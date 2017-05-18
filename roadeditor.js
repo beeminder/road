@@ -14,16 +14,20 @@ var knots = [];
 function initializeKnotArray() {
     var nk = rawknots.length - 1;
     for (var i = 0; i < nk; i++) {
-        var slope =  (rawknots[i+1][1] - rawknots[i][1]) / (rawknots[i+1][0] - rawknots[i][0]);
+        var slope =  (rawknots[i+1][1] - rawknots[i][1]) 
+                / (rawknots[i+1][0] - rawknots[i][0]);
         knots.push(rawknots[i].concat(rawknots[i+1]));
         knots[knots.length-1].push(slope);
     }
-    var firstsegment = [knots[0][0]-10*365*24*60*60, knots[0][1], knots[0][0], knots[0][1], 0];
-    var lastsegment = [knots[nk-1][2], knots[nk-1][3], knots[nk-1][2]+10*365*24*60*60, knots[nk-1][3], 0];
+    var firstsegment = [knots[0][0]-10*365*24*60*60, knots[0][1], 
+                        knots[0][0], knots[0][1], 0];
+    var lastsegment = [knots[nk-1][2], knots[nk-1][3], 
+                       knots[nk-1][2]+10*365*24*60*60, knots[nk-1][3], 0];
     knots.push(lastsegment);
     knots.unshift(firstsegment);
 }
 initializeKnotArray();
+
 // Create and initialize the SVG chart and its components
 var chart = d3.select('.content')
 	.append('svg:svg')
@@ -42,12 +46,18 @@ chart.append('def').append("clipPath")
 // Create a rectange to monitor zoom events and install initial handlers
 var zoomarea = chart.append('rect')
         .attr("class", "zoomarea")
-        .attr("x", padding.left)
-        .attr("y", padding.right)
-        .attr("width", plotsize.width)
-        .attr("height", plotsize.height);
+        .attr("x", padding.left).attr("y", padding.right)
+        .attr("width", plotsize.width).attr("height", plotsize.height);
+var xzoomarea = chart.append('rect')
+        .attr("class", "axiszoom")
+        .attr("x", padding.left).attr("y", plotsize.height)
+        .attr("width", plotsize.width).attr("height", padding.bottom);
+var yzoomarea = chart.append('rect')
+        .attr("class", "axiszoom")
+        .attr("x", 0).attr("y", padding.top)
+        .attr("width", padding.left).attr("height", plotsize.height);
 var axisZoom = d3.zoom()
-        .scaleExtent([1, 10])
+        .scaleExtent([1, Infinity])
         .extent([[0, 0], [plotsize.width, plotsize.height]])
         .translateExtent([[0, 0], [plotsize.width, plotsize.height]])
         .on("zoom", updateZoom);
@@ -65,68 +75,62 @@ var plot = chart.append('g')
 // Define and compute limits of current data
 var xMin=Infinity,xMax=-Infinity;
 var yMin=Infinity,yMax=-Infinity;
-// These keep track of the limits excluding the last goal
-var xMaxLast=-Infinity, yMinLast=Infinity, yMaxLast=-Infinity;
-function updateLimits() {
-    var xMinNew = d3.min(knots, function(d) { return d[2]; });
-    var xMaxNew = d3.max(knots, function(d) { return d[0]; });
-    var yMinNew = d3.min(knots, function(d) { return d[1]; });
-    var yMaxNew = d3.max(knots, function(d) { return d[1]; });
-    xMinNew = xMinNew - 0.05*(xMaxNew - xMinNew);
-    xMaxNew = xMaxNew + 0.05*(xMaxNew - xMinNew);
-    yMinNew = yMinNew - 0.05*(yMaxNew - yMinNew);
-    yMaxNew = yMaxNew + 0.05*(yMaxNew - yMinNew);
-    if (xMin != Infinity) {
+
+function recomputeDataLimits() {
+    var firstRun = !Number.isFinite(xMin);
+
+    // Save old limits so we can figure out how much to extend scale
+    // extent for zoom
+    var xMinOld = xMin, xMaxOld = xMax;
+    var yMinOld = yMin, yMaxOld = yMax;
+
+    // Compute new limits for the current data
+    xMin = d3.min(knots, function(d) { return d[2]; });
+    xMax = d3.max(knots, function(d) { return d[0]; });
+    yMin = d3.min(knots, function(d) { return d[1]; });
+    yMax = d3.max(knots, function(d) { return d[1]; });
+    // Extend limits by 5% so everything is visible
+    xMin = xMin - 0.05*(xMax - xMin);
+    xMax = xMax + 0.05*(xMax - xMin);
+    yMin = yMin - 0.05*(yMax - yMin);
+    yMax = yMax + 0.05*(yMax - yMin);
+
+    // Make sure we never shrink allowable zoom extent since that
+    // causes jumpy behavior
+    xMin = d3.min([xMin, xMinOld]);
+    xMax = d3.max([xMax, xMaxOld]);
+    yMin = d3.min([yMin, yMinOld]);
+    yMax = d3.max([yMax, yMaxOld]);
+
+    if (!firstRun) {
+        // After initialization, update the zoom scale extent if the
+        // data limits have been extended.
         var curScales = axisZoom.scaleExtent();
-        curScales[0] = curScales[0] * d3.min([(xMax - xMin) / (xMaxNew - xMinNew),(yMax - yMin) / (yMaxNew - yMinNew)]);
-        axisZoom.scaleExtent(curScales);
-    } else {
-        xMaxLast = d3.max(knots.slice(0,knots.length-1), function(d) { return d[0]; });
-        yMinLast = d3.min(knots.slice(0,knots.length-1), function(d) { return d[1]; });
-        yMaxLast = d3.max(knots.slice(0,knots.length-1), function(d) { return d[1]; });
-        xMaxLast = xMaxLast + 0.1*(xMaxLast - xMinNew);
-        yMinLast = yMinLast - 0.1*(yMaxLast - yMinLast);
-        yMaxLast = yMaxLast + 0.1*(yMaxLast - yMinLast);
-        var curScales = axisZoom.scaleExtent();
-        curScales[0] = d3.min([(xMaxLast - xMinNew) / (xMaxNew - xMinNew),(yMaxLast - yMinLast) / (yMaxNew - yMinNew)]);;
+        curScales[0] = curScales[0] 
+            * d3.min([(xMaxOld - xMinOld) / (xMax - xMin),
+                      (yMaxOld - yMinOld) / (yMax - yMin)]);
         axisZoom.scaleExtent(curScales);
     }
-    xMin = d3.min([xMin, xMinNew]);
-    xMax = d3.max([xMax, xMaxNew]);
-    yMin = d3.min([yMin, yMinNew]);
-    yMax = d3.max([yMax, yMaxNew]);
 }
-updateLimits();
+recomputeDataLimits();
 
 // Create and initialize the x and y axes
 var xScale = d3.scaleTime()
-        .domain([new Date(xMin*1000), new Date(xMaxLast*1000)])
+        .domain([new Date(xMin*1000), new Date(xMax*1000)])
         .range([0,plotsize.width]);
 var xAxis = d3.axisBottom(xScale).ticks(6);
 var xAxisObj = chart.append('g')        
         .attr("class", "axis")
         .attr("transform", "translate("+padding.left+"," + (size.height - padding.bottom) + ")")
         .call(xAxis);
-var xzoom = chart.append('rect')
-        .attr("class", "axiszoom")
-        .attr("x", padding.left)
-        .attr("y", plotsize.height)
-        .attr("width", plotsize.width)
-        .attr("height", padding.bottom);
 var yScale = d3.scaleLinear()
-        .domain([yMinLast, yMaxLast])
+        .domain([yMin, yMax])
         .range([plotsize.height, 0]);
 var yAxis = d3.axisLeft(yScale);
 var yAxisObj = chart.append('g')        
         .attr("class", "axis")
         .attr("transform", "translate(" + padding.left + ","+padding.top+")")
         .call(yAxis);
-var yzoom = chart.append('rect')
-        .attr("class", "axiszoom")
-        .attr("x", 0)
-        .attr("y", padding.top)
-        .attr("width", padding.left)
-        .attr("height", plotsize.height);
 
 // These keep the current scaling factors for x and y axes
 var xFactor = 1, yFactor = 1;
@@ -139,6 +143,7 @@ function updateZoom() {
     var tr = d3.event.transform;
     if (tr != null) lastTransform = tr;
     else tr = lastTransform;
+
     if (tr == null) return;
 
     plot.attr("transform", tr);
@@ -211,7 +216,7 @@ function knotdragged(d) {
 };
 function knotdragended(d){
 	d3.select(this).attr("stroke","rgb(200,200,200)");
-    updateLimits();
+    recomputeDataLimits();
     updateData();
     updateZoom();
 };
