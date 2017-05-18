@@ -18,7 +18,7 @@ function initializeKnotArray() {
         knots.push(rawknots[i].concat(rawknots[i+1]));
         knots[knots.length-1].push(slope);
     }
-    var firstsegment = [knots[0][0] - 10*365*24*60*60, knots[0][1], knots[0][0], knots[0][1], 0];
+    var firstsegment = [knots[0][0]-10*365*24*60*60, knots[0][1], knots[0][0], knots[0][1], 0];
     var lastsegment = [knots[nk-1][2], knots[nk-1][3], knots[nk-1][2]+10*365*24*60*60, knots[nk-1][3], 0];
     knots.push(lastsegment);
     knots.unshift(firstsegment);
@@ -76,19 +76,25 @@ function updateLimits() {
     xMaxNew = xMaxNew + 0.05*(xMaxNew - xMinNew);
     yMinNew = yMinNew - 0.05*(yMaxNew - yMinNew);
     yMaxNew = yMaxNew + 0.05*(yMaxNew - yMinNew);
+    if (xMin != Infinity) {
+        var curScales = axisZoom.scaleExtent();
+        curScales[0] = curScales[0] * d3.min([(xMax - xMin) / (xMaxNew - xMinNew),(yMax - yMin) / (yMaxNew - yMinNew)]);
+        axisZoom.scaleExtent(curScales);
+    } else {
+        xMaxLast = d3.max(knots.slice(0,knots.length-1), function(d) { return d[0]; });
+        yMinLast = d3.min(knots.slice(0,knots.length-1), function(d) { return d[1]; });
+        yMaxLast = d3.max(knots.slice(0,knots.length-1), function(d) { return d[1]; });
+        xMaxLast = xMaxLast + 0.1*(xMaxLast - xMinNew);
+        yMinLast = yMinLast - 0.1*(yMaxLast - yMinLast);
+        yMaxLast = yMaxLast + 0.1*(yMaxLast - yMinLast);
+        var curScales = axisZoom.scaleExtent();
+        curScales[0] = d3.min([(xMaxLast - xMinNew) / (xMaxNew - xMinNew),(yMaxLast - yMinLast) / (yMaxNew - yMinNew)]);;
+        axisZoom.scaleExtent(curScales);
+    }
     xMin = d3.min([xMin, xMinNew]);
     xMax = d3.max([xMax, xMaxNew]);
     yMin = d3.min([yMin, yMinNew]);
     yMax = d3.max([yMax, yMaxNew]);
-    xMaxLast = d3.max(knots.slice(0,knots.length-1), function(d) { return d[0]; });
-    yMinLast = d3.min(knots.slice(0,knots.length-1), function(d) { return d[1]; });
-    yMaxLast = d3.max(knots.slice(0,knots.length-1), function(d) { return d[1]; });
-    xMaxLast = xMaxLast + 0.1*(xMaxLast - xMin);
-    yMinLast = yMinLast - 0.1*(yMaxLast - yMinLast);
-    yMaxLast = yMaxLast + 0.1*(yMaxLast - yMinLast);
-    var curScales = axisZoom.scaleExtent();
-    curScales[0] = (xMaxLast - xMin) / (xMax - xMin);
-    axisZoom.scaleExtent(curScales);
 }
 updateLimits();
 
@@ -131,8 +137,9 @@ var lastTransform = null;
 function updateZoom() {
     // Inject the current transform into the plot element
     var tr = d3.event.transform;
-    if (tr) lastTransform = tr;
+    if (tr != null) lastTransform = tr;
     else tr = lastTransform;
+    if (tr == null) return;
 
     plot.attr("transform", tr);
 
@@ -203,14 +210,8 @@ function knotdragged(d) {
     }
 };
 function knotdragended(d){
-	d3.select(this)
-		.attr("stroke","rgb(200,200,200)");
-    updateData();
+	d3.select(this).attr("stroke","rgb(200,200,200)");
     updateLimits();
-    xScale.domain([new Date(xMin*1000), new Date(xMaxLast*1000)]).range([0,plotsize.width]);
-    xAxisObj.call(xAxis);
-    yScale.domain([yMinLast, yMaxLast]).range([plotsize.height, 0]);
-    yAxisObj.call(yAxis);
     updateData();
     updateZoom();
 };
