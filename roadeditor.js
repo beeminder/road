@@ -25,6 +25,7 @@ function initializeKnotArray() {
                        knots[nk-1][2]+10*365*24*60*60, knots[nk-1][3], 0];
     knots.push(lastsegment);
     knots.unshift(firstsegment);
+    console.debug(knots);
 }
 initializeKnotArray();
 
@@ -35,13 +36,28 @@ var chart = d3.select('.content')
 	.attr('height', size.height)
 	.attr('id', 'roadchart')
 	.attr('class', 'chart');
-chart.append('def').append("clipPath")
-    .attr("id", "clipper")
+var defs = chart.append('def');
+defs.append("clipPath")
+    .attr("id", "plotclip")
     .append("rect")
-    .attr("x", padding.left)
-    .attr("y", padding.top)
+    .attr("x", 0)
+    .attr("y", 0)
     .attr("width", plotsize.width)
     .attr("height", plotsize.height);
+defs.append("clipPath")
+    .attr("id", "buttonareaclip")
+    .append("rect")
+    .attr("x", padding.left)
+    .attr("y", 0)
+    .attr("width", plotsize.width)
+    .attr("height", plotsize.height);
+var buttongrp = defs.append("g")
+        .attr("id", "removebutton");
+buttongrp.append("rect")
+    .attr("x", 0).attr("y", 0)
+    .attr("width", 30).attr("height", 30).attr('fill', '#00000000');
+buttongrp.append("path")
+    .attr("d", "M13.98,0C6.259,0,0,6.261,0,13.983c0,7.721,6.259,13.982,13.98,13.982c7.725,0,13.985-6.262,13.985-13.982C27.965,6.261,21.705,0,13.98,0z M19.992,17.769l-2.227,2.224c0,0-3.523-3.78-3.786-3.78c-0.259,0-3.783,3.78-3.783,3.78l-2.228-2.224c0,0,3.784-3.472,3.784-3.781c0-0.314-3.784-3.787-3.784-3.787l2.228-2.229c0,0,3.553,3.782,3.783,3.782c0.232,0,3.786-3.782,3.786-3.782l2.227,2.229c0,0-3.785,3.523-3.785,3.787C16.207,14.239,19.992,17.769,19.992,17.769z");
 
 // Create a rectange to monitor zoom events and install initial handlers
 var zoomarea = chart.append('rect')
@@ -64,12 +80,15 @@ var axisZoom = d3.zoom()
 zoomarea.call(axisZoom);
 
 // Create plotting area above the zooming area so points can be selected
-var plot = chart.append('g')
-	    .attr('class', 'main')
-        .attr('clip-path', 'url(#clipper)')
-        .append('g')
-        .attr('transform', 'translate('+padding.left+','+padding.top+')')
-        .append('g')
+var main = chart.append('g')
+	    .attr('class', 'main');
+var buttonarea = main.append('g')
+        .attr('clip-path', 'url(#buttonareaclip)')
+        .attr('class', 'buttonarea'); 
+var mainclip = main.append('g')
+    .attr('clip-path', 'url(#plotclip)')
+    .attr('transform', 'translate('+padding.left+','+padding.top+')');
+var plot = mainclip.append('g')
 	    .attr('class', 'plot');
 
 // Define and compute limits of current data
@@ -164,6 +183,10 @@ function updateZoom() {
     plot.selectAll("line.knots").style("stroke-width",3/xFactor);
     plot.selectAll("circle.dots").attr("r",5/xFactor);
     plot.selectAll("circle.dots").style("stroke-width",1/xFactor);
+    buttonarea.selectAll("use.remove").attr("transform", 
+                 function(d){ return "translate("+(newXScale(d[0]*1000)
+                                                   +padding.left-8)
+                           +","+(padding.top-20)+") scale(0.6,0.6)";});
 }
 
 function recomputeKnotArray() {
@@ -174,6 +197,7 @@ function recomputeKnotArray() {
         knots[i][3] = knots[i+1][1];
     }
     knots[nk][3] = knots[nk][1];
+    console.debug(knots);
 }
 
 function inrange(x, min, max) {
@@ -181,21 +205,22 @@ function inrange(x, min, max) {
 }
 
 var knotsave, knotmin, knotmax;
-function knotdragstarted(d) {
+function knotDragStarted(d) {
 	d3.event.sourceEvent.stopPropagation();
     var knotindex = Number(this.id);
 	knotmin = (knotindex == 0) ? xMin : (knots[knotindex-1][0]) + 0.01;
 	knotmax = (knotindex == knots.length-1) ? knots[knotindex][2]-0.01:(knots[knotindex+1][0])-0.01;
     knotsave = knots.map(function(arr){return arr.slice();});
 };
-function knotdragged(d) {
+function knotDragged(d) {
 	var x = d3.event.x;
 	if (inrange(xScale.invert(x)/1000, knotmin, knotmax)) {
         d3.select(this).attr("stroke","rgb(255,180,0)");
         var knotindex = Number(this.id);
         i = knotindex;
         //for (i = knotindex; i < knots.length; i++) {
-	    knots[i][0] = knotsave[i][0] + xScale.invert(x)/1000 - knotsave[knotindex][0];
+	    knots[i][0] = knotsave[i][0] + xScale.invert(x)/1000 
+            - knotsave[knotindex][0];
         //}
         recomputeKnotArray();
         for (i = 0; i < knots.length; i++) {
@@ -211,25 +236,62 @@ function knotdragged(d) {
 			    .attr("y1", yScale(knots[i][1]))
 			    .attr("y2", yScale(knots[i][4]));
         }
-        updateData();
+        updateDataOnMove();
     }
 };
-function knotdragended(d){
+function knotDragEnded(d){
 	d3.select(this).attr("stroke","rgb(200,200,200)");
     recomputeDataLimits();
-    updateData();
+    updateAllData();
 };
 
-function updateData() {
+function knotDeleted(d) {
+    var knotindex = Number(this.id)+2;
+    knots.splice(knotindex, 1);
+    if (knotindex > 1) {
+        knots[knotindex-1][4] = (knots[knotindex][1] - knots[knotindex-1][1]) / (knots[knotindex][0] - knots[knotindex-1][0]);
+    }
+    recomputeKnotArray();
+    recomputeDataLimits();
+    updateAllData();
+}
+
+function updateDataOnMove() {
+    // Create, update and delete vertical knot lines
+    var klines = plot.selectAll("line.knots").data(knots);
+    klines.attr("x1", function(d){ return xScale(d[0]*1000)})
+		.attr("x2", function(d){ return xScale(d[0]*1000)});
+
+    var kremove = buttonarea.selectAll("use.remove").data(knots);
+    kremove.attr("transform", 
+                 function(d){ return "translate("+(newXScale(d[0]*1000)+padding.left-8)
+                           +","+(padding.top-20)+") scale(0.6,0.6)";});
+
+    // Create, update and delete road lines
+    var kroads = plot.selectAll("line.roads").data(knots);
+    kroads.attr("y1",function(d){ return yScale(d[1]);})
+		.attr("y2",function(d){ return yScale(d[3]);})
+		.attr("x1", function(d){ return xScale(d[0]*1000);})
+		.attr("x2", function(d){ return xScale(d[2]*1000);})
+		.style("stroke-width",2/xFactor);
+
+    // Create, update and delete inflection points
+    var kdots = plot.selectAll("circle.dots").data(knots);
+    kdots.attr("cy",function(d){ return yScale(d[1]);})
+		.attr("cx", function(d){ return xScale(d[0]*1000);})
+		.attr("stroke-width", 1/xFactor);
+}
+
+function updateAllData() {
 
     // Create, update and delete vertical knot lines
-    kn = plot.selectAll("line.knots").data(knots);
-    kn.attr("y1",yScale(yMin - 10*(yMax-yMin)))
+    var klines = plot.selectAll("line.knots").data(knots);
+    klines.attr("y1",yScale(yMin - 10*(yMax-yMin)))
 		.attr("y2",yScale(yMax + 10*(yMax-yMin)))
 		.attr("x1", function(d){ return xScale(d[0]*1000)})
 		.attr("x2", function(d){ return xScale(d[0]*1000)});
-    kn.exit().remove();
-    kn.enter().append("svg:line")
+    klines.exit().remove();
+    klines.enter().append("svg:line")
 		.attr("class","knots")
 		.attr("y1",yScale(yMin))
 		.attr("y2",yScale(yMax))
@@ -244,20 +306,39 @@ function updateData() {
 		.on("mouseout",function() {
 			d3.select(this).style("stroke-width",3/xFactor);})
         .call(d3.drag()
-              .on("start", knotdragstarted)
-              .on("drag", knotdragged)
-              .on("end", knotdragended));
+              .on("start", knotDragStarted)
+              .on("drag", knotDragged)
+              .on("end", knotDragEnded));
+
+    var kremove = buttonarea.selectAll("use.remove").data(knots.slice(2,knots.length-1));
+    kremove.attr("transform", 
+                 function(d){ return "translate("+(newXScale(d[0]*1000)+padding.left-8)
+                           +","+(padding.top-20)+") scale(0.6,0.6)";});
+    kremove.enter().append("use")
+        .attr("xlink:href", "#removebutton")
+        .attr("class", "remove")
+		.attr("id", function(d,i) {return i;})
+		.attr("name", function(d,i) {return "remove"+i;})
+        .attr("transform", 
+              function(d){ return "translate("+(newXScale(d[0]*1000)+padding.left-8)
+                           +","+(padding.top-20)+") scale(0.6,0.6)";})
+		.on("mouseenter",function() {
+			d3.select(this).attr("fill","#ff0000");})
+		.on("mouseout",function() {
+			d3.select(this).attr("fill","#000000");})
+		.on("click",knotDeleted);
+    kremove.exit().remove();
 
     // Create, update and delete road lines
-    kn = plot.selectAll("line.roads").data(knots);
-    kn.attr("y1",function(d){ return yScale(d[1]);})
+    var kroads = plot.selectAll("line.roads").data(knots);
+    kroads.attr("y1",function(d){ return yScale(d[1]);})
 		.attr("y2",function(d){ return yScale(d[3]);})
 		.attr("x1", function(d){ return xScale(d[0]*1000);})
 		.attr("x2", function(d){ return xScale(d[2]*1000);})
 		.style("stroke-width",2/xFactor);
     
-    kn.exit().remove();
-    kn.enter().append("svg:line")
+    kroads.exit().remove();
+    kroads.enter().append("svg:line")
 		.attr("class","roads")
 		.attr("y1",function(d){ return yScale(d[1]);})
 		.attr("y2",function(d){ return yScale(d[3]);})
@@ -268,12 +349,12 @@ function updateData() {
 		.attr("name", function(d,i) {return "road"+i;});
 
     // Create, update and delete inflection points
-    kn = plot.selectAll("circle.dots").data(knots);
-    kn.attr("cy",function(d){ return yScale(d[1]);})
+    var kdots = plot.selectAll("circle.dots").data(knots);
+    kdots.attr("cy",function(d){ return yScale(d[1]);})
 		.attr("cx", function(d){ return xScale(d[0]*1000);})
 		.attr("stroke-width", 1/xFactor);
-    kn.exit().remove();
-    kn.enter().append("svg:circle")
+    kdots.exit().remove();
+    kdots.enter().append("svg:circle")
 		.attr("class","dots")
 		.attr("cy",function(d){ return yScale(d[1]);})
 		.attr("cx", function(d){ return xScale(d[0]*1000);})
@@ -281,7 +362,6 @@ function updateData() {
 		.attr("r",5/xFactor)
 		.attr("id", function(d,i) {return i;})
 		.attr("name", function(d,i) {return "dot"+i;});
-
 }
 
 // Reset button restores zooming transformation to identity
@@ -297,7 +377,7 @@ function zoomOut() {
         .extent([[0, 0], [plotsize.width, plotsize.height]])
         .translateExtent([[0, 0], [plotsize.width, plotsize.height]]);
     zoomarea.call(axisZoom.transform, d3.zoomIdentity);
-    updateData();
+    updateAllData();
 }
 d3.select("button#zoomout").on("click", zoomOut);
 
@@ -319,10 +399,10 @@ function saveZoom() {
     xScale = newXScale; yScale = newYScale;
     zoomarea.call(axisZoom.transform, d3.zoomIdentity);
     // This ensures that data components are moved to their new coordinates
-    updateData();
+    updateAllData();
 }
 d3.select("button#savezoom").on("click", saveZoom);
 
-updateData();
+updateAllData();
 
-//self.setInterval(function() {data.push([10*Math.random(), 10*Math.random()]); updateData();}, 100);
+//self.setInterval(function() {data.push([10*Math.random(), 10*Math.random()]); updateAllData();}, 100);
