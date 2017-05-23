@@ -1,6 +1,6 @@
 
 var size = {width: 1000, height:400};
-var padding = {left:40, right:10, top:10, bottom:30};
+var padding = {left:40, right:10, top:30, bottom:30};
 var plotsize = {width: size.width-padding.left-padding.right, height: size.height-padding.top-padding.bottom};
 
 // rawknots includes the start date and value, subsequent date/value
@@ -39,18 +39,18 @@ chart.append('def').append("clipPath")
     .attr("id", "clipper")
     .append("rect")
     .attr("x", padding.left)
-    .attr("y", padding.right)
+    .attr("y", padding.top)
     .attr("width", plotsize.width)
     .attr("height", plotsize.height);
 
 // Create a rectange to monitor zoom events and install initial handlers
 var zoomarea = chart.append('rect')
         .attr("class", "zoomarea")
-        .attr("x", padding.left).attr("y", padding.right)
+        .attr("x", padding.left).attr("y", padding.top)
         .attr("width", plotsize.width).attr("height", plotsize.height);
 var xzoomarea = chart.append('rect')
         .attr("class", "axiszoom")
-        .attr("x", padding.left).attr("y", plotsize.height)
+        .attr("x", padding.left).attr("y", plotsize.height+padding.top)
         .attr("width", plotsize.width).attr("height", padding.bottom);
 var yzoomarea = chart.append('rect')
         .attr("class", "axiszoom")
@@ -76,7 +76,7 @@ var plot = chart.append('g')
 var xMin=Infinity,xMax=-Infinity;
 var yMin=Infinity,yMax=-Infinity;
 
-function recomputeDataLimits() {
+function recomputeDataLimits(allowShrink = false) {
     var firstRun = !Number.isFinite(xMin);
 
     // Save old limits so we can figure out how much to extend scale
@@ -91,17 +91,19 @@ function recomputeDataLimits() {
     yMax = d3.max(knots, function(d) { return d[1]; });
     // Extend limits by 5% so everything is visible
     xMin = xMin - 0.05*(xMax - xMin);
-    xMax = xMax + 0.05*(xMax - xMin);
+    xMax = xMax + 0.15*(xMax - xMin);
     yMin = yMin - 0.05*(yMax - yMin);
     yMax = yMax + 0.05*(yMax - yMin);
 
-    // Make sure we never shrink allowable zoom extent since that
-    // causes jumpy behavior
-    xMin = d3.min([xMin, xMinOld]);
-    xMax = d3.max([xMax, xMaxOld]);
-    yMin = d3.min([yMin, yMinOld]);
-    yMax = d3.max([yMax, yMaxOld]);
-
+    // Make sure we never shrink allowable zoom extent (unless
+    // requested) since that causes jumpy behavior
+    if (!allowShrink) {
+        xMin = d3.min([xMin, xMinOld]);
+        xMax = d3.max([xMax, xMaxOld]);
+        yMin = d3.min([yMin, yMinOld]);
+        yMax = d3.max([yMax, yMaxOld]);
+    }
+    
     if (!firstRun) {
         // After initialization, update the zoom scale extent if the
         // data limits have been extended.
@@ -110,9 +112,11 @@ function recomputeDataLimits() {
             * d3.min([(xMaxOld - xMinOld) / (xMax - xMin),
                       (yMaxOld - yMinOld) / (yMax - yMin)]);
         axisZoom.scaleExtent(curScales);
+        axisZoom.translateExtent([[xScale(xMin*1000), yScale(yMax)], 
+                                  [xScale(xMax*1000), yScale(yMin)]]);
     }
 }
-recomputeDataLimits();
+recomputeDataLimits( );
 
 // Create and initialize the x and y axes
 var xScale = d3.scaleTime()
@@ -136,14 +140,10 @@ var yAxisObj = chart.append('g')
 var xFactor = 1, yFactor = 1;
 // These are the updated scale objects based on the current transform
 var newXScale = xScale, newYScale = yScale;
-var lastTransform = null;
 
 function updateZoom() {
     // Inject the current transform into the plot element
     var tr = d3.event.transform;
-    if (tr != null) lastTransform = tr;
-    else tr = lastTransform;
-
     if (tr == null) return;
 
     plot.attr("transform", tr);
@@ -157,8 +157,8 @@ function updateZoom() {
     // Compute scaling factors and adjust translation limits for zooming
     xFactor = tr.applyX(1) - tr.applyX(0);
     yFactor = tr.applyY(1) - tr.applyY(0);
-    axisZoom.translateExtent([[xScale(xMin*1000), yScale(yMax)], [xScale(xMax*1000), yScale(yMin)]]);
-    //console.debug([xScale(xMin*1000), yScale(yMax), xScale(xMax*1000), yScale(yMin)]);
+    axisZoom.translateExtent([[xScale(xMin*1000), yScale(yMax)], 
+                              [xScale(xMax*1000), yScale(yMin)]]);
     // Readjust point sizes and line widths with the current scale
     plot.selectAll("line.roads").style("stroke-width",2/xFactor);
     plot.selectAll("line.knots").style("stroke-width",3/xFactor);
@@ -166,7 +166,7 @@ function updateZoom() {
     plot.selectAll("circle.dots").style("stroke-width",1/xFactor);
 }
 
-function updateKnotArray() {
+function recomputeKnotArray() {
     var nk = knots.length-1;
     for (var i = 0; i < nk; i++) {
         knots[i+1][1] = knots[i][1] + knots[i][4]*(knots[i+1][0] - knots[i][0]);
@@ -197,7 +197,7 @@ function knotdragged(d) {
         //for (i = knotindex; i < knots.length; i++) {
 	    knots[i][0] = knotsave[i][0] + xScale.invert(x)/1000 - knotsave[knotindex][0];
         //}
-        updateKnotArray();
+        recomputeKnotArray();
         for (i = 0; i < knots.length; i++) {
 		    d3.select("[name=knot"+i+"]")
 			    .attr("x1", xScale(knots[i][0]*1000))
@@ -218,7 +218,6 @@ function knotdragended(d){
 	d3.select(this).attr("stroke","rgb(200,200,200)");
     recomputeDataLimits();
     updateData();
-    updateZoom();
 };
 
 function updateData() {
@@ -284,6 +283,23 @@ function updateData() {
 		.attr("name", function(d,i) {return "dot"+i;});
 
 }
+
+// Reset button restores zooming transformation to identity
+function zoomOut() {
+    recomputeDataLimits(true);
+    xFactor = 1; yFactor = 1;
+    xScale.domain([new Date(xMin*1000), new Date(xMax*1000)])
+        .range([0,plotsize.width]);
+    yScale.domain([yMin, yMax])
+        .range([plotsize.height, 0]);
+    newXScale = xScale; newYScale = yScale;
+    axisZoom.scaleExtent([1, Infinity])
+        .extent([[0, 0], [plotsize.width, plotsize.height]])
+        .translateExtent([[0, 0], [plotsize.width, plotsize.height]]);
+    zoomarea.call(axisZoom.transform, d3.zoomIdentity);
+    updateData();
+}
+d3.select("button#zoomout").on("click", zoomOut);
 
 // Reset button restores zooming transformation to identity
 function resetZoom() {
