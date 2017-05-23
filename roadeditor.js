@@ -10,24 +10,33 @@ var rawknots = [[1441606400,0], [1454284800,2], [1457284800,5], [1460284800,0], 
 // segment of the road in the form [startdate, startvalue, enddate,
 // endvalue, slope]. The first and last entries encode flat segments
 // at the beginning and end of the overall road.
-var knots = [];
-function initializeKnotArray() {
+var roads;
+function initializeRoadArray() {
+    roads = [];
     var nk = rawknots.length - 1;
     for (var i = 0; i < nk; i++) {
-        var slope =  (rawknots[i+1][1] - rawknots[i][1]) 
+        var segment = {};
+        segment.slope = (rawknots[i+1][1] - rawknots[i][1]) 
                 / (rawknots[i+1][0] - rawknots[i][0]);
-        knots.push(rawknots[i].concat(rawknots[i+1]));
-        knots[knots.length-1].push(slope);
+        segment.sta = rawknots[i].slice();
+        segment.end = rawknots[i+1].slice();
+        roads.push(segment);
     }
-    var firstsegment = [knots[0][0]-10*365*24*60*60, knots[0][1], 
-                        knots[0][0], knots[0][1], 0];
-    var lastsegment = [knots[nk-1][2], knots[nk-1][3], 
-                       knots[nk-1][2]+10*365*24*60*60, knots[nk-1][3], 0];
-    knots.push(lastsegment);
-    knots.unshift(firstsegment);
-    console.debug(knots);
+    var firstsegment = {};
+    firstsegment.sta = roads[0].sta.slice();
+    firstsegment.end = roads[0].sta.slice();
+    firstsegment.sta[0] -= 10*365*24*60*60;
+    firstsegment.slope = 0;
+
+    var lastsegment = {};
+    lastsegment.sta = roads[nk-1].end.slice();
+    lastsegment.end = roads[nk-1].end.slice();
+    lastsegment.end[0] += 10*365*24*60*60;
+    firstsegment.slope = 0;
+    roads.push(lastsegment);
+    roads.unshift(firstsegment);
 }
-initializeKnotArray();
+initializeRoadArray();
 
 // Create and initialize the SVG chart and its components
 var chart = d3.select('.content')
@@ -36,17 +45,19 @@ var chart = d3.select('.content')
 	.attr('height', size.height)
 	.attr('id', 'roadchart')
 	.attr('class', 'chart');
-var defs = chart.append('def');
-defs.append("clipPath")
+// Common SVG definitions, including clip paths
+var defs = chart.append('defs');
+defs.append("svg:clipPath")
     .attr("id", "plotclip")
-    .append("rect")
+    .append("svg:rect")
+    .attr("id", "plotclip-rect")
     .attr("x", 0)
     .attr("y", 0)
     .attr("width", plotsize.width)
     .attr("height", plotsize.height);
-defs.append("clipPath")
+defs.append("svg:clipPath")
     .attr("id", "buttonareaclip")
-    .append("rect")
+    .append("svg:rect")
     .attr("x", padding.left)
     .attr("y", 0)
     .attr("width", plotsize.width)
@@ -54,9 +65,11 @@ defs.append("clipPath")
 var buttongrp = defs.append("g")
         .attr("id", "removebutton");
 buttongrp.append("rect")
+    .attr("id", "removebutton-rect")
     .attr("x", 0).attr("y", 0)
-    .attr("width", 30).attr("height", 30).attr('fill', '#00000000');
+    .attr("width", 30).attr("height", 30).attr('fill', '#ffffff');
 buttongrp.append("path")
+    .attr("id", "removebutton-path")
     .attr("d", "M13.98,0C6.259,0,0,6.261,0,13.983c0,7.721,6.259,13.982,13.98,13.982c7.725,0,13.985-6.262,13.985-13.982C27.965,6.261,21.705,0,13.98,0z M19.992,17.769l-2.227,2.224c0,0-3.523-3.78-3.786-3.78c-0.259,0-3.783,3.78-3.783,3.78l-2.228-2.224c0,0,3.784-3.472,3.784-3.781c0-0.314-3.784-3.787-3.784-3.787l2.228-2.229c0,0,3.553,3.782,3.783,3.782c0.232,0,3.786-3.782,3.786-3.782l2.227,2.229c0,0-3.785,3.523-3.785,3.787C16.207,14.239,19.992,17.769,19.992,17.769z");
 
 // Create a rectange to monitor zoom events and install initial handlers
@@ -78,6 +91,57 @@ var axisZoom = d3.zoom()
         .translateExtent([[0, 0], [plotsize.width, plotsize.height]])
         .on("zoom", updateZoom);
 zoomarea.call(axisZoom);
+function dotAdded() {
+    var found = -1;
+    var x = d3.event.x-padding.left;
+    var y = d3.event.y-padding.top;
+    if (d3.event.shiftKey) {
+        console.debug([x, y]);
+        for (var i = 0; i < roads.length; i++) {
+            if ((x > newXScale(roads[i].sta[0]*1000)) 
+                && (x < newXScale(roads[i].end[0]*1000))) {
+                found = i;
+                break;
+            }
+        }
+        
+    }
+    if (found >= 0) {
+        var segment = {};
+        var newx = newXScale.invert(x)/1000;
+        var newy = roads[found].sta[1] + roads[found].slope*(newx - roads[found].sta[0]);
+        console.debug("Found at "+found);
+        if (found == 0) {
+            // First segment splitted
+            roads[found].sta[1] = newy;
+            roads[found].end = [newx, newy];
+            segment.sta = roads[found].end.slice();
+            segment.end = roads[found+1].sta.slice();
+        } else {
+            segment.sta = [newx, newy];
+            if (found == roads.length-1) {
+                // Last segment splitted
+                segment.end = roads[found].end.slice();
+                segment.end[1] = segment.sta[1];
+            } else {
+                segment.end = roads[found+1].sta.slice();
+            }
+            roads[found].end = segment.sta.slice();
+            roads[found].slope =
+                (roads[found].end[1] - roads[found].sta[1]) 
+                / (roads[found].end[0] - roads[found].sta[0]);
+        }
+        segment.slope =
+            (segment.end[1] - segment.sta[1]) 
+            / (segment.end[0] - segment.sta[0]);
+        roads.splice(i+1, 0, segment);
+        recomputeRoadArray();
+        recomputeDataLimits();
+        updateAllData();
+    }
+}
+zoomarea.on("click", dotAdded);
+
 
 // Create plotting area above the zooming area so points can be selected
 var main = chart.append('g')
@@ -86,8 +150,8 @@ var buttonarea = main.append('g')
         .attr('clip-path', 'url(#buttonareaclip)')
         .attr('class', 'buttonarea'); 
 var mainclip = main.append('g')
-    .attr('clip-path', 'url(#plotclip)')
-    .attr('transform', 'translate('+padding.left+','+padding.top+')');
+        .attr('clip-path', 'url(#plotclip)')
+        .attr('transform', 'translate('+padding.left+','+padding.top+')');
 var plot = mainclip.append('g')
 	    .attr('class', 'plot');
 
@@ -104,10 +168,10 @@ function recomputeDataLimits(allowShrink = false) {
     var yMinOld = yMin, yMaxOld = yMax;
 
     // Compute new limits for the current data
-    xMin = d3.min(knots, function(d) { return d[2]; });
-    xMax = d3.max(knots, function(d) { return d[0]; });
-    yMin = d3.min(knots, function(d) { return d[1]; });
-    yMax = d3.max(knots, function(d) { return d[1]; });
+    xMin = d3.min(roads, function(d) { return d.end[0]; });
+    xMax = d3.max(roads, function(d) { return d.sta[0]; });
+    yMin = d3.min(roads, function(d) { return d.sta[1]; });
+    yMax = d3.max(roads, function(d) { return d.sta[1]; });
     // Extend limits by 5% so everything is visible
     xMin = xMin - 0.05*(xMax - xMin);
     xMax = xMax + 0.15*(xMax - xMin);
@@ -179,124 +243,162 @@ function updateZoom() {
     axisZoom.translateExtent([[xScale(xMin*1000), yScale(yMax)], 
                               [xScale(xMax*1000), yScale(yMin)]]);
     // Readjust point sizes and line widths with the current scale
-    plot.selectAll("line.roads").style("stroke-width",2/xFactor);
-    plot.selectAll("line.knots").style("stroke-width",3/xFactor);
-    plot.selectAll("circle.dots").attr("r",5/xFactor);
-    plot.selectAll("circle.dots").style("stroke-width",1/xFactor);
-    buttonarea.selectAll("use.remove").attr("transform", 
-                 function(d){ return "translate("+(newXScale(d[0]*1000)
+    plot.selectAll(".roads").style("stroke-width",2/xFactor);
+    plot.selectAll(".knots").style("stroke-width",3/xFactor);
+    plot.selectAll(".dots").attr("r",5/xFactor);
+    plot.selectAll(".dots").style("stroke-width",1/xFactor);
+    buttonarea.selectAll(".remove").attr("transform", 
+                 function(d){ return "translate("+(newXScale(d.sta[0]*1000)
                                                    +padding.left-8)
                            +","+(padding.top-20)+") scale(0.6,0.6)";});
 }
 
-function recomputeKnotArray() {
-    var nk = knots.length-1;
-    for (var i = 0; i < nk; i++) {
-        knots[i+1][1] = knots[i][1] + knots[i][4]*(knots[i+1][0] - knots[i][0]);
-        knots[i][2] = knots[i+1][0];
-        knots[i][3] = knots[i+1][1];
+function recomputeRoadArray() {
+    var nr = roads.length;
+    for (var i = 0; i < nr-1; i++) {
+        roads[i+1].sta[1] = 
+            roads[i].sta[1]+roads[i].slope*(roads[i+1].sta[0]-roads[i].sta[0]);
+        roads[i].end[0] = roads[i+1].sta[0];
+        roads[i].end[1] = roads[i+1].sta[1];
     }
-    knots[nk][3] = knots[nk][1];
-    console.debug(knots);
+    roads[nr-1].end[1] = roads[nr-1].sta[1];
 }
 
 function inrange(x, min, max) {
   return x >= min && x <= max;
 }
 
-var knotsave, knotmin, knotmax;
+var roadsave, knotmin, knotmax;
+function saveRoad() {
+    roadsave = [];
+    for (var i = 0; i < roads.length; i++) {
+        var segment = {};
+        segment.sta = roads[i].sta.slice();
+        segment.end = roads[i].sta.slice();
+        segment.slope = roads[i].slope;
+        roadsave.push(segment);
+    }
+}
 function knotDragStarted(d) {
 	d3.event.sourceEvent.stopPropagation();
-    var knotindex = Number(this.id);
-	knotmin = (knotindex == 0) ? xMin : (knots[knotindex-1][0]) + 0.01;
-	knotmax = (knotindex == knots.length-1) ? knots[knotindex][2]-0.01:(knots[knotindex+1][0])-0.01;
-    knotsave = knots.map(function(arr){return arr.slice();});
+    var kind = Number(this.id);
+	knotmin = (kind == 0) ? xMin : (roads[kind-1].sta[0]) + 0.01;
+	knotmax = 
+        (kind == roads.length-1) 
+        ? roads[kind].end[0]-0.01
+        :(roads[kind+1].sta[0]-0.01);
+    saveRoad();
 };
 function knotDragged(d) {
 	var x = d3.event.x;
 	if (inrange(xScale.invert(x)/1000, knotmin, knotmax)) {
-        d3.select(this).attr("stroke","rgb(255,180,0)");
-        var knotindex = Number(this.id);
-        i = knotindex;
+        //d3.select(this).attr("stroke","rgb(255,180,0)");
+        var kind = Number(this.id);
+        var i = kind;
         //for (i = knotindex; i < knots.length; i++) {
-	    knots[i][0] = knotsave[i][0] + xScale.invert(x)/1000 
-            - knotsave[knotindex][0];
+	    roads[i].sta[0] = roadsave[i].sta[0] + xScale.invert(x)/1000 
+            - roadsave[kind].sta[0];
         //}
-        recomputeKnotArray();
-        for (i = 0; i < knots.length; i++) {
+        recomputeRoadArray();
+        for (i = 0; i < roads.length; i++) {
 		    d3.select("[name=knot"+i+"]")
-			    .attr("x1", xScale(knots[i][0]*1000))
-			    .attr("x2", xScale(knots[i][0]*1000));
+			    .attr("x1", xScale(roads[i].sta[0]*1000))
+			    .attr("x2", xScale(roads[i].sta[0]*1000));
 		    d3.select("[name=dot"+i+"]")
-			    .attr("cx", xScale(knots[i][0]*1000))
-			    .attr("cy", yScale(knots[i][1]));
+			    .attr("cx", xScale(roads[i].sta[0]*1000))
+			    .attr("cy", yScale(roads[i].sta[1]));
 		    d3.select("[name=road"+i+"]")
-			    .attr("x1", xScale(knots[i][0]*1000))
-			    .attr("x2", xScale(knots[i][3]*1000))
-			    .attr("y1", yScale(knots[i][1]))
-			    .attr("y2", yScale(knots[i][4]));
+			    .attr("x1", xScale(roads[i].sta[0]*1000))
+			    .attr("y1", yScale(roads[i].sta[1]))
+			    .attr("x2", xScale(roads[i].end[0]*1000))
+			    .attr("y2", yScale(roads[i].end[1]));
+		    d3.select("[name=remove"+i+"]")
+                .attr("transform", 
+                      function(d){ 
+                          return "translate("+(newXScale(d.sta[0]*1000)
+                                               +padding.left-8)
+                              +","+(padding.top-20)+") scale(0.6,0.6)";
+                      });
         }
-        updateDataOnMove();
     }
 };
 function knotDragEnded(d){
-	d3.select(this).attr("stroke","rgb(200,200,200)");
+	// d3.select(this).attr("stroke","rgb(200,200,200)");
     recomputeDataLimits();
     updateAllData();
 };
 
 function knotDeleted(d) {
-    var knotindex = Number(this.id)+2;
-    knots.splice(knotindex, 1);
-    if (knotindex > 1) {
-        knots[knotindex-1][4] = (knots[knotindex][1] - knots[knotindex-1][1]) / (knots[knotindex][0] - knots[knotindex-1][0]);
+    var kind = Number(this.id)+2;
+    roads.splice(kind, 1);
+    if (kind > 1) {
+        roads[kind-1].slope = 
+            (roads[kind].sta[1] - roads[kind-1].sta[1]) 
+            / (roads[kind].sta[0] - roads[kind-1].sta[0]);
     }
-    recomputeKnotArray();
+    recomputeRoadArray();
     recomputeDataLimits();
     updateAllData();
 }
 
-function updateDataOnMove() {
-    // Create, update and delete vertical knot lines
-    var klines = plot.selectAll("line.knots").data(knots);
-    klines.attr("x1", function(d){ return xScale(d[0]*1000)})
-		.attr("x2", function(d){ return xScale(d[0]*1000)});
-
-    var kremove = buttonarea.selectAll("use.remove").data(knots);
-    kremove.attr("transform", 
-                 function(d){ return "translate("+(newXScale(d[0]*1000)+padding.left-8)
-                           +","+(padding.top-20)+") scale(0.6,0.6)";});
-
-    // Create, update and delete road lines
-    var kroads = plot.selectAll("line.roads").data(knots);
-    kroads.attr("y1",function(d){ return yScale(d[1]);})
-		.attr("y2",function(d){ return yScale(d[3]);})
-		.attr("x1", function(d){ return xScale(d[0]*1000);})
-		.attr("x2", function(d){ return xScale(d[2]*1000);})
-		.style("stroke-width",2/xFactor);
-
-    // Create, update and delete inflection points
-    var kdots = plot.selectAll("circle.dots").data(knots);
-    kdots.attr("cy",function(d){ return yScale(d[1]);})
-		.attr("cx", function(d){ return xScale(d[0]*1000);})
-		.attr("stroke-width", 1/xFactor);
-}
+function dotDragStarted(d) {
+	d3.event.sourceEvent.stopPropagation();
+    saveRoad();
+};
+function dotDragged(d) {
+	var y = d3.event.y;
+    console.debug(y);
+	if (inrange(y, 0, plotsize.height)) {
+        //d3.select(this).attr("stroke","rgb(255,180,0)");
+        var kind = Number(this.id);
+	    roads[kind].sta[1] = yScale.invert(y);
+        if (kind == 1) {
+	        roads[kind-1].sta[1] = yScale.invert(y);
+        } if (kind == roads.length-1) {
+	        roads[kind].end[1] = yScale.invert(y);
+	        roads[kind-1].slope = 
+                (roads[kind].sta[1] - roads[kind-1].sta[1])
+                / (roads[kind].sta[0] - roads[kind-1].sta[0]);
+        } else {
+	        roads[kind-1].slope = 
+                (roads[kind].sta[1] - roads[kind-1].sta[1])
+                / (roads[kind].sta[0] - roads[kind-1].sta[0]);
+        }
+        recomputeRoadArray();
+        for (i = 0; i < roads.length; i++) {
+		    d3.select("[name=dot"+i+"]")
+			    .attr("cx", xScale(roads[i].sta[0]*1000))
+			    .attr("cy", yScale(roads[i].sta[1]));
+		    d3.select("[name=road"+i+"]")
+			    .attr("x1", xScale(roads[i].sta[0]*1000))
+			    .attr("y1", yScale(roads[i].sta[1]))
+			    .attr("x2", xScale(roads[i].end[0]*1000))
+			    .attr("y2", yScale(roads[i].end[1]));
+        }
+    }
+};
+function dotDragEnded(d){
+	//d3.select(this).attr("stroke","rgb(200,200,200)");
+    recomputeDataLimits();
+    updateAllData();
+};
 
 function updateAllData() {
 
     // Create, update and delete vertical knot lines
-    var klines = plot.selectAll("line.knots").data(knots);
-    klines.attr("y1",yScale(yMin - 10*(yMax-yMin)))
+    var knotelt = plot.selectAll(".knots").data(roads);
+    knotelt.exit().remove();
+    knotelt
+        .attr("y1",yScale(yMin - 10*(yMax-yMin)))
 		.attr("y2",yScale(yMax + 10*(yMax-yMin)))
-		.attr("x1", function(d){ return xScale(d[0]*1000)})
-		.attr("x2", function(d){ return xScale(d[0]*1000)});
-    klines.exit().remove();
-    klines.enter().append("svg:line")
+		.attr("x1", function(d){ return xScale(d.sta[0]*1000);})
+		.attr("x2", function(d){ return xScale(d.sta[0]*1000);});
+    knotelt.enter().append("svg:line")
 		.attr("class","knots")
 		.attr("y1",yScale(yMin))
 		.attr("y2",yScale(yMax))
-		.attr("x1", function(d){ return xScale(d[0]*1000)})
-		.attr("x2", function(d){ return xScale(d[0]*1000)})
+		.attr("x1", function(d){ return xScale(d.sta[0]*1000);})
+		.attr("x2", function(d){ return xScale(d.sta[0]*1000);})
 		.attr("stroke", "rgb(200,200,200)") 
 		.style("stroke-width",3/xFactor)
 		.attr("id", function(d,i) {return i;})
@@ -310,58 +412,77 @@ function updateAllData() {
               .on("drag", knotDragged)
               .on("end", knotDragEnded));
 
-    var kremove = buttonarea.selectAll("use.remove").data(knots.slice(2,knots.length-1));
-    kremove.attr("transform", 
-                 function(d){ return "translate("+(newXScale(d[0]*1000)+padding.left-8)
-                           +","+(padding.top-20)+") scale(0.6,0.6)";});
-    kremove.enter().append("use")
+    var knotrmelt = 
+            buttonarea.selectAll(".remove").
+            data(roads.slice(2,roads.length-1));
+    knotrmelt.exit().remove();
+    knotrmelt
+        .attr("transform", 
+              function(d){ 
+                  return "translate("+(newXScale(d.sta[0]*1000)+padding.left-8)
+                      +","+(padding.top-20)+") scale(0.6,0.6)";
+              });
+    knotrmelt.enter()
+        .append("use")
         .attr("xlink:href", "#removebutton")
         .attr("class", "remove")
 		.attr("id", function(d,i) {return i;})
 		.attr("name", function(d,i) {return "remove"+i;})
         .attr("transform", 
-              function(d){ return "translate("+(newXScale(d[0]*1000)+padding.left-8)
-                           +","+(padding.top-20)+") scale(0.6,0.6)";})
+              function(d){ 
+                  return "translate("+(newXScale(d.sta[0]*1000)+padding.left-8)
+                      +","+(padding.top-20)+") scale(0.6,0.6)";
+              })
 		.on("mouseenter",function() {
 			d3.select(this).attr("fill","#ff0000");})
 		.on("mouseout",function() {
 			d3.select(this).attr("fill","#000000");})
 		.on("click",knotDeleted);
-    kremove.exit().remove();
 
     // Create, update and delete road lines
-    var kroads = plot.selectAll("line.roads").data(knots);
-    kroads.attr("y1",function(d){ return yScale(d[1]);})
-		.attr("y2",function(d){ return yScale(d[3]);})
-		.attr("x1", function(d){ return xScale(d[0]*1000);})
-		.attr("x2", function(d){ return xScale(d[2]*1000);})
+    var roadelt = plot.selectAll(".roads").data(roads);
+    roadelt.exit().remove();
+    roadelt
+		.attr("x1", function(d){ return xScale(d.sta[0]*1000);})
+        .attr("y1",function(d){ return yScale(d.sta[1]);})
+		.attr("x2", function(d){ return xScale(d.end[0]*1000);})
+		.attr("y2",function(d){ return yScale(d.end[1]);})
 		.style("stroke-width",2/xFactor);
-    
-    kroads.exit().remove();
-    kroads.enter().append("svg:line")
+    roadelt.enter()
+        .append("svg:line")
 		.attr("class","roads")
-		.attr("y1",function(d){ return yScale(d[1]);})
-		.attr("y2",function(d){ return yScale(d[3]);})
-		.attr("x1", function(d){ return xScale(d[0]*1000);})
-		.attr("x2", function(d){ return xScale(d[2]*1000);})
+		.attr("x1", function(d){ return xScale(d.sta[0]*1000);})
+		.attr("y1",function(d){ return yScale(d.sta[1]);})
+		.attr("x2", function(d){ return xScale(d.end[0]*1000);})
+		.attr("y2",function(d){ return yScale(d.end[1]);})
 		.style("stroke-width",2/xFactor)
 		.attr("id", function(d,i) {return i;})
 		.attr("name", function(d,i) {return "road"+i;});
 
     // Create, update and delete inflection points
-    var kdots = plot.selectAll("circle.dots").data(knots);
-    kdots.attr("cy",function(d){ return yScale(d[1]);})
-		.attr("cx", function(d){ return xScale(d[0]*1000);})
+    var dotelt = plot.selectAll(".dots").data(roads);
+    dotelt.exit().remove();
+    dotelt
+		.attr("cx", function(d){ return xScale(d.sta[0]*1000);})
+        .attr("cy",function(d){ return yScale(d.sta[1]);})
 		.attr("stroke-width", 1/xFactor);
-    kdots.exit().remove();
-    kdots.enter().append("svg:circle")
+    dotelt.enter().append("svg:circle")
 		.attr("class","dots")
-		.attr("cy",function(d){ return yScale(d[1]);})
-		.attr("cx", function(d){ return xScale(d[0]*1000);})
+		.attr("cx", function(d){ return xScale(d.sta[0]*1000);})
+		.attr("cy",function(d){ return yScale(d.sta[1]);})
 		.style("stroke-width", 1/xFactor) 
 		.attr("r",5/xFactor)
 		.attr("id", function(d,i) {return i;})
-		.attr("name", function(d,i) {return "dot"+i;});
+		.attr("name", function(d,i) {return "dot"+i;})
+		.on("mouseover",function() {
+			d3.select(this).style("fill","#00ff00");})
+		.on("mouseout",function() {
+			d3.select(this).style("fill","red");})
+        .call(d3.drag()
+              .on("start", dotDragStarted)
+              .on("drag", dotDragged)
+              .on("end", dotDragEnded));
+
 }
 
 // Reset button restores zooming transformation to identity
@@ -382,26 +503,11 @@ function zoomOut() {
 d3.select("button#zoomout").on("click", zoomOut);
 
 // Reset button restores zooming transformation to identity
-function resetZoom() {
-    xFactor = 1; yFactor = 1;
-    newXScale = xScale; newYScale = yScale;
-    zoomarea.call(axisZoom.transform, d3.zoomIdentity);
+function resetRoad() {
+    initializeRoadArray();
+    zoomOut();
 }
-d3.select("button#reset").on("click", resetZoom);
-
-// Saving the current zoom updates x and y scale objects and resets
-// the zoom transform to identity afterwards. This also requires an
-// update to data elements
-function saveZoom() {
-    var curScale = axisZoom.scaleExtent();
-    axisZoom.scaleExtent([curScale[0]/xFactor, curScale[1]/yFactor]);
-    xFactor = 1; yFactor = 1;
-    xScale = newXScale; yScale = newYScale;
-    zoomarea.call(axisZoom.transform, d3.zoomIdentity);
-    // This ensures that data components are moved to their new coordinates
-    updateAllData();
-}
-d3.select("button#savezoom").on("click", saveZoom);
+d3.select("button#resetroad").on("click", resetRoad);
 
 updateAllData();
 
