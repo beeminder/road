@@ -2,28 +2,29 @@
 <html>
 <meta charset="utf-8">
 <style>
+
 .chart { 
-       border: 1px solid #cccccc
+  border: 1px solid #cccccc
 }
+svg text {
+    -webkit-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
+}
+svg text::selection {
+    background: none;
+}
+
 .axis path,
 .axis line {
-    fill: none;
-    stroke: black;
-    shape-rendering: crispEdges;
+  fill: none;
+  stroke: black;
+  shape-rendering: crispEdges;
 }
-
 .axis text {
-    font-family: sans-serif;
-    font-size: 15px;
-}
-
-circle.dots {
-      stroke: black;
-      fill: red;
-}
-
-line.roads {
-      stroke: black;
+  font-family: sans-serif;
+  font-size: 15px;
 }
 
 .zoomarea {
@@ -38,6 +39,17 @@ line.roads {
   pointer-events: all;
 }
 
+circle.dots {
+  stroke: black;
+}
+line.roads {
+  stroke: black;
+}
+.past, .pasttext, .horizon, .horizontext, .pinkregion{
+  pointer-events: none;
+  text-anchor: middle;
+}
+
 </style>
 
 <script src="https://d3js.org/d3.v4.js"></script>
@@ -45,9 +57,13 @@ line.roads {
 <body>
 
 <div class='content'></div>
+<form action="">
+<input id="fixslopes" type="checkbox" checked>Keep slopes fixed<br>
+<input id="fixintervals" type="checkbox">Keep intervals fixed
+</form>
 <button id="zoomout">Zoom To Fit</button>
 <button id="resetroad">Reset Edits</button>
-
+<button id="undo">Undo</button>
 <script src = "roadeditor.js"></script>
 </body>
 </html>
