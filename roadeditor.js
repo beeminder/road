@@ -93,6 +93,34 @@ var initialRoad;
 var roads;
 var undoBuffer = [];
 
+// Determines whether the given road is valid or not (i.e. whether it
+// is clear of the pink region or not)
+function roadValid( rd ) {
+    var ir = initialRoad;
+
+    var now = today.getTime()/1000;
+    var hor = hordate.getTime()/1000;
+    // Check left/right boundaries of the pink region
+    if (roadyaw*roadValue(rd, now) < roadyaw*roadValue(ir, now)) return false;
+    if (roadyaw*roadValue(rd, hor) < roadyaw*roadValue(ir, hor)) return false;
+    // Iterate through and check current road points in the ping range
+    var rd_i1 = findRoadSegment(rd, now);
+    var rd_i2 = findRoadSegment(rd, hor);
+    for (var i = rd_i1; i < rd_i2; i++) {
+        if (roadyaw*roadValue(rd, rd[i].end[0]) 
+            < roadyaw*roadValue(ir, rd[i].end[0])) return false;
+    }
+    // Iterate through and check old road points in the ping range
+    var ir_i1 = findRoadSegment(ir, now);
+    var ir_i2 = findRoadSegment(ir, hor);
+    for (i = ir_i1; i < ir_i2; i++) {
+        if (roadyaw*roadValue(rd, ir[i].end[0]) 
+            < roadyaw*roadValue(ir, ir[i].end[0])) return false;
+    }
+
+    return true;
+}
+
 function copyRoad( inroad ) {
     var newroad = [];
     for (var i = 0; i < inroad.length; i++) {
@@ -288,7 +316,7 @@ reloadRoadArray();
 initialRoad = copyRoad( roads );
 
 // Create and initialize the SVG chart and its components
-var chart = d3.select('.content')
+var chart = d3.select('.roadgraph')
 	    .append('svg:svg')
 	    .attr('width', size.width)
 	    .attr('height', size.height)
@@ -488,6 +516,7 @@ function knotDragged(d) {
                               +","+(padding.top-20)+") scale(0.6,0.6)";
                       });
         }
+        updateRoads(); // Make sure road validity is checked
         knotdate.setTime(x*1000); 
         updateTextBox(knottext, newXScale(x*1000), plotsize.height-15, 
                       knotdate.toDateString());
@@ -563,6 +592,7 @@ function dotDragged(d, id) {
 			    .attr("x2", xScale(roads[i].end[0]*1000))
 			    .attr("y2", yScale(roads[i].end[1]));
         }
+        updateRoads(); // Make sure road validity is checked
         // event coordinates are pre-scaled, so use normal scale
 	    var txtx = daysnap(d.sta[0]);
 	    var txty = yScale.invert(d3.event.y);
@@ -626,7 +656,7 @@ function roadEdited(d) {
 // Determines whether the knot at the given index is editable or not
 function knotEditable(i) {
     if (opts.editpast)
-        return ((i > 0) && (i <roads.length));
+        return ((i > 1) && (i <roads.length));
     else
         return ((i > horindex) && (i <roads.length));
 }
@@ -672,16 +702,20 @@ function updateHorizon() {
     if (horizonelt.empty()) {
         plot.append("svg:line")
 	        .attr("class","horizon")
-	  	    .attr("x1", xScale(hordate.getTime())).attr("y1",yScale(yMin))
-		    .attr("x2", xScale(hordate.getTime())).attr("y2",yScale(yMax))
+	  	    .attr("x1", xScale(hordate.getTime()))
+            .attr("y1",yScale(yMin-5*(yMax-yMin)))
+		    .attr("x2", xScale(hordate.getTime()))
+            .attr("y2",yScale(yMax+5*(yMax-yMin)))
             .attr("stroke", "rgb(0,0,200)") 
             .attr("stroke-dasharray", 
                   (opts.horizondash/xFactor)+","+(opts.horizondash/xFactor)) 
 		    .style("stroke-width",opts.horizonwidth/xFactor);
     } else {
         horizonelt
-	  	    .attr("x1", xScale(hordate.getTime())).attr("y1",yScale(yMin))
-		    .attr("x2", xScale(hordate.getTime())).attr("y2",yScale(yMax))
+	  	    .attr("x1", xScale(hordate.getTime()))
+            .attr("y1",yScale(yMin-5*(yMax-yMin)))
+		    .attr("x2", xScale(hordate.getTime()))
+            .attr("y2",yScale(yMax+5*(yMax-yMin)))
             .attr("stroke-dasharray", 
                   (opts.horizondash/xFactor)+","+(opts.horizondash/xFactor)) 
 		    .style("stroke-width",opts.horizonwidth/xFactor);
@@ -760,10 +794,7 @@ function updateOldRoad() {
         .style('pointer-events', "none");
 }
 
-function updateAllData() {
-    updateOldRoad();
-    updatePinkRegion();
-
+function updateKnots() {
     // Create, update and delete vertical knot lines
     var knotelt = plot.selectAll(".knots").data(roads);
     knotelt.exit().remove();
@@ -822,6 +853,10 @@ function updateAllData() {
 		.on("mouseout",function() {
 			d3.select(this).attr("fill","#000000");})
 		.on("click",knotDeleted);
+}
+
+function updateRoads() {
+    var lineColor = roadValid( roads )?"black":"red";
 
     // Create, update and delete road lines
     var roadelt = plot.selectAll(".roads").data(roads);
@@ -831,6 +866,7 @@ function updateAllData() {
         .attr("y1",function(d){ return yScale(d.sta[1]);})
 		.attr("x2", function(d){ return xScale(d.end[0]*1000);})
 		.attr("y2",function(d){ return yScale(d.end[1]);})
+		.style("stroke",lineColor)
 		.style("stroke-width",opts.roadwidth/xFactor)
         .style('pointer-events', function(d,i) {return (knotEditable(i+1))?"all":"none";});
     roadelt.enter()
@@ -849,7 +885,9 @@ function updateAllData() {
 		.on("mouseout",function(d,i) { if (knotEditable(i+1))
 			                           d3.select(this).style("stroke-width",opts.roadwidth/xFactor);})
         .on("dblclick", function(d,i) { if (knotEditable(i+1)) roadEdited(d);});
-    
+}
+
+function updateDots() {
     // Create, update and delete inflection points
     var dotelt = plot.selectAll(".dots").data(roads);
     dotelt.exit().remove();
@@ -881,11 +919,51 @@ function updateAllData() {
                   if (knotEditable(i)) dotDragged(d, this.id);})
               .on("end", function(d,i) { 
                   if (knotEditable(i)) dotDragEnded(d, this.id);}));
+}
 
-    updateHorizon();
-    updatePastBox();
+var columns = ['ID', 'End Date', 'End Value', 'Daily Slope'];
+var thead = d3.select('table.roadtable').append('thead');
+thead.append("tr").selectAll("th").data(columns)
+    .enter().append("th")
+    .text(function (column) { return column; });
+var tbody = d3.select('table.roadtable').append('tbody');
+
+function updateTable() {
+    
+    var rows = tbody.selectAll(".roadtable tr").data(roads.slice(1,roads.length-1));
+    rows.enter().append("tr");
+    rows.exit().remove();
+    rows.order();
+    rows = tbody.selectAll(".roadtable tr");
+
+    var cells = rows.selectAll(".roadtable td")
+        .data(function(row, i) {
+            var date = new Date(row.end[0]*1000);
+            var datestr = date.getFullYear()+"."+(date.getMonth()+1)+"."+date.getDate();
+            return [
+                {column: 'ID', value: i},
+                {column: 'End Date', value: datestr},
+                {column: 'End Value', value: row.end[1].toPrecision(4)},
+                {column: 'Daily Slope', value: (row.slope*24*60*60).toPrecision(4)}];
+        });
+    cells.enter().append("td").style('text-align', 'center');
+    cells.exit().remove();
+    cells = rows.selectAll(".roadtable td");
+    cells.text(function(d) { return d.value;});
 
 }
+
+function updateAllData() {
+    updatePinkRegion();
+    updateOldRoad();
+    updateKnots();
+    updateRoads();
+    updateDots();
+    updateHorizon();
+    updatePastBox();
+    updateTable();
+}
+
 
 // Reset button restores zooming transformation to identity
 function zoomOut() {
@@ -907,6 +985,7 @@ d3.select("button#zoomout").on("click", zoomOut);
 // Reset button restores zooming transformation to identity
 function resetRoad() {
     roads = copyRoad( initialRoad );
+    undoBuffer = [];
     if (!opts.editpast) addNewDot(hordate.getTime()/1000);
     zoomOut();
 }

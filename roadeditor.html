@@ -50,20 +50,32 @@ line.roads {
   text-anchor: middle;
 }
 
+table.roadtable tbody td {
+  border: 1px solid black;
+  border-collapse: collapse;
+}
+table.roadtable thead td {
+  border: 0px;
+  text-align: center;
+}
 </style>
 
 <script src="https://d3js.org/d3.v4.js"></script>
 
 <body>
 
-<div class='content'></div>
+<div class='roadgraph'></div>
 <form action="">
 <input id="fixslopes" type="checkbox" checked>Keep slopes fixed<br>
 <input id="fixintervals" type="checkbox">Keep intervals fixed
 </form>
 <button id="zoomout">Zoom To Fit</button>
 <button id="resetroad">Reset Edits</button>
-<button id="undo">Undo</button>
+<button id="undo">Undo</button><br/><br/>
+
+<table class='roadtable'>
+</table>
+
 <script src = "roadeditor.js"></script>
 </body>
 </html>
