@@ -56,20 +56,3 @@ CHANGELOG
 2016.07.08 Dreev refactors the code a bit
 2016.07.07 Dreev moves it to Glitch (then known as HyperDev)
 2016.04.24 Uluc shows off http://www.ceng.metu.edu.tr/~saranli/road/vertical.html
-
-
-
-# Take a daystamp like "20140831" and return unixtime. If it's already a 
-# unixtime, dayfloor it.
-def dayparse(s):
-  if s is None or nummy(s): return dayfloor(s)  #TZFAT
-  try:
-    return time.mktime(datetime.datetime.strptime(s, "%Y%m%d").timetuple())
-  except Exception:
-    return s
-
-# Take unixtime t and return a daystamp like "20140831"
-def dayify(t): 
-  if t is None or stringy(t): return t
-  if t < 0: t = 0 # bugfix for confused road matrix; should fix upstream
-  return datetime.datetime.fromtimestamp(t).strftime('%Y%m%d')

@@ -960,7 +960,6 @@ function updateDots() {
 		.attr("cx", function(d){ return xScale(d.sta[0]*1000);})
         .attr("cy",function(d){ return yScale(d.sta[1]);})
         .attr("fill", function(d,i) { return knotEditable(i)?$black:$gray;})
-        .attr("stroke")
         .style('pointer-events', function(d,i) {return (knotEditable(i))?"all":"none";})
 		.attr("stroke-width", opts.dotborder/xFactor);
     dotelt.enter().append("svg:circle")
