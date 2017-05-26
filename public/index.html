@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Playing with Road Editor Interfaces</title>
+  <meta name="description" content="Playing with Road Editor interfaces in Glitch">
+  <link id="favicon" rel="icon" href="https://glitch.com/favicon.ico" type="image/x-icon">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/style.css">
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+</head>
+
+<body>
+
+<h1>Playing With Road Editor Interfaces in Glitch...</h1>
+
+<p>
+<a href="http://www.ceng.metu.edu.tr/~saranli/">Uluc Saranli</a>
+(known in Beeminderland for 
+<a href="http://blog.beeminder.com/beedroid/">Beedroid</a>)
+wrote this.  
+<a href="https://glitch.com/#!/project/road">See the code</a>
+on
+<a href="https://glitch.com">Glitch</a>
+or ask 
+<a href="http://dreev.es">dreeves</a>
+for a link to live-edit it with us.
+</p>
+
+
+<div>Shift-click: Add new node</div>
+<div>Double-click on road: Edit slope</div>
+<div>Double-click on dots: Edit value</div>
+<div>Double-click on vertical lines: Edit date [TODO]</div>
+<table>
+  <tr>
+    <td valign="top"><div class="roadgraph"></div></td>
+    <td valign="top"><table class="roadtable"></table></td>
+  </tr>
+</table>
+  
+<form action="">
+<input id="fixslopes" type="checkbox" checked>Keep slopes fixed<br>
+<input id="fixintervals" type="checkbox">Keep intervals fixed
+</form>
+<button id="zoomout">Zoom To Fit</button>
+<button id="resetroad">Reset Edits</button>
+<button id="undo">Undo</button><br/><br/>
+
+<script src="/roadeditor.js"></script>
+
+</body>
+</html>
+
+<!--
+<h2>Road Matrix</h2>
+<form>
+<textarea rows="5" cols="80">
+[
+  ["20161222", 0, null],
+  ["20170101", null, 6]
+]
+</textarea>
+<br>
+<button type="submit">Submit</button>
+</form>
+-->
+
+<!--
+    <script src="https://code.jquery.com/jquery-2.2.1.min.js"
+            integrity="sha256-gvQgAFzTH6trSrAWoH1iPo9Xc96QxSZ3feW6kem+O00="
+            crossorigin="anonymous"></script>
+    <script src="/client.js"></script>
+-->

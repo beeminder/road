@@ -1,0 +1,82 @@
+.main text {
+  font: 15px sans-serif;	
+}
+
+body,td,th {
+	font-family: Tahoma, Geneva, sans-serif;
+	font-size: 12pt;
+}
+
+textarea { 
+  font-family: Consolas, Lucida Console, monospace;
+  font-size: 15pt;
+}
+
+
+
+/* Definitions related to the Javascript road editor */
+.chart { 
+  border: 1px solid #cccccc
+}
+svg text {
+    -webkit-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
+}
+svg text::selection {
+    background: none;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: black;
+  shape-rendering: crispEdges;
+}
+.axis text {
+  font-family: sans-serif;
+  font-size: 15px;
+}
+
+.zoomarea {
+  cursor: move;
+  fill: none;
+  pointer-events: all;
+}
+
+.axiszoom {
+  cursor: move;
+  fill: none;
+  pointer-events: all;
+}
+
+circle.dots {
+  stroke: black;
+}
+line.roads {
+  stroke: black;
+}
+.past, .pasttext, .horizon, .horizontext, .pinkregion{
+  pointer-events: none;
+  text-anchor: middle;
+}
+
+table.roadtable {
+  border-collapse: collapse;
+  margin-left: 8px;
+}
+
+table.roadtable thead th {
+  border: 0px;
+  text-align: center;
+  padding: 4px;
+}
+table.roadtable tbody.startbody td {
+  border: 1px solid black;
+  padding: 4px;
+}
+table.roadtable tbody.roadbody td {
+  border: 1px solid black;
+  padding: 4px;
+}
