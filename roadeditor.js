@@ -73,10 +73,10 @@ function formatDate(unixtime) {
 // Uluc: Got rid of UTC since we initialize D3's x axis values with the local timezone, 
 // so using UTC will screw that up. We will just keep internal times in the local 
 // timezone, and convert to whatever is appropriate before sending data back
-function dayparse(s) {
-    if (!/^\d{8}$/.test(s)) { return -1 }
-    s = s.replace(/^(\d\d\d\d)(\d\d)(\d\d)$/, "$1-$2-$3");
-    return Date.parse(s) / 1000;
+function dayparse(s, sep='') {
+    if (!RegExp('^\\d{4}'+sep+'\\d{2}'+sep+'\\d{2}$').test(s)) { return NaN; }
+    s = s.replace(RegExp('^(\\d\\d\\d\\d)'+sep+'(\\d\\d)'+sep+'(\\d\\d)$'), "$1-$2-$3");
+    return Date.parse(s)/1000;
 }
 
 // Take an integer unixtime in seconds and return a daystamp like "20170531"
@@ -678,6 +678,25 @@ function knotDeleted(d) {
     removeKnot(kind, false);
 }
 
+function changeKnotDate( kind, newDate, fromtable = true ) {
+    pushUndoState();
+
+	knotmin = (kind == 0) ? xMin : (roads[kind].sta[0]) + 0.01;
+	knotmax = 
+        (kind == roads.length-1) 
+        ? roads[kind].end[0]-0.01
+        :(roads[kind+1].end[0]-0.01);
+    if (newDate <= knotmin) newDate = daysnap(knotmin+24*60*60);
+    if (newDate >= knotmax) newDate = daysnap(knotmin-24*60*60);
+    roads[kind].end[0] = newDate;
+    if (!fromtable) {
+        // TODO?
+    }
+    fixRoadArray( null, fromtable, RoadParamEnum.DATE );
+    computeRoadExtent();
+    updateAllData();
+}
+
 // ------------------- Functions for manipulating dots -----------------
 var editingDot = false;
 function dotDragStarted(d,id) {
@@ -1086,32 +1105,84 @@ thead.append("div").attr('class', 'roadhdr')
     .text(function (column) { return column; });
 var tbody = thead.append('div').attr('class', 'roadbody');
 
+var focusField = null;
 var focusOldText = null;
+var datePicker = null;
 function tableFocusIn( d, i ){
     //console.debug('tableFocusIn('+i+') for '+this.parentNode.id);
-    focusOldText = d3.select(this).text();
+    focusField = d3.select(this);
+    focusOldText = focusField.text();
+    if (i == 0 && datePicker == null) {
+        var kind = Number(focusField.node().parentNode.id);
+	    knotmin = (kind == 0) ? xMin : (roads[kind].sta[0]);
+	    knotmax = 
+            (kind == roads.length-1) 
+            ? roads[kind].end[0]
+            :(roads[kind+1].end[0]);
+        datePicker = new Pikaday({
+            onSelect: function(date) {
+                var newdate = datePicker.toString();
+                var val = dayparse(newdate, '-');
+                console.debug(val);
+                if (!isNaN(val)) {
+                    focusField.text(newdate);
+                    tableDateChanged( Number(kind), val);
+                }
+            },
+            minDate: new Date((knotmin+24*60*60)*1000),
+            maxDate: new Date((knotmax-24*60*60)*1000)});
+        datePicker.setDate(focusOldText, true);
+        var floating = d3.select('.floating');
+        var bbox = this.getBoundingClientRect();
+        floating.style('left', bbox.left+"px").style('top', (bbox.bottom+3)+"px");
+        floating.node().appendChild(datePicker.el, this);
+    }
 }
 
 function tableFocusOut( d, i ){
     //console.debug('tableFocusOut('+i+') for '+this.parentNode.id);
     var text = d3.select(this).text();
+    if (datePicker != null) {
+        datePicker.destroy();
+        datePicker = null;
+    }
     if (text === focusOldText) return;
-    if (isNaN(text)) return;
     if (focusOldText == null) return; // ENTER must have been hit
-    if (i == 1) tableValueChanged( Number(this.parentNode.id), text);
-    if (i == 2) tableSlopeChanged( Number(this.parentNode.id), text);  
+    var val = (i==0)?dayparse(text, '-'):text;
+    if (isNaN(val)) {
+        d3.select(this).text(focusOldText);
+        focusOldText = null;
+        focusField = null;
+        return;
+    }
+    if (i == 0) tableDateChanged( Number(this.parentNode.id), val);
+    if (i == 1) tableValueChanged( Number(this.parentNode.id), val);
+    if (i == 2) tableSlopeChanged( Number(this.parentNode.id), val);  
+    focusOldText = null;
+    focusField = null;
 }
 function tableKeyDown( d, i ){
     if (d3.event.keyCode == 13) {
         window.getSelection().removeAllRanges();
         var text = d3.select(this).text();
-        if (isNaN(text)) return;
-        if (i == 1) tableValueChanged( Number(this.parentNode.id), text);
-        if (i == 2) tableSlopeChanged( Number(this.parentNode.id), text);  
-        focusOldText = null;
+        var val = (i==0)?dayparse(text, '-'):text;
+        if (isNaN(val)) {
+            d3.select(this).text(focusOldText);
+            focusOldText = null;
+            return;
+        }
+        if (i == 0) tableDateChanged( Number(this.parentNode.id), val);
+        if (i == 1) tableValueChanged( Number(this.parentNode.id), val);
+        if (i == 2) tableSlopeChanged( Number(this.parentNode.id), val);  
+        focusOldText = d3.select(this).text();
     }
 }
 
+function tableDateChanged( row, value ) {
+    console.debug("tableDateChanged("+row+","+value+")");
+    if (isNaN(value)) updateTableValues();
+    else changeKnotDate( row, Number(value), true );
+}
 function tableValueChanged( row, value ) {
     //console.debug("tableValueChanged("+row+","+value+")");
     if (isNaN(value)) updateTableValues();
@@ -1223,7 +1294,7 @@ function updateTableValues() {
     srows = stbody.selectAll(".startrow");
     var scells = srows.selectAll(".rtable .startcell")
             .data(function(row, i) {
-                var datestr = dayify(row.end[0], false, '/');
+                var datestr = dayify(row.end[0], false, '-');
                 return [
                     {order: 2, value: datestr, name: "enddate"+i},
                     {order: 4, value: row.end[1].toPrecision(5), name: "endvalue"+i},
@@ -1232,7 +1303,7 @@ function updateTableValues() {
     scells.enter().append("span").attr('class', 'startcell')
         .attr('name', function(d) { return d.name;})
         .style('color', 'var(--col-tbltxt)')
-        .attr("contenteditable", function(d,i) { return (i!=1)?'false':'true';})
+        .attr("contenteditable", function(d,i) { return (i>1)?'false':'true';})
         .on('focusin', tableFocusIn)
         .on('focusout', tableFocusOut)
         .on('keydown', tableKeyDown);
@@ -1251,7 +1322,7 @@ function updateTableValues() {
 
     var cells = rows.selectAll(".roadcell")
             .data(function(row, i) {
-                var datestr = dayify(row.end[0], false, '/');
+                var datestr = dayify(row.end[0], false, '-');
                 return [
                     {order: 2, value: datestr, name: "enddate"+(i+1), 
                      auto: (row.auto==RoadParamEnum.DATE)},
@@ -1262,7 +1333,7 @@ function updateTableValues() {
             });
     cells.enter().append("span").attr('class', 'roadcell')
         .attr('name', function(d) { return d.name;})
-        .attr("contenteditable", function(d,i) { return (i<1)?'false':'true';})
+        .attr("contenteditable", function(d,i) { return (d.auto)?'false':'true';})
         .on('focusin', tableFocusIn)
         .on('focusout', tableFocusOut)
         .on('keydown', tableKeyDown);
@@ -1272,7 +1343,7 @@ function updateTableValues() {
     cells.text(function(d) { return d.value;})
         .style('color', function(d) {
             return d.auto?'var(--col-tbltxt-disabled)':'var(--col-tbltxt)';})
-        .attr("contenteditable", function(d,i) { return (i<1 || d.auto)?'false':'true';});
+        .attr("contenteditable", function(d,i) { return (d.auto)?'false':'true';});
 
 }
 
