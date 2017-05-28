@@ -3,6 +3,23 @@
 <meta charset="utf-8">
 <style>
 
+:root {
+  --col-line-valid:      black;
+  --col-line-invalid:      #ca1212;
+  --col-dot-fixed:         darkgray;
+  --col-dot-editable:      #ca1212;
+  --col-dot-selected:      lightgreen;
+  --col-oldroad:           #f0f000;
+  --col-rmknot:            black;
+  --col-rmknot-selected:   red;
+  --col-txtbox-bg:         #ffffff;
+  --col-txtbox-stroke:     #d0d0d0;
+  --col-tblbg:             #ffffff;
+  --col-tblbg-highlight:   #bbffbb;
+  --col-tbltxt:            #000000;
+  --col-tbltxt-disabled: #aaaaaa;
+}
+
 .chart { 
   border: 1px solid #cccccc
 }
@@ -50,9 +67,34 @@ line.roads {
   text-anchor: middle;
 }
 
-div.roadtable div.roadcell {
-  border: 1px;
-  width: 100px;
+.rtable {
+  display: table;
+  margin: 5px;
+}
+.starthdr, .roadhdr {
+  display: table-header-group;
+}
+.startbody, .roadbody {
+  display: table-row-group;
+}
+.startrow, .roadrow {
+  display: table-row;
+}
+.starthdrrow, .roadhdrrow {
+  display: table-row;
+}
+
+.roadhdrcell, span.starthdrcell {
+  display: table-cell;
+  border: 0px;
+  padding: 2px;
+  text-align: center;
+}
+.roadcell, .startcell {
+  display: table-cell;
+  border: 1px solid black;
+  padding: 2px 5px 2px 5px;
+  text-align: center;
 }
 </style>
 
@@ -63,13 +105,13 @@ div.roadtable div.roadcell {
 <table>
   <tr>
     <td valign="top"><div class="roadgraph"></div></td>
-    <td valign="top"><div class="roadtable"></div></td>
+    <td valign="top"><div class="rtable"></div></td>
   </tr>
 </table>
 
 <form action="">
-<input id="fixslopes" type="checkbox" checked>Keep slopes fixed<br>
-<input id="fixintervals" type="checkbox">Keep intervals fixed
+<input id="keepslopes" type="checkbox" checked>Keep slopes fixed<br>
+<input id="keepintervals" type="checkbox">Keep intervals fixed
 </form>
 <button id="zoomout">Default Zoom</button>
 <button id="zoomall">Zoom To Fit</button>
