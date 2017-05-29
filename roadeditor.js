@@ -201,7 +201,6 @@ function sameRoads( roada, roadb ) {
         if (!nearlyEqual(roada[i].end[1], roadb[i].end[1], 10)) return false;
         if (!nearlyEqual(roada[i].slope, roadb[i].slope, 1e-14)) return false;
     }
-    console.debug("Great!");
     return true;
 }
 
@@ -663,6 +662,7 @@ function knotDragged(d,i) {
 function knotDragEnded(d,i){
     highlightDate(i, false);
     editingKnot = false;
+    d3.select("[name=knot"+i+"]").style("stroke-width",opts.knotwidth/xFactor);
     computeRoadExtent();
     updateAllData();
     removeTextBox(knottext);
@@ -740,6 +740,7 @@ function dotDragged(d, id) {
 };
 function dotDragEnded(d,id){
     editingDot = false;
+	d3.select("[name=dot"+id+"]").style("fill", "var(--col-dot-editable)");
     highlightValue(id, false);
     computeRoadExtent();
     updateAllData();
@@ -978,9 +979,15 @@ function updateKnots() {
 	    .attr("stroke", "rgb(200,200,200)") 
 	    .style("stroke-width",opts.knotwidth/xFactor)
 	    .on("mouseover",function(d,i) {
-	        highlightDate(i,true);d3.select(this).style("stroke-width",(opts.knotwidth+2)/xFactor);})
+	        if (!editingKnot) {
+                highlightDate(i,true);
+                d3.select(this).style("stroke-width",(opts.knotwidth+2)/xFactor);
+            }})
 	    .on("mouseout",function(d,i) {
-	        if (!editingKnot) highlightDate(i,false);d3.select(this).style("stroke-width",opts.knotwidth/xFactor);})
+	        if (!editingKnot) {
+                highlightDate(i,false);
+                d3.select(this).style("stroke-width",opts.knotwidth/xFactor);
+            }})
         .call(d3.drag()
               .on("start", knotDragStarted)
               .on("drag", knotDragged)
@@ -1071,10 +1078,16 @@ function updateDots() {
             return knotEditable(i-1)?"var(--col-dot-editable)":"var(--col-dot-fixed)";})
 		.style("stroke-width", opts.dotborder/xFactor) 
         .style('pointer-events', function(d,i) {return (knotEditable(i-1))?"all":"none";})
-		.on("mouseover",function(d,i) { if (knotEditable(i-1)) { highlightValue(i-1, true);
-			                            d3.select(this).style("fill","var(--col-dot-selected");}})
-		.on("mouseout",function(d,i) { if (knotEditable(i-1)) { if (!editingDot) highlightValue(i-1, false);
-			                           d3.select(this).style("fill","var(--col-dot-editable");}})
+		.on("mouseover",function(d,i) { 
+            if (knotEditable(i-1)) { if (!editingDot) {
+                highlightValue(i-1, true);
+			    d3.select(this).style("fill","var(--col-dot-selected");
+            }}})
+		.on("mouseout",function(d,i) { 
+            if (knotEditable(i-1)) { if (!editingDot) {
+                highlightValue(i-1, false);
+			    d3.select(this).style("fill","var(--col-dot-editable");
+            }}})
         .on("dblclick", function(d,i) { if (knotEditable(i-1)) dotEdited(d,this.id);})
         .call(d3.drag()
               .on("start", function(d,i) { 
@@ -1123,7 +1136,6 @@ function tableFocusIn( d, i ){
             onSelect: function(date) {
                 var newdate = datePicker.toString();
                 var val = dayparse(newdate, '-');
-                console.debug(val);
                 if (!isNaN(val)) {
                     focusField.text(newdate);
                     tableDateChanged( Number(kind), val);
@@ -1179,7 +1191,7 @@ function tableKeyDown( d, i ){
 }
 
 function tableDateChanged( row, value ) {
-    console.debug("tableDateChanged("+row+","+value+")");
+    //console.debug("tableDateChanged("+row+","+value+")");
     if (isNaN(value)) updateTableValues();
     else changeKnotDate( row, Number(value), true );
 }
