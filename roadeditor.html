@@ -16,21 +16,23 @@
 
 <table>
   <tr>
-    <td valign="top"><div class="roadgraph"></div></td>
-    <td valign="top"><div class="rtable">
-        <div id="dpfloat" class="floating"></div></div>
-    </td>
-  </tr>
-</table>
-
+    <td valign="top"><div class="roadgraph"></div>
 <form action="">
+<input id="showdata" type="checkbox" checked>Show datapoints<br>
 <input id="keepslopes" type="checkbox" checked>Keep slopes fixed<br>
 <input id="keepintervals" type="checkbox">Keep intervals fixed
 </form>
 <button id="zoomout">Default Zoom</button>
 <button id="zoomall">Zoom To Fit</button>
-<button id="resetroad">Reset Edits</button>
-<button id="undo">Undo</button><br/><br/>
+<button id="undo">Undo</button>
+<button id="redo">Redo</button><br/><br/>
+
+</td>
+    <td valign="top"><div class="rtable">
+        <div id="dpfloat" class="floating"></div></div>
+    </td>
+  </tr>
+</table>
 
 <script src = "roadeditor.js"></script>
 
