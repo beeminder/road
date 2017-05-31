@@ -7,13 +7,17 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="/style.css">
-  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="pikaday.css">
+  <link rel="stylesheet" href="roadeditor.css">
+  <script src="https://d3js.org/d3.v4.js"></script>
+  <script src = "moment.min.js"></script>
+  <script src = "pikaday.js"></script>
 </head>
 
 <body>
 
-<h1>Playing With Road Editor Interfaces in Glitch...</h1>
+<h1>Beeminder's New Visual Road Editor</h1>
 
 <p>
 <a href="http://www.ceng.metu.edu.tr/~saranli/">Uluc Saranli</a>
@@ -30,43 +34,43 @@ for a link to live-edit it with us.
 
 
 <div>Shift-click: Add new node</div>
-<div>Double-click on road: Edit slope</div>
-<div>Double-click on dots: Edit value</div>
-<div>Double-click on vertical lines: Edit date [TODO]</div>
+<div>Double-click on road, dots or vertical lines: Edit slope, value or date</div>
+
+ <select class="roadselect">
+  <option value="testroad1.json">Test Road 1</option>
+  <option value="testroad2.json">Test Road 2</option>
+  <option value="testroad3.json">Test Road 3</option>
+  <option value="testroad4.json">Test Road 4</option>
+  <option value="testroad5.json">Test Road 5</option>
+  <option value="testroad6.json">Test Road 6</option>
+  <option value="testroad7.json">Test Road 7</option>
+</select> 
+  
 <table>
   <tr>
-    <td valign="top"><div class="roadgraph"></div></td>
-    <td valign="top"><table class="roadtable"></table></td>
+    <td valign="top"><div class="roadgraph"></div>
+      <input id="showdata" type="checkbox" checked>Show datapoints<br>
+      <input id="keepslopes" type="checkbox" checked>Keep slopes fixed<br>
+      <input id="keepintervals" type="checkbox">Keep intervals fixed<br>
+      <button id="zoomout">Default Zoom</button>
+      <button id="zoomall">Zoom To Fit</button>
+      <button id="undo">Undo</button>
+      <button id="redo">Redo</button>
+      <br/><br/>
+    </td>
+    <td valign="top">
+      <input id="reversetable" type="checkbox">Reverse table order<br>
+      <div class="rtable">
+        <div id="dpfloat" class="floating"></div>
+      </div>
+    </td>
   </tr>
 </table>
   
-<form action="">
-<input id="fixslopes" type="checkbox" checked>Keep slopes fixed<br>
-<input id="fixintervals" type="checkbox">Keep intervals fixed
-</form>
-<button id="zoomout">Default Zoom</button>
-<button id="zoomall">Zoom To Fit</button>
-<button id="resetroad">Reset Edits</button>
-<button id="undo">Undo</button><br/><br/>
-
 <script src="/roadeditor.js"></script>
 
 </body>
 </html>
-
-<!--
-<h2>Road Matrix</h2>
-<form>
-<textarea rows="5" cols="80">
-[
-  ["20161222", 0, null],
-  ["20170101", null, 6]
-]
-</textarea>
-<br>
-<button type="submit">Submit</button>
-</form>
--->
 
 <!--
     <script src="https://code.jquery.com/jquery-2.2.1.min.js"
