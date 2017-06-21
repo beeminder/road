@@ -59,36 +59,31 @@ function loadJSON(url, callback) {
  }
 // ----------------- Date facilities ----------------------
 // Returns a new date object ahead by the specified number of days
-function addDays(moment, days) {
-    var result = moment(date);
+function addDays(m, days) {
+    var result = moment(m);
     result.add(days, 'days');
     return result;
 }
 
 // Fixes the supplied unixtime to 00:00:00 on the same day
 function daysnap(unixtime) {
-    var d = new Date(unixtime*1000);
-    d.setHours(0,0,0,0); // I think we want everything in UTC
-    return Math.ceil(d.getTime()/1000);
+    var d = moment.unix(unixtime).utc();
+    d.hours(0); d.minutes(0); d.seconds(0); d.milliseconds(0);
+    return d.unix();
 }
 
 function formatDate(unixtime) {
-    var date = new Date(unixtime);
-    var year = date.getFullYear();
-    var month = (date.getMonth()+1);
+    var mm = moment.unix(unixtime).utc();
+    var year = mm.year();
+    var month = (mm.month()+1);
     month = (month < 10)?"0"+month.toString():month.toString();
-    var day = date.getDate();
+    var day = mm.date();
     day= (day < 10)?"0"+day.toString():day.toString();
     return year+"."+month+"."+day;
 }
 
 // Take a daystamp like "20170531" and return unixtime in seconds
 // (dreev confirmed this seems to match Beebrain's function)
-
-// Uluc: Got rid of UTC since we initialize D3's x-axis values with the local
-// timezone. So using UTC will screw that up. We will just keep internal times
-// in the local timezone, and convert to whatever is appropriate before sending
-// data back.
 function dayparse(s, sep='') {
     if (!RegExp('^\\d{4}'+sep+'\\d{2}'+sep+'\\d{2}$').test(s)) { 
         // Check if the supplied date is a timestamp or not.
@@ -103,12 +98,12 @@ function dayparse(s, sep='') {
 // Take an integer unixtime in seconds and return a daystamp like "20170531"
 // (dreev superficially confirmed this works)
 // Uluc: Added options to disable UTC and choose a separator
-function dayify(t, utc = false, sep = '') {
+function dayify(t, sep = '') {
     if (isNaN(t) || t < 0) { return "ERROR"; }
-    var date = new Date(t*1000);
-    var y = utc?date.getUTCFullYear():date.getFullYear();
-    var m = utc?date.getUTCMonth() + 1:date.getMonth() + 1;
-    var d = utc?date.getUTCDate():date.getDate();
+    var mm = moment.unix(t).utc();
+    var y = mm.year();
+    var m = mm.month() + 1;
+    var d = mm.date();
     return '' + y + sep + (m < 10 ? '0' : '') + m 
                   + sep + (d < 10 ? '0' : '') + d;
 }
@@ -346,7 +341,7 @@ function aok(t,v, l) {
 // Returns the number of days to derail for the current road
 // TODO: There are some issues with computing tcur, vcur
 function dtd( t, v ) {
-  var tnow = today.getTime()/1000;
+  var tnow = today.unix();
   var x = 0; // the number of steps  
   var xt = 0; // the number of steps past today
   var vpess = v; // the value as we walk forward w/ pessimistic presumptive reports  
@@ -363,8 +358,8 @@ function dtd( t, v ) {
 function isRoadValid( rd ) {
     var ir = initialRoad;
     
-    var now = today.getTime()/1000;
-    var hor = hordate.getTime()/1000;
+    var now = today.unix();
+    var hor = hordate.unix();
     // Check left/right boundaries of the pink region
     if (roadyaw*roadValue(rd, now) < roadyaw*roadValue(ir, now)) return false;
     if (roadyaw*roadValue(rd, hor) < roadyaw*roadValue(ir, hor)) return false;
@@ -534,7 +529,7 @@ function addNewDot(x) {
         
         computeRoadExtent();
         updateAllData();
-        horindex = findRoadSegment(roads, hordate.getTime()/1000);
+        horindex = findRoadSegment(roads, hordate.unix());
     }
 }
 
@@ -700,7 +695,7 @@ function computeRoadExtent(allowShrink = false) {
     
     var cur = roadExtent( roads );
     var old = roadExtent( initialRoad );
-    var now = today.getTime()/1000;
+    var now = today.unix();
 
     xMin = d3.min([cur.xMin, old.xMin]);
     xMax = d3.max([cur.xMax, old.xMax]);
@@ -802,7 +797,7 @@ zoomarea.call(axisZoom);
 function dotAdded() {
     if (d3.event.shiftKey) {
         var newx = newXScale.invert(d3.event.x-padding.left);
-        if (opt.editpast || newx > hordate.getTime())
+        if (opt.editpast || newx > hordate.unix()*1000)
             addNewDot(newx/1000);
     }
 }
@@ -834,7 +829,7 @@ var gHorizonText = plot.append('g').attr('id', 'hortxtgrp');
 var gPastText = plot.append('g').attr('id', 'pasttxtgrp');
 
 // Create and initialize the x and y axes
-var xScale = d3.scaleTime()
+var xScale = d3.scaleUtc()
         .domain([new Date(xMinNow*1000), new Date(xMax*1000)])
         .range([0,plotsize.width]);
 var xAxis = d3.axisBottom(xScale).ticks(6);
@@ -922,9 +917,9 @@ function knotDragStarted(d,i) {
     roadsave = copyRoad( roads );
     // event coordinates are pre-scaled, so use normal scale
 	var x = daysnap(xScale.invert(d3.event.x)/1000);
-    knotdate = new Date(d.end[0]*1000);
+    knotdate = moment.unix(d.end[0]).utc();
     knottext = createTextBox(newXScale(x*1000), plotsize.height-15, 
-                             knotdate.toDateString());
+                             knotdate.format('YYYY-MM-DD'));
     dottext = createTextBox(newXScale(x*1000), newYScale(d.end[1])-15, 
                             d.end[1].toPrecision(5));
 };
@@ -968,9 +963,9 @@ function knotDragged(d,i) {
         updateRoads(); // Make sure road validity is checked
         updateYBHP();
         updateTableValues();
-        knotdate.setTime(x*1000); 
+        knotdate = moment.unix(x).utc(); 
         updateTextBox(knottext, newXScale(x*1000), plotsize.height-15, 
-                      knotdate.toDateString());
+                      knotdate.format('YYYY-MM-DD'));
         updateTextBox(dottext, newXScale(x*1000), newYScale(d.end[1])-15, 
                       d.end[1].toPrecision(opt.precision));
     }
@@ -999,10 +994,10 @@ function changeKnotDate( kind, newDate, fromtable = true ) {
 	knotmin = (kind == 0) ? xMin : (roads[kind].sta[0]) + 0.01;
 	knotmax = 
         (kind == roads.length-1) 
-        ? roads[kind].end[0]-0.01
-        :(roads[kind+1].end[0]-0.01);
-    if (newDate <= knotmin) newDate = daysnap(knotmin+SID);
-    if (newDate >= knotmax) newDate = daysnap(knotmin-SID);
+        ? roads[kind].end[0]+0.01
+        :(roads[kind+1].end[0]+0.01);
+    if (newDate <= knotmin) newDate = daysnap(knotmin);
+    if (newDate >= knotmax) newDate = daysnap(knotmin);
     roads[kind].end[0] = newDate;
     if (!fromtable) {
         // TODO?
@@ -1050,6 +1045,9 @@ function dotDragStarted(d,id) {
     // event coordinates are pre-scaled, so use normal scale
 	var txtx = daysnap(d.sta[0]);
 	var txty = yScale.invert(d3.event.y);
+    knotdate = moment.unix(d.sta[0]).utc();
+    knottext = createTextBox(newXScale(txtx*1000), plotsize.height-15, 
+                             knotdate.format('YYYY-MM-DD'));
     dottext = createTextBox(newXScale(txtx*1000), newYScale(txty)-18, 
                             d.sta[1].toPrecision(opt.precision));  
 };
@@ -1090,6 +1088,7 @@ function dotDragEnded(d,id){
     computeRoadExtent();
     updateAllData();
     removeTextBox(dottext);
+    removeTextBox(knottext);
     roadsave = null;
     dottext = null;
 };
@@ -1206,19 +1205,19 @@ function updatePastBox() {
         gPastBox.insert("svg:rect", ":first-child")
             .attr("class","past")
 	  	    .attr("x", xScale(xMin)).attr("y", yScale(yMax+3*(yMax-yMin)))
-		    .attr("width", xScale(today.getTime())-xScale(xMin))		  
+		    .attr("width", xScale(today.unix()*1000)-xScale(xMin))		  
   		    .attr("height",7*Math.abs(yScale(yMin)-yScale(yMax)))
             .attr("fill", "var(--col-pastbox)");
     } else {
         pastelt
 	  	    .attr("x", xScale(xMin)).attr("y", yScale(yMax+3*(yMax-yMin)))
-		    .attr("width", xScale(today.getTime())-xScale(xMin))		  
+		    .attr("width", xScale(today.unix()*1000)-xScale(xMin))		  
   		    .attr("height",7*Math.abs(yScale(yMin)-yScale(yMax)));
     }
 }
 // Creates or updates the shaded box to indicate past dates
 function updatePastText() {
-    var textx = xScale(today.getTime())-(5/xFactor);
+    var textx = xScale(today.unix()*1000)-(5/xFactor);
     var texty = yScale(newYScale.invert(plotsize.height/2));
     var pasttextelt = gPastText.select(".pasttext");
     if (pasttextelt.empty()) {
@@ -1261,7 +1260,7 @@ function updateWatermark() {
     var bx = size.width/2;
     var by = plotsize.height+padding.top+60;
     if (wmarkelt.empty()) {
-        var tcur = (datapoints.length != 0)?dayparse(datapoints[datapoints.length-1][0]):(today.getTime()/1000);
+        var tcur = (datapoints.length != 0)?dayparse(datapoints[datapoints.length-1][0]):(today.unix());
         var vcur = (datapoints.length != 0)?datapoints[datapoints.length-1][1]:0;
         main.append("svg:text")
 	        .attr("class","watermark")
@@ -1269,7 +1268,7 @@ function updateWatermark() {
           .style('font-size', 30+"px")
           .text("safe days: "+dtd(tcur, vcur));
     } else {
-        var tcur = (datapoints.length != 0)?dayparse(datapoints[datapoints.length-1][0]):(today.getTime()/1000);
+        var tcur = (datapoints.length != 0)?dayparse(datapoints[datapoints.length-1][0]):(today.unix());
         var vcur = (datapoints.length != 0)?datapoints[datapoints.length-1][1]:0;
         wmarkelt
 	  	    .attr("x", bx).attr("y", by).text("safe days: "+dtd(tcur, vcur));
@@ -1282,9 +1281,9 @@ function updateHorizon() {
     if (horizonelt.empty()) {
         gHorizon.append("svg:line")
 	        .attr("class","horizon")
-	  	    .attr("x1", xScale(hordate.getTime()))
+	  	    .attr("x1", xScale(hordate.unix()*1000))
             .attr("y1",yScale(yMin-5*(yMax-yMin)))
-		    .attr("x2", xScale(hordate.getTime()))
+		    .attr("x2", xScale(hordate.unix()*1000))
             .attr("y2",yScale(yMax+5*(yMax-yMin)))
             .attr("stroke", "rgb(0,0,200)") 
             .attr("stroke-dasharray", 
@@ -1292,15 +1291,15 @@ function updateHorizon() {
 		    .style("stroke-width",opt.horizonwidth/xFactor);
     } else {
         horizonelt
-	  	    .attr("x1", xScale(hordate.getTime()))
+	  	    .attr("x1", xScale(hordate.unix()*1000))
             .attr("y1",yScale(yMin-5*(yMax-yMin)))
-		    .attr("x2", xScale(hordate.getTime()))
+		    .attr("x2", xScale(hordate.unix()*1000))
             .attr("y2",yScale(yMax+5*(yMax-yMin)))
             .attr("stroke-dasharray", 
                   (opt.horizondash/xFactor)+","+(opt.horizondash/xFactor)) 
 		    .style("stroke-width",opt.horizonwidth/xFactor);
     }
-    var textx = xScale(hordate.getTime())+(20/xFactor);
+    var textx = xScale(hordate.unix()*1000)+(20/xFactor);
     var texty = yScale(newYScale.invert(plotsize.height/2));
     var horizontextelt = gHorizonText.select(".horizontext");
     if (horizontextelt.empty()) {
@@ -1354,8 +1353,8 @@ function updatePinkRegion() {
     var pinkelt = gPink.select(".pinkregion");
     var yedge, itoday, ihor;
     var ir = initialRoad;
-    var now = today.getTime()/1000;
-    var hor = hordate.getTime()/1000;
+    var now = today.unix();
+    var hor = hordate.unix();
     // Determine good side of the road 
     if (roadyaw > 0) yedge = yMin - 5*(yMax - yMin);
     else yedge = yMax + 5*(yMax - yMin);
@@ -1636,12 +1635,11 @@ function tableFocusIn( d, i ){
             (kind == roads.length-1) 
             ? roads[kind].end[0]
             :(roads[kind+1].end[0]);
+        var timezone = moment(new Date()).format("ZZ");
         datePicker = new Pikaday({
             onSelect: function(date) {
                 var newdate = datePicker.toString();
-                console.debug(newdate);
                 var val = dayparse(newdate, '-');
-                console.debug(val);
                 if (newdate === focusOldText) return;
                 if (!isNaN(val)) {
                     focusField.text(newdate);
@@ -1649,11 +1647,14 @@ function tableFocusIn( d, i ){
                     focusOldText = newdate;
                 }
             },
-            minDate: new Date((knotmin)*1000),
-            maxDate: new Date((knotmax)*1000)});
-        var timezone = moment(new Date()).format("ZZ");
+            // The manipulations below ensure that Pikaday shows the
+            // correct minimum and maximum dates regardless of the
+            // current local timezone.
+            minDate: moment.unix(knotmin).utc()
+                .utcOffset(timezone, true).toDate(),
+            maxDate: moment.unix(knotmax).utc()
+                .utcOffset(timezone, true).toDate()});
         datePicker.setMoment(moment(focusOldText + "T00:00:00.000"+timezone));        
-        //datePicker.setDate(focusOldText, true);
         var floating = d3.select('.floating');
         var bbox = this.getBoundingClientRect();
         floating.style('left', (bbox.right+window.scrollX)+"px").style('top', (bbox.bottom+3+window.scrollY)+"px");
@@ -1701,7 +1702,7 @@ function tableKeyDown( d, i ){
 }
 
 function tableDateChanged( row, value ) {
-    console.debug("tableDateChanged("+row+","+value+")");
+    //console.debug("tableDateChanged("+row+","+value+")");
     if (isNaN(value)) updateTableValues();
     else changeKnotDate( row, Number(value), true );
 }
@@ -1824,7 +1825,7 @@ function updateTableValues() {
     srows = stbody.selectAll(".startrow");
     var scells = srows.selectAll(".rtable .startcell")
             .data(function(row, i) {
-                var datestr = dayify(row.end[0], false, '-');
+                var datestr = dayify(row.end[0], '-');
                 return [
                     {order: 2, value: datestr, name: "enddate"+i},
                     {order: 4, value: row.end[1].toPrecision(5), name: "endvalue"+i},
@@ -1856,7 +1857,7 @@ function updateTableValues() {
         .attr("id", function(d,i) { return opt.reversetable?roads.length-1-(i+1):i+1;});
     var cells = rows.selectAll(".roadcell")
             .data(function(row, i) {
-                var datestr = dayify(row.end[0], false, '-');
+                var datestr = dayify(row.end[0], '-');
                 var ri;
                 if (opt.reversetable) ri = roads.length-1-(i+1);
                 else ri = i+1;
@@ -1945,7 +1946,7 @@ d3.select("button#zoomall").on("click", zoomAll);
 function resetRoad() {
     roads = copyRoad( initialRoad );
     clearUndoBuffer();
-    if (!opt.editpast) addNewDot(hordate.getTime()/1000);
+    if (!opt.editpast) addNewDot(hordate.unix());
     zoomOut();
 }
 d3.select("button#resetroad").on("click", resetRoad);
