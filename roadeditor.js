@@ -1,17 +1,18 @@
 // --------------------------------- 80chars ---------------------------------->
-/* global d3 */ // This line makes JSLint not complain
+/* global d3 Pikaday moment */ // This line makes JSLint not complain
 
 // SVG size and padding
-var size = {width: 700, height:500};
-var padding = {left:50, right:10, top:30, bottom:30};
+var size = {width: 700, height:550};
+var padding = {left:50, right:10, top:30, bottom:80};
 // Options for graph generation and editing
 var opt = {
-    dotsize: 5,
+    bullseyesize:   40,
+    dotsize:   5,
     dotborder: 1.5,
-    dpsize: 4,
+    dpsize:   4,
     dpborder: 1,
     oldroadwidth: 2,
-    roadwidth: 3,
+    roadwidth:    3,
     knotwidth: 3,
     horizonwidth: 2,
     horizondash: 8,
@@ -21,26 +22,22 @@ var opt = {
     editpast: true,
     showdata: true,
     keepslopes: true,
-    keeintervals: false
+    keeintervals: false,
+    reversetable: false
 };
 readOptions();
 
-// rawknots includes the start date and value, subsequent date/value
-// pairs, and the last entry is the goal date and value
-var rawknotsin = [[1474606400,50], 
-                [1484606400,0], 
-                [1495984800,20], 
-                [1503284800,-50], 
-                [1503284800,-40], 
-                [1505284800,0],
-                [1509284800,-100]];
 var roadyaw = +1; // +1: above, -1: below
+var roaddir = +1;
 
 // Do not edit: Computed based on values provided above
 var plotsize = {width: size.width-padding.left-padding.right, 
                 height: size.height-padding.top-padding.bottom};
 
 // ----------------- Basic tools ----------------------
+var DIY = 365.25;
+var SID = 86400;
+
 function inrange(x, min, max) {
     return x >= min && x <= max;
 }
@@ -62,11 +59,12 @@ function loadJSON(url, callback) {
  }
 // ----------------- Date facilities ----------------------
 // Returns a new date object ahead by the specified number of days
-function addDays(date, days) {
-    var result = new Date(date);
-    result.setDate(result.getDate() + days);
+function addDays(moment, days) {
+    var result = moment(date);
+    result.add(days, 'days');
     return result;
 }
+
 // Fixes the supplied unixtime to 00:00:00 on the same day
 function daysnap(unixtime) {
     var d = new Date(unixtime*1000);
@@ -87,28 +85,32 @@ function formatDate(unixtime) {
 // Take a daystamp like "20170531" and return unixtime in seconds
 // (dreev confirmed this seems to match Beebrain's function)
 
-// Uluc: Got rid of UTC since we initialize D3's x axis values with the local timezone, 
-// so using UTC will screw that up. We will just keep internal times in the local 
-// timezone, and convert to whatever is appropriate before sending data back
+// Uluc: Got rid of UTC since we initialize D3's x-axis values with the local
+// timezone. So using UTC will screw that up. We will just keep internal times
+// in the local timezone, and convert to whatever is appropriate before sending
+// data back.
 function dayparse(s, sep='') {
     if (!RegExp('^\\d{4}'+sep+'\\d{2}'+sep+'\\d{2}$').test(s)) { 
         // Check if the supplied date is a timestamp or not.
         if (!isNaN(s)) return Number(s);
-        else return NaN; }
-    s = s.replace(RegExp('^(\\d\\d\\d\\d)'+sep+'(\\d\\d)'+sep+'(\\d\\d)$'), "$1-$2-$3");
-    return Date.parse(s)/1000;
+        else return NaN; 
+    }
+    s = s.replace(RegExp('^(\\d\\d\\d\\d)'+sep+'(\\d\\d)'+sep+'(\\d\\d)$'), 
+                  "$1-$2-$3");
+    return daysnap(moment.utc(s).unix());
 }
 
 // Take an integer unixtime in seconds and return a daystamp like "20170531"
 // (dreev superficially confirmed this works)
 // Uluc: Added options to disable UTC and choose a separator
-function dayify(t, utc = true, sep = '') {
+function dayify(t, utc = false, sep = '') {
     if (isNaN(t) || t < 0) { return "ERROR"; }
     var date = new Date(t*1000);
     var y = utc?date.getUTCFullYear():date.getFullYear();
     var m = utc?date.getUTCMonth() + 1:date.getMonth() + 1;
     var d = utc?date.getUTCDate():date.getDate();
-    return '' + y + sep + (m < 10 ? '0' : '') + m + sep + (d < 10 ? '0' : '') + d;
+    return '' + y + sep + (m < 10 ? '0' : '') + m 
+                  + sep + (d < 10 ? '0' : '') + d;
 }
 
 // ------------------ Text Box Utilities ---------------------
@@ -117,9 +119,11 @@ function createTextBox(x, y, text){
     if (y < 20-padding.top) y = 20 -padding.top;
     if (y > size.height-padding.bottom-10) y = size.height-padding.bottom-10;
     textobj.grp = main.append('g')
-        .attr('transform', 'translate('+(x+padding.left)+","+(y+padding.top)+")");
+        .attr('transform', 'translate('+(x+padding.left)+","
+                                       +(y+padding.top)+")");
     textobj.rect = textobj.grp.append('svg:rect')
-        .attr('fill','var(--col-txtbox-bg)').attr('stroke', 'var(--col-txtbox-stroke)');
+        .attr('fill',   'var(--col-txtbox-bg)')
+        .attr('stroke', 'var(--col-txtbox-stroke)');
     textobj.text = textobj.grp.append('svg:text')
         .attr('text-anchor', 'middle')
         .text(text).attr('class', 'svgtxt');
@@ -150,18 +154,9 @@ function removeTextBox(obj) {
     obj.grp.remove();
 }
 
-// ---------------- Road Array utilities --------------------
-// The roads array is initialized and updated by us. Each entry encodes a
-// segment of the road in the form [startdate, startvalue, enddate,
-// endvalue, slope]. The first and last entries encode flat segments
-// at the beginning and end of the overall road.
-var initialRoad;
-var roads;
-var datapoints = [];
+// ---------------- Undo/Redo functionality --------------------
 var undoBuffer = [];
 var redoBuffer = [];
-
-var RoadParamEnum = Object.freeze({DATE:0, VALUE:1, SLOPE:2});
 
 function clearUndoBuffer() {
     undoBuffer = [];
@@ -176,7 +171,6 @@ function redoLastEdit() {
     pushUndoState(true);
     roads = redoBuffer.pop();
     updateAllData();
-    sortAllData();
     if (redoBuffer.length == 0) 
         d3.select("button#redo").attr('disabled', 'true').text('Redo (0)');
     else
@@ -185,15 +179,16 @@ function redoLastEdit() {
 }
 
 function undoLastEdit() {
-    //console.debug("undoLastEdit: Undo Buffer has "+undoBuffer.length+" entries");
+//console.debug("undoLastEdit: Undo Buffer has "+undoBuffer.length+" entries");
     if (undoBuffer.length == 0) return;
-    if (undoBuffer.length == 0 || !sameRoads(undoBuffer[undoBuffer.length-1], roads)) {
+    if (undoBuffer.length == 0 || 
+        !sameRoads(undoBuffer[undoBuffer.length-1], roads)) {
       redoBuffer.push(roads);
-      d3.select("button#redo").attr('disabled', null).text('Redo ('+redoBuffer.length+")");
+      d3.select("button#redo").attr('disabled', null)
+        .text('Redo ('+redoBuffer.length+")");
     }
     roads = undoBuffer.pop();
     updateAllData();
-    sortAllData();
     if (undoBuffer.length == 0) 
         d3.select("button#undo").attr('disabled', 'true').text('Undo (0)');
     else
@@ -202,15 +197,165 @@ function undoLastEdit() {
 }
 
 function pushUndoState(fromredo = false) {
-    //console.debug("pushUndoState: Undo Buffer has "+undoBuffer.length+" entries");
-    if (undoBuffer.length == 0 || !sameRoads(undoBuffer[undoBuffer.length-1], roads)) {
+//console.debug("pushUndoState: Undo Buffer has "+undoBuffer.length+" entries");
+    if (undoBuffer.length == 0 || 
+        !sameRoads(undoBuffer[undoBuffer.length-1], roads)) {
         undoBuffer.push(copyRoad(roads));
-        d3.select("button#undo").attr('disabled', null).text('Undo ('+undoBuffer.length+")");
+        d3.select("button#undo").attr('disabled', null)
+          .text('Undo ('+undoBuffer.length+")");
         if (!fromredo) {
           redoBuffer = [];        
           d3.select("button#redo").attr('disabled', 'true').text('Redo (0)');
         }
     }
+}
+
+// ---------------- Road Array utilities --------------------
+// The roads array is initialized and updated by us. Each entry encodes a
+// segment of the road in the form [startdate, startvalue, enddate,
+// endvalue, slope]. The first and last entries encode flat segments
+// at the beginning and end of the overall road.
+var roads = [], initialRoad = [], datapoints = [];
+
+var RoadParamEnum = Object.freeze({DATE:0, VALUE:1, SLOPE:2});
+
+// Compute daysnapped dates for today and the akrasia horizon
+var today = moment.utc();
+today.hour(0); today.minute(0); today.second(0); today.millisecond(0);
+var hordate = addDays(today, 7);
+var horindex = null;
+
+function printRoad( rd ) {
+  for (var i = 0; i < rd.length; i++) {
+    var segment = rd[i];
+    console.debug("[("+segment.sta[0]+","+segment.sta[1]+"),("
+                   +segment.end[0]+","+segment.end[1]+"),"
+                   +segment.slope+", auto="+segment.auto+"]");
+  }
+}
+
+// Tested, but this does not seem like "argmax" functionality to me, 
+// argmax should return the index. This is just max with a filter
+function argmax(f, dom) {
+  if (dom == null) return null;
+  var newdom = dom.map(f);
+  var maxelt = d3.max(newdom);
+  return dom[newdom.findIndex(function (e) {return e == maxelt;})];
+}
+
+// zip([[1,2], [3,4]]) --> [[1,3], [2,4]]
+function zip(arrays) {
+    return arrays[0].map(function(_,i){
+        return arrays.map(function(array){return array[i]})
+    });
+}
+
+// Return 0 when x is very close to 0
+function chop(x, delta=1e-7) { 
+  return (Math.abs(x) < delta)?0:x;
+}
+
+// Return an integer when x is very close to an integer
+function ichop(x, delta=1e-7) {
+  var fracp = x % 1;
+  var intp = x - fracp;
+  if (fracp < 0) {fracp += 1; intp -= 1;};
+  if (fracp > 0.5) fracp = 1 - chop(1-fracp);
+  return Math.round(intp) + chop(fracp, delta);
+}
+
+
+// Good delta: Returns the delta from the given point to the centerline of the 
+// road but with the sign such that being on the good side of the road gives a 
+// positive delta and being on the wrong side gives a negative delta.
+function gdelt(t, v) {
+   return chop(roadyaw*(v-roadValue(roads, t)));
+}
+
+// Utility function for stepify
+function stepFunc(data, x, dflt=0) {
+  if (x < data[0][0]) return dflt;
+  var prevval = data[0][1];
+  for (var i = 0; i < data.length; i++) {
+    if (data[i][0] > x) return prevval;
+    else  prevval = data[i][1];
+  }
+  return data[data.length-1][1];
+}
+
+// Take a list of datapoints sorted by x-value and returns a pure function that
+// interpolates a step function from the data, always mapping to the most recent
+// value. Cf http://stackoverflow.com/q/6853787
+function stepify(data, dflt=0){
+  if (data == null) return (function (x) { return dflt; });
+  return (function(x) { return stepFunc(data, x, dflt); });
+}
+
+// Computes the slope of the supplied road array at the given timestamp
+function rtf(t) {
+    var i = findRoadSegment(roads, t);
+    return (roads[i].slope);
+}
+
+// TODO: Test
+function lnf(x) {
+  var t = roads.map(function(elt) { return elt.end[0]; });
+  var r = roads.map(function(elt) { return Math.abs(elt.slope)*SID; });
+  // pretend flat spots have the previous or next non-flat rate
+  var rb = r.slice();
+  for (var i = 1; i < rb.length; i++) if (Math.abs(rb[i]) < 1e-9 || !isFinite(rb[i])) rb[i] = rb[i-1];
+  var rr = r.reverse();
+  var rf = rr.slice();
+  for (var i = 1; i < rf.length; i++) if (Math.abs(rf[i]) < 1e-9 || !isFinite(rf[i])) rf[i] = rf[i-1];
+  rf = rf.reverse();
+
+  r = zip([rb,rf]).map(function (e) { return argmax(Math.abs, [e[0],e[1]]); });
+  var valdiff = roadValue( roads, x ) - roadValue( roads, x-SID );
+  var i = findRoadSegment(roads, x);
+  return d3.max([Math.abs(valdiff), r[i]]);
+}
+
+// TODO: Test
+function lanage(t, v, l = null) {
+  if (l == null) l = lnf(t);
+  var d = v - roadValue(roads, t);
+  if (chop(l) == 0) return Math.round((chop(d) == 0.0)?roadyaw:Math.sign(d)*666);
+  var x = ichop(d/l);
+  var fracp = x % 1;
+  var intp = x -fracp;
+  if (fracp > .99999999) {
+    intp += 1;
+    fracp = 0;
+  }
+  if (chop(fracp) == 0) {
+    if (roadyaw > 0 && intp >= 0) return Math.round(intp+1);
+    if (roadyaw < 0 && intp <= 0) return Math.round(intp-1);
+    return Math.round(Math.sign(x)*Math.ceil(Math.abs(x)));
+  }
+  return Math.round(Math.sign(x)*Math.ceil(Math.abs(x)));
+}
+
+// TODO: Test
+// Whether the given point is on the road if the road has lane width l
+function aok(t,v, l) {
+  return ((lanage(t,v, l) * roadyaw >= -1.0));
+}
+
+
+// TODO: Test
+// Returns the number of days to derail for the current road
+// TODO: There are some issues with computing tcur, vcur
+function dtd( t, v ) {
+  var tnow = today.getTime()/1000;
+  var x = 0; // the number of steps  
+  var xt = 0; // the number of steps past today
+  var vpess = v; // the value as we walk forward w/ pessimistic presumptive reports  
+  while (aok(t+x*SID, vpess, lnf(t+x*SID)) && t+x*SID <= d3.max([roads[roads.length-1].sta[0], t])) {
+    x += 1; // walk forward until we're off the YBR
+    if (t+x*SID > tnow) xt += 1;
+    vpess += (roadyaw*roaddir < 0)?2*rtf(t+x*SID)*SID:0;
+  }
+  return xt;
 }
 
 // Determines whether the given road is valid or not (i.e. whether it
@@ -244,9 +389,6 @@ function isRoadValid( rd ) {
 function sameRoads( roada, roadb ) {
     if (roada.length != roadb.length) return false;
     for (var i = 0; i < roada.length; i++) {
-        //console.debug(nearlyEqual(roada[i].end[0], roadb[i].end[0], 1));
-        //console.debug(nearlyEqual(roada[i].end[1], roadb[i].end[1], 1));
-        //console.debug(nearlyEqual(roada[i].slope, roadb[i].slope, 1));
         if (!nearlyEqual(roada[i].end[0], roadb[i].end[0], 10)) return false;
         if (!nearlyEqual(roada[i].end[1], roadb[i].end[1], 10)) return false;
         if (!nearlyEqual(roada[i].slope, roadb[i].slope, 1e-14)) return false;
@@ -254,6 +396,7 @@ function sameRoads( roada, roadb ) {
     return true;
 }
 
+// Creates and returns a clone of the supplied road array
 function copyRoad( inroad ) {
     var newroad = [];
     for (var i = 0; i < inroad.length; i++) {
@@ -279,14 +422,17 @@ function findRoadSegment(rd, x) {
     return found;
 }
 
+// Computes the slope of the supplied road segment
 function roadSegmentSlope(rd) {
     return (rd.end[1] - rd.sta[1]) / (rd.end[0] - rd.sta[0]);
 }
 
+// Computes the value of the supplied road segment at the given timestamp
 function roadSegmentValue(rdseg, x) {
     return rdseg.sta[1] + rdseg.slope*(x - rdseg.sta[0]);
 }
 
+// Computes the value of the supplied road array at the given timestamp
 function roadValue(rd, x) {
     var i = findRoadSegment(rd, x);
     return roadSegmentValue( rd[i], x );
@@ -300,7 +446,7 @@ function fixRoadArray( autoparam=RoadParamEnum.VALUE, usetable=false,
                        edited=RoadParamEnum.VALUE) {
     var nr = roads.length;
     // Fix the special first road segment, whose slope will always be 0.
-    roads[0].sta[0] = roads[0].end[0] - 100*365*24*60*60;
+    roads[0].sta[0] = roads[0].end[0] - 100*DIY*SID;
     roads[0].sta[1] = roads[0].end[1];
 
     // Iterate through the remaining segments until the last one
@@ -321,7 +467,7 @@ function fixRoadArray( autoparam=RoadParamEnum.VALUE, usetable=false,
             }
             // Sanity check
             if (roads[i].end[0] <= roads[i].sta[0]) {
-                roads[i].end[0] = daysnap(roads[i].sta[0]+24*60*60);
+                roads[i].end[0] = daysnap(roads[i].sta[0]+SID);
             }
             if (edited == RoadParamEnum.SLOPE) {
                 // Readjust value if slope was edited
@@ -350,7 +496,7 @@ function fixRoadArray( autoparam=RoadParamEnum.VALUE, usetable=false,
     if (nr > 1) {
         roads[nr-1].sta[0] = roads[nr-2].end[0];
         roads[nr-1].sta[1] = roads[nr-2].end[1];
-        roads[nr-1].end[0] = roads[nr-1].sta[0] + 100*365*24*60*60;
+        roads[nr-1].end[0] = roads[nr-1].sta[0] + 100*DIY*SID;
         roads[nr-1].end[1] = roads[nr-1].sta[1];
     }
 }
@@ -388,7 +534,6 @@ function addNewDot(x) {
         
         computeRoadExtent();
         updateAllData();
-        sortAllData();
         horindex = findRoadSegment(roads, hordate.getTime()/1000);
     }
 }
@@ -397,7 +542,7 @@ function addNewKnot(kind) {
     if (kind < roads.length-1) {
         addNewDot((roads[kind].sta[0] + roads[kind+1].sta[0])/2);
     } else {
-        addNewDot(roads[kind].sta[0] + 7*24*60*60);
+        addNewDot(roads[kind].sta[0] + 7*SID);
     }
 }
 
@@ -415,18 +560,26 @@ function removeKnot(kind, fromtable) {
 // Recreates the road array from the "rawknots" array, which includes
 // only timestamp,value pairs
 function loadRoad( newrd ) {
+
     roads = [];
     clearUndoBuffer();
     var rdData = newrd.params.road;
     var nk = rdData.length;
     var firstsegment;
+    var ratemult = SID;
+    if (newrd.params.runits === 'h') ratemult = 60*60;
+    if (newrd.params.runits === 'd') ratemult = SID;
+    if (newrd.params.runits === 'w') ratemult = 7*SID;
+    if (newrd.params.runits === 'm') ratemult = 30*SID;
+    if (newrd.params.runits === 'y') ratemult = DIY*SID;
+  
     if (newrd.params.hasOwnProperty('tini')) {
         firstsegment = {
             sta: [dayparse(newrd.params.tini), Number(newrd.params.vini)],
             slope: 0,
             auto: RoadParamEnum.SLOPE };
         firstsegment.end = firstsegment.sta.slice();
-        firstsegment.sta[0] = daysnap(firstsegment.sta[0]-100*365*24*60*60);
+        firstsegment.sta[0] = daysnap(firstsegment.sta[0]-100*DIY*SID);
     } else {
         // Retrieve starting date from the first datapoint
         firstsegment = {
@@ -434,7 +587,7 @@ function loadRoad( newrd ) {
             slope: 0,
             auto: RoadParamEnum.SLOPE };
         firstsegment.end = firstsegment.sta.slice();
-        firstsegment.sta[0] = daysnap(firstsegment.sta[0]-100*365*24*60*60);
+        firstsegment.sta[0] = daysnap(firstsegment.sta[0]-100*365*SID);
     }
     roads.push(firstsegment);
     
@@ -475,12 +628,12 @@ function loadRoad( newrd ) {
 
         if (rddate == null) {
             segment.end = [0, Number(rdvalue)];
-            segment.slope = Number(rdslope)/(24*60*60);
+            segment.slope = Number(rdslope)/(ratemult);
             segment.end[0] = (segment.end[1] - segment.sta[1])/segment.slope;
             segment.auto = RoadParamEnum.DATE;
         } else if (rdvalue == null) {
             segment.end = [dayparse(rddate), 0];
-            segment.slope = Number(rdslope)/(24*60*60);
+            segment.slope = Number(rdslope)/(ratemult);
             segment.end[1] = 
                 segment.sta[1]+segment.slope*(segment.end[0]-segment.sta[0]);
             segment.auto = RoadParamEnum.VALUE;
@@ -500,21 +653,16 @@ function loadRoad( newrd ) {
         end: roads[roads.length-1].end.slice(),
         slope: 0,
         auto: RoadParamEnum.VALUE };
-    finalsegment.end[0] = daysnap(finalsegment.end[0]+100*365*24*60*60);
+    finalsegment.end[0] = daysnap(finalsegment.end[0]+100*DIY*SID);
     roads.push(finalsegment);
     
-    console.debug('loadRoad:');
-    for (i = 0; i < roads.length; i++) {
-        segment = roads[i];
-        console.debug("[("+segment.sta[0]+","+segment.sta[1]+"),("
-                      +segment.end[0]+","+segment.end[1]+"),"
-                      +segment.slope+", auto="+segment.auto+"]");
-    }
+    //console.debug('loadRoad:');
 
     initialRoad = copyRoad( roads );
     computeRoadExtent( true );
     zoomOut();
     roadyaw = Number(newrd.params.yaw);
+    roaddir = Number(newrd.params.dir);
     datapoints = newrd.data;
     if (newrd.params.kyoom) {
         // Process datapoints to be cumulative
@@ -522,45 +670,6 @@ function loadRoad( newrd ) {
             datapoints[i][1] += datapoints[i-1][1];
         }
     }
-}
-
-// Recreates the road array from the "rawknots" array, which includes
-// only timestamp,value pairs
-function reloadRoadArray( rawknots ) {
-    roads = [];
-    datapoints = [];
-    clearUndoBuffer();
-    var nk = rawknots.length;
-    for (var i = 0; i < nk; i++) {
-        rawknots[i][0] = daysnap(rawknots[i][0]);
-    }
-    for (i = 0; i < nk-1; i++) {
-        var segment = {};
-        segment.slope = (rawknots[i+1][1] - rawknots[i][1]) / 
-            (rawknots[i+1][0] - rawknots[i][0]);
-        segment.sta = rawknots[i].slice();
-        segment.end = rawknots[i+1].slice();
-        segment.auto = RoadParamEnum.VALUE;
-        roads.push(segment);
-    }
-    var firstsegment = {
-        sta: roads[0].sta.slice(),
-        end: roads[0].sta.slice(),
-        slope: 0,
-        auto: RoadParamEnum.SLOPE };
-    firstsegment.sta[0] = daysnap(firstsegment.sta[0]-100*365*24*60*60);
-    
-    var lastsegment = {
-        sta: roads[nk-2].end.slice(),
-        end: roads[nk-2].end.slice(),
-        slope: 0,
-        auto: RoadParamEnum.VALUE };
-    lastsegment.end[0] = daysnap(lastsegment.end[0]+100*365*24*60*60);
-    
-    roads.push(lastsegment);
-    roads.unshift(firstsegment);
-
-    initialRoad = copyRoad( roads );
 }
 
 function roadExtent( rd ) {
@@ -579,8 +688,8 @@ function roadExtent( rd ) {
 }
 
 // Define and compute limits for the current road array.
-var xMin = Infinity, xMinNow = Infinity, xMax = -Infinity;
-var yMin = Infinity, yMax = -Infinity;
+var xMin = today, xMinNow = today, xMax = hordate, xMaxNow = hordate;
+var yMin = -1, yMinNow = -1, yMax = 1, yMaxNow = 1;
 function computeRoadExtent(allowShrink = false) {
     var firstRun = !Number.isFinite(xMin);
     
@@ -602,12 +711,16 @@ function computeRoadExtent(allowShrink = false) {
         yMax += 1.0;
     }
     if (xMin == xMax) {
-        xMin -= 7*24*60*60;
-        xMax += 7*24*60*60;
+        xMin -= 7*SID
+        xMax += 7*SID;
     }
     // Limit minimum x to a month before today
-    xMinNow = d3.max([xMin, now-28*24*60*60]);
-    if (xMinNow > (xMax - 28*24*60*60)) xMinNow = xMin;
+    xMinNow = d3.max([xMin, now-30*SID]);
+    if (xMinNow > (xMax - 30*SID)) xMinNow = xMin;
+    //yMinNow = roadValue(roads, xMinNow);
+    xMaxNow = d3.min([xMax, now+6*30*SID]);
+    if (xMaxNow < (xMin + 6*30*SID)) xMaxNow = xMax;
+    //yMaxNow = roadValue(roads, xMaxNow);
 
     // Make sure we never shrink allowable zoom extent (unless
     // requested) since that causes jumpy behavior
@@ -632,13 +745,7 @@ function computeRoadExtent(allowShrink = false) {
     }
 }
 
-// Compute daysnapped dates for today and the akrasia horizon
-var today = new Date();
-today.setHours(0,0,0,0);
-var hordate = addDays(today, 7);
-var horindex = null;
-
-reloadRoadArray( rawknotsin );
+loadRoadFromURL();
 
 // Create and initialize the SVG chart and its components
 var chart = d3.select('.roadgraph')
@@ -700,6 +807,7 @@ function dotAdded() {
     }
 }
 zoomarea.on("click", dotAdded);
+zoomarea.on("dblclick.zoom", function(d) { });
 
 // Create plotting area above the zooming area so points can be selected
 var main = chart.append('g')
@@ -710,11 +818,20 @@ var buttonarea = main.append('g')
 var mainclip = main.append('g')
         .attr('clip-path', 'url(#plotclip)')
         .attr('transform', 'translate('+padding.left+','+padding.top+')');
-var plot = mainclip.append('g')
-	    .attr('class', 'plot');
-
-// Now, compute limits of road data and create x and y axes
-computeRoadExtent( );
+var plot = mainclip.append('g').attr('class', 'plot');
+    
+var gPastBox = plot.append('g').attr('id', 'pastboxgrp');
+var gYBHP = plot.append('g').attr('id', 'ybhpgrp');
+var gPink = plot.append('g').attr('id', 'pinkgrp');
+var gOldRoad = plot.append('g').attr('id', 'oldroadgrp');
+var gKnots = plot.append('g').attr('id', 'knotgrp');
+var gDpts = plot.append('g').attr('id', 'datapointgrp');
+var gBullseye = plot.append('g').attr('id', 'bullseyegrp');
+var gRoads = plot.append('g').attr('id', 'roadgrp');
+var gDots = plot.append('g').attr('id', 'dotgrp');
+var gHorizon = plot.append('g').attr('id', 'horgrp');
+var gHorizonText = plot.append('g').attr('id', 'hortxtgrp');
+var gPastText = plot.append('g').attr('id', 'pasttxtgrp');
 
 // Create and initialize the x and y axes
 var xScale = d3.scaleTime()
@@ -759,7 +876,8 @@ function updateZoom() {
                               [xScale(xMax*1000), yScale(yMin)]]);
     // Readjust point sizes and line widths with the current scale
     updateHorizon();
-    updatePastBox();
+    updatePastText();
+    updateBullseye();
     plot.selectAll(".roads").style("stroke-width",opt.roadwidth/xFactor);
     plot.selectAll(".oldroads").style("stroke-width",opt.oldroadwidth/xFactor);
     plot.selectAll(".knots").style("stroke-width",opt.knotwidth/xFactor);
@@ -767,7 +885,7 @@ function updateZoom() {
     plot.selectAll(".dpts").attr("r",opt.dpsize/xFactor).style("stroke-width",opt.dpborder/xFactor);
     buttonarea.selectAll(".remove")
         .attr("transform", 
-              function(d){ return "translate("+(newXScale(d.sta[0]*1000)
+              function(d){ return "translate("+(newXScale(d.end[0]*1000)
                                                 +padding.left-8)
                            +","+(padding.top-20)+") scale(0.6,0.6)";});
 }
@@ -781,6 +899,8 @@ function readOptions() {
     opt.keepintervals = (!keepintervals.empty() && keepintervals.node().checked);
     var showdata = d3.select('#showdata');
     opt.showdata = (!showdata.empty() && showdata.node().checked);
+    var reversetable = d3.select('#reversetable');
+    opt.reversetable = (!reversetable.empty() && reversetable.node().checked);
 }
 
 var editingKnot = false;
@@ -790,11 +910,14 @@ function knotDragStarted(d,i) {
     highlightDate(i, true);
     pushUndoState();
     var kind = Number(this.id);
-	knotmin = (kind == 0) ? xMin : (roads[kind].sta[0])-24*60*60;
-	knotmax = 
+	  knotmin = (kind == 0) ? xMin : (roads[kind].sta[0])-SID;
+    //var hortime = hordate.getTime()/1000;
+    //if (kind == roads.length-2 && roads[kind].end[0] >= hortime)
+    //knotmin = d3.max([knotmin, hortime]);
+	  knotmax = 
         ((kind == roads.length-1) 
         ? roads[kind].end[0]
-        :(roads[kind+1].end[0])) + 24*60*60;
+        :(roads[kind+1].end[0])) + SID;
     if (opt.keepintervals) knotmax = newXScale.invert(plotsize.width)/1000;
     roadsave = copyRoad( roads );
     // event coordinates are pre-scaled, so use normal scale
@@ -840,7 +963,10 @@ function knotDragged(d,i) {
                               +","+(padding.top-20)+") scale(0.6,0.6)";
                       });
         }
+        updateWatermark();
+        updateBullseye();
         updateRoads(); // Make sure road validity is checked
+        updateYBHP();
         updateTableValues();
         knotdate.setTime(x*1000); 
         updateTextBox(knottext, newXScale(x*1000), plotsize.height-15, 
@@ -875,8 +1001,8 @@ function changeKnotDate( kind, newDate, fromtable = true ) {
         (kind == roads.length-1) 
         ? roads[kind].end[0]-0.01
         :(roads[kind+1].end[0]-0.01);
-    if (newDate <= knotmin) newDate = daysnap(knotmin+24*60*60);
-    if (newDate >= knotmax) newDate = daysnap(knotmin-24*60*60);
+    if (newDate <= knotmin) newDate = daysnap(knotmin+SID);
+    if (newDate >= knotmax) newDate = daysnap(knotmin-SID);
     roads[kind].end[0] = newDate;
     if (!fromtable) {
         // TODO?
@@ -945,7 +1071,10 @@ function dotDragged(d, id) {
 			    .attr("x2", xScale(roads[i].end[0]*1000))
 			    .attr("y2", yScale(roads[i].end[1]));
         }
+        updateBullseye();
+        updateWatermark();
         updateRoads(); // Make sure road validity is checked
+        updateYBHP();
         updateTableValues();
         // event coordinates are pre-scaled, so use normal scale
 	    var txtx = daysnap(d.sta[0]);
@@ -1021,7 +1150,7 @@ function changeRoadSlope(kind, newSlope, fromtable = false) {
     if (kind == roads.length-1) return;
     pushUndoState();
 
-    roads[kind].slope = newSlope/(24*60*60);
+    roads[kind].slope = newSlope/(SID);
     if (!fromtable) {
         if (!opt.keepslopes) {
             roads[kind].end[1] = roads[kind].sta[1] + roads[kind].slope*(roads[kind].end[0] - roads[kind].sta[0]);
@@ -1053,7 +1182,7 @@ function roadEdited(d, id) {
       selection.removeAllRanges();
       selection.addRange(range);
     }
-    //var newSlope = prompt("Please enter desired daily slope", d.slope*24*60*60);
+    //var newSlope = prompt("Please enter desired daily slope", d.slope*SID);
     //if (newSlope == null) return;
     //newSlope = parseFloat(newSlope);
     //if (isNaN(newSlope)) return;
@@ -1072,25 +1201,28 @@ function knotEditable(i) {
 
 // Creates or updates the shaded box to indicate past dates
 function updatePastBox() {
-    var pastelt = plot.select(".past");
+    var pastelt = gPastBox.select(".past");
     if (pastelt.empty()) {
-        plot.insert("svg:rect", ":first-child")
+        gPastBox.insert("svg:rect", ":first-child")
             .attr("class","past")
 	  	    .attr("x", xScale(xMin)).attr("y", yScale(yMax+3*(yMax-yMin)))
 		    .attr("width", xScale(today.getTime())-xScale(xMin))		  
   		    .attr("height",7*Math.abs(yScale(yMin)-yScale(yMax)))
-            .attr("fill", "rgb(240,240,240)");
+            .attr("fill", "var(--col-pastbox)");
     } else {
         pastelt
 	  	    .attr("x", xScale(xMin)).attr("y", yScale(yMax+3*(yMax-yMin)))
 		    .attr("width", xScale(today.getTime())-xScale(xMin))		  
   		    .attr("height",7*Math.abs(yScale(yMin)-yScale(yMax)));
     }
+}
+// Creates or updates the shaded box to indicate past dates
+function updatePastText() {
     var textx = xScale(today.getTime())-(5/xFactor);
     var texty = yScale(newYScale.invert(plotsize.height/2));
-    var pasttextelt = plot.select(".pasttext");
+    var pasttextelt = gPastText.select(".pasttext");
     if (pasttextelt.empty()) {
-        plot.append("svg:text")
+        gPastText.append("svg:text")
 	        .attr("class","pasttext")
 	  	    .attr("x",textx ).attr("y",texty)
             .attr("transform", "rotate(-90,"+textx+","+texty+")")
@@ -1105,11 +1237,50 @@ function updatePastBox() {
     }
 }
 
+// Creates or updates the Bullseye at the goal date
+function updateBullseye() {
+    var bullseyeelt = gBullseye.select(".bullseye");
+    var bx = xScale(roads[roads.length-1].sta[0]*1000)-(opt.bullseyesize/2)/xFactor;
+    var by = yScale(roads[roads.length-1].sta[1])-(opt.bullseyesize/2)/xFactor;
+    if (bullseyeelt.empty()) {
+        gBullseye.append("svg:image")
+	        .attr("class","bullseye")
+	        .attr("xlink:href","https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye.png?1496219226927")
+	  	    .attr("x",bx ).attr("y",by)
+          .attr('width', (opt.bullseyesize/xFactor)).attr('height', (opt.bullseyesize/xFactor));
+    } else {
+        bullseyeelt
+	  	    .attr("x", bx).attr("y", by)
+          .attr('width', (opt.bullseyesize/xFactor)).attr('height', (opt.bullseyesize/xFactor));
+    }
+}
+
+// Creates or updates the watermark with the number of safe days
+function updateWatermark() {
+    var wmarkelt = main.select(".watermark");
+    var bx = size.width/2;
+    var by = plotsize.height+padding.top+60;
+    if (wmarkelt.empty()) {
+        var tcur = (datapoints.length != 0)?dayparse(datapoints[datapoints.length-1][0]):(today.getTime()/1000);
+        var vcur = (datapoints.length != 0)?datapoints[datapoints.length-1][1]:0;
+        main.append("svg:text")
+	        .attr("class","watermark")
+	  	    .attr("x",bx ).attr("y",by)
+          .style('font-size', 30+"px")
+          .text("safe days: "+dtd(tcur, vcur));
+    } else {
+        var tcur = (datapoints.length != 0)?dayparse(datapoints[datapoints.length-1][0]):(today.getTime()/1000);
+        var vcur = (datapoints.length != 0)?datapoints[datapoints.length-1][1]:0;
+        wmarkelt
+	  	    .attr("x", bx).attr("y", by).text("safe days: "+dtd(tcur, vcur));
+    }
+}
+
 // Creates or updates the Akrasia Horizon line
 function updateHorizon() {
-    var horizonelt = plot.select(".horizon");
+    var horizonelt = gHorizon.select(".horizon");
     if (horizonelt.empty()) {
-        plot.append("svg:line")
+        gHorizon.append("svg:line")
 	        .attr("class","horizon")
 	  	    .attr("x1", xScale(hordate.getTime()))
             .attr("y1",yScale(yMin-5*(yMax-yMin)))
@@ -1131,9 +1302,9 @@ function updateHorizon() {
     }
     var textx = xScale(hordate.getTime())+(20/xFactor);
     var texty = yScale(newYScale.invert(plotsize.height/2));
-    var horizontextelt = plot.select(".horizontext");
+    var horizontextelt = gHorizonText.select(".horizontext");
     if (horizontextelt.empty()) {
-        plot.append("svg:text")
+        gHorizonText.append("svg:text")
 	        .attr("class","horizontext")
 	  	    .attr("x",textx ).attr("y",texty)
             .attr("transform", "rotate(-90,"+textx+","+texty+")")
@@ -1148,8 +1319,39 @@ function updateHorizon() {
     }
 }
 
+function updateYBHP() {
+    var pinkelt = gYBHP.select(".halfplane");
+    var yedge, itoday, ihor;
+    var ir = roads;
+    var now = xMin;
+    var hor = roads[roads.length-1].sta[0];
+    // Determine good side of the road 
+    if (roadyaw < 0) yedge = yMin - 5*(yMax - yMin);
+    else yedge = yMax + 5*(yMax - yMin);
+    // Compute road indices for left and right boundaries
+    itoday = findRoadSegment(ir, now);
+    ihor = findRoadSegment(ir, hor);
+    var d = "M"+xScale(now*1000)+" "+yScale(roadValue(ir, now));
+    for (var i = itoday; i < ihor; i++) {
+        d += " L"+xScale(ir[i].end[0]*1000)+" "+yScale(ir[i].end[1]);
+    }
+    d += " L"+xScale(hor*1000)+" "+yScale(roadValue(ir, hor));
+    d += " L"+xScale(hor*1000)+" "+yScale(yedge);
+    d += " L"+xScale(now*1000)+" "+yScale(yedge);
+    d += " Z";
+    if (pinkelt.empty()) {
+        gYBHP.append("svg:path")
+          .style('pointer-events', "none")
+	        .attr("class","halfplane")
+	  	    .attr("d", d)
+          .attr("fill", "var(--col-halfplane)");
+    } else {
+        pinkelt.attr("d", d);
+    }
+}
+
 function updatePinkRegion() {
-    var pinkelt = plot.select(".pinkregion");
+    var pinkelt = gPink.select(".pinkregion");
     var yedge, itoday, ihor;
     var ir = initialRoad;
     var now = today.getTime()/1000;
@@ -1169,10 +1371,11 @@ function updatePinkRegion() {
     d += " L"+xScale(now*1000)+" "+yScale(yedge);
     d += " Z";
     if (pinkelt.empty()) {
-        plot.append("svg:path")
-	        .attr("class","pinkregion")
+        gPink.append("svg:path")
+          .style('pointer-events', "none")
+          .attr("class","pinkregion")
 	  	    .attr("d", d)
-            .attr("fill", "rgb(255,220,220)");
+            .attr("fill", "var(--col-pinkregion)");
     } else {
         pinkelt.attr("d", d);
     }
@@ -1181,7 +1384,7 @@ function updatePinkRegion() {
 // Creates or updates the unedited road
 function updateOldRoad() {
     // Create, update and delete road lines
-    var roadelt = plot.selectAll(".oldroads").data(initialRoad);
+    var roadelt = gOldRoad.selectAll(".oldroads").data(initialRoad);
     roadelt.exit().remove();
     roadelt
 		.attr("x1", function(d){ return xScale(d.sta[0]*1000);})
@@ -1200,12 +1403,12 @@ function updateOldRoad() {
   		.attr("y2",function(d){ return yScale(d.end[1]);})
   		.style("stroke-width",opt.oldroadwidth/xFactor)
   		.style("stroke","var(--col-oldroad)")
-        .style('pointer-events', "none");
+      .style('pointer-events', "none");
 }
 
 function updateKnots() {
     // Create, update and delete vertical knot lines
-    var knotelt = plot.selectAll(".knots").data(roads);
+    var knotelt = gKnots.selectAll(".knots").data(roads);
     knotelt.exit().remove();
     knotelt
 	    .attr("x1", function(d){ return xScale(d.end[0]*1000);})
@@ -1250,6 +1453,8 @@ function updateKnots() {
     var knotrmelt = buttonarea.selectAll(".remove").data(roads);
     knotrmelt.exit().remove();
     knotrmelt
+  	    .attr("id", function(d,i) {return i;})
+	      .attr("name", function(d,i) {return "remove"+i;})
         .attr("transform", 
               function(d){ 
                   return "translate("+(newXScale(d.end[0]*1000)+padding.left-8)
@@ -1261,8 +1466,8 @@ function updateKnots() {
         .append("use")
         .attr("class", "remove")
         .attr("xlink:href", "#removebutton")
-	    .attr("id", function(d,i) {return i;})
-	    .attr("name", function(d,i) {return "remove"+i;})
+  	    .attr("id", function(d,i) {return i;})
+	      .attr("name", function(d,i) {return "remove"+i;})
         .attr("transform", 
               function(d){ 
                   return "translate("+(newXScale(d.end[0]*1000)+padding.left-8)
@@ -1281,7 +1486,7 @@ function updateRoads() {
     var lineColor = isRoadValid( roads )?"var(--col-line-valid)":"var(--col-line-invalid)";
 
     // Create, update and delete road lines
-    var roadelt = plot.selectAll(".roads").data(roads);
+    var roadelt = gRoads.selectAll(".roads").data(roads);
     roadelt.exit().remove();
     roadelt
 		  .attr("x1", function(d){ return xScale(d.sta[0]*1000);})
@@ -1302,7 +1507,11 @@ function updateRoads() {
   		.attr("y2",function(d){ return yScale(d.end[1]);})
   		.style("stroke-width",opt.roadwidth/xFactor)
       .style('pointer-events', function(d,i) {return (knotEditable(i))?"all":"none";})
-		  .on("mouseover",function(d,i) { if (knotEditable(i))
+      .on('wheel', function(d) { 
+            // Redispatch a copy of the event to the zoom area
+            var new_event = new d3.event.constructor(d3.event.type, d3.event); 
+            zoomarea.node().dispatchEvent(new_event);})		  
+      .on("mouseover",function(d,i) { if (knotEditable(i))
 			                            d3.select(this).style("stroke-width",(opt.roadwidth+2)/xFactor);highlightSlope(i, true);})
 		  .on("mouseout",function(d,i) { if (knotEditable(i))
 			                           d3.select(this).style("stroke-width",opt.roadwidth/xFactor);highlightSlope(i, false);})
@@ -1311,7 +1520,7 @@ function updateRoads() {
 
 function updateDots() {
     // Create, update and delete inflection points
-    var dotelt = plot.selectAll(".dots").data(roads);
+    var dotelt = gDots.selectAll(".dots").data(roads);
     dotelt.exit().remove();
     dotelt
 		.attr("cx", function(d){ return xScale(d.sta[0]*1000);})
@@ -1331,7 +1540,11 @@ function updateDots() {
             return knotEditable(i-1)?"var(--col-dot-editable)":"var(--col-dot-fixed)";})
 		.style("stroke-width", opt.dotborder/xFactor) 
         .style('pointer-events', function(d,i) {return (knotEditable(i-1))?"all":"none";})
-		.on("mouseover",function(d,i) { 
+      .on('wheel', function(d) { 
+            // Redispatch a copy of the event to the zoom area
+            var new_event = new d3.event.constructor(d3.event.type, d3.event); 
+            zoomarea.node().dispatchEvent(new_event);})
+      .on("mouseover",function(d,i) { 
             if (knotEditable(i-1)) { if (!editingDot) {
                 highlightValue(i-1, true);
 			    d3.select(this).style("fill","var(--col-dot-selected");
@@ -1352,10 +1565,12 @@ function updateDots() {
 }
 
 function updateDataPoints() {
-    var dpelt = plot.selectAll(".dpts").data(datapoints);
+    var dpelt = gDpts.selectAll(".dpts").data(datapoints);
     if (opt.showdata) {
         dpelt.exit().remove();
         dpelt
+		        .attr("cx", function(d){ return xScale(dayparse(d[0])*1000);})
+            .attr("cy",function(d){ return yScale(d[1]);})
             .attr("stroke-width", opt.dpborder/xFactor)
             .attr("r", opt.dpsize/xFactor);
         dpelt.enter().append("svg:circle")
@@ -1374,25 +1589,38 @@ function updateDataPoints() {
     }
 }
 
-// Create the table header and body to show the start node
-var startcolumns = ['', 'Start Date', '', 'Start Value', ''];
-var sthead = d3.select('div.rtable');
-sthead.append("div").attr('class', 'starthdr')
-    .append("div").attr('class', 'starthdrrow')
-    .selectAll("span.starthdrcell").data(startcolumns)
-    .enter().append('span').attr('class', 'starthdrcell')
-    .text(function (column) { return column; });
-var stbody = sthead.append('div').attr('class', 'startbody');
-
 // Create the table header and body to show road segments
-var roadcolumns = ['', 'End Date', '', 'End Value', '', 'Daily Slope', ''];
-var thead = d3.select('div.rtable');
-thead.append("div").attr('class', 'roadhdr')
+var thead, tbody;
+function createRoadTable() {
+  var roadcolumns = ['', 'End Date', '', 'End Value', '', 'Daily Slope', ''];
+  thead = d3.select('div.rtable');
+  thead.append("div").attr('class', 'roadhdr')
     .append("div").attr('class', 'roadhdrrow')
     .selectAll("span.roadhdrcell").data(roadcolumns)
     .enter().append("span").attr('class', 'roadhdrcell')
     .text(function (column) { return column; });
-var tbody = thead.append('div').attr('class', 'roadbody');
+  tbody = thead.append('div').attr('class', 'roadbody');
+}
+
+// Create the table header and body to show the start node
+var sthead, stbody;
+function createStartTable() {
+  var startcolumns = ['', 'Start Date', '', 'Start Value', ''];
+  sthead = d3.select('div.rtable');
+  sthead.append("div").attr('class', 'starthdr')
+    .append("div").attr('class', 'starthdrrow')
+    .selectAll("span.starthdrcell").data(startcolumns)
+    .enter().append('span').attr('class', 'starthdrcell')
+    .text(function (column) { return column; });
+  stbody = sthead.append('div').attr('class', 'startbody');
+};
+if (opt.reversetable) {
+  createRoadTable();
+  createStartTable();
+} else {
+  createStartTable();
+  createRoadTable();  
+}
 
 var focusField = null;
 var focusOldText = null;
@@ -1411,19 +1639,24 @@ function tableFocusIn( d, i ){
         datePicker = new Pikaday({
             onSelect: function(date) {
                 var newdate = datePicker.toString();
+                console.debug(newdate);
                 var val = dayparse(newdate, '-');
+                console.debug(val);
+                if (newdate === focusOldText) return;
                 if (!isNaN(val)) {
                     focusField.text(newdate);
                     tableDateChanged( Number(kind), val);
                     focusOldText = newdate;
                 }
             },
-            minDate: new Date((knotmin+24*60*60)*1000),
-            maxDate: new Date((knotmax-24*60*60)*1000)});
-        datePicker.setDate(focusOldText, true);
+            minDate: new Date((knotmin)*1000),
+            maxDate: new Date((knotmax)*1000)});
+        var timezone = moment(new Date()).format("ZZ");
+        datePicker.setMoment(moment(focusOldText + "T00:00:00.000"+timezone));        
+        //datePicker.setDate(focusOldText, true);
         var floating = d3.select('.floating');
         var bbox = this.getBoundingClientRect();
-        floating.style('left', bbox.left+"px").style('top', (bbox.bottom+3)+"px");
+        floating.style('left', (bbox.right+window.scrollX)+"px").style('top', (bbox.bottom+3+window.scrollY)+"px");
         floating.node().appendChild(datePicker.el, this);
     }
 }
@@ -1468,7 +1701,7 @@ function tableKeyDown( d, i ){
 }
 
 function tableDateChanged( row, value ) {
-    //console.debug("tableDateChanged("+row+","+value+")");
+    console.debug("tableDateChanged("+row+","+value+")");
     if (isNaN(value)) updateTableValues();
     else changeKnotDate( row, Number(value), true );
 }
@@ -1533,35 +1766,43 @@ function disableSlope(i) {
 }
 
 function updateTableButtons() {
+    // Update butons on all rows at once, including the start node.
     var allrows = d3.selectAll(".rtable .startrow, .rtable .roadrow");
     var btncells = allrows.selectAll(".roadbtn")
             .data(function(row, i) {
+                // The table row order is reversed, which means that the last road segment comes in the first row.
+                // We need to compute knot index accordingly
+                var kind;
+                if (opt.reversetable) kind = roads.length-2-i;
+                else kind = i;
                 return [
-                    {order: -1, row:i, name: "btndel"+i, evt: function() {removeKnot(i, false);}, 
+                    {order: -1, row:kind, name: "btndel"+kind, evt: function() {removeKnot(kind, false);}, 
                      type: 'button', txt: 'del', auto: false},
-                    {order: 3, row:i, name: "btndate"+i, evt: function() {disableDate(i);}, 
+                    {order: 3, row:kind, name: "btndate"+kind, evt: function() {disableDate(kind);}, 
                      type: 'checkbox', txt: 'r', auto: (row.auto==RoadParamEnum.DATE)},
-                    {order: 5, row:i, name: "btnvalue"+i, evt: function() {disableValue(i);}, 
+                    {order: 5, row:kind, name: "btnvalue"+kind, evt: function() {disableValue(kind);}, 
                      type: 'checkbox', txt: 'r', auto: (row.auto==RoadParamEnum.VALUE)},
-                    {order: 7, row:i, name: "btnslope"+i, evt: function() {disableSlope(i);}, 
+                    {order: 7, row:kind, name: "btnslope"+kind, evt: function() {disableSlope(kind);}, 
                      type: 'checkbox', txt: 'r', auto: (row.auto==RoadParamEnum.SLOPE)},
-                    {order: 8, row:i, name: "btnadd"+i, evt: function() {addNewKnot(i+1);}, 
+                    {order: 8, row:kind, name: "btnadd"+kind, evt: function() {addNewKnot(kind+1);}, 
                      type: 'button', txt: 'ins', auto: false},
 ];
             });
     
     var newbtncells = btncells.enter().append("input").attr('class', 'roadbtn')
-            .attr('type',function(d) {return d.type;})
             .attr('id', function(d) { return d.row;})
-            .attr('value', function(d) { return d.txt;})
             .attr('name', function(d) { return d.name;})
+            .attr('type',function(d) {return d.type;})
+            .attr('value', function(d) { return d.txt;})
             .on('click', function (d) {d.evt();});
 
     btncells.exit().remove();
     btncells = allrows.selectAll(".rtable .roadbtn");
     btncells
+        .attr('id', function(d) { return d.row;})
+        .attr('name', function(d) { return d.name;})
         .style('visibility', function(d,i) {
-            return ((Number(d.row)>0 && Number(d.row)<(roads.length-2)) 
+            return ((Number(d.row)>0 && Number(d.row)<(roads.length-1)) 
                 || i==4 
                 || (i>0 && Number(d.row)>0 ))?"visible":"hidden";
         })
@@ -1600,24 +1841,31 @@ function updateTableValues() {
     scells = srows.selectAll(".startcell");
     scells.text(function(d) { return d.value;});
     
-    var rows = tbody.selectAll(".roadrow")
-            .data(roads.slice(1,roads.length-1));
+    var rows;
+    if (opt.reversetable)
+      rows = tbody.selectAll(".roadrow").data(roads.slice(1,roads.length-1).reverse());
+    else
+      rows = tbody.selectAll(".roadrow").data(roads.slice(1,roads.length-1));
     rows.enter().append("div").attr('class', 'roadrow')
-        .attr("name", function(d,i) { return 'roadrow'+(i+1);})
-        .attr("id", function(d,i) { return (i+1);});
+        .attr("name", function(d,i) { return 'roadrow'+(opt.reversetable?roads.length-1-(i+1):(i+1));})
+        .attr("id", function(d,i) { return opt.reversetable?roads.length-1-(i+1):(i+1);});
     rows.exit().remove();
     rows.order();
     rows = tbody.selectAll(".roadrow");
-
+    rows.attr("name", function(d,i) { return 'roadrow'+(opt.reversetable?roads.length-1-(i+1):(i+1));})
+        .attr("id", function(d,i) { return opt.reversetable?roads.length-1-(i+1):i+1;});
     var cells = rows.selectAll(".roadcell")
             .data(function(row, i) {
                 var datestr = dayify(row.end[0], false, '-');
+                var ri;
+                if (opt.reversetable) ri = roads.length-1-(i+1);
+                else ri = i+1;
                 return [
-                    {order: 2, value: datestr, name: "enddate"+(i+1), 
+                    {order: 2, value: datestr, name: "enddate"+(ri), 
                      auto: (row.auto==RoadParamEnum.DATE)},
-                    {order: 4, value: row.end[1].toPrecision(5), name: "endvalue"+(i+1), 
+                    {order: 4, value: row.end[1].toPrecision(5), name: "endvalue"+(ri), 
                      auto: (row.auto==RoadParamEnum.VALUE)},
-                    {order: 6, value: (row.slope*24*60*60).toPrecision(5), name: "slope"+(i+1), 
+                    {order: 6, value: (row.slope*SID).toPrecision(5), name: "slope"+(ri), 
                     auto: (row.auto==RoadParamEnum.SLOPE)}];
             });
     cells.enter().append("span").attr('class', 'roadcell')
@@ -1630,6 +1878,7 @@ function updateTableValues() {
     cells.exit().remove();
     cells = rows.selectAll(".rtable .roadcell");
     cells.text(function(d) { return d.value;})
+        .attr('name', function(d) { return d.name;})
         .style('color', function(d) {
             return d.auto?'var(--col-tbltxt-disabled)':'var(--col-tbltxt)';})
         .attr("contenteditable", function(d,i) { return (d.auto)?'false':'true';});
@@ -1642,26 +1891,19 @@ function updateTable() {
 }
 
 function updateAllData() {
-    updatePinkRegion();
     updatePastBox();
-    updateDataPoints();
+    updateYBHP();
+    updatePinkRegion();
     updateOldRoad();
+    updateBullseye();
     updateKnots();
+    updateDataPoints();
     updateRoads();
     updateDots();
     updateHorizon();
+    updatePastText();
+    updateWatermark();
     updateTable();
-    
-}
-
-function sortAllData() {
-    plot.selectAll(".past").raise();
-    plot.selectAll(".pasttext").raise();
-    plot.selectAll(".oldroads").raise();
-    plot.selectAll(".knots").raise();
-    plot.selectAll(".dpts").raise();
-    plot.selectAll(".roads").raise();
-    plot.selectAll(".dots").raise();
 }
 
 // Reset button restores zooming transformation to identity
@@ -1683,13 +1925,7 @@ d3.select("button#zoomout").on("click", zoomOut);
 
 // Reset button restores zooming transformation to identity
 function zoomAll() {
-    console.debug('zoomAll:');
-    for (var i = 0; i < roads.length; i++) {
-        var segment = roads[i];
-        console.debug("[("+segment.sta[0]+","+segment.sta[1]+"),("
-                      +segment.end[0]+","+segment.end[1]+"),"
-                      +segment.slope+"]");
-    }
+    //console.debug('zoomAll:');
     computeRoadExtent(true);
     xFactor = 1; yFactor = 1;
     xScale.domain([new Date(xMin*1000), new Date(xMax*1000)])
@@ -1714,27 +1950,42 @@ function resetRoad() {
 }
 d3.select("button#resetroad").on("click", resetRoad);
 
+// Checkbox to reverse table ordering
+function reverseTable() {
+    readOptions();
+    if (opt.reversetable) {
+      d3.select(".starthdr").raise();
+      d3.select(".startbody").raise();
+    } else {
+      d3.select(".roadhdr").raise();
+      d3.select(".roadbody").raise();      
+    }
+    updateTable();
+}
+d3.select("input#reversetable").on("click", reverseTable);
 d3.select("input#keepslopes").on("click", readOptions);
 d3.select("input#keepintervals").on("click", readOptions);
+// Checkbox to enable/disable display of datapoints
 function showData() {
     readOptions();
     updateDataPoints();
-    sortAllData();
 }
 d3.select("input#showdata").on("click", showData);
 
 d3.select("button#undo").attr('disabled', 'true').on("click", undoLastEdit);
 d3.select("button#redo").attr('disabled', 'true').on("click", redoLastEdit);
 
-if (!opt.editpast) addNewDot(hordate.getTime()/1000);
-updateAllData();
-sortAllData();
-
-loadJSON('data/testroad1.json', 
+function loadRoadFromURL() {
+  var node = d3.select(".roadselect").node();
+  var url = "data/"+node.options[node.selectedIndex].value;
+  loadJSON(url, 
          function(resp) { 
-             console.debug(resp); 
              loadRoad(resp);
              updateAllData();
-             sortAllData();});
+          });  
+}
+d3.select(".roadselect").on("change", function() {
+  loadRoadFromURL();
+});
 
 // --------------------------------- 80chars ---------------------------------->
