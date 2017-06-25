@@ -12,6 +12,12 @@ var brushpad = {left:50, right:10, top:0, bottom:30};
 
 // Options for graph generation and editing
 var opt = {
+    // Zoom buttons on the SVG graph
+    zoombtnsize:    40,
+    zoombtnopacity: 0.7,
+    zoombtnfactor:  1.5,
+
+    // Main focus plot components
     bullseyesize:   40,
     dotsize:   5,
     dotborder: 1.5,
@@ -23,22 +29,24 @@ var opt = {
     horizonwidth: 2,
     horizondash: 8,
     horizonfont: 16,
+
+    // Context plot components
+    bullseyesizectx: 20,
+    oldroadwidthctx: 1,
+    roadwidthctx:    2,
+    horizonwidthctx: 1,
+    todayfont:       10,
+    dotsizectx:      3,
+    dotborderctx:    1,
+
     tbmargin: 3,       // Margin for text box background
+
     precision: 5,      // Digit precision for values
     editpast: true,
     showdata: true,
     keepslopes: true,
     keeintervals: false,
-    reversetable: false,
-
-    bullseyesizebrush: 20,
-    oldroadwidthbrush: 1,
-    roadwidthbrush:    2,
-    horizonwidthbrush: 1,
-    todaydash: 4,
-    todayfont: 10,
-    dotsizebrush:      3,
-    dotborderbrush:    1
+    reversetable: false
 };
 readOptions();
 
@@ -732,7 +740,7 @@ function enlargeExtent( extent, p) {
     extent.yMax = extent.yMax + p.ymax*ydiff;
 }
 
-function roadExtent( rd ) {
+function roadExtent( rd, extend = true ) {
     var extent = {};
     // Compute new limits for the current data
     extent.xMin = d3.min(rd, function(d) { return d.end[0]; });
@@ -741,11 +749,11 @@ function roadExtent( rd ) {
     extent.yMax = d3.max(rd, function(d) { return d.sta[1]; });
     // Extend limits by 5% so everything is visible
     var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
-    enlargeExtent(extent, p);
+    if (extend) enlargeExtent(extent, p);
     return extent;
 }
 
-function roadExtentPartial( rd, xmin, xmax ) {
+function roadExtentPartial( rd, xmin, xmax, extend = false ) {
     var extent = {};
     // Compute new limits for the current data
     extent.xMin = xmin;
@@ -758,7 +766,7 @@ function roadExtentPartial( rd, xmin, xmax ) {
 
     // Extend limits by 5% so everything is visible
     var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
-    enlargeExtent(extent, p);
+    if (extend) enlargeExtent(extent, p);
     return extent;
 }
 
@@ -772,11 +780,14 @@ function computePlotLimits(adjustZoom = true) {
     var xMinOld = xMin, xMaxOld = xMax;
     var yMinOld = yMin, yMaxOld = yMax;
     
-    var cur = roadExtent( roads );
-    var old = roadExtent( initialRoad );
+    var cur = roadExtent( roads, false );
+    var old = roadExtent( initialRoad, false );
     var now = today.unix();
 
     var ne = mergeExtents( cur, old );
+    var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
+    enlargeExtent(ne, p);
+
     xMin = ne.xMin; xMax = ne.xMax;
     yMin = ne.yMin; yMax = ne.yMax;
 
@@ -844,6 +855,7 @@ defs.append("clipPath")
     .attr("y", 0)
     .attr("width", plotbox.width)
     .attr("height", plotpad.top);
+
 var buttongrp = defs.append("g")
         .attr("id", "removebutton");
 buttongrp.append("circle")
@@ -851,6 +863,20 @@ buttongrp.append("circle")
     .attr("r", 16).attr('fill', 'white');
 buttongrp.append("path")
     .attr("d", "M13.98,0C6.259,0,0,6.261,0,13.983c0,7.721,6.259,13.982,13.98,13.982c7.725,0,13.985-6.262,13.985-13.982C27.965,6.261,21.705,0,13.98,0z M19.992,17.769l-2.227,2.224c0,0-3.523-3.78-3.786-3.78c-0.259,0-3.783,3.78-3.783,3.78l-2.228-2.224c0,0,3.784-3.472,3.784-3.781c0-0.314-3.784-3.787-3.784-3.787l2.228-2.229c0,0,3.553,3.782,3.783,3.782c0.232,0,3.786-3.782,3.786-3.782l2.227,2.229c0,0-3.785,3.523-3.785,3.787C16.207,14.239,19.992,17.769,19.992,17.769z");
+
+var zoomingrp = defs.append("g")
+        .attr("id", "zoominbtn");
+zoomingrp.append("path").style("fill", "white")
+    .attr("d", "m 530.86356,264.94116 a 264.05649,261.30591 0 1 1 -528.1129802,0 264.05649,261.30591 0 1 1 528.1129802,0 z");
+zoomingrp.append("path")
+    .attr("d", "m 308.21,155.10302 -76.553,0 0,76.552 -76.552,0 0,76.553 76.552,0 0,76.552 76.553,0 0,-76.552 76.552,0 0,-76.553 -76.552,0 z m 229.659,114.829 C 537.869,119.51007 420.50428,1.9980234 269.935,1.9980234 121.959,1.9980234 2.0000001,121.95602 2.0000001,269.93202 c 0,147.976 117.2473599,267.934 267.9339999,267.934 150.68664,0 267.935,-117.51205 267.935,-267.934 z m -267.935,191.381 c -105.681,0 -191.381,-85.7 -191.381,-191.381 0,-105.681 85.701,-191.380996 191.381,-191.380996 105.681,0 191.381,85.700996 191.381,191.380996 0,105.681 -85.7,191.381 -191.381,191.381 z");
+
+var zoomoutgrp = defs.append("g")
+        .attr("id", "zoomoutbtn");
+zoomoutgrp.append("path").style("fill", "white")
+    .attr("d", "m 530.86356,264.94116 a 264.05649,261.30591 0 1 1 -528.1129802,0 264.05649,261.30591 0 1 1 528.1129802,0 z");
+zoomoutgrp.append("path")
+    .attr("d", "m 155.105,231.65502 0,76.553 229.657,0 0,-76.553 c -76.55233,0 -153.10467,0 -229.657,0 z m 382.764,38.277 C 537.869,119.51007 420.50428,1.9980234 269.935,1.9980234 121.959,1.9980234 2.0000001,121.95602 2.0000001,269.93202 c 0,147.976 117.2473599,267.934 267.9339999,267.934 150.68664,0 267.935,-117.51205 267.935,-267.934 z m -267.935,191.381 c -105.681,0 -191.381,-85.7 -191.381,-191.381 0,-105.681 85.701,-191.380996 191.381,-191.380996 105.681,0 191.381,85.700996 191.381,191.380996 0,105.681 -85.7,191.381 -191.381,191.381 z");
 
 // --------------------------------- 80chars ---------------------------------->
 // Create a rectange to monitor zoom events and install initial handlers
@@ -903,6 +929,41 @@ var gDots = plot.append('g').attr('id', 'dotgrp');
 var gHorizon = plot.append('g').attr('id', 'horgrp');
 var gHorizonText = plot.append('g').attr('id', 'hortxtgrp');
 var gPastText = plot.append('g').attr('id', 'pasttxtgrp');
+var zoombtnscale = opt.zoombtnsize / 540;
+
+var zoombtntr = {botin:"translate("+(plotbox.width-2*(opt.zoombtnsize+5))
+                      +","+(plotbox.height-(opt.zoombtnsize+5))
+                      +") scale("+zoombtnscale+","+zoombtnscale+")",
+                      botout:"translate("+(plotbox.width-(opt.zoombtnsize+5))
+                      +","+(plotbox.height-(opt.zoombtnsize+5))
+                      +") scale("+zoombtnscale+","+zoombtnscale+")",
+                      topin:"translate("+(plotbox.width-2*(opt.zoombtnsize+5))
+                      +",5) scale("+zoombtnscale+","+zoombtnscale+")",
+                      topout:"translate("+(plotbox.width-(opt.zoombtnsize+5))
+                      +",5) scale("+zoombtnscale+","+zoombtnscale+")"};
+var zoomin = plot.append("svg:use")
+	    .attr("class","zoomin")
+        .attr("xlink:href", "#zoominbtn")
+	  	.attr("opacity",opt.zoombtnopacity)
+        .attr("transform", zoombtntr.botin)
+        .on("click", function() {
+            zoomarea.call(axisZoom.scaleBy, opt.zoombtnfactor);})
+        .on("mouseover", function() {
+            d3.select(this).style("fill", "red");})
+	    .on("mouseout",function(d,i) {
+            d3.select(this).style("fill", "black");});
+var zoomout = plot.append("svg:use")
+	    .attr("class","zoomout")
+	    .attr("xlink:href","#zoomoutbtn")
+	  	.attr("opacity",opt.zoombtnopacity)
+        .attr("transform", zoombtntr.botout)
+        .on("click", function() {
+            zoomarea.call(axisZoom.scaleBy, 1/opt.zoombtnfactor);})
+        .on("mouseover", function() {
+            d3.select(this).style("fill", "red");})
+	    .on("mouseout",function(d,i) {
+            d3.select(this).style("fill", "black");});
+
 
 // Create and initialize the x and y axes
 var xScale = d3.scaleUtc().range([0,plotbox.width])
@@ -964,7 +1025,11 @@ function adjustYScale() {
     var xrange = [newXScale.invert(0), newXScale.invert(plotbox.width)];
     var xtimes = xrange.map(function(d) {return Math.floor(d.getTime()/1000);});
     var roadextent = roadExtentPartial(roads, xtimes[0], xtimes[1]);
-    var yrange = [roadextent.yMax, roadextent.yMin] ;
+    var oldroadextent = roadExtentPartial(initialRoad, xtimes[0], xtimes[1]);
+    var allextent = mergeExtents(roadextent, oldroadextent);
+    var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
+    enlargeExtent(allextent, p);
+    var yrange = [allextent.yMax, allextent.yMin] ;
     var newtr = d3.zoomIdentity.scale(plotbox.height
                                       /(yScale(yrange[1])-yScale(yrange[0])))
                 .translate(0, -yScale(yrange[0]));
@@ -1064,7 +1129,7 @@ function knotDragStarted(d,i) {
     if (opt.keepintervals) knotmax = newXScale.invert(plotbox.width)/1000;
     roadsave = copyRoad( roads );
     // event coordinates are pre-scaled, so use normal scale
-	var x = daysnap(xScale.invert(d3.event.x)/1000);
+	var x = daysnap(newXScale.invert(d3.event.x+3)/1000);
     knotdate = moment.unix(d.end[0]).utc();
     knottext = createTextBox(newXScale(x*1000), plotbox.height-15, 
                              knotdate.format('YYYY-MM-DD'));
@@ -1436,15 +1501,15 @@ function updateBullseye() {
 
 function updateContextBullseye() {
     var bullseyeelt = ctxplot.select(".ctxbullseye");
-    bx = xScaleB(roads[roads.length-1].sta[0]*1000)-(opt.bullseyesizebrush/2);
-    by = yScaleB(roads[roads.length-1].sta[1])-(opt.bullseyesizebrush/2);
+    bx = xScaleB(roads[roads.length-1].sta[0]*1000)-(opt.bullseyesizectx/2);
+    by = yScaleB(roads[roads.length-1].sta[1])-(opt.bullseyesizectx/2);
     if (bullseyeelt.empty()) {
         ctxplot.append("svg:image")
 	        .attr("class","ctxbullseye")
 	        .attr("xlink:href","https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye.png?1496219226927")
 	  	    .attr("x",bx ).attr("y",by)
-            .attr('width', (opt.bullseyesizebrush))
-            .attr('height', (opt.bullseyesizebrush));
+            .attr('width', (opt.bullseyesizectx))
+            .attr('height', (opt.bullseyesizectx));
     } else {
         bullseyeelt.attr("x", bx).attr("y", by);
     }
@@ -1461,6 +1526,22 @@ function updateOldBullseye() {
 	        .attr("xlink:href","https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye_old.png?1498051783901")
 	  	    .attr("x",bx ).attr("y",by)
           .attr('width', (opt.bullseyesize)).attr('height', (opt.bullseyesize));
+    } else {
+        bullseyeelt
+	  	    .attr("x", bx).attr("y", by);
+    }
+}
+
+function updateContextOldBullseye() {
+    var bullseyeelt = ctxplot.select(".ctxoldbullseye");
+    var bx = xScaleB(initialRoad[initialRoad.length-1].sta[0]*1000)-(opt.bullseyesizectx/2);
+    var by = yScaleB(initialRoad[initialRoad.length-1].sta[1])-(opt.bullseyesizectx/2);
+    if (bullseyeelt.empty()) {
+        ctxplot.append("svg:image")
+	        .attr("class","ctxoldbullseye")
+	        .attr("xlink:href","https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye_old.png?1498051783901")
+	  	    .attr("x",bx ).attr("y",by)
+          .attr('width', (opt.bullseyesizectx)).attr('height', (opt.bullseyesizectx));
     } else {
         bullseyeelt
 	  	    .attr("x", bx).attr("y", by);
@@ -1537,7 +1618,7 @@ function updateContextToday() {
 		    .attr("x2", xScaleB(today.unix()*1000))
             .attr("y2",yScaleB(yMax+5*(yMax-yMin)))
             .attr("stroke", "rgb(0,0,200)") 
-		    .style("stroke-width",opt.horizonwidthbrush);
+		    .style("stroke-width",opt.horizonwidthctx);
     } else {
         todayelt
 	  	    .attr("x1", xScaleB(today.unix()*1000))
@@ -1575,7 +1656,7 @@ function updateContextHorizon() {
             .attr("y2",yScaleB(yMax+5*(yMax-yMin)))
             .attr("stroke", "rgb(0,0,200)") 
             .attr("stroke-dasharray", (opt.horizondash)+","+(opt.horizondash)) 
-		    .style("stroke-width",opt.horizonwidthbrush);
+		    .style("stroke-width",opt.horizonwidthctx);
     } else {
         horizonelt
 	  	    .attr("x1", xScaleB(hordate.unix()*1000))
@@ -1689,7 +1770,7 @@ function updateContextOldRoad() {
   		.attr("y1",function(d){ return yScaleB(d.sta[1]);})
 	  	.attr("x2", function(d){ return xScaleB(d.end[0]*1000);})
   		.attr("y2",function(d){ return yScaleB(d.end[1]);})
-  		.style("stroke-width",opt.oldroadwidthbrush)
+  		.style("stroke-width",opt.oldroadwidthctx)
   		.style("stroke","var(--col-oldroad)")
         .style('pointer-events', "none");
 }
@@ -1826,7 +1907,7 @@ function updateContextRoads() {
 	  	.attr("x2", function(d){ return xScaleB(d.end[0]*1000);})
   		.attr("y2",function(d){ return yScaleB(d.end[1]);})
   		.style("stroke","var(--col-line-valid)")
-  		.style("stroke-width",opt.roadwidthbrush);
+  		.style("stroke-width",opt.roadwidthctx);
 }
 
 function updateDots() {
@@ -1886,9 +1967,9 @@ function updateContextDots() {
 		.attr("name", function(d,i) {return "ctxdot"+(i-1);})
         .attr("cx", function(d){ return xScaleB(d.sta[0]*1000);})
 		.attr("cy",function(d){ return yScaleB(d.sta[1]);})
-		.attr("r", opt.dotsizebrush)
+		.attr("r", opt.dotsizectx)
         .attr("fill", "var(--col-dot-editable)")
-		.style("stroke-width", opt.dotborderbrush);
+		.style("stroke-width", opt.dotborderctx);
 }
 
 function updateDataPoints() {
@@ -2219,6 +2300,7 @@ function updateTable() {
 
 function updateContextData() {
     updateContextOldRoad();
+    updateContextOldBullseye();
     updateContextBullseye();
     updateContextRoads();
     updateContextDots();
@@ -2273,6 +2355,14 @@ function zoomAll() {
         .translateExtent([[0, 0], [plotbox.width, plotbox.height]]);
     zoomarea.call(axisZoom.transform, d3.zoomIdentity);
     
+    // Relocate zoom buttons based on road yaw
+    if (roadyaw > 0) {
+        zoomin.attr("transform", zoombtntr.botin);
+        zoomout.attr("transform", zoombtntr.botout);
+    } else {
+        zoomin.attr("transform", zoombtntr.topin);
+        zoomout.attr("transform", zoombtntr.topout);
+    }
     reloadBrush();
     updateAllData();
     updateContextData();
