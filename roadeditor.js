@@ -195,6 +195,8 @@ function redoLastEdit() {
     if (redoBuffer.length == 0) return;
     pushUndoState(true);
     roads = redoBuffer.pop();
+    computePlotLimits( true );
+    reloadBrush();
     updateAllData();
     updateContextData();
     if (redoBuffer.length == 0) 
@@ -214,6 +216,8 @@ function undoLastEdit() {
         .text('Redo ('+redoBuffer.length+")");
     }
     roads = undoBuffer.pop();
+    computePlotLimits( true );
+    reloadBrush();
     updateAllData();
     updateContextData();
     if (undoBuffer.length == 0) 
@@ -940,6 +944,16 @@ var brushObj = d3.brushX()
 var brush = ctxplot.append("g")
         .attr("class", "brush")
         .call(brushObj);
+var focusrect = ctxclip.append("rect")
+        .attr("class", "focusrect")
+        .attr("x", 1)
+        .attr("y", 1)
+        .attr("width", brushbox.width-2)
+        .attr("height", brushbox.height-2)
+        .attr("fill", "none")
+        .attr("stroke", "black")
+        .attr("stroke-width", 1)
+        .attr("stroke-dasharray", "8,4,2,4");
 
 // These are the updated scale objects based on the current transform
 var newXScale = xScale, newYScale = yScale;
@@ -950,13 +964,37 @@ function adjustYScale() {
     var xrange = [newXScale.invert(0), newXScale.invert(plotbox.width)];
     var xtimes = xrange.map(function(d) {return Math.floor(d.getTime()/1000);});
     var roadextent = roadExtentPartial(roads, xtimes[0], xtimes[1]);
-    var yrange = [roadextent.yMin, roadextent.yMax] ;
+    var yrange = [roadextent.yMax, roadextent.yMin] ;
     var newtr = d3.zoomIdentity.scale(plotbox.height
-                                      /(yScale(yrange[0])-yScale(yrange[1])))
-                .translate(0, -yScale(yrange[1]));
-    
+                                      /(yScale(yrange[1])-yScale(yrange[0])))
+                .translate(0, -yScale(yrange[0]));
     newYScale = newtr.rescaleY(yScale);
     yAxisObj.call(yAxis.scale(newYScale));
+
+    var sx = xrange.map(function (x){return xScaleB(x);});
+    var sy = yrange.map(function (y){return yScaleB(y);});
+    focusrect.attr("x", sx[0]+1).attr("width", sx[1]-sx[0]-2)
+        .attr("y", sy[0]+1).attr("height", sy[1]-sy[0]-2);
+    
+}
+
+function resizeContext(){
+    xScaleB.domain([new Date(xMin*1000), new Date(xMax*1000)]);
+    yScaleB.domain([yMin, yMax]);
+    xAxisObjB.call(xAxisB.scale(xScaleB));
+}
+
+function resizeBrush() {
+    var limits = [xScaleB(newXScale.invert(0)), 
+                  xScaleB(newXScale.invert(plotbox.width))];
+    if (limits[0] < 0) limits[0] = 0;
+    if (limits[1] > brushbox.width) limits[1] = brushbox.width;
+    brush.call(brushObj.move, limits );
+}
+
+function reloadBrush() {
+    resizeContext();
+    resizeBrush();
 }
 
 function zoomed() {
@@ -967,14 +1005,13 @@ function zoomed() {
     // Inject the current transform into the plot element
     var tr = d3.zoomTransform(zoomarea.node());
     if (tr == null) return;
-    console.debug("zoomed: "+tr);
+    //console.debug("zoomed: "+tr);
 
     newXScale = tr.rescaleX(xScale);
     xAxisObj.call(xAxis.scale(newXScale));
-
     adjustYScale();
 
-    reloadBrush();
+    resizeBrush();
     updateAllData();
     return;
 }
@@ -983,7 +1020,7 @@ function brushed() {
     if (roads.length == 0) return;
     if (d3.event.sourceEvent && d3.event.sourceEvent.type === "zoom") return;
     var s = d3.event.selection || xScaleB.range();
-    console.debug("brushed: "+s);
+    //console.debug("brushed: "+s);
 
     newXScale.domain(s.map(xScaleB.invert, xScaleB));
     xAxisObj.call(xAxis);
@@ -1499,8 +1536,7 @@ function updateContextToday() {
             .attr("y1",yScaleB(yMin-5*(yMax-yMin)))
 		    .attr("x2", xScaleB(today.unix()*1000))
             .attr("y2",yScaleB(yMax+5*(yMax-yMin)))
-            .attr("stroke", "rgb(0,0,0)") 
-            .attr("stroke-dasharray", (opt.todaydash)+","+(opt.todaydash)) 
+            .attr("stroke", "rgb(0,0,200)") 
 		    .style("stroke-width",opt.horizonwidthbrush);
     } else {
         todayelt
@@ -1667,6 +1703,8 @@ function updateKnots() {
 	    .attr("y2",newYScale(yMax + 10*(yMax-yMin)))
 	    .attr("x2", function(d){ return newXScale(d.end[0]*1000);})
         .attr("y1",newYScale(yMin - 10*(yMax-yMin)))
+	    .attr("stroke", "rgb(200,200,200)") 
+	    .style("stroke-width",opt.knotwidth)
         .style('pointer-events', function(d,i) {return (knotEditable(i))?"all":"none";})
         .style("visibility", function(d,i) {return (knotEditable(i))?"visible":"hidden";});
     knotelt.enter().append("svg:line")
@@ -2203,19 +2241,6 @@ function updateAllData() {
     updatePastText();
     updateWatermark();
     updateTable();
-}
-
-function reloadBrush() {
-    xScaleB.domain([new Date(xMin*1000), new Date(xMax*1000)]);
-    yScaleB.domain([yMin, yMax]);
-    xAxisObjB.call(xAxisB.scale(xScaleB));
-
-    var limits = [xScaleB(newXScale.invert(0)), 
-                  xScaleB(newXScale.invert(plotbox.width))];
-    if (limits[0] < 0) limits[0] = 0;
-    if (limits[1] > brushbox.width) limits[1] = brushbox.width;
-    brush.call(brushObj.move, limits );
-
 }
 
 // Reset button restores zooming transformation to identity
