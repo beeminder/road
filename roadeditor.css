@@ -21,7 +21,7 @@
   --col-pastbox:           #f0f0f0;
 }
 
-.chart { 
+.chart, .bmndrsvg { 
   border: 1px solid #cccccc
 }
 svg text {
