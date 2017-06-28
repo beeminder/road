@@ -14,6 +14,7 @@
   --col-tbltxt:            #000000;
   --col-tbltxt-disabled:   #aaaaaa;
   --col-dp-fill:           #a0a0ff;
+  --col-dp-fill-old:       #909090;
   --col-dp-stroke:         lightgray;
   --col-pinkregion:        #ffd0d0;
   --col-halfplane:         #ffffd0;
@@ -62,7 +63,7 @@ circle.dots {
 line.roads {
     stroke: black;
 }
-.past, .pasttext, .ctxtodaytext, .horizon, .horizontext, .pinkregion{
+.past, .pasttext, .ctxtodaytext, .ctxhortext, .horizon, .horizontext, .pinkregion{
   pointer-events: none;
   text-anchor: middle;
 }
