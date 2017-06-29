@@ -14,49 +14,50 @@
 
 <body>
 
- <select class="roadselect">
-  <option value="testroad1.json">Test Road 1</option>
-  <option value="testroad2.json">Test Road 2</option>
-  <option value="testroad3.json">Test Road 3</option>
-  <option value="testroad4.json">Test Road 4</option>
-  <option value="testroad5.json">Test Road 5</option>
-  <option value="testroad6.json">Test Road 6</option>
-  <option value="testroad7.json">Test Road 7</option>
+ <select id="roadselect" class="roadselect" onchange="editor.loadGoal(this.value);">
+  <option value="data/testroad1.json">Test Road 1</option>
+  <option value="data/testroad2.json">Test Road 2</option>
+  <option value="data/testroad3.json">Test Road 3</option>
+  <option value="data/testroad4.json">Test Road 4</option>
+  <option value="data/testroad5.json">Test Road 5</option>
+  <option value="data/testroad6.json">Test Road 6</option>
+  <option value="data/testroad7.json">Test Road 7</option>
 </select> 
  
 <table>
   <tr>
-    <td valign="top"><div class="roadgraph""></div>
+    <td valign="top"><div id="roadgraph"></div>
+
 <form action="">
-<input id="showdata" type="checkbox" checked>Show datapoints<br>
-<input id="keepslopes" type="checkbox" checked>Keep slopes fixed<br>
-<input id="keepintervals" type="checkbox">Keep intervals fixed
+<input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>Show datapoints<br>
+<input id="keepslopes" type="checkbox" onclick="editor.keepSlopes(this.checked);" checked>Keep slopes fixed<br>
+<input id="keepintervals" onclick="editor.keepIntervals(this.checked);" type="checkbox">Keep intervals fixed
 </form>
-<button id="zoomall">Zoom To Fit</button>
-<button id="undo">Undo</button>
-<button id="redo">Redo</button><br/><br/>
+
+<button id="zoomall" onclick="editor.zoomOut();">Zoom To Fit</button>
+<button id="undo" onclick="editor.undo();">Undo</button>
+<button id="redo" onclick="editor.redo();">Redo</button><br/><br/>
 
 </td>
     <td valign="top">
-      <input id="reversetable" type="checkbox">Reverse table order<br>
-      <div class="rtable">
-      <div id="dpfloat" class="floating"></div></div>
-    </td>
-  </tr>
-</table>
+      <input id="reversetable" type="checkbox" onclick="editor.reverseTable(this.checked);">Reverse table order<br>
 
-<table>
-  <tr>  
-    <td valign="top">
-        <div id="roadgraph">Blablabla</div>
-    </td>
-    <td valign="top">
-      <div id="roadtable">Blablabla</div>
+      <div id="roadtable"></div>
     </td>
   </tr>
 </table>
 
 <script src = "roadeditor.js"></script>
+
+<script>
+  var editor = new bmndr({divGraph: document.getElementById('roadgraph'),
+                          divTable: document.getElementById('roadtable')});
+  editor.showData(document.getElementById("showdata").checked);
+  editor.keepSlopes(document.getElementById("keepslopes").checked);
+  editor.keepIntervals(document.getElementById("keepintervals").checked);
+  editor.reverseTable(document.getElementById("reversetable").checked);
+  editor.loadGoal(document.getElementById("roadselect").value);
+</script>
 
 </body>
 </html>

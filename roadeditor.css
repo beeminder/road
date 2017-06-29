@@ -63,7 +63,7 @@ circle.dots {
 line.roads {
     stroke: black;
 }
-.past, .pasttext, .ctxtodaytext, .ctxhortext, .horizon, .horizontext, .pinkregion{
+.past, .pastline, .pasttext, .ctxtodaytext, .ctxhortext, .horizon, .horizontext, .pinkregion{
   pointer-events: none;
   text-anchor: middle;
 }
