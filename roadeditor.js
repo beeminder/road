@@ -2500,7 +2500,12 @@
                     (kind == roads.length-1) 
                     ? roads[kind].end[0]
                     :(roads[kind+1].end[0]);
-                var timezone = moment(new Date()).format("ZZ");
+                // Switch all dates to local time to babysit Pikaday
+                var md = moment(focusOldText);
+                var mindate = moment(moment.unix(knotmin).utc()
+                                     .format("YYYY-MM-DD"));
+                var maxdate = moment(moment.unix(knotmax).utc()
+                                     .format("YYYY-MM-DD"));
                 datePicker = new Pikaday({
                     onSelect: function(date) {
                         var newdate = datePicker.toString();
@@ -2512,17 +2517,14 @@
                             focusOldText = newdate;
                         }
                     },
-                    // The manipulations below ensure that Pikaday shows the
-                    // correct minimum and maximum dates regardless of the
-                    // current local timezone.
-                    minDate: moment.unix(knotmin).utc()
-                        .utcOffset(timezone, true).toDate(),
-                    maxDate: moment.unix(knotmax).utc()
-                        .utcOffset(timezone, true).toDate()});
-                datePicker.setMoment(moment(focusOldText + "T00:00:00.000"+timezone));        
+                    minDate: mindate.toDate(),
+                    maxDate: maxdate.toDate()});
+                datePicker.setMoment(md);        
                 var floating = d3.select('.floating');
                 var bbox = this.getBoundingClientRect();
-                floating.style('left', (bbox.right+window.scrollX)+"px").style('top', (bbox.bottom+3+window.scrollY)+"px");
+                floating
+                    .style('left', (bbox.right+window.scrollX)+"px")
+                    .style('top', (bbox.bottom+3+window.scrollY)+"px");
                 floating.node().appendChild(datePicker.el, this);
             }
         }
