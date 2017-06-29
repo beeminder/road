@@ -22,7 +22,7 @@
     defaults = {
         divGraph:     null,   // Binds the graph to a div element
         divTable:     null,    // Binds the road table to a div element
-        svgSize:      { width: 700, height: 550 },
+        svgSize:      { width: 700, height: 530 },
         focusRect:    { x:0, y:0, width:700, height: 400 },
         focusPad:     { left:50, right:10, top:30, bottom:30 },
         contextRect:  { x:0, y:400, width:700, height: 80 },
@@ -39,7 +39,7 @@
                         font: 16, ctxfont: 10 },
         today:        { width: 2, ctxwidth: 1, font: 16, ctxfont: 10 },
 
-        tableHeight:  550, // Choose 0 for unspecified
+        tableHeight:  530, // Choose 0 for unspecified
         tableScroll:  true,// auto scrolling
 
         textBox:      { margin: 3 },
@@ -689,8 +689,7 @@
 
             function dotAdded() {
                 var newx = newXScale.invert(d3.event.x-plotpad.left);
-                if (newx > goal.horizon.unix()*1000)
-                    addNewDot(newx/1000);
+                addNewDot(newx/1000);
             }
             function dotAddedShift() {
                 if (d3.event.shiftKey) {
@@ -700,7 +699,6 @@
             zoomarea.on("click", dotAddedShift);
             zoomarea.on("dblclick.zoom", dotAdded);
             
-
             focus = svg.append('g')
 	            .attr('class', 'focus')
                 .attr('transform', 'translate('+opts.focusRect.x
@@ -818,13 +816,14 @@
             }
             var divelt = d3.select(div);
             if (opts.tableHeight != 0) {
-                divelt.style("height", opts.tableHeight+"px")
-                    .style("overflow-y", "scroll")
-                    .style("overflow-x", "visible");
+                divelt
+                    .style("height", opts.tableHeight+"px")
+                    .style("width", "500px")
+                    .style("overflow-y", "auto");
             }
-            divelt.append("div")
-                .attr("class", "rtable")
-                .append("div").attr("id", "dpfloat")
+            var table = divelt.append("div")
+                    .attr("class", "rtable");
+            table.append("div").attr("id", "dpfloat")
                 .attr("class", "floating");
             if (opts.reversetable) {
                 createRoadTable();
@@ -839,12 +838,9 @@
         function createTextBox( x, y, text ){
             var plotpad = opts.focusPad;
             var textobj = {};
-            if (y < 20-plotpad.top) y = 20 -plotpad.top;
-            if (y > sh-plotpad.bottom-10) 
-                y = sh-plotpad.bottom-10;
-            textobj.grp = focus.append('g')
-                .attr('transform', 'translate('+(x+plotpad.left)+","
-                      +(y+plotpad.top)+")");
+            if (y < 20-plotpad.top)    y = 20 -plotpad.top;
+            if (y > plotbox.height-15) y = plotbox.height-15;
+            textobj.grp = focus.append('g');
             textobj.rect = textobj.grp.append('svg:rect')
                 .attr('fill',   opts.textBoxCol.bg)
                 .attr('stroke', opts.textBoxCol.stroke);
@@ -858,13 +854,19 @@
                 .attr('y', bbox.y-margin)
                 .attr('width',  bbox.width + margin*2)
                 .attr('height', bbox.height+ margin*2);
+
+            if (x < bbox.width/2) x = bbox.width/2;
+            if (x > plotbox.width-bbox.width/2) x =plotbox.width-bbox.width/2;
+
+            textobj.grp
+                .attr('transform', 'translate('+(x+plotpad.left)+","
+                      +(y+plotpad.top)+")");
             return textobj;
         }
 
         function updateTextBox( obj, x, y, text ) {
             if (y < 20-plotpad.top) y = 20 -plotpad.top;
-            if (y > sh-plotpad.bottom-10) 
-                y = sh-plotpad.bottom-10;
+            if (y > plotbox.height-15) y = plotbox.height-15;
             obj.text.text(text);
             var bbox = obj.text.node().getBBox();
             var margin = opts.textBox.margin;
@@ -873,12 +875,19 @@
                 .attr('y', bbox.y-margin)
                 .attr('width',  bbox.width +margin*2)
                 .attr('height', bbox.height+margin*2);
+
+            if (x < bbox.width/2) x = bbox.width/2;
+            if (x > plotbox.width-bbox.width/2) x =plotbox.width-bbox.width/2;
             obj.grp.attr('transform', 'translate('+(x+plotpad.left)+","
                          +(y+plotpad.top)+")");
         }
 
         function removeTextBox( obj ) {
             obj.grp.remove();
+        }
+
+        function hideTextBox( obj, hide ) {
+            obj.grp.attr("visibility", (hide)?"hidden":"visible");
         }
 
         // Private variables holding goal, road and datapoint info
@@ -930,6 +939,7 @@
         }
 
         function resizeContext(){
+            if (opts.divGraph == null) return;
             xScaleB.domain([new Date(goal.xMin*1000), 
                                new Date(goal.xMax*1000)]);
             yScaleB.domain([goal.yMin, goal.yMax]);
@@ -937,6 +947,7 @@
         }
 
         function resizeBrush() {
+            if (opts.divGraph == null) return;
             var limits = [xScaleB(newXScale.invert(0)), 
                           xScaleB(newXScale.invert(plotbox.width))];
             if (limits[0] < 0) limits[0] = 0;
@@ -984,6 +995,7 @@
         }
 
         function zoomAll() {
+            if (opts.divGraph == null) return;
             //console.debug('zoomAll:');
             computePlotLimits( false );
             xScale.domain([new Date(goal.xMin*1000), 
@@ -1198,23 +1210,21 @@
 
         function computePlotLimits( adjustZoom = true ) {
             if (roads.length == 0) return;
-            // Save old limits so we can figure out how much to extend scale
-            // extent for zoom
-            var xMinOld = goal.xMin, xMaxOld = goal.xMax;
-            var yMinOld = goal.yMin, yMaxOld = goal.yMax;
-            
-            var cur = roadExtent( roads, false );
-            var old = roadExtent( initialRoad, false );
+
             var now = goal.asof.unix();
+            var maxx = d3.min([now+DIY*SID, roads[roads.length-1].sta[0]]);
+            var cur = roadExtentPartial( roads, roads[0].end[0], maxx, false );
+            var old = roadExtentPartial( initialRoad, roads[0].end[0], maxx, false );
 
             var ne = mergeExtents( cur, old );
+            if (ne.xMax > now+DIY*SID) ne.xMax = now+DIY*SID;
             var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
             enlargeExtent(ne, p);
 
             goal.xMin = ne.xMin; goal.xMax = ne.xMax;
             goal.yMin = ne.yMin; goal.yMax = ne.yMax;
 
-            if ( adjustZoom ) {
+            if ( adjustZoom && opts.divGraph != null) {
                 var xrange = [newXScale.invert(0), 
                               newXScale.invert(plotbox.width)];
                 var yrange = [newYScale.invert(0), 
@@ -1469,7 +1479,99 @@
         }
 
         // -------------- Functions for manipulating knots ---------------
-        var roadsave, knotind, knotmin, knotmax, knottext, knotdate, dottext;
+        var roadsave, knotind, knotdate, knottext, dottext, slopetext;
+
+        function createDragInfo( pt, slope = undefined ) {
+	        var ptx = newXScale(daysnap(pt[0])*1000);
+	        var pty = pt[1];
+            knotdate = moment.unix(pt[0]).utc();
+            knottext = createTextBox(ptx, plotbox.height-15, 
+                                     knotdate.format('YYYY-MM-DD'));
+            dottext = createTextBox(ptx, newYScale(pty)-15, 
+                                    pt[1].toPrecision(5));
+            if (slope != undefined) {
+	            var slopex = newXScale(daysnap(slope[0])*1000);
+	            var slopey = newYScale(slope[1]);
+                slopetext = createTextBox(slopex,slopey, 
+                                          "s:"+slope[2].toPrecision(5));
+                if (ptx - slopex < 50) hideTextBox(slopetext, true);
+                console.debug(ptx);
+            }
+        }
+        function updateDragInfo( pt, slope ) {
+            var ptx = daysnap(pt[0]);
+            var pty = pt[1];
+            knotdate = moment.unix(ptx).utc(); 
+            updateTextBox(knottext, newXScale(ptx*1000), plotbox.height-15, 
+                          knotdate.format('YYYY-MM-DD'));
+            updateTextBox(dottext, newXScale(ptx*1000), newYScale(pty)-15, 
+                          pt[1].toPrecision(opts.precision));
+            if (slope != undefined) {
+	            var slopex = daysnap(slope[0]);
+	            var slopey = slope[1];
+                updateTextBox(slopetext, newXScale(slopex*1000), 
+                              newYScale(slopey), 
+                              "s:"+slope[2].toPrecision(5));
+            }
+        }
+        function removeDragInfo( ) {
+            removeTextBox(knottext);
+            removeTextBox(dottext);
+            if (slopetext != null) removeTextBox(slopetext);
+            knottext = null;
+            dottext = null;
+            slopetext = null;
+
+            roadsave = null;
+        }
+
+        function updateDragPositions( kind, updateKnots ) {
+            var rd = roads;
+            for (var ii = kind; ii < rd.length; ii++) {
+  	            d3.select("[name=dot"+ii+"]")
+	                .attr("cx", newXScale(rd[ii].end[0]*1000))
+		            .attr("cy", newYScale(rd[ii].end[1]));
+  	            d3.select("[name=ctxdot"+ii+"]")
+	                .attr("cx", xScaleB(rd[ii].end[0]*1000))
+		            .attr("cy", yScaleB(rd[ii].end[1]));
+  		        d3.select("[name=road"+ii+"]")
+	  	            .attr("x1", newXScale(rd[ii].sta[0]*1000))
+		            .attr("y1", newYScale(rd[ii].sta[1]))
+			        .attr("x2", newXScale(rd[ii].end[0]*1000))
+			        .attr("y2", newYScale(rd[ii].end[1]));
+  		        d3.select("[name=ctxroad"+ii+"]")
+	  	            .attr("x1", xScaleB(rd[ii].sta[0]*1000))
+		            .attr("y1", yScaleB(rd[ii].sta[1]))
+			        .attr("x2", xScaleB(rd[ii].end[0]*1000))
+			        .attr("y2", yScaleB(rd[ii].end[1]));
+                if (updateKnots) {
+  	                d3.select("[name=knot"+ii+"]")
+	                    .attr("x1", newXScale(rd[ii].end[0]*1000))
+		  	            .attr("x2", newXScale(rd[ii].end[0]*1000));
+		            d3.select("[name=remove"+ii+"]")
+                        .attr("transform", 
+                              function(d){ 
+                                  return "translate("+(newXScale(d.end[0]*1000)
+                                                       +plotpad.left-8)
+                                      +","+(plotpad.top-20)+") scale(0.6,0.6)";
+                              });
+                }
+                var datestr = dayify(rd[ii].end[0], '-');
+  		        d3.select("[name=enddate"+ii+"]")
+                    .text(datestr);
+  		        d3.select("[name=endvalue"+ii+"]")
+                    .text(rd[ii].end[1].toPrecision(5));
+  		        d3.select("[name=slope"+ii+"]")
+                    .text((rd[ii].slope*SID).toPrecision(5));
+            }
+            updateRoadValidity();
+            updateWatermark();
+            updateBullseye();
+            updateContextBullseye();
+            updateDataPoints();
+            updateYBHP();
+
+        }
 
         var editingKnot = false;
         function knotDragStarted(d,i) {
@@ -1478,26 +1580,11 @@
             highlightDate(i, true);
             pushUndoState();
             var kind = Number(this.id);
-	        knotmin = (kind == 0) ? goal.xMin : (roads[kind].sta[0])-SID;
-            //var hortime = goal.horizon.getTime()/1000;
-            //if (kind == roads.length-2 && roads[kind].end[0] >= hortime)
-            //knotmin = d3.max([knotmin, hortime]);
-	        knotmax = 
-                ((kind == roads.length-1) 
-                 ? roads[kind].end[0]
-                 :(roads[kind+1].end[0])) + SID;
-            if (opts.keepintervals) 
-                knotmax = newXScale.invert(plotbox.width)/1000;
             roadsave = copyRoad( roads );
-            // event coordinates are pre-scaled, so use normal scale
-	        var x = daysnap(newXScale.invert(d3.event.x+3)/1000);
-            knotdate = moment.unix(d.end[0]).utc();
-            knottext = createTextBox(newXScale(x*1000), plotbox.height-15, 
-                                     knotdate.format('YYYY-MM-DD'));
-            dottext = createTextBox(newXScale(x*1000), 
-                                    newYScale(d.end[1])-15, 
-                                    d.end[1].toPrecision(5));
-        };
+            createDragInfo( d.end );
+            knottext.grp.raise();
+        }
+
         function knotDragged(d,i) {
             // event coordinates are pre-scaled, so use normal scale
 	        var x = daysnap(newXScale.invert(d3.event.x)/1000);
@@ -1515,63 +1602,16 @@
             }
             fixRoadArray( rd, opts.keepslopes?
                           RoadParamEnum.VALUE:RoadParamEnum.SLOPE,
-                          false,RoadParamEnum.DATE );
-            for (ii = kind; ii < rd.length; ii++) {
-  	            d3.select("[name=knot"+ii+"]")
-	                .attr("x1", newXScale(rd[ii].end[0]*1000))
-		  	        .attr("x2", newXScale(rd[ii].end[0]*1000));
-  	            d3.select("[name=dot"+ii+"]")
-	                .attr("cx", newXScale(rd[ii].end[0]*1000))
-		            .attr("cy", newYScale(rd[ii].end[1]));
-  	            d3.select("[name=ctxdot"+ii+"]")
-	                .attr("cx", xScaleB(rd[ii].end[0]*1000))
-		            .attr("cy", yScaleB(rd[ii].end[1]));
-  		        d3.select("[name=road"+ii+"]")
-	  	            .attr("x1", newXScale(rd[ii].sta[0]*1000))
-		            .attr("y1", newYScale(rd[ii].sta[1]))
-			        .attr("x2", newXScale(rd[ii].end[0]*1000))
-			        .attr("y2", newYScale(rd[ii].end[1]));
-  		        d3.select("[name=ctxroad"+ii+"]")
-	  	            .attr("x1", xScaleB(rd[ii].sta[0]*1000))
-		            .attr("y1", yScaleB(rd[ii].sta[1]))
-			        .attr("x2", xScaleB(rd[ii].end[0]*1000))
-			        .attr("y2", yScaleB(rd[ii].end[1]));
-		        d3.select("[name=remove"+ii+"]")
-                    .attr("transform", 
-                          function(d){ 
-                              return "translate("+(newXScale(d.end[0]*1000)
-                                                   +plotpad.left-8)
-                                  +","+(plotpad.top-20)+") scale(0.6,0.6)";
-                          });
-                var datestr = dayify(rd[ii].end[0], '-');
-  		        d3.select("[name=enddate"+ii+"]")
-                    .text(datestr);
-  		        d3.select("[name=endvalue"+ii+"]")
-                    .text(rd[ii].end[1].toPrecision(5));
-  		        d3.select("[name=slope"+ii+"]")
-                    .text((rd[ii].slope*SID).toPrecision(5));
-            }
-            updateWatermark();
-            updateBullseye();
-            updateContextBullseye();
-            updateRoadValidity(); // Make sure road validity is checked
-            updateDataPoints();
-            updateYBHP();
-            knotdate = moment.unix(x).utc(); 
-            updateTextBox(knottext, newXScale(x*1000), plotbox.height-15, 
-                          knotdate.format('YYYY-MM-DD'));
-            updateTextBox(dottext, newXScale(x*1000), newYScale(d.end[1])-15, 
-                          d.end[1].toPrecision(opts.precision));
+                          false, RoadParamEnum.DATE );
+
+            updateDragPositions( kind, true );
+            updateDragInfo( d.end );
         };
         function knotDragEnded(d,i){
             highlightDate(i, false);
             editingKnot = false;
 
-            removeTextBox(knottext);
-            removeTextBox(dottext);
-            knottext = null;
-            dottext = null;
-            roadsave = null;
+            removeDragInfo();
 
             computePlotLimits( true );
             reloadBrush();
@@ -1588,8 +1628,8 @@
         function changeKnotDate( kind, newDate, fromtable = true ) {
             pushUndoState();
 
-	        knotmin = (kind == 0) ? goal.xMin : (roads[kind].sta[0]) + 0.01;
-	        knotmax = 
+	        var knotmin = (kind == 0) ? goal.xMin : (roads[kind].sta[0]) + 0.01;
+	        var knotmax = 
                 (kind == roads.length-1) 
                 ? roads[kind].end[0]+0.01
                 :(roads[kind+1].end[0]+0.01);
@@ -1628,11 +1668,6 @@
                 selection.removeAllRanges();
                 selection.addRange(range);
             }
-            //var newValue = prompt("Please enter desired value", d.end[1]);
-            //if (newValue == null) return;
-            //newValue = parseFloat(newValue);
-            //if (isNaN(newValue)) return;
-            //changeDotValue(kind, newValue, false);
         };
 
         // ------------------- Functions for manipulating dots -----------------
@@ -1643,59 +1678,34 @@
             highlightValue(id, true);
             pushUndoState();
             roadsave = copyRoad( roads );
-            // event coordinates are pre-scaled, so use normal scale
-	        var txtx = daysnap(d.sta[0]);
-	        var txty = newYScale.invert(d3.event.y);
-            knotdate = moment.unix(d.sta[0]).utc();
-            knottext = createTextBox(newXScale(txtx*1000), 
-                                     plotbox.height-15, 
-                                     knotdate.format('YYYY-MM-DD'));
-            dottext = createTextBox(newXScale(txtx*1000), 
-                                    newYScale(txty)-18, 
-                                    d.sta[1].toPrecision(opts.precision));  
+            var kind = id;
+            if (kind != 0) {
+                var seg = roads[kind];
+                createDragInfo( d.sta, [(seg.sta[0]+seg.end[0])/2, 
+                                        (seg.sta[1]+seg.end[1])/2, 
+                                        seg.slope*SID] );
+            } else createDragInfo( d.sta );
+            dottext.grp.raise();
         };
         function dotDragged(d, id) {
             var now = goal.asof.unix();
 	        var y = newYScale.invert(d3.event.y);
             var kind = id;
             var rd = roads;
-	        roads[kind].end[1] = y;
-            roads[kind].slope = roadSegmentSlope(rd[kind]);
+            var seg = roads[kind];
+	        seg.end[1] = y;
+            seg.slope = roadSegmentSlope(seg);
             fixRoadArray( rd, opts.keepslopes?RoadParamEnum.VALUE
                           :RoadParamEnum.SLOPE,
                           false,RoadParamEnum.VALUE );
+
             var strt = (kind==0)?0:(kind-1);
-            for (var i = strt; i < rd.length; i++) {
-		        d3.select("[name=dot"+i+"]")
-		            .attr("cy", newYScale(rd[i].end[1]));
-		        d3.select("[name=ctxdot"+i+"]")
-		            .attr("cy", yScaleB(rd[i].end[1]));
-		        d3.select("[name=road"+i+"]")
-			        .attr("y1", newYScale(rd[i].sta[1]))
-			        .attr("y2", newYScale(rd[i].end[1]));
-		        d3.select("[name=ctxroad"+i+"]")
-			        .attr("y1", yScaleB(rd[i].sta[1]))
-			        .attr("y2", yScaleB(rd[i].end[1]));
-                var datestr = dayify(rd[i].end[0], '-');
-  		        d3.select("[name=enddate"+i+"]")
-                    .text(datestr);
-  		        d3.select("[name=endvalue"+i+"]")
-                    .text(rd[i].end[1].toPrecision(5));
-  		        d3.select("[name=slope"+i+"]")
-                    .text((rd[i].slope*SID).toPrecision(5));
-            }
-            updateWatermark();
-            updateBullseye();
-            updateContextBullseye();
-            updateRoadValidity();
-            updateDataPoints();
-            updateYBHP();
-            // event coordinates are pre-scaled, so use normal scale
-	        var txtx = daysnap(d.sta[0]);
-	        var txty = newYScale.invert(d3.event.y);
-            updateTextBox(dottext, newXScale(txtx*1000), 
-                          newYScale(txty)-18, 
-                          d.sta[1].toPrecision(opts.precision));  
+            updateDragPositions( strt, false );
+            if (kind != 0) {
+                updateDragInfo( d.sta, [(seg.sta[0]+seg.end[0])/2, 
+                                        (seg.sta[1]+seg.end[1])/2, 
+                                        seg.slope*SID] );
+                } else updateDragInfo( d.sta );
         };
         function dotDragEnded(d,id){
             editingDot = false;
@@ -1703,10 +1713,7 @@
                 .style("fill", opts.roadDotCol.editable);
             highlightValue(id, false);
 
-            removeTextBox(dottext);
-            removeTextBox(knottext);
-            roadsave = null;
-            dottext = null;
+            removeDragInfo();
 
             computePlotLimits( true );
             reloadBrush();
@@ -1767,6 +1774,66 @@
         };
 
         // -------------- Functions for manipulating road segments ----------
+        var editingRoad = false;
+        var roadedit_x;
+        function roadDragStarted(d,id) {
+            console.debug("roadDragStarted: "+id);
+            d3.event.sourceEvent.stopPropagation();
+            editingRoad = true;
+            roadedit_x = daysnap(newXScale.invert(d3.event.x)/1000);
+            highlightSlope(id, true);
+            pushUndoState();
+            roadsave = copyRoad( roads );
+            var slopex = (d.sta[0]+d.end[0])/2;
+            if (slopex < newXScale.invert(0)/1000) 
+                slopex = newXScale.invert(0)/1000;
+            if (slopex > newXScale.invert(plotbox.width)/1000 - 10) 
+                slopex = newXScale.invert(plotbox.width)/1000 - 10;
+            createDragInfo( d.end, [slopex, d.sta[1]+d.slope*(slopex-d.sta[0]),
+                                    d.slope*SID] );
+            slopetext.grp.raise();
+        };
+        function roadDragged(d, id) {
+            console.debug("roadDragged()");
+            var now = goal.asof.unix();
+            var x = daysnap(newXScale.invert(d3.event.x)/1000);
+	        var y = newYScale.invert(d3.event.y);
+            var kind = id;
+            var rd = roads;
+
+            roads[kind].slope 
+                = ((y - d.sta[1])/d3.max([x - d.sta[0], SID]));
+            roads[kind].end[1] = roads[kind].sta[1] 
+                + roads[kind].slope*(roads[kind].end[0] 
+                                     - roads[kind].sta[0]);
+            roads[kind+1].sta[1] = roads[kind].end[1];
+            roads[kind+1].slope = roadSegmentSlope(roads[kind+1]);
+
+            fixRoadArray( rd, RoadParamEnum.VALUE,
+                          false, RoadParamEnum.SLOPE );
+
+            updateDragPositions( kind, true );
+            var slopex = (d.sta[0]+d.end[0])/2;
+            if (slopex < newXScale.invert(0)/1000) 
+                slopex = newXScale.invert(0)/1000;
+            if (slopex > newXScale.invert(plotbox.width)/1000 - 10) 
+                slopex = newXScale.invert(plotbox.width)/1000 - 10;
+            updateDragInfo( d.end, [slopex, d.sta[1]+d.slope*(slopex-d.sta[0]),
+                                    d.slope*SID]  );
+        };
+        function roadDragEnded(d,id){
+            editingRoad = false;
+            highlightSlope(id, false);
+
+            removeDragInfo();
+
+            computePlotLimits( true );
+            reloadBrush();
+            updateGraphData();
+            updateTable();
+            updateContextData();
+        };
+
         function changeRoadSlope(kind, newSlope, fromtable = false) {
             if (kind == roads.length-1) return;
             pushUndoState();
@@ -1815,6 +1882,7 @@
 
         // Creates or updates the shaded box to indicate past dates
         function updatePastBox() {
+            if (opts.divGraph == null) return;
             var pastelt = gPastBox.select(".past");
             if (pastelt.empty()) {
                 gPastBox.insert("svg:rect", ":first-child")
@@ -1838,6 +1906,7 @@
         }
         // Creates or updates the shaded box to indicate past dates
         function updatePastText() {
+            if (opts.divGraph == null) return;
             var todayelt = gPastText.select(".pastline");
             if (todayelt.empty()) {
                 gPastText.append("svg:line")
@@ -1875,6 +1944,7 @@
 
         // Creates or updates the Bullseye at the goal date
         function updateBullseye() {
+            if (opts.divGraph == null) return;
             var bullseyeelt = gBullseye.select(".bullseye");
             var bx = newXScale(roads[roads.length-1].sta[0]*1000)-(opts.bullsEye.size/2);
             var by = newYScale(roads[roads.length-1].sta[1])-(opts.bullsEye.size/2);
@@ -1892,6 +1962,7 @@
         }
 
         function updateContextBullseye() {
+            if (opts.divGraph == null) return;
             var bullseyeelt = ctxplot.select(".ctxbullseye");
             var bx = xScaleB(roads[roads.length-1].sta[0]*1000)
                 -(opts.bullsEye.ctxsize/2);
@@ -1911,6 +1982,7 @@
 
         // Creates or updates the Bullseye at the goal date
         function updateOldBullseye() {
+            if (opts.divGraph == null) return;
             var bullseyeelt = gOldBullseye.select(".oldbullseye");
             var bx = newXScale(initialRoad[initialRoad.length-1]
                                   .sta[0]*1000)-(opts.bullsEye.size/2);
@@ -1930,6 +2002,7 @@
         }
 
         function updateContextOldBullseye() {
+            if (opts.divGraph == null) return;
             var bullseyeelt = ctxplot.select(".ctxoldbullseye");
             var bx = xScaleB(initialRoad[initialRoad.length-1].sta[0]*1000)
                 -(opts.bullsEye.ctxsize/2);
@@ -1950,6 +2023,7 @@
 
         // Creates or updates the watermark with the number of safe days
         function updateWatermark() {
+            if (opts.divGraph == null) return;
             var wmarkelt = focus.select(".watermark");
             var bx = sw/2;
             var by = sh-20;
@@ -1971,6 +2045,7 @@
 
         // Creates or updates the Akrasia Horizon line
         function updateHorizon() {
+            if (opts.divGraph == null) return;
             var horizonelt = gHorizon.select(".horizon");
             if (horizonelt.empty()) {
                 gHorizon.append("svg:line")
@@ -2009,6 +2084,7 @@
         }
 
         function updateContextToday() {
+            if (opts.divGraph == null) return;
             var todayelt = ctxplot.select(".ctxtoday");
             if (todayelt.empty()) {
                 ctxplot.append("svg:line")
@@ -2046,6 +2122,7 @@
         }
 
         function updateContextHorizon() {
+            if (opts.divGraph == null) return;
             var horizonelt = ctxplot.select(".ctxhorizon");
             if (horizonelt.empty()) {
                 ctxplot.append("svg:line")
@@ -2086,6 +2163,7 @@
         }
 
         function updateYBHP() {
+            if (opts.divGraph == null) return;
             var pinkelt = gYBHP.select(".halfplane");
             var yedge, itoday, ihor;
             var ir = roads;
@@ -2118,6 +2196,7 @@
         }
 
         function updatePinkRegion() {
+            if (opts.divGraph == null) return;
             var pinkelt = gPink.select(".pinkregion");
             var yedge, itoday, ihor;
             var ir = initialRoad;
@@ -2151,6 +2230,7 @@
 
         // Creates or updates the unedited road
         function updateOldRoad() {
+            if (opts.divGraph == null) return;
             // Create, update and delete road lines
             var roadelt = gOldRoad.selectAll(".oldroads").data(initialRoad);
             roadelt.exit().remove();
@@ -2173,6 +2253,7 @@
         }
 
         function updateContextOldRoad() {
+            if (opts.divGraph == null) return;
             // Create, update and delete road lines on the brush graph
             var roadelt = ctxplot.selectAll(".ctxoldroads")
                     .data(initialRoad);
@@ -2196,6 +2277,7 @@
         }
 
         function updateKnots() {
+            if (opts.divGraph == null) return;
             // Create, update and delete vertical knot lines
             var knotelt = gKnots.selectAll(".knots").data(roads);
             knotelt.exit().remove();
@@ -2278,6 +2360,7 @@
         }
 
         function updateRoads() {
+            if (opts.divGraph == null) return;
             var lineColor = isRoadValid( roads )?
                     opts.roadLineCol.valid:opts.roadLineCol.invalid;
 
@@ -2306,18 +2389,31 @@
                                                              d3.event); 
                     zoomarea.node().dispatchEvent(new_event);})		  
                 .on("mouseover",function(d,i) { 
-			        d3.select(this)
-                        .style("stroke-width",(opts.roadLine.width+2));
-                    highlightSlope(i, true);})
+                    if (i > 0 && i < roads.length-1) {
+			            d3.select(this)
+                            .style("stroke-width",(opts.roadLine.width+2));
+                        highlightSlope(i, true);}})
 		        .on("mouseout",function(d,i) { 
-			        d3.select(this)
-                        .style("stroke-width",opts.roadLine.width);
-                    highlightSlope(i, false);})
+                    if (i > 0 && i < roads.length-1) {
+			            d3.select(this)
+                            .style("stroke-width",opts.roadLine.width);
+                        highlightSlope(i, false);}})
                 .on("click", function(d,i) { 
-                    if (d3.event.ctrlKey) roadEdited(d, this.id);});
+                    if (d3.event.ctrlKey) roadEdited(d, this.id);})
+                .call(d3.drag()
+                      .on("start", function(d,i) { 
+                          if (i > 0 && i < roads.length-1) 
+                              roadDragStarted(d, Number(this.id));})
+                      .on("drag", function(d,i) { 
+                          if (i > 0 && i < roads.length-1) 
+                              roadDragged(d, Number(this.id));})
+                      .on("end", function(d,i) { 
+                          if (i > 0 && i < roads.length-1) 
+                              roadDragEnded(d, Number(this.id));}));
         }
 
         function updateRoadValidity() {
+            if (opts.divGraph == null) return;
             var lineColor = isRoadValid( roads )?
                     opts.roadLineCol.valid:opts.roadLineCol.invalid;
 
@@ -2330,6 +2426,7 @@
         }
 
         function updateContextRoads() {
+            if (opts.divGraph == null) return;
             var lineColor = isRoadValid( roads )?
                     opts.roadLineCol.valid:opts.roadLineCol.invalid;
 
@@ -2355,6 +2452,7 @@
         }
 
         function updateDots() {
+            if (opts.divGraph == null) return;
             // Create, update and delete inflection points
             var dotelt = gDots.selectAll(".dots").data(roads);
             dotelt.exit().remove();
@@ -2396,6 +2494,7 @@
                           dotDragEnded(d, Number(this.id));}));
         }
         function updateContextDots() {
+            if (opts.divGraph == null) return;
             // Create, update and delete inflection points
             var dotelt = ctxplot.selectAll(".ctxdots").data(roads);
             dotelt.exit().remove();
@@ -2414,6 +2513,7 @@
         }
 
         function updateDataPoints() {
+            if (opts.divGraph == null) return;
             var pts = (flad != null)?
                     datapoints.slice(0,datapoints.length-1).concat(futurepoints):
                     datapoints.concat(futurepoints);
@@ -2474,7 +2574,7 @@
         // Create the table header and body to show road segments
         var thead, tbody;
         function createRoadTable() {
-            var roadcolumns = ['', '', 'End Date', '', 'End Value', '',
+            var roadcolumns = ['', '', 'End Date', '', 'Value', '',
                                'Daily Slope', ''];
             thead = d3.select(".rtable");
             thead.append("div").attr('class', 'roadhdr')
@@ -2488,7 +2588,7 @@
         // Create the table header and body to show the start node
         var sthead, stbody;
         function createStartTable() {
-            var startcolumns = ['', '', 'Start Date', '', 'Start Value', ''];
+            var startcolumns = ['', '', 'Start Date', '', 'Value', ''];
             sthead = d3.select(".rtable");
             sthead.append("div").attr('class', 'starthdr')
                 .append("div").attr('class', 'starthdrrow')
@@ -2507,8 +2607,8 @@
             focusOldText = focusField.text();
             if (i == 0 && datePicker == null) {
                 var kind = Number(focusField.node().parentNode.id);
-	            knotmin = (kind == 0) ? goal.xMin : (roads[kind].sta[0]);
-	            knotmax = 
+	            var knotmin = (kind == 0) ? goal.xMin : (roads[kind].sta[0]);
+	            var knotmax = 
                     (kind == roads.length-1) 
                     ? roads[kind].end[0]
                     :(roads[kind+1].end[0]);
@@ -2604,23 +2704,29 @@
             }
         }
         function highlightDate(i, state) {
+            if (opts.divTable == null) return;
             var color = (state)
                     ?opts.roadTableCol.bgHighlight:opts.roadTableCol.bg;
             var elt = d3.select('.rtable [name=enddate'+i+']');
+            if (elt.empty()) return;
             elt.style('background-color', color);
             autoScroll(elt);
         }
         function highlightValue(i, state) {
+            if (opts.divTable == null) return;
             var color = (state)
                     ?opts.roadTableCol.bgHighlight:opts.roadTableCol.bg;
             var elt = d3.select('.rtable [name=endvalue'+i+']');
+            if (elt.empty()) return;
             elt.style('background-color', color);
             autoScroll(elt);
         }
         function highlightSlope(i, state) {
+            if (opts.divTable == null) return;
             var color = (state)
                     ?opts.roadTableCol.bgHighlight:opts.roadTableCol.bg;
             var elt = d3.select('.rtable [name=slope'+i+']');
+            if (elt.empty()) return;
             elt.style('background-color', color);  
             autoScroll(elt);
         }
@@ -2680,6 +2786,7 @@
         }
 
         function updateTableButtons() {
+            if (opts.divTable == null) return;
             // Update butons on all rows at once, including the start node.
             var allrows = d3.selectAll(".rtable .startrow, .rtable .roadrow");
             var btncells = allrows.selectAll(".roadbtn")
@@ -2726,6 +2833,7 @@
         }
 
         function updateTableValues() {
+            if (opts.divTable == null) return;
 
             var reversetable = opts.reversetable;
             var srows = stbody.selectAll(".startrow")

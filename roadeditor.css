@@ -28,12 +28,6 @@ svg text::selection {
   pointer-events: all;
 }
 
-.axiszoom {
-  cursor: move;
-  fill: none;
-  pointer-events: all;
-}
-
 circle.dots {
     stroke: black;
 }
