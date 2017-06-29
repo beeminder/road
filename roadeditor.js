@@ -39,13 +39,15 @@
                         font: 16, ctxfont: 10 },
         today:        { width: 2, ctxwidth: 1, font: 16, ctxfont: 10 },
 
-        
+        tableHeight:  550, // Choose 0 for unspecified
+        tableScroll:  true,// auto scrolling
+
         textBox:      { margin: 3 },
         showdata:     true,
         keepslopes:   true,
         keepintervals:false,
         reversetable: false,
-
+        
         roadLineCol:  { valid: "black", invalid:"#ca1212", old:"#f0f000"},
         roadDotCol:   { fixed: "darkgray", editable:"#ca1212", 
                         selected: "lightgreen"},
@@ -58,8 +60,7 @@
         halfPlaneCol: { fill: "#ffffd0" },
         pastBoxCol:   { fill: "#f0f0f0" },
 
-        precision: 5,
-        editpast: true
+        precision: 5
     },
     
     /** Beeminder colors for datapoints */
@@ -688,7 +689,7 @@
 
             function dotAdded() {
                 var newx = newXScale.invert(d3.event.x-plotpad.left);
-                if (opts.editpast || newx > goal.horizon.unix()*1000)
+                if (newx > goal.horizon.unix()*1000)
                     addNewDot(newx/1000);
             }
             function dotAddedShift() {
@@ -815,7 +816,14 @@
             while (div.firstChild) {
                 div.removeChild(div.firstChild);
             }
-            d3.select(div).attr("class", "rtable")
+            var divelt = d3.select(div);
+            if (opts.tableHeight != 0) {
+                divelt.style("height", opts.tableHeight+"px")
+                    .style("overflow-y", "scroll")
+                    .style("overflow-x", "visible");
+            }
+            divelt.append("div")
+                .attr("class", "rtable")
                 .append("div").attr("id", "dpfloat")
                 .attr("class", "floating");
             if (opts.reversetable) {
@@ -2101,7 +2109,6 @@
             d+=" Z";
             if (pinkelt.empty()) {
                 gYBHP.append("svg:path")
-                    .style('pointer-events', "none")
 	                .attr("class","halfplane")
 	  	            .attr("d", d)
                     .attr("fill", opts.halfPlaneCol.fill);
@@ -2134,7 +2141,6 @@
             d+=" Z";
             if (pinkelt.empty()) {
                 gPink.append("svg:path")
-                    .style('pointer-events', "none")
                     .attr("class","pinkregion")
 	  	            .attr("d", d)
                     .attr("fill", opts.pinkRegionCol.fill);
@@ -2163,8 +2169,7 @@
 	  	        .attr("x2", function(d){ return newXScale(d.end[0]*1000);})
   		        .attr("y2",function(d){ return newYScale(d.end[1]);})
   		        .style("stroke-width",opts.oldRoadLine.width)
-  		        .style("stroke", opts.roadLineCol.old)
-                .style('pointer-events', "none");
+  		        .style("stroke", opts.roadLineCol.old);
         }
 
         function updateContextOldRoad() {
@@ -2187,8 +2192,7 @@
 	  	        .attr("x2", function(d){ return xScaleB(d.end[0]*1000);})
   		        .attr("y2",function(d){ return yScaleB(d.end[1]);})
   		        .style("stroke-width",opts.oldRoadLine.ctxwidth)
-  		        .style("stroke", opts.roadLineCol.old)
-                .style('pointer-events', "none");
+  		        .style("stroke", opts.roadLineCol.old);
         }
 
         function updateKnots() {
@@ -2429,7 +2433,6 @@
 		            .attr("class","dpts")
 		            .attr("id", function(d,i) {return i;})
 		            .attr("name", function(d,i) {return "dpt"+i;})
-                    .style('pointer-events', 'none')
 		            .attr("stroke", opts.dataPointCol.stroke)
 		            .attr("stroke-width", opts.dataPoint.border)
                     .attr("r", opts.dataPoint.size)
@@ -2471,9 +2474,9 @@
         // Create the table header and body to show road segments
         var thead, tbody;
         function createRoadTable() {
-            var roadcolumns = ['', 'End Date', '', 'End Value', '',
+            var roadcolumns = ['', '', 'End Date', '', 'End Value', '',
                                'Daily Slope', ''];
-            thead = d3.select(opts.divTable);
+            thead = d3.select(".rtable");
             thead.append("div").attr('class', 'roadhdr')
                 .append("div").attr('class', 'roadhdrrow')
                 .selectAll("span.roadhdrcell").data(roadcolumns)
@@ -2485,8 +2488,8 @@
         // Create the table header and body to show the start node
         var sthead, stbody;
         function createStartTable() {
-            var startcolumns = ['', 'Start Date', '', 'Start Value', ''];
-            sthead = d3.select(opts.divTable);
+            var startcolumns = ['', '', 'Start Date', '', 'Start Value', ''];
+            sthead = d3.select(".rtable");
             sthead.append("div").attr('class', 'starthdr')
                 .append("div").attr('class', 'starthdrrow')
                 .selectAll("span.starthdrcell").data(startcolumns)
@@ -2593,23 +2596,33 @@
             else changeRoadSlope( row, Number(value), true );
         }
 
+        function autoScroll( elt ) {
+            if (opts.tableScroll && opts.tableHeight !== 0) {
+                var topPos = elt.node().offsetTop;            
+                document.getElementById('roadtable').scrollTop 
+                    = topPos-opts.tableHeight/2;
+            }
+        }
         function highlightDate(i, state) {
             var color = (state)
                     ?opts.roadTableCol.bgHighlight:opts.roadTableCol.bg;
-            d3.select('.rtable [name=enddate'+i+']')
-                .style('background-color', color);  
+            var elt = d3.select('.rtable [name=enddate'+i+']');
+            elt.style('background-color', color);
+            autoScroll(elt);
         }
         function highlightValue(i, state) {
             var color = (state)
                     ?opts.roadTableCol.bgHighlight:opts.roadTableCol.bg;
-            d3.select('.rtable [name=endvalue'+i+']')
-                .style('background-color', color);
+            var elt = d3.select('.rtable [name=endvalue'+i+']');
+            elt.style('background-color', color);
+            autoScroll(elt);
         }
         function highlightSlope(i, state) {
             var color = (state)
                     ?opts.roadTableCol.bgHighlight:opts.roadTableCol.bg;
-            d3.select('.rtable [name=slope'+i+']')
-                .style('background-color', color);  
+            var elt = d3.select('.rtable [name=slope'+i+']');
+            elt.style('background-color', color);  
+            autoScroll(elt);
         }
         function disableDate(i) {
             roads[i].auto=RoadParamEnum.DATE;
@@ -2719,7 +2732,9 @@
                     .data(roads.slice(0,1));
             srows.enter().append('div').attr('class', 'startrow')
                 .attr("name", function(d,i) { return 'startrow'+i;})
-                .attr("id", function(d,i) { return (i);});
+                .attr("id", function(d,i) { return (i);})
+                .append("span")
+                .attr("class", "rowid").text(function(d,i) {return (i)+":";});
             srows.exit().remove();
             srows.order();
             srows = stbody.selectAll(".startrow");
@@ -2748,8 +2763,13 @@
             else
                 rows = tbody.selectAll(".roadrow").data(roads.slice(1,roads.length-1));
             rows.enter().append("div").attr('class', 'roadrow')
-                .attr("name", function(d,i) { return 'roadrow'+(reversetable?roads.length-1-(i+1):(i+1));})
-                .attr("id", function(d,i) { return reversetable?roads.length-1-(i+1):(i+1);});
+                .attr("name", function(d,i) { 
+                    return 'roadrow'+(reversetable?roads.length-1-(i+1)
+                                      :(i+1));})
+                .attr("id", function(d,i) { 
+                    return reversetable?roads.length-1-(i+1):(i+1);})
+                .append("span")
+                .attr("class", "rowid").text(function(d,i) {return (i+1)+":";});
             rows.exit().remove();
             rows.order();
             rows = tbody.selectAll(".roadrow");
@@ -2823,7 +2843,6 @@
 
         // This is a privileged function that can access private
         // variables, but is also accessible from the outside.
-        self.privileged = function() { console.log( goal ); };
         self.showData = function( flag ) {
             if (arguments.length > 0) opts.showdata = flag;
             updateDataPoints();
@@ -2862,6 +2881,10 @@
         };
         self.loadGoal = function( url ) {
             loadRoadFromURL( url );
+        };
+        self.autoScroll = function( flag ) {
+            if (arguments.length > 0) opts.tableScroll = flag;
+            return opts.tableScroll;
         };
     };
 
