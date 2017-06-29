@@ -2409,8 +2409,8 @@
                     datapoints.slice(0,datapoints.length-1).concat(futurepoints):
                     datapoints.concat(futurepoints);
             var now = goal.asof.unix();
-            var dpelt = gDpts.selectAll(".dpts").data(pts);
             if (opts.showdata) {
+                var dpelt = gDpts.selectAll(".dpts").data(pts);
                 dpelt.exit().remove();
                 dpelt
 		            .attr("cx", function(d){ return newXScale((d[0])*1000);})
@@ -2455,6 +2455,9 @@
                     if (!dpelt.empty()) dpelt.remove();
                 }
             } else {
+                var dpelt = gDpts.selectAll(".dpts").data(pts);
+                dpelt.remove();
+                dpelt = gDpts.selectAll(".fladp");
                 dpelt.remove();
             }
         }
