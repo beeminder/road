@@ -51,7 +51,7 @@
                         selected: "lightgreen"},
         roadKnotCol:  { dflt: "#c2c2c2", rmbtn: "black", rmbtnsel: "red"}, 
         textBoxCol:   { bg: "#ffffff", stroke:"#d0d0d0"},
-        roadTable:    { bg:"#ffffff", bgHighlight: "#bbffbb", 
+        roadTableCol: { bg:"#ffffff", bgHighlight: "#bbffbb", 
                         text:"#000000", textDisabled: "#aaaaaa"},
         dataPointCol: { future: "#909090", stroke: "lightgray"},
         pinkRegionCol:{ fill: "#ffd0d0" },
@@ -1691,7 +1691,8 @@
         };
         function dotDragEnded(d,id){
             editingDot = false;
-	        d3.select("[name=dot"+id+"]").style("fill", "var(--col-dot-editable)");
+	        d3.select("[name=dot"+id+"]")
+                .style("fill", opts.roadDotCol.editable);
             highlightValue(id, false);
 
             removeTextBox(dottext);
@@ -1816,7 +1817,7 @@
                           -newXScale(goal.xMin))		  
   		            .attr("height",7*Math.abs(newYScale(goal.yMin)
                                               -newYScale(goal.yMax)))
-                    .attr("fill", "var(--col-pastbox)");
+                    .attr("fill", opts.pastBoxCol.fill);
             } else {
                 pastelt
 	  	            .attr("x", newXScale(goal.xMin))
@@ -2103,7 +2104,7 @@
                     .style('pointer-events', "none")
 	                .attr("class","halfplane")
 	  	            .attr("d", d)
-                    .attr("fill", "var(--col-halfplane)");
+                    .attr("fill", opts.halfPlaneCol.fill);
             } else {
                 pinkelt.attr("d", d);
             }
@@ -2136,7 +2137,7 @@
                     .style('pointer-events', "none")
                     .attr("class","pinkregion")
 	  	            .attr("d", d)
-                    .attr("fill", "var(--col-pinkregion)");
+                    .attr("fill", opts.pinkRegionCol.fill);
             } else {
                 pinkelt.attr("d", d);
             }
@@ -2162,7 +2163,7 @@
 	  	        .attr("x2", function(d){ return newXScale(d.end[0]*1000);})
   		        .attr("y2",function(d){ return newYScale(d.end[1]);})
   		        .style("stroke-width",opts.oldRoadLine.width)
-  		        .style("stroke","var(--col-oldroad)")
+  		        .style("stroke", opts.roadLineCol.old)
                 .style('pointer-events', "none");
         }
 
@@ -2186,7 +2187,7 @@
 	  	        .attr("x2", function(d){ return xScaleB(d.end[0]*1000);})
   		        .attr("y2",function(d){ return yScaleB(d.end[1]);})
   		        .style("stroke-width",opts.oldRoadLine.ctxwidth)
-  		        .style("stroke","var(--col-oldroad)")
+  		        .style("stroke", opts.roadLineCol.old)
                 .style('pointer-events', "none");
         }
 
@@ -2266,14 +2267,15 @@
                     return (i < roads.length-1)
                         ?"visible":"hidden";})
 		        .on("mouseenter",function() {
-			        d3.select(this).attr("fill","var(--col-rmknot-selected)");})
+			        d3.select(this).attr("fill",opts.roadKnotCol.rmbtnsel);})
 		        .on("mouseout",function() {
-			        d3.select(this).attr("fill","var(--col-rmknot)");})
+			        d3.select(this).attr("fill",opts.roadKnotCol.rmbtns);})
 		        .on("click",knotDeleted);
         }
 
         function updateRoads() {
-            var lineColor = isRoadValid( roads )?"var(--col-line-valid)":"var(--col-line-invalid)";
+            var lineColor = isRoadValid( roads )?
+                    opts.roadLineCol.valid:opts.roadLineCol.invalid;
 
             // Create, update and delete road lines
             var roadelt = gRoads.selectAll(".roads").data(roads);
@@ -2313,7 +2315,7 @@
 
         function updateRoadValidity() {
             var lineColor = isRoadValid( roads )?
-                    "var(--col-line-valid)":"var(--col-line-invalid)";
+                    opts.roadLineCol.valid:opts.roadLineCol.invalid;
 
             // Create, update and delete road lines
             var roadelt = gRoads.selectAll(".roads");
@@ -2324,6 +2326,9 @@
         }
 
         function updateContextRoads() {
+            var lineColor = isRoadValid( roads )?
+                    opts.roadLineCol.valid:opts.roadLineCol.invalid;
+
             // Create, update and delete road lines for the brush 
             var roadelt = ctxplot.selectAll(".ctxroads").data(roads);
             roadelt.exit().remove();
@@ -2341,7 +2346,7 @@
   		        .attr("y1",function(d){ return yScaleB(d.sta[1]);})
 	  	        .attr("x2", function(d){ return xScaleB(d.end[0]*1000);})
   		        .attr("y2",function(d){ return yScaleB(d.end[1]);})
-  		        .style("stroke","var(--col-line-valid)")
+  		        .style("stroke", lineColor)
   		        .style("stroke-width",opts.roadLine.ctxwidth);
         }
 
@@ -2359,7 +2364,7 @@
                 .attr("cx", function(d){ return newXScale(d.sta[0]*1000);})
 		        .attr("cy",function(d){ return newYScale(d.sta[1]);})
 		        .attr("r", opts.roadDot.size)
-                .attr("fill", "var(--col-dot-editable)")
+                .attr("fill", opts.roadDotCol.editable)
 		        .style("stroke-width", opts.roadDot.border) 
                 .on('wheel', function(d) { 
                     // Redispatch a copy of the event to the zoom area
@@ -2369,12 +2374,12 @@
                 .on("mouseover",function(d,i) { 
                     if (!editingDot) {
                         highlightValue(i-1, true);
-			            d3.select(this).style("fill","var(--col-dot-selected");
+			            d3.select(this).style("fill",opts.roadDotCol.selected);
                     }})
 		        .on("mouseout",function(d,i) { 
                     if (!editingDot) {
                         highlightValue(i-1, false);
-			            d3.select(this).style("fill","var(--col-dot-editable");
+			            d3.select(this).style("fill",opts.roadDotCol.editable);
                     }})
                 .on("click", function(d,i) { 
                     if (d3.event.ctrlKey) dotEdited(d,this.id);})
@@ -2398,7 +2403,7 @@
 		        .attr("id", function(d,i) {return i-1;})
 		        .attr("name", function(d,i) {return "ctxdot"+(i-1);})
 		        .attr("r", opts.roadDot.ctxsize)
-                .attr("fill", "var(--col-dot-editable)")
+                .attr("fill", opts.roadDotCol.editable)
 		        .style("stroke-width", opts.roadDot.ctxborder)
                 .attr("cx", function(d){ return xScaleB(d.sta[0]*1000);})
 		        .attr("cy",function(d){ return yScaleB(d.sta[1]);});
@@ -2409,8 +2414,9 @@
                     datapoints.slice(0,datapoints.length-1).concat(futurepoints):
                     datapoints.concat(futurepoints);
             var now = goal.asof.unix();
+            var dpelt;
             if (opts.showdata) {
-                var dpelt = gDpts.selectAll(".dpts").data(pts);
+                dpelt = gDpts.selectAll(".dpts").data(pts);
                 dpelt.exit().remove();
                 dpelt
 		            .attr("cx", function(d){ return newXScale((d[0])*1000);})
@@ -2418,20 +2424,20 @@
                     .attr("fill", function(d){ 
                         return (d[0] <= now)?
                             dotcolor(roads, goal.yaw, d[0], d[1])
-                            :"var(--col-dp-fill-old)";});
+                            :opts.dataPointCol.future;});
                 dpelt.enter().append("svg:circle")
 		            .attr("class","dpts")
 		            .attr("id", function(d,i) {return i;})
 		            .attr("name", function(d,i) {return "dpt"+i;})
                     .style('pointer-events', 'none')
-		            .attr("stroke", "var(--col-dp-stroke)")
+		            .attr("stroke", opts.dataPointCol.stroke)
 		            .attr("stroke-width", opts.dataPoint.border)
                     .attr("r", opts.dataPoint.size)
 		            .attr("cx", function(d){ return newXScale((d[0])*1000);})
                     .attr("cy",function(d){ return newYScale(d[1]);})
                     .attr("fill", function(d){ 
                         return (d[0] <= now)?dotcolor(roads, goal.yaw, d[0], d[1])
-                            :"var(--col-dp-fill-old)";});
+                            :opts.dataPointCol.future;});
                 dpelt = gDpts.selectAll(".fladp");
                 if (flad != null) {
                     if (dpelt.empty()) {
@@ -2455,7 +2461,7 @@
                     if (!dpelt.empty()) dpelt.remove();
                 }
             } else {
-                var dpelt = gDpts.selectAll(".dpts").data(pts);
+                dpelt = gDpts.selectAll(".dpts").data(pts);
                 dpelt.remove();
                 dpelt = gDpts.selectAll(".fladp");
                 dpelt.remove();
@@ -2588,56 +2594,76 @@
         }
 
         function highlightDate(i, state) {
-            var color = (state)?"var(--col-tblbg-highlight)":"var(--col-tblbg)";
-            d3.select('.rtable [name=enddate'+i+']').style('background-color', color);  
+            var color = (state)
+                    ?opts.roadTableCol.bgHighlight:opts.roadTableCol.bg;
+            d3.select('.rtable [name=enddate'+i+']')
+                .style('background-color', color);  
         }
         function highlightValue(i, state) {
-            var color = (state)?'var(--col-tblbg-highlight)':'var(--col-tblbg)';
-            d3.select('.rtable [name=endvalue'+i+']').style('background-color', color);
+            var color = (state)
+                    ?opts.roadTableCol.bgHighlight:opts.roadTableCol.bg;
+            d3.select('.rtable [name=endvalue'+i+']')
+                .style('background-color', color);
         }
         function highlightSlope(i, state) {
-            var color = (state)?'var(--col-tblbg-highlight)':'var(--col-tblbg)';
-            d3.select('.rtable [name=slope'+i+']').style('background-color', color);  
+            var color = (state)
+                    ?opts.roadTableCol.bgHighlight:opts.roadTableCol.bg;
+            d3.select('.rtable [name=slope'+i+']')
+                .style('background-color', color);  
         }
         function disableDate(i) {
             roads[i].auto=RoadParamEnum.DATE;
             d3.select('.rtable [name=enddate'+i+']')
-                .style('color', 'var(--col-tbltxt-disabled)')
+                .style('color', opts.roadTableCol.textDisabled)
                 .attr('contenteditable', false);  
             d3.select('.rtable [name=endvalue'+i+']')
-                .style('color', 'var(--col-tbltxt)').attr('contenteditable', true);  
+                .style('color', opts.roadTableCol.text)
+                .attr('contenteditable', true);  
             d3.select('.rtable [name=slope'+i+']')
-                .style('color', 'var(--col-tbltxt)').attr('contenteditable', true);  
-            d3.select('.rtable [name=btndate'+i+']').property('checked', true);  
-            d3.select('.rtable [name=btnvalue'+i+']').property('checked', false);  
-            d3.select('.rtable [name=btnslope'+i+']').property('checked', false);  
+                .style('color', opts.roadTableCol.text)
+                .attr('contenteditable', true);  
+            d3.select('.rtable [name=btndate'+i+']')
+                .property('checked', true);  
+            d3.select('.rtable [name=btnvalue'+i+']')
+                .property('checked', false);  
+            d3.select('.rtable [name=btnslope'+i+']')
+                .property('checked', false);  
         }
         function disableValue(i) {
             roads[i].auto=RoadParamEnum.VALUE;
             d3.select('.rtable [name=enddate'+i+']')
-                .style('color', 'var(--col-tbltxt)')
+                .style('color', opts.roadTableCol.text)
                 .attr('contenteditable', true);  
             d3.select('.rtable [name=endvalue'+i+']')
-                .style('color', 'var(--col-tbltxt-disabled)')
+                .style('color', opts.roadTableCol.textDisabled)
                 .attr('contenteditable', false);  
             d3.select('.rtable [name=slope'+i+']')
-                .style('color', 'var(--col-tbltxt)').attr('contenteditable', true);  
-            d3.select('.rtable [name=btndate'+i+']').property('checked', false);  
-            d3.select('.rtable [name=btnvalue'+i+']').property('checked', true);  
-            d3.select('.rtable [name=btnslope'+i+']').property('checked', false);  
+                .style('color', opts.roadTableCol.text)
+                .attr('contenteditable', true);  
+            d3.select('.rtable [name=btndate'+i+']')
+                .property('checked', false);  
+            d3.select('.rtable [name=btnvalue'+i+']')
+                .property('checked', true);  
+            d3.select('.rtable [name=btnslope'+i+']')
+                .property('checked', false);  
         }
         function disableSlope(i) {
             roads[i].auto=RoadParamEnum.SLOPE;
             d3.select('.rtable [name=enddate'+i+']')
-                .style('color', 'var(--col-tbltxt)').attr('contenteditable', true);  
+                .style('color', opts.roadTableCol.text)
+                .attr('contenteditable', true);  
             d3.select('.rtable [name=endvalue'+i+']')
-                .style('color', 'var(--col-tbltxt)').attr('contenteditable', true);  
+                .style('color', opts.roadTableCol.text)
+                .attr('contenteditable', true);  
             d3.select('.rtable [name=slope'+i+']')
-                .style('color', 'var(--col-tbltxt-disabled)')
+                .style('color', opts.roadTableCol.text)
                 .attr('contenteditable', false);  
-            d3.select('.rtable [name=btndate'+i+']').property('checked', false);  
-            d3.select('.rtable [name=btnvalue'+i+']').property('checked', false);  
-            d3.select('.rtable [name=btnslope'+i+']').property('checked', true);  
+            d3.select('.rtable [name=btndate'+i+']')
+                .property('checked', false);  
+            d3.select('.rtable [name=btnvalue'+i+']')
+                .property('checked', false);  
+            d3.select('.rtable [name=btnslope'+i+']')
+                .property('checked', true);  
         }
 
         function updateTableButtons() {
@@ -2707,7 +2733,7 @@
                     });
             scells.enter().append("span").attr('class', 'startcell')
                 .attr('name', function(d) { return d.name;})
-                .style('color', 'var(--col-tbltxt)')
+                .style('color', opts.roadTableCol.text)
                 .attr("contenteditable", function(d,i) { return (i>1)?'false':'true';})
                 .on('focusin', tableFocusIn)
                 .on('focusout', tableFocusOut)
@@ -2755,7 +2781,8 @@
             cells.text(function(d) { return d.value;})
                 .attr('name', function(d) { return d.name;})
                 .style('color', function(d) {
-                    return d.auto?'var(--col-tbltxt-disabled)':'var(--col-tbltxt)';})
+                    return d.auto?opts.roadTableCol.textDisabled
+                        :opts.roadTableCol.text;})
                 .attr("contenteditable", function(d,i) { return (d.auto)?'false':'true';});
 
         }

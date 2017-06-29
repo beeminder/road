@@ -1,27 +1,4 @@
-:root {
-  --col-line-valid:        black;
-  --col-line-invalid:      #ca1212;
-  --col-dot-fixed:         darkgray;
-  --col-dot-editable:      #ca1212;
-  --col-dot-selected:      lightgreen;
-  --col-oldroad:           #f0f000;
-  --col-rmknot:            black;
-  --col-rmknot-selected:   red;
-  --col-txtbox-bg:         #ffffff;
-  --col-txtbox-stroke:     #d0d0d0;
-  --col-tblbg:             #ffffff;
-  --col-tblbg-highlight:   #bbffbb;
-  --col-tbltxt:            #000000;
-  --col-tbltxt-disabled:   #aaaaaa;
-  --col-dp-fill:           #a0a0ff;
-  --col-dp-fill-old:       #909090;
-  --col-dp-stroke:         lightgray;
-  --col-pinkregion:        #ffd0d0;
-  --col-halfplane:         #ffffd0;
-  --col-pastbox:           #f0f0f0;
-}
-
-.chart, .bmndrsvg { 
+.bmndrsvg { 
   border: 1px solid #cccccc
 }
 svg text {
