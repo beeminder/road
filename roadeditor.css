@@ -1,4 +1,4 @@
-.bmndrsvg { 
+.chart, .bmndrsvg { 
   border: 1px solid #cccccc
 }
 svg text {
@@ -40,18 +40,17 @@ circle.dots {
 line.roads {
     stroke: black;
 }
-.past, .pastline, .pasttext, .ctxtodaytext, .ctxhortext, .horizon, .horizontext, .pinkregion{
+.pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .watermark {
   pointer-events: none;
   text-anchor: middle;
 }
 
-.ctxroads, .ctxdots, .bullseye, .oldbullseye, .ctxbullseye, .ctxoldbullseye, .ctxtoday, .ctxtodaytext {
+.past, .pastline, .halfplane, .pinkregion, .horizon,
+.ctxroads, .ctxdots, .ctxoldroads, .oldroads, 
+.bullseye, .oldbullseye, .ctxbullseye, .ctxoldbullseye, 
+.ctxtoday, .ctxtodaytext, 
+.dpts, .fladp  {
   pointer-events: none;
-}
-
-.watermark {
-  pointer-events: none;
-  text-anchor: middle;
 }
 
 .brush rect.selection {
@@ -65,7 +64,7 @@ line.roads {
 
 .rtable {
   display: table;
-  margin: 5px;
+  margin: 3px;
 }
 .starthdr, .roadhdr {
   display: table-header-group;
@@ -75,22 +74,33 @@ line.roads {
 }
 .startrow, .roadrow {
   display: table-row;
+  white-space: nowrap;
 }
 .starthdrrow, .roadhdrrow {
   display: table-row;
+  white-space: nowrap;
 }
 
-.roadhdrcell, span.starthdrcell {
+.rowid {
+  display: table-cell;
+  border: 0px;
+  padding: 2px;
+  text-align: right;
+  white-space: nowrap;
+}
+.roadhdrcell, .starthdrcell {
   display: table-cell;
   border: 0px;
   padding: 2px;
   text-align: center;
+  white-space: nowrap;
 }
 .roadcell, .startcell {
   display: table-cell;
   border: 1px solid black;
   padding: 2px 5px 2px 5px;
   text-align: center;
+  white-space: nowrap;
 }
 .floating {
   float: left;

@@ -40,9 +40,11 @@
 
 </td>
     <td valign="top">
-      <input id="reversetable" type="checkbox" onclick="editor.reverseTable(this.checked);">Reverse table order<br>
+      <input id="reversetable" type="checkbox" onclick="editor.reverseTable(this.checked);">Reverse table order
+      <input id="autoscroll" type="checkbox" onclick="editor.autoScroll(this.checked);">Auto-scroll table<br>
 
       <div id="roadtable"></div>
+      </div>
     </td>
   </tr>
 </table>
@@ -56,6 +58,7 @@
   editor.keepSlopes(document.getElementById("keepslopes").checked);
   editor.keepIntervals(document.getElementById("keepintervals").checked);
   editor.reverseTable(document.getElementById("reversetable").checked);
+  editor.autoScroll(document.getElementById("autoscroll").checked);
   editor.loadGoal(document.getElementById("roadselect").value);
 </script>
 
