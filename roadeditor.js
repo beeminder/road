@@ -24,9 +24,10 @@
         divTable:     null,    // Binds the road table to a div element
         svgSize:      { width: 700, height: 530 },
         focusRect:    { x:0, y:0, width:700, height: 400 },
-        focusPad:     { left:50, right:10, top:30, bottom:30 },
+        focusPad:     { left:25, right:10, top:30, bottom:30 },
         contextRect:  { x:0, y:400, width:700, height: 80 },
-        contextPad:   { left:50, right:10, top:0, bottom:30 },
+        contextPad:   { left:25, right:10, top:0, bottom:30 },
+        tableHeight:  540, // Choose 0 for unspecified
 
         zoomButton:   { size: 40, opacity: 0.7, factor: 1.5 },
         bullsEye:     { size: 40, ctxsize: 20 },
@@ -38,16 +39,8 @@
         horizon:      { width: 2, ctxwidth: 1, dash: 8, ctxdash: 8, 
                         font: 16, ctxfont: 10 },
         today:        { width: 2, ctxwidth: 1, font: 16, ctxfont: 10 },
-
-        tableHeight:  530, // Choose 0 for unspecified
-        tableScroll:  true,// auto scrolling
-
         textBox:      { margin: 3 },
-        showdata:     true,
-        keepslopes:   true,
-        keepintervals:false,
-        reversetable: false,
-        
+
         roadLineCol:  { valid: "black", invalid:"#ca1212", old:"#f0f000"},
         roadDotCol:   { fixed: "darkgray", editable:"#ca1212", 
                         selected: "lightgreen"},
@@ -60,7 +53,18 @@
         halfPlaneCol: { fill: "#ffffd0" },
         pastBoxCol:   { fill: "#f0f0f0" },
 
-        precision: 5
+        showContext:     false,
+        showFocusRect:   true,
+        tableAutoScroll: true, // auto scrolling
+        showdata:     true,
+        keepslopes:   true,
+        keepintervals:false,
+        reversetable: false,
+        
+        precision: 5,
+        maxFutureDays: 365,
+
+        onRoadChange: null
     },
     
     /** Beeminder colors for datapoints */
@@ -560,37 +564,45 @@
     datapoints = [],   // Holds the current set of non-future datapoints 
     futurepoints = [], // Holds the current set of future datapoints 
 
+    
     /** bmndr constructor */
     bmndr = function(options) {
         //console.debug("bmndr constructor: ");console.log(options);
         var self = this,
             opts = config(self, options);
 
-        var plotpad = opts.focusPad;
-        var brushpad = opts.brushPad;
+        var yaxisw = 50;
+
         var 
         sw = opts.svgSize.width,
-        sh = opts.svgSize.height, 
-        plotbox = {
-            x:     opts.focusRect.x + plotpad.left,
-            y:     opts.focusRect.y + plotpad.top,
-            width: opts.focusRect.width
-                - plotpad.left - plotpad.right, 
-            height:opts.focusRect.height
-                - plotpad.top - plotpad.bottom
-        },
-        brushbox = {
-            x:     opts.contextRect.x + opts.contextPad.left,
-            y:     opts.contextRect.y + opts.contextPad.top,
-            width: opts.contextRect.width
-                - opts.contextPad.left - opts.contextPad.right, 
-            height:opts.contextRect.height
-                - opts.contextPad.top - opts.contextPad.bottom
-        };
+        sh = opts.svgSize.height,
+        plotbox, brushbox, plotpad, contextpad;
 
         var zoombtnsize = opts.zoomButton.size;
         var zoombtnscale = zoombtnsize / 540;
-        var zoombtntr = {botin:"translate("+(plotbox.width
+        var zoombtntr;
+        function computeBoxes() {
+            plotpad = extend({}, opts.focusPad);
+            contextpad = extend({}, opts.contextPad);
+            plotpad.left += yaxisw;
+            contextpad.left += yaxisw;
+            plotbox = {
+                x:     opts.focusRect.x + plotpad.left,
+                y:     opts.focusRect.y + plotpad.top,
+                width: opts.focusRect.width
+                    - plotpad.left - plotpad.right, 
+                height:opts.focusRect.height
+                    - plotpad.top - plotpad.bottom
+            },
+            brushbox = {
+                x:     opts.contextRect.x + contextpad.left,
+                y:     opts.contextRect.y + contextpad.top,
+                width: opts.contextRect.width
+                    - contextpad.left - contextpad.right, 
+                height:opts.contextRect.height
+                    - contextpad.top - contextpad.bottom
+            };
+            zoombtntr = {botin:"translate("+(plotbox.width
                                              -2*(zoombtnsize+5))
                          +","+(plotbox.height-(zoombtnsize+5))
                          +") scale("+zoombtnscale+","+zoombtnscale+")",
@@ -604,18 +616,19 @@
                          topout:"translate("+(plotbox.width
                                               -(zoombtnsize+5))
                          +",5) scale("+zoombtnscale+","+zoombtnscale+")"};
+        };
+        computeBoxes();
 
-        var svg, zoomarea, axisZoom, focus, buttonarea, focusclip, plot;
+        var svg, defs, zoomarea, axisZoom, focus, buttonarea, focusclip, plot;
         var gPastBox, gYBHP, gPink, gOldRoad, gOldBullseye, gKnots;
         var gDpts, gBullseye, gRoads, gDots, gHorizon, gHorizonText;
         var gPastText, zoomin, zoomout;;
         var xScale, xAxis, xAxisObj;
-        var yScale, yAxis, yAxisObj;
+        var yScale, yAxis, yAxisObj, yAxisLabel;
         var context, ctxclip, ctxplot, xScaleB, xAxisB, xAxisObjB;
         var yScaleB, brushObj, brush, focusrect;
         var newXScale, newYScale;
 
-        var gr = {};  // Holds graph related objects
         function createGraph() {
             var div = opts.divGraph;
             if (div === null) return;
@@ -630,7 +643,7 @@
 	            .attr('height', sh)
 	            .attr('class', 'bmndrsvg');
             // Common SVG definitions, including clip paths
-            var defs = svg.append('defs');
+            defs = svg.append('defs');
             defs.append("clipPath")
                 .attr("id", "plotclip")
                 .append("rect")
@@ -707,6 +720,7 @@
                 .attr('clip-path', 'url(#buttonareaclip)')
                 .attr('class', 'buttonarea'); 
             focusclip = focus.append('g')
+	            .attr('class', 'focusclip')
                 .attr('clip-path', 'url(#plotclip)')
                 .attr('transform', 'translate('+plotpad.left
                       +','+plotpad.top+')');
@@ -767,7 +781,13 @@
                 .attr("transform", "translate(" 
                       + plotpad.left + ","+plotpad.top+")")
                 .call(yAxis);
-
+            yAxisLabel = focus.append('text')        
+                .attr("class", "axislabel")
+                .attr("transform", 
+                      "translate(15,"+(plotbox.height/2+plotpad.top)
+                      +") rotate(-90)")
+                .text("deneme");
+            
             // Create brush area
             context = svg.append('g')
 	            .attr('class', 'brush')
@@ -776,14 +796,14 @@
             ctxclip = context.append('g')
                 .attr('clip-path', 'url(#brushclip)')
                 .attr('transform', 'translate('
-                      +opts.contextPad.left+','+opts.contextPad.top+')');
+                      +contextpad.left+','+contextpad.top+')');
             ctxplot = ctxclip.append('g').attr('class', 'context');
             xScaleB = d3.scaleUtc().range([0,brushbox.width]);
             xAxisB = d3.axisBottom(xScaleB).ticks(6);
             xAxisObjB = context.append('g')        
                 .attr("class", "axis")
                 .attr("transform", "translate("+brushbox.x+"," 
-                      + (opts.contextPad.top+brushbox.height) + ")")
+                      + (contextpad.top+brushbox.height) + ")")
                 .call(xAxisB);
             yScaleB = d3.scaleLinear().range([brushbox.height, 0]);
 
@@ -803,6 +823,51 @@
                 .attr("stroke", "black").attr("stroke-width", 1)
                 .attr("stroke-dasharray", "8,4,2,4");
             newXScale = xScale, newYScale = yScale;
+        }
+
+        function resizeGraph() {
+            var div = opts.divGraph;
+            if (div === null) return;
+
+            computeBoxes();
+
+            // Common SVG definitions, including clip paths
+            defs.select("#plotclip > rect")
+                .attr("width", plotbox.width).attr("height", plotbox.height);
+            defs.select("#brushclip > rect")
+                .attr("width", brushbox.width).attr("height", brushbox.height);
+            defs.select("#buttonareaclip > rect")
+                .attr("x", plotbox.x).attr("y", 0)
+                .attr("width", plotbox.width).attr("height", plotbox.height);
+            zoomarea.attr("x", plotbox.x).attr("y", plotbox.y)
+                .attr("width", plotbox.width).attr("height", plotbox.height);
+            axisZoom.extent([[0, 0], [plotbox.width, plotbox.height]])
+                .scaleExtent([1, Infinity])
+                .translateExtent([[0, 0], [plotbox.width, plotbox.height]]);
+            focusclip.attr('transform', 'translate('+plotpad.left
+                           +','+plotpad.top+')');
+            zoomin.attr("transform", zoombtntr.botin);
+            zoomout.attr("transform", zoombtntr.botout);
+            xScale.range([0, plotbox.width]);
+            xAxisObj.attr("transform", "translate("+plotbox.x+"," 
+                          + (plotpad.top+plotbox.height) + ")")
+                .call(xAxis);
+            yScale.range([0, plotbox.height]);
+            yAxisObj.attr("transform", "translate(" 
+                      + plotpad.left + ","+plotpad.top+")")
+                .call(yAxis);
+            yAxisLabel.attr("transform", 
+                            "translate(15,"+(plotbox.height/2+plotpad.top)
+                            +") rotate(-90)");
+            ctxclip.attr('transform', 'translate('
+                         +contextpad.left+','+contextpad.top+')');
+            xScaleB.range([0,brushbox.width]);
+            xAxisObjB.attr("transform", "translate("+brushbox.x+"," 
+                           + (contextpad.top+brushbox.height) + ")")
+                .call(xAxisB);
+            yScaleB.range([brushbox.height, 0]);
+            brushObj.extent([[0, 0], [brushbox.width, brushbox.height]]);
+            brush.call(brushObj);
         }
 
         var tbl = {}; // Holds table related objects
@@ -834,9 +899,20 @@
             }
         }
 
+        function roadChanged() {
+            computePlotLimits( true );
+            horindex = findRoadSegment(roads, goal.horizon.unix());
+            reloadBrush();
+            updateGraphData();
+            updateContextData();
+            updateTable();
+            if (typeof opts.onRoadChange === 'function') {
+                opts.onRoadChange.call();
+            }
+        }
+        
         // ------------------ Text Box Utilities ---------------------
         function createTextBox( x, y, text ){
-            var plotpad = opts.focusPad;
             var textobj = {};
             if (y < 20-plotpad.top)    y = 20 -plotpad.top;
             if (y > plotbox.height-15) y = plotbox.height-15;
@@ -918,13 +994,16 @@
                           newXScale.invert(plotbox.width)];
             var xtimes = xrange.map(function(d) {
                 return Math.floor(d.getTime()/1000);});
-            var roadextent = roadExtentPartial(roads, xtimes[0], xtimes[1]);
-            var oldroadextent = roadExtentPartial(initialRoad, 
-                                                  xtimes[0], xtimes[1]);
+
+            var roadextent 
+                    = roadExtentPartial(roads,xtimes[0],xtimes[1],false);
+            var oldroadextent 
+                    = roadExtentPartial(initialRoad,xtimes[0],xtimes[1],false);
             var allextent = mergeExtents(roadextent, oldroadextent);
-            var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
+            var p = {xmin:0.0, xmax:0.0, ymin:0.10, ymax:0.10};
             enlargeExtent(allextent, p);
-            var yrange = [allextent.yMax, allextent.yMin] ;
+
+            var yrange = [allextent.yMax, allextent.yMin];
             var newtr = 
                     d3.zoomIdentity
                     .scale(plotbox.height/(yScale(yrange[1])
@@ -932,9 +1011,16 @@
                     .translate(0, -yScale(yrange[0]));
             newYScale = newtr.rescaleY(yScale);
             yAxisObj.call(yAxis.scale(newYScale));
+
+            // Resize brush if dynamic y limits are beyond graph limits
+            if (allextent.yMax > goal.yMax) goal.yMax = allextent.yMax;
+            if (allextent.yMin < goal.yMin) goal.yMin = allextent.yMin;
+            resizeContext();
+
             var sx = xrange.map(function (x){return xScaleB(x);});
             var sy = yrange.map(function (y){return yScaleB(y);});
-            focusrect.attr("x", sx[0]+1).attr("width", sx[1]-sx[0]-2)
+            focusrect
+                .attr("x", sx[0]+1).attr("width", sx[1]-sx[0]-2)
                 .attr("y", sy[0]+1).attr("height", sy[1]-sy[0]-2);
         }
 
@@ -942,8 +1028,8 @@
             if (opts.divGraph == null) return;
             xScaleB.domain([new Date(goal.xMin*1000), 
                                new Date(goal.xMax*1000)]);
-            yScaleB.domain([goal.yMin, goal.yMax]);
             xAxisObjB.call(xAxisB.scale(xScaleB));
+            yScaleB.domain([goal.yMin, goal.yMax]);
         }
 
         function resizeBrush() {
@@ -1004,7 +1090,7 @@
             newXScale = xScale; newYScale = yScale;
             resizeContext();
             zoomarea.call(axisZoom.transform, d3.zoomIdentity);
-            
+
             // Relocate zoom buttons based on road yaw
             if (goal.yaw > 0) {
                 zoomin.attr("transform", zoombtntr.botin);
@@ -1020,19 +1106,9 @@
         }
         // ---------------- Undo/Redo functionality --------------------
 
-        function documentKeyDown(e) {
-            var evtobj = window.event? window.event : e;
-            if (evtobj.keyCode == 89 && evtobj.ctrlKey) redoLastEdit();
-            if (evtobj.keyCode == 90 && evtobj.ctrlKey) undoLastEdit();
-        }
-        
-        document.onkeydown = documentKeyDown;
-
         function clearUndoBuffer() {
             undoBuffer = [];
             redoBuffer = [];
-            d3.select("button#undo").attr('disabled', 'true').text('Undo (0)');
-            d3.select("button#redo").attr('disabled', 'true').text('Redo (0)');
         }
 
         function redoLastEdit() {
@@ -1040,16 +1116,8 @@
             if (redoBuffer.length == 0) return;
             pushUndoState(true);
             roads = redoBuffer.pop();
-            computePlotLimits( true );
-            reloadBrush();
-            updateGraphData();
-            updateTable();
-            updateContextData();
-            if (redoBuffer.length == 0)  {
-                d3.select("button#redo")
-                    .attr('disabled', 'true').text('Redo (0)');
-            } else
-                d3.select("button#redo").text('Redo ('+redoBuffer.length+")");
+            roadChanged();
+
             return;
         }
 
@@ -1059,20 +1127,9 @@
             if (undoBuffer.length == 0 || 
                 !sameRoads(undoBuffer[undoBuffer.length-1], roads)) {
                 redoBuffer.push(roads);
-                d3.select("button#redo").attr('disabled', null)
-                    .text('Redo ('+redoBuffer.length+")");
             }
             roads = undoBuffer.pop();
-            computePlotLimits( true );
-            reloadBrush();
-            updateGraphData();
-            updateTable();
-            updateContextData();
-            if (undoBuffer.length == 0) {
-                d3.select("button#undo")
-                    .attr('disabled', 'true').text('Undo (0)');
-            } else
-                d3.select("button#undo").text('Undo ('+undoBuffer.length+")");
+            roadChanged();
             return;
         }
 
@@ -1081,12 +1138,8 @@
             if (undoBuffer.length == 0 || 
                 !sameRoads(undoBuffer[undoBuffer.length-1], roads)) {
                 undoBuffer.push(copyRoad(roads));
-                d3.select("button#undo").attr('disabled', null)
-                    .text('Undo ('+undoBuffer.length+")");
                 if (!fromredo) {
                     redoBuffer = [];        
-                    d3.select("button#redo")
-                        .attr('disabled', 'true').text('Redo (0)');
                 }
             }
         }
@@ -1201,7 +1254,6 @@
                 return (d.sta[0] <xmin||d.sta[0]>xmax)?-Infinity:d.sta[1]; });
             extent.yMin = d3.min([extent.yMin, roadValue(rd,xmin), roadValue(rd,xmax)]);
             extent.yMax = d3.max([extent.yMax, roadValue(rd,xmin), roadValue(rd,xmax)]);
-
             // Extend limits by 5% so everything is visible
             var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
             if (extend) enlargeExtent(extent, p);
@@ -1212,12 +1264,12 @@
             if (roads.length == 0) return;
 
             var now = goal.asof.unix();
-            var maxx = d3.min([now+DIY*SID, roads[roads.length-1].sta[0]]);
+            var maxx = daysnap(d3.min([now+opts.maxFutureDays*SID, 
+                               roads[roads.length-1].sta[0]]));
             var cur = roadExtentPartial( roads, roads[0].end[0], maxx, false );
             var old = roadExtentPartial( initialRoad, roads[0].end[0], maxx, false );
 
             var ne = mergeExtents( cur, old );
-            if (ne.xMax > now+DIY*SID) ne.xMax = now+DIY*SID;
             var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
             enlargeExtent(ne, p);
 
@@ -1245,16 +1297,20 @@
         function loadRoad( json ) {
 
             roads = [];
+            goal = [];
+            initialRoad = [];
+
             clearUndoBuffer();
             var rdData = json.params.road;
             var nk = rdData.length;
             var firstsegment;
             var ratemult = SID;
-            if (json.params.runits === 'h') ratemult = 60*60;
-            if (json.params.runits === 'd') ratemult = SID;
-            if (json.params.runits === 'w') ratemult = 7*SID;
-            if (json.params.runits === 'm') ratemult = 30*SID;
-            if (json.params.runits === 'y') ratemult = DIY*SID;
+            goal.runits = json.params.runits;
+            if (goal.runits === 'h') goal.ratemult = 60*60;
+            if (goal.runits === 'd') goal.ratemult = SID;
+            if (goal.runits === 'w') goal.ratemult = 7*SID;
+            if (goal.runits === 'm') goal.ratemult = 30*SID;
+            if (goal.runits === 'y') goal.ratemult = DIY*SID;
 
             if (json.params.hasOwnProperty('asof')) {
                 goal.asof = moment.utc(json.params.asof);
@@ -1264,21 +1320,19 @@
             }
 
             if (json.params.hasOwnProperty('tini')) {
-                firstsegment = {
-                    sta: [dayparse(json.params.tini), Number(json.params.vini)],
-                    slope: 0,
-                    auto: RoadParamEnum.SLOPE };
-                firstsegment.end = firstsegment.sta.slice();
-                firstsegment.sta[0] = daysnap(firstsegment.sta[0]-100*DIY*SID);
+                goal.tini = json.params.tini;
+                goal.vini = json.params.vini;
             } else {
                 // Retrieve starting date from the first datapoint
-                firstsegment = {
-                    sta: [dayparse(json.data[0][0]), Number(json.data[0][1])],
-                    slope: 0,
-                    auto: RoadParamEnum.SLOPE };
-                firstsegment.end = firstsegment.sta.slice();
-                firstsegment.sta[0] = daysnap(firstsegment.sta[0]-100*365*SID);
+                goal.tini = json.data[0][0];
+                goal.vini = json.data[0][1];
             }
+            firstsegment = {
+                sta: [dayparse(goal.tini), Number(goal.vini)],
+                slope: 0,
+                auto: RoadParamEnum.SLOPE };
+            firstsegment.end = firstsegment.sta.slice();
+            firstsegment.sta[0] = daysnap(firstsegment.sta[0]-100*DIY*SID);
             roads.push(firstsegment);
             
             for (var i = 0; i < nk+1; i++) {
@@ -1296,7 +1350,7 @@
                     if (json.params.hasOwnProperty('tfin') 
                         && json.params.tfin != null) { 
                         rddate = json.params.tfin;
-                    } if (json.params.hasOwnProperty('gldt') 
+                    } else if (json.params.hasOwnProperty('gldt') 
                           && json.params.gldt != null) { 
                         rddate = json.params.gldt;
                     }
@@ -1318,13 +1372,13 @@
 
                 if (rddate == null) {
                     segment.end = [0, Number(rdvalue)];
-                    segment.slope = Number(rdslope)/(ratemult);
+                    segment.slope = Number(rdslope)/(goal.ratemult);
                     segment.end[0] 
                         = (segment.end[1] - segment.sta[1])/segment.slope;
                     segment.auto = RoadParamEnum.DATE;
                 } else if (rdvalue == null) {
                     segment.end = [dayparse(rddate), 0];
-                    segment.slope = Number(rdslope)/(ratemult);
+                    segment.slope = Number(rdslope)/(goal.ratemult);
                     segment.end[1] = 
                         segment.sta[1]
                         +segment.slope*(segment.end[0]-segment.sta[0]);
@@ -1356,8 +1410,10 @@
                 datapoints[i].splice(-1,1); // Remove comment
                 datapoints[i][0] = dayparse(datapoints[i][0]);
             }
-            if (json.params.hasOwnProperty('odom') && json.params.odom)
-                odomify(datapoints);
+            if (json.params.hasOwnProperty('odom')) {
+                goal.odom = json.params.odom;
+                if (goal.odom) odomify(datapoints);
+            }
 
             goal.kyoom = (json.params.hasOwnProperty('kyoom') 
                          &&json.params.kyoom);
@@ -1399,7 +1455,20 @@
 
             initialRoad = copyRoad( roads );
 
+            if (json.params.hasOwnProperty('yaxis'))
+                goal.yaxis = json.params.yaxis;
+            else goal.yaxis = "";
+                
             computePlotLimits( false );
+            zoomAll();
+
+            if (opts.divGraph != null) {
+                yAxisLabel.text(goal.yaxis);
+                var bbox = yAxisObj.node().getBBox();
+                yaxisw = bbox.width;
+                resizeGraph();
+            }
+
             zoomAll();
         }
 
@@ -1407,9 +1476,8 @@
             loadJSON(url, 
                      function(resp) { 
                          loadRoad(resp);
-                         updateGraphData();
-                         updateTable();
-                         updateContextData();
+                         roadChanged();
+                         updateRoadTableTitle();
                      });  
         }
 
@@ -1444,12 +1512,7 @@
                 segment.auto = RoadParamEnum.VALUE;
                 roads.splice(found+1, 0, segment);
                 
-                computePlotLimits( true );
-                horindex = findRoadSegment(roads, goal.horizon.unix());
-                reloadBrush();
-                updateGraphData();
-                updateTable();
-                updateContextData();
+                roadChanged();
             }
         }
 
@@ -1471,11 +1534,7 @@
                           opts.keepslopes?RoadParamEnum.VALUE
                           :RoadParamEnum.SLOPE, fromtable );
 
-            computePlotLimits( true );
-            reloadBrush();
-            updateGraphData();
-            updateTable();
-            updateContextData();
+            roadChanged();
         }
 
         // -------------- Functions for manipulating knots ---------------
@@ -1562,7 +1621,7 @@
   		        d3.select("[name=endvalue"+ii+"]")
                     .text(rd[ii].end[1].toPrecision(5));
   		        d3.select("[name=slope"+ii+"]")
-                    .text((rd[ii].slope*SID).toPrecision(5));
+                    .text((rd[ii].slope*goal.ratemult).toPrecision(5));
             }
             updateRoadValidity();
             updateWatermark();
@@ -1570,7 +1629,6 @@
             updateContextBullseye();
             updateDataPoints();
             updateYBHP();
-
         }
 
         var editingKnot = false;
@@ -1613,11 +1671,7 @@
 
             removeDragInfo();
 
-            computePlotLimits( true );
-            reloadBrush();
-            updateGraphData();
-            updateTable();
-            updateContextData();
+            roadChanged();
         };
 
         function knotDeleted(d) {
@@ -1641,11 +1695,7 @@
             }
             fixRoadArray( roads, null, fromtable, RoadParamEnum.DATE );
 
-            computePlotLimits( true );
-            reloadBrush();
-            updateGraphData();
-            updateTable();
-            updateContextData();
+            roadChanged();
         }
 
         function knotEdited(d, id) {
@@ -1683,7 +1733,7 @@
                 var seg = roads[kind];
                 createDragInfo( d.sta, [(seg.sta[0]+seg.end[0])/2, 
                                         (seg.sta[1]+seg.end[1])/2, 
-                                        seg.slope*SID] );
+                                        seg.slope*goal.ratemult] );
             } else createDragInfo( d.sta );
             dottext.grp.raise();
         };
@@ -1704,7 +1754,7 @@
             if (kind != 0) {
                 updateDragInfo( d.sta, [(seg.sta[0]+seg.end[0])/2, 
                                         (seg.sta[1]+seg.end[1])/2, 
-                                        seg.slope*SID] );
+                                        seg.slope*goal.ratemult] );
                 } else updateDragInfo( d.sta );
         };
         function dotDragEnded(d,id){
@@ -1715,11 +1765,7 @@
 
             removeDragInfo();
 
-            computePlotLimits( true );
-            reloadBrush();
-            updateGraphData();
-            updateTable();
-            updateContextData();
+            roadChanged();
         };
 
         function changeDotValue( kind, newValue, fromtable = false ) {
@@ -1745,11 +1791,7 @@
 
             fixRoadArray( roads, null, fromtable, RoadParamEnum.VALUE );
 
-            computePlotLimits( true );
-            reloadBrush();
-            updateGraphData();
-            updateTable();
-            updateContextData();
+            roadChanged();
         }
 
         function dotEdited(d, id) {
@@ -1790,7 +1832,7 @@
             if (slopex > newXScale.invert(plotbox.width)/1000 - 10) 
                 slopex = newXScale.invert(plotbox.width)/1000 - 10;
             createDragInfo( d.end, [slopex, d.sta[1]+d.slope*(slopex-d.sta[0]),
-                                    d.slope*SID] );
+                                    d.slope*goal.ratemult] );
             slopetext.grp.raise();
         };
         function roadDragged(d, id) {
@@ -1819,7 +1861,7 @@
             if (slopex > newXScale.invert(plotbox.width)/1000 - 10) 
                 slopex = newXScale.invert(plotbox.width)/1000 - 10;
             updateDragInfo( d.end, [slopex, d.sta[1]+d.slope*(slopex-d.sta[0]),
-                                    d.slope*SID]  );
+                                    d.slope*goal.ratemult]  );
         };
         function roadDragEnded(d,id){
             editingRoad = false;
@@ -1827,18 +1869,14 @@
 
             removeDragInfo();
 
-            computePlotLimits( true );
-            reloadBrush();
-            updateGraphData();
-            updateTable();
-            updateContextData();
+            roadChanged();
         };
 
         function changeRoadSlope(kind, newSlope, fromtable = false) {
             if (kind == roads.length-1) return;
             pushUndoState();
 
-            roads[kind].slope = newSlope/(SID);
+            roads[kind].slope = newSlope/(goal.ratemult);
             if (!fromtable) {
                 if (!opts.keepslopes) {
                     roads[kind].end[1] = roads[kind].sta[1] 
@@ -1850,11 +1888,7 @@
             }
             fixRoadArray( roads, null, fromtable, RoadParamEnum.SLOPE );
 
-            computePlotLimits( true );
-            reloadBrush();
-            updateGraphData();  
-            updateTable();
-            updateContextData();
+            roadChanged();
         }
 
         function roadEdited(d, id) {
@@ -1882,7 +1916,7 @@
 
         // Creates or updates the shaded box to indicate past dates
         function updatePastBox() {
-            if (opts.divGraph == null) return;
+            if (opts.divGraph == null || roads.length == 0) return;
             var pastelt = gPastBox.select(".past");
             if (pastelt.empty()) {
                 gPastBox.insert("svg:rect", ":first-child")
@@ -1906,7 +1940,7 @@
         }
         // Creates or updates the shaded box to indicate past dates
         function updatePastText() {
-            if (opts.divGraph == null) return;
+            if (opts.divGraph == null || roads.length == 0) return;
             var todayelt = gPastText.select(".pastline");
             if (todayelt.empty()) {
                 gPastText.append("svg:line")
@@ -1944,7 +1978,7 @@
 
         // Creates or updates the Bullseye at the goal date
         function updateBullseye() {
-            if (opts.divGraph == null) return;
+            if (opts.divGraph == null || roads.length == 0) return;
             var bullseyeelt = gBullseye.select(".bullseye");
             var bx = newXScale(roads[roads.length-1].sta[0]*1000)-(opts.bullsEye.size/2);
             var by = newYScale(roads[roads.length-1].sta[1])-(opts.bullsEye.size/2);
@@ -1962,7 +1996,7 @@
         }
 
         function updateContextBullseye() {
-            if (opts.divGraph == null) return;
+            if (opts.divGraph == null || roads.length == 0) return;
             var bullseyeelt = ctxplot.select(".ctxbullseye");
             var bx = xScaleB(roads[roads.length-1].sta[0]*1000)
                 -(opts.bullsEye.ctxsize/2);
@@ -1982,7 +2016,7 @@
 
         // Creates or updates the Bullseye at the goal date
         function updateOldBullseye() {
-            if (opts.divGraph == null) return;
+            if (opts.divGraph == null || roads.length == 0) return;
             var bullseyeelt = gOldBullseye.select(".oldbullseye");
             var bx = newXScale(initialRoad[initialRoad.length-1]
                                   .sta[0]*1000)-(opts.bullsEye.size/2);
@@ -2002,7 +2036,7 @@
         }
 
         function updateContextOldBullseye() {
-            if (opts.divGraph == null) return;
+            if (opts.divGraph == null || roads.length == 0) return;
             var bullseyeelt = ctxplot.select(".ctxoldbullseye");
             var bx = xScaleB(initialRoad[initialRoad.length-1].sta[0]*1000)
                 -(opts.bullsEye.ctxsize/2);
@@ -2023,7 +2057,7 @@
 
         // Creates or updates the watermark with the number of safe days
         function updateWatermark() {
-            if (opts.divGraph == null) return;
+            if (opts.divGraph == null || roads.length == 0) return;
             var wmarkelt = focus.select(".watermark");
             var bx = sw/2;
             var by = sh-20;
@@ -2045,7 +2079,7 @@
 
         // Creates or updates the Akrasia Horizon line
         function updateHorizon() {
-            if (opts.divGraph == null) return;
+            if (opts.divGraph == null || roads.length == 0) return;
             var horizonelt = gHorizon.select(".horizon");
             if (horizonelt.empty()) {
                 gHorizon.append("svg:line")
@@ -2084,7 +2118,7 @@
         }
 
         function updateContextToday() {
-            if (opts.divGraph == null) return;
+            if (opts.divGraph == null || roads.length == 0) return;
             var todayelt = ctxplot.select(".ctxtoday");
             if (todayelt.empty()) {
                 ctxplot.append("svg:line")
@@ -2122,7 +2156,7 @@
         }
 
         function updateContextHorizon() {
-            if (opts.divGraph == null) return;
+            if (opts.divGraph == null || roads.length == 0) return;
             var horizonelt = ctxplot.select(".ctxhorizon");
             if (horizonelt.empty()) {
                 ctxplot.append("svg:line")
@@ -2163,7 +2197,7 @@
         }
 
         function updateYBHP() {
-            if (opts.divGraph == null) return;
+            if (opts.divGraph == null || roads.length == 0) return;
             var pinkelt = gYBHP.select(".halfplane");
             var yedge, itoday, ihor;
             var ir = roads;
@@ -2196,7 +2230,7 @@
         }
 
         function updatePinkRegion() {
-            if (opts.divGraph == null) return;
+            if (opts.divGraph == null || roads.length == 0) return;
             var pinkelt = gPink.select(".pinkregion");
             var yedge, itoday, ihor;
             var ir = initialRoad;
@@ -2230,7 +2264,7 @@
 
         // Creates or updates the unedited road
         function updateOldRoad() {
-            if (opts.divGraph == null) return;
+            if (opts.divGraph == null || roads.length == 0) return;
             // Create, update and delete road lines
             var roadelt = gOldRoad.selectAll(".oldroads").data(initialRoad);
             roadelt.exit().remove();
@@ -2253,7 +2287,7 @@
         }
 
         function updateContextOldRoad() {
-            if (opts.divGraph == null) return;
+            if (opts.divGraph == null || roads.length == 0) return;
             // Create, update and delete road lines on the brush graph
             var roadelt = ctxplot.selectAll(".ctxoldroads")
                     .data(initialRoad);
@@ -2277,7 +2311,7 @@
         }
 
         function updateKnots() {
-            if (opts.divGraph == null) return;
+            if (opts.divGraph == null || roads.length == 0) return;
             // Create, update and delete vertical knot lines
             var knotelt = gKnots.selectAll(".knots").data(roads);
             knotelt.exit().remove();
@@ -2360,7 +2394,7 @@
         }
 
         function updateRoads() {
-            if (opts.divGraph == null) return;
+            if (opts.divGraph == null || roads.length == 0) return;
             var lineColor = isRoadValid( roads )?
                     opts.roadLineCol.valid:opts.roadLineCol.invalid;
 
@@ -2413,7 +2447,7 @@
         }
 
         function updateRoadValidity() {
-            if (opts.divGraph == null) return;
+            if (opts.divGraph == null || roads.length == 0) return;
             var lineColor = isRoadValid( roads )?
                     opts.roadLineCol.valid:opts.roadLineCol.invalid;
 
@@ -2426,7 +2460,7 @@
         }
 
         function updateContextRoads() {
-            if (opts.divGraph == null) return;
+            if (opts.divGraph == null || roads.length == 0) return;
             var lineColor = isRoadValid( roads )?
                     opts.roadLineCol.valid:opts.roadLineCol.invalid;
 
@@ -2452,7 +2486,7 @@
         }
 
         function updateDots() {
-            if (opts.divGraph == null) return;
+            if (opts.divGraph == null || roads.length == 0) return;
             // Create, update and delete inflection points
             var dotelt = gDots.selectAll(".dots").data(roads);
             dotelt.exit().remove();
@@ -2494,7 +2528,7 @@
                           dotDragEnded(d, Number(this.id));}));
         }
         function updateContextDots() {
-            if (opts.divGraph == null) return;
+            if (opts.divGraph == null || roads.length == 0) return;
             // Create, update and delete inflection points
             var dotelt = ctxplot.selectAll(".ctxdots").data(roads);
             dotelt.exit().remove();
@@ -2513,7 +2547,7 @@
         }
 
         function updateDataPoints() {
-            if (opts.divGraph == null) return;
+            if (opts.divGraph == null || roads.length == 0) return;
             var pts = (flad != null)?
                     datapoints.slice(0,datapoints.length-1).concat(futurepoints):
                     datapoints.concat(futurepoints);
@@ -2584,7 +2618,25 @@
                 .text(function (column) { return column; });
             tbody = thead.append('div').attr('class', 'roadbody');
         }
+        function updateRoadTableTitle() {
+            if (opts.divTable == null) return;
+            var ratetext = "Daily Slope";
+            if (goal.runits === 'h') ratetext = "Hourly Slope";
+            if (goal.runits === 'd') ratetext = "Daily Slope";
+            if (goal.runits === 'w') ratetext = "Weekly Slope";
+            if (goal.runits === 'm') ratetext = "Monthly Slope";
+            if (goal.runits === 'y') ratetext = "Yearly Slope";
 
+            var roadcolumns = ['', '', 'End Date', '', 'Value', '',
+                               ratetext, ''];
+            thead.selectAll("span.roadhdrcell").data(roadcolumns)
+                .text(function (column) { return column; });
+
+            d3.select("#roadtable")
+                .style("width", (tbody.node().offsetWidth+30)+"px");
+
+        }
+        
         // Create the table header and body to show the start node
         var sthead, stbody;
         function createStartTable() {
@@ -2697,7 +2749,7 @@
         }
 
         function autoScroll( elt ) {
-            if (opts.tableScroll && opts.tableHeight !== 0) {
+            if (opts.tableAutoScroll && opts.tableHeight !== 0) {
                 var topPos = elt.node().offsetTop;            
                 document.getElementById('roadtable').scrollTop 
                     = topPos-opts.tableHeight/2;
@@ -2894,7 +2946,7 @@
                              auto: (row.auto==RoadParamEnum.DATE)},
                             {order: 4, value: row.end[1].toPrecision(5), name: "endvalue"+(ri), 
                              auto: (row.auto==RoadParamEnum.VALUE)},
-                            {order: 6, value: (row.slope*SID).toPrecision(5), name: "slope"+(ri), 
+                            {order: 6, value: (row.slope*goal.ratemult).toPrecision(5), name: "slope"+(ri), 
                              auto: (row.auto==RoadParamEnum.SLOPE)}];
                     });
             cells.enter().append("span").attr('class', 'roadcell')
@@ -2921,13 +2973,20 @@
         }
 
         function updateContextData() {
-            updateContextOldRoad();
-            updateContextOldBullseye();
-            updateContextBullseye();
-            updateContextRoads();
-            updateContextDots();
-            updateContextHorizon();
-            updateContextToday();
+            if (opts.showContext) {
+                context.attr("visibility", "visible");
+                updateContextOldRoad();
+                updateContextOldBullseye();
+                updateContextBullseye();
+                updateContextRoads();
+                updateContextDots();
+                updateContextHorizon();
+                updateContextToday();
+                if (opts.focusRect) focusrect.attr("visibility", "visible");
+            } else {
+                context.attr("visibility", "hidden");
+                focusrect.attr("visibility", "hidden");
+            }
         }
 
         function updateGraphData() {
@@ -2956,6 +3015,11 @@
             updateDataPoints();
             return opts.showdata;
         };
+        self.showContext = function( flag ) {
+            if (arguments.length > 0) opts.showContext = flag;
+            updateContextData();
+            return opts.showContext;
+        };
         self.keepSlopes = function( flag ) {
             if (arguments.length > 0) opts.keepslopes = flag;
             return opts.keepslopes;
@@ -2978,6 +3042,15 @@
             }
             return opts.reversetable;
         };
+        self.autoScroll = function( flag ) {
+            if (arguments.length > 0) opts.tableAutoScroll = flag;
+            return opts.tableAutoScroll;
+        };
+
+        self.undoBufferState = function() {
+            return({undo: undoBuffer.length, redo: redoBuffer.length});
+        };
+
         self.undo = function() {
             undoLastEdit();
         };
@@ -2989,10 +3062,6 @@
         };
         self.loadGoal = function( url ) {
             loadRoadFromURL( url );
-        };
-        self.autoScroll = function( flag ) {
-            if (arguments.length > 0) opts.tableScroll = flag;
-            return opts.tableScroll;
         };
     };
 
