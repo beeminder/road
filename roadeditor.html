@@ -29,14 +29,15 @@
     <td valign="top"><div id="roadgraph"></div>
 
 <form action="">
-<input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>Show datapoints<br>
+<input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>Show datapoints
+<input id="showcontext" type="checkbox" onclick="editor.showContext(this.checked);" checked>Show context graph<br>
 <input id="keepslopes" type="checkbox" onclick="editor.keepSlopes(this.checked);" checked>Keep slopes fixed<br>
 <input id="keepintervals" onclick="editor.keepIntervals(this.checked);" type="checkbox">Keep intervals fixed
 </form>
 
 <button id="zoomall" onclick="editor.zoomOut();">Zoom To Fit</button>
-<button id="undo" onclick="editor.undo();">Undo</button>
-<button id="redo" onclick="editor.redo();">Redo</button><br/><br/>
+<button id="undo" onclick="editor.undo();">Undo (0)</button>
+<button id="redo" onclick="editor.redo();">Redo (0)</button><br/><br/>
 
 </td>
     <td valign="top">
@@ -52,14 +53,48 @@
 <script src = "roadeditor.js"></script>
 
 <script>
+  var undoBtn = document.getElementById("undo");
+  var redoBtn = document.getElementById("redo");
+  function roadChanged() {
+    var bufStates = editor.undoBufferState();
+    if (bufStates.undo === 0)  {
+      undoBtn.disabled = true;
+      undoBtn.innerHTML = "Undo (0)";
+    } else {
+      undoBtn.disabled = false;
+      undoBtn.innerHTML = "Undo ("+bufStates.undo+")";
+    }
+    if (bufStates.redo === 0)  {
+      redoBtn.disabled = true;
+      redoBtn.innerHTML = "Redo (0)";
+    } else {
+      redoBtn.disabled = false;
+      redoBtn.innerHTML = "Redo ("+bufStates.redo+")";
+    }
+  }
+
   var editor = new bmndr({divGraph: document.getElementById('roadgraph'),
-                          divTable: document.getElementById('roadtable')});
+                          divTable: document.getElementById('roadtable'),
+                          maxFutureDays: 365,
+                          showFocusRect: true,
+                          showContext: true,
+                          onRoadChange: roadChanged});
   editor.showData(document.getElementById("showdata").checked);
+  editor.showContext(document.getElementById("showcontext").checked);
   editor.keepSlopes(document.getElementById("keepslopes").checked);
   editor.keepIntervals(document.getElementById("keepintervals").checked);
   editor.reverseTable(document.getElementById("reversetable").checked);
   editor.autoScroll(document.getElementById("autoscroll").checked);
+
   editor.loadGoal(document.getElementById("roadselect").value);
+
+  function documentKeyDown(e) {
+    var evtobj = window.event? window.event : e;
+    if (evtobj.keyCode == 89 && evtobj.ctrlKey) editor.redo();
+    if (evtobj.keyCode == 90 && evtobj.ctrlKey) editor.undo();
+  }
+        
+  document.onkeydown = documentKeyDown;
 </script>
 
 </body>
