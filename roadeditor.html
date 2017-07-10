@@ -38,6 +38,7 @@
 <button id="zoomall" onclick="editor.zoomOut();">Zoom To Fit</button>
 <button id="undo" onclick="editor.undo();">Undo (0)</button>
 <button id="redo" onclick="editor.redo();">Redo (0)</button><br/><br/>
+Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">Retroratchet</button><br/>
 
 </td>
     <td valign="top">
