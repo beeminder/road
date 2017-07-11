@@ -16,8 +16,25 @@ svg text::selection {
   fill: none;
   stroke: black;
   shape-rendering: crispEdges;
+  pointer-events: none;
 }
+.axis .minor line {
+  stroke: #777;
+  stroke-dasharray:5,4;
+}
+.grid line {
+  fill: none;
+  stroke: #dddddd;
+  stroke-width: 2px;
+  shape-rendering: crispEdges;
+  pointer-events: none;
+}
+.grid .minor line {
+  stroke: none;
+}
+
 .axis text {
+  pointer-events: none;
   font-family: sans-serif;
   font-size: 13px;
 }
