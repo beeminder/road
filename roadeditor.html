@@ -15,6 +15,7 @@
 <body>
 
  <select id="roadselect" class="roadselect" onchange="editor.loadGoal(this.value);">
+  <option value="data/beeminder.json">Beeminder</option>
   <option value="data/testroad1.json">Test Road 1</option>
   <option value="data/testroad2.json">Test Road 2</option>
   <option value="data/testroad3.json">Test Road 3</option>
@@ -22,6 +23,7 @@
   <option value="data/testroad5.json">Test Road 5</option>
   <option value="data/testroad6.json">Test Road 6</option>
   <option value="data/testroad7.json">Test Road 7</option>
+  <option value="data/ceng424.json">CENG 424</option>
 </select> 
  
 <table>
@@ -76,7 +78,7 @@ Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id=
 
   var editor = new bmndr({divGraph: document.getElementById('roadgraph'),
                           divTable: document.getElementById('roadtable'),
-                          maxFutureDays: 365,
+                          maxFutureDays: 2*365,
                           showFocusRect: true,
                           showContext: true,
                           onRoadChange: roadChanged});
