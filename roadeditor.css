@@ -36,12 +36,12 @@ svg text::selection {
 .axis text {
   pointer-events: none;
   font-family: sans-serif;
-  font-size: 13px;
+  font-size: 11px;
 }
 
 .axislabel {
   font-family: sans-serif;
-  font-size: 13px;
+  font-size: 11px;
   text-anchor: middle;
 }
 

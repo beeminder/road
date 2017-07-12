@@ -35,7 +35,7 @@
         roadKnot:     { width: 3, rmbtnscale: 0.6 },
         roadLine:     { width: 3, ctxwidth: 2 },
         oldRoadLine:  { width: 3, ctxwidth: 2, dash: 32, ctxdash: 16 },
-        dataPoint:    { size: 4, flsize: 5 }, 
+        dataPoint:    { size: 5, flsize: 5 }, 
         horizon:      { width: 2, ctxwidth: 1, dash: 8, ctxdash: 6, 
                         font: 12, ctxfont: 9 },
         today:        { width: 2, ctxwidth: 1, font: 16, ctxfont: 9 },
@@ -201,6 +201,36 @@
         return Math.round(intp) + chop(fracp, delta);
     },
 
+    // clip(x, a,b) = min(b,max(a,x))
+    clip = function(x, a,b) {
+      var tmp;
+      if (a > b) { tmp=a; a=b; b=tmp;}
+      if (x < a) x = a;
+      if (x > b) x = b;
+      return x;
+    },
+
+    // Convex combination: x rescaled to be in [c,d] as x ranges from a to b. 
+    // clipQ indicates whether the output value should be clipped to [c,d]. 
+    // Unsorted inputs [a,b] and [c,d] are also supported and work in the expected 
+    // way except when clipQ = False, in which case [a,b] and [c,d] are sorted prior 
+    // to computing the output.
+    cvx = function(x, a,b, c,d, clipQ=true) {
+      var tmp;
+      if (chop(a-b) == 0) {
+        if (x <= a) return d3.min([c,d]);
+        else        return d3.max([c,d]);
+      }
+      if (chop(c-d) == 0) return c;
+      if (clipQ)
+        return clip(c + (x-a)/(b-a)*(d-c), (c>d)?d:c,(c>d)?c:d);
+      else {
+          if (a > b) { tmp=a; a=b; b=tmp;}
+          if (c > d) { tmp=c; c=d; d=tmp;}
+          return c + (x-a)/(b-a)*(d-c);
+      }
+    },
+  
     deldups = function(a) {
         var seen = {};
         return a.filter(function(item) {
@@ -718,6 +748,7 @@
         var yScaleB, brushObj, brush, focusrect;
         var topLeft;
         var newXScale, newYScale;
+        var scalf = 1;
 
         function createGraph() {
             var div = opts.divGraph;
@@ -814,8 +845,12 @@
                     dotAdded();
                 }
             }
-            zoomarea.on("click", dotAddedShift);
-            zoomarea.on("dblclick.zoom", dotAdded);
+            if (opts.roadEditor) {
+                zoomarea.on("click", dotAddedShift);
+                zoomarea.on("dblclick.zoom", dotAdded);
+            } else {
+                zoomarea.on("dblclick.zoom", null);            
+            }
             
             focus = svg.append('g')
 	            .attr('class', 'focus')
@@ -834,9 +869,9 @@
             gGrid = plot.append('g').attr('id', 'grid');
             gPastBox = plot.append('g').attr('id', 'pastboxgrp');
             gYBHP = plot.append('g').attr('id', 'ybhpgrp');
-            gPink = plot.append('g').attr('id', 'pinkgrp');
             gOldGuides = plot.append('g').attr('id', 'oldguidegrp');
             gOldRoad = plot.append('g').attr('id', 'oldroadgrp');
+            gPink = plot.append('g').attr('id', 'pinkgrp');
             gOldCenter = plot.append('g').attr('id', 'oldcentergrp');
             gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp');
             gKnots = plot.append('g').attr('id', 'knotgrp');
@@ -891,8 +926,8 @@
             }
 
             yScale = d3.scaleLinear().range([plotbox.height, 0]);
-            yAxis = d3.axisLeft(yScale);
-            yAxisR = d3.axisRight(yScale);
+            yAxis = d3.axisLeft(yScale).ticks(8);
+            yAxisR = d3.axisRight(yScale).ticks(8);
             yAxisObj = focus.append('g')        
                 .attr("class", "axis")
                 .attr("transform", "translate(" 
@@ -1132,8 +1167,9 @@
             ticks.push([d3.utcDay.range(xr[0], xr[1], 2),"%b %d"]);
             ticks.push([d3.utcWeek.range(xr[0], xr[1], 1),"%b %d"]);
             ticks.push([d3.utcWeek.range(xr[0], xr[1], 2),"%b %d"]);
-            //ticks.push([d3.utcMonth.every(1).range(xr[0], xr[1]),"%b"]);
-            //ticks.push([d3.utcMonth.every(2).range(xr[0], xr[1]),"%b"]);
+            ticks.push([d3.utcMonth.every(1).range(xr[0], xr[1]),"%b %Y"]);
+            ticks.push([d3.utcMonth.every(2).range(xr[0], xr[1]),"%b %Y"]);
+            ticks.push([d3.utcYear.every(1).range(xr[0], xr[1]),"%Y"]);
         }
         function redrawXTicks() {
             //console.debug("redrawXTicks()");
@@ -1149,10 +1185,14 @@
                 tickType = 0; majorSkip = 7;
             } else if (diff < 120) {
                 tickType = 1; majorSkip = 7;
-            } else if (diff < 365/2) {
+            } else if (diff < 365){
                 tickType = 2; majorSkip = 7;
+            } else if (diff < 2*365){
+                tickType = 4; majorSkip = 3;
+            } else if (diff < 4*365){
+                tickType = 5; majorSkip = 3;
             } else {
-                tickType = 3; majorSkip = 7;
+                tickType = 6; majorSkip = 1;              
             }
             var pt = ticks[tickType][0].filter(function(d){
                 return (d.getTime()<xr[0]);});
@@ -1196,6 +1236,10 @@
             allextent = mergeExtents(allextent, dataextent);
             var p = {xmin:0.0, xmax:0.0, ymin:0.10, ymax:0.10};
             enlargeExtent(allextent, p);
+            if ((allextent.yMax - allextent.yMin) < 3*goal.lnw) {
+                allextent.yMax += 1.5*goal.lnw;
+                allextent.yMin -= 1.5*goal.lnw;
+            }
 
             var yrange = [allextent.yMax, allextent.yMin];
             var newtr = 
@@ -1444,12 +1488,15 @@
         function dataExtentPartial( data, xmin, xmax, extend = false ) {
             var extent = {};
             // Compute new limits for the current data
-            extent.xMin = xmin;
-            extent.xMax = xmax;
+            extent.xMin = d3.min(data, function(d) { 
+                return (d[0] <xmin||d[0]>xmax)?Infinity:d[0]; });
+            extent.xMax = d3.max(data, function(d) { 
+                return (d[0] <xmin||d[0]>xmax)?-Infinity:d[0]; });
             extent.yMin = d3.min(data, function(d) { 
                 return (d[0] <xmin||d[0]>xmax)?Infinity:d[1]; });
             extent.yMax = d3.max(data, function(d) { 
                 return (d[0] <xmin||d[0]>xmax)?-Infinity:d[1]; });
+
             // Extend limits by 5% so everything is visible
             var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
             if (extend) enlargeExtent(extent, p);
@@ -1480,11 +1527,15 @@
             var maxx = daysnap(d3.min([now+opts.maxFutureDays*SID, 
                                roads[roads.length-1].sta[0]]));
             var cur = roadExtentPartial( roads, roads[0].end[0], maxx, false );
-            var old = roadExtentPartial( initialRoad, roads[0].end[0], maxx, false );
-            var data = dataExtentPartial( datapoints, roads[0].end[0], maxx, false );
-
+            var old = roadExtentPartial(initialRoad,roads[0].end[0],maxx,false);
             var ne = mergeExtents( cur, old );
+
+            var data = dataExtentPartial(datapoints,roads[0].end[0],datapoints[datapoints.length-1][0],false);
             ne = mergeExtents(ne, data);
+            if (fuda.length != 0) {
+                var df = dataExtentPartial(fuda,roads[0].end[0],maxx,false);
+                ne = mergeExtents(ne, df);
+            }
 
             var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
             enlargeExtent(ne, p);
@@ -1696,7 +1747,6 @@
         // Recreates the road array from the "rawknots" array, which includes
         // only timestamp,value pairs
         function loadGoal( json ) {
-
             clearUndoBuffer();
 
             legacyIn(json.params);
@@ -1734,15 +1784,22 @@
 
             // Process datapoints
             procData();
+            var vtmp;
             if (json.params.hasOwnProperty('tini')) {
                 goal.tini = json.params.tini;
-                if (goal.plotall) goal.vini = json.params.vini;
-                else goal.vini = json.params.vini;
             } else {
-                // Retrieve starting date from the first datapoint
                 goal.tini = datapoints[0][0];
-                goal.vini = datapoints[0][1];
             }
+            if (allvals.hasOwnProperty(goal.tini))
+                vtmp = (goal.plotall)?allvals[goal.tini][0]:aggval[goal.tini];
+            else
+                vtmp = json.params.vini;
+            if (!allvals.hasOwnProperty(goal.vini)) {
+                goal.vini = (goal.kyoom)?0:vtmp;
+            } else {
+                goal.vini = json.params.vini;
+            }
+
             // Extract the road from the json and fill in details
             procRoad( json.params.road );
 
@@ -2478,13 +2535,14 @@
                     .attr("stroke", Cols.AKRA) 
                     .attr("stroke-dasharray", 
                           (opts.horizon.dash)+","+(opts.horizon.dash)) 
-		            .style("stroke-width",opts.horizon.width);
+		            .style("stroke-width",opts.horizon.width*scalf);
             } else {
                 horizonelt
 	  	            .attr("x1", newXScale(goal.horizon*1000))
                     .attr("y1",0)
 		            .attr("x2", newXScale(goal.horizon*1000))
-                    .attr("y2",plotbox.height);
+                    .attr("y2",plotbox.height)
+		            .style("stroke-width",opts.horizon.width*scalf);
             }
             var textx = newXScale(goal.horizon*1000)+(18);
             var texty = plotbox.height/2;
@@ -2636,10 +2694,11 @@
                           +(opts.oldRoadLine.dash)) 
   		            .style("pointer-events", "none")
   		            .style("fill", "none")
-  		            .style("stroke-width",opts.oldRoadLine.width)
+  		            .style("stroke-width",opts.oldRoadLine.width*scalf)
   		            .style("stroke", Cols.ORNG);
             } else {
-                roadelt.attr("d", d);
+                roadelt.attr("d", d)
+  		            .style("stroke-width",opts.oldRoadLine.width*scalf);
             }
             if (!opts.roadEditor) {
                 d = "M"+newXScale(ir[0].sta[0]*1000)+" "
@@ -2679,9 +2738,16 @@
                           newYScale.invert(0)];
             var delta = 1;
             var numlines = Math.abs((yrange[1] - yrange[0])/(goal.lnw*delta));
-            console.debug(numlines);
-            if (numlines > 48) {
-                delta = 6;
+            if (numlines > 32) {
+                delta = 7;
+                numlines = Math.abs((yrange[1] - yrange[0])/(goal.lnw*delta));
+            }
+            if (numlines > 32) {
+                delta = 4*7;
+                numlines = Math.abs((yrange[1] - yrange[0])/(goal.lnw*delta));
+            }
+            if (numlines > 32) {
+                delta = 8*7;
                 numlines = Math.abs((yrange[1] - yrange[0])/(goal.lnw*delta));
             }
             var arr = new Array(Math.ceil(numlines)).fill(0);
@@ -2704,20 +2770,20 @@
   		        .style("pointer-events", "none")
   		        .style("fill", "none")
   		        .style("stroke-width", function (d,i) { 
-                    return ((delta!=1 && i==0) || (delta==1 && i==6))
-                        ?4:2;})
+                    return ((delta==7 && i==0) || (delta==1 && i==6))
+                        ?4*scalf:2*scalf;})
   		        .style("stroke", function (d,i) { 
-                    return ((delta!=1 && i==0) || (delta==1 && i==6))
+                    return ((delta==7 && i==0) || (delta==1 && i==6))
                         ?Cols.DYEL:Cols.LYEL;});
             roadelt
 	  	        .attr("d", d)
                 .attr("transform", function(d,i) { 
                     return "translate(0,"+((i+1)*delta*shift)+")";})
   		        .style("stroke-width", function (d,i) { 
-                    return ((delta!=1 && i==0) || (delta==1 && i==6))
-                        ?4:2;})
+                    return ((delta==7 && i==0) || (delta==1 && i==6))
+                        ?4*scalf:2*scalf;})
   		        .style("stroke", function (d,i) { 
-                    return ((delta!=1 && i==0) || (delta==1 && i==6))
+                    return ((delta==7 && i==0) || (delta==1 && i==6))
                         ?Cols.DYEL:Cols.LYEL;});
         }
         function updateContextOldRoad() {
@@ -3015,9 +3081,9 @@
         }
         function dpStrokeWidth( pt ) {
             if (opts.roadEditor) {
-                return opts.dataPoint.border;
+                return opts.dataPoint.border*scalf;
             } else {
-                return (pt[2] == DPTYPE.AGGPAST)?"1.5px":"1px";
+                return ((pt[2] == DPTYPE.AGGPAST)?1:0.5)*scalf;
             }
         }
 
@@ -3034,6 +3100,8 @@
                 dpelt
 		            .attr("cx", function(d){ return newXScale((d[0])*1000);})
                     .attr("cy",function(d){ return newYScale(d[1]);})
+		            .attr("stroke-width", dpStrokeWidth)
+                    .attr("r", opts.dataPoint.size*scalf)
                     .attr("fill", dpFill);
                 dpelt.enter().append("svg:circle")
 		            .attr("class","dpts")
@@ -3041,7 +3109,7 @@
 		            .attr("name", function(d,i) {return "dpt"+i;})
 		            .attr("stroke", dpStroke)
 		            .attr("stroke-width", dpStrokeWidth)
-                    .attr("r", opts.dataPoint.size)
+                    .attr("r", opts.dataPoint.size*scalf)
 		            .attr("cx", function(d){ return newXScale((d[0])*1000);})
                     .attr("cy",function(d){ return newYScale(d[1]);})
                     .attr("fill", dpFill);
@@ -3084,20 +3152,22 @@
                             .attr("pointer-events", "none")
 	  	                    .attr("d", d)
   		                    .style("fill", "none")
-  		                    .style("stroke-width","3px")
+  		                    .style("stroke-width",3*scalf)
   		                    .style("stroke", Cols.PURP);
                     } else {
-                        stpelt.attr("d", d);
+                        stpelt.attr("d", d)
+  		                    .style("stroke-width",3*scalf);
                     }
                     stpdelt.exit().remove();
                     stpdelt
 		                .attr("cx", function(d){ return newXScale(d[0]*1000);})
-                        .attr("cy",function(d){ return newYScale(d[1]);});
+                        .attr("cy",function(d){ return newYScale(d[1]);})
+                        .attr("r", (opts.dataPoint.size+2)*scalf);
                     stpdelt.enter().append("svg:circle")
 		                .attr("class","steppyd")
 		                .attr("stroke", "none")
                         .attr("pointer-events", "none")
-                        .attr("r", opts.dataPoint.size+2)
+                        .attr("r", (opts.dataPoint.size+2)*scalf)
 		                .attr("cx", function(d){ return newXScale(d[0]*1000);})
                         .attr("cy",function(d){ return newYScale(d[1]);})
                         .attr("fill", Cols.PURP);
@@ -3511,6 +3581,10 @@
         }
 
         function updateGraphData() {
+            var limits = [newXScale.invert(0).getTime()/1000, 
+                          newXScale.invert(plotbox.width).getTime()/1000];
+            scalf = cvx(limits[1], limits[0], limits[0]+73*SID, 1,0.5);
+
             updatePastBox();
             updateYBHP();
             updatePinkRegion();
