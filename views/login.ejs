@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<!-- --------------------------------- 80chars ----------------------------- -->
+
+<html ng-app="beeApp">
+<head>
+
+<title>Beeminder Road Editor</title>
+<meta name="description" 
+      content="Beeminder Road Editor">
+<link id="favicon" rel="icon" href="https://glitch.com/favicon-app.ico" 
+      type="image/x-icon">
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" 
+  href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+  integrity=
+       "sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+  crossorigin="anonymous">
+
+<link rel="stylesheet" href="/style.css">
+
+</head>
+<body>
+
+<header>
+  <h1 style="text-align: center;">
+    Beeminder Road Editor
+  </h1>
+</header>
+<div style="margin-bottom: 40px;">&nbsp;</div>
+<main>
+  
+  <!-- Initial welcome screen -->
+  <div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3" 
+       ng-if="currentStage == 'initialScreen'" style="text-align: center;">
+    <p>
+      Welcome to Beeminder Road Editor!</p>
+    <p style="text-align: center">
+      In order to start working with this app, please<br />&nbsp;<br />
+      <a class="btn btn-primary" href=
+"https://www.beeminder.com/apps/authorize?client_id=<%= BEEMINDER_CLIENT_ID %>&redirect_uri=<%= AUTH_REDIRECT_URI %>&response_type=token">
+        Log in with your Beeminder account
+      </a>
+    <br />&nbsp;<br />
+      or <a href="/demo.html">
+        visit our demo page
+      </a>
+
+    </p>
+  </div>
+</main>
+</body>
+</html>
