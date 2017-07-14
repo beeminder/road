@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <link rel="stylesheet" href="pikaday.css">
     <link rel="stylesheet" href="roadeditor.css">
-    <script src="https://d3js.org/d3.v4.js"></script>
+    <script src = "https://d3js.org/d3.v4.js"></script>
     <script src = "moment.min.js"></script>
     <script src = "pikaday.js"></script>
 </head>
@@ -14,7 +14,8 @@
 
 <body>
 
- <select id="roadselect" class="roadselect" onchange="editor.loadGoal(this.value);">
+Select goal: 
+ <select id="roadselect" class="roadselect" onchange="editor.loadGoal(this.value);editor2.loadGoal(this.value);">
   <option value="data/beeminder.json">Beeminder</option>
   <option value="data/testroad1.json">Test Road 1</option>
   <option value="data/testroad2.json">Test Road 2</option>
@@ -26,6 +27,7 @@
   <option value="data/ceng424.json">CENG 424</option>
 </select> 
  
+<h2>Road Editor</h2>
 <table>
   <tr>
     <td valign="top"><div id="roadgraph"></div>
@@ -49,6 +51,23 @@ Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id=
       <input id="autoscroll" type="checkbox" onclick="editor.autoScroll(this.checked);">Auto-scroll table<br>
       <input id="reversetable" type="checkbox" onclick="editor.reverseTable(this.checked);">Reverse table order<br/>
 
+    </td>
+  </tr>
+</table>
+
+<hr/>
+<h2>Goal Graph</h2>
+<table>
+  <tr>
+    <td valign="top"><div id="roadgraph2"></div>
+      <button id="zoomall2" onclick="editor2.zoomOut();">Zoom To Fit</button>
+    </td>
+    <td valign="top">
+      <div id="roadtable2"></div>
+      <br/>
+      <input id="reversetable2" type="checkbox" 
+             onclick="editor2.reverseTable(this.checked);">
+      Reverse table order<br/>
     </td>
   </tr>
 </table>
@@ -78,6 +97,7 @@ Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id=
 
   var editor = new bmndr({divGraph: document.getElementById('roadgraph'),
                           divTable: document.getElementById('roadtable'),
+                          roadEditor:true,
                           maxFutureDays: 2*365,
                           showFocusRect: true,
                           showContext: true,
@@ -90,6 +110,16 @@ Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id=
   editor.autoScroll(document.getElementById("autoscroll").checked);
 
   editor.loadGoal(document.getElementById("roadselect").value);
+
+  var editor2 = new bmndr({divGraph: document.getElementById('roadgraph2'),
+                          divTable: document.getElementById('roadtable2'),
+                          roadEditor:false,
+                          maxFutureDays: 2*365,
+                          showFocusRect: false,
+                          showContext: true});
+  editor2.reverseTable(document.getElementById("reversetable2").checked);
+  editor2.loadGoal(document.getElementById("roadselect").value);
+
 
   function documentKeyDown(e) {
     var evtobj = window.event? window.event : e;
