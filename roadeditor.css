@@ -57,7 +57,7 @@ circle.dots {
 line.roads {
     stroke: black;
 }
-.pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .watermark {
+.pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .waterbuf, .waterbux {
   pointer-events: none;
   text-anchor: middle;
 }
