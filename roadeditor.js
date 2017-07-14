@@ -23,7 +23,7 @@
     defaults = {
         divGraph:     null,   // Binds the graph to a div element
         divTable:     null,    // Binds the road table to a div element
-        svgSize:      { width: 700, height: 530 },
+        svgSize:      { width: 700, height: 480 },
         focusRect:    { x:0, y:0, width:700, height: 400 },
         focusPad:     { left:25, right:0, top:25, bottom:30 },
         contextRect:  { x:0, y:400, width:700, height: 80 },
@@ -41,6 +41,7 @@
                         font: 12, ctxfont: 9 },
         today:        { width: 2, ctxwidth: 1, font: 16, ctxfont: 9 },
         textBox:      { margin: 3 },
+        watermark:    { height:150, fntsize:100 },
 
         roadLineCol:  { valid: "black", invalid:"#ca1212"},
         roadDotCol:   { fixed: "darkgray", editable:"#ca1212", 
@@ -51,7 +52,7 @@
                         text:"#000000", textDisabled: "#aaaaaa"},
         dataPointCol: { future: "#909090", stroke: "lightgray"},
         halfPlaneCol: { fill: "#ffffe8" },
-        pastBoxCol:   { fill: "#f0f0f0" },
+        pastBoxCol:   { fill: "#f8f8f8", opacity:0.5 },
 
         roadEditor:      false,
         showContext:     false,
@@ -132,6 +133,13 @@
              'd' : 'day',
              'h' : 'hour'      },
 
+    PNG = { beye: "https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye.png?1496219226927", 
+            beyey: "https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye.png?1496219226927",
+            skl: "https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fjollyroger_sqr.png?1500062888621",
+            inf: "https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Finfinity.png?1500062867122",
+            sml: "https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fsmiley.png?1500062837171",
+          },
+            
     // ---------------- General Utility Functionc ----------------------
 
     onMobileOrTablet = function() {
@@ -140,8 +148,8 @@
       return check;
     },
         
-    isArray = function(obj) {
-        return (/Array/).test(Object.prototype.toString.call(obj));
+    isArray = function(o) {
+        return (/Array/).test(Object.prototype.toString.call(o));
     },
 
     extend = function(to, fr, owr) {
@@ -164,6 +172,7 @@
         }
         return to;
     },
+
     // Tested, but this does not seem like "argmax" functionality to me, 
     // argmax should return the index. This is just max with a filter
     argmax = function(f, dom) {
@@ -185,6 +194,7 @@
         return ol;
     },
 
+    // Returns a list containing the fraction and integer parts of a float
     modf = function(f) {
         var fp = (f<0)?-f:f, fl = Math.floor(fp);
         return (f<0)?[-(fp-fl),-fl]:[(fp-fl),fl];
@@ -194,11 +204,11 @@
     // http://reference.wolfram.com/mathematica/ref/Quantile.html
     // Author: Ernesto P. Adorio, PhD; UP Extension Program in
     // Pampanga, Clark Field.
-    quantile = function(l, q, qtype=1, issorted=false) {
+    quantile = function(l, q, qt=1, issorted=false) {
         var y;
         if (issorted) y = l;
         else y = l.slice().sort();
-        if (qtype < 1 || qtype > 9) return null; // error
+        if (qt < 1 || qt > 9) return null; // error
 
         var abcd = [ // Parameters for the Hyndman and Fan algorithm
             [0,   0,   1, 0], // R type 1: inv. emp. CDF (mathematica's default)
@@ -211,10 +221,10 @@
             [1/3, 1/3, 0, 1], // R type 8: median-unbiased
             [3/8, 1/4, 0, 1]  // R type 9: normal-unbiased
         ],
-            a = abcd[qtype-1][0],
-            b = abcd[qtype-1][1],
-            c = abcd[qtype-1][2],
-            d = abcd[qtype-1][3],
+            a = abcd[qt-1][0],
+            b = abcd[qt-1][1],
+            c = abcd[qt-1][2],
+            d = abcd[qt-1][3],
             n = l.length,
             out = modf(a + (n+b)*q - 1),
             g = out[0],
@@ -225,7 +235,8 @@
         return (g==0)?y[j]:(y[j] + (y[j+1] - y[j])* (c + d*g));
     },
 
-    //Return a list with the cumulative sum of the elements in l, left to right
+    // Return a list with the cumulative sum of the elements in l, left
+    // to right
     accumulate = function(l) {
         var ne = l.length;
         if (ne == 0) return l;
@@ -235,9 +246,9 @@
     },
 
     // zip([[1,2], [3,4]]) --> [[1,3], [2,4]]
-    zip = function (arrays) {
-        return arrays[0].map(function(_,i){
-            return arrays.map(function(array){return array[i];});
+    zip = function (av) {
+        return av[0].map(function(_,i){
+            return av.map(function(a){return a[i];});
         });
     },
 
@@ -248,25 +259,23 @@
 
     // Return an integer when x is very close to an integer
     ichop = function(x, delta=1e-7) {
-        var fracp = x % 1;
-        var intp = x - fracp;
-        if (fracp < 0) {fracp += 1; intp -= 1;};
-        if (fracp > 0.5) fracp = 1 - chop(1-fracp);
-        return Math.round(intp) + chop(fracp, delta);
+        var fp = x % 1, ip = x - fp;
+        if (fp < 0) {fp += 1; ip -= 1;};
+        if (fp > 0.5) fp = 1 - chop(1-fp);
+        return Math.round(ip) + chop(fp, delta);
     },
 
     // clip(x, a,b) = min(b,max(a,x))
-    clip = function(x, a,b) {
-      var tmp;
-      if (a > b) { tmp=a; a=b; b=tmp;}
+    clip = function(x, a, b) {
+      if (a > b) { var tmp=a; a=b; b=tmp;}
       if (x < a) x = a;
       if (x > b) x = b;
       return x;
     },
 
-    linspace = function linspace(a,b,n) {
-        if(typeof n === "undefined") n = Math.max(Math.round(b-a)+1,1);
-        if(n<2) { return n===1?[a]:[]; }
+    linspace = function linspace( a, b, n) {
+        if (typeof n === "undefined") n = Math.max(Math.round(b-a)+1,1);
+        if (n < 2) { return n===1?[a]:[]; }
         var i,ret = Array(n);
         n--;
         for(i=n;i>=0;i--) { ret[i] = (i*b+(n-i)*a)/n; }
@@ -297,67 +306,66 @@
   
     deldups = function(a) {
         var seen = {};
-        return a.filter(function(item) {
-            return seen.hasOwnProperty(item) ? false : (seen[item] = true);
+        return a.filter(function(it) {
+            return seen.hasOwnProperty(it) ? false : (seen[it] = true);
         });
     },
 
-    nonzero = function(arr) {
-        var l = arr.length;
-        for( var i = 0; i < l; i++ ){ if (arr[i] != 0) return true;}
+    nonzero = function(a) {
+        var l = a.length, i;
+        for( i = 0; i < l; i++ ){ if (a[i] != 0) return true;}
         return false;
     },
 
-    clocky = function(arr) {
-        var sum = 0, l = arr.length;
-        for( var i = 1; i < l; i+=2 ){ sum += (arr[i]-arr[i-1]);}
-        return sum;
+    clocky = function(a) {
+        var s = 0, l = a.length, i;
+        for( i = 1; i < l; i+=2 ){ s += (a[i]-a[i-1]);}
+        return s;
     },
 
-    sum = function(arr) {
-        var sum = 0, l = arr.length;
-        for( var i = 0; i < l; i++ ){ sum += arr[i];}
-        return sum;
+    sum = function(a) {
+        var s = 0, l = a.length, i;
+        for( i = 0; i < l; i++ ){ s += a[i];}
+        return s;
     },
 
-    mean = function (arr) {
-        var sum = 0, l = arr.length;
+    mean = function (a) {
+        var s = 0,l = a.length,i;
         if (l == 0) return 0;
-        for( var i = 0; i < l; i++ ){ sum += arr[i];}
-        return sum/arr.length;
+        for( i = 0; i < l; i++ ){ s += a[i];}
+        return s/a.length;
     },
 
-    median = function(arr) {
-        var m = 0, l = arr.length;
-        arr.sort();
-        
-        if (l % 2 === 0) { m = (arr[l / 2 - 1] + arr[l / 2]) / 2; }
-        else { m = arr[(l - 1) / 2];}
+    median = function(a) {
+        var m = 0, l = a.length;
+        a.sort();
+        if (l % 2 === 0) { m = (a[l / 2 - 1] + a[l / 2]) / 2; }
+        else { m = a[(l - 1) / 2];}
         return m;
     },
 
-    mode = function(arr) {
-        var modes = [], count = [], i, number, maxIndex = 0;
+    mode = function(a) {
+        var md = [], count = [], i, num, maxi = 0, al = a.length;
         
-        for (i = 0; i < arr.length; i += 1) {
-            number = arr[i];
-            count[number] = (count[number] || 0) + 1;
-            if (count[number] > maxIndex) { maxIndex = count[number]; }
+        for (i = 0; i < al; i += 1) {
+            num = a[i];
+            count[num] = (count[num] || 0) + 1;
+            if (count[num] > maxi) { maxi = count[num]; }
         }
         
         for (i in count)
             if (count.hasOwnProperty(i)) {
-                if (count[i] === maxIndex) { modes.push(Number(i));}
+                if (count[i] === maxi) { md.push(Number(i));}
             }
-        return modes;
+        return md;
     },
 
     inrange = function(x, min, max) {
         return x >= min && x <= max;
     },
 
-    nearlyEqual = function(a, b, epsilon) {
-        return Math.abs(a - b) < epsilon;
+    nearlyEqual = function(a, b, eps) {
+        return Math.abs(a - b) < eps;
     },
 
     ZFUN = function(x) { return 0; },
@@ -372,14 +380,14 @@
     },
 
     // Fixes the supplied unixtime to 00:00:00 on the same day
-    daysnap = function(unixtime) {
-        var d = moment.unix(unixtime).utc();
+    daysnap = function(ut) {
+        var d = moment.unix(ut).utc();
         d.hours(0); d.minutes(0); d.seconds(0); d.milliseconds(0);
         return d.unix();
     },
 
-    formatDate = function(unixtime) {
-        var mm = moment.unix(unixtime).utc();
+    formatDate = function(ut) {
+        var mm = moment.unix(ut).utc();
         var year = mm.year();
         var month = (mm.month()+1);
         month = (month < 10)?"0"+month.toString():month.toString();
@@ -441,14 +449,14 @@
         mean     : function (x) { return mean(deldups(x)); },
         median   : function (x) { return median(x); },
         mode     : function (x) { return mode(x); },
-        trimmean : function (x) { return mean(x); }, // Uluc: did not bother with this
+        trimmean : function (x) { return mean(x); }, // Uluc: did not bother 
         sum      : function (x) { return sum(x); },
         jolly    : function (x) { return (x.length > 0)?1:0; },
         binary   : function (x) { return (x.length > 0)?1:0; },
         nonzero  : nonzero,
         triangle : function (x) { return sum(x)*(sum(x)+1)/2; },
         square   : function (x) { return Math.pow(sum(x),2); },
-        clocky   : function (x) { return clocky(x); /* sum of pair differences*/ },
+        clocky   : function (x) { return clocky(x); /*sum of pair diff.*/ },
         count    : function (x) { return x.length; /* number of datapoints*/ }
     },
 
@@ -472,12 +480,12 @@
     },
 
     /** Creates and returns a clone of the supplied road array */
-    copyRoad = function( inroad ) {
+    copyRoad = function( rd ) {
         var newroad = [];
-        for (var i = 0; i < inroad.length; i++) {
+        for (var i = 0; i < rd.length; i++) {
             var segment = {
-                sta: inroad[i].sta.slice(), end: inroad[i].end.slice(),
-                slope: inroad[i].slope, auto: inroad[i].auto };
+                sta: rd[i].sta.slice(), end: rd[i].end.slice(),
+                slope: rd[i].slope, auto: rd[i].auto };
             newroad.push(segment);
         }
         return newroad;
@@ -511,11 +519,11 @@
         return roadSegmentValue( rd[i], x );
     },
 
-    // Recomputes the road array starting from the first node and assuming
-    // that the one of slope, enddate or endvalue parameters is chosen to
-    // be automatically computed. If usetable is true, autocompute
-    // parameter selections from the table are used
-    fixRoadArray = function( rd, autoparam=RP.VALUE, usetable=false, 
+    /** Recomputes the road array starting from the first node and
+     assuming that the one of slope, enddate or endvalue parameters is
+     chosen to be automatically computed. If usetable is true,
+     autocompute parameter selections from the table are used */
+    fixRoadArray = function( rd, autop=RP.VALUE, usetable=false, 
                              edited=RP.VALUE) {
         var nr = rd.length;
         // Fix the special first road segment, whose slope will always be 0.
@@ -525,7 +533,7 @@
         // Iterate through the remaining segments until the last one
         for (var i = 1; i < nr-1; i++) {
             //console.debug("before("+i+"):[("+rd[i].sta[0]+","+rd[i].sta[1]+"),("+rd[i].end[0]+","+rd[i].end[1]+"),"+rd[i].slope+"]");
-            if (usetable) autoparam = rd[i].auto;
+            if (usetable) autop = rd[i].auto;
 
             var difftime = rd[i].end[0] - rd[i].sta[0]; 
             var diffval = rd[i].end[1] - rd[i].sta[1]; 
@@ -533,7 +541,7 @@
             rd[i].sta[0] = rd[i-1].end[0];
             rd[i].sta[1] = rd[i-1].end[1];
 
-            if (autoparam == RP.DATE) {
+            if (autop == RP.DATE) {
                 if (isFinite(rd[i].slope) && rd[i].slope != 0) {
                     rd[i].end[0] = daysnap(
                         rd[i].sta[0]+(rd[i].end[1]-rd[i].sta[1])/rd[i].slope);
@@ -550,7 +558,7 @@
                     // Readjust value if value was edited
                     rd[i].slope = roadSegmentSlope(rd[i]);
                 }
-            } else if (autoparam == RP.VALUE) {
+            } else if (autop == RP.VALUE) {
                 if (isFinite(rd[i].slope)) {
                     rd[i].end[1] = rd[i].sta[1]+rd[i].slope
                         *(rd[i].end[0]-rd[i].sta[0]);
@@ -559,7 +567,7 @@
                     rd[i].end[1] = rd[i].sta[1]+diffval;
                     rd[i].slope = roadSegmentSlope(rd[i]);
                 }
-            } else if (autoparam == RP.SLOPE) {
+            } else if (autop == RP.SLOPE) {
                 rd[i].slope = roadSegmentSlope(rd[i]);
             }
             //console.debug("after("+i+"):[("+rd[i].sta[0]+","+rd[i].sta[1]+"),("+rd[i].end[0]+","+rd[i].end[1]+"),"+rd[i].slope+"]");
@@ -574,10 +582,10 @@
         }
     },
 
-    // Good delta: Returns the delta from the given point to the
-    // centerline of the road but with the sign such that being on the
-    // good side of the road gives a positive delta and being on the
-    // wrong side gives a negative delta.
+    /** Good delta: Returns the delta from the given point to the
+     centerline of the road but with the sign such that being on the
+     good side of the road gives a positive delta and being on the
+     wrong side gives a negative delta. */
     gdelt = function( rd, goal, t, v ) {
         return chop( goal.yaw*(v - rdf(rd, t)));
     },
@@ -849,7 +857,7 @@
         var gPastBox, gYBHP, gPink, gGrid;
         var gOldRoad, gOldCenter, gOldGuides, gOldBullseye, gKnots;
         var gSteppy, gMovingAv, gDpts, gAllpts, gBullseye, gRoads, gDots;
-        var gHorizon, gHorizonText;
+        var gWatermark, gHorizon, gHorizonText;
         var gPastText, zoomin, zoomout;;
         var xScale, xAxis, xGrid, xAxisObj, xGridObj;
         var yScale, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel;
@@ -977,6 +985,7 @@
             gGrid = plot.append('g').attr('id', 'grid');
             gPastBox = plot.append('g').attr('id', 'pastboxgrp');
             gYBHP = plot.append('g').attr('id', 'ybhpgrp');
+            gWatermark = plot.append('g').attr('id', 'wmarkgrp');
             gOldGuides = plot.append('g').attr('id', 'oldguidegrp');
             gOldRoad = plot.append('g').attr('id', 'oldroadgrp');
             gPink = plot.append('g').attr('id', 'pinkgrp');
@@ -1700,6 +1709,42 @@
             //     goal.vmax = (maxmax>vmin)?maxmax:(vmin-1);
         }
 
+        // Convert deadline value (seconds from midnight) to
+        // time-of-day like "3am"
+        function deadtod(ds) {
+            var str = moment.unix(ds).utc().format("h:mmA").replace(":00","");
+            return str;
+        }
+
+        // Convert tluz to the day of the week (eg, "Wed") of the eep day
+        function deaddow(t){
+            return moment.unix(t).utc().format("ddd");
+        }
+
+        // Set the watermark (waterbuf) to number of safe days if not
+        // given explicitly.
+        function setWatermark() {
+
+            goal.safebuf = dtd(roads, goal, goal.tcur, goal.vcur);
+            goal.tluz = goal.tcur+goal.safebuf*SID;
+            goal.loser = isLoser(roads,goal,datapoints,goal.tcur,goal.vcur);
+
+            if  (goal.asof >= goal.tfin && !goal.loser)  {
+                goal.waterbuf = ":)";
+                return;
+            }
+
+            if (goal.safebuf > 999) {
+                goal.waterbuf = "inf";
+            } else if (goal.safebuf >= 7) {               
+                goal.waterbuf = goal.safebuf+"d";
+            } else if (goal.safebuf <= 0) {
+                goal.waterbuf = deadtod(goal.deadline)+"!";
+            } else {
+                goal.waterbuf = deaddow(goal.tluz);
+            }
+        }
+
         function computePlotLimits( adjustZoom = true ) {
             if (roads.length == 0) return;
 
@@ -2020,7 +2065,19 @@
                 ?autowiden(roads, goal, datapoints, goal.dflux):0;
             goal.lnw = d3.max([goal.nw,lnfraw( initialRoad, goal, goal.tcur )]);
 
+            goal.safebuf = dtd(roads, goal, goal.tcur, goal.vcur);
+            goal.tluz = goal.tcur+goal.safebuf*SID;
             setDefaultRange();
+        }
+
+        function getNumParam(p, n, dflt) {
+            return (p.hasOwnProperty(n))?Number(p[n]):dflt;
+        }
+        function getBoolParam(p, n, dflt) {
+            return (p.hasOwnProperty(n))?p[n]:dflt;
+        }
+        function getStrParam(p, n, dflt) {
+            return (p.hasOwnProperty(n))?p[n]:dflt;
         }
 
         // Recreates the road array from the "rawknots" array, which includes
@@ -2042,40 +2099,28 @@
             goal.rfin = json.params.rfin;
             goal.yaw = Number(json.params.yaw);
             goal.dir = Number(json.params.dir);
-            goal.abslnw =
-                (json.params.hasOwnProperty('abslnw'))?json.params.abslnw:null;
-            goal.odom = (json.params.hasOwnProperty('odom')
-                         && json.params.odom);
-            goal.kyoom = (json.params.hasOwnProperty('kyoom') 
-                         && json.params.kyoom);
-            goal.noisy = (json.params.hasOwnProperty('noisy') 
-                         && json.params.noisy);
+            goal.abslnw = getNumParam(json.params, 'abslnw', null);
+            goal.odom = getBoolParam(json.params, 'odom', false);
+            goal.kyoom = getBoolParam(json.params, 'kyoom', false);
+            goal.noisy = getBoolParam(json.params, 'noisy', false);
             if ( json.params.hasOwnProperty('aggday'))
                 goal.aggday = json.params.aggday;
             else {
                 if (goal.kyoom) goal.aggday = "sum";
                 else goal.aggday = "last";
             }
-            goal.plotall = (json.params.hasOwnProperty('plotall')
-                         && json.params.plotall);
-            goal.yaxis =
-                (json.params.hasOwnProperty('yaxis'))?json.params.yaxis:"";
-            goal.steppy = 
-                (json.params.hasOwnProperty('steppy'))?json.params.steppy:true;
-            goal.movingav = 
-                (json.params.hasOwnProperty('movingav'))
-                ?json.params.movingav:false;
-            goal.tmin = 
-                (json.params.hasOwnProperty('tmin'))?Number(json.params.tmin):null;
-            goal.tmax = 
-                (json.params.hasOwnProperty('tmax'))?Number(json.params.tmax):null;
-            goal.vmin = 
-                (json.params.hasOwnProperty('vmin'))?Number(json.params.vmin):null;
-            goal.vmax = 
-                (json.params.hasOwnProperty('vmax'))?Number(json.params.vmax):null;
-            goal.monotone = 
-                (json.params.hasOwnProperty('monotone'))
-                ?json.params.monotone:null;
+            goal.plotall = getBoolParam(json.params, 'plotall', false);
+            goal.yaxis = getStrParam(json.params, "yaxis", "");
+            goal.steppy = getBoolParam(json.params, 'steppy', true);
+            goal.movingav = getBoolParam(json.params, 'movingav', false);
+            goal.tmin = getNumParam(json.params, 'tmin', null);
+            goal.tmax = getNumParam(json.params, 'tmax', null);
+            goal.vmin = getNumParam(json.params, 'vmin', null);
+            goal.vmax = getNumParam(json.params, 'vmax', null);
+            goal.monotone = getBoolParam(json.params, 'vmax', false);
+            goal.deadline = getNumParam(json.params, 'deadline', 0);
+            goal.waterbuf = null;
+            goal.waterbux = getStrParam(json.params, "waterbux", "");
 
             // Process datapoints
             procData();
@@ -2629,7 +2674,8 @@
                           -newXScale(goal.xMin))		  
   		            .attr("height",7*Math.abs(newYScale(goal.yMin)
                                               -newYScale(goal.yMax)))
-                    .attr("fill", opts.pastBoxCol.fill);
+                    .attr("fill", opts.pastBoxCol.fill)
+                    .attr("fill-opacity", opts.pastBoxCol.opacity);
             } else {
                 pastelt
 	  	            .attr("x", newXScale(goal.xMin))
@@ -2739,7 +2785,7 @@
             if (bullseyeelt.empty()) {
                 gBullseye.append("svg:image")
 	                .attr("class","bullseye")
-	                .attr("xlink:href","https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye.png?1496219226927")
+	                .attr("xlink:href",PNG.beye)
 	  	            .attr("x",bx ).attr("y",by)
                     .attr('width', opts.bullsEye.size)
                     .attr('height', opts.bullsEye.size);
@@ -2763,7 +2809,7 @@
             if (bullseyeelt.empty()) {
                 ctxplot.append("svg:image")
 	                .attr("class","ctxbullseye")
-	                .attr("xlink:href","https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye.png?1496219226927")
+	                .attr("xlink:href",PNG.beyey)
 	  	            .attr("x",bx ).attr("y",by)
                     .attr('width', (opts.bullsEye.ctxsize))
                     .attr('height', (opts.bullsEye.ctxsize));
@@ -2818,22 +2864,71 @@
         // Creates or updates the watermark with the number of safe days
         function updateWatermark() {
             if (opts.divGraph == null || roads.length == 0) return;
-            var wmarkelt = focus.select(".watermark");
-            var bx = sw/2;
-            var by = sh-20;
-            var loser = isLoser(roads,goal,datapoints,goal.tcur,goal.vcur);
-            var txt = (loser)?"Insta-Derail!!":"safe days: "
-                    +dtd(roads, goal, goal.tcur, goal.vcur);
+
+            setWatermark();
             
-            if (wmarkelt.empty()) {
-                focus.append("svg:text")
-	                .attr("class","watermark")
-	  	            .attr("x",bx ).attr("y",by)
-                    .style('font-size', 30+"px")
-                    .text(txt);
+            var g = null, b = null, y, bbox, newsize, newh;
+            if (goal.loser) g = PNG.skl;
+
+            if   (goal.waterbuf === 'inf') g = PNG.inf;
+            else if (goal.waterbuf === ':)') g = PNG.sml;
+
+            var wbufelt = gWatermark.select(".waterbuf");
+            wbufelt.remove();
+            if (g != null) {
+                y = ((plotbox.height/2-opts.watermark.height)/2);
+                if (goal.yaw<0) y+= plotbox.height/2;
+                wbufelt = gWatermark.append("svg:image")
+	                .attr("class","waterbuf")
+	                .attr("xlink:href",g)
+	  	            .attr("x",(plotbox.width/2-opts.watermark.height)/2)
+                    .attr("y",y)
+                    .attr('width', opts.watermark.height)
+                    .attr('height', opts.watermark.height);
             } else {
-                wmarkelt
-	  	            .attr("x", bx).attr("y", by).text(txt);
+                y = plotbox.height/4+opts.watermark.fntsize/2;
+                if (goal.yaw<0) y+= plotbox.height/2;
+                wbufelt = gWatermark.append("svg:text")
+	                .attr("class","waterbuf")
+                    .style('font-size', opts.watermark.fntsize+"px")
+                    .style('font-weight', "bold")
+                    .style('fill', Cols.GRAY)
+	  	            .attr("x",plotbox.width/4)
+                    .attr("y",y)
+                    .text(goal.waterbuf);
+                bbox = wbufelt.node().getBBox();
+                if (bbox.width > plotbox.width/2.2) {
+                    newsize = (opts.watermark.fntsize*(plotbox.width/2.2)
+                                   /bbox.width);
+                    newh = newsize/opts.watermark.fntsize*bbox.height;
+                    y = plotbox.height/4+newh/2-plotbox.height/16;
+                    if (goal.yaw<0) y+= plotbox.height/2;
+                    wbufelt.style('font-size', newsize+"px").attr("y", y);
+                }
+            }
+
+            var wbuxelt = gWatermark.select(".waterbux");
+            wbuxelt.remove();
+            if (!opts.roadEditor) {
+                y = 3*plotbox.height/4+opts.watermark.fntsize/2;
+                if (goal.yaw<0) y-= plotbox.height/2;
+                wbuxelt = gWatermark.append("svg:text")
+	                .attr("class","waterbux")
+                    .style('font-size', opts.watermark.fntsize+"px")
+                    .style('font-weight', "bold")
+                    .style('fill', Cols.GRAY)
+	  	            .attr("x",3*plotbox.width/4)
+                    .attr("y",y)
+                    .text(goal.waterbux);
+                bbox = wbuxelt.node().getBBox();
+                if (bbox.width > plotbox.width/2.2) {
+                    newsize = (opts.watermark.fntsize*(plotbox.width/2.2)
+                               /bbox.width);
+                    newh = newsize/opts.watermark.fntsize*bbox.height;
+                    y = plotbox.height/4+newh/2-plotbox.height/16;
+                    if (goal.yaw>0) y+= plotbox.height/2;
+                    wbuxelt.style('font-size', newsize+"px").attr("y", y);
+                }
             }
         }
 
@@ -3289,10 +3384,10 @@
 
             // Create, update and delete road lines
             var roadelt = gRoads.selectAll(".roads");
-            roadelt.attr("stroke",lineColor);
+            roadelt.style("stroke",lineColor);
 
-            roadelt = gRoads.selectAll(".ctxroads");
-            roadelt.attr("stroke",lineColor);
+            roadelt = ctxplot.selectAll(".ctxroads");
+            roadelt.style("stroke",lineColor);
         }
 
         function updateContextRoads() {
@@ -3311,7 +3406,8 @@
 		        .attr("x1", function(d){ return xScaleB(d.sta[0]*1000);})
                 .attr("y1",function(d){ return yScaleB(d.sta[1]);})
 		        .attr("x2", function(d){ return xScaleB(d.end[0]*1000);})
-		        .attr("y2",function(d){ return yScaleB(d.end[1]);});
+		        .attr("y2",function(d){ return yScaleB(d.end[1]);})
+  		        .style("stroke", lineColor)
             roadelt.enter()
                 .append("svg:line")
 		        .attr("class","ctxroads")
