@@ -264,6 +264,15 @@
       return x;
     },
 
+    linspace = function linspace(a,b,n) {
+        if(typeof n === "undefined") n = Math.max(Math.round(b-a)+1,1);
+        if(n<2) { return n===1?[a]:[]; }
+        var i,ret = Array(n);
+        n--;
+        for(i=n;i>=0;i--) { ret[i] = (i*b+(n-i)*a)/n; }
+        return ret;
+    },
+
     // Convex combination: x rescaled to be in [c,d] as x ranges from
     // a to b.  clipQ indicates whether the output value should be
     // clipped to [c,d].  Unsorted inputs [a,b] and [c,d] are also
@@ -407,7 +416,7 @@
 
     // ----------------- Network utilities ----------------------
     loadJSON = function( url, callback ) {   
-
+        if (url === "") return;
         var xobj = new XMLHttpRequest();
         xobj.overrideMimeType("application/json");
         xobj.open('GET', url, true);
@@ -786,7 +795,7 @@
             curid = gid;
         gid++;
 
-        var yaxisw = 0;
+        var yaxisw = 50;
 
         var 
         sw = opts.svgSize.width,
@@ -839,7 +848,8 @@
         var svg, defs, zoomarea, axisZoom, focus, buttonarea, focusclip, plot;
         var gPastBox, gYBHP, gPink, gGrid;
         var gOldRoad, gOldCenter, gOldGuides, gOldBullseye, gKnots;
-        var gSteppy, gDpts, gBullseye, gRoads, gDots, gHorizon, gHorizonText;
+        var gSteppy, gMovingAv, gDpts, gAllpts, gBullseye, gRoads, gDots;
+        var gHorizon, gHorizonText;
         var gPastText, zoomin, zoomout;;
         var xScale, xAxis, xGrid, xAxisObj, xGridObj;
         var yScale, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel;
@@ -974,6 +984,8 @@
             gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp');
             gKnots = plot.append('g').attr('id', 'knotgrp');
             gSteppy = plot.append('g').attr('id', 'steppygrp');
+            gMovingAv = plot.append('g').attr('id', 'movingavgrp');
+            gAllpts = plot.append('g').attr('id', 'datapointgrp');
             gDpts = plot.append('g').attr('id', 'datapointgrp');
             gBullseye = plot.append('g').attr('id', 'bullseyegrp');
             gRoads = plot.append('g').attr('id', 'roadgrp');
@@ -1834,6 +1846,74 @@
             initialRoad = copyRoad( roads );
         }
 
+       // Helper function for Exponential Moving Average; returns
+        // smoothed value at x.  Very inefficient since we recompute
+        // the whole moving average up to x for every point we want to
+        // plot.
+        function ema(d, x) {
+            // The Hacker's Diet recommends 0.1 Uluc had .0864
+            // http://forum.beeminder.com/t/control-exp-moving-av/2938/7
+            // suggests 0.25
+            var KEXP = .25/SID; 
+            if (goal.yoog==='meta/derev') KEXP = .03/SID;  //.015 for meta/derev
+            if (goal.yoog==='meta/dpledge') KEXP = .03/SID;// .1 jagged
+            var xp = d[0][0],
+                yp = d[0][1];
+            var prev = yp, dt, i, ii, A, B;
+            if (x < xp) return prev;
+            for (ii = 1; ii < d.length; ii++) { // compute line equation
+                i = d[ii]; 
+                dt = i[0] - xp;
+                A = (i[1]-yp)/dt;  // (why was this line marked as a to-do?)
+                B = yp;
+                if (x < i[0]) { // found interval; compute intermediate point
+                    dt = x-xp;
+                    return B+A*dt-A/KEXP + (prev-B+A/KEXP) * Math.exp(-KEXP*dt);
+                } else { // not the current interval; compute next point
+                    prev = B+A*dt-A/KEXP + (prev-B+A/KEXP) * Math.exp(-KEXP*dt);
+                    xp = i[0];
+                    yp = i[1];
+                }
+            }
+            // keep computing exponential past the last datapoint if needed
+            dt = x-xp;
+            return B + A*dt - A/KEXP + (prev-B+A/KEXP) * Math.exp(-KEXP*dt);
+        }
+
+        // Function to generate samples for the Butterworth filter
+        function griddlefilt(a, b) {
+            return linspace(a, b, Math.floor(clip((b-a)/(SID+1), 40, 2000)));
+        }
+
+        // Function to generate samples for the Butterworth filter
+        function griddle(a, b) {
+            return linspace(a, b, Math.floor(clip((b-a)/(SID+1), 600, 6000)));
+        }
+
+        // Assumes both datapoints and the x values are sorted
+        function interpData(d, xv) {
+            var interp = function (before, after, atPoint) {
+                return before + (after - before) * atPoint;
+            };
+            var di = 0, dl = d.length, od = [];
+            if (dl == 0) return null;
+            if (dl == 1) return xv.map(function(d){return [d, d[0][1]];});
+            for (var i = 0; i < xv.length; i++) {
+                var xi = xv[i];
+                if (xi <= d[0][0]) od.push([xi, d[0][1]]);
+                else if (xi >= d[dl-1][0]) od.push([xi, d[dl-1][1]]);
+                else if (xi < d[di+1][0] ) { 
+                    od.push([xi, interp(d[di][1], d[di+1][1],
+                                        (xi-d[di][0])/(d[di+1][0]-d[di][0]))]);
+                } else {
+                    while (xi > d[di+1][0]) di++;
+                    od.push([xi, interp(d[di][1], d[di+1][1],
+                                        (xi-d[di][0])/(d[di+1][0]-d[di][0]))]);
+                }
+            }
+            return od;
+        }
+
         function procData() {
             var numpts = datapoints.length, i;
             for (i = 0; i < numpts; i++) {
@@ -1912,6 +1992,19 @@
             datapoints = newpts.filter(function(e){return e[0]<=goal.asof;});
 
             if (!goal.plotall) goal.numpts = datapoints.length;
+
+            if (goal.movingav) {
+                // Filter data and produce moving average
+                var dl = datapoints.length;
+                if (dl <= 1 || datapoints[dl-1][0]-datapoints[0][0] <= 0) 
+                    return;
+                
+                // Create new vector for filtering datapoints
+                var newx = griddle(datapoints[0][0], datapoints[dl-1][0]);
+                console.debug(ema(datapoints, datapoints[0][0]));
+                goal.filtpts 
+                    = newx.map(function(d) {return [d, ema(datapoints, d)];});
+            } else goal.filtpts = [];
         }
 
         function procParams( p ) {
@@ -1969,6 +2062,9 @@
                 (json.params.hasOwnProperty('yaxis'))?json.params.yaxis:"";
             goal.steppy = 
                 (json.params.hasOwnProperty('steppy'))?json.params.steppy:true;
+            goal.movingav = 
+                (json.params.hasOwnProperty('movingav'))
+                ?json.params.movingav:false;
             goal.tmin = 
                 (json.params.hasOwnProperty('tmin'))?Number(json.params.tmin):null;
             goal.tmax = 
@@ -2223,6 +2319,7 @@
             updateBullseye();
             updateContextBullseye();
             updateDataPoints();
+            updateMovingAv();
             updateYBHP();
         }
 
@@ -2923,18 +3020,22 @@
   		            .attr("stroke-width",opts.oldRoadLine.width*scalf);
             }
             if (!opts.roadEditor) {
+                var minpx = 3*scalf;
+                var thin=Math.abs(newYScale.invert(minpx)-newYScale.invert(0));
+                var lw = (goal.lnw == 0)?thin:goal.lnw;
+                if (Math.abs(newYScale(lw)-newYScale(0)) < minpx) lw=thin;
                 d = "M"+newXScale(ir[0].sta[0]*1000)+" "
-                    +newYScale(ir[0].sta[1]+goal.lnw);
+                    +newYScale(ir[0].sta[1]+lw);
                 for (i = 0; i < ir.length; i++) {
                     d += " L"+newXScale(ir[i].end[0]*1000)+" "+
-                        newYScale(ir[i].end[1]+goal.lnw);
+                        newYScale(ir[i].end[1]+lw);
                 }
                 for (i = ir.length; i > 0; i--) {
                     d += " L"+newXScale(ir[i-1].end[0]*1000)+" "+
-                        newYScale(ir[i-1].end[1]-goal.lnw);
+                        newYScale(ir[i-1].end[1]-lw);
                 }
                 d += " L"+newXScale(ir[0].sta[0]*1000)+" "+
-                    newYScale(ir[0].sta[1]-goal.lnw)+" Z";
+                    newYScale(ir[0].sta[1]-lw)+" Z";
                 roadelt = gOldRoad.select(".oldlanes");
                 if (roadelt.empty()) {
                     gOldRoad.append("svg:path")
@@ -3321,8 +3422,8 @@
 		        .attr("cx", function(d){ return newXScale((d[0])*1000);})
                 .attr("cy",function(d){ return newYScale(d[1]);});
             if (r != null) dpelt.attr("r", r);
-            if (s != null) dpelt.attr("stroke-width", sw);
-            if (sw != null) dpelt.attr("fill", f);
+            if (sw != null) dpelt.attr("stroke-width", sw);
+            if (f != null) dpelt.attr("fill", f);
 
             dpelt.enter().append("svg:circle")
 		        .attr("class",cls)
@@ -3344,12 +3445,12 @@
                         datapoints.slice(0,datapoints.length-1):
                         datapoints;
                 if (goal.plotall && !opts.roadEditor) {
-                    updateDotGroup(gDpts, goal.allpts, "allpts", 
+                    updateDotGroup(gAllpts, goal.allpts, "allpts", 
                                    0.7*(opts.dataPoint.size)*scalf,
                                    "none", null, dpFill);
                     
                 } else {
-                    var el = gSteppy.selectAll(".allpts");
+                    var el = gAllpts.selectAll(".allpts");
                     el.remove();
                 }
 
@@ -3405,7 +3506,7 @@
                                    "none", null, Cols.PURP);
                 } else {
                     stpelt.remove();
-                    var stpdelt = gSteppy.selectAll(".steppyd").data(pts);
+                    var stpdelt = gSteppy.selectAll(".steppyd");
                     stpdelt.remove();
                 }
             } else {
@@ -3413,6 +3514,36 @@
                 dpelt.remove();
                 fladelt = gDpts.selectAll(".fladp");
                 fladelt.remove();
+            }
+        }
+        // Other ideas for data smoothing...  Double Exponential
+        // Moving Average: http://stackoverflow.com/q/5533544 Uluc
+        // notes that we should use an acausal filter to prevent the
+        // lag in the thin purple line.
+
+ 
+        function updateMovingAv() {
+            var el = gMovingAv.selectAll(".movingav");
+            if (!opts.roadEditor && goal.movingav && opts.showdata) {
+                var d = "M"+newXScale(goal.filtpts[0][0]*1000)+" "
+                        +newYScale(goal.filtpts[0][1]);
+                for (var i = 1; i < goal.filtpts.length; i++) {
+                    d += " L"+newXScale(goal.filtpts[i][0]*1000)+" "+
+                        newYScale(goal.filtpts[i][1]);
+                }
+                if (el.empty()) {
+                    gMovingAv.append("svg:path")
+                        .attr("class","movingav")
+	  	                .attr("d", d)
+  		                .style("fill", "none")
+  		                .attr("stroke-width",3*scalf)
+  		                .style("stroke", Cols.PURP);
+                } else {
+                    el.attr("d", d)
+  		                .attr("stroke-width",3*scalf);
+                }
+            } else {
+                el.remove();
             }
         }
 
@@ -3847,6 +3978,7 @@
             updateBullseye();
             updateKnots();
             updateDataPoints();
+            updateMovingAv();
             updateRoads();
             updateDots();
             updateHorizon();
@@ -3862,6 +3994,7 @@
         self.showData = function( flag ) {
             if (arguments.length > 0) opts.showdata = flag;
             updateDataPoints();
+            updateMovingAv();
             return opts.showdata;
         };
         self.showContext = function( flag ) {
