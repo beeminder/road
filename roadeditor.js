@@ -19,14 +19,15 @@
 
     /** default options */
     var 
+    gid = 1,
     defaults = {
         divGraph:     null,   // Binds the graph to a div element
         divTable:     null,    // Binds the road table to a div element
         svgSize:      { width: 700, height: 530 },
         focusRect:    { x:0, y:0, width:700, height: 400 },
-        focusPad:     { left:25, right:10, top:25, bottom:30 },
+        focusPad:     { left:25, right:0, top:25, bottom:30 },
         contextRect:  { x:0, y:400, width:700, height: 80 },
-        contextPad:   { left:25, right:10, top:0, bottom:30 },
+        contextPad:   { left:25, right:0, top:0, bottom:30 },
         tableHeight:  540, // Choose 0 for unspecified
 
         zoomButton:   { size: 40, opacity: 0.7, factor: 1.5 },
@@ -118,6 +119,7 @@
     DIY = 365.25,   // Days in year
     SID = 86400,    // Seconds in day
     AKH = 7*SID,    // Akrasia Horizon, in seconds
+    PRAF = .015,    // Fraction of plot range that the axes extend beyond
 
     SECS = { 'y' : DIY*SID,     // Number of seconds in a year, month, etc
              'm' : DIY/12*SID,
@@ -780,9 +782,11 @@
     bmndr = function(options) {
         //console.debug("bmndr constructor: ");console.log(options);
         var self = this,
-            opts = config(self, options);
+            opts = config(self, options),
+            curid = gid;
+        gid++;
 
-        var yaxisw = 50;
+        var yaxisw = 0;
 
         var 
         sw = opts.svgSize.width,
@@ -861,17 +865,17 @@
             // Common SVG definitions, including clip paths
             defs = svg.append('defs');
             defs.append("clipPath")
-                .attr("id", "plotclip")
+                .attr("id", "plotclip"+curid)
                 .append("rect")
                 .attr("x", 0).attr("y", 0)
                 .attr("width", plotbox.width).attr("height", plotbox.height);
             defs.append("clipPath")
-                .attr("id", "brushclip")
+                .attr("id", "brushclip"+curid)
                 .append("rect")
                 .attr("x", 0).attr("y", 0)
                 .attr("width", brushbox.width).attr("height", brushbox.height);
             defs.append("clipPath")
-                .attr("id", "buttonareaclip")
+                .attr("id", "buttonareaclip"+curid)
                 .append("rect")
                 .attr("x", plotbox.x).attr("y", 0)
                 .attr("width", plotbox.width).attr("height", plotpad.top);
@@ -951,11 +955,11 @@
                 .attr('transform', 'translate('+opts.focusRect.x
                       +','+opts.focusRect.y+')');
             buttonarea = focus.append('g')
-                .attr('clip-path', 'url(#buttonareaclip)')
+                .attr('clip-path', 'url(#buttonareaclip'+curid+')')
                 .attr('class', 'buttonarea'); 
             focusclip = focus.append('g')
 	            .attr('class', 'focusclip')
-                .attr('clip-path', 'url(#plotclip)')
+                .attr('clip-path', 'url(#plotclip'+curid+')')
                 .attr('transform', 'translate('+plotpad.left
                       +','+plotpad.top+')');
             plot = focusclip.append('g').attr('class', 'plot');
@@ -1045,7 +1049,7 @@
                 .attr('transform', 'translate('
                       +opts.contextRect.x+','+opts.contextRect.y+')');
             ctxclip = context.append('g')
-                .attr('clip-path', 'url(#brushclip)')
+                .attr('clip-path', 'url(#brushclip'+curid+')')
                 .attr('transform', 'translate('
                       +contextpad.left+','+contextpad.top+')');
             ctxplot = ctxclip.append('g').attr('class', 'context');
@@ -1083,11 +1087,11 @@
             computeBoxes();
 
             // Common SVG definitions, including clip paths
-            defs.select("#plotclip > rect")
+            defs.select('#plotclip'+curid+' > rect')
                 .attr("width", plotbox.width).attr("height", plotbox.height);
-            defs.select("#brushclip > rect")
+            defs.select('#brushclip'+curid+' > rect')
                 .attr("width", brushbox.width).attr("height", brushbox.height);
-            defs.select("#buttonareaclip > rect")
+            defs.select('#buttonareaclip'+curid+' > rect')
                 .attr("x", plotbox.x).attr("y", 0)
                 .attr("width", plotbox.width).attr("height", plotbox.height);
             zoomarea.attr("x", plotbox.x).attr("y", plotbox.y)
@@ -1318,16 +1322,19 @@
                           newXScale.invert(plotbox.width)];
             var xtimes = xrange.map(function(d) {
                 return Math.floor(d.getTime()/1000);});
-
             var roadextent 
                     = roadExtentPartial(roads,xtimes[0],xtimes[1],false);
+            roadextent.yMin -= goal.lnw;
+            roadextent.yMax += goal.lnw;
             var oldroadextent 
                     = roadExtentPartial(initialRoad,xtimes[0],xtimes[1],false);
+            oldroadextent.yMin -= goal.lnw;
+            oldroadextent.yMax += goal.lnw;
             var dataextent 
-                    = dataExtentPartial(datapoints,xtimes[0],xtimes[1],false);
+                    = dataExtentPartial((goal.plotall&&!opts.roadEditor)?goal.allpts:datapoints,xtimes[0],xtimes[1],false);
             var allextent = mergeExtents(roadextent, oldroadextent);
             allextent = mergeExtents(allextent, dataextent);
-            var p = {xmin:0.0, xmax:0.0, ymin:0.10, ymax:0.10};
+            var p = {xmin:0.0, xmax:0.0, ymin:0.05, ymax:0.05};
             enlargeExtent(allextent, p);
             if ((allextent.yMax - allextent.yMin) < 3*goal.lnw) {
                 allextent.yMax += 1.5*goal.lnw;
@@ -1413,12 +1420,27 @@
             updateGraphData();
         }
 
-        function zoomAll() {
+        function zoomDefault() {
+            var ta = goal.tmin - PRAF*(goal.tmax-goal.tmin);
+            var tb = goal.tmax + PRAF*(goal.tmax-goal.tmin);
+
+            var newdom = [new Date(ta*1000),new Date(tb*1000)];
+            newXScale.domain(newdom);
+            var s = newdom.map(xScaleB);
+            redrawXTicks();
+            adjustYScale();
+            zoomarea.call(axisZoom.transform, d3.zoomIdentity
+                          .scale(brushbox.width / (s[1] - s[0]))
+                          .translate(-s[0], 0));
+            updateGraphData();
+        }
+
+        function zoomAll( ) {
             if (opts.divGraph == null) return;
             //console.debug('zoomAll:');
             computePlotLimits( false );
             xScale.domain([new Date(goal.xMin*1000), 
-                              new Date(goal.xMax*1000)]);
+                           new Date(goal.xMax*1000)]);
             computeXTicks();
             yScale.domain([goal.yMin, goal.yMax]);
             newXScale = xScale; newYScale = yScale;
@@ -1614,6 +1636,58 @@
             return extent;
         }
 
+        // Set any of {tmin, tmax, vmin, vmax} that don't have explicit values.
+        function setDefaultRange() {
+            if (goal.tmin == null) goal.tmin = d3.min([goal.tini, goal.asof]);
+            if (goal.tmax == null) {
+                // Make more room beyond the askrasia horizon if lots of data
+                var years = (goal.tcur - goal.tmin) / (DIY*SID);
+                goal.tmax = daysnap((1+years/2)*2*AKH + goal.tcur);
+            }
+            // No need for the following since auto-y range covers this
+            // if (goal.vmin != null && goal.vmax != null) {
+            //     if (goal.vmin == goal.vmax)  {
+            //         goal.vmin -= 1; goal.vmax += 1;
+            //     } else if  (goal.vmin >  goal.vmax) {
+            //         var tmp=goal.vmin; goal.vmin=goal.vmax; goal.vmax=tmp;
+            //     }
+            //     return;
+            // }
+            // var a = rdf(roads, goal.tmin), b = rdf(roads, goal.tmax);
+            // var d0 = datapoints.filter(function(d){
+            //     return (d[0]<=goal.tmax && d[0]>=goal.tmin); });
+            // var mind = (d0.length>0)?d3.min(d0):0;
+            // var maxd = (d0.length>0)?d3.max(d0):0;
+            // var padding = d3.max([goal.lnw/3, (maxd-mind)*PRAF*2]);
+            // var minmin = mind - padding;
+            // var maxmax = maxd + padding;
+            // if (goal.monotone!=null && goal.dir>0) { // Up, no extra padding
+            //     minmin = d3.min([minmin, a, b]); //   below (the low) vini.
+            //     maxmax = d3.max([maxmax, a+goal.lnw, b+goal.lnw]);
+            // } else if (goal.monotone!=null && goal.dir<0) { // down
+            //     minmin = d3.min([minmin, a-goal.lnw, b-goal.lnw]);
+            //     maxmax = d3.max([maxmax, a, b]);
+            // } else {
+            //     minmin = d3.min([minmin, a-goal.lnw, b-goal.lnw]);
+            //     maxmax = d3.max([maxmax, a+goal.lnw, b+goal.lnw]);
+            // }
+            // if (goal.plotall && goal.tmin<=goal.tini 
+            //     && goal.tini<=goal.tmax && allvals.hasOwnProperty(goal.tini)){
+            //     // At tini, leave room
+            //     minmin = d3.min([minmin, d3.min(allvals[goal.tini])]);
+            //     maxmax = d3.max([maxmax, d3.max(allvals[goal.tini])]);
+            // }
+            // if (goal.vmin == null && goal.vmax == null) {
+            //     var tmp=goal.vmin; goal.vmin=goal.vmax; goal.vmax=tmp;
+            //     if (goal.vmin == goal.vmax){  goal.vmin -= 1; goal.vmax += 1;
+            //     } else if (goal.vmin >  goal.vmax){
+            //         var tmp=goal.vmin; goal.vmin=goal.vmax; goal.vmax=tmp; }
+            // } else if (goal.vmin == null)  
+            //     goal.vmin = (minmin<vmax)?minmin:(vmax - 1);
+            // else if (goal.vmax ==null)
+            //     goal.vmax = (maxmax>vmin)?maxmax:(vmin-1);
+        }
+
         function computePlotLimits( adjustZoom = true ) {
             if (roads.length == 0) return;
 
@@ -1624,7 +1698,7 @@
             var old = roadExtentPartial(initialRoad,roads[0].end[0],maxx,false);
             var ne = mergeExtents( cur, old );
 
-            var data = dataExtentPartial(datapoints,roads[0].end[0],datapoints[datapoints.length-1][0],false);
+            var data = dataExtentPartial((goal.plotall&&!opts.roadEditor)?goal.allpts:datapoints,roads[0].end[0],datapoints[datapoints.length-1][0],false);
             ne = mergeExtents(ne, data);
             if (fuda.length != 0) {
                 var df = dataExtentPartial(fuda,roads[0].end[0],maxx,false);
@@ -1823,6 +1897,16 @@
                 allvals[ct] = vl;
                 aggval[ct] = ad;
             }
+            var allpts = [];
+            for (var t in allvals) {
+                if (allvals.hasOwnProperty(t)) {
+                    allpts = allpts.concat(allvals[t].map(
+                        function(d){
+                            return [Number(t), d, (Number(t) <= goal.asof)
+                                    ?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE];}));
+                }
+            }
+            goal.allpts = allpts;
 
             fuda = newpts.filter(function(e){return e[0]>goal.asof;});
             datapoints = newpts.filter(function(e){return e[0]<=goal.asof;});
@@ -1843,6 +1927,7 @@
                 ?autowiden(roads, goal, datapoints, goal.dflux):0;
             goal.lnw = d3.max([goal.nw,lnfraw( initialRoad, goal, goal.tcur )]);
 
+            setDefaultRange();
         }
 
         // Recreates the road array from the "rawknots" array, which includes
@@ -1864,9 +1949,8 @@
             goal.rfin = json.params.rfin;
             goal.yaw = Number(json.params.yaw);
             goal.dir = Number(json.params.dir);
-            if (json.params.hasOwnProperty('abslnw'))
-                goal.abslnw = json.params.abslnw;
-            else goal.abslnw = null;
+            goal.abslnw =
+                (json.params.hasOwnProperty('abslnw'))?json.params.abslnw:null;
             goal.odom = (json.params.hasOwnProperty('odom')
                          && json.params.odom);
             goal.kyoom = (json.params.hasOwnProperty('kyoom') 
@@ -1885,26 +1969,35 @@
                 (json.params.hasOwnProperty('yaxis'))?json.params.yaxis:"";
             goal.steppy = 
                 (json.params.hasOwnProperty('steppy'))?json.params.steppy:true;
+            goal.tmin = 
+                (json.params.hasOwnProperty('tmin'))?Number(json.params.tmin):null;
+            goal.tmax = 
+                (json.params.hasOwnProperty('tmax'))?Number(json.params.tmax):null;
+            goal.vmin = 
+                (json.params.hasOwnProperty('vmin'))?Number(json.params.vmin):null;
+            goal.vmax = 
+                (json.params.hasOwnProperty('vmax'))?Number(json.params.vmax):null;
+            goal.monotone = 
+                (json.params.hasOwnProperty('monotone'))
+                ?json.params.monotone:null;
 
             // Process datapoints
             procData();
             var vtmp;
             if (json.params.hasOwnProperty('tini')) {
-                goal.tini = json.params.tini;
+                goal.tini = Number(json.params.tini);
             } else {
                 goal.tini = datapoints[0][0];
             }
-            console.debug(goal.tini);
             if (allvals.hasOwnProperty(goal.tini))
                 vtmp = (goal.plotall)?allvals[goal.tini][0]:aggval[goal.tini];
             else
-                vtmp = json.params.vini;
+                vtmp = Number(json.params.vini);
             if (!allvals.hasOwnProperty(goal.vini)) {
                 goal.vini = (goal.kyoom)?0:vtmp;
             } else {
                 goal.vini = json.params.vini;
             }
-            console.debug(allvals);
 
             // Special leniency for noisy graphs: YBR starts at worst
             // of 1st 7 datapoints
@@ -1934,6 +2027,7 @@
                 resizeGraph();
             }
             zoomAll();
+            zoomDefault();
         }
 
         function loadGoalFromURL( url ) {
@@ -1946,7 +2040,7 @@
         }
 
         function setSafeDays( days ) {
-            console.debug("setSafeDays()");
+            //console.debug("setSafeDays()");
             var curdtd = dtd(roads, goal, goal.tcur, goal.vcur);
             var now = goal.asof;
             if (days < 0) days = 0;
@@ -2086,28 +2180,29 @@
 
         function updateDragPositions( kind, updateKnots ) {
             var rd = roads;
+            var el = d3.select(opts.divGraph);
             for (var ii = kind; ii < rd.length; ii++) {
-  	            d3.select("[name=dot"+ii+"]")
+  	            el.select("[name=dot"+ii+"]")
 	                .attr("cx", newXScale(rd[ii].end[0]*1000))
 		            .attr("cy", newYScale(rd[ii].end[1]));
-  	            d3.select("[name=ctxdot"+ii+"]")
+  	            el.select("[name=ctxdot"+ii+"]")
 	                .attr("cx", xScaleB(rd[ii].end[0]*1000))
 		            .attr("cy", yScaleB(rd[ii].end[1]));
-  		        d3.select("[name=road"+ii+"]")
+  		        el.select("[name=road"+ii+"]")
 	  	            .attr("x1", newXScale(rd[ii].sta[0]*1000))
 		            .attr("y1", newYScale(rd[ii].sta[1]))
 			        .attr("x2", newXScale(rd[ii].end[0]*1000))
 			        .attr("y2", newYScale(rd[ii].end[1]));
-  		        d3.select("[name=ctxroad"+ii+"]")
+  		        el.select("[name=ctxroad"+ii+"]")
 	  	            .attr("x1", xScaleB(rd[ii].sta[0]*1000))
 		            .attr("y1", yScaleB(rd[ii].sta[1]))
 			        .attr("x2", xScaleB(rd[ii].end[0]*1000))
 			        .attr("y2", yScaleB(rd[ii].end[1]));
                 if (updateKnots) {
-  	                d3.select("[name=knot"+ii+"]")
+  	                el.select("[name=knot"+ii+"]")
 	                    .attr("x1", newXScale(rd[ii].end[0]*1000))
 		  	            .attr("x2", newXScale(rd[ii].end[0]*1000));
-		            d3.select("[name=remove"+ii+"]")
+		            el.select("[name=remove"+ii+"]")
                         .attr("transform", 
                               function(d){ 
                                   return "translate("+(newXScale(d.end[0]*1000)
@@ -2116,11 +2211,11 @@
                               });
                 }
                 var datestr = dayify(rd[ii].end[0], '-');
-  		        d3.select("[name=enddate"+ii+"]")
+  		        el.select("[name=enddate"+ii+"]")
                     .text(datestr);
-  		        d3.select("[name=endvalue"+ii+"]")
+  		        el.select("[name=endvalue"+ii+"]")
                     .text(rd[ii].end[1].toPrecision(5));
-  		        d3.select("[name=slope"+ii+"]")
+  		        el.select("[name=slope"+ii+"]")
                     .text((rd[ii].slope*goal.siru).toPrecision(5));
             }
             updateRoadValidity();
@@ -2200,11 +2295,12 @@
 
         function knotEdited(d, id) {
             var kind = Number(id);
+            var el = d3.select(opts.divTable);
             if (roads[kind].auto == RP.DATE) {
                 if (opts.keepslopes) disableValue(id);
                 else disableSlope(id);
             }
-            var cell = d3.select('[name=enddate'+kind+']').node();
+            var cell = el.select('[name=enddate'+kind+']').node();
             cell.focus();
             var range, selection;
             if (document.body.createTextRange) {
@@ -2259,7 +2355,8 @@
         };
         function dotDragEnded(d,id){
             editingDot = false;
-	        d3.select("[name=dot"+id+"]")
+            var el = d3.select(opts.divGraph);
+	        el.select("[name=dot"+id+"]")
                 .style("fill", opts.roadDotCol.editable);
             highlightValue(id, false);
 
@@ -2297,10 +2394,11 @@
 
         function dotEdited(d, id) {
             var kind = Number(id);
+            var el = d3.select(opts.divTable);
             if (roads[kind].auto == RP.VALUE) {
                 disableSlope(id);  
             }
-            var cell = d3.select('[name=endvalue'+kind+']').node();
+            var cell = el.select('[name=endvalue'+kind+']').node();
             cell.focus();
             var range, selection;
             if (document.body.createTextRange) {
@@ -2395,10 +2493,11 @@
 
         function roadEdited(d, id) {
             var kind = Number(id);
+            var el = d3.select(opts.divTable);
             if (d.auto == RP.SLOPE) {
                 disableValue(id);
             }
-            var cell = d3.select('[name=slope'+kind+']').node();
+            var cell = el.select('[name=slope'+kind+']').node();
             cell.focus();
             var range, selection;
             if (document.body.createTextRange) {
@@ -3213,6 +3312,29 @@
             }
         }
 
+        function updateDotGroup(grp, d, cls, r, s=null, sw=null, f=null ) {
+            var dpelt;
+
+            dpelt = grp.selectAll("."+cls).data(d);
+            dpelt.exit().remove();
+            dpelt
+		        .attr("cx", function(d){ return newXScale((d[0])*1000);})
+                .attr("cy",function(d){ return newYScale(d[1]);});
+            if (r != null) dpelt.attr("r", r);
+            if (s != null) dpelt.attr("stroke-width", sw);
+            if (sw != null) dpelt.attr("fill", f);
+
+            dpelt.enter().append("svg:circle")
+		        .attr("class",cls)
+		        .attr("id", function(d,i) {return i;})
+                .attr("r", r)
+		        .attr("cx", function(d){ return newXScale((d[0])*1000);})
+                .attr("cy",function(d){ return newYScale(d[1]);})
+		        .attr("stroke-width", sw)
+		        .style("stroke", s)
+                .attr("fill", f);
+        }
+
         function updateDataPoints() {
             if (opts.divGraph == null || roads.length == 0) return;
             var now = goal.asof;
@@ -3221,24 +3343,20 @@
                 var pts = (flad != null)?
                         datapoints.slice(0,datapoints.length-1):
                         datapoints;
-                dpelt = gDpts.selectAll(".dpts").data(pts.concat(fuda));
-                dpelt.exit().remove();
-                dpelt
-		            .attr("cx", function(d){ return newXScale((d[0])*1000);})
-                    .attr("cy",function(d){ return newYScale(d[1]);})
-                    .attr("r", opts.dataPoint.size*scalf)
-		            .attr("stroke-width", dpStrokeWidth)
-                    .attr("fill", dpFill);
-                dpelt.enter().append("svg:circle")
-		            .attr("class","dpts")
-		            .attr("id", function(d,i) {return i;})
-		            .attr("name", function(d,i) {return "dpt"+i;})
-                    .attr("r", opts.dataPoint.size*scalf)
-		            .attr("cx", function(d){ return newXScale((d[0])*1000);})
-                    .attr("cy",function(d){ return newYScale(d[1]);})
-		            .attr("stroke-width", dpStrokeWidth)
-		            .style("stroke", dpStroke)
-                    .attr("fill", dpFill);
+                if (goal.plotall && !opts.roadEditor) {
+                    updateDotGroup(gDpts, goal.allpts, "allpts", 
+                                   0.7*(opts.dataPoint.size)*scalf,
+                                   "none", null, dpFill);
+                    
+                } else {
+                    var el = gSteppy.selectAll(".allpts");
+                    el.remove();
+                }
+
+                updateDotGroup(gDpts, pts.concat(fuda), "dpts", 
+                               opts.dataPoint.size*scalf,
+                              dpStroke, dpStrokeWidth, dpFill);
+
                 var fladelt = gDpts.selectAll(".fladp");
                 if (flad != null) {
                     if (fladelt.empty()) {
@@ -3262,7 +3380,6 @@
                     if (!fladelt.empty()) fladelt.remove();
                 }
                 var stpelt = gSteppy.selectAll(".steppy");
-                var stpdelt = gSteppy.selectAll(".steppyd").data(pts);
                 if (!opts.roadEditor && goal.steppy) {
                     var d = "M"+newXScale(datapoints[0][3]*1000)+" "
                             +newYScale(datapoints[0][4]);
@@ -3275,7 +3392,6 @@
                     if (stpelt.empty()) {
                         gSteppy.append("svg:path")
                             .attr("class","steppy")
-                            .attr("pointer-events", "none")
 	  	                    .attr("d", d)
   		                    .style("fill", "none")
   		                    .attr("stroke-width",3*scalf)
@@ -3284,21 +3400,12 @@
                         stpelt.attr("d", d)
   		                    .attr("stroke-width",3*scalf);
                     }
-                    stpdelt.exit().remove();
-                    stpdelt
-		                .attr("cx", function(d){ return newXScale(d[0]*1000);})
-                        .attr("cy",function(d){ return newYScale(d[1]);})
-                        .attr("r", (opts.dataPoint.size+2)*scalf);
-                    stpdelt.enter().append("svg:circle")
-		                .attr("class","steppyd")
-                        .attr("pointer-events", "none")
-		                .style("stroke", "none")
-                        .style("fill", Cols.PURP)
-		                .attr("cx", function(d){ return newXScale(d[0]*1000);})
-                        .attr("cy",function(d){ return newYScale(d[1]);})
-                        .attr("r", (opts.dataPoint.size+2)*scalf);
+                    updateDotGroup(gSteppy, pts, "steppyd",
+                                   (opts.dataPoint.size+2)*scalf,
+                                   "none", null, Cols.PURP);
                 } else {
                     stpelt.remove();
+                    var stpdelt = gSteppy.selectAll(".steppyd").data(pts);
                     stpdelt.remove();
                 }
             } else {
@@ -3402,7 +3509,7 @@
                     minDate: mindate.toDate(),
                     maxDate: maxdate.toDate()});
                 datePicker.setMoment(md);        
-                var floating = d3.select('.floating');
+                var floating = d3.select(opts.roadTable).select('.floating');
                 var bbox = this.getBoundingClientRect();
                 var tlbox = topLeft.node().getBoundingClientRect();
                 floating
@@ -3774,11 +3881,11 @@
             if (arguments.length > 0) {
                 opts.reversetable = flag;
                 if (opts.reversetable) {
-                    d3.select(".starthdr").raise();
-                    d3.select(".startbody").raise();
+                    d3.select(opts.roadTable).select(".starthdr").raise();
+                    d3.select(opts.roadTable).select(".startbody").raise();
                 } else {
-                    d3.select(".roadhdr").raise();
-                    d3.select(".roadbody").raise();      
+                    d3.select(opts.roadTable).select(".roadhdr").raise();
+                    d3.select(opts.roadTable).select(".roadbody").raise();      
                 }
                 updateTable();
             }
@@ -3803,8 +3910,11 @@
             document.activeElement.blur();
             redoLastEdit();
         };
-        self.zoomOut = function() {
+        self.zoomAll = function() {
             zoomAll();
+        };
+        self.zoomDefault = function() {
+            zoomDefault();
         };
         self.loadGoal = function( url ) {
             loadGoalFromURL( url );

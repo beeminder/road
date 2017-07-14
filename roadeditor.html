@@ -39,7 +39,8 @@ Select goal:
 <input id="keepintervals" onclick="editor.keepIntervals(this.checked);" type="checkbox">Keep intervals fixed
 </form>
 
-<button id="zoomall" onclick="editor.zoomOut();">Zoom To Fit</button>
+<button id="zoomall" onclick="editor.zoomAll();">View All</button>
+<button id="zoomdflt" onclick="editor.zoomDefault();">Default Zoom</button>
 <button id="undo" onclick="editor.undo();">Undo (0)</button>
 <button id="redo" onclick="editor.redo();">Redo (0)</button><br/><br/>
 Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">Retroratchet</button><br/>
@@ -60,7 +61,8 @@ Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id=
 <table>
   <tr>
     <td valign="top"><div id="roadgraph2"></div>
-      <button id="zoomall2" onclick="editor2.zoomOut();">Zoom To Fit</button>
+      <button id="zoomall2" onclick="editor2.zoomAll();">View All</button>
+      <button id="zoomdflt2" onclick="editor2.zoomDefault();">Default Zoom</button>
     </td>
     <td valign="top">
       <div id="roadtable2"></div>
@@ -98,7 +100,7 @@ Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id=
   var editor = new bmndr({divGraph: document.getElementById('roadgraph'),
                           divTable: document.getElementById('roadtable'),
                           roadEditor:true,
-                          maxFutureDays: 2*365,
+                          maxFutureDays: 365,
                           showFocusRect: true,
                           showContext: true,
                           onRoadChange: roadChanged});
@@ -114,7 +116,7 @@ Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id=
   var editor2 = new bmndr({divGraph: document.getElementById('roadgraph2'),
                           divTable: document.getElementById('roadtable2'),
                           roadEditor:false,
-                          maxFutureDays: 2*365,
+                          maxFutureDays: 365,
                           showFocusRect: false,
                           showContext: true});
   editor2.reverseTable(document.getElementById("reversetable2").checked);
