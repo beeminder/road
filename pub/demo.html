@@ -17,24 +17,15 @@
 
 <body>
 
-<h1>Beeminder's New Visual Road Editor</h1>
-
-<p>
-<a href="http://www.ceng.metu.edu.tr/~saranli/">Uluc Saranli</a>
-(known in Beeminderland for 
-<a href="http://blog.beeminder.com/beedroid/">Beedroid</a>)
-wrote this.  
-<a href="https://glitch.com/#!/project/road">See the code</a>
-on
-<a href="https://glitch.com">Glitch</a>
-or ask 
-<a href="http://dreev.es">dreeves</a>
-for a link to live-edit it with us.
-</p>
-
-
-<div>Shift-click: Add new node</div>
-<div>Double-click on road, dots or vertical lines: Edit slope, value or date</div>
+<h1>Beeminder Visual Road Editor <a style="display: block; float: right; font-size: 14px;" href="/">Return to login page</a></h1>
+  
+<h2>Instructions:</h2>
+<ul>
+<li>Shift-click or double-click on blank area: Add new node</li>
+<li>Ctrl-click on dots / segments / vertical lines to edit end values / rates / end dates</li>
+<li>Scroll wheel to zoom the x axis, use the context graph at the bottom to adjust zoom region</li>
+<li>Ctrl-Z to undo, Ctrl-y to redo</li>
+</ul>
 
  <select class="roadselect">
   <option value="testroad1.json">Test Road 1</option>
@@ -48,11 +39,11 @@ for a link to live-edit it with us.
   
 <table>
   <tr>
-    <td valign="top"><div class="roadgraph"></div>
+    <td valign="top">
+      <div class="roadgraph"></div>
       <input id="showdata" type="checkbox" checked>Show datapoints<br>
       <input id="keepslopes" type="checkbox" checked>Keep slopes fixed<br>
       <input id="keepintervals" type="checkbox">Keep intervals fixed<br>
-      <button id="zoomout">Default Zoom</button>
       <button id="zoomall">Zoom To Fit</button>
       <button id="undo">Undo</button>
       <button id="redo">Redo</button>
@@ -68,6 +59,21 @@ for a link to live-edit it with us.
 </table>
   
 <script src="/roadeditor.js"></script>
+
+<h3>Credits</h3>
+
+<p>
+<a href="http://www.ceng.metu.edu.tr/~saranli/">Uluc Saranli</a>
+(known in Beeminderland for 
+<a href="http://blog.beeminder.com/beedroid/">Beedroid</a>)
+wrote this.  
+<a href="https://glitch.com/#!/project/road">See the code</a>
+on
+<a href="https://glitch.com">Glitch</a>
+or ask 
+<a href="http://dreev.es">dreeves</a>
+for a link to live-edit it with us.
+</p>
 
 </body>
 </html>
