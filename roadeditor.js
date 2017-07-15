@@ -26,17 +26,17 @@
         svgSize:      { width: 700, height: 480 },
         focusRect:    { x:0, y:0, width:700, height: 400 },
         focusPad:     { left:25, right:0, top:25, bottom:30 },
-        contextRect:  { x:0, y:400, width:700, height: 80 },
-        contextPad:   { left:25, right:0, top:0, bottom:30 },
+        ctxRect:      { x:0, y:400, width:700, height: 80 },
+        ctxPad:       { left:25, right:0, top:0, bottom:30 },
         tableHeight:  540, // Choose 0 for unspecified
 
-        zoomButton:   { size: 40, opacity: 0.7, factor: 1.5 },
+        zoomButton:   { size: 40, opacity: 0.6, factor: 1.5 },
         bullsEye:     { size: 40, ctxsize: 20 },
         roadDot:      { size: 5, ctxsize: 3, border: 1.5, ctxborder: 1 },
         roadKnot:     { width: 3, rmbtnscale: 0.6 },
         roadLine:     { width: 3, ctxwidth: 2 },
         oldRoadLine:  { width: 3, ctxwidth: 2, dash: 32, ctxdash: 16 },
-        dataPoint:    { size: 5, flsize: 5 }, 
+        dataPoint:    { size: 5, fsize: 5 }, 
         horizon:      { width: 2, ctxwidth: 1, dash: 8, ctxdash: 6, 
                         font: 12, ctxfont: 9 },
         today:        { width: 2, ctxwidth: 1, font: 16, ctxfont: 9 },
@@ -58,10 +58,10 @@
         showContext:     false,
         showFocusRect:   true,
         tableAutoScroll: true, // auto scrolling
-        showData:     true,
-        keepSlopes:   true,
-        keepIntervals:false,
-        reverseTable: false,
+        showData:        true,
+        keepSlopes:      true,
+        keepIntervals:   false,
+        reverseTable:    false,
         
         precision: 5,
         maxFutureDays: 365,
@@ -73,8 +73,8 @@
         svgSize:      { width: 700, height: 530 },
         focusRect:    { x:0, y:0, width:700, height: 400 },
         focusPad:     { left:25, right:10, top:35, bottom:30 },
-        contextRect:  { x:0, y:400, width:700, height: 80 },
-        contextPad:   { left:25, right:10, top:0, bottom:30 },
+        ctxRect:  { x:0, y:400, width:700, height: 80 },
+        ctxPad:   { left:25, right:10, top:0, bottom:30 },
         tableHeight:  540, // Choose 0 for unspecified
 
         zoomButton:   { size: 50, opacity: 0.7, factor: 1.5 },
@@ -83,7 +83,7 @@
         roadKnot:     { width: 7, rmbtnscale: 0.9 },
         roadLine:     { width: 7, ctxwidth: 2 },
         oldRoadLine:  { width: 3, ctxwidth: 1 },
-        dataPoint:    { size: 4, flsize: 6 }, 
+        dataPoint:    { size: 4, fsize: 6 }, 
         horizon:      { width: 2, ctxwidth: 1, dash: 8, ctxdash: 8, 
                         font: 16, ctxfont: 10 },
         today:        { width: 2, ctxwidth: 1, font: 16, ctxfont: 10 },
@@ -274,6 +274,38 @@
       return x;
     },
 
+    /** Show Number: convert number to string. Use at most d
+     significant figures after the decimal point. Target t significant
+     figures total (clipped to be at least i and at most i+d, where i
+     is the number of digits in integer part of x). */
+    shn = function(x, t=10, d=5) {
+        if (isNaN(x)) return x.toString();
+        var i = Math.round(Math.abs(x)), k, fmt, ostr;
+        i = (i==0)?0:i.toString().length; // # of digits left of the decimal
+        if (Math.abs(x) > Math.pow(10,i)-.5) i += 1;
+        if (i == 0 && x != 0)
+            k = (Math.floor(d - Math.log(Math.abs(x), 10)));// get desired 
+        else k = d;                                          // dec. digits
+        // Round input to have the desired number of decimal digits
+        var v = x * Math.pow(10,k);
+        // Hack to prevent incorrect rounding with the decimal digits:
+        if (v % 10 >= 4.5 && v % 10 < 4.9999999) v = Math.floor(v);
+        var xn = Math.round(v) / Math.pow(10,k) + 1e-10;
+        // If total significant digits < i, do something about it
+        if (t < i && Math.abs(Math.pow(10,(i-1)) - xn) < .5) 
+            xn = Math.pow(10,(i-1));
+        t = clip(t, i, i+d);
+        // If the magnitude <= 1e-4, prevent scientific notation
+        if (Math.abs(xn) < 1e-4 || Math.round(xn) == 9 
+            || Math.round(xn) == 99 || Math.round(xn) == 999) {
+            ostr = parseFloat(x.toPrecision(k)).toString();
+        } else {
+            ostr = xn.toPrecision(t);
+            if (!ostr.includes('e')) ostr = parseFloat(ostr);
+        }
+        return ostr;
+    },
+        
     linspace = function linspace( a, b, n) {
         if (typeof n === "undefined") n = Math.max(Math.round(b-a)+1,1);
         if (n < 2) { return n===1?[a]:[]; }
@@ -806,7 +838,7 @@
         var zoombtntr;
         function computeBoxes() {
             plotpad = extend({}, opts.focusPad);
-            contextpad = extend({}, opts.contextPad);
+            contextpad = extend({}, opts.ctxPad);
             plotpad.left += yaxisw;
             plotpad.right += yaxisw;
             contextpad.left += yaxisw;
@@ -820,11 +852,11 @@
                     - plotpad.top - plotpad.bottom
             },
             brushbox = {
-                x:     opts.contextRect.x + contextpad.left,
-                y:     opts.contextRect.y + contextpad.top,
-                width: opts.contextRect.width
+                x:     opts.ctxRect.x + contextpad.left,
+                y:     opts.ctxRect.y + contextpad.top,
+                width: opts.ctxRect.width
                     - contextpad.left - contextpad.right, 
-                height:opts.contextRect.height
+                height:opts.ctxRect.height
                     - contextpad.top - contextpad.bottom
             };
             zoombtntr = {botin:"translate("+(plotbox.width
@@ -845,53 +877,47 @@
         computeBoxes();
 
         var svg, defs, zoomarea, axisZoom, focus, buttonarea, focusclip, plot;
-        var gPastBox, gYBHP, gPink, gGrid;
+        var gPB, gYBHP, gPink, gGrid;
         var gOldRoad, gOldCenter, gOldGuides, gOldBullseye, gKnots;
         var gSteppy, gMovingAv, gDpts, gAllpts, gBullseye, gRoads, gDots;
         var gWatermark, gHorizon, gHorizonText;
         var gPastText, zoomin, zoomout;;
-        var xSc, xAxis, xGrid, xAxisObj, xGridObj;
-        var ySc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel;
+        var xSc, nXSc, xAxis, xGrid, xAxisObj, xGridObj;
+        var ySc, nYSc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel;
         var context, ctxclip, ctxplot, xScB, xAxisB, xAxisObjB;
         var yScB, brushObj, brush, focusrect;
         var topLeft;
-        var nXSc, nYSc;
         var scalf = 1;
 
         function createGraph() {
             var div = opts.divGraph;
             if (div === null) return;
             // First, remove all children from the div
-            while (div.firstChild) {
-                div.removeChild(div.firstChild);
-            }        
+            while (div.firstChild) div.removeChild(div.firstChild);
+
             // Initialize the div and the SVG
             svg = d3.select(div).attr("class", "bmndrgraph")
 	            .append('svg:svg')
-	            .attr('width', sw)
-	            .attr('height', sh)
+                .attr('width', sw).attr('height', sh)
 	            .attr('class', 'bmndrsvg');
+
             // Common SVG definitions, including clip paths
             defs = svg.append('defs');
             defs.append("clipPath")
                 .attr("id", "plotclip"+curid)
-                .append("rect")
-                .attr("x", 0).attr("y", 0)
+                .append("rect").attr("x", 0).attr("y", 0)
                 .attr("width", plotbox.width).attr("height", plotbox.height);
             defs.append("clipPath")
                 .attr("id", "brushclip"+curid)
-                .append("rect")
-                .attr("x", 0).attr("y", 0)
+                .append("rect").attr("x", 0).attr("y", 0)
                 .attr("width", brushbox.width).attr("height", brushbox.height);
             defs.append("clipPath")
                 .attr("id", "buttonareaclip"+curid)
-                .append("rect")
-                .attr("x", plotbox.x).attr("y", 0)
+                .append("rect").attr("x", plotbox.x).attr("y", 0)
                 .attr("width", plotbox.width).attr("height", plotpad.top);
-            
+
             defs.append("path")
-                .style("stroke", "none")
-                .attr("id", "rightarrow")
+                .style("stroke", "none").attr("id", "rightarrow")
                 .attr("d", "M 55,0 -35,45 -35,-45 z");
             
             var buttongrp = defs.append("g")
@@ -974,7 +1000,7 @@
             plot = focusclip.append('g').attr('class', 'plot');
 
             gGrid = plot.append('g').attr('id', 'grid');
-            gPastBox = plot.append('g').attr('id', 'pastboxgrp');
+            gPB = plot.append('g').attr('id', 'pastboxgrp');
             gYBHP = plot.append('g').attr('id', 'ybhpgrp');
             gWatermark = plot.append('g').attr('id', 'wmarkgrp');
             gOldGuides = plot.append('g').attr('id', 'oldguidegrp');
@@ -1059,7 +1085,7 @@
             context = svg.append('g')
 	            .attr('class', 'brush')
                 .attr('transform', 'translate('
-                      +opts.contextRect.x+','+opts.contextRect.y+')');
+                      +opts.ctxRect.x+','+opts.ctxRect.y+')');
             ctxclip = context.append('g')
                 .attr('clip-path', 'url(#brushclip'+curid+')')
                 .attr('transform', 'translate('
@@ -1450,7 +1476,6 @@
             zoomarea.call(axisZoom.transform, d3.zoomIdentity
                           .scale(brushbox.width / (s[1] - s[0]))
                           .translate(-s[0], 0));
-            updateGraphData();
         }
 
         function zoomAll( ) {
@@ -1473,12 +1498,9 @@
                 zoomout.attr("transform", zoombtntr.topout);
             }
             reloadBrush();
-            updateGraphData();
-            updateTable();
-            updateContextData();
         }
-        // ---------------- Undo/Redo functionality --------------------
 
+        // ---------------- Undo/Redo functionality --------------------
         function clearUndoBuffer() {
             //console.debug("clearUndoBuffer()");
             undoBuffer = [];
@@ -2085,6 +2107,7 @@
         // Recreates the road array from the "rawknots" array, which includes
         // only timestamp,value pairs
         function loadGoal( json ) {
+            //console.debug("id="+curid+", loadGoal()->"+json.params.yoog);
             clearUndoBuffer();
 
             legacyIn(json.params);
@@ -2168,15 +2191,20 @@
                 yaxisw = bbox.width;
                 resizeGraph();
             }
-            zoomAll();
             zoomDefault();
+            updateTable();
+            updateContextData();
         }
 
         function loadGoalFromURL( url ) {
             loadJSON(url, 
                      function(resp) { 
+                         //console.debug("id="+curid+" loadGoalFromURL() done for "+url);
                          loadGoal(resp);
-                         roadChanged();
+                         if (typeof opts.onRoadChange === 'function') {
+                             opts.onRoadChange.call();
+                         }
+                         //roadChanged();
                          updateRoadTableTitle();
                      });  
         }
@@ -2284,12 +2312,12 @@
             knottext = createTextBox(ptx, plotbox.height-15, 
                                      knotdate.format('YYYY-MM-DD'));
             dottext = createTextBox(ptx, nYSc(pty)-15, 
-                                    pt[1].toPrecision(5));
+                                    shn(pt[1]));
             if (slope != undefined) {
 	            var slopex = nXSc(daysnap(slope[0])*1000);
 	            var slopey = nYSc(slope[1]);
                 slopetext = createTextBox(slopex,slopey, 
-                                          "s:"+slope[2].toPrecision(5));
+                                          "s:"+shn(slope[2]));
                 if (ptx - slopex < 50) hideTextBox(slopetext, true);
             }
         }
@@ -2300,13 +2328,13 @@
             updateTextBox(knottext, nXSc(ptx*1000), plotbox.height-15, 
                           knotdate.format('YYYY-MM-DD'));
             updateTextBox(dottext, nXSc(ptx*1000), nYSc(pty)-15, 
-                          pt[1].toPrecision(opts.precision));
+                          shn(pt[1]));
             if (slope != undefined) {
 	            var slopex = daysnap(slope[0]);
 	            var slopey = slope[1];
                 updateTextBox(slopetext, nXSc(slopex*1000), 
                               nYSc(slopey), 
-                              "s:"+slope[2].toPrecision(5));
+                              "s:"+shn(slope[2]));
             }
         }
         function removeDragInfo( ) {
@@ -2356,9 +2384,9 @@
   		        el.select("[name=enddate"+ii+"]")
                     .text(datestr);
   		        el.select("[name=endvalue"+ii+"]")
-                    .text(rd[ii].end[1].toPrecision(5));
+                    .text(shn(rd[ii].end[1]));
   		        el.select("[name=slope"+ii+"]")
-                    .text((rd[ii].slope*goal.siru).toPrecision(5));
+                    .text(shn(rd[ii].slope*goal.siru));
             }
             updateRoadValidity();
             updateWatermark();
@@ -2661,13 +2689,13 @@
         // Creates or updates the shaded box to indicate past dates
         function updatePastBox() {
             if (opts.divGraph == null || roads.length == 0) return;
-            var pastelt = gPastBox.select(".past");
+            var pastelt = gPB.select(".past");
             if (!opts.roadEditor) {
                 pastelt.remove();
                 return;
             }
             if (pastelt.empty()) {
-                gPastBox.insert("svg:rect", ":first-child")
+                gPB.insert("svg:rect", ":first-child")
                     .attr("class","past")
 	  	            .attr("x", nXSc(goal.xMin))
                     .attr("y", nYSc(goal.yMax+3*(goal.yMax-goal.yMin)))
@@ -3535,6 +3563,8 @@
         }
 
         function updateDataPoints() {
+            //console.debug("id="+curid+", updateDataPoints()");
+            //console.trace();
             if (opts.divGraph == null || roads.length == 0) return;
             var now = goal.asof;
             var dpelt;
@@ -3566,14 +3596,14 @@
                             .attr("transform", 
                                   "translate("+(nXSc((flad[0])*1000))+","
                                   +nYSc(flad[1])+"),scale("
-                                  +(opts.dataPoint.flsize/50)+")");
+                                  +(opts.dataPoint.fsize/50)+")");
                     } else {
                         fladelt
                             .attr("fill", dotcolor(roads,goal,flad[0],flad[1]))
                             .attr("transform", 
                                   "translate("+(nXSc((flad[0])*1000))+","
                                   +nYSc(flad[1])+"),scale("
-                                  +(opts.dataPoint.flsize/50)+")");
+                                  +(opts.dataPoint.fsize/50)+")");
                     }
                 } else {
                     if (!fladelt.empty()) fladelt.remove();
@@ -3674,7 +3704,6 @@
 
             d3.select(opts.divTable)
                 .style("width", (tbody.node().offsetWidth+30)+"px");
-
         }
         
         // Create the table header and body to show the start node
@@ -3972,7 +4001,7 @@
                         var datestr = dayify(row.end[0], '-');
                         return [
                             {order: 2, value: datestr, name: "enddate"+i},
-                            {order: 4, value: row.end[1].toPrecision(5), name: "endvalue"+i},
+                            {order: 4, value: shn(row.end[1]), name: "endvalue"+i},
                             {order: 6, value: '', name: "slope"}];
                     });
             scells.enter().append("span").attr('class', 'startcell')
@@ -4013,9 +4042,9 @@
                         return [
                             {order: 2, value: datestr, name: "enddate"+(ri), 
                              auto: (row.auto==RP.DATE)},
-                            {order: 4, value: row.end[1].toPrecision(5), name: "endvalue"+(ri), 
+                            {order: 4, value: shn(row.end[1]), name: "endvalue"+(ri), 
                              auto: (row.auto==RP.VALUE)},
-                            {order: 6, value: (row.slope*goal.siru).toPrecision(5), name: "slope"+(ri), 
+                            {order: 6, value: shn(row.slope*goal.siru), name: "slope"+(ri), 
                              auto: (row.auto==RP.SLOPE)}];
                     });
             cells.enter().append("span").attr('class', 'roadcell')
@@ -4034,6 +4063,8 @@
                         :opts.roadTableCol.text;})
                 .attr("contenteditable", function(d,i) { return (d.auto || !opts.roadEditor)?'false':'true';});
 
+            d3.select(opts.divTable)
+                .style("width", (tbody.node().offsetWidth+30)+"px");
         }
 
         function updateTable() {
@@ -4091,13 +4122,16 @@
         // variables, but is also accessible from the outside.
         self.showData = function( flag ) {
             if (arguments.length > 0) opts.showData = flag;
-            updateDataPoints();
-            updateMovingAv();
+            if (alldata.length != 0) {
+                updateDataPoints();
+                updateMovingAv();
+            }
             return opts.showData;
         };
         self.showContext = function( flag ) {
             if (arguments.length > 0) opts.showContext = flag;
-            updateContextData();
+            if (roads.length != 0)
+                updateContextData();
             return opts.showContext;
         };
         self.keepSlopes = function( flag ) {
@@ -4120,7 +4154,8 @@
                     aggdataf = aggdata.filter(function(e){
                         return e[0]>(goal.asof-opts.maxDataDays*SID);});
                 }
-                updateDataPoints();
+                if (alldata.length != 0)
+                    updateDataPoints();
             }
             return opts.maxDataDays;
         };
@@ -4157,15 +4192,9 @@
             document.activeElement.blur();
             redoLastEdit();
         };
-        self.zoomAll = function() {
-            zoomAll();
-        };
-        self.zoomDefault = function() {
-            zoomDefault();
-        };
-        self.loadGoal = function( url ) {
-            loadGoalFromURL( url );
-        };
+        self.zoomAll = function() { zoomAll(); };
+        self.zoomDefault = function() { zoomDefault(); };
+        self.loadGoal = function( url ) { loadGoalFromURL( url ); };
         self.retroRatchet = function( days ) {
             if (!opts.roadEditor) return;
             setSafeDays( days );  
