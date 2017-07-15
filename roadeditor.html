@@ -16,6 +16,7 @@
 
 Select goal: 
  <select id="roadselect" class="roadselect" onchange="editor.loadGoal(this.value);editor2.loadGoal(this.value);">
+  <option value="data/bugroad.json">Bug Road</option>
   <option value="data/beeminder.json">Beeminder</option>
   <option value="data/testroad1.json">Test Road 1</option>
   <option value="data/testroad2.json">Test Road 2</option>
@@ -34,6 +35,7 @@ Select goal:
 
 <form action="">
 <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>Show datapoints
+<input id="showalldata" type="checkbox" onclick="if (this.checked) editor.maxDataDays(-1); else editor.maxDataDays(100);">Show all datapoints
 <input id="showcontext" type="checkbox" onclick="editor.showContext(this.checked);" checked>Show context graph<br>
 <input id="keepslopes" type="checkbox" onclick="editor.keepSlopes(this.checked);" checked>Keep slopes fixed<br>
 <input id="keepintervals" onclick="editor.keepIntervals(this.checked);" type="checkbox">Keep intervals fixed
@@ -61,6 +63,7 @@ Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id=
 <table>
   <tr>
     <td valign="top"><div id="roadgraph2"></div>
+      <input id="showalldata2" type="checkbox" onclick="if (this.checked) editor2.maxDataDays(-1); else editor2.maxDataDays(100);">Show all datapoints<br/>
       <button id="zoomall2" onclick="editor2.zoomAll();">View All</button>
       <button id="zoomdflt2" onclick="editor2.zoomDefault();">Default Zoom</button>
     </td>
@@ -105,6 +108,8 @@ Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id=
                           showContext: true,
                           onRoadChange: roadChanged});
   editor.showData(document.getElementById("showdata").checked);
+  if (document.getElementById("showalldata").checked) editor.maxDataDays(-1); else editor.maxDataDays(100);
+  editor.showData(document.getElementById("showdata").checked);
   editor.showContext(document.getElementById("showcontext").checked);
   editor.keepSlopes(document.getElementById("keepslopes").checked);
   editor.keepIntervals(document.getElementById("keepintervals").checked);
@@ -119,6 +124,7 @@ Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id=
                           maxFutureDays: 365,
                           showFocusRect: false,
                           showContext: true});
+  if (document.getElementById("showalldata2").checked) editor2.maxDataDays(-1); else editor2.maxDataDays(100);
   editor2.reverseTable(document.getElementById("reversetable2").checked);
   editor2.loadGoal(document.getElementById("roadselect").value);
 
