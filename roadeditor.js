@@ -3345,8 +3345,8 @@
             // Create, update and delete removal icons for knots
             knotrmelt.exit().remove();
             knotrmelt
-  	            .attr("id", function(d,i) {return i;})
-	            .attr("name", function(d,i) {return "remove"+i;})
+//  	            .attr("id", function(d,i) {return i;})
+//	            .attr("name", function(d,i) {return "remove"+i;})
                 .attr("transform", 
                       function(d){ 
                           return "translate("+(nXSc(d.end[0]*1000)
@@ -3540,8 +3540,6 @@
                 .attr("cy",function(d){ return yScB(d.sta[1]);});
             dotelt.enter().append("svg:circle")
 		        .attr("class","ctxdots")
-		        .attr("id", function(d,i) {return i-1;})
-		        .attr("name", function(d,i) {return "ctxdot"+(i-1);})
 		        .attr("r", opts.roadDot.ctxsize)
                 .attr("fill", opts.roadDotCol.editable)
 		        .style("stroke-width", opts.roadDot.ctxborder)
@@ -3582,7 +3580,6 @@
 
             dpelt.enter().append("svg:circle")
 		        .attr("class",cls)
-		        .attr("id", function(d,i) {return i;})
                 .attr("r", r)
 		        .attr("cx", function(d){ return nXSc((d[0])*1000);})
                 .attr("cy",function(d){ return nYSc(d[1]);})
@@ -3611,6 +3608,7 @@
                 var pts = (flad != null)?
                         aggdataf.slice(0,aggdataf.length-1):
                         aggdataf;
+                // Filter data to only include visible points
                 pts = pts.filter(df);
                 if (goal.plotall && !opts.roadEditor) {
                     updateDotGroup(gAllpts, alldataf.filter(adf), "allpts", 
@@ -3650,23 +3648,21 @@
                 }
                 var stpelt = gSteppy.selectAll(".steppy");
                 if (!opts.roadEditor && goal.steppy && aggdataf.length != 0) {
-                    var npts = aggdataf.filter(df);
+                    var npts = aggdataf.filter(df), i;
                     if (npts.length == 0) {
                         // no points are in range, find enclosing two
                         var ind = -1;
-                        for (var i = 0; i < aggdataf.length-1; i++) {
+                        for (i = 0; i < aggdataf.length-1; i++) {
                             if (aggdataf[i][0]<=l[0]&&aggdataf[i+1][0]>=l[1]) {
-                                ind = i;
-                                break;
+                                ind = i; break;
                             }
                         }
-                        if (ind > 0)
-                            npts = aggdataf.slice(ind, ind+2);
+                        if (ind > 0) npts = aggdataf.slice(ind, ind+2);
                     }
                     if (npts.length != 0) {
                         var d = "M"+nXSc(npts[0][3]*1000)+" "
                                 +nYSc(npts[0][4]);
-                        for (var i = 0; i < npts.length; i++) {
+                        for (i = 0; i < npts.length; i++) {
                             d += " L"+nXSc(npts[i][0]*1000)+" "+
                                 nYSc(npts[i][4]);
                             d += " L"+nXSc(npts[i][0]*1000)+" "+
