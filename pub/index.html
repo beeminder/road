@@ -42,10 +42,12 @@
   <tr>
     <td valign="top"><div id="roadgraph"></div>
       <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>Show datapoints
+      <input id="showalldata" type="checkbox" onclick="if (this.checked) editor.maxDataDays(-1); else editor.maxDataDays(100);" checked>Show All data
       <input id="showcontext" type="checkbox" onclick="editor.showContext(this.checked);" checked>Show context graph<br>
       <input id="keepslopes" type="checkbox" onclick="editor.keepSlopes(this.checked);" checked>Keep slopes fixed<br>
       <input id="keepintervals" onclick="editor.keepIntervals(this.checked);" type="checkbox">Keep intervals fixed<br>
       <button id="zoomall" onclick="editor.zoomOut();">Zoom To Fit</button>
+      <button id="zoomdflt" onclick="editor.zoomDefault();">Default Zoom</button>
       <button id="undo" onclick="editor.undo();">Undo (0)</button>
       <button id="redo" onclick="editor.redo();">Redo (0)</button><br/><br/>
       Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">Retroratchet</button><br/>
@@ -86,11 +88,12 @@
 
   var editor = new bmndr({divGraph: document.getElementById('roadgraph'),
                           divTable: document.getElementById('roadtable'),
-                          roadEditor: false,
+                          roadEditor: true,
                           maxFutureDays: 365,
                           showFocusRect: true,
                           showContext: true,
                           onRoadChange: roadChanged});
+  if (document.getElementById("showalldata").checked) editor.maxDataDays(-1); else editor.maxDataDays(100);
   editor.showData(document.getElementById("showdata").checked);
   editor.showContext(document.getElementById("showcontext").checked);
   editor.keepSlopes(document.getElementById("keepslopes").checked);
