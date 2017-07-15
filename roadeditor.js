@@ -850,8 +850,8 @@
         var gSteppy, gMovingAv, gDpts, gAllpts, gBullseye, gRoads, gDots;
         var gWatermark, gHorizon, gHorizonText;
         var gPastText, zoomin, zoomout;;
-        var xScale, xAxis, xGrid, xAxisObj, xGridObj;
-        var yScale, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel;
+        var xSc, xAxis, xGrid, xAxisObj, xGridObj;
+        var ySc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel;
         var context, ctxclip, ctxplot, xScB, xAxisB, xAxisObjB;
         var yScB, brushObj, brush, focusrect;
         var topLeft;
@@ -1020,24 +1020,24 @@
                     d3.select(this).style("fill", "black");});
 
             // Create and initialize the x and y axes
-            xScale = d3.scaleUtc().range([0,plotbox.width]);
-            xAxis = d3.axisBottom(xScale).ticks(6);
+            xSc = d3.scaleUtc().range([0,plotbox.width]);
+            xAxis = d3.axisBottom(xSc).ticks(6);
             xAxisObj = focus.append('g')        
                 .attr("class", "axis")
                 .attr("transform", "translate("+plotbox.x+"," 
                       + (plotpad.top+plotbox.height) + ")")
                 .call(xAxis);
             if (!opts.roadEditor) {
-                xGrid = d3.axisTop(xScale).ticks(6).tickFormat("");
+                xGrid = d3.axisTop(xSc).ticks(6).tickFormat("");
                 xGridObj = gGrid.append('g')        
                     .attr("class", "grid")
                     .attr("transform", "translate(0,"+(plotbox.height)+")")
                     .call(xGrid);
             }
 
-            yScale = d3.scaleLinear().range([plotbox.height, 0]);
-            yAxis = d3.axisLeft(yScale).ticks(8);
-            yAxisR = d3.axisRight(yScale).ticks(8);
+            ySc = d3.scaleLinear().range([plotbox.height, 0]);
+            yAxis = d3.axisLeft(ySc).ticks(8);
+            yAxisR = d3.axisRight(ySc).ticks(8);
             yAxisObj = focus.append('g')        
                 .attr("class", "axis")
                 .attr("transform", "translate(" 
@@ -1089,7 +1089,7 @@
                 .attr("fill", "none")
                 .style("stroke", "black").style("stroke-width", 1)
                 .style("stroke-dasharray", "8,4,2,4");
-            nXSc = xScale, nYSc = yScale;
+            nXSc = xSc, nYSc = ySc;
         }
 
         function resizeGraph() {
@@ -1115,7 +1115,7 @@
                            +','+plotpad.top+')');
             zoomin.attr("transform", zoombtntr.botin);
             zoomout.attr("transform", zoombtntr.botout);
-            xScale.range([0, plotbox.width]);
+            xSc.range([0, plotbox.width]);
             xAxisObj.attr("transform", "translate("+plotbox.x+"," 
                           + (plotpad.top+plotbox.height) + ")")
                 .call(xAxis);
@@ -1123,7 +1123,7 @@
                 xGridObj.attr("transform", "translate(0,"+(plotbox.height)+")")
                     .call(xGrid);
             }
-            yScale.range([0, plotbox.height]);
+            ySc.range([0, plotbox.height]);
             yAxisObj.attr("transform", "translate(" 
                       + plotpad.left + ","+plotpad.top+")")
                 .call(yAxis);
@@ -1276,7 +1276,7 @@
         // ------- Zoom and brush  related private functions ---------
         var ticks, tickType = 1, majorSkip = 7;
         function computeXTicks() {
-            var xr = xScale.domain();
+            var xr = xSc.domain();
             ticks = [];
             ticks.push([d3.utcDay.range(xr[0], xr[1], 1),"%b %d"]);
             ticks.push([d3.utcDay.range(xr[0], xr[1], 2),"%b %d"]);
@@ -1362,10 +1362,10 @@
 
             var yrange = [ae.yMax, ae.yMin];
             var newtr = d3.zoomIdentity
-                    .scale(plotbox.height/(yScale(yrange[1])
-                                           -yScale(yrange[0])))
-                    .translate(0, -yScale(yrange[0]));
-            nYSc = newtr.rescaleY(yScale);
+                    .scale(plotbox.height/(ySc(yrange[1])
+                                           -ySc(yrange[0])))
+                    .translate(0, -ySc(yrange[0]));
+            nYSc = newtr.rescaleY(ySc);
             yAxisObj.call(yAxis.scale(nYSc));
             yAxisObjR.call(yAxisR.scale(nYSc));
 
@@ -1413,7 +1413,7 @@
             var tr = d3.zoomTransform(zoomarea.node());
             if (tr == null) return;
             
-            nXSc = tr.rescaleX(xScale);
+            nXSc = tr.rescaleX(xSc);
             redrawXTicks();
             adjustYScale();
 
@@ -1456,11 +1456,11 @@
         function zoomAll( ) {
             if (opts.divGraph == null) return;
             computePlotLimits( false );
-            xScale.domain([new Date(goal.xMin*1000), 
+            xSc.domain([new Date(goal.xMin*1000), 
                            new Date(goal.xMax*1000)]);
             computeXTicks();
-            yScale.domain([goal.yMin, goal.yMax]);
-            nXSc = xScale; nYSc = yScale;
+            ySc.domain([goal.yMin, goal.yMax]);
+            nXSc = xSc; nYSc = ySc;
             resizeContext();
             zoomarea.call(axisZoom.transform, d3.zoomIdentity);
 
@@ -1768,14 +1768,14 @@
                               nXSc.invert(plotbox.width)];
                 var yrange = [nYSc.invert(0), 
                               nYSc.invert(plotbox.height)];
-                xScale.domain([new Date(goal.xMin*1000), 
+                xSc.domain([new Date(goal.xMin*1000), 
                                   new Date(goal.xMax*1000)]);
                 computeXTicks();
-                yScale.domain([goal.yMin, goal.yMax]);
+                ySc.domain([goal.yMin, goal.yMax]);
                 var newtr = d3.zoomIdentity.scale(plotbox.width
-                                                  /(xScale(xrange[1]) 
-                                                    - xScale(xrange[0])))
-                        .translate(-xScale(xrange[0]), 0);
+                                                  /(xSc(xrange[1]) 
+                                                    - xSc(xrange[0])))
+                        .translate(-xSc(xrange[0]), 0);
                 zoomarea.call( axisZoom.transform, newtr );
             }
         }
@@ -3170,8 +3170,9 @@
                 numlines = Math.abs((yrange[1] - yrange[0])/(goal.lnw*delta));
             }
             if (numlines > 32) {
-                delta = 8*7;
-                numlines = Math.abs((yrange[1] - yrange[0])/(goal.lnw*delta));
+                // We give up, just draw up to 32 guidelines wherever 
+                numlines = 32;
+                delta = Math.abs((yrange[1] - yrange[0])/numlines);
             }
             var arr = new Array(Math.ceil(numlines)).fill(0);
             el = gOldGuides.selectAll(".oldguides").data(arr);
