@@ -37,6 +37,7 @@
   <tr>
     <td valign="top"><div id="roadgraph"></div>
       <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>Show datapoints
+      <input id="showalldata" type="checkbox" onclick="if (this.checked) editor.maxDataDays(-1); else editor.maxDataDays(100);">Show All data
       <input id="showcontext" type="checkbox" onclick="editor.showContext(this.checked);" checked>Show context graph<br>
       <input id="keepslopes" type="checkbox" onclick="editor.keepSlopes(this.checked);" checked>Keep slopes fixed<br>
       <input id="keepintervals" onclick="editor.keepIntervals(this.checked);" type="checkbox">Keep intervals fixed<br>
@@ -64,6 +65,7 @@
 <table>
   <tr>
     <td valign="top"><div id="roadgraph2"></div>
+      <input id="showalldata2" type="checkbox" onclick="if (this.checked) editor2.maxDataDays(-1); else editor2.maxDataDays(100);">Show All data<br/>
       <button id="zoomall2" onclick="editor2.zoomAll();">Zoom All</button>
       <button id="zoomdflt2" onclick="editor2.zoomDefault();">Default Zoom</button>
     </td>

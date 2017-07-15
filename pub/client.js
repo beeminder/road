@@ -23,6 +23,15 @@ function roadChanged() {
     }
 }
 
+var editor2 = new bmndr({divGraph: document.getElementById('roadgraph2'),
+                        divTable: document.getElementById('roadtable2'),
+                        roadEditor:false,
+                        maxFutureDays: 365,
+                        showFocusRect: false,
+                        showContext: true});
+if (document.getElementById("showalldata2").checked) editor2.maxDataDays(-1); else editor2.maxDataDays(100);
+editor2.reverseTable(document.getElementById("reversetable2").checked);
+
 var editor = new bmndr({divGraph: document.getElementById('roadgraph'),
                         divTable: document.getElementById('roadtable'),
                         roadEditor: true,
@@ -30,6 +39,7 @@ var editor = new bmndr({divGraph: document.getElementById('roadgraph'),
                         showFocusRect: true,
                         showContext: true,
                         onRoadChange: roadChanged});
+if (document.getElementById("showalldata").checked) editor.maxDataDays(-1); else editor.maxDataDays(100);
 editor.showData(document.getElementById("showdata").checked);
 editor.showContext(document.getElementById("showcontext").checked);
 editor.keepSlopes(document.getElementById("keepslopes").checked);
@@ -37,14 +47,7 @@ editor.keepIntervals(document.getElementById("keepintervals").checked);
 editor.reverseTable(document.getElementById("reversetable").checked);
 editor.autoScroll(document.getElementById("autoscroll").checked);
 
-var editor2 = new bmndr({divGraph: document.getElementById('roadgraph2'),
-                        divTable: document.getElementById('roadtable2'),
-                        roadEditor:false,
-                        maxFutureDays: 2*365,
-                        showFocusRect: false,
-                        showContext: true});
-editor2.reverseTable(document.getElementById("reversetable2").checked);
-editor2.loadGoal(document.getElementById("roadselect").value);
+//editor2.loadGoal(document.getElementById("roadselect").value);
 
 document.onkeydown = documentKeyDown;
 
