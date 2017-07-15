@@ -25,9 +25,9 @@
         divTable:     null,    // Binds the road table to a div element
         svgSize:      { width: 700, height: 480 },
         focusRect:    { x:0, y:0, width:700, height: 400 },
-        focusPad:     { left:25, right:0, top:25, bottom:30 },
+        focusPad:     { left:25, right:5, top:25, bottom:30 },
         ctxRect:      { x:0, y:400, width:700, height: 80 },
-        ctxPad:       { left:25, right:0, top:0, bottom:30 },
+        ctxPad:       { left:25, right:5, top:0, bottom:30 },
         tableHeight:  540, // Choose 0 for unspecified
 
         zoomButton:   { size: 40, opacity: 0.6, factor: 1.5 },
@@ -1641,15 +1641,23 @@
 
         function dataExtentPartial( data, xmin, xmax, extend = false ) {
             var extent = {};
+            var nd = data.filter(function(d) {
+                return (d[0] > xmin && d[0] < xmax);});
+            if (nd.length == 0) {
+                // no points are in range, find enclosing two
+                var ind = -1;
+                for (var i = 0; i < data.length-1; i++) {
+                    if (data[i][0]<=xmin && data[i+1][0]>=xmax) {
+                        ind = i; break;
+                    }
+                }
+                if (ind > 0) nd = data.slice(ind, ind+1);
+            }
             // Compute new limits for the current data
-            extent.xMin = d3.min(data, function(d) { 
-                return (d[0] <xmin||d[0]>xmax)?Infinity:d[0]; });
-            extent.xMax = d3.max(data, function(d) { 
-                return (d[0] <xmin||d[0]>xmax)?-Infinity:d[0]; });
-            extent.yMin = d3.min(data, function(d) { 
-                return (d[0] <xmin||d[0]>xmax)?Infinity:d[1]; });
-            extent.yMax = d3.max(data, function(d) { 
-                return (d[0] <xmin||d[0]>xmax)?-Infinity:d[1]; });
+            extent.xMin = d3.min(nd, function(d) { return d[0]; });
+            extent.xMax = d3.max(nd, function(d) { return d[0]; });
+            extent.yMin = d3.min(nd, function(d) { return d[1]; });
+            extent.yMax = d3.max(nd, function(d) { return d[1]; });
 
             // Extend limits by 5% so everything is visible
             var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
@@ -3119,7 +3127,17 @@
         function updateOldRoad() {
             if (opts.divGraph == null || roads.length == 0) return;
 
-            var ir = iRoad;
+            var l = [nXSc.invert(0).getTime()/1000, 
+                     nXSc.invert(plotbox.width).getTime()/1000];
+            var rdfilt = function(r) {
+                return ((r.sta[0] > l[0] && r.sta[0] < l[1])
+                        || (r.end[0] > l[0] && r.end[0] < l[1]));
+            };
+            var ir = iRoad.filter(rdfilt);
+            if (ir.length == 0) {
+                var ind = findRoadSegment(iRoad, l[0]);
+                ir = [iRoad[ind]];
+            }
             var d = "M"+nXSc(ir[0].sta[0]*1000)+" "
                     +nYSc(ir[0].sta[1]);
             var i;
@@ -3183,7 +3201,18 @@
                 return;
             }
 
-            var ir = iRoad, d, i;
+            var l = [nXSc.invert(0).getTime()/1000, 
+                     nXSc.invert(plotbox.width).getTime()/1000];
+            var rdfilt = function(r) {
+                return ((r.sta[0] > l[0] && r.sta[0] < l[1])
+                        || (r.end[0] > l[0] && r.end[0] < l[1]));
+            };
+
+            var ir = iRoad.filter(rdfilt), d, i;
+            if (ir.length == 0) {
+                var ind = findRoadSegment(iRoad, l[0]);
+                ir = [iRoad[ind]];
+            }
             // Compute Y range
             var yrange = [nYSc.invert(plotbox.height), 
                           nYSc.invert(0)];
@@ -3565,6 +3594,16 @@
         function updateDataPoints() {
             //console.debug("id="+curid+", updateDataPoints()");
             //console.trace();
+            var l = [nXSc.invert(0).getTime()/1000, 
+                     nXSc.invert(plotbox.width).getTime()/1000];
+            var df = function(d) {
+                    return ((d[0] >= l[0] && d[0] <= l[1]) 
+                            || (d[3] >= l[0] && d[3] <= l[1]));
+            };
+            var adf = function(d) {
+                    return (d[0] >= l[0] && d[0] <= l[1]);
+            };
+
             if (opts.divGraph == null || roads.length == 0) return;
             var now = goal.asof;
             var dpelt;
@@ -3572,8 +3611,9 @@
                 var pts = (flad != null)?
                         aggdataf.slice(0,aggdataf.length-1):
                         aggdataf;
+                pts = pts.filter(df);
                 if (goal.plotall && !opts.roadEditor) {
-                    updateDotGroup(gAllpts, alldataf, "allpts", 
+                    updateDotGroup(gAllpts, alldataf.filter(adf), "allpts", 
                                    0.7*(opts.dataPoint.size)*scalf,
                                    "none", null, dpFill);
                     
@@ -3610,25 +3650,40 @@
                 }
                 var stpelt = gSteppy.selectAll(".steppy");
                 if (!opts.roadEditor && goal.steppy && aggdataf.length != 0) {
-                    var d = "M"+nXSc(aggdataf[0][3]*1000)+" "
-                            +nYSc(aggdataf[0][4]);
-                    for (var i = 0; i < aggdataf.length; i++) {
-                        d += " L"+nXSc(aggdataf[i][0]*1000)+" "+
-                            nYSc(aggdataf[i][4]);
-                        d += " L"+nXSc(aggdataf[i][0]*1000)+" "+
-                            nYSc(aggdataf[i][1]);
+                    var npts = aggdataf.filter(df);
+                    if (npts.length == 0) {
+                        // no points are in range, find enclosing two
+                        var ind = -1;
+                        for (var i = 0; i < aggdataf.length-1; i++) {
+                            if (aggdataf[i][0]<=l[0]&&aggdataf[i+1][0]>=l[1]) {
+                                ind = i;
+                                break;
+                            }
+                        }
+                        if (ind > 0)
+                            npts = aggdataf.slice(ind, ind+2);
                     }
-                    if (stpelt.empty()) {
-                        gSteppy.append("svg:path")
-                            .attr("class","steppy")
-	  	                    .attr("d", d)
-  		                    .style("fill", "none")
-  		                    .attr("stroke-width",3*scalf)
-  		                    .style("stroke", Cols.PURP);
-                    } else {
-                        stpelt.attr("d", d)
-  		                    .attr("stroke-width",3*scalf);
-                    }
+                    if (npts.length != 0) {
+                        var d = "M"+nXSc(npts[0][3]*1000)+" "
+                                +nYSc(npts[0][4]);
+                        for (var i = 0; i < npts.length; i++) {
+                            d += " L"+nXSc(npts[i][0]*1000)+" "+
+                                nYSc(npts[i][4]);
+                            d += " L"+nXSc(npts[i][0]*1000)+" "+
+                                nYSc(npts[i][1]);
+                        }
+                        if (stpelt.empty()) {
+                            gSteppy.append("svg:path")
+                                .attr("class","steppy")
+	  	                        .attr("d", d)
+  		                        .style("fill", "none")
+  		                        .attr("stroke-width",3*scalf)
+  		                        .style("stroke", Cols.PURP);
+                        } else {
+                            stpelt.attr("d", d)
+  		                        .attr("stroke-width",3*scalf);
+                        }
+                    } else stpelt.remove();
                     updateDotGroup(gSteppy, pts, "steppyd",
                                    (opts.dataPoint.size+2)*scalf,
                                    "none", null, Cols.PURP);
