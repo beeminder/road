@@ -60,6 +60,7 @@ line.roads {
 .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .waterbuf, .waterbux {
   pointer-events: none;
   text-anchor: middle;
+  font-family: sans-serif;
 }
 
 .past, .pastline, .halfplane, .pinkregion, .horizon,
