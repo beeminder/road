@@ -63,9 +63,8 @@
         keepIntervals:   false,
         reverseTable:    false,
         
-        precision: 5,
         maxFutureDays: 365,
-        maxDataDays:   100, // Choose -1 to show all points
+        maxDataDays:   -1, // Choose -1 to show all points
 
         onRoadChange: null
     },
@@ -1285,7 +1284,8 @@
         redoBuffer = [], // Array of future roads for redo
         oresets = [],
         allvals = {},
-        aggval = {};
+        aggval = {},
+        loading = false;
 
         // Initialize goal with sane values
         goal.yaw = +1; goal.dir = +1;
@@ -2118,6 +2118,7 @@
             //console.debug("id="+curid+", loadGoal()->"+json.params.yoog);
             clearUndoBuffer();
 
+            loading = true;
             legacyIn(json.params);
             initGlobals();
             aggdata = stampIn(json.params, json.data);
@@ -2199,6 +2200,8 @@
                 yaxisw = bbox.width;
                 resizeGraph();
             }
+            loading = false;
+
             zoomDefault();
             updateTable();
             updateContextData();
@@ -3229,7 +3232,7 @@
             if (numlines > 32) {
                 // We give up, just draw up to 32 guidelines wherever 
                 numlines = 32;
-                delta = Math.abs((yrange[1] - yrange[0])/numlines);
+                delta = Math.abs((yrange[1] - yrange[0])/numlines)/goal.lnw;
             }
             var arr = new Array(Math.ceil(numlines)).fill(0);
             el = gOldGuides.selectAll(".oldguides").data(arr);
@@ -3589,6 +3592,7 @@
         }
 
         function updateDataPoints() {
+            if (loading) return;
             //console.debug("id="+curid+", updateDataPoints()");
             //console.trace();
             var l = [nXSc.invert(0).getTime()/1000, 
