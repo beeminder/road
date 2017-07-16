@@ -878,7 +878,7 @@
         var svg, defs, zoomarea, axisZoom, focus, buttonarea, focusclip, plot;
         var gPB, gYBHP, gPink, gGrid;
         var gOldRoad, gOldCenter, gOldGuides, gOldBullseye, gKnots;
-        var gSteppy, gMovingAv, gDpts, gAllpts, gBullseye, gRoads, gDots;
+        var gSteppy, gMovingAv, gAura, gDpts, gAllpts, gBullseye, gRoads, gDots;
         var gWatermark, gHorizon, gHorizonText;
         var gPastText, zoomin, zoomout;;
         var xSc, nXSc, xAxis, xGrid, xAxisObj, xGridObj;
@@ -1001,6 +1001,7 @@
             gGrid = plot.append('g').attr('id', 'grid');
             gPB = plot.append('g').attr('id', 'pastboxgrp');
             gYBHP = plot.append('g').attr('id', 'ybhpgrp');
+            gAura = plot.append('g').attr('id', 'auragrp');
             gWatermark = plot.append('g').attr('id', 'wmarkgrp');
             gOldGuides = plot.append('g').attr('id', 'oldguidegrp');
             gOldRoad = plot.append('g').attr('id', 'oldroadgrp');
@@ -1957,7 +1958,9 @@
 
         // Function to generate samples for the Butterworth filter
         function griddle(a, b) {
-            return linspace(a, b, Math.floor(clip((b-a)/(SID+1), 600, 6000)));
+            return linspace(a, b, Math.floor(clip((b-a)/(SID+1), 
+                                                  d3.min([600, plotbox.width]),
+                                                  plotbox.width)));
         }
 
         // Assumes both datapoints and the x values are sorted
@@ -2137,6 +2140,7 @@
             goal.odom = getBoolParam(json.params, 'odom', false);
             goal.kyoom = getBoolParam(json.params, 'kyoom', false);
             goal.noisy = getBoolParam(json.params, 'noisy', false);
+            goal.aura = getBoolParam(json.params, 'aura', false);
             if ( json.params.hasOwnProperty('aggday'))
                 goal.aggday = json.params.aggday;
             else {
@@ -2970,6 +2974,109 @@
                     wbuxelt.style('font-size', newsize+"px").attr("y", y);
                 }
             }
+        }
+        
+        function sint(x){ return Math.round(x).toString(); }
+
+        // Used with grAura() and for computing mean and meandelt,
+        // this adds dummy datapoints on every day that doesn't have a
+        // datapoint, interpolating linearly.
+        function gapFill(d) {
+            var interp = function (before, after, atPoint) {
+                return before + (after - before) * atPoint;
+            };
+            var start = d[0][0], end = d[d.length-1][0];
+            var n = Math.floor((end-start)/SID);
+            var out = Array(n), i, j = 0, t = start;
+            for (i = 0; i < d.length-1; i++) {
+                var den = (d[i+1][0]-d[i][0]);
+                while (t <= d[i+1][0]) {
+                    out[j] = [t,interp(d[i][1], d[i+1][1], (t-d[i][0])/den)];
+                    j++; t += SID;
+                }
+            }
+            return out;
+        }
+
+        // Return a pure function that fits the data smoothly, used by grAura
+        function smooth(data) {
+            var SMOOTH = (data[0][0] + data[data.length-1][0])/2;
+            var dz = zip(data);
+            var xnew = dz[0].map(function(e){return e-SMOOTH;});
+            var poly = new Polyfit(xnew, dz[1]);
+            // If smallest singular value is too small, try fitting a
+            // 2nd order polynom
+            //           if Math.min(sv) < 5e-13:
+            //     c2 = np.polyfit(xnew, y, 2)
+            //     coeff = c2.tolist()
+            //     coeff.insert(0, 0.0)
+            // except np.RankWarning:
+            //   c2 = np.polyfit(xnew, y, 2)
+            //   coeff = c2.tolist()
+            //   coeff.insert(0, 0.0)
+            var solver = poly.getPolynomial(3);
+            return function(x){ return solver(x-SMOOTH);};
+        }
+        function updateAura() {
+            if (loading) return;
+            var el = gAura.selectAll(".aura");
+            var el2 = gAura.selectAll(".aurapast");
+            if (goal.aura) {
+                var adata = aggdata.filter(function(e){
+                    return e[0]>=goal.tmin;});
+                var fdata = gapFill(adata);
+                var auraf = smooth(fdata);
+                var aurdn = d3.min([-goal.lnw/2.0, -goal.dflux]);
+                var aurup = d3.max([goal.lnw/2.0,  goal.dflux]);
+                var fudge = PRAF*(goal.tmax-goal.tmin);
+                var xr = [nXSc.invert(0), 
+                          nXSc.invert(plotbox.width)];
+                var xvec = griddle(goal.tmin, 
+                                 d3.min([goal.asof+AKH, goal.tmax+fudge])),i;
+                var d = "M"+nXSc(xvec[0]*1000)+" "
+                        +nYSc(auraf(xvec[0])+aurup);
+                for (i = 1; i < xvec.length; i++)
+                    d += " L"+nXSc(xvec[i]*1000)+" "+nYSc(auraf(xvec[i])+aurup);
+                for (i = xvec.length-1; i >= 0; i--)
+                    d += " L"+nXSc(xvec[i]*1000)+" "+nYSc(auraf(xvec[i])+aurdn);
+                d += " Z";
+                if (el.empty()) {
+                    gAura.append("svg:path")
+                        .attr("class","aura").attr("d", d)
+  		                .style("fill", Cols.BLUE)
+  		                .style("stroke-width", 2).style("stroke", Cols.BLUE);
+                } else {
+                    el.attr("d", d);
+                }
+                if (xr[0].getTime()/1000 < goal.tmin) {
+                    xvec = griddle(xr[0].getTime()/1000, goal.tmin);
+                    d = "M"+nXSc(xvec[0]*1000)+" "
+                        +nYSc(auraf(xvec[0])+aurup);
+                    for (i = 1; i < xvec.length; i++)
+                        d += " L"+nXSc(xvec[i]*1000)+" "
+                        +nYSc(auraf(xvec[i])+aurup);
+                    for (i = xvec.length-1; i >= 0; i--)
+                        d += " L"+nXSc(xvec[i]*1000)+" "
+                        +nYSc(auraf(xvec[i])+aurdn);
+                    d += " Z";
+                    if (el2.empty()) {
+                        gAura.append("svg:path")
+                        .attr("class","aurapast").attr("d", d)
+  		                    .style("fill", Cols.BLUE)
+  		                    .style("fill-opacity", 0.3)
+  		                    .style("stroke-width", 2)
+  		                    .style("stroke-dasharray", "4,4")
+                            .style("stroke", Cols.BLUE);
+                    } else {
+                        el2.attr("d", d);
+                    }
+                } else 
+                    el2.remove();
+            } else {
+                el.remove();
+                el2.remove();
+            }
+
         }
 
         // Creates or updates the Akrasia Horizon line
@@ -4167,6 +4274,7 @@
             updateDots();
             updateHorizon();
             updatePastText();
+            updateAura();
             updateWatermark();
         }
 
