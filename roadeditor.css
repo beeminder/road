@@ -66,8 +66,8 @@ line.roads {
 .past, .pastline, .halfplane, .pinkregion, .horizon,
 .ctxroads, .ctxdots, .ctxoldroads, .oldroads, 
 .bullseye, .oldbullseye, .ctxbullseye, .ctxoldbullseye, 
-.ctxtoday, .ctxtodaytext, 
-.dpts, .allpts, .steppy, .steppyd, .fladp  {
+.ctxtoday, .ctxtodaytext, .dpts, .allpts, .steppy, .steppyd, .fladp, 
+.aura, .aurapast  {
   pointer-events: none;
 }
 
