@@ -13,6 +13,7 @@
   <script src="https://d3js.org/d3.v4.js"></script>
   <script src = "moment.min.js"></script>
   <script src = "pikaday.js"></script>
+  <script src = "polyfit.js"></script>
 </head>
 
 <body>
@@ -37,7 +38,7 @@
   <tr>
     <td valign="top"><div id="roadgraph"></div>
       <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>Show datapoints
-      <input id="showalldata" type="checkbox" onclick="if (this.checked) editor.maxDataDays(-1); else editor.maxDataDays(100);">Show All data
+      <input id="showalldata" type="checkbox" onclick="if (this.checked) editor.maxDataDays(-1); else editor.maxDataDays(100);" checked>Show All data
       <input id="showcontext" type="checkbox" onclick="editor.showContext(this.checked);" checked>Show context graph<br>
       <input id="keepslopes" type="checkbox" onclick="editor.keepSlopes(this.checked);" checked>Keep slopes fixed<br>
       <input id="keepintervals" onclick="editor.keepIntervals(this.checked);" type="checkbox">Keep intervals fixed<br>
@@ -46,12 +47,14 @@
       <button id="undo" onclick="editor.undo();">Undo (0)</button>
       <button id="redo" onclick="editor.redo();">Redo (0)</button><br/><br/>
       Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">Retroratchet</button><br/>
-      <br/><br/>
+      <br/>
+<button id="submit" onclick="window.alert('new road matrix:\n'+JSON.stringify(editor.getRoad(),null,2));">Submit (coming soon!)</button><br/><br/>
     </td>
     <td valign="top">
       <div id="roadtable"></div>
       <br/>
-      <input id="autoscroll" type="checkbox" onclick="editor.autoScroll(this.checked);">Auto-scroll table<br>
+      <input id="autoscroll" type="checkbox" onclick="editor.tableAutoScroll(this.checked);" checked>Auto-scroll table<br>
+      <input id="updateondrag" type="checkbox" onclick="editor.tableUpdateOnDrag(this.checked);" checked>Update table on drag<br>
       <input id="reversetable" type="checkbox" onclick="editor.reverseTable(this.checked);">Reverse table order<br/>
 
     </td>
@@ -65,7 +68,7 @@
 <table>
   <tr>
     <td valign="top"><div id="roadgraph2"></div>
-      <input id="showalldata2" type="checkbox" onclick="if (this.checked) editor2.maxDataDays(-1); else editor2.maxDataDays(100);">Show All data<br/>
+      <input id="showalldata2" type="checkbox" onclick="if (this.checked) editor2.maxDataDays(-1); else editor2.maxDataDays(100);"  checked>Show All data<br/>
       <button id="zoomall2" onclick="editor2.zoomAll();">Zoom All</button>
       <button id="zoomdflt2" onclick="editor2.zoomDefault();">Default Zoom</button>
     </td>
