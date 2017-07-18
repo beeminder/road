@@ -3974,6 +3974,7 @@
                 var maxdate = moment(moment.unix(knotmax).utc()
                                      .format("YYYY-MM-DD"));
                 datePicker = new Pikaday({
+                    keyboardInput: false,
                     onSelect: function(date) {
                         var newdate = datePicker.toString();
                         var val = dayparse(newdate, '-');
@@ -4439,10 +4440,10 @@
             // Format the current road matrix to be submitted to Beeminder
             var r = {}, seg, rd, kd;
             r.valid = isRoadValid(roads);
-            r.tini = dt(roads[0].end[0]);
-            r.vini = roads[0].end[1];
+            //r.tini = dt(roads[0].end[0]);
+            //r.vini = roads[0].end[1];
             r.road = [];
-            for (var i = 1; i < roads.length-1; i++) {
+            for (var i = 0; i < roads.length-1; i++) {
                 seg = roads[i];
                 if (seg.sta[0] == seg.end[0] && seg.sta[1] == seg.end[1])
                     continue;
@@ -4451,11 +4452,12 @@
                 if (seg.auto == RP.DATE) rd[0] = null;
                 if (seg.auto == RP.VALUE) rd[1] = null;
                 if (seg.auto == RP.SLOPE) rd[2] = null;
-                if (i == roads.length-2) {
-                    r.tfin = rd[0];
-                    r.vfin = rd[1];
-                    r.rfin = rd[2];
-                } else r.road.push(rd);
+                //if (i == roads.length-2) {
+                //    r.tfin = rd[0];
+                //    r.vfin = rd[1];
+                //    r.rfin = rd[2];
+                //} else 
+                r.road.push(rd);
             }
             return r;
         };
