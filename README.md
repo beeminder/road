@@ -1,5 +1,10 @@
 ### CHANGELOG
 
+* 2017.07.17 fixed retroratcheting with fixed slopes
+* 2017.07.17 informative table display for duplicate road segments
+* 2017.07.17 implemented table update on drag and fixed x axis tick mark issues
+* 2017.07.17 implemented road matrix generation (auto eliminates duplicates)
+* 2017.07.16 implemented aura generation and drawing
 * 2017.07.15 implemented shn and changed all text generation to shn()
 * 2017.07.15 streamlined loading to prevent unnecessary refreshes
 * 2017.07.15 optimized datapoint, old road and guidelines display when zoomed in
