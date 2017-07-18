@@ -1,17 +1,39 @@
 /*!
  * bmndr
  *
+ * This package provides a general purpose tool to generate possibly
+ * editable graphs for the Beeminder system. It is implemented as a
+ * package which, once the script is loaded, provides a bmndr factory
+ * object that can be used to create instances of this tool. In
+ * particular, the following comamnd can be used to create and
+ * initialize a particular instance, associated with specific div
+ * container objects to hold the graph and the table for the road
+ * matrix:
+ *
+ * var editor 
+ *     = new bmndr({divGraph: document.getElementById('roadgraph'),
+ *                  divTable: document.getElementById('roadtable')});
+ *
+ * As evident from this example, the constructor accepts an "options"
+ * input, holding key configuration variables to control the behavior
+ * of the bmndr object. Please consult the default options object
+ * definition below for specific options and their semantics. If any
+ * or both of divGraph or divTable is null, the corresponding feature
+ * is disabled and the corresponding html components are not created.
+ *
+ * Dependencies: d3.v4, Pikaday, moment, Polyfit
+ * 
  * Copyright © 2017 Uluc Saranli
  */
 
 ;(function (root, factory) {
     'use strict';
     if (typeof define === 'function' && define.amd) {
-        define(['d3', 'moment', 'Pikaday'], factory);
+        define(['d3', 'moment', 'Pikaday', 'Polyfit'], factory);
     } else if (typeof module === 'object' && module.exports) {
-        module.exports = factory(require('d3', 'moment', 'Pikaday'));
+        module.exports = factory(require('d3', 'moment', 'Pikaday', 'Polyfit'));
     } else {
-        root.bmndr = factory(root.d3, root.moment, root.Pikaday);
+        root.bmndr = factory(root.d3, root.moment, root.Pikaday, root.Polyfit);
     }
 }(this, function (d3, moment, Pikaday) {
     'use strict';
@@ -21,27 +43,47 @@
     var 
     gid = 1,
     defaults = {
-        divGraph:     null,   // Binds the graph to a div element
-        divTable:     null,    // Binds the road table to a div element
+        /** Binds the graph to a div element */
+        divGraph:     null,
+        /** Binds the road table to a div element */
+        divTable:     null,    
+        /** Size of the SVG element to hold the graph */
         svgSize:      { width: 700, height: 480 },
+        /** Boundaries of the SVG group to hold the focus graph */
         focusRect:    { x:0, y:0, width:700, height: 400 },
+        /** Initial padding within the focus graph. */
         focusPad:     { left:25, right:5, top:25, bottom:30 },
+        /** Boundaries of the SVG group to hold the context graph */
         ctxRect:      { x:0, y:400, width:700, height: 80 },
+        /** Initial padding within the context graph. */
         ctxPad:       { left:25, right:5, top:0, bottom:30 },
-        tableHeight:  540, // Choose 0 for unspecified
+        /** Height of the road matrix table. Choose 0 for unspecified */
+        tableHeight:  540,
 
+        /** Visual parameters for the zoom in/out buttons. "factor" 
+         indicates how much to zoom in/out per click. */
         zoomButton:   { size: 40, opacity: 0.6, factor: 1.5 },
+        /** Size of the bullseye image in the focus and context graphs */ 
         bullsEye:     { size: 40, ctxsize: 20 },
+        /** Visual parameters for draggable road dots */ 
         roadDot:      { size: 5, ctxsize: 3, border: 1.5, ctxborder: 1 },
+        /** Visual parameters for draggable road knots and removal buttons */ 
         roadKnot:     { width: 3, rmbtnscale: 0.6 },
+        /** Visual parameters for draggable road lines */ 
         roadLine:     { width: 3, ctxwidth: 2 },
+        /** Visual parameters for fixed lines for the original road */ 
         oldRoadLine:  { width: 3, ctxwidth: 2, dash: 32, ctxdash: 16 },
+        /** Visual parameters for data points (past and flatlined) */ 
         dataPoint:    { size: 5, fsize: 5 }, 
+        /** Visual parameters for the akrasia horizon */ 
         horizon:      { width: 2, ctxwidth: 1, dash: 8, ctxdash: 6, 
                         font: 12, ctxfont: 9 },
+        /** Visual parameters for vertical line for asof */ 
         today:        { width: 2, ctxwidth: 1, font: 16, ctxfont: 9 },
-        textBox:      { margin: 3 },
+        /** Visual parameters for watermarks */ 
         watermark:    { height:150, fntsize:100 },
+        /** Visual parameters for text boxes shown during dragging */ 
+        textBox:      { margin: 3 },
 
         roadLineCol:  { valid: "black", invalid:"#ca1212"},
         roadDotCol:   { fixed: "darkgray", editable:"#ca1212", 
@@ -54,21 +96,72 @@
         halfPlaneCol: { fill: "#ffffe8" },
         pastBoxCol:   { fill: "#f8f8f8", opacity:0.5 },
 
+        /** Enables the road editor. When disabled, the generated
+         graph mirrors beebrain output as closely as possible. */
         roadEditor:        false,
+
+        /** Enables the display of the context graph within the SVG */
         showContext:       false,
+
+        /** Enables showing a dashed rectange in the context graph
+         visualizing the current graph limits on the y-axis */
         showFocusRect:     true,
+
+        /** Enables displaying datapoints on the graph */ 
         showData:          true,
-        keepSlopes:        true,
-        keepIntervals:     false,
-        reverseTable:      false,
-        tableAutoScroll:   true, // auto scrolling
-        tableUpdateOnDrag: false,
-        
-        maxFutureDays: 365,
+
+        /** When datapoint display is enabled, indicates the number of
+         days before asof to show data for. This can be used to speed
+         up display refresh for large goals. Choose -1 to display all
+         datapoints. */ 
         maxDataDays:   -1, // Choose -1 to show all points
 
+        /** Indicates how many days beyond asof should be included in
+         the fully zoomed out graph. This is useful for when the goal
+         date is too far beyond asof, making the context graph
+         somewhat useless in terms of its interface utility. */
+        maxFutureDays: 365,
+
+        /** Indicates whether slopes for segments beyond the currently 
+         dragged element should be kept constant during editing. */
+        keepSlopes:        true,
+
+        /** Indicates whether intervals between the knots for segments
+         beyond the currently dragged element should be kept constant
+         during editing. */
+        keepIntervals:     false,
+
+        /** Indicates whether the road matrix table should be shown
+         with the earliest rows first (normal) or most recent rows
+         first (reversed). */ 
+        reverseTable:      false,
+
+        /** Indicates whether the auto-scrolling feature for the road
+         matrix table should be enabled such that when the mouse moves
+         over knots, dots or road elements, the corresponding table
+         row is scrolled to be visible in the table. This is
+         particularly useful when tableHeight is explicitly specified
+         and is nonzero. */ 
+        tableAutoScroll:   true,
+
+        /** Chooses whether the road matrix table should be
+         dynamically updated during the dragging of road knots, dots
+         and segments. Enabling this may induce some lagginess,
+         particularly on Firefox due to more components being updated
+         during dragging */
+        tableUpdateOnDrag: false,
+        
+        /** Callback function that gets invoked when the road is edited 
+         by the user. Various interface functions can then be used to 
+         retrieve the new road state. This is also useful to update the 
+         state of undo/redo and submit buttons based on how many edits 
+         have been done on the original road. */
         onRoadChange: null
     },
+
+    /** This object defines default options for mobile browsers, where
+     larger dots, knots and roads are necessary to make editing
+     through dragging feasible. */
     mobiledefaults = {
         svgSize:      { width: 700, height: 530 },
         focusRect:    { x:0, y:0, width:700, height: 400 },
@@ -112,9 +205,11 @@
         REDDOT: "#ff0000"  // Red for off the road on the bad side
     },
 
+    /** Enum object to identify field types for road segments. */
     RP = {
         DATE:0, VALUE:1, SLOPE:2
     },
+    /** Enum object to identify different types of datapoints. */
     DPTYPE = {
         AGGPAST:0, AGGFUTURE:1, RAWPAST:2, RAWFUTURE:3, FLATLINE:4, HOLLOW: 5
     },
@@ -141,7 +236,7 @@
             sml: "https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fsmiley.png?1500062837171"
           },
             
-    // ---------------- General Utility Functionc ----------------------
+    // ---------------- General Utility Functions ----------------------
 
     onMobileOrTablet = function() {
       var check = false;
@@ -465,6 +560,8 @@
             if (xobj.readyState == 4 && xobj.status == "200") {
                 //if (xobj.readyState == 4) {
                 callback(JSON.parse(xobj.responseText));
+            } else if (xobj.readyState == 4) {
+                callback(null);
             }
         };
         xobj.send(null);  
@@ -895,7 +992,7 @@
         };
         computeBoxes();
 
-        var svg, defs, zoomarea, axisZoom, focus, buttonarea, focusclip, plot;
+        var svg, defs, graphs, zoomarea, axisZoom, focus, buttonarea, focusclip, plot;
         var gPB, gYBHP, gPink, gGrid;
         var gOldRoad, gOldCenter, gOldGuides, gOldBullseye, gKnots;
         var gSteppy, gMovingAv, gAura, gDpts, gAllpts, gBullseye, gRoads, gDots;
@@ -938,7 +1035,7 @@
             defs.append("path")
                 .style("stroke", "none").attr("id", "rightarrow")
                 .attr("d", "M 55,0 -35,45 -35,-45 z");
-            
+      
             var buttongrp = defs.append("g")
                     .attr("id", "removebutton");
             buttongrp.append("circle")
@@ -1310,13 +1407,14 @@
         alldata = [],    // Holds the entire set of data points
         aggdata = [],    // Holds past aggregated data
         fuda = [],       // Holds all future data
-        alldataf = [], // Holds all data up to a limited days before asof
-        aggdataf = [], // Holds past aggregated data (limited)
+        alldataf = [],   // Holds all data up to a limited days before asof
+        aggdataf = [],   // Holds past aggregated data (limited)
         undoBuffer = [], // Array of previous roads for undo
         redoBuffer = [], // Array of future roads for redo
         oresets = [],
         allvals = {},
         aggval = {},
+        processing = false, 
         loading = false;
 
         // Initialize goal with sane values
@@ -1959,6 +2057,8 @@
                 slope: 0, auto: RP.VALUE };
             finalsegment.end[0] = daysnap(finalsegment.end[0]+100*DIY*SID);
             roads.push(finalsegment);
+
+            fixRoadArray( roads );
             iRoad = copyRoad( roads );
         }
 
@@ -2006,6 +2106,49 @@
             return linspace(a, b, Math.floor(clip((b-a)/(SID+1), 
                                                   d3.min([600, plotbox.width]),
                                                   plotbox.width)));
+        }
+
+        /** Converts a number to an integer string */
+        function sint(x){ return Math.round(x).toString(); }
+        
+        // Used with grAura() and for computing mean and meandelt,
+        // this adds dummy datapoints on every day that doesn't have a
+        // datapoint, interpolating linearly.
+        function gapFill(d) {
+            var interp = function (before, after, atPoint) {
+                return before + (after - before) * atPoint;
+            };
+            var start = d[0][0], end = d[d.length-1][0];
+            var n = Math.floor((end-start)/SID);
+            var out = Array(n), i, j = 0, t = start;
+            for (i = 0; i < d.length-1; i++) {
+                var den = (d[i+1][0]-d[i][0]);
+                while (t <= d[i+1][0]) {
+                    out[j] = [t,interp(d[i][1], d[i+1][1], (t-d[i][0])/den)];
+                    j++; t += SID;
+                }
+            }
+            return out;
+        }
+
+        // Return a pure function that fits the data smoothly, used by grAura
+        function smooth(data) {
+            var SMOOTH = (data[0][0] + data[data.length-1][0])/2;
+            var dz = zip(data);
+            var xnew = dz[0].map(function(e){return e-SMOOTH;});
+            var poly = new Polyfit(xnew, dz[1]);
+            // If smallest singular value is too small, try fitting a
+            // 2nd order polynom
+            //           if Math.min(sv) < 5e-13:
+            //     c2 = np.polyfit(xnew, y, 2)
+            //     coeff = c2.tolist()
+            //     coeff.insert(0, 0.0)
+            // except np.RankWarning:
+            //   c2 = np.polyfit(xnew, y, 2)
+            //   coeff = c2.tolist()
+            //   coeff.insert(0, 0.0)
+            var solver = poly.getPolynomial(3);
+            return function(x){ return solver(x-SMOOTH);};
         }
 
         // Assumes both datapoints and the x values are sorted
@@ -2166,7 +2309,7 @@
             //console.debug("id="+curid+", loadGoal()->"+json.params.yoog);
             clearUndoBuffer();
 
-            loading = true;
+            processing = true;
             legacyIn(json.params);
             initGlobals();
             aggdata = stampIn(json.params, json.data);
@@ -2240,9 +2383,19 @@
 
             procParams( json.params );
 
+            // Generate the aura function now that the flatlined
+            // datapoint is also computed.
+            if (goal.aura) {
+                var adata = aggdata.filter(function(e){
+                    return e[0]>=goal.tmin;});
+                var fdata = gapFill(adata);
+                goal.auraf = smooth(fdata);
+            } else
+                goal.auraf = function(e){ return 0; };
+
             // Finally, wrap up with graph related initialization
             zoomAll();
-            loading = false;
+            processing = false;
 
             zoomDefault();
             updateTable();
@@ -2250,15 +2403,31 @@
         }
 
         function loadGoalFromURL( url ) {
+            if (url == "" || loading) return;
+            loading = true;
+            var pg = svg.append('g').attr('class', 'progress');
+            pg.append('svg:rect')
+                .attr('x', 0).attr('y',0)
+                .attr('width', sw).attr('height',sh)
+                .attr('fill', Cols.WITE)
+                .attr('fill-opacity', 0.8);
+            pg.append('svg:text').attr('class', 'loading')
+                .attr('x', sw/2).attr('y',sh/2)
+                .attr('font-size', sh/10)
+                .style('font-size', sh/10)
+                .text("loading...");
             loadJSON(url, 
                      function(resp) { 
                          //console.debug("id="+curid+" loadGoalFromURL() done for "+url);
-                         loadGoal(resp);
-                         if (typeof opts.onRoadChange === 'function') {
-                             opts.onRoadChange.call();
+                         if (resp != null) {
+                             loadGoal(resp);
+                             if (typeof opts.onRoadChange === 'function') {
+                                 opts.onRoadChange.call();
+                             }
+                             updateRoadTableTitle();
                          }
-                         //roadChanged();
-                         updateRoadTableTitle();
+                         pg.remove();
+                         loading = false;
                      });  
         }
 
@@ -3032,56 +3201,11 @@
             }
         }
         
-        function sint(x){ return Math.round(x).toString(); }
-
-        // Used with grAura() and for computing mean and meandelt,
-        // this adds dummy datapoints on every day that doesn't have a
-        // datapoint, interpolating linearly.
-        function gapFill(d) {
-            var interp = function (before, after, atPoint) {
-                return before + (after - before) * atPoint;
-            };
-            var start = d[0][0], end = d[d.length-1][0];
-            var n = Math.floor((end-start)/SID);
-            var out = Array(n), i, j = 0, t = start;
-            for (i = 0; i < d.length-1; i++) {
-                var den = (d[i+1][0]-d[i][0]);
-                while (t <= d[i+1][0]) {
-                    out[j] = [t,interp(d[i][1], d[i+1][1], (t-d[i][0])/den)];
-                    j++; t += SID;
-                }
-            }
-            return out;
-        }
-
-        // Return a pure function that fits the data smoothly, used by grAura
-        function smooth(data) {
-            var SMOOTH = (data[0][0] + data[data.length-1][0])/2;
-            var dz = zip(data);
-            var xnew = dz[0].map(function(e){return e-SMOOTH;});
-            var poly = new Polyfit(xnew, dz[1]);
-            // If smallest singular value is too small, try fitting a
-            // 2nd order polynom
-            //           if Math.min(sv) < 5e-13:
-            //     c2 = np.polyfit(xnew, y, 2)
-            //     coeff = c2.tolist()
-            //     coeff.insert(0, 0.0)
-            // except np.RankWarning:
-            //   c2 = np.polyfit(xnew, y, 2)
-            //   coeff = c2.tolist()
-            //   coeff.insert(0, 0.0)
-            var solver = poly.getPolynomial(3);
-            return function(x){ return solver(x-SMOOTH);};
-        }
         function updateAura() {
-            if (loading) return;
+            if (processing) return;
             var el = gAura.selectAll(".aura");
             var el2 = gAura.selectAll(".aurapast");
             if (goal.aura && opts.showData) {
-                var adata = aggdata.filter(function(e){
-                    return e[0]>=goal.tmin;});
-                var fdata = gapFill(adata);
-                var auraf = smooth(fdata);
                 var aurdn = d3.min([-goal.lnw/2.0, -goal.dflux]);
                 var aurup = d3.max([goal.lnw/2.0,  goal.dflux]);
                 var fudge = PRAF*(goal.tmax-goal.tmin);
@@ -3089,12 +3213,15 @@
                           nXSc.invert(plotbox.width)];
                 var xvec = griddle(goal.tmin, 
                                  d3.min([goal.asof+AKH, goal.tmax+fudge])),i;
+                // Generate a path string for the aura
                 var d = "M"+nXSc(xvec[0]*1000)+" "
-                        +nYSc(auraf(xvec[0])+aurup);
+                        +nYSc(goal.auraf(xvec[0])+aurup);
                 for (i = 1; i < xvec.length; i++)
-                    d += " L"+nXSc(xvec[i]*1000)+" "+nYSc(auraf(xvec[i])+aurup);
+                    d += " L"+nXSc(xvec[i]*1000)+" "
+                    +nYSc(goal.auraf(xvec[i])+aurup);
                 for (i = xvec.length-1; i >= 0; i--)
-                    d += " L"+nXSc(xvec[i]*1000)+" "+nYSc(auraf(xvec[i])+aurdn);
+                    d += " L"+nXSc(xvec[i]*1000)+" "
+                    +nYSc(goal.auraf(xvec[i])+aurdn);
                 d += " Z";
                 if (el.empty()) {
                     gAura.append("svg:path")
@@ -3107,13 +3234,13 @@
                 if (xr[0].getTime()/1000 < goal.tmin) {
                     xvec = griddle(xr[0].getTime()/1000, goal.tmin);
                     d = "M"+nXSc(xvec[0]*1000)+" "
-                        +nYSc(auraf(xvec[0])+aurup);
+                        +nYSc(goal.auraf(xvec[0])+aurup);
                     for (i = 1; i < xvec.length; i++)
                         d += " L"+nXSc(xvec[i]*1000)+" "
-                        +nYSc(auraf(xvec[i])+aurup);
+                        +nYSc(goal.auraf(xvec[i])+aurup);
                     for (i = xvec.length-1; i >= 0; i--)
                         d += " L"+nXSc(xvec[i]*1000)+" "
-                        +nYSc(auraf(xvec[i])+aurdn);
+                        +nYSc(goal.auraf(xvec[i])+aurdn);
                     d += " Z";
                     if (el2.empty()) {
                         gAura.append("svg:path")
@@ -3757,7 +3884,7 @@
         }
 
         function updateDataPoints() {
-            if (loading) return;
+            if (processing) return;
             //console.debug("id="+curid+", updateDataPoints()");
             //console.trace();
             var l = [nXSc.invert(0).getTime()/1000, 
@@ -4343,8 +4470,7 @@
         createGraph();
         createTable();
 
-        // This is a privileged function that can access private
-        // variables, but is also accessible from the outside.
+        /** Sets/gets the showData option */
         self.showData = function( flag ) {
             if (arguments.length > 0) opts.showData = flag;
             if (alldata.length != 0) {
@@ -4354,20 +4480,25 @@
             }
             return opts.showData;
         };
+        /** Sets/gets the showContext option */
         self.showContext = function( flag ) {
             if (arguments.length > 0) opts.showContext = flag;
             if (roads.length != 0)
                 updateContextData();
             return opts.showContext;
         };
+        /** Sets/gets the keepSlopes option */
         self.keepSlopes = function( flag ) {
             if (arguments.length > 0) opts.keepSlopes = flag;
             return opts.keepSlopes;
         };
+        /** Sets/gets the keepIntervals option */
         self.keepIntervals = function( flag ) {
             if (arguments.length > 0) opts.keepIntervals = flag;
             return opts.keepIntervals;
         };
+        /** Sets/gets the maxDataDays option. Updates the datapoint
+         display if the option is changed. */
         self.maxDataDays = function( days ) {
             if (arguments.length > 0) {
                 opts.maxDataDays = days;
@@ -4385,6 +4516,8 @@
             }
             return opts.maxDataDays;
         };
+        /** Sets/gets the reverseTable option. Updates the table if
+         the option is changed. */
         self.reverseTable = function( flag ) {
             if (arguments.length > 0) {
                 opts.reverseTable = flag;
@@ -4399,6 +4532,7 @@
             }
             return opts.reverseTable;
         };
+        /** Sets/gets the tableUpdateOnDrag option. */
         self.tableUpdateOnDrag = function( flag ) {
             if (arguments.length > 0) {
                 opts.tableUpdateOnDrag = flag;
@@ -4406,35 +4540,67 @@
             }
             return opts.tableUpdateOnDrag;
         };
+        /** Sets/gets the tableAutoScroll option. */
         self.tableAutoScroll = function( flag ) {
             if (arguments.length > 0) opts.tableAutoScroll = flag;
             return opts.tableAutoScroll;
         };
 
+        /** Returns an object with the lengths of the undo and redo
+         buffers */
         self.undoBufferState = function() {
             return({undo: undoBuffer.length, redo: redoBuffer.length});
         };
 
+        /** Undoes the last edit */
         self.undo = function() {
             if (!opts.roadEditor) return;
             document.activeElement.blur();
             undoLastEdit();
         };
+
+        /** Redoes the last edit that was undone */
         self.redo = function() {
             if (!opts.roadEditor) return;
             document.activeElement.blur();
             redoLastEdit();
         };
+
+        /** Clears the undo buffer. May be useful after the new
+         road is submitted to Beeminder and past edits need to be
+         forgotten. */
         self.clearUndo = function() {
             clearUndoBuffer();
         };
+
+        /** Zooms out the goal graph to make the entire range from
+         tini to tfin visible, with additional slack before and after
+         to facilitate adding new knots. */
         self.zoomAll = function() { zoomAll(); };
+
+        /** Brings the zoom level to include the range from tini to
+         slightly beyond the akrasia horizon. This is expected to be
+         consistent with beebrain generated graphs. */ 
         self.zoomDefault = function() { zoomDefault(); };
+
+        /** Initiates loading a new goal from the indicated url.
+         Expected input format is teh same as beebrain. Once the input
+         file is fetched, the goal graph and road matrix table are
+         updated accordingly. */
         self.loadGoal = function( url ) { loadGoalFromURL( url ); };
+
+        /** Performs retroratcheting function by adding new knots to
+         leave "days" number of days to derailment based on today data
+         point (which may be flatlined). */
         self.retroRatchet = function( days ) {
             if (!opts.roadEditor) return;
             setSafeDays( days );  
         };
+
+        /** Returns an object with an array ('road') containing the
+         current roadmatix (latest edited version), as well as a
+         boolean ('valid') indicating whether the edited road
+         intersects the pink region or not. */
         self.getRoad = function() {
             function dt(d) { return moment.unix(d).utc().format("YYYYMMDD");};
             // Format the current road matrix to be submitted to Beeminder
