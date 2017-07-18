@@ -1,5 +1,15 @@
 ### CHANGELOG
 
+* 2017.07.17 fixed retroratcheting with fixed slopes
+* 2017.07.17 informative table display for duplicate road segments
+* 2017.07.17 implemented table update on drag and fixed x axis tick mark issues
+* 2017.07.17 implemented road matrix generation (auto eliminates duplicates)
+* 2017.07.16 implemented aura generation and drawing
+* 2017.07.15 implemented shn and changed all text generation to shn()
+* 2017.07.15 streamlined loading to prevent unnecessary refreshes
+* 2017.07.15 optimized datapoint, old road and guidelines display when zoomed in
+* 2017.07.15 Option to display only the latest 100 days (configurable) of data
+* 2017.07.15 moving average, fixed tini/vini, tfin/vfin issues
 * 2017.07.14 Default zoom consistent with beebrain, fixes for multiple graphs
 * 2017.07.13 Support for loading goals from the API
 * 2017.07.13 Noisy width, guidelines, plotall support

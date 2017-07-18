@@ -45,7 +45,8 @@ editor.showContext(document.getElementById("showcontext").checked);
 editor.keepSlopes(document.getElementById("keepslopes").checked);
 editor.keepIntervals(document.getElementById("keepintervals").checked);
 editor.reverseTable(document.getElementById("reversetable").checked);
-editor.autoScroll(document.getElementById("autoscroll").checked);
+editor.tableAutoScroll(document.getElementById("autoscroll").checked);
+editor.tableUpdateOnDrag(document.getElementById("updateondrag").checked);
 
 //editor2.loadGoal(document.getElementById("roadselect").value);
 
