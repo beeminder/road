@@ -653,18 +653,18 @@
         // Uluc: Disabled this since it is problematic with the date
         // picker
         return;
-        var done = false, i;
-        while (!done) {
-            done = true;
-            for (i = 0; i < rd.length; i++) {
-                if (rd[i].sta[0] == rd[i].end[0]
-                    && rd[i].sta[1] == rd[i].end[1]) {
-                    rd.splice(i, 1);
-                    done = false;
-                    break;
-                }
-            }
-        }
+        // var done = false, i;
+        // while (!done) {
+        //     done = true;
+        //     for (i = 0; i < rd.length; i++) {
+        //         if (rd[i].sta[0] == rd[i].end[0]
+        //             && rd[i].sta[1] == rd[i].end[1]) {
+        //             rd.splice(i, 1);
+        //             done = false;
+        //             break;
+        //         }
+        //     }
+        // }
     },
 
     /** Recomputes the road array starting from the first node and
@@ -1723,7 +1723,7 @@
                         return;
                 }
                 var prevpt = aggdata[numpts-1];
-                flad = [x, vlast, DPTYPE.FLATLINE, prevpt[0], prevpt[1]];
+                flad = [x, vlast, "PPR", DPTYPE.FLATLINE, prevpt[0], prevpt[1]];
                 aggdata.push(flad);
             }
         }
@@ -2186,7 +2186,6 @@
         }
 
         function procData() {
-            var numpts = aggdata.length, i;
             for (i = 0; i < numpts; i++) {
                 //aggdata[i].splice(-1,1); // Remove comment
                 aggdata[i][0] = dayparse(aggdata[i][0]);
@@ -2196,6 +2195,7 @@
                 odomify(aggdata);
             }
 
+            var numpts = aggdata.length, i;
             var nonfuda = aggdata.filter(function(e){
                 return e[0]<=goal.asof;});
             if (goal.plotall) goal.numpts = nonfuda.length;
@@ -2248,6 +2248,7 @@
                     vl = [[aggdata[i][1],aggdata[i][2]]];
                 }
             }
+            vlv = vl.map(dval);
             ad = AGGR[goal.aggday](vlv);
             if (newpts.length > 0) prevpt = newpts[newpts.length-1];
             else prevpt = [ct, ad+pre];
@@ -2387,7 +2388,7 @@
             }
             if (allvals.hasOwnProperty(goal.tini)) {
                 vtmp = (goal.plotall)
-                    ?allvals[goal.tini][0]:aggval[goal.tini];
+                    ?allvals[goal.tini][0][0]:aggval[goal.tini];
             } else
                 vtmp = Number(json.params.vini);
             if (json.params.hasOwnProperty('vini')) {
@@ -3900,9 +3901,9 @@
                 +", "+shn(d[1]);
                 if (dotText != null) removeTextBox(dotText);
                 if (d[2] === "") {
-                    dotText = createTextBox(ptx, pty-45, txt );
+                    dotText = createTextBox(ptx, pty-15, txt );
                 } else {
-                    dotText = createTextBox(ptx, pty-45, txt, "\""+d[2]+"\"" );
+                    dotText = createTextBox(ptx, pty-40, txt, "\""+d[2]+"\"" );
                 }
             };
 
@@ -3946,7 +3947,7 @@
                      nXSc.invert(plotbox.width).getTime()/1000];
             var df = function(d) {
                     return ((d[0] >= l[0] && d[0] <= l[1]) 
-                            || (d[3] >= l[0] && d[3] <= l[1]));
+                            || (d[4] >= l[0] && d[4] <= l[1]));
             };
             var adf = function(d) {
                     return (d[0] >= l[0] && d[0] <= l[1]);
