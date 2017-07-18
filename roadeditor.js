@@ -2007,8 +2007,9 @@
             if (p.hasOwnProperty('tmax'))     p.tmax = dayparse(p.tmax);
             if (p.hasOwnProperty('road'))     p.road = p.road.map(parserow);
 
-            return d.map(function(r) {return [dayparse(r[0]), r[1], r[2]];})
-                .sort(function(a,b){ return a[0]-b[0];});
+            var numpts = d.length;
+            return d.map(function(r, i) {return [dayparse(r[0]), r[1], r[2], i];})
+                .sort(function(a,b){ return (a[0]-b[0]) + (a[0] !== b[0])?0:(0.1*(a[4]-b[4])/numpts);});
         }
 
         function procRoad( json ) {
