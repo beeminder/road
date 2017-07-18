@@ -62,6 +62,12 @@ line.roads {
   text-anchor: middle;
   font-family: sans-serif;
 }
+.loading {
+  pointer-events: none;
+  text-anchor: middle;
+  font-weight: bold;
+  font-family: sans-serif;
+}
 
 .past, .pastline, .halfplane, .pinkregion, .horizon,
 .ctxroads, .ctxdots, .ctxoldroads, .oldroads, 
