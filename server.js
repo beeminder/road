@@ -7,6 +7,7 @@ var http = require('http')
 var bodyParser = require('body-parser')
 var session = require('express-session')
 var Sequelize = require('sequelize')
+var request = require('request')
 
 // Setting session store to Sequelize
 var SequelizeStore = require('connect-session-sequelize')(session.Store)
@@ -160,7 +161,39 @@ app.get("/getgoaljson/:goal", (req, resp) => {
   }, (error)=> { console.log(error) })
 })
 
+app.post("/submitroad/:goal", (req, resp)=>{
+  if(!req.session.access_token || !req.session.username) {
+    resp.redirect('/login')
+  }
+  console.log(req.body)
+  beemSubmitRoad({
+    usr: req.session.username,
+    gol: req.params.goal,
+    access_token: req.session.access_token,
+    roadall: req.body.roadall,
+  }, function(error, response, body) {
+    if (error) {
+      return console.error('submit failed:', error);
+    }
+    console.log("success? ")
+    console.log(response)
+    console.log(body)
+  })
+})
+
 // helper functions
+function beemSubmitRoad(params, callback) {
+  var options = {
+    url: 'https://www.beeminder.com/api/v1/users/'+params.usr+'/goals/'+params.gol+'.json',
+    method: 'POST',
+    json: true,
+    body: {
+      access_token: params.access_token,
+      roadall: params.roadall,
+    }
+  }
+  request.post(options, callback)
+}
 
 function beemGetUser(user, callback, error_callback = ()=>{}) {
   var options = {
