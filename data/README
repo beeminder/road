@@ -1,2 +1,5 @@
-bugroad1 has the datapoints under the road, contrary to bmndr.com/d/push
+bug-meta-pledged causes the browser to hang
+bug-d/mmuvi has an extra segment in the purple line at the bottom left of the static graph
+
+FIXED with stable sort?: bugroad1 has the datapoints under the road, contrary to bmndr.com/d/push
 FIXED: bugroad2 has the bullseye too early, contrary to bmndr.com/d/meta
