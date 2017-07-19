@@ -4672,7 +4672,7 @@
                     continue;
                 kd = moment.unix(seg.end[0]).utc();
                 rd = [kd.format("YYYYMMDD"), seg.end[1], seg.slope*goal.siru];
-                if (seg.auto == RP.DATE) rd[0] = null;
+                if (seg.auto == RP.DATE) rd[2] = null; // Exception here since roadall does not support null dates.
                 if (seg.auto == RP.VALUE) rd[1] = null;
                 if (seg.auto == RP.SLOPE) rd[2] = null;
                 //if (i == roads.length-2) {
