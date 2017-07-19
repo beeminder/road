@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Playing with Road Editor Interfaces</title>
+  <title>Beeminder Road Editor</title>
   <meta name="description" content="Playing with Road Editor interfaces in Glitch">
   <link id="favicon" rel="icon" href="https://glitch.com/favicon.ico" type="image/x-icon">
   <meta charset="utf-8">
@@ -42,8 +42,7 @@
       <input id="showcontext" type="checkbox" onclick="editor.showContext(this.checked);" checked>Show context graph<br>
       <input id="keepslopes" type="checkbox" onclick="editor.keepSlopes(this.checked);" checked>Keep slopes fixed<br>
       <input id="keepintervals" onclick="editor.keepIntervals(this.checked);" type="checkbox">Keep intervals fixed<br>
-      <button id="zoomall" onclick="editor.zoomAll();">Zoom All</button>
-      <button id="zoomdflt" onclick="editor.zoomDefault();">Default Zoom</button>
+      <button id="zoomdflt" onclick="editor.zoomDefault();">Reset Zoom</button>
       <button id="undo" onclick="editor.undo();">Undo (0)</button>
       <button id="redo" onclick="editor.redo();">Redo (0)</button><br/><br/>
       Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">Retroratchet</button><br/>
@@ -53,9 +52,6 @@
     <td valign="top">
       <div id="roadtable"></div>
       <br/>
-      <input id="autoscroll" type="checkbox" onclick="editor.tableAutoScroll(this.checked);" checked>Auto-scroll table<br>
-      <input id="updateondrag" type="checkbox" onclick="editor.tableUpdateOnDrag(this.checked);" checked>Update table on drag<br>
-      <input id="reversetable" type="checkbox" onclick="editor.reverseTable(this.checked);">Reverse table order<br/>
 
     </td>
   </tr>
@@ -75,9 +71,6 @@
     <td valign="top">
       <div id="roadtable2"></div>
       <br/>
-      <input id="reversetable2" type="checkbox" 
-             onclick="editor2.reverseTable(this.checked);">
-      Reverse table order<br/>
     </td>
   </tr>
 </table>
