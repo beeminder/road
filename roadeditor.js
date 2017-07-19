@@ -1911,6 +1911,7 @@
 
             goal.safebuf = dtd(roads, goal, goal.tcur, goal.vcur);
             goal.tluz = goal.tcur+goal.safebuf*SID;
+            if (goal.tfin < goal.tluz) goal.tluz = BDUSK;
             goal.loser = isLoser(roads,goal,aggdata,goal.tcur,goal.vcur);
 
             if  (goal.asof >= goal.tfin && !goal.loser)  {
@@ -2288,15 +2289,6 @@
             alldata = allpts;
             aggdata = newpts.filter(function(e){return e[0]<=goal.asof;});
             fuda = newpts.filter(function(e){return e[0]>goal.asof;});
-            if (opts.maxDataDays < 0) {
-                alldataf = alldata;
-                aggdataf = aggdata;
-            } else {
-                alldataf = alldata.filter(function(e){
-                    return e[0]>(goal.asof-opts.maxDataDays*SID);});
-                aggdataf = aggdata.filter(function(e){
-                    return e[0]>(goal.asof-opts.maxDataDays*SID);});
-            }
 
             if (!goal.plotall) goal.numpts = aggdata.length;
 
@@ -2422,6 +2414,17 @@
 
             procParams( json.params );
 
+            // Now that the flatlined datapoint is in place, we can
+            // extract limited data
+            if (opts.maxDataDays < 0) {
+                alldataf = alldata.slice();
+                aggdataf = aggdata.slice();
+            } else {
+                alldataf = alldata.filter(function(e){
+                    return e[0]>(goal.asof-opts.maxDataDays*SID);});
+                aggdataf = aggdata.filter(function(e){
+                    return e[0]>(goal.asof-opts.maxDataDays*SID);});
+            }
             // Generate the aura function now that the flatlined
             // datapoint is also computed.
             if (goal.aura) {
@@ -4387,7 +4390,8 @@
                 })
                 .property('checked', function(d) { return d.auto?true:false;});
 
-            allrows.selectAll(".roadcell, .roadbtn, .startcell").sort(function(a,b) {return a.order > b.order;});
+            allrows.selectAll(".roadcell, .roadbtn, .startcell")
+                .sort(function(a,b) {return a.order > b.order;});
 
             if (!opts.roadEditor) {
                 allrows.selectAll(".roadbtn").style('visibility', "collapse").attr("value","");
@@ -4567,8 +4571,8 @@
             if (arguments.length > 0) {
                 opts.maxDataDays = days;
                 if (opts.maxDataDays < 0) {
-                    alldataf = alldata;
-                    aggdataf = aggdata;
+                    alldataf = alldata.slice();
+                    aggdataf = aggdata.slice();
                 } else {
                     alldataf = alldata.filter(function(e){
                         return e[0]>(goal.asof-opts.maxDataDays*SID);});
