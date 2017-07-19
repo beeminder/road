@@ -30,6 +30,7 @@
 
  <select id="roadselect" class="roadselect" onchange="editor.loadGoal(this.value);">
   <option value="data/testroad0.json">Test Road 0</option>
+  <option value="data/bugroad1.bb">Bug Road 1</option>
   <option value="data/testroad1.json">Test Road 1</option>
   <option value="data/testroad2.json">Test Road 2</option>
   <option value="data/testroad3.json">Test Road 3</option>
@@ -47,7 +48,7 @@
       <input id="showcontext" type="checkbox" onclick="editor.showContext(this.checked);" checked>Show context graph<br>
       <input id="keepslopes" type="checkbox" onclick="editor.keepSlopes(this.checked);" checked>Keep slopes fixed<br>
       <input id="keepintervals" onclick="editor.keepIntervals(this.checked);" type="checkbox">Keep intervals fixed<br>
-      <button id="zoomall" onclick="editor.zoomOut();">Zoom To Fit</button>
+      <button id="zoomall" onclick="editor.zoomAll();">Zoom To Fit</button>
       <button id="zoomdflt" onclick="editor.zoomDefault();">Default Zoom</button>
       <button id="undo" onclick="editor.undo();">Undo (0)</button>
       <button id="redo" onclick="editor.redo();">Redo (0)</button><br/><br/>
@@ -90,9 +91,9 @@
 
   var editor = new bmndr({divGraph: document.getElementById('roadgraph'),
                           divTable: document.getElementById('roadtable'),
-                          roadEditor: true,
+                          roadEditor: false,
                           maxFutureDays: 365,
-                          showFocusRect: true,
+                          showFocusRect: false,
                           showContext: true,
                           onRoadChange: roadChanged});
   if (document.getElementById("showalldata").checked) editor.maxDataDays(-1); else editor.maxDataDays(100);

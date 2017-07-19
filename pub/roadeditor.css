@@ -65,9 +65,16 @@ line.roads {
 .past, .pastline, .halfplane, .pinkregion, .horizon,
 .ctxroads, .ctxdots, .ctxoldroads, .oldroads, 
 .bullseye, .oldbullseye, .ctxbullseye, .ctxoldbullseye, 
-.ctxtoday, .ctxtodaytext, .dpts, .allpts, .steppy, .steppyd, .fladp
+.ctxtoday, .ctxtodaytext, .dpts, .allpts, .steppy, .steppyd, .fladp,
 .aura, .aurapast  {
   pointer-events: none;
+}
+
+.loading {
+  pointer-events: none;
+  text-anchor: middle;
+  font-weight: bold;
+  font-family: sans-serif;
 }
 
 .brush rect.selection {

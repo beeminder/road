@@ -1,17 +1,39 @@
 /*!
  * bmndr
  *
+ * This package provides a general purpose tool to generate possibly
+ * editable graphs for the Beeminder system. It is implemented as a
+ * package which, once the script is loaded, provides a bmndr factory
+ * object that can be used to create instances of this tool. In
+ * particular, the following comamnd can be used to create and
+ * initialize a particular instance, associated with specific div
+ * container objects to hold the graph and the table for the road
+ * matrix:
+ *
+ * var editor 
+ *     = new bmndr({divGraph: document.getElementById('roadgraph'),
+ *                  divTable: document.getElementById('roadtable')});
+ *
+ * As evident from this example, the constructor accepts an "options"
+ * input, holding key configuration variables to control the behavior
+ * of the bmndr object. Please consult the default options object
+ * definition below for specific options and their semantics. If any
+ * or both of divGraph or divTable is null, the corresponding feature
+ * is disabled and the corresponding html components are not created.
+ *
+ * Dependencies: d3.v4, Pikaday, moment, Polyfit
+ * 
  * Copyright © 2017 Uluc Saranli
  */
 
 ;(function (root, factory) {
     'use strict';
     if (typeof define === 'function' && define.amd) {
-        define(['d3', 'moment', 'Pikaday'], factory);
+        define(['d3', 'moment', 'Pikaday', 'Polyfit'], factory);
     } else if (typeof module === 'object' && module.exports) {
-        module.exports = factory(require('d3', 'moment', 'Pikaday'));
+        module.exports = factory(require('d3', 'moment', 'Pikaday', 'Polyfit'));
     } else {
-        root.bmndr = factory(root.d3, root.moment, root.Pikaday);
+        root.bmndr = factory(root.d3, root.moment, root.Pikaday, root.Polyfit);
     }
 }(this, function (d3, moment, Pikaday) {
     'use strict';
@@ -21,27 +43,47 @@
     var 
     gid = 1,
     defaults = {
-        divGraph:     null,   // Binds the graph to a div element
-        divTable:     null,    // Binds the road table to a div element
+        /** Binds the graph to a div element */
+        divGraph:     null,
+        /** Binds the road table to a div element */
+        divTable:     null,    
+        /** Size of the SVG element to hold the graph */
         svgSize:      { width: 700, height: 480 },
+        /** Boundaries of the SVG group to hold the focus graph */
         focusRect:    { x:0, y:0, width:700, height: 400 },
+        /** Initial padding within the focus graph. */
         focusPad:     { left:25, right:5, top:25, bottom:30 },
+        /** Boundaries of the SVG group to hold the context graph */
         ctxRect:      { x:0, y:400, width:700, height: 80 },
+        /** Initial padding within the context graph. */
         ctxPad:       { left:25, right:5, top:0, bottom:30 },
-        tableHeight:  540, // Choose 0 for unspecified
+        /** Height of the road matrix table. Choose 0 for unspecified */
+        tableHeight:  540,
 
+        /** Visual parameters for the zoom in/out buttons. "factor" 
+         indicates how much to zoom in/out per click. */
         zoomButton:   { size: 40, opacity: 0.6, factor: 1.5 },
+        /** Size of the bullseye image in the focus and context graphs */ 
         bullsEye:     { size: 40, ctxsize: 20 },
+        /** Visual parameters for draggable road dots */ 
         roadDot:      { size: 5, ctxsize: 3, border: 1.5, ctxborder: 1 },
+        /** Visual parameters for draggable road knots and removal buttons */ 
         roadKnot:     { width: 3, rmbtnscale: 0.6 },
+        /** Visual parameters for draggable road lines */ 
         roadLine:     { width: 3, ctxwidth: 2 },
+        /** Visual parameters for fixed lines for the original road */ 
         oldRoadLine:  { width: 3, ctxwidth: 2, dash: 32, ctxdash: 16 },
+        /** Visual parameters for data points (past and flatlined) */ 
         dataPoint:    { size: 5, fsize: 5 }, 
+        /** Visual parameters for the akrasia horizon */ 
         horizon:      { width: 2, ctxwidth: 1, dash: 8, ctxdash: 6, 
                         font: 12, ctxfont: 9 },
+        /** Visual parameters for vertical line for asof */ 
         today:        { width: 2, ctxwidth: 1, font: 16, ctxfont: 9 },
-        textBox:      { margin: 3 },
+        /** Visual parameters for watermarks */ 
         watermark:    { height:150, fntsize:100 },
+        /** Visual parameters for text boxes shown during dragging */ 
+        textBox:      { margin: 3 },
 
         roadLineCol:  { valid: "black", invalid:"#ca1212"},
         roadDotCol:   { fixed: "darkgray", editable:"#ca1212", 
@@ -54,21 +96,72 @@
         halfPlaneCol: { fill: "#ffffe8" },
         pastBoxCol:   { fill: "#f8f8f8", opacity:0.5 },
 
+        /** Enables the road editor. When disabled, the generated
+         graph mirrors beebrain output as closely as possible. */
         roadEditor:        false,
+
+        /** Enables the display of the context graph within the SVG */
         showContext:       false,
+
+        /** Enables showing a dashed rectange in the context graph
+         visualizing the current graph limits on the y-axis */
         showFocusRect:     true,
+
+        /** Enables displaying datapoints on the graph */ 
         showData:          true,
-        keepSlopes:        true,
-        keepIntervals:     false,
-        reverseTable:      false,
-        tableAutoScroll:   true, // auto scrolling
-        tableUpdateOnDrag: false,
-        
-        maxFutureDays: 365,
+
+        /** When datapoint display is enabled, indicates the number of
+         days before asof to show data for. This can be used to speed
+         up display refresh for large goals. Choose -1 to display all
+         datapoints. */ 
         maxDataDays:   -1, // Choose -1 to show all points
 
+        /** Indicates how many days beyond asof should be included in
+         the fully zoomed out graph. This is useful for when the goal
+         date is too far beyond asof, making the context graph
+         somewhat useless in terms of its interface utility. */
+        maxFutureDays: 365,
+
+        /** Indicates whether slopes for segments beyond the currently 
+         dragged element should be kept constant during editing. */
+        keepSlopes:        true,
+
+        /** Indicates whether intervals between the knots for segments
+         beyond the currently dragged element should be kept constant
+         during editing. */
+        keepIntervals:     false,
+
+        /** Indicates whether the road matrix table should be shown
+         with the earliest rows first (normal) or most recent rows
+         first (reversed). */ 
+        reverseTable:      false,
+
+        /** Indicates whether the auto-scrolling feature for the road
+         matrix table should be enabled such that when the mouse moves
+         over knots, dots or road elements, the corresponding table
+         row is scrolled to be visible in the table. This is
+         particularly useful when tableHeight is explicitly specified
+         and is nonzero. */ 
+        tableAutoScroll:   true,
+
+        /** Chooses whether the road matrix table should be
+         dynamically updated during the dragging of road knots, dots
+         and segments. Enabling this may induce some lagginess,
+         particularly on Firefox due to more components being updated
+         during dragging */
+        tableUpdateOnDrag: false,
+        
+        /** Callback function that gets invoked when the road is edited 
+         by the user. Various interface functions can then be used to 
+         retrieve the new road state. This is also useful to update the 
+         state of undo/redo and submit buttons based on how many edits 
+         have been done on the original road. */
         onRoadChange: null
     },
+
+    /** This object defines default options for mobile browsers, where
+     larger dots, knots and roads are necessary to make editing
+     through dragging feasible. */
     mobiledefaults = {
         svgSize:      { width: 700, height: 530 },
         focusRect:    { x:0, y:0, width:700, height: 400 },
@@ -112,9 +205,11 @@
         REDDOT: "#ff0000"  // Red for off the road on the bad side
     },
 
+    /** Enum object to identify field types for road segments. */
     RP = {
         DATE:0, VALUE:1, SLOPE:2
     },
+    /** Enum object to identify different types of datapoints. */
     DPTYPE = {
         AGGPAST:0, AGGFUTURE:1, RAWPAST:2, RAWFUTURE:3, FLATLINE:4, HOLLOW: 5
     },
@@ -141,7 +236,7 @@
             sml: "https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fsmiley.png?1500062837171"
           },
             
-    // ---------------- General Utility Functionc ----------------------
+    // ---------------- General Utility Functions ----------------------
 
     onMobileOrTablet = function() {
       var check = false;
@@ -465,6 +560,8 @@
             if (xobj.readyState == 4 && xobj.status == "200") {
                 //if (xobj.readyState == 4) {
                 callback(JSON.parse(xobj.responseText));
+            } else if (xobj.readyState == 4) {
+                callback(null);
             }
         };
         xobj.send(null);  
@@ -556,18 +653,18 @@
         // Uluc: Disabled this since it is problematic with the date
         // picker
         return;
-        var done = false, i;
-        while (!done) {
-            done = true;
-            for (i = 0; i < rd.length; i++) {
-                if (rd[i].sta[0] == rd[i].end[0]
-                    && rd[i].sta[1] == rd[i].end[1]) {
-                    rd.splice(i, 1);
-                    done = false;
-                    break;
-                }
-            }
-        }
+        // var done = false, i;
+        // while (!done) {
+        //     done = true;
+        //     for (i = 0; i < rd.length; i++) {
+        //         if (rd[i].sta[0] == rd[i].end[0]
+        //             && rd[i].sta[1] == rd[i].end[1]) {
+        //             rd.splice(i, 1);
+        //             done = false;
+        //             break;
+        //         }
+        //     }
+        // }
     },
 
     /** Recomputes the road array starting from the first node and
@@ -895,7 +992,7 @@
         };
         computeBoxes();
 
-        var svg, defs, zoomarea, axisZoom, focus, buttonarea, focusclip, plot;
+        var svg, defs, graphs, zoomarea, axisZoom, focus, buttonarea, focusclip, plot;
         var gPB, gYBHP, gPink, gGrid;
         var gOldRoad, gOldCenter, gOldGuides, gOldBullseye, gKnots;
         var gSteppy, gMovingAv, gAura, gDpts, gAllpts, gBullseye, gRoads, gDots;
@@ -938,7 +1035,7 @@
             defs.append("path")
                 .style("stroke", "none").attr("id", "rightarrow")
                 .attr("d", "M 55,0 -35,45 -35,-45 z");
-            
+      
             var buttongrp = defs.append("g")
                     .attr("id", "removebutton");
             buttongrp.append("circle")
@@ -985,7 +1082,7 @@
                     var newx = nXSc.invert(pressX);
                     if (pressTimer == null && d3.event.touches.length == 1) pressTimer = window.setTimeout(function() { if (newx != null) addNewDot(newx/1000); },1000);
                     oldTouchStart.apply(this, arguments);} )
-                .on("touchmove.zoom", function () { clearTimeout(pressTimer); pressTimer = null; oldTouchMove.apply(this, arguments);})
+                .on("touchmove.zoom", function () { window.clearTimeout(pressTimer); pressTimer = null; oldTouchMove.apply(this, arguments);})
                 .on("touchend.zoom", function () { clearTimeout(pressTimer); pressTimer = null; oldTouchEnd.apply(this, arguments);} );              
             }
             function dotAdded() {
@@ -1248,17 +1345,27 @@
         }
         
         // ------------------ Text Box Utilities ---------------------
-        function createTextBox( x, y, text ){
+        function createTextBox( x, y, text, text2=null ){
             var textobj = {};
             if (y < 20-plotpad.top)    y = 20 -plotpad.top;
             if (y > plotbox.height-15) y = plotbox.height-15;
             textobj.grp = focus.append('g');
             textobj.rect = textobj.grp.append('svg:rect')
+                .attr('pointer-events', "none")
                 .attr('fill',   opts.textBoxCol.bg)
                 .style('stroke', opts.textBoxCol.stroke);
             textobj.text = textobj.grp.append('svg:text')
-                .attr('text-anchor', 'middle')
-                .text(text).attr('class', 'svgtxt');
+                .attr('pointer-events', "none")
+                .attr('text-anchor', 'middle');
+            if (text2 == null) {
+                textobj.text.text(text).attr('class', 'svgtxt');
+            } else {
+                textobj.text.append("tspan").attr("x", 0).attr("dy", "0.6em")
+                    .text(text).attr('class', 'svgtxt');
+                textobj.text.append("tspan").attr("dy", "1.2em")
+                    .attr("x", 0).text(text2)
+                    .attr("font-size", "0.7em");
+            }
             var bbox = textobj.text.node().getBBox();
             var margin = opts.textBox.margin;
             textobj.rect
@@ -1310,13 +1417,14 @@
         alldata = [],    // Holds the entire set of data points
         aggdata = [],    // Holds past aggregated data
         fuda = [],       // Holds all future data
-        alldataf = [], // Holds all data up to a limited days before asof
-        aggdataf = [], // Holds past aggregated data (limited)
+        alldataf = [],   // Holds all data up to a limited days before asof
+        aggdataf = [],   // Holds past aggregated data (limited)
         undoBuffer = [], // Array of previous roads for undo
         redoBuffer = [], // Array of future roads for redo
         oresets = [],
         allvals = {},
         aggval = {},
+        processing = false, 
         loading = false;
 
         // Initialize goal with sane values
@@ -1615,7 +1723,7 @@
                         return;
                 }
                 var prevpt = aggdata[numpts-1];
-                flad = [x, vlast, DPTYPE.FLATLINE, prevpt[0], prevpt[1]];
+                flad = [x, vlast, "PPR", DPTYPE.FLATLINE, prevpt[0], prevpt[1]];
                 aggdata.push(flad);
             }
         }
@@ -1899,8 +2007,9 @@
             if (p.hasOwnProperty('tmax'))     p.tmax = dayparse(p.tmax);
             if (p.hasOwnProperty('road'))     p.road = p.road.map(parserow);
 
-            return d.map(function(r) {return [dayparse(r[0]), r[1], r[2]];})
-                .sort(function(a,b){ return a[0]-b[0];});
+            var numpts = d.length;
+            return d.map(function(r, i) {return [dayparse(r[0]), r[1], r[2], i];})
+                .sort(function(a,b){ return (a[0]-b[0]) + (a[0] !== b[0])?0:(0.1*(a[4]-b[4])/numpts);});
         }
 
         function procRoad( json ) {
@@ -1959,6 +2068,8 @@
                 slope: 0, auto: RP.VALUE };
             finalsegment.end[0] = daysnap(finalsegment.end[0]+100*DIY*SID);
             roads.push(finalsegment);
+
+            fixRoadArray( roads );
             iRoad = copyRoad( roads );
         }
 
@@ -2008,6 +2119,49 @@
                                                   plotbox.width)));
         }
 
+        /** Converts a number to an integer string */
+        function sint(x){ return Math.round(x).toString(); }
+        
+        // Used with grAura() and for computing mean and meandelt,
+        // this adds dummy datapoints on every day that doesn't have a
+        // datapoint, interpolating linearly.
+        function gapFill(d) {
+            var interp = function (before, after, atPoint) {
+                return before + (after - before) * atPoint;
+            };
+            var start = d[0][0], end = d[d.length-1][0];
+            var n = Math.floor((end-start)/SID);
+            var out = Array(n), i, j = 0, t = start;
+            for (i = 0; i < d.length-1; i++) {
+                var den = (d[i+1][0]-d[i][0]);
+                while (t <= d[i+1][0]) {
+                    out[j] = [t,interp(d[i][1], d[i+1][1], (t-d[i][0])/den)];
+                    j++; t += SID;
+                }
+            }
+            return out;
+        }
+
+        // Return a pure function that fits the data smoothly, used by grAura
+        function smooth(data) {
+            var SMOOTH = (data[0][0] + data[data.length-1][0])/2;
+            var dz = zip(data);
+            var xnew = dz[0].map(function(e){return e-SMOOTH;});
+            var poly = new Polyfit(xnew, dz[1]);
+            // If smallest singular value is too small, try fitting a
+            // 2nd order polynom
+            //           if Math.min(sv) < 5e-13:
+            //     c2 = np.polyfit(xnew, y, 2)
+            //     coeff = c2.tolist()
+            //     coeff.insert(0, 0.0)
+            // except np.RankWarning:
+            //   c2 = np.polyfit(xnew, y, 2)
+            //   coeff = c2.tolist()
+            //   coeff.insert(0, 0.0)
+            var solver = poly.getPolynomial(3);
+            return function(x){ return solver(x-SMOOTH);};
+        }
+
         // Assumes both datapoints and the x values are sorted
         function interpData(d, xv) {
             var interp = function (before, after, atPoint) {
@@ -2033,9 +2187,8 @@
         }
 
         function procData() {
-            var numpts = aggdata.length, i;
             for (i = 0; i < numpts; i++) {
-                aggdata[i].splice(-1,1); // Remove comment
+                //aggdata[i].splice(-1,1); // Remove comment
                 aggdata[i][0] = dayparse(aggdata[i][0]);
             }
             if (goal.odom) {
@@ -2043,65 +2196,86 @@
                 odomify(aggdata);
             }
 
+            var numpts = aggdata.length, i;
             var nonfuda = aggdata.filter(function(e){
                 return e[0]<=goal.asof;});
             if (goal.plotall) goal.numpts = nonfuda.length;
 
             aggval = {};
             allvals = {};
+            var dval = function(d) { return d[0];};
+            var aggcmt = function(vl, v) { 
+                if (vl.length == 1) return vl[0][1];
+                 else {
+                     var ind;
+                     if (goal.kyoom && goal.aggday === "sum") 
+                         ind = accumulate(vl.map(dval)).indexOf(v);
+                     else ind = vl.map(dval).indexOf(v);
+                     if (ind < 0) return goal.aggday;
+                     else return vl[ind][1]+" ("+goal.aggday+")";
+                 }
+            };
 
             // Aggregate datapoints and handle kyoom
             var newpts = [];
-            var ct = aggdata[0][0], vl = [aggdata[0][1]];
-            var pre = 0, prevpt, ad;
+            var ct = aggdata[0][0], vl = [[aggdata[0][1],aggdata[0][2]]], vlv;
+            var pre = 0, prevpt, ad, cmt;
             for (i = 1; i < aggdata.length; i++) {
                 if (aggdata[i][0] == ct) {
-                    vl.push(aggdata[i][1]);
+                    vl.push([aggdata[i][1],aggdata[i][2]]);
                 } else {
-                    ad = AGGR[goal.aggday](vl);
+                    vlv = vl.map(dval);
+                    ad = AGGR[goal.aggday](vlv);
                     if (newpts.length > 0) prevpt = newpts[newpts.length-1];
                     else prevpt = [ct, ad+pre];
                     //pre remains 0 for non-kyoom
-                    newpts.push([ct, pre+ad, (ct <= goal.asof)
+                    newpts.push([ct, pre+ad, aggcmt(vl, ad), (ct <= goal.asof)
                                  ?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE, 
                                  prevpt[0], prevpt[1]]);
                     if (goal.kyoom) {
-                        if (goal.aggday === "sum") allvals[ct] 
-                            = accumulate(vl).map(function(e){return e+pre;});
-                        else allvals[ct] = vl.map(function(e) { return e+pre;});
-                        aggval[ct] = pre+ad;
+                        if (goal.aggday === "sum") {
+                            allvals[ct] = accumulate(vlv).map(function(e,i){
+                                return [e+pre, vl[i]];});
+                        } else allvals[ct] = vl.map(function(e) {
+                            return [e[0]+pre, e[1]];});
+                        aggval[ct] = [pre+ad, aggcmt(vl, ad)];
                         pre += ad; 
                     } else {
                         allvals[ct] = vl;
-                        aggval[ct] = ad;
+                        aggval[ct] = [ad, aggcmt(vl, ad)];
                     }
 
                     ct = aggdata[i][0];
-                    vl = [aggdata[i][1]];
+                    vl = [[aggdata[i][1],aggdata[i][2]]];
                 }
             }
-            ad = AGGR[goal.aggday](vl);
+            vlv = vl.map(dval);
+            ad = AGGR[goal.aggday](vlv);
             if (newpts.length > 0) prevpt = newpts[newpts.length-1];
             else prevpt = [ct, ad+pre];
-            newpts.push([ct, ad+pre, 
+            newpts.push([ct, ad+pre, aggcmt(vl, ad), 
                          (ct <= goal.asof)?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE,
                          prevpt[0], prevpt[1]]);
             if (goal.kyoom) {
-                if (goal.aggday === "sum") allvals[ct] 
-                    = accumulate(vl).map(function(e){return e+pre;});
-                else allvals[ct] = vl.map(function(e) { return e+pre;});
-                aggval[ct] = pre+ad;
+                if (goal.aggday === "sum") {
+                    allvals[ct] = accumulate(vlv).map(function(e,i){
+                        return [e+pre, vl[i]];});
+                } else allvals[ct] = vl.map(function(e) { 
+                    return [e[0]+pre, e[1]];});
+                aggval[ct] = [pre+ad, aggcmt(vl, ad)];
             } else {
                 allvals[ct] = vl;
-                aggval[ct] = ad;
+                aggval[ct] = [ad, aggcmt(vl, ad)];
             }
             var allpts = [];
             for (var t in allvals) {
                 if (allvals.hasOwnProperty(t)) {
                     allpts = allpts.concat(allvals[t].map(
                         function(d){
-                            return [Number(t), d, (Number(t) <= goal.asof)
-                                    ?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE];}));
+                            return [Number(t), d[0], d[1], 
+                                    (Number(t) <= goal.asof)
+                                    ?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE
+                                    , d[0], d[1],];}));
                 }
             }
             alldata = allpts;
@@ -2166,7 +2340,7 @@
             //console.debug("id="+curid+", loadGoal()->"+json.params.yoog);
             clearUndoBuffer();
 
-            loading = true;
+            processing = true;
             legacyIn(json.params);
             initGlobals();
             aggdata = stampIn(json.params, json.data);
@@ -2213,9 +2387,10 @@
             } else {
                 goal.tini = aggdata[0][0];
             }
-            if (allvals.hasOwnProperty(goal.tini))
-                vtmp = (goal.plotall)?allvals[goal.tini][0]:aggval[goal.tini];
-            else
+            if (allvals.hasOwnProperty(goal.tini)) {
+                vtmp = (goal.plotall)
+                    ?allvals[goal.tini][0][0]:aggval[goal.tini];
+            } else
                 vtmp = Number(json.params.vini);
             if (json.params.hasOwnProperty('vini')) {
                 goal.vini = json.params.vini;
@@ -2240,9 +2415,19 @@
 
             procParams( json.params );
 
+            // Generate the aura function now that the flatlined
+            // datapoint is also computed.
+            if (goal.aura) {
+                var adata = aggdata.filter(function(e){
+                    return e[0]>=goal.tmin;});
+                var fdata = gapFill(adata);
+                goal.auraf = smooth(fdata);
+            } else
+                goal.auraf = function(e){ return 0; };
+
             // Finally, wrap up with graph related initialization
             zoomAll();
-            loading = false;
+            processing = false;
 
             zoomDefault();
             updateTable();
@@ -2250,15 +2435,31 @@
         }
 
         function loadGoalFromURL( url ) {
+            if (url == "" || loading) return;
+            loading = true;
+            var pg = svg.append('g').attr('class', 'progress');
+            pg.append('svg:rect')
+                .attr('x', 0).attr('y',0)
+                .attr('width', sw).attr('height',sh)
+                .attr('fill', Cols.WITE)
+                .attr('fill-opacity', 0.8);
+            pg.append('svg:text').attr('class', 'loading')
+                .attr('x', sw/2).attr('y',sh/2)
+                .attr('font-size', sh/10)
+                .style('font-size', sh/10)
+                .text("loading...");
             loadJSON(url, 
                      function(resp) { 
                          //console.debug("id="+curid+" loadGoalFromURL() done for "+url);
-                         loadGoal(resp);
-                         if (typeof opts.onRoadChange === 'function') {
-                             opts.onRoadChange.call();
+                         if (resp != null) {
+                             loadGoal(resp);
+                             if (typeof opts.onRoadChange === 'function') {
+                                 opts.onRoadChange.call();
+                             }
+                             updateRoadTableTitle();
                          }
-                         //roadChanged();
-                         updateRoadTableTitle();
+                         pg.remove();
+                         loading = false;
                      });  
         }
 
@@ -3032,56 +3233,11 @@
             }
         }
         
-        function sint(x){ return Math.round(x).toString(); }
-
-        // Used with grAura() and for computing mean and meandelt,
-        // this adds dummy datapoints on every day that doesn't have a
-        // datapoint, interpolating linearly.
-        function gapFill(d) {
-            var interp = function (before, after, atPoint) {
-                return before + (after - before) * atPoint;
-            };
-            var start = d[0][0], end = d[d.length-1][0];
-            var n = Math.floor((end-start)/SID);
-            var out = Array(n), i, j = 0, t = start;
-            for (i = 0; i < d.length-1; i++) {
-                var den = (d[i+1][0]-d[i][0]);
-                while (t <= d[i+1][0]) {
-                    out[j] = [t,interp(d[i][1], d[i+1][1], (t-d[i][0])/den)];
-                    j++; t += SID;
-                }
-            }
-            return out;
-        }
-
-        // Return a pure function that fits the data smoothly, used by grAura
-        function smooth(data) {
-            var SMOOTH = (data[0][0] + data[data.length-1][0])/2;
-            var dz = zip(data);
-            var xnew = dz[0].map(function(e){return e-SMOOTH;});
-            var poly = new Polyfit(xnew, dz[1]);
-            // If smallest singular value is too small, try fitting a
-            // 2nd order polynom
-            //           if Math.min(sv) < 5e-13:
-            //     c2 = np.polyfit(xnew, y, 2)
-            //     coeff = c2.tolist()
-            //     coeff.insert(0, 0.0)
-            // except np.RankWarning:
-            //   c2 = np.polyfit(xnew, y, 2)
-            //   coeff = c2.tolist()
-            //   coeff.insert(0, 0.0)
-            var solver = poly.getPolynomial(3);
-            return function(x){ return solver(x-SMOOTH);};
-        }
         function updateAura() {
-            if (loading) return;
+            if (processing) return;
             var el = gAura.selectAll(".aura");
             var el2 = gAura.selectAll(".aurapast");
             if (goal.aura && opts.showData) {
-                var adata = aggdata.filter(function(e){
-                    return e[0]>=goal.tmin;});
-                var fdata = gapFill(adata);
-                var auraf = smooth(fdata);
                 var aurdn = d3.min([-goal.lnw/2.0, -goal.dflux]);
                 var aurup = d3.max([goal.lnw/2.0,  goal.dflux]);
                 var fudge = PRAF*(goal.tmax-goal.tmin);
@@ -3089,12 +3245,15 @@
                           nXSc.invert(plotbox.width)];
                 var xvec = griddle(goal.tmin, 
                                  d3.min([goal.asof+AKH, goal.tmax+fudge])),i;
+                // Generate a path string for the aura
                 var d = "M"+nXSc(xvec[0]*1000)+" "
-                        +nYSc(auraf(xvec[0])+aurup);
+                        +nYSc(goal.auraf(xvec[0])+aurup);
                 for (i = 1; i < xvec.length; i++)
-                    d += " L"+nXSc(xvec[i]*1000)+" "+nYSc(auraf(xvec[i])+aurup);
+                    d += " L"+nXSc(xvec[i]*1000)+" "
+                    +nYSc(goal.auraf(xvec[i])+aurup);
                 for (i = xvec.length-1; i >= 0; i--)
-                    d += " L"+nXSc(xvec[i]*1000)+" "+nYSc(auraf(xvec[i])+aurdn);
+                    d += " L"+nXSc(xvec[i]*1000)+" "
+                    +nYSc(goal.auraf(xvec[i])+aurdn);
                 d += " Z";
                 if (el.empty()) {
                     gAura.append("svg:path")
@@ -3107,13 +3266,13 @@
                 if (xr[0].getTime()/1000 < goal.tmin) {
                     xvec = griddle(xr[0].getTime()/1000, goal.tmin);
                     d = "M"+nXSc(xvec[0]*1000)+" "
-                        +nYSc(auraf(xvec[0])+aurup);
+                        +nYSc(goal.auraf(xvec[0])+aurup);
                     for (i = 1; i < xvec.length; i++)
                         d += " L"+nXSc(xvec[i]*1000)+" "
-                        +nYSc(auraf(xvec[i])+aurup);
+                        +nYSc(goal.auraf(xvec[i])+aurup);
                     for (i = xvec.length-1; i >= 0; i--)
                         d += " L"+nXSc(xvec[i]*1000)+" "
-                        +nYSc(auraf(xvec[i])+aurdn);
+                        +nYSc(goal.auraf(xvec[i])+aurdn);
                     d += " Z";
                     if (el2.empty()) {
                         gAura.append("svg:path")
@@ -3520,7 +3679,7 @@
                               +","+(plotpad.top-28*opts.roadKnot.rmbtnscale-3)+") scale("+opts.roadKnot.rmbtnscale+")";
                       })
                 .style("visibility", function(d,i) {
-                    return (i<roads.length-1)
+                    return (i > 0 && i<roads.length-2)
                         ?"visible":"hidden";});
             knotrmelt.enter()
                 .append("use")
@@ -3535,7 +3694,7 @@
                               +","+(plotpad.top-28*opts.roadKnot.rmbtnscale-3)+") scale("+opts.roadKnot.rmbtnscale+")";
                       })
                 .style("visibility", function(d,i) {
-                    return (i < roads.length-1)
+                    return (i > 0 && i < roads.length-2)
                         ?"visible":"hidden";})
 		        .on("mouseenter",function() {
 			        d3.select(this).attr("fill",opts.roadKnotCol.rmbtnsel);})
@@ -3717,7 +3876,7 @@
 
         function dpFill( pt ) {
             var col = dotcolor(roads, goal, pt[0], pt[1]);
-            return (pt[2] == DPTYPE.AGGPAST)?col:(col+"54");
+            return (pt[3] == DPTYPE.AGGPAST)?col:(col+"54");
         }
         function dpStroke( pt ) {
             if (opts.roadEditor) {
@@ -3734,8 +3893,20 @@
             }
         }
 
-        function updateDotGroup(grp, d, cls, r, s=null, sw=null, f=null ) {
-            var dpelt;
+        function updateDotGroup(grp, d, cls, r, s=null, sw=null, f=null, hov=true ) {
+            var dpelt, dotTimer = null, dotText = null;
+            var showDot = function(d) {
+	            var ptx = nXSc(daysnap(d[0])*1000);
+	            var pty = nYSc(d[1]);
+                var txt = moment.unix(d[0]).utc().format("YYYY-MM-DD")
+                +", "+shn(d[1]);
+                if (dotText != null) removeTextBox(dotText);
+                if (d[2] === "") {
+                    dotText = createTextBox(ptx, pty-15, txt );
+                } else {
+                    dotText = createTextBox(ptx, pty-40, txt, "\""+d[2]+"\"" );
+                }
+            };
 
             dpelt = grp.selectAll("."+cls).data(d);
             dpelt.exit().remove();
@@ -3753,18 +3924,31 @@
                 .attr("cy",function(d){ return nYSc(d[1]);})
 		        .attr("stroke-width", sw)
 		        .style("stroke", s)
-                .attr("fill", f);
+                .attr("fill", f)
+                .style("pointer-events", function() {
+                    return (opts.roadEditor&&hov)?"none":"all";})
+		        .on("mouseenter",function(d) {
+                    if (dotTimer != null) window.clearTimeout(dotTimer);
+                    dotTimer = window.setTimeout(function() {
+                        showDot(d); dotTimer = null;
+			        }, 500);})
+		        .on("mouseout",function() { 
+                    if (dotText != null) {
+                        removeTextBox(dotText);
+                        dotText = null;
+                    }
+                    window.clearTimeout(dotTimer); dotTimer = null;});
         }
 
         function updateDataPoints() {
-            if (loading) return;
+            if (processing) return;
             //console.debug("id="+curid+", updateDataPoints()");
             //console.trace();
             var l = [nXSc.invert(0).getTime()/1000, 
                      nXSc.invert(plotbox.width).getTime()/1000];
             var df = function(d) {
                     return ((d[0] >= l[0] && d[0] <= l[1]) 
-                            || (d[3] >= l[0] && d[3] <= l[1]));
+                            || (d[4] >= l[0] && d[4] <= l[1]));
             };
             var adf = function(d) {
                     return (d[0] >= l[0] && d[0] <= l[1]);
@@ -3829,11 +4013,11 @@
                         if (ind > 0) npts = aggdataf.slice(ind, ind+2);
                     }
                     if (npts.length != 0) {
-                        var d = "M"+nXSc(npts[0][3]*1000)+" "
-                                +nYSc(npts[0][4]);
+                        var d = "M"+nXSc(npts[0][4]*1000)+" "
+                                +nYSc(npts[0][5]);
                         for (i = 0; i < npts.length; i++) {
                             d += " L"+nXSc(npts[i][0]*1000)+" "+
-                                nYSc(npts[i][4]);
+                                nYSc(npts[i][5]);
                             d += " L"+nXSc(npts[i][0]*1000)+" "+
                                 nYSc(npts[i][1]);
                         }
@@ -3974,6 +4158,7 @@
                 var maxdate = moment(moment.unix(knotmax).utc()
                                      .format("YYYY-MM-DD"));
                 datePicker = new Pikaday({
+                    keyboardInput: false,
                     onSelect: function(date) {
                         var newdate = datePicker.toString();
                         var val = dayparse(newdate, '-');
@@ -4189,7 +4374,7 @@
                 .attr('id', function(d) { return d.row;})
                 .attr('name', function(d) { return d.name;})
                 .style('visibility', function(d,i) {
-                    return ((Number(d.row)>0 && Number(d.row)<(roads.length-1)) 
+                    return ((Number(d.row)>0 && Number(d.row)<(roads.length-2)) 
                             || i==4 
                             || (i>0 && Number(d.row)>0 ))?"visible":"hidden";
                 })
@@ -4342,8 +4527,7 @@
         createGraph();
         createTable();
 
-        // This is a privileged function that can access private
-        // variables, but is also accessible from the outside.
+        /** Sets/gets the showData option */
         self.showData = function( flag ) {
             if (arguments.length > 0) opts.showData = flag;
             if (alldata.length != 0) {
@@ -4353,20 +4537,25 @@
             }
             return opts.showData;
         };
+        /** Sets/gets the showContext option */
         self.showContext = function( flag ) {
             if (arguments.length > 0) opts.showContext = flag;
             if (roads.length != 0)
                 updateContextData();
             return opts.showContext;
         };
+        /** Sets/gets the keepSlopes option */
         self.keepSlopes = function( flag ) {
             if (arguments.length > 0) opts.keepSlopes = flag;
             return opts.keepSlopes;
         };
+        /** Sets/gets the keepIntervals option */
         self.keepIntervals = function( flag ) {
             if (arguments.length > 0) opts.keepIntervals = flag;
             return opts.keepIntervals;
         };
+        /** Sets/gets the maxDataDays option. Updates the datapoint
+         display if the option is changed. */
         self.maxDataDays = function( days ) {
             if (arguments.length > 0) {
                 opts.maxDataDays = days;
@@ -4384,6 +4573,8 @@
             }
             return opts.maxDataDays;
         };
+        /** Sets/gets the reverseTable option. Updates the table if
+         the option is changed. */
         self.reverseTable = function( flag ) {
             if (arguments.length > 0) {
                 opts.reverseTable = flag;
@@ -4398,6 +4589,7 @@
             }
             return opts.reverseTable;
         };
+        /** Sets/gets the tableUpdateOnDrag option. */
         self.tableUpdateOnDrag = function( flag ) {
             if (arguments.length > 0) {
                 opts.tableUpdateOnDrag = flag;
@@ -4405,35 +4597,67 @@
             }
             return opts.tableUpdateOnDrag;
         };
+        /** Sets/gets the tableAutoScroll option. */
         self.tableAutoScroll = function( flag ) {
             if (arguments.length > 0) opts.tableAutoScroll = flag;
             return opts.tableAutoScroll;
         };
 
+        /** Returns an object with the lengths of the undo and redo
+         buffers */
         self.undoBufferState = function() {
             return({undo: undoBuffer.length, redo: redoBuffer.length});
         };
 
+        /** Undoes the last edit */
         self.undo = function() {
             if (!opts.roadEditor) return;
             document.activeElement.blur();
             undoLastEdit();
         };
+
+        /** Redoes the last edit that was undone */
         self.redo = function() {
             if (!opts.roadEditor) return;
             document.activeElement.blur();
             redoLastEdit();
         };
+
+        /** Clears the undo buffer. May be useful after the new
+         road is submitted to Beeminder and past edits need to be
+         forgotten. */
         self.clearUndo = function() {
             clearUndoBuffer();
         };
+
+        /** Zooms out the goal graph to make the entire range from
+         tini to tfin visible, with additional slack before and after
+         to facilitate adding new knots. */
         self.zoomAll = function() { zoomAll(); };
+
+        /** Brings the zoom level to include the range from tini to
+         slightly beyond the akrasia horizon. This is expected to be
+         consistent with beebrain generated graphs. */ 
         self.zoomDefault = function() { zoomDefault(); };
+
+        /** Initiates loading a new goal from the indicated url.
+         Expected input format is teh same as beebrain. Once the input
+         file is fetched, the goal graph and road matrix table are
+         updated accordingly. */
         self.loadGoal = function( url ) { loadGoalFromURL( url ); };
+
+        /** Performs retroratcheting function by adding new knots to
+         leave "days" number of days to derailment based on today data
+         point (which may be flatlined). */
         self.retroRatchet = function( days ) {
             if (!opts.roadEditor) return;
             setSafeDays( days );  
         };
+
+        /** Returns an object with an array ('road') containing the
+         current roadmatix (latest edited version), as well as a
+         boolean ('valid') indicating whether the edited road
+         intersects the pink region or not. */
         self.getRoad = function() {
             function dt(d) { return moment.unix(d).utc().format("YYYYMMDD");};
             // Format the current road matrix to be submitted to Beeminder
@@ -4448,7 +4672,7 @@
                     continue;
                 kd = moment.unix(seg.end[0]).utc();
                 rd = [kd.format("YYYYMMDD"), seg.end[1], seg.slope*goal.siru];
-                if (seg.auto == RP.DATE) rd[0] = null;
+                if (seg.auto == RP.DATE) rd[2] = null; // Exception here since roadall does not support null dates.
                 if (seg.auto == RP.VALUE) rd[1] = null;
                 if (seg.auto == RP.SLOPE) rd[2] = null;
                 //if (i == roads.length-2) {
