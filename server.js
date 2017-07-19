@@ -97,6 +97,18 @@ app.get("/road", (req, resp) => {
     resp.render('road.ejs', {user: user})
   }
 })
+app.get("/", (req, resp) => {
+  if (typeof req.session.access_token === 'undefined' ||
+             req.session.access_token === null) {
+    resp.redirect('/login')
+  } else {
+    var user = {
+      username: req.session.username,
+      access_token: req.session.access_token,
+    }
+    resp.render('road.ejs', {user: user})
+  }
+})
 
 
 // Callback endpoint to receive username and access_token from Beeminder upon 
