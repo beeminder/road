@@ -217,6 +217,7 @@
     SID = 86400,    // Seconds in day
     AKH = 7*SID,    // Akrasia Horizon, in seconds
     PRAF = .015,    // Fraction of plot range that the axes extend beyond
+    BDUSK  = 2147317201, // ~2038, rails's ENDOFDAYS+1 (was 2^31-2weeks)
 
     SECS = { 'y' : DIY*SID,     // Number of seconds in a year, month, etc
              'm' : DIY/12*SID,
@@ -771,17 +772,21 @@
     // Returns the number of days to derail for the current road
     // TODO: There are some issues with computing tcur, vcur
     dtd = function( rd, goal, t, v ) {
-        var tnow = goal.asof;
+        var tnow = goal.tcur;
+        var fnw = (gdelt(rd, goal, t,v) >= 0)?0.0:goal.nw;// future noisy width
+        var elnf = function(x) {
+            return d3.max([lnf(rd,goal,x),fnw]);};//eff. lane width
+
         var x = 0; // the number of steps  
-        var xt = 0; // the number of steps past today
         var vpess = v; // the value as we walk forward w/ pessimistic presumptive reports  
-        while (aok( rd, goal, t+x*SID, vpess, lnf( rd, goal, t+x*SID ) ) 
-               && t+x*SID <= d3.max([rd[rd.length-1].sta[0], t])) {
+        while (aok( rd, goal, t+x*SID, vpess, elnf( t+x*SID ) ) 
+               && t+x*SID <= d3.max([goal.tfin, t])) {
             x += 1; // walk forward until we're off the YBR
-            if (t+x*SID > tnow) xt += 1;
+            //if (t+x*SID > tnow) xt += 1;
             vpess += (goal.yaw*goal.dir < 0)?2*rtf(rd, t+x*SID)*SID:0;
         }
-        return xt;
+        if (goal.noisy && gdelt(rd,goal,t,v) >= 0) x = d3.max([2, x]);
+        return x;
     },
 
     // Days To Centerline: Count the integer days till you cross the
@@ -1906,6 +1911,7 @@
 
             goal.safebuf = dtd(roads, goal, goal.tcur, goal.vcur);
             goal.tluz = goal.tcur+goal.safebuf*SID;
+            if (goal.tfin < goal.tluz) goal.tluz = BDUSK;
             goal.loser = isLoser(roads,goal,aggdata,goal.tcur,goal.vcur);
 
             if  (goal.asof >= goal.tfin && !goal.loser)  {
@@ -2008,8 +2014,9 @@
             if (p.hasOwnProperty('road'))     p.road = p.road.map(parserow);
 
             var numpts = d.length;
-            return d.map(function(r, i) {return [dayparse(r[0]), r[1], r[2], i];})
-                .sort(function(a,b){ return (a[0]-b[0]) + (a[0] !== b[0])?0:(0.1*(a[4]-b[4])/numpts);});
+            return d.map(function(r,i){return [dayparse(r[0]),r[1],r[2],i];})
+                .sort(function(a,b){ 
+                    return (a[0]!== b[0])?(a[0]-b[0]):(a[3]-b[3]);});
         }
 
         function procRoad( json ) {
@@ -2040,6 +2047,7 @@
                     segment.end[0] 
                         = segment.sta[0] 
                         + (segment.end[1] - segment.sta[1])/segment.slope;
+                    segment.end[0] = d3.min([BDUSK, segment.end[0]]);
                     segment.auto = RP.DATE;
                 } else if (rdvalue == null) {
                     segment.end = [rddate, 0];
@@ -2281,15 +2289,6 @@
             alldata = allpts;
             aggdata = newpts.filter(function(e){return e[0]<=goal.asof;});
             fuda = newpts.filter(function(e){return e[0]>goal.asof;});
-            if (opts.maxDataDays < 0) {
-                alldataf = alldata;
-                aggdataf = aggdata;
-            } else {
-                alldataf = alldata.filter(function(e){
-                    return e[0]>(goal.asof-opts.maxDataDays*SID);});
-                aggdataf = aggdata.filter(function(e){
-                    return e[0]>(goal.asof-opts.maxDataDays*SID);});
-            }
 
             if (!goal.plotall) goal.numpts = aggdata.length;
 
@@ -2415,6 +2414,17 @@
 
             procParams( json.params );
 
+            // Now that the flatlined datapoint is in place, we can
+            // extract limited data
+            if (opts.maxDataDays < 0) {
+                alldataf = alldata.slice();
+                aggdataf = aggdata.slice();
+            } else {
+                alldataf = alldata.filter(function(e){
+                    return e[0]>(goal.asof-opts.maxDataDays*SID);});
+                aggdataf = aggdata.filter(function(e){
+                    return e[0]>(goal.asof-opts.maxDataDays*SID);});
+            }
             // Generate the aura function now that the flatlined
             // datapoint is also computed.
             if (goal.aura) {
@@ -2576,7 +2586,7 @@
 	        var pty = pt[1];
             knotdate = moment.unix(pt[0]).utc();
             knottext = createTextBox(ptx, plotbox.height-15, 
-                                     knotdate.format('YYYY-MM-DD'));
+                                     knotdate.format('YYYY-MM-DD') + " ("+knotdate.format("ddd")+")");
             dottext = createTextBox(ptx, nYSc(pty)-15, 
                                     shn(pt[1]));
             if (slope != undefined) {
@@ -2592,7 +2602,7 @@
             var pty = pt[1];
             knotdate = moment.unix(ptx).utc(); 
             updateTextBox(knottext, nXSc(ptx*1000), plotbox.height-15, 
-                          knotdate.format('YYYY-MM-DD'));
+                          knotdate.format('YYYY-MM-DD') + " ("+knotdate.format("ddd")+")");
             updateTextBox(dottext, nXSc(ptx*1000), nYSc(pty)-15, 
                           shn(pt[1]));
             if (slope != undefined) {
@@ -3022,7 +3032,7 @@
                     .attr("transform", "rotate(-90,"+textx+","+texty+")")
                     .attr("fill", "rgb(0,0,200)") 
                     .style("font-size", opts.horizon.font+"px") 
-                    .text("Today");
+                    .text("Today"+" ("+moment.unix(goal.asof).utc().format("ddd")+")");
             } else {
                 pasttextelt
 	  	            .attr("x", textx).attr("y", texty)
@@ -4380,7 +4390,8 @@
                 })
                 .property('checked', function(d) { return d.auto?true:false;});
 
-            allrows.selectAll(".roadcell, .roadbtn, .startcell").sort(function(a,b) {return a.order > b.order;});
+            allrows.selectAll(".roadcell, .roadbtn, .startcell")
+                .sort(function(a,b) {return a.order > b.order;});
 
             if (!opts.roadEditor) {
                 allrows.selectAll(".roadbtn").style('visibility', "collapse").attr("value","");
@@ -4560,8 +4571,8 @@
             if (arguments.length > 0) {
                 opts.maxDataDays = days;
                 if (opts.maxDataDays < 0) {
-                    alldataf = alldata;
-                    aggdataf = aggdata;
+                    alldataf = alldata.slice();
+                    aggdataf = aggdata.slice();
                 } else {
                     alldataf = alldata.filter(function(e){
                         return e[0]>(goal.asof-opts.maxDataDays*SID);});
