@@ -47,7 +47,7 @@
       <button id="redo" onclick="editor.redo();">Redo (0)</button><br/><br/>
       Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">Retroratchet</button><br/>
       <br/>
-<button id="submit" onclick="window.alert('new road matrix:\n'+JSON.stringify(editor.getRoad(),null,2));">Submit (coming soon!)</button><br/><br/>
+<button id="roadsubmit" onclick="window.alert('new road matrix:\n'+JSON.stringify(editor.getRoad(),null,2));">Submit (coming soon!)</button><br/><br/>
     </td>
     <td valign="top">
       <div id="roadtable"></div>
