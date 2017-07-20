@@ -82,6 +82,7 @@
         today:        { width: 2, ctxwidth: 1, font: 16, ctxfont: 9 },
         /** Visual parameters for watermarks */ 
         watermark:    { height:150, fntsize:100 },
+        guidelines:   { width:2, weekwidth:3 },
         /** Visual parameters for text boxes shown during dragging */ 
         textBox:      { margin: 3 },
 
@@ -997,17 +998,17 @@
         };
         computeBoxes();
 
-        var svg, defs, graphs, zoomarea, axisZoom, focus, buttonarea, focusclip, plot;
-        var gPB, gYBHP, gPink, gGrid;
-        var gOldRoad, gOldCenter, gOldGuides, gOldBullseye, gKnots;
-        var gSteppy, gMovingAv, gAura, gDpts, gAllpts, gBullseye, gRoads, gDots;
-        var gWatermark, gHorizon, gHorizonText;
-        var gPastText, zoomin, zoomout;;
-        var xSc, nXSc, xAxis, xGrid, xAxisObj, xGridObj;
-        var ySc, nYSc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel;
-        var context, ctxclip, ctxplot, xScB, xAxisB, xAxisObjB;
-        var yScB, brushObj, brush, focusrect;
-        var topLeft;
+        var svg, defs, graphs, buttonarea, focus, focusclip, plot,
+            context, ctxclip, ctxplot, 
+            xSc, nXSc, xAxis, xGrid, xAxisObj, xGridObj,
+            ySc, nYSc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel,
+            xScB, xAxisB, xAxisObjB, yScB, 
+            gPB, gYBHP, gPink, gGrid, gPastText, 
+            gOldRoad, gOldCenter, gOldGuides, gOldBullseye, 
+            gKnots, gSteppy, gMovingAv, gAura, gAllpts, gDpts, gFlat, 
+            gBullseye, gRoads, gDots,  gWatermark, gHorizon, gHorizonText, 
+            zoomarea, axisZoom, zoomin, zoomout,  
+            brushObj, brush, focusrect, topLeft;
         var scalf = 1;
 
         function createGraph() {
@@ -1120,7 +1121,6 @@
                       +','+plotpad.top+')');
             plot = focusclip.append('g').attr('class', 'plot');
 
-            gGrid = plot.append('g').attr('id', 'grid');
             gPB = plot.append('g').attr('id', 'pastboxgrp');
             gYBHP = plot.append('g').attr('id', 'ybhpgrp');
             gAura = plot.append('g').attr('id', 'auragrp');
@@ -1130,11 +1130,13 @@
             gPink = plot.append('g').attr('id', 'pinkgrp');
             gOldCenter = plot.append('g').attr('id', 'oldcentergrp');
             gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp');
+            gGrid = plot.append('g').attr('id', 'grid');
             gKnots = plot.append('g').attr('id', 'knotgrp');
             gSteppy = plot.append('g').attr('id', 'steppygrp');
             gMovingAv = plot.append('g').attr('id', 'movingavgrp');
             gAllpts = plot.append('g').attr('id', 'allptsgrp');
             gDpts = plot.append('g').attr('id', 'datapointgrp');
+            gFlat = plot.append('g').attr('id', 'flatlinegrp');
             gBullseye = plot.append('g').attr('id', 'bullseyegrp');
             gRoads = plot.append('g').attr('id', 'roadgrp');
             gDots = plot.append('g').attr('id', 'dotgrp');
@@ -1350,7 +1352,7 @@
         }
         
         // ------------------ Text Box Utilities ---------------------
-        function createTextBox( x, y, text, text2=null ){
+        function createTextBox( x, y, text, col, textr=null ){
             var textobj = {};
             if (y < 20-plotpad.top)    y = 20 -plotpad.top;
             if (y > plotbox.height-15) y = plotbox.height-15;
@@ -1358,18 +1360,21 @@
             textobj.rect = textobj.grp.append('svg:rect')
                 .attr('pointer-events', "none")
                 .attr('fill',   opts.textBoxCol.bg)
-                .style('stroke', opts.textBoxCol.stroke);
+                .style('stroke', col);
             textobj.text = textobj.grp.append('svg:text')
                 .attr('pointer-events', "none")
                 .attr('text-anchor', 'middle');
-            if (text2 == null) {
+            if (textr == null) {
                 textobj.text.text(text).attr('class', 'svgtxt');
             } else {
-                textobj.text.append("tspan").attr("x", 0).attr("dy", "0.6em")
+                textobj.text.append("tspan")
+                    .attr("x", 0).attr("dy", "0.6em")
                     .text(text).attr('class', 'svgtxt');
-                textobj.text.append("tspan").attr("dy", "1.2em")
-                    .attr("x", 0).text(text2)
-                    .attr("font-size", "0.7em");
+                for (var i = 0; i < textr.length; i++) {
+                    textobj.text.append("tspan").attr("dy", "1.2em")
+                        .attr("x", 0).text(textr[i])
+                        .attr("font-size", "0.7em");
+                }
             }
             var bbox = textobj.text.node().getBBox();
             var margin = opts.textBox.margin;
@@ -1728,7 +1733,8 @@
                         return;
                 }
                 var prevpt = aggdata[numpts-1];
-                flad = [x, vlast, "PPR", DPTYPE.FLATLINE, prevpt[0], prevpt[1]];
+                flad = [x, vlast, "PPR", DPTYPE.FLATLINE, 
+                        prevpt[0], prevpt[1], null];
                 aggdata.push(flad);
             }
         }
@@ -2014,7 +2020,8 @@
             if (p.hasOwnProperty('road'))     p.road = p.road.map(parserow);
 
             var numpts = d.length;
-            return d.map(function(r,i){return [dayparse(r[0]),r[1],r[2],i];})
+            return d.map(function(r,i){
+                return [dayparse(r[0]),r[1],r[2],i,r[1]];})
                 .sort(function(a,b){ 
                     return (a[0]!== b[0])?(a[0]-b[0]):(a[3]-b[3]);});
         }
@@ -2194,11 +2201,12 @@
             return od;
         }
 
-        function procData() {
-            for (i = 0; i < numpts; i++) {
-                //aggdata[i].splice(-1,1); // Remove comment
-                aggdata[i][0] = dayparse(aggdata[i][0]);
-            }
+        function procData() { 
+
+            // Coming here, we assume that aggdata has entries with
+            // the following format:
+            // [t, v, comment, original index, v(original)]
+            //
             if (goal.odom) {
                 oresets = aggdata.filter(function(e){ return (e[1]==0);});
                 odomify(aggdata);
@@ -2212,68 +2220,70 @@
             aggval = {};
             allvals = {};
             var dval = function(d) { return d[0];};
-            var aggcmt = function(vl, v) { 
-                if (vl.length == 1) return vl[0][1];
+            var aggpt = function(vl, v) { 
+                if (vl.length == 1) return [vl[0][1], vl[0][2]];
                  else {
                      var ind;
                      if (goal.kyoom && goal.aggday === "sum") 
                          ind = accumulate(vl.map(dval)).indexOf(v);
                      else ind = vl.map(dval).indexOf(v);
-                     if (ind < 0) return goal.aggday;
-                     else return vl[ind][1]+" ("+goal.aggday+")";
+                     if (ind < 0) return [goal.aggday, null];
+                     else return [vl[ind][1]+" ("+goal.aggday+")", vl[ind][2]];
                  }
             };
-
             // Aggregate datapoints and handle kyoom
             var newpts = [];
-            var ct = aggdata[0][0], vl = [[aggdata[0][1],aggdata[0][2]]], vlv;
-            var pre = 0, prevpt, ad, cmt;
+            var ct = aggdata[0][0], 
+                vl = [[aggdata[0][1],aggdata[0][2],aggdata[0][4]]], vlv;
+            var pre = 0, prevpt, ad, cmt, ptinf;
             for (i = 1; i < aggdata.length; i++) {
                 if (aggdata[i][0] == ct) {
-                    vl.push([aggdata[i][1],aggdata[i][2]]);
+                    vl.push([aggdata[i][1],aggdata[i][2],aggdata[i][4]]);
                 } else {
                     vlv = vl.map(dval);
                     ad = AGGR[goal.aggday](vlv);
                     if (newpts.length > 0) prevpt = newpts[newpts.length-1];
                     else prevpt = [ct, ad+pre];
                     //pre remains 0 for non-kyoom
-                    newpts.push([ct, pre+ad, aggcmt(vl, ad), (ct <= goal.asof)
+                    ptinf = aggpt(vl, ad);
+                    newpts.push([ct, pre+ad, ptinf[0], (ct <= goal.asof)
                                  ?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE, 
-                                 prevpt[0], prevpt[1]]);
+                                 prevpt[0], prevpt[1], ptinf[1]]);
                     if (goal.kyoom) {
                         if (goal.aggday === "sum") {
                             allvals[ct] = accumulate(vlv).map(function(e,i){
-                                return [e+pre, vl[i]];});
+                                return [e+pre, vl[i][1], vl[i][2]];});
                         } else allvals[ct] = vl.map(function(e) {
-                            return [e[0]+pre, e[1]];});
-                        aggval[ct] = [pre+ad, aggcmt(vl, ad)];
+                            return [e[0]+pre, e[1], e[2]];});
+                        aggval[ct] = [pre+ad, ptinf[0], ptinf[1]];
                         pre += ad; 
                     } else {
                         allvals[ct] = vl;
-                        aggval[ct] = [ad, aggcmt(vl, ad)];
+                        aggval[ct] = [ad, ptinf[0], ptinf[1]];
                     }
 
                     ct = aggdata[i][0];
-                    vl = [[aggdata[i][1],aggdata[i][2]]];
+                    vl = [[aggdata[i][1],aggdata[i][2],aggdata[i][4]]];
                 }
             }
             vlv = vl.map(dval);
             ad = AGGR[goal.aggday](vlv);
             if (newpts.length > 0) prevpt = newpts[newpts.length-1];
             else prevpt = [ct, ad+pre];
-            newpts.push([ct, ad+pre, aggcmt(vl, ad), 
+            ptinf = aggpt(vl, ad);
+            newpts.push([ct, ad+pre, ptinf[0], 
                          (ct <= goal.asof)?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE,
-                         prevpt[0], prevpt[1]]);
+                         prevpt[0], prevpt[1], ptinf[1]]);
             if (goal.kyoom) {
                 if (goal.aggday === "sum") {
                     allvals[ct] = accumulate(vlv).map(function(e,i){
-                        return [e+pre, vl[i]];});
+                        return [e+pre, vl[i][1], vl[i][2]];});
                 } else allvals[ct] = vl.map(function(e) { 
-                    return [e[0]+pre, e[1]];});
-                aggval[ct] = [pre+ad, aggcmt(vl, ad)];
+                    return [e[0]+pre, e[1], e[2]];});
+                aggval[ct] = [pre+ad, ptinf[0], ptinf[1]];
             } else {
                 allvals[ct] = vl;
-                aggval[ct] = [ad, aggcmt(vl, ad)];
+                aggval[ct] = [ad, , ptinf[0], ptinf[1]];
             }
             var allpts = [];
             for (var t in allvals) {
@@ -2282,8 +2292,8 @@
                         function(d){
                             return [Number(t), d[0], d[1], 
                                     (Number(t) <= goal.asof)
-                                    ?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE
-                                    , d[0], d[1],];}));
+                                    ?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE,
+                                    d[0], d[1], d[2]];}));
                 }
             }
             alldata = allpts;
@@ -2445,6 +2455,7 @@
         }
 
         function loadGoalFromURL( url ) {
+            console.debug( "Loading: "+url );
             if (url == "" || loading) return;
             loading = true;
             var pg = svg.append('g').attr('class', 'progress');
@@ -2460,7 +2471,7 @@
                 .text("loading...");
             loadJSON(url, 
                      function(resp) { 
-                         //console.debug("id="+curid+" loadGoalFromURL() done for "+url);
+                         //console.debug("id="+curid+" loadGoalFromURL() done for "+url+", resp="+resp);
                          if (resp != null) {
                              loadGoal(resp);
                              if (typeof opts.onRoadChange === 'function') {
@@ -2586,14 +2597,17 @@
 	        var pty = pt[1];
             knotdate = moment.unix(pt[0]).utc();
             knottext = createTextBox(ptx, plotbox.height-15, 
-                                     knotdate.format('YYYY-MM-DD') + " ("+knotdate.format("ddd")+")");
+                                     knotdate.format('YYYY-MM-DD')
+                                     + " ("+knotdate.format("ddd")+")",
+                                     opts.textBoxCol.stroke);
             dottext = createTextBox(ptx, nYSc(pty)-15, 
-                                    shn(pt[1]));
+                                    shn(pt[1]), opts.textBoxCol.stroke);
             if (slope != undefined) {
 	            var slopex = nXSc(daysnap(slope[0])*1000);
 	            var slopey = nYSc(slope[1]);
                 slopetext = createTextBox(slopex,slopey, 
-                                          "s:"+shn(slope[2]));
+                                          "s:"+shn(slope[2]),
+                                         opts.textBoxCol.stroke);
                 if (ptx - slopex < 50) hideTextBox(slopetext, true);
             }
         }
@@ -3586,7 +3600,8 @@
   		        .style("fill", "none")
   		        .attr("stroke-width", function (d,i) { 
                     return ((delta==7 && i==0) || (delta==1 && i==6))
-                        ?4*scalf:2*scalf;})
+                        ?opts.guidelines.weekwidth*scalf
+                        :opts.guidelines.width*scalf;})
   		        .attr("stroke", function (d,i) { 
                     return ((delta==7 && i==0) || (delta==1 && i==6))
                         ?Cols.DYEL:Cols.LYEL;});
@@ -3595,7 +3610,8 @@
                     return "translate(0,"+((i+1)*delta*shift)+")";})
   		        .attr("stroke-width", function (d,i) { 
                     return ((delta==7 && i==0) || (delta==1 && i==6))
-                        ?4*scalf:2*scalf;})
+                        ?opts.guidelines.weekwidth*scalf
+                        :opts.guidelines.width*scalf;})
   		        .attr("stroke", function (d,i) { 
                     return ((delta==7 && i==0) || (delta==1 && i==6))
                         ?Cols.DYEL:Cols.LYEL;});
@@ -3903,20 +3919,24 @@
             }
         }
 
-        function updateDotGroup(grp, d, cls, r, s=null, sw=null, f=null, hov=true ) {
-            var dpelt, dotTimer = null, dotText = null;
-            var showDot = function(d) {
-	            var ptx = nXSc(daysnap(d[0])*1000);
-	            var pty = nYSc(d[1]);
-                var txt = moment.unix(d[0]).utc().format("YYYY-MM-DD")
-                +", "+shn(d[1]);
-                if (dotText != null) removeTextBox(dotText);
-                if (d[2] === "") {
-                    dotText = createTextBox(ptx, pty-15, txt );
-                } else {
-                    dotText = createTextBox(ptx, pty-40, txt, "\""+d[2]+"\"" );
-                }
-            };
+        var dotTimer = null, dotText = null;
+        function showDotText(d) {
+	        var ptx = nXSc(daysnap(d[0])*1000);
+	        var pty = nYSc(d[1]);
+            var txt = moment.unix(d[0]).utc().format("YYYY-MM-DD")
+                +", "+((d[6] != null)?shn(d[6]):shn(d[1]));
+            if (dotText != null) removeTextBox(dotText);
+            var info = [];
+            if (d[2] !== "") info.push("\""+d[2]+"\"");
+            if (d[6] !== null && d[1] !== d[6]) info.push("total:"+d[1]);
+            var col = dotcolor(roads, goal, d[0], d[1]);
+            dotText = createTextBox(ptx, pty-(15+18*info.length), txt, 
+                                    col, info );
+        };
+        function removeDotText() { removeTextBox(dotText); }
+
+        function updateDotGroup(grp,d,cls,r,s=null,sw=null,f=null,hov=true ) {
+            var dpelt;
 
             dpelt = grp.selectAll("."+cls).data(d);
             dpelt.exit().remove();
@@ -3940,11 +3960,11 @@
 		        .on("mouseenter",function(d) {
                     if (dotTimer != null) window.clearTimeout(dotTimer);
                     dotTimer = window.setTimeout(function() {
-                        showDot(d); dotTimer = null;
+                        showDotText(d); dotTimer = null;
 			        }, 500);})
 		        .on("mouseout",function() { 
                     if (dotText != null) {
-                        removeTextBox(dotText);
+                        removeDotText();
                         dotText = null;
                     }
                     window.clearTimeout(dotTimer); dotTimer = null;});
@@ -3987,17 +4007,31 @@
                                opts.dataPoint.size*scalf,
                                dpStroke, dpStrokeWidth, dpFill);
 
-                var fladelt = gDpts.selectAll(".fladp");
+                var fladelt = gFlat.selectAll(".fladp");
                 if (flad != null) {
                     if (fladelt.empty()) {
-                        gDpts.append("svg:use")
+                        gFlat.append("svg:use")
 		                    .attr("class","fladp")
                             .attr("xlink:href", "#rightarrow")
                             .attr("fill", dotcolor(roads,goal,flad[0],flad[1]))
                             .attr("transform", 
                                   "translate("+(nXSc((flad[0])*1000))+","
                                   +nYSc(flad[1])+"),scale("
-                                  +(opts.dataPoint.fsize/50)+")");
+                                  +(opts.dataPoint.fsize/50)+")")
+                            .style("pointer-events", function() {
+                                return (opts.roadEditor)?"none":"all";})
+		                    .on("mouseenter",function() {
+                                if (dotTimer != null) 
+                                    window.clearTimeout(dotTimer);
+                                dotTimer = window.setTimeout(function() {
+                                    showDotText(flad); dotTimer = null;
+			                    }, 500);})
+		                    .on("mouseout",function() { 
+                                if (dotText != null) {
+                                    removeDotText(); dotText = null;
+                                }
+                                window.clearTimeout(dotTimer); 
+                                dotTimer = null;});
                     } else {
                         fladelt
                             .attr("fill", dotcolor(roads,goal,flad[0],flad[1]))
@@ -4695,11 +4729,41 @@
             }
             return r;
         };
-    };
 
+        /** Opens up a new page with only a static svg graph, which
+         can then be saved as a local file */
+        self.saveGraph = function() {
+            //get svg element.
+            var svge = svg.node();
+
+            //get svg source.
+            var serializer = new XMLSerializer();
+            var source = serializer.serializeToString(svge);
+
+            //add name spaces.
+            if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
+                source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+}
+            if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)){
+                source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+}
+
+            //add xml declaration
+            source = '<?xml version="1.0" standalone="no"?>\n<?xml-stylesheet type="text/css" href="roadeditor.css"?>\r\n' + source;
+
+            //convert svg source to URI data scheme.
+            var url = "data:image/svg+xml;charset=utf-8,"
+                    +encodeURIComponent(source);
+
+            //set url value to a element's href attribute.
+            //document.getElementById("link").href = url;
+            window.open(url, "graph.svg");
+        };
+        
+    };
 
     bmndr.prototype = {
     };
-
+    
     return bmndr;
 }));
