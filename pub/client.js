@@ -72,6 +72,19 @@ function loadJSON( url, callback ) {
     xobj.send(null);  
 }
 
+function postJSON( url, data, callback ){
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", url, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState == 4 && xhr.status == "200") {
+      callback(JSON.parse(xhr.responseText));
+    }
+  };
+  console.log("posting data to "+url)
+  xhr.send(JSON.stringify(data));
+}
+
 function documentKeyDown(e) {
     var evtobj = window.event? window.event : e;
     if (evtobj.keyCode == 89 && evtobj.ctrlKey) editor.redo();
@@ -111,5 +124,10 @@ function handleGoalSelect() {
 }
 
 function handleRoadSubmit(){
-  
+  var currentGoal = document.getElementById('roadselect').value;
+  console.log(editor.getRoad());
+  postJSON("/submitroad/"+currentGoal, editor.getRoad(), function(resp) {
+    console.log("success!")
+    console.log(resp)
+  })
 }

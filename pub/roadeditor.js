@@ -1121,11 +1121,11 @@
             plot = focusclip.append('g').attr('class', 'plot');
 
             gGrid = plot.append('g').attr('id', 'grid');
-            gPB = plot.append('g').attr('id', 'pastboxgrp');
+            gPB = plot.append('g').attr('id', 'pastboxgrp'); // Gray "past" box (only in edit mode)
             gYBHP = plot.append('g').attr('id', 'ybhpgrp');
             gAura = plot.append('g').attr('id', 'auragrp');
             gWatermark = plot.append('g').attr('id', 'wmarkgrp');
-            gOldGuides = plot.append('g').attr('id', 'oldguidegrp');
+            gOldGuides = plot.append('g').attr('id', 'oldguidegrp'); // Guidelines for the "old" road
             gOldRoad = plot.append('g').attr('id', 'oldroadgrp');
             gPink = plot.append('g').attr('id', 'pinkgrp');
             gOldCenter = plot.append('g').attr('id', 'oldcentergrp');
