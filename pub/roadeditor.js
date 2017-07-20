@@ -2445,6 +2445,7 @@
         }
 
         function loadGoalFromURL( url ) {
+            console.debug( "Loading: "+url );
             if (url == "" || loading) return;
             loading = true;
             var pg = svg.append('g').attr('class', 'progress');
@@ -2460,7 +2461,7 @@
                 .text("loading...");
             loadJSON(url, 
                      function(resp) { 
-                         //console.debug("id="+curid+" loadGoalFromURL() done for "+url);
+                         //console.debug("id="+curid+" loadGoalFromURL() done for "+url+", resp="+resp);
                          if (resp != null) {
                              loadGoal(resp);
                              if (typeof opts.onRoadChange === 'function') {
@@ -4695,11 +4696,41 @@
             }
             return r;
         };
-    };
 
+        /** Opens up a new page with only a static svg graph, which
+         can then be saved as a local file */
+        self.saveGraph = function() {
+            //get svg element.
+            var svge = svg.node();
+
+            //get svg source.
+            var serializer = new XMLSerializer();
+            var source = serializer.serializeToString(svge);
+
+            //add name spaces.
+            if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
+                source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+}
+            if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)){
+                source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+}
+
+            //add xml declaration
+            source = '<?xml version="1.0" standalone="no"?>\n<?xml-stylesheet type="text/css" href="roadeditor.css"?>\r\n' + source;
+
+            //convert svg source to URI data scheme.
+            var url = "data:image/svg+xml;charset=utf-8,"
+                    +encodeURIComponent(source);
+
+            //set url value to a element's href attribute.
+            //document.getElementById("link").href = url;
+            window.open(url, "graph.svg");
+        };
+        
+    };
 
     bmndr.prototype = {
     };
-
+    
     return bmndr;
 }));
