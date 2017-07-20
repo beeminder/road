@@ -25,7 +25,7 @@ svg text::selection {
 .grid line {
   fill: none;
   stroke: #dddddd;
-  stroke-width: 2px;
+  stroke-width: 1px;
   shape-rendering: crispEdges;
   pointer-events: none;
 }
@@ -72,7 +72,7 @@ line.roads {
 .past, .pastline, .halfplane, .pinkregion, .horizon,
 .ctxroads, .ctxdots, .ctxoldroads, .oldroads, 
 .bullseye, .oldbullseye, .ctxbullseye, .ctxoldbullseye, 
-.ctxtoday, .ctxtodaytext, .dpts, .allpts, .steppy, .steppyd, .fladp, 
+.ctxtoday, .ctxtodaytext, .dpts, .allpts, .steppy, .steppyd, 
 .aura, .aurapast  {
   pointer-events: none;
 }
