@@ -1,0 +1,132 @@
+.chart, .bmndrsvg { 
+  border: 1px solid #cccccc
+}
+svg text {
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+svg text::selection {
+  background: none;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: black;
+  shape-rendering: crispEdges;
+  pointer-events: none;
+}
+.axis .minor line {
+  stroke: #777;
+  stroke-dasharray:5,4;
+}
+.grid line {
+  fill: none;
+  stroke: #dddddd;
+  stroke-width: 2px;
+  shape-rendering: crispEdges;
+  pointer-events: none;
+}
+.grid .minor line {
+  stroke: none;
+}
+
+.axis text {
+  pointer-events: none;
+  font-family: sans-serif;
+  font-size: 11px;
+}
+
+.axislabel {
+  font-family: sans-serif;
+  font-size: 11px;
+  text-anchor: middle;
+}
+
+.zoomarea {
+  cursor: move;
+  fill: none;
+  pointer-events: all;
+}
+
+circle.dots {
+    stroke: black;
+}
+line.roads {
+    stroke: black;
+}
+.pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .waterbuf, .waterbux {
+  pointer-events: none;
+  text-anchor: middle;
+  font-family: sans-serif;
+}
+.loading {
+  pointer-events: none;
+  text-anchor: middle;
+  font-weight: bold;
+  font-family: sans-serif;
+}
+
+.past, .pastline, .halfplane, .pinkregion, .horizon,
+.ctxroads, .ctxdots, .ctxoldroads, .oldroads, 
+.bullseye, .oldbullseye, .ctxbullseye, .ctxoldbullseye, 
+.ctxtoday, .ctxtodaytext, .dpts, .allpts, .steppy, .steppyd, .fladp, 
+.aura, .aurapast  {
+  pointer-events: none;
+}
+
+.brush rect.selection {
+  fill: #9090ff;
+  fill-opacity: .125;
+}
+.brush rect.focusrect {
+  stroke: #7070ff;
+  pointer-events: none;
+}
+
+.rtable {
+  display: table;
+  margin: 3px;
+}
+.starthdr, .roadhdr {
+  display: table-header-group;
+}
+.startbody, .roadbody {
+  display: table-row-group;
+}
+.startrow, .roadrow {
+  display: table-row;
+  white-space: nowrap;
+}
+.starthdrrow, .roadhdrrow {
+  display: table-row;
+  white-space: nowrap;
+}
+
+.rowid {
+  display: table-cell;
+  border: 0px;
+  padding: 2px;
+  text-align: right;
+  white-space: nowrap;
+}
+.roadhdrcell, .starthdrcell {
+  display: table-cell;
+  border: 0px;
+  padding: 2px;
+  text-align: center;
+  white-space: nowrap;
+}
+.roadcell, .startcell {
+  display: table-cell;
+  border: 1px solid black;
+  padding: 2px 5px 2px 5px;
+  text-align: center;
+  white-space: nowrap;
+}
+.floating {
+  float: left;
+  position: absolute;
+}
