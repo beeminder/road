@@ -151,6 +151,7 @@ app.get("/getgoaljson/:goal", (req, resp) => {
   if(!req.session.access_token || !req.session.username) {
     resp.redirect('/login')
   }
+  //console.log("user: "+req.session.username+" "+req.session.access_token)
   beemGetGraphParams({
     username: req.session.username, 
     goalslug: req.params.goal,
@@ -170,29 +171,31 @@ app.post("/submitroad/:goal", (req, resp)=>{
     usr: req.session.username,
     gol: req.params.goal,
     access_token: req.session.access_token,
-    roadall: req.body.roadall,
+    roadall: req.body.road,
   }, function(error, response, body) {
     if (error) {
       return console.error('submit failed:', error);
     }
-    console.log("success? ")
-    console.log(response)
-    console.log(body)
+    resp.send(body)
+    //console.log("success? ")
+    //console.log(body)
   })
 })
 
 // helper functions
 function beemSubmitRoad(params, callback) {
+  console.log("beemSubmitRoad")
   var options = {
     url: 'https://www.beeminder.com/api/v1/users/'+params.usr+'/goals/'+params.gol+'.json',
-    method: 'POST',
+    method: 'PUT',
     json: true,
     body: {
       access_token: params.access_token,
       roadall: params.roadall,
     }
   }
-  request.post(options, callback)
+  console.log(options)
+  request.put(options, callback)
 }
 
 function beemGetUser(user, callback, error_callback = ()=>{}) {
