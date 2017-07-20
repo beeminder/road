@@ -51,7 +51,7 @@ Select goal:
 <button id="zoomdflt" onclick="editor.zoomDefault();">Default Zoom</button>
 <button id="undo" onclick="editor.undo();">Undo (0)</button>
 <button id="redo" onclick="editor.redo();">Redo (0)</button><br/><br/>
-Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">Retroratchet</button><br/>
+Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">Retroratchet</button><br/><br/>
 <button id="submit" onclick="window.alert('new road matrix:\n'+JSON.stringify(editor.getRoad(),null,2));">Submit</button>
 <button id="savesvg" onclick="editor.saveGraph();">Save SVG</button><br/>
 
@@ -74,7 +74,7 @@ Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id=
     <td valign="top"><div id="roadgraph2"></div>
       <input id="showalldata2" type="checkbox" onclick="if (this.checked) editor2.maxDataDays(-1); else editor2.maxDataDays(100);" checked>Show all datapoints<br/>
       <button id="zoomall2" onclick="editor2.zoomAll();">View All</button>
-      <button id="zoomdflt2" onclick="editor2.zoomDefault();">Default Zoom</button><br/>
+      <button id="zoomdflt2" onclick="editor2.zoomDefault();">Default Zoom</button><br/><br/>
       <button id="savesvg" onclick="editor2.saveGraph();">Save SVG</button><br/>
     </td>
     <td valign="top">
