@@ -82,6 +82,7 @@
         today:        { width: 2, ctxwidth: 1, font: 16, ctxfont: 9 },
         /** Visual parameters for watermarks */ 
         watermark:    { height:150, fntsize:100 },
+        guidelines:   { width:2, weekwidth:3 },
         /** Visual parameters for text boxes shown during dragging */ 
         textBox:      { margin: 3 },
 
@@ -1120,7 +1121,6 @@
                       +','+plotpad.top+')');
             plot = focusclip.append('g').attr('class', 'plot');
 
-            gGrid = plot.append('g').attr('id', 'grid');
             gPB = plot.append('g').attr('id', 'pastboxgrp');
             gYBHP = plot.append('g').attr('id', 'ybhpgrp');
             gAura = plot.append('g').attr('id', 'auragrp');
@@ -1130,6 +1130,7 @@
             gPink = plot.append('g').attr('id', 'pinkgrp');
             gOldCenter = plot.append('g').attr('id', 'oldcentergrp');
             gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp');
+            gGrid = plot.append('g').attr('id', 'grid');
             gKnots = plot.append('g').attr('id', 'knotgrp');
             gSteppy = plot.append('g').attr('id', 'steppygrp');
             gMovingAv = plot.append('g').attr('id', 'movingavgrp');
@@ -3587,7 +3588,8 @@
   		        .style("fill", "none")
   		        .attr("stroke-width", function (d,i) { 
                     return ((delta==7 && i==0) || (delta==1 && i==6))
-                        ?4*scalf:2*scalf;})
+                        ?opts.guidelines.weekwidth*scalf
+                        :opts.guidelines.width*scalf;})
   		        .attr("stroke", function (d,i) { 
                     return ((delta==7 && i==0) || (delta==1 && i==6))
                         ?Cols.DYEL:Cols.LYEL;});
@@ -3596,7 +3598,8 @@
                     return "translate(0,"+((i+1)*delta*shift)+")";})
   		        .attr("stroke-width", function (d,i) { 
                     return ((delta==7 && i==0) || (delta==1 && i==6))
-                        ?4*scalf:2*scalf;})
+                        ?opts.guidelines.weekwidth*scalf
+                        :opts.guidelines.width*scalf;})
   		        .attr("stroke", function (d,i) { 
                     return ((delta==7 && i==0) || (delta==1 && i==6))
                         ?Cols.DYEL:Cols.LYEL;});
