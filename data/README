@@ -1,4 +1,5 @@
 bug-d-pocket: zoom to 2016-11-28 -> 2017-05-03 and observe weird graph artifacts
+bug-d-bump: static graph doesn't show centerline of YBR
 
 FIXED (Missing BDUSK, making dtd take forever): bug-meta-pledged causes the browser to hang
 FIXED (Uluc's dumb sorting mistake):bug-d-mmuvi has an extra segment in the purple line at the bottom left of the static graph
