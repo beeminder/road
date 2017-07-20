@@ -17,16 +17,21 @@
 
 Select goal: 
  <select id="roadselect" class="roadselect" onchange="editor.loadGoal(this.value);editor2.loadGoal(this.value);">
+  <option value="data/testroad0.json">Test Road 0</option>
   <option value="data/testroad1.json">Test Road 1</option>
-  <option value="data/bugroad.json">Bug Road</option>
-  <option value="data/beeminder.json">Beeminder</option>
   <option value="data/testroad2.json">Test Road 2</option>
   <option value="data/testroad3.json">Test Road 3</option>
   <option value="data/testroad4.json">Test Road 4</option>
   <option value="data/testroad5.json">Test Road 5</option>
   <option value="data/testroad6.json">Test Road 6</option>
   <option value="data/testroad7.json">Test Road 7</option>
-  <option value="data/ceng424.json">CENG 424</option>
+  <option value="data/bug-d-bump.bb">bug-d-bump</option>
+  <option value="data/bug-d-mmuvi.bb">bug-d-mmuvi</option>
+  <option value="data/bug-d-pocket.bb">bug-d-pocket</option>
+  <option value="data/bug-meta-pledged.bb">bug-meta-pledged</option>
+  <option value="data/bugroad1.bb">bugroad1</option>
+  <option value="data/bugroad2.bb">bugroad2</option>
+  <option value="data/bugroad3.bb">bugroad3</option>
 </select> 
  
 <h2>Road Editor</h2>
@@ -47,7 +52,7 @@ Select goal:
 <button id="undo" onclick="editor.undo();">Undo (0)</button>
 <button id="redo" onclick="editor.redo();">Redo (0)</button><br/><br/>
 Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">Retroratchet</button><br/>
-<button id="submit" onclick="window.alert('new road matrix:\n'+JSON.stringify(editor.getRoad(),null,2));">Submit</button><br/>
+<button id="submit" onclick="window.alert('new road matrix:\n'+JSON.stringify(editor.getRoad(),null,2));">Submit</button>
 <button id="savesvg" onclick="editor.saveGraph();">Save SVG</button><br/>
 
 </td>
@@ -69,7 +74,8 @@ Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id=
     <td valign="top"><div id="roadgraph2"></div>
       <input id="showalldata2" type="checkbox" onclick="if (this.checked) editor2.maxDataDays(-1); else editor2.maxDataDays(100);" checked>Show all datapoints<br/>
       <button id="zoomall2" onclick="editor2.zoomAll();">View All</button>
-      <button id="zoomdflt2" onclick="editor2.zoomDefault();">Default Zoom</button>
+      <button id="zoomdflt2" onclick="editor2.zoomDefault();">Default Zoom</button><br/>
+      <button id="savesvg" onclick="editor2.saveGraph();">Save SVG</button><br/>
     </td>
     <td valign="top">
       <div id="roadtable2"></div>
