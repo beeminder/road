@@ -998,17 +998,17 @@
         };
         computeBoxes();
 
-        var svg, defs, graphs, zoomarea, axisZoom, focus, buttonarea, focusclip, plot;
-        var gPB, gYBHP, gPink, gGrid;
-        var gOldRoad, gOldCenter, gOldGuides, gOldBullseye, gKnots;
-        var gSteppy, gMovingAv, gAura, gDpts, gAllpts, gBullseye, gRoads, gDots;
-        var gWatermark, gHorizon, gHorizonText;
-        var gPastText, zoomin, zoomout;;
-        var xSc, nXSc, xAxis, xGrid, xAxisObj, xGridObj;
-        var ySc, nYSc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel;
-        var context, ctxclip, ctxplot, xScB, xAxisB, xAxisObjB;
-        var yScB, brushObj, brush, focusrect;
-        var topLeft;
+        var svg, defs, graphs, buttonarea, focus, focusclip, plot,
+            context, ctxclip, ctxplot, 
+            xSc, nXSc, xAxis, xGrid, xAxisObj, xGridObj,
+            ySc, nYSc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel,
+            xScB, xAxisB, xAxisObjB, yScB, 
+            gPB, gYBHP, gPink, gGrid, gPastText, 
+            gOldRoad, gOldCenter, gOldGuides, gOldBullseye, 
+            gKnots, gSteppy, gMovingAv, gAura, gAllpts, gDpts, gFlat, 
+            gBullseye, gRoads, gDots,  gWatermark, gHorizon, gHorizonText, 
+            zoomarea, axisZoom, zoomin, zoomout,  
+            brushObj, brush, focusrect, topLeft;
         var scalf = 1;
 
         function createGraph() {
@@ -1136,6 +1136,7 @@
             gMovingAv = plot.append('g').attr('id', 'movingavgrp');
             gAllpts = plot.append('g').attr('id', 'allptsgrp');
             gDpts = plot.append('g').attr('id', 'datapointgrp');
+            gFlat = plot.append('g').attr('id', 'flatlinegrp');
             gBullseye = plot.append('g').attr('id', 'bullseyegrp');
             gRoads = plot.append('g').attr('id', 'roadgrp');
             gDots = plot.append('g').attr('id', 'dotgrp');
@@ -3991,10 +3992,10 @@
                                opts.dataPoint.size*scalf,
                                dpStroke, dpStrokeWidth, dpFill);
 
-                var fladelt = gDpts.selectAll(".fladp");
+                var fladelt = gFlat.selectAll(".fladp");
                 if (flad != null) {
                     if (fladelt.empty()) {
-                        gDpts.append("svg:use")
+                        gFlat.append("svg:use")
 		                    .attr("class","fladp")
                             .attr("xlink:href", "#rightarrow")
                             .attr("fill", dotcolor(roads,goal,flad[0],flad[1]))
