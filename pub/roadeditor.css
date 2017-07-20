@@ -34,13 +34,14 @@ svg text::selection {
 }
 
 .axis text {
+  pointer-events: none;
   font-family: sans-serif;
-  font-size: 13px;
+  font-size: 11px;
 }
 
 .axislabel {
   font-family: sans-serif;
-  font-size: 13px;
+  font-size: 11px;
   text-anchor: middle;
 }
 
@@ -61,20 +62,19 @@ line.roads {
   text-anchor: middle;
   font-family: sans-serif;
 }
-
-.past, .pastline, .halfplane, .pinkregion, .horizon,
-.ctxroads, .ctxdots, .ctxoldroads, .oldroads, 
-.bullseye, .oldbullseye, .ctxbullseye, .ctxoldbullseye, 
-.ctxtoday, .ctxtodaytext, .dpts, .allpts, .steppy, .steppyd, .fladp,
-.aura, .aurapast  {
-  pointer-events: none;
-}
-
 .loading {
   pointer-events: none;
   text-anchor: middle;
   font-weight: bold;
   font-family: sans-serif;
+}
+
+.past, .pastline, .halfplane, .pinkregion, .horizon,
+.ctxroads, .ctxdots, .ctxoldroads, .oldroads, 
+.bullseye, .oldbullseye, .ctxbullseye, .ctxoldbullseye, 
+.ctxtoday, .ctxtodaytext, .dpts, .allpts, .steppy, .steppyd, .fladp, 
+.aura, .aurapast  {
+  pointer-events: none;
 }
 
 .brush rect.selection {
