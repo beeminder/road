@@ -4709,6 +4709,8 @@
       // Format the current road matrix to be submitted to Beeminder
       var r = {}, seg, rd, kd;
       r.valid = isRoadValid(roads);
+      r.loser: isLoser(roads,goal,aggdata,goal.tcur,goal.vcur);
+
       //r.tini = dt(roads[0].end[0]);
       //r.vini = roads[0].end[1];
       r.road = [];
@@ -4729,11 +4731,6 @@
         r.road.push(rd);
       }
       return r;
-    };
-
-    self.getRoadState = function() {
-      return {valid: isRoadValid( roads ), 
-              loser: isLoser(roads,goal,aggdata,goal.tcur,goal.vcur) };
     };
 
     /** Opens up a new page with only a static svg graph, which
