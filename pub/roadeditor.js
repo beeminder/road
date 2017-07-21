@@ -97,8 +97,12 @@
     halfPlaneCol: { fill: "#ffffe8" },
     pastBoxCol:   { fill: "#f8f8f8", opacity:0.5 },
 
-    /** Enables the road editor. When disabled, the generated
-     graph mirrors beebrain output as closely as possible. */
+    /** Enables zooming by scrollwheel. When disabled, only the
+     context graph and the zoom buttons will allow zooming. */
+    scrollZoom:        true,
+
+    /** Enables the road editor. When disabled, the generated graph
+     mirrors beebrain output as closely as possible. */
     roadEditor:        false,
 
     /** Enables the display of the context graph within the SVG */
@@ -106,24 +110,24 @@
 
     /** Enables showing a dashed rectange in the context graph
      visualizing the current graph limits on the y-axis */
-    showFocusRect:     true,
+    showFocusRect:     false,
 
     /** Enables displaying datapoints on the graph */ 
     showData:          true,
 
     /** When datapoint display is enabled, indicates the number of
-     days before asof to show data for. This can be used to speed
-     up display refresh for large goals. Choose -1 to display all
+     days before asof to show data for. This can be used to speed up
+     display refresh for large goals. Choose -1 to display all
      datapoints. */ 
     maxDataDays:   -1, // Choose -1 to show all points
 
-    /** Indicates how many days beyond asof should be included in
-     the fully zoomed out graph. This is useful for when the goal
-     date is too far beyond asof, making the context graph
-     somewhat useless in terms of its interface utility. */
+    /** Indicates how many days beyond asof should be included in the
+     fully zoomed out graph. This is useful for when the goal date is
+     too far beyond asof, making the context graph somewhat useless in
+     terms of its interface utility. */
     maxFutureDays: 365,
 
-    /** Indicates whether slopes for segments beyond the currently 
+    /** Indicates whether slopes for segments beyond the currently
      dragged element should be kept constant during editing. */
     keepSlopes:        true,
 
@@ -132,37 +136,36 @@
      during editing. */
     keepIntervals:     false,
 
-    /** Indicates whether the road matrix table should be shown
-     with the earliest rows first (normal) or most recent rows
-     first (reversed). */ 
+    /** Indicates whether the road matrix table should be shown with
+     the earliest rows first (normal) or most recent rows first
+     (reversed). */ 
     reverseTable:      false,
 
     /** Indicates whether the auto-scrolling feature for the road
      matrix table should be enabled such that when the mouse moves
-     over knots, dots or road elements, the corresponding table
-     row is scrolled to be visible in the table. This is
-     particularly useful when tableHeight is explicitly specified
-     and is nonzero. */ 
+     over knots, dots or road elements, the corresponding table row is
+     scrolled to be visible in the table. This is particularly useful
+     when tableHeight is explicitly specified and is nonzero. */ 
     tableAutoScroll:   true,
 
-    /** Chooses whether the road matrix table should be
-     dynamically updated during the dragging of road knots, dots
-     and segments. Enabling this may induce some lagginess,
-     particularly on Firefox due to more components being updated
-     during dragging */
+    /** Chooses whether the road matrix table should be dynamically
+     updated during the dragging of road knots, dots and
+     segments. Enabling this may induce some lagginess, particularly
+     on Firefox due to more components being updated during
+     dragging */
     tableUpdateOnDrag: false,
     
-    /** Callback function that gets invoked when the road is edited 
-     by the user. Various interface functions can then be used to 
-     retrieve the new road state. This is also useful to update the 
-     state of undo/redo and submit buttons based on how many edits 
+    /** Callback function that gets invoked when the road is edited by
+     the user. Various interface functions can then be used to
+     retrieve the new road state. This is also useful to update the
+     state of undo/redo and submit buttons based on how many edits
      have been done on the original road. */
     onRoadChange: null
   },
 
   /** This object defines default options for mobile browsers, where
-   larger dots, knots and roads are necessary to make editing
-   through dragging feasible. */
+   larger dots, knots and roads are necessary to make editing through
+   dragging feasible. */
   mobiledefaults = {
     svgSize:      { width: 700, height: 530 },
     focusRect:    { x:0, y:0, width:700, height: 400 },
@@ -186,19 +189,19 @@
   
   /** Beeminder colors for datapoints */
   Cols = {
-    DYEL: "#ffff66",
-    LYEL: "#ffff99",
-    ROSE: "#ff8080",
-    AKRA: "#4C4Cff",
-    PURP: "#B56bb5",
-    BLUE: "#EAEAFF",
-    GRUE: "#b5ffDE",
-    ORNG: "#ff8000",
-    WITE: "#ffffff",
-    BIGG: "#ffe54c",
-    PINK: "#ffe5e5",
-    PNKE: "#ffcccc",
-    GRAY: "#f0f0f0",
+    DYEL:   "#ffff66",
+    LYEL:   "#ffff99",
+    ROSE:   "#ff8080",
+    AKRA:   "#4C4Cff",
+    PURP:   "#B56bb5",
+    BLUE:   "#EAEAFF",
+    GRUE:   "#b5ffDE",
+    ORNG:   "#ff8000",
+    WITE:   "#ffffff",
+    BIGG:   "#ffe54c",
+    PINK:   "#ffe5e5",
+    PNKE:   "#ffcccc",
+    GRAY:   "#f0f0f0",
     BLCK:   "#000000",
     GRNDOT: "#00aa00", //Dark green for good side of the road
     BLUDOT: "#3f3fff", // Blue for correct lane
@@ -207,25 +210,24 @@
   },
 
   /** Enum object to identify field types for road segments. */
-  RP = {
-    DATE:0, VALUE:1, SLOPE:2
-  },
+  RP = { DATE:0, VALUE:1, SLOPE:2},
+
   /** Enum object to identify different types of datapoints. */
   DPTYPE = {
     AGGPAST:0, AGGFUTURE:1, RAWPAST:2, RAWFUTURE:3, FLATLINE:4, HOLLOW: 5
   },
-  DIY = 365.25,   // Days in year
-  SID = 86400,    // Seconds in day
-  AKH = 7*SID,    // Akrasia Horizon, in seconds
-  PRAF = .015,    // Fraction of plot range that the axes extend beyond
-  BDUSK  = 2147317201, // ~2038, rails's ENDOFDAYS+1 (was 2^31-2weeks)
+  DIY   = 365.25,     // Days in year
+  SID   = 86400,      // Seconds in day
+  AKH   = 7*SID,      // Akrasia Horizon, in seconds
+  PRAF  = .015,       // Fraction of plot range that the axes extend beyond
+  BDUSK = 2147317201, // ~2038, rails's ENDOFDAYS+1 (was 2^31-2weeks)
 
-  SECS = { 'y' : DIY*SID,     // Number of seconds in a year, month, etc
+  SECS = { 'y' : DIY*SID,       // Number of seconds in a year, month, etc
            'm' : DIY/12*SID,
            'w' : 7*SID,
            'd' : SID,
            'h' : 3600        },
-  UNAM = { 'y' : 'year',      // Unit names
+  UNAM = { 'y' : 'year',        // Unit names
            'm' : 'month',
            'w' : 'week',
            'd' : 'day',
@@ -255,8 +257,7 @@
     for (prop in fr) {
       hasProp = to[prop] !== undefined;
       if (hasProp && typeof fr[prop] === 'object' 
-          && fr[prop] !== null 
-          && fr[prop].nodeName === undefined) {
+          && fr[prop] !== null  && fr[prop].nodeName === undefined ) {
         if (isArray(fr[prop])) {
           if (owr) {
             to[prop] = fr[prop].slice(0);
@@ -271,8 +272,9 @@
     return to;
   },
 
-  // Tested, but this does not seem like "argmax" functionality to me, 
-  // argmax should return the index. This is just max with a filter
+  /** Tested, but this does not seem like "argmax" functionality to
+   me, argmax should return the index. This is just max with a
+   filter */
   argmax = function(f, dom) {
     if (dom == null) return null;
     var newdom = dom.map(f);
@@ -280,10 +282,10 @@
     return dom[newdom.findIndex(function (e) {return e == maxelt;})];
   },
 
-  // Partitions list l into sublists whose beginning indices are
-  // separated by d, and whose lengths are n. If the end of the list is
-  // reached and there are fewer than n elements, those are not
-  // returned.
+  /** Partitions list l into sublists whose beginning indices are
+   separated by d, and whose lengths are n. If the end of the list is
+   reached and there are fewer than n elements, those are not
+   returned. */
   partition = function(l, n, d) {
     var il = l.length;
     var ol = [];
@@ -292,33 +294,32 @@
     return ol;
   },
 
-  // Returns a list containing the fraction and integer parts of a float
+  /** Returns a list containing the fraction and integer parts of a float */
   modf = function(f) {
     var fp = (f<0)?-f:f, fl = Math.floor(fp);
     return (f<0)?[-(fp-fl),-fl]:[(fp-fl),fl];
   },
 
-  // The qth quantile of values in l. For median, set q=1/2.  See
-  // http://reference.wolfram.com/mathematica/ref/Quantile.html
-  // Author: Ernesto P. Adorio, PhD; UP Extension Program in
-  // Pampanga, Clark Field.
+  /** The qth quantile of values in l. For median, set q=1/2.  See
+   http://reference.wolfram.com/mathematica/ref/Quantile.html Author:
+   Ernesto P. Adorio, PhD; UP Extension Program in Pampanga, Clark
+   Field. */
   quantile = function(l, q, qt=1, issorted=false) {
     var y;
     if (issorted) y = l;
     else y = l.slice().sort();
     if (qt < 1 || qt > 9) return null; // error
 
-    var abcd = [ // Parameters for the Hyndman and Fan algorithm
-      [0,   0,   1, 0], // R type 1: inv. emp. CDF (mathematica's default)
-      [1/2, 0,   1, 0], // R type 2: similar to type 1, averaged
-      [1/2, 0,   0, 0], // R type 3: nearest order statistic (SAS)
-      [0,   0,   0, 1], // R type 4: linear interp. (California method)
-      [1/2, 0,   0, 1], // R type 5: hydrologist method
-      [0,   1,   0, 1], // R type 6: mean-based (Weibull m; SPSS, Minitab)
-      [1,  -1,   0, 1], // R type 7: mode-based method (S, S-Plus)
-      [1/3, 1/3, 0, 1], // R type 8: median-unbiased
-      [3/8, 1/4, 0, 1]  // R type 9: normal-unbiased
-    ],
+    var abcd = [         // Parameters for the Hyndman and Fan algorithm
+      [0,   0,   1, 0],  // R type 1: inv. emp. CDF (mathematica's default)
+      [1/2, 0,   1, 0],  // R type 2: similar to type 1, averaged
+      [1/2, 0,   0, 0],  // R type 3: nearest order statistic (SAS)
+      [0,   0,   0, 1],  // R type 4: linear interp. (California method)
+      [1/2, 0,   0, 1],  // R type 5: hydrologist method
+      [0,   1,   0, 1],  // R type 6: mean-based (Weibull m; SPSS, Minitab)
+      [1,  -1,   0, 1],  // R type 7: mode-based method (S, S-Plus)
+      [1/3, 1/3, 0, 1],  // R type 8: median-unbiased
+      [3/8, 1/4, 0, 1]], // R type 9: normal-unbiased
         a = abcd[qt-1][0],
         b = abcd[qt-1][1],
         c = abcd[qt-1][2],
@@ -4728,6 +4729,11 @@
         r.road.push(rd);
       }
       return r;
+    };
+
+    self.getRoadState = function() {
+      return {valid: isRoadValid( roads ), 
+              loser: isLoser(roads,goal,aggdata,goal.tcur,goal.vcur) };
     };
 
     /** Opens up a new page with only a static svg graph, which

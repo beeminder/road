@@ -99,7 +99,7 @@ function prepareGoalSelect(goalist) {
     opt.text = slug;
     opt.value = slug;
     roadSelect.add(opt);
-  })
+  });
   roadSelect.addEventListener("change", handleGoalSelect);
   roadSelect.value = goalist[0];
   editor.loadGoal('/getgoaljson/'+roadSelect.value);
@@ -109,8 +109,8 @@ function prepareGoalSelect(goalist) {
 function handleGoalSelect() {
   //console.log("handling goal select: "+this.value);
   //console.log(event.target.value)
-  editor.loadGoal('/getgoaljson/'+this.value)
-  editor2.loadGoal('/getgoaljson/'+this.value)
+  editor.loadGoal('/getgoaljson/'+this.value);
+  editor2.loadGoal('/getgoaljson/'+this.value);
   /*
   //alternately: use the loadJSON fn to just get the bb json data directly?
   loadJSON('/getgoaljson/'+event.target.value, function(data) {
@@ -125,9 +125,18 @@ function handleGoalSelect() {
 
 function handleRoadSubmit(){
   var currentGoal = document.getElementById('roadselect').value;
+  var roadState = editor.getRoadState();
   console.log(editor.getRoad());
+  if (!roadState.valid) {
+    window.alert("New road intersects pink region!");
+    return;
+  }
+  if (!roadState.loser) {
+    window.alert("New road causes derailment!");
+    return;
+  }
   postJSON("/submitroad/"+currentGoal, editor.getRoad(), function(resp) {
-    console.log("success!")
-    console.log(resp)
-  })
+    console.log("success!");
+    console.log(resp);
+  });
 }
