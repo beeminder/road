@@ -4,6 +4,8 @@ loadJSON('/getusergoals', prepareGoalSelect);
 
 var undoBtn = document.getElementById("undo");
 var redoBtn = document.getElementById("redo");
+var submitBtn = document.getElementById("roadsubmit");
+var submitMsg = document.getElementById("submitmsg");
 
 function roadChanged() {
     var bufStates = editor.undoBufferState();
@@ -20,6 +22,17 @@ function roadChanged() {
     } else {
       redoBtn.disabled = false;
       redoBtn.innerHTML = "Redo ("+bufStates.redo+")";
+    }
+    var newRoad = editor.getRoad();
+    if (!newRoad.valid) {
+      submitBtn.disabled = true;
+      submitMsg.innerHTML = "(disabled: new road is easier!)";      
+    } else if (newRoad.loser) {
+      submitBtn.disabled = true;
+      submitMsg.innerHTML = "(disabled: new road causes derailment!)";
+    } else {
+      submitBtn.disabled = false;
+      submitMsg.innerHTML = "";
     }
 }
 
@@ -99,7 +112,7 @@ function prepareGoalSelect(goalist) {
     opt.text = slug;
     opt.value = slug;
     roadSelect.add(opt);
-  })
+  });
   roadSelect.addEventListener("change", handleGoalSelect);
   roadSelect.value = goalist[0];
   editor.loadGoal('/getgoaljson/'+roadSelect.value);
@@ -109,8 +122,8 @@ function prepareGoalSelect(goalist) {
 function handleGoalSelect() {
   //console.log("handling goal select: "+this.value);
   //console.log(event.target.value)
-  editor.loadGoal('/getgoaljson/'+this.value)
-  editor2.loadGoal('/getgoaljson/'+this.value)
+  editor.loadGoal('/getgoaljson/'+this.value);
+  editor2.loadGoal('/getgoaljson/'+this.value);
   /*
   //alternately: use the loadJSON fn to just get the bb json data directly?
   loadJSON('/getgoaljson/'+event.target.value, function(data) {
@@ -125,9 +138,22 @@ function handleGoalSelect() {
 
 function handleRoadSubmit(){
   var currentGoal = document.getElementById('roadselect').value;
-  console.log(editor.getRoad());
+  var newRoad = editor.getRoad();
+  console.log(newRoad);
+  if (!newRoad.valid) {
+    window.alert("New road intersects pink region!");
+    return;
+  }
+  if (newRoad.loser) {
+    window.alert("New road causes derailment!");
+    return;
+  }
   postJSON("/submitroad/"+currentGoal, editor.getRoad(), function(resp) {
-    console.log("success!")
-    console.log(resp)
-  })
+    
+    submitMsg.innerHTML = "(successfully submitted road!)";
+    console.log("success!");
+    console.log(resp);
+    editor.loadGoal('/getgoaljson/'+currentGoal);
+    editor2.loadGoal('/getgoaljson/'+currentGoal);
+  });
 }

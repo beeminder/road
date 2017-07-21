@@ -55,6 +55,7 @@ Quibbly issues to try to make the overall graph aesthetics match or exceed Matpl
 
 1. show flatlined triangle datapoint on top of other points
 2. watermarks quibble. try making the vertical gridlines display on top of the watermarks like matplotlib does it? and a bit bigger puffier font might help too.
+2.2. more on watermarks: i think the graph canvas should be divided into 4 quadrants and the watermarks should take up as much as possible of their designated quadrant as possible
 3. frame around the graph with tickmarks only pointing inward?
 4. lower priority since the blue/green aura isn't turned on for most graphs but i really like how in matplotlib it's green where it overlaps the YBR (cuz yellow and blue make green)
 5. example of svg with artifacts (only appears in chrome; firefox and safari display it fine): http://road.glitch.me/svg-with-artifacts.svg 

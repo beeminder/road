@@ -47,7 +47,7 @@
       <button id="redo" onclick="editor.redo();">Redo (0)</button><br/><br/>
       Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">Retroratchet</button><br/>
       <br/>
-<button id="roadsubmit" onclick="handleRoadSubmit();">Submit</button>
+<button id="roadsubmit" onclick="handleRoadSubmit();">Submit</button>&nbsp;<span id="submitmsg"></span><br/>
 <button id="savesvg" onclick="editor.saveGraph();">Save SVG</button><br/><br/>
 
     </td>
