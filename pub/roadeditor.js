@@ -2366,7 +2366,7 @@
     // Recreates the road array from the "rawknots" array, which includes
     // only timestamp,value pairs
     function loadGoal( json ) {
-      //console.debug("id="+curid+", loadGoal()->"+json.params.yoog);
+      console.debug("id="+curid+", loadGoal()->"+json.params.yoog);
       clearUndoBuffer();
 
       processing = true;
