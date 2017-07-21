@@ -48,13 +48,13 @@
     /** Binds the road table to a div element */
     divTable:     null,    
     /** Size of the SVG element to hold the graph */
-    svgSize:      { width: 700, height: 480 },
+    svgSize:      { width: 700, height: 450 },
     /** Boundaries of the SVG group to hold the focus graph */
-    focusRect:    { x:0, y:0, width:700, height: 400 },
+    focusRect:    { x:0, y:0, width:700, height: 370 },
     /** Initial padding within the focus graph. */
     focusPad:     { left:25, right:5, top:25, bottom:30 },
     /** Boundaries of the SVG group to hold the context graph */
-    ctxRect:      { x:0, y:400, width:700, height: 80 },
+    ctxRect:      { x:0, y:370, width:700, height: 80 },
     /** Initial padding within the context graph. */
     ctxPad:       { left:25, right:5, top:0, bottom:30 },
     /** Height of the road matrix table. Choose 0 for unspecified */
@@ -1244,11 +1244,13 @@
     }
 
     function resizeGraph() {
+      //console.debug("id="+curid+", resizeGraph()");
+
       var div = opts.divGraph;
       if (div === null) return;
 
       var xr = [nXSc.invert(0), nXSc.invert(plotbox.width)]; 
-
+      //console.debug(xr);
       computeBoxes();
       // Common SVG definitions, including clip paths
       defs.select('#plotclip'+curid+' > rect')
@@ -1289,6 +1291,7 @@
                       +") rotate(-90)");
       ctxclip.attr('transform', 'translate('
                    +contextpad.left+','+contextpad.top+')');
+      //console.debug("Scaling brush x axis to "+brushbox.width);
       xScB.range([0,brushbox.width]);
       xAxisObjB.attr("transform", "translate("+brushbox.x+"," 
                      + (contextpad.top+brushbox.height) + ")")
@@ -1303,6 +1306,7 @@
       zoomarea.call(axisZoom.transform, d3.zoomIdentity
                     .scale(plotbox.width / (s[1] - s[0]))
                     .translate(-s[0], 0));
+      //console.debug(s);
       adjustYScale();
     }
 
@@ -1436,7 +1440,8 @@
     allvals = {},
     aggval = {},
     processing = false, 
-    loading = false;
+    loading = false,
+    hidden = false;
 
     // Initialize goal with sane values
     goal.yaw = +1; goal.dir = +1;
@@ -1511,6 +1516,22 @@
           .classed("minor", true);
       }
     }
+    function handleYAxisWidth() {
+      //console.debug("curid="+curid+", hidden="+hidden);
+      if (opts.divGraph != null && !hidden) {
+        yAxisLabel.text(goal.yaxis);
+        var bbox = yAxisObj.node().getBBox();
+        // Adjust the graph size and axes if the y axis tick
+        // width has changed by a nontrivial amount. This
+        // causes a bit jumpy behavior when dragging the brush
+        // across the boundary of width change, but that seems
+        // to not be too bad a problem.
+        if (Math.abs(bbox.width-yaxisw) > 5) {
+          yaxisw = bbox.width;
+          resizeGraph();
+        }
+      }
+    }
 
     function adjustYScale() {
       var xrange = [nXSc.invert(0), 
@@ -1557,19 +1578,6 @@
         .attr("x", sx[0]+1).attr("width", sx[1]-sx[0]-2)
         .attr("y", sy[0]+1).attr("height", sy[1]-sy[0]-2);
 
-      if (opts.divGraph != null) {
-        yAxisLabel.text(goal.yaxis);
-        var bbox = yAxisObj.node().getBBox();
-        // Adjust the graph size and axes if the y axis tick
-        // width has changed by a nontrivial amount. This
-        // causes a bit jumpy behavior when dragging the brush
-        // across the boundary of width change, but that seems
-        // to not be too bad a problem.
-        if (Math.abs(bbox.width-yaxisw) > 5) {
-          yaxisw = bbox.width;
-          resizeGraph();
-        }
-      }
     }
 
     function resizeContext(){
@@ -1584,6 +1592,7 @@
       if (opts.divGraph == null) return;
       var limits = [xScB(nXSc.invert(0)), 
                     xScB(nXSc.invert(plotbox.width))];
+      //console.debug("limits: "+limits);
       if (limits[0] < 0) limits[0] = 0;
       if (limits[1] > brushbox.width) limits[1] = brushbox.width;
       brush.call(brushObj.move, limits );
@@ -1595,7 +1604,8 @@
     }
 
     function zoomed() {
-      //console.debug("zoomed()");
+      //console.debug("id="+curid+", zoomed()");
+      //console.trace();
       if ( roads.length == 0 ) return;
       if (d3.event && d3.event.sourceEvent 
           && d3.event.sourceEvent.type === "brush") return;
@@ -1607,6 +1617,7 @@
       nXSc = tr.rescaleX(xSc);
       redrawXTicks();
       adjustYScale();
+      handleYAxisWidth();
 
       resizeBrush();
       updateGraphData();
@@ -1614,6 +1625,8 @@
     }
 
     function brushed() {
+      //console.debug("id="+curid+", brushed()");
+      //console.trace();
       if ( roads.length == 0 ) return;
       if (d3.event.sourceEvent && d3.event.sourceEvent.type === "zoom") 
         return;
@@ -1622,6 +1635,7 @@
       nXSc.domain(s.map(xScB.invert, xScB));
       redrawXTicks();
       adjustYScale();
+      handleYAxisWidth();
 
       zoomarea.call(axisZoom.transform, d3.zoomIdentity
                     .scale(brushbox.width / (s[1] - s[0]))
@@ -1630,12 +1644,14 @@
     }
 
     function zoomDefault() {
+      //console.debug("id="+curid+", zoomDefault()");
       var ta = goal.tmin - PRAF*(goal.tmax-goal.tmin);
       var tb = goal.tmax + PRAF*(goal.tmax-goal.tmin);
-
       var newdom = [new Date(ta*1000),new Date(tb*1000)];
+      //console.debug(newdom);
       nXSc.domain(newdom);
       var s = newdom.map(xScB);
+      //console.debug(s);
       redrawXTicks();
       adjustYScale();
       zoomarea.call(axisZoom.transform, d3.zoomIdentity
@@ -1644,6 +1660,7 @@
     }
 
     function zoomAll( ) {
+      //console.debug("id="+curid+", zoomAll()");
       if (opts.divGraph == null) return;
       computePlotLimits( false );
       xSc.domain([new Date(goal.xMin*1000), 
@@ -2087,6 +2104,7 @@
       roads.push(finalsegment);
 
       fixRoadArray( roads );
+
       iRoad = copyRoad( roads );
     }
 
@@ -2133,7 +2151,7 @@
     function griddle(a, b) {
       return linspace(a, b, Math.floor(clip((b-a)/(SID+1), 
                                             d3.min([600, plotbox.width]),
-                                            plotbox.width)));
+                                            6000)));
     }
 
     /** Converts a number to an integer string */
@@ -3190,7 +3208,7 @@
 
     // Creates or updates the watermark with the number of safe days
     function updateWatermark() {
-      if (opts.divGraph == null || roads.length == 0) return;
+      if (opts.divGraph == null || roads.length == 0 || hidden) return;
 
       setWatermark();
       
@@ -4573,6 +4591,7 @@
 
     createGraph();
     createTable();
+    zoomAll();
 
     /** Sets/gets the showData option */
     self.showData = function( flag ) {
@@ -4763,7 +4782,32 @@
       //document.getElementById("link").href = url;
       window.open(url, "graph.svg");
     };
-    
+
+    /** Informs the module instance that the element containing the
+     visuals will be hidden. Internally, this prevents calls to
+     getBBox(), eliminating associated exceptions and errors. */
+    self.hide = function() {
+      //console.debug("curid="+curid+", hide()");
+      hidden = true;
+    };
+
+    /** Informs the module instance that the element containing the
+     visuals will be shown again. This forces an update of all visual
+     elements, which might have previously been incorrectly rendered
+     if hidden. */
+    self.show = function() {
+      //console.debug("curid="+curid+", show()");
+      hidden = false;
+      if (roads.length == 0) return;
+      redrawXTicks();
+      adjustYScale();
+      handleYAxisWidth();
+      resizeBrush();
+      updateTable();
+      updateContextData();
+      updateGraphData();
+    };
+
   };
 
   bmndr.prototype = {

@@ -15,7 +15,11 @@
 
 <body>
 
-Select goal: 
+<h1>Beeminder Visual Road Editor and Client-Side Graphs</h1>
+
+<form name="graphType">
+<input type="radio" name="typeButton" value="graph" onclick="handleRadio(this);" checked >Graph&nbsp;&nbsp;
+<input type="radio" name="typeButton" value="editor" onclick="handleRadio(this);">Editor<br>
  <select id="roadselect" class="roadselect" onchange="editor.loadGoal(this.value);editor2.loadGoal(this.value);">
   <option value="data/testroad0.json">Test Road 0</option>
   <option value="data/testroad1.json">Test Road 1</option>
@@ -29,12 +33,18 @@ Select goal:
   <option value="data/bug-d-mmuvi.bb">bug-d-mmuvi</option>
   <option value="data/bug-d-pocket.bb">bug-d-pocket</option>
   <option value="data/bug-meta-pledged.bb">bug-meta-pledged</option>
+  <option value="data/bug-bweight.bb">bug-bweight</option>
   <option value="data/bugroad1.bb">bugroad1</option>
   <option value="data/bugroad2.bb">bugroad2</option>
   <option value="data/bugroad3.bb">bugroad3</option>
 </select> 
  
-<h2>Road Editor</h2>
+</form>
+<div id="diveditor">
+<ul>
+<li>Drag dots, vertical lines or roads to edit, double-click to add new node, Ctrl-Z to undo, Ctrl-y to redo</li>
+</ul>
+
 <table>
   <tr>
     <td valign="top"><div id="roadgraph"></div>
@@ -43,8 +53,7 @@ Select goal:
 <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>Show datapoints
 <input id="showalldata" type="checkbox" onclick="if (this.checked) editor.maxDataDays(-1); else editor.maxDataDays(100);" checked>Show all datapoints
 <input id="showcontext" type="checkbox" onclick="editor.showContext(this.checked);" checked>Show context graph<br>
-<input id="keepslopes" type="checkbox" onclick="editor.keepSlopes(this.checked);" checked>Keep slopes fixed<br>
-<input id="keepintervals" onclick="editor.keepIntervals(this.checked);" type="checkbox">Keep intervals fixed
+<input id="keepslopes" type="checkbox" onclick="editor.keepSlopes(this.checked);" checked>Keep slopes fixed&nbsp;<input id="keepintervals" onclick="editor.keepIntervals(this.checked);" type="checkbox">Keep intervals fixed
 </form>
 
 <button id="zoomall" onclick="editor.zoomAll();">View All</button>
@@ -66,9 +75,9 @@ Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id=
     </td>
   </tr>
 </table>
+</div>
 
-<hr/>
-<h2>Goal Graph</h2>
+<div id="divgraph">
 <table>
   <tr>
     <td valign="top"><div id="roadgraph2"></div>
@@ -86,6 +95,7 @@ Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id=
     </td>
   </tr>
 </table>
+</div>
 
 <script src = "roadeditor.js"></script>
 
@@ -109,7 +119,7 @@ Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id=
       redoBtn.innerHTML = "Redo ("+bufStates.redo+")";
     }
   }
-
+  
   var editor = new bmndr({divGraph: document.getElementById('roadgraph'),
                           divTable: document.getElementById('roadtable'),
                           roadEditor:true,
@@ -127,8 +137,6 @@ Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id=
   editor.tableAutoScroll(document.getElementById("autoscroll").checked);
   editor.tableUpdateOnDrag(document.getElementById("updateondrag").checked);
 
-  editor.loadGoal(document.getElementById("roadselect").value);
-
   var editor2 = new bmndr({divGraph: document.getElementById('roadgraph2'),
                           divTable: document.getElementById('roadtable2'),
                           roadEditor:false,
@@ -137,6 +145,34 @@ Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id=
                           showContext: true});
   if (document.getElementById("showalldata2").checked) editor2.maxDataDays(-1); else editor2.maxDataDays(100);
   editor2.reverseTable(document.getElementById("reversetable2").checked);
+
+
+  var curRadio = 0;
+  var divEditor = document.getElementById("diveditor");
+  var divGraph = document.getElementById("divgraph");
+  function handleRadio(myRadio) {
+    if (curRadio !== myRadio.value) {
+      curRadio = myRadio.value;
+      if (curRadio === "editor") { 
+        divEditor.style.display = "block";
+        divGraph.style.display = "none";
+        editor.show();
+        editor2.hide();
+     } else {
+        divEditor.style.display = "none";
+        divGraph.style.display = "block";
+        editor.hide();
+        editor2.show();
+      }
+    }
+  }
+  document.graphType.typeButton[0].checked = true;
+  divEditor.style.display = "none";
+  divGraph.style.display = "block";
+  editor.hide();
+  editor2.show();
+
+  editor.loadGoal(document.getElementById("roadselect").value);
   editor2.loadGoal(document.getElementById("roadselect").value);
 
 
