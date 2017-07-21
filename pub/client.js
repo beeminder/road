@@ -125,13 +125,13 @@ function handleGoalSelect() {
 
 function handleRoadSubmit(){
   var currentGoal = document.getElementById('roadselect').value;
-  var roadState = editor.getRoadState();
-  console.log(editor.getRoad());
-  if (!roadState.valid) {
+  var newRoad = editor.getRoad();
+  console.log(newRoad);
+  if (!newRoad) {
     window.alert("New road intersects pink region!");
     return;
   }
-  if (!roadState.loser) {
+  if (!newRoad.loser) {
     window.alert("New road causes derailment!");
     return;
   }
