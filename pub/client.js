@@ -131,7 +131,7 @@ function handleRoadSubmit(){
     window.alert("New road intersects pink region!");
     return;
   }
-  if (!newRoad.loser) {
+  if (newRoad.loser) {
     window.alert("New road causes derailment!");
     return;
   }
