@@ -18,22 +18,22 @@
 
 <body>
 
-<h1>Beeminder Visual Road Editor</h1>
+<h1>Beeminder Visual Road Editor and Client-Side Graphs</h1>
 
-<div>
-    
-<h2>Instructions:</h2>
-<ul>
-<li>Shift-click or double-click on blank area: Add new node</li>
-<li>Ctrl-click on dots / segments / vertical lines to edit end values / rates / end dates</li>
-<li>Scroll wheel to zoom the x axis, use the context graph at the bottom to adjust zoom region</li>
-<li>Ctrl-Z to undo, Ctrl-y to redo</li>
-</ul>
-
-<select id="roadselect">
+<form name="graphType">
+<input type="radio" name="typeButton" value="graph" onclick="handleRadio(this);" checked >Graph&nbsp;&nbsp;
+<input type="radio" name="typeButton" value="editor" onclick="handleRadio(this);">Editor<br>
+ <select id="roadselect" class="roadselect">
   <option value="">Select a goal to edit:</option>
 </select> 
-  
+ 
+</form>
+
+  <div id="diveditor">
+<ul>
+<li>Drag dots, vertical lines or roads to edit, double-click to add new node, Ctrl-Z to undo, Ctrl-y to redo</li>
+</ul>
+
 <table>
   <tr>
     <td valign="top"><div id="roadgraph"></div>
@@ -56,18 +56,17 @@
 
     </td>
   </tr>
-</table>
-  
+</table>  
 </div>
 
-<hr/>
-<h2>Goal Graph</h2>
+<div id="divgraph">
+
 <table>
   <tr>
     <td valign="top"><div id="roadgraph2"></div>
       <input id="showalldata2" type="checkbox" onclick="if (this.checked) editor2.maxDataDays(-1); else editor2.maxDataDays(100);"  checked>Show All data<br/>
       <button id="resetzoom2" onclick="editor2.zoomDefault();">Reset Zoom</button>
-      <button id="savesvg" onclick="editor2.saveGraph();">Save SVG</button><br/><br/>
+      <button id="savesvg2" onclick="editor2.saveGraph();">Save SVG</button><br/><br/>
     </td>
     <td valign="top">
       <div id="roadtable2"></div>
@@ -75,12 +74,11 @@
     </td>
   </tr>
 </table>
-
-
+</div>
+  
 <script src="/roadeditor.js"></script>
 <script src="/client.js"></script>
 
-  
 <h3>Credits</h3>
 
 <p>

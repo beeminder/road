@@ -63,7 +63,30 @@ editor.showContext(document.getElementById("showcontext").checked);
 editor.keepSlopes(document.getElementById("keepslopes").checked);
 editor.keepIntervals(document.getElementById("keepintervals").checked);
 
-//editor2.loadGoal(document.getElementById("roadselect").value);
+var curRadio = 0;
+var divEditor = document.getElementById("diveditor");
+var divGraph = document.getElementById("divgraph");
+function handleRadio(myRadio) {
+  if (curRadio !== myRadio.value) {
+    curRadio = myRadio.value;
+    if (curRadio === "editor") { 
+      divEditor.style.display = "block";
+      divGraph.style.display = "none";
+      editor.show();
+      editor2.hide();
+   } else {
+      divEditor.style.display = "none";
+      divGraph.style.display = "block";
+      editor.hide();
+      editor2.show();
+    }
+  }
+}
+document.graphType.typeButton[0].checked = true;
+divEditor.style.display = "none";
+divGraph.style.display = "block";
+editor.hide();
+editor2.show();
 
 document.onkeydown = documentKeyDown;
 
