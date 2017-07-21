@@ -1851,6 +1851,7 @@
     // Set any of {tmin, tmax, vmin, vmax} that don't have explicit values.
     function setDefaultRange() {
       if (goal.tmin == null) goal.tmin = d3.min([goal.tini, goal.asof]);
+      if (goal.tmin >= goal.asof - SID) goal.tmin -= SID;
       if (goal.tmax == null) {
         // Make more room beyond the askrasia horizon if lots of data
         var years = (goal.tcur - goal.tmin) / (DIY*SID);
