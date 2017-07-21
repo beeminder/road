@@ -4,6 +4,8 @@ loadJSON('/getusergoals', prepareGoalSelect);
 
 var undoBtn = document.getElementById("undo");
 var redoBtn = document.getElementById("redo");
+var submitBtn = document.getElementById("roadsubmit");
+var submitMsg = document.getElementById("submitmsg");
 
 function roadChanged() {
     var bufStates = editor.undoBufferState();
@@ -20,6 +22,17 @@ function roadChanged() {
     } else {
       redoBtn.disabled = false;
       redoBtn.innerHTML = "Redo ("+bufStates.redo+")";
+    }
+    var newRoad = editor.getRoad();
+    if (!newRoad.valid) {
+      submitBtn.disabled = true;
+      submitMsg.innerHTML = "(disabled: new road is easier!)";      
+    } else if (newRoad.loser) {
+      submitBtn.disabled = true;
+      submitMsg.innerHTML = "(disabled: new road causes derailment!)";
+    } else {
+      submitBtn.disabled = false;
+      submitMsg.innerHTML = "";
     }
 }
 
@@ -136,7 +149,11 @@ function handleRoadSubmit(){
     return;
   }
   postJSON("/submitroad/"+currentGoal, editor.getRoad(), function(resp) {
+    
+    submitMsg.innerHTML = "(successfully submitted road!)";
     console.log("success!");
     console.log(resp);
+    editor.loadGoal('/getgoaljson/'+currentGoal);
+    editor2.loadGoal('/getgoaljson/'+currentGoal);
   });
 }
