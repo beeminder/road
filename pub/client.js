@@ -127,7 +127,7 @@ function handleRoadSubmit(){
   var currentGoal = document.getElementById('roadselect').value;
   var newRoad = editor.getRoad();
   console.log(newRoad);
-  if (!newRoad) {
+  if (!newRoad.valid) {
     window.alert("New road intersects pink region!");
     return;
   }
