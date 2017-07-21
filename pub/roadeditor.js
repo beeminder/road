@@ -2333,6 +2333,7 @@
         goal.filtpts 
           = newx.map(function(d) {return [d, ema(aggdata, d)];});
       } else goal.filtpts = [];
+      
     }
 
     function procParams( p ) {
@@ -2418,7 +2419,7 @@
       }
       if (allvals.hasOwnProperty(goal.tini)) {
         vtmp = (goal.plotall)
-          ?allvals[goal.tini][0][0]:aggval[goal.tini];
+          ?allvals[goal.tini][0][0]:aggval[goal.tini][0];
       } else
         vtmp = Number(json.params.vini);
       if (json.params.hasOwnProperty('vini')) {
