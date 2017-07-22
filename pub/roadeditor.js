@@ -179,11 +179,13 @@
     roadDot:      { size: 10, ctxsize: 4, border: 1.5, ctxborder: 1 },
     roadKnot:     { width: 7, rmbtnscale: 0.9 },
     roadLine:     { width: 7, ctxwidth: 2 },
-    oldRoadLine:  { width: 3, ctxwidth: 1 },
+    oldRoadLine:  { width: 3, ctxwidth: 1, dash: 32, ctxdash: 16  },
     dataPoint:    { size: 4, fsize: 6 }, 
     horizon:      { width: 2, ctxwidth: 1, dash: 8, ctxdash: 8, 
                     font: 16, ctxfont: 10 },
     today:        { width: 2, ctxwidth: 1, font: 16, ctxfont: 10 },
+    watermark:    { height:150, fntsize:100 },
+    guidelines:   { width:2, weekwidth:3 },
     textBox:      { margin: 3 }
   },
   
@@ -3508,8 +3510,11 @@
         var ind = findRoadSegment(iRoad, l[0]);
         ir = [iRoad[ind]];
       }
-      var d = "M"+nXSc(ir[0].sta[0]*1000)+" "
-            +nYSc(ir[0].sta[1]);
+      var fx = nXSc(ir[0].sta[0]*1000), fy = nYSc(ir[0].sta[1]);
+      var ex = nXSc(ir[0].end[0]*1000), ey = nYSc(ir[0].end[1]);
+      fy = (fy + (0-fx)*(ey-fy)/(ex-fx));
+      fx = 0;
+      var d = "M"+fx+" "+fy;
       var i;
       for (i = 0; i < ir.length; i++) {
         d += " L"+nXSc(ir[i].end[0]*1000)+" "+
@@ -3525,11 +3530,11 @@
           .style("stroke-dasharray", (opts.oldRoadLine.dash)+","
                  +(opts.oldRoadLine.dash)) 
   		    .style("fill", "none")
-  		    .attr("stroke-width",opts.oldRoadLine.width*scalf)
+  		    .style("stroke-width",opts.oldRoadLine.width*scalf)
   		    .style("stroke", Cols.ORNG);
       } else {
         roadelt.attr("d", d)
-  		    .attr("stroke-width",opts.oldRoadLine.width*scalf);
+  		    .style("stroke-width",opts.oldRoadLine.width*scalf);
       }
       if (!opts.roadEditor) {
         var minpx = 3*scalf;
