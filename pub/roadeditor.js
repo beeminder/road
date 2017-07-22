@@ -2151,10 +2151,10 @@
     }
 
     // Function to generate samples for the Butterworth filter
-    function griddle(a, b) {
+    function griddle(a, b, maxcnt = 6000) {
       return linspace(a, b, Math.floor(clip((b-a)/(SID+1), 
                                             d3.min([600, plotbox.width]),
-                                            6000)));
+                                            maxcnt)));
     }
 
     /** Converts a number to an integer string */
@@ -3289,10 +3289,13 @@
         var aurdn = d3.min([-goal.lnw/2.0, -goal.dflux]);
         var aurup = d3.max([goal.lnw/2.0,  goal.dflux]);
         var fudge = PRAF*(goal.tmax-goal.tmin);
-        var xr = [nXSc.invert(0), 
-                  nXSc.invert(plotbox.width)];
+        var xr = [nXSc.invert(0).getTime()/1000, 
+                  nXSc.invert(plotbox.width).getTime()/1000];
         var xvec = griddle(goal.tmin, 
                            d3.min([goal.asof+AKH, goal.tmax+fudge])),i;
+        xvec = griddle(d3.max([xr[0], goal.tmin]),
+                       d3.min([xr[1], goal.asof+AKH, goal.tmax+fudge]),
+                       plotbox.width/2);
         // Generate a path string for the aura
         var d = "M"+nXSc(xvec[0]*1000)+" "
               +nYSc(goal.auraf(xvec[0])+aurup);
@@ -3311,8 +3314,8 @@
         } else {
           el.attr("d", d);
         }
-        if (xr[0].getTime()/1000 < goal.tmin) {
-          xvec = griddle(xr[0].getTime()/1000, goal.tmin);
+        if (xr[0] < goal.tmin) {
+          xvec = griddle(xr[0], goal.tmin, plotbox.width/2);
           d = "M"+nXSc(xvec[0]*1000)+" "
             +nYSc(goal.auraf(xvec[0])+aurup);
           for (i = 1; i < xvec.length; i++)
@@ -4127,11 +4130,19 @@
     function updateMovingAv() {
       var el = gMovingAv.selectAll(".movingav");
       if (!opts.roadEditor && goal.movingav && opts.showData) {
-        var d = "M"+nXSc(goal.filtpts[0][0]*1000)+" "
-              +nYSc(goal.filtpts[0][1]);
-        for (var i = 1; i < goal.filtpts.length; i++) {
-          d += " L"+nXSc(goal.filtpts[i][0]*1000)+" "+
-            nYSc(goal.filtpts[i][1]);
+        var l = [nXSc.invert(0).getTime()/1000, 
+                 nXSc.invert(plotbox.width).getTime()/1000];
+        var rdfilt = function(r) {
+          return ((r.sta[0] > l[0] && r.sta[0] < l[1])
+                  || (r.end[0] > l[0] && r.end[0] < l[1]));
+        };
+        var pts = goal.filtpts.filter(function(e){
+          return (e[0] > l[0]-2*SID && e[0] < l[1]+2*SID);});
+        var d = "M"+nXSc(pts[0][0]*1000)+" "
+              +nYSc(pts[0][1]);
+        for (var i = 1; i < pts.length; i++) {
+          d += " L"+nXSc(pts[i][0]*1000)+" "+
+            nYSc(pts[i][1]);
         }
         if (el.empty()) {
           gMovingAv.append("svg:path")
