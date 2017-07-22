@@ -3952,8 +3952,10 @@
     }
 
     function dpFill( pt ) {
-      var col = dotcolor(roads, goal, pt[0], pt[1]);
-      return (pt[3] == DPTYPE.AGGPAST)?col:(col+"54");
+      return dotcolor(roads, goal, pt[0], pt[1]);
+    }
+    function dpFillOp( pt ) {
+      return (pt[3] == DPTYPE.AGGPAST)?1:0.3;
     }
     function dpStroke( pt ) {
       if (opts.roadEditor) {
@@ -3986,7 +3988,8 @@
     };
     function removeDotText() { removeTextBox(dotText); }
 
-    function updateDotGroup(grp,d,cls,r,s=null,sw=null,f=null,hov=true ) {
+    function updateDotGroup(grp,d,cls,r,
+                            s=null,sw=null,f=null,hov=true,fop=null) {
       var dpelt;
 
       dpelt = grp.selectAll("."+cls).data(d);
@@ -3997,6 +4000,7 @@
       if (r != null) dpelt.attr("r", r);
       if (sw != null) dpelt.attr("stroke-width", sw);
       if (f != null) dpelt.attr("fill", f);
+      if (fop != null) dpelt.style("fill-opacity", fop);
 
       dpelt.enter().append("svg:circle")
 		    .attr("class",cls)
@@ -4006,6 +4010,7 @@
 		    .attr("stroke-width", sw)
 		    .style("stroke", s)
         .attr("fill", f)
+        .style("fill-opacity", fop)
         .style("pointer-events", function() {
           return (opts.roadEditor&&hov)?"none":"all";})
 		    .on("mouseenter",function(d) {
@@ -4047,7 +4052,7 @@
         if (goal.plotall && !opts.roadEditor) {
           updateDotGroup(gAllpts, alldataf.filter(adf), "allpts", 
                          0.7*(opts.dataPoint.size)*scalf,
-                         "none", null, dpFill);
+                         "none", null, dpFill, true, dpFillOp);
           
         } else {
           var el = gAllpts.selectAll(".allpts");
@@ -4056,7 +4061,7 @@
 
         updateDotGroup(gDpts, pts.concat(fuda), "dpts", 
                        opts.dataPoint.size*scalf,
-                       dpStroke, dpStrokeWidth, dpFill);
+                       dpStroke, dpStrokeWidth, dpFill, true, dpFillOp);
 
         var fladelt = gFlat.selectAll(".fladp");
         if (flad != null) {
