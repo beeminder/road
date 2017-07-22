@@ -1802,9 +1802,9 @@
 
     function enlargeExtent( extent, p) {
       var xdiff = extent.xMax - extent.xMin;
-      if (xdiff < 1) xdiff = 1;
+      if (xdiff < 1e-7) xdiff = 1e-7;
       var ydiff = extent.yMax - extent.yMin;
-      if (ydiff < 1) ydiff = 1;
+      if (ydiff < 1e-7) ydiff = 1e-7;
 
       extent.xMin = extent.xMin - p.xmin*xdiff;
       extent.xMax = extent.xMax + p.xmax*xdiff;
@@ -2151,10 +2151,10 @@
     }
 
     // Function to generate samples for the Butterworth filter
-    function griddle(a, b) {
+    function griddle(a, b, maxcnt = 6000) {
       return linspace(a, b, Math.floor(clip((b-a)/(SID+1), 
                                             d3.min([600, plotbox.width]),
-                                            6000)));
+                                            maxcnt)));
     }
 
     /** Converts a number to an integer string */
@@ -2370,7 +2370,7 @@
     // Recreates the road array from the "rawknots" array, which includes
     // only timestamp,value pairs
     function loadGoal( json ) {
-      console.debug("id="+curid+", loadGoal()->"+json.params.yoog);
+      //console.debug("id="+curid+", loadGoal()->"+json.params.yoog);
       clearUndoBuffer();
 
       processing = true;
@@ -2479,7 +2479,7 @@
     }
 
     function loadGoalFromURL( url ) {
-      console.debug( "Loading: "+url );
+      //console.debug( "Loading: "+url );
       if (url == "" || loading) return;
       loading = true;
       var pg = svg.append('g').attr('class', 'progress');
@@ -2952,7 +2952,7 @@
                               d.slope*goal.siru]  );
     };
     function roadDragEnded(d,id){
-      console.debug("roadDragEnded()");
+      //console.debug("roadDragEnded()");
       editingRoad = false;
       highlightSlope(id, false);
       d3.select(opts.divGraph).select("[name=road"+id+"]")
@@ -3289,10 +3289,13 @@
         var aurdn = d3.min([-goal.lnw/2.0, -goal.dflux]);
         var aurup = d3.max([goal.lnw/2.0,  goal.dflux]);
         var fudge = PRAF*(goal.tmax-goal.tmin);
-        var xr = [nXSc.invert(0), 
-                  nXSc.invert(plotbox.width)];
+        var xr = [nXSc.invert(0).getTime()/1000, 
+                  nXSc.invert(plotbox.width).getTime()/1000];
         var xvec = griddle(goal.tmin, 
                            d3.min([goal.asof+AKH, goal.tmax+fudge])),i;
+        xvec = griddle(d3.max([xr[0], goal.tmin]),
+                       d3.min([xr[1], goal.asof+AKH, goal.tmax+fudge]),
+                       plotbox.width/2);
         // Generate a path string for the aura
         var d = "M"+nXSc(xvec[0]*1000)+" "
               +nYSc(goal.auraf(xvec[0])+aurup);
@@ -3311,8 +3314,8 @@
         } else {
           el.attr("d", d);
         }
-        if (xr[0].getTime()/1000 < goal.tmin) {
-          xvec = griddle(xr[0].getTime()/1000, goal.tmin);
+        if (xr[0] < goal.tmin) {
+          xvec = griddle(xr[0], goal.tmin, plotbox.width/2);
           d = "M"+nXSc(xvec[0]*1000)+" "
             +nYSc(goal.auraf(xvec[0])+aurup);
           for (i = 1; i < xvec.length; i++)
@@ -3516,7 +3519,7 @@
       var newx = (-nXSc(iRoad[0].sta[0]*1000)) % (2*opts.oldRoadLine.dash);
       fy = (fy + (-newx-fx)*(ey-fy)/(ex-fx));
       fx = -newx;
-      var d = "M"+fx+" "+fy;
+      var d, rd = "M"+fx+" "+fy;
       var i;
       for (i = 0; i < ir.length; i++) {
         ex = nXSc(ir[i].end[0]*1000); ey = nYSc(ir[i].end[1]);
@@ -3525,14 +3528,14 @@
           ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx));
           ex = plotbox.width;          
         }
-        d += " L"+ex+" "+ey;
+        rd += " L"+ex+" "+ey;
       }
 
       var roadelt = gOldCenter.select(".oldroads");
       if (roadelt.empty()) {
         gOldCenter.append("svg:path")
           .attr("class","oldroads")
-	  	    .attr("d", d)
+	  	    .attr("d", rd)
   		    .attr("pointer-events", "none")
           .style("stroke-dasharray", (opts.oldRoadLine.dash)+","
                  +(opts.oldRoadLine.dash)) 
@@ -3540,9 +3543,12 @@
   		    .style("stroke-width",opts.oldRoadLine.width*scalf)
   		    .style("stroke", Cols.ORNG);
       } else {
-        roadelt.attr("d", d)
+        roadelt.attr("d", rd)
   		    .style("stroke-width",opts.oldRoadLine.width*scalf);
       }
+
+      var laneelt = gOldRoad.select(".oldlanes");
+      var guideelt = gOldGuides.selectAll(".oldguides");
       if (!opts.roadEditor) {
         var minpx = 3*scalf;
         var thin=Math.abs(nYSc.invert(minpx)-nYSc.invert(0));
@@ -3553,21 +3559,17 @@
         ex = nXSc(ir[0].end[0]*1000); ey = nYSc(ir[0].end[1]+lw);
         fy = (fy + (0-fx)*(ey-fy)/(ex-fx)); fx = 0;
         
-        console.debug("begin");
         d = "M"+fx+" "+fy;
-        console.debug([fx, fy]);
         for (i = 0; i < ir.length; i++) {
           ex = nXSc(ir[i].end[0]*1000); ey = nYSc(ir[i].end[1]+lw);
           if (ex > plotbox.width) {
             fx = nXSc(ir[i].sta[0]*1000); fy = nYSc(ir[i].sta[1]+lw);
             ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx)); ex = plotbox.width;          
           }
-          console.debug("end:"+[ex, ey]);
           d += " L"+ex+" "+ey;
         }
         ey += (nYSc(0) - nYSc(2*lw));
         d += " L"+ex+" "+ey;
-        console.debug("end:"+[ex, ey]);
         for (i = ir.length-1; i >= 0; i--) {
           fx = nXSc(ir[i].sta[0]*1000); fy = nYSc(ir[i].sta[1]-lw);
           if (fx < 0) {
@@ -3575,11 +3577,9 @@
             fy = (fy + (0-fx)*(ey-fy)/(ex-fx)); fx = 0;          
           }
           d += " L"+fx+" "+fy;
-          console.debug("sta:"+[fx, fy]);
         }
         d += " Z";
-        roadelt = gOldRoad.select(".oldlanes");
-        if (roadelt.empty()) {
+        if (laneelt.empty()) {
           gOldRoad.append("svg:path")
             .attr("class","oldlanes")
   		      .attr("pointer-events", "none")
@@ -3588,85 +3588,63 @@
   		      .style("fill-opacity", 0.5)
   		      .style("stroke", "none");
         } else {
-          roadelt.attr("d", d);
+          laneelt.attr("d", d);
         }
+
+        // Update guidelines
+        // Compute Y range
+        var yrange = [nYSc.invert(plotbox.height), 
+                      nYSc.invert(0)];
+        var delta = 1;
+        var numlines = Math.abs((yrange[1] - yrange[0])/(goal.lnw*delta));
+        if (numlines > 32) {
+          delta = 7;
+          numlines = Math.abs((yrange[1] - yrange[0])/(goal.lnw*delta));
+        }
+        if (numlines > 32) {
+          delta = 4*7;
+          numlines = Math.abs((yrange[1] - yrange[0])/(goal.lnw*delta));
+        }
+        if (numlines > 32) {
+          // We give up, just draw up to 32 guidelines wherever 
+          numlines = 32;
+          delta = Math.abs((yrange[1] - yrange[0])/numlines)/goal.lnw;
+        }
+        var arr = new Array(Math.ceil(numlines)).fill(0);
+        var shift = nYSc(ir[0].sta[1]+goal.yaw*goal.lnw) 
+              - nYSc(ir[0].sta[1]);
+        guideelt = guideelt.data(arr);
+        guideelt.exit().remove();
+        guideelt.enter().append("svg:path")
+          .attr("class","oldguides")
+	  	    .attr("d", rd)
+	  	    .attr("transform", function(d,i) { 
+            return "translate(0,"+((i+1)*delta*shift)+")";})
+  		    .attr("pointer-events", "none")
+  		    .style("fill", "none")
+  		    .attr("stroke-width", function (d,i) { 
+            return ((delta==7 && i==0) || (delta==1 && i==6))
+              ?opts.guidelines.weekwidth*scalf
+              :opts.guidelines.width*scalf;})
+  		    .attr("stroke", function (d,i) { 
+            return ((delta==7 && i==0) || (delta==1 && i==6))
+              ?Cols.DYEL:Cols.LYEL;});
+        guideelt.attr("d", rd)
+          .attr("transform", function(d,i) { 
+            return "translate(0,"+((i+1)*delta*shift)+")";})
+  		    .attr("stroke-width", function (d,i) { 
+            return ((delta==7 && i==0) || (delta==1 && i==6))
+              ?opts.guidelines.weekwidth*scalf
+              :opts.guidelines.width*scalf;})
+  		    .attr("stroke", function (d,i) { 
+            return ((delta==7 && i==0) || (delta==1 && i==6))
+              ?Cols.DYEL:Cols.LYEL;});
+      } else {
+        laneelt.remove();
+        guideelt.remove();
       }
     }
 
-    function updateGuidelines() {
-      if (opts.divGraph == null || roads.length == 0) return;
-      var el = gOldGuides.selectAll(".oldguides");
-      if (opts.roadEditor) {
-        el.remove();
-        return;
-      }
-
-      var l = [nXSc.invert(0).getTime()/1000, 
-               nXSc.invert(plotbox.width).getTime()/1000];
-      var rdfilt = function(r) {
-        return ((r.sta[0] > l[0] && r.sta[0] < l[1])
-                || (r.end[0] > l[0] && r.end[0] < l[1]));
-      };
-
-      var ir = iRoad.filter(rdfilt), d, i;
-      if (ir.length == 0) {
-        var ind = findRoadSegment(iRoad, l[0]);
-        ir = [iRoad[ind]];
-      }
-      // Compute Y range
-      var yrange = [nYSc.invert(plotbox.height), 
-                    nYSc.invert(0)];
-      var delta = 1;
-      var numlines = Math.abs((yrange[1] - yrange[0])/(goal.lnw*delta));
-      if (numlines > 32) {
-        delta = 7;
-        numlines = Math.abs((yrange[1] - yrange[0])/(goal.lnw*delta));
-      }
-      if (numlines > 32) {
-        delta = 4*7;
-        numlines = Math.abs((yrange[1] - yrange[0])/(goal.lnw*delta));
-      }
-      if (numlines > 32) {
-        // We give up, just draw up to 32 guidelines wherever 
-        numlines = 32;
-        delta = Math.abs((yrange[1] - yrange[0])/numlines)/goal.lnw;
-      }
-      var arr = new Array(Math.ceil(numlines)).fill(0);
-      el = gOldGuides.selectAll(".oldguides").data(arr);
-      d = "M"+nXSc(ir[0].sta[0]*1000)+" "
-        +nYSc(ir[0].sta[1]);
-      for (i = 0; i < ir.length; i++) {
-        d += " L"+nXSc(ir[i].end[0]*1000)+" "+
-          nYSc(ir[i].end[1]);
-      }
-      var shift = nYSc(ir[0].sta[1]+goal.yaw*goal.lnw) 
-            - nYSc(ir[0].sta[1]);
-      el.exit().remove();
-      el.enter().append("svg:path")
-        .attr("class","oldguides")
-	  	  .attr("d", d)
-	  	  .attr("transform", function(d,i) { 
-          return "translate(0,"+((i+1)*delta*shift)+")";})
-  		  .attr("pointer-events", "none")
-  		  .style("fill", "none")
-  		  .attr("stroke-width", function (d,i) { 
-          return ((delta==7 && i==0) || (delta==1 && i==6))
-            ?opts.guidelines.weekwidth*scalf
-            :opts.guidelines.width*scalf;})
-  		  .attr("stroke", function (d,i) { 
-          return ((delta==7 && i==0) || (delta==1 && i==6))
-            ?Cols.DYEL:Cols.LYEL;});
-      el.attr("d", d)
-        .attr("transform", function(d,i) { 
-          return "translate(0,"+((i+1)*delta*shift)+")";})
-  		  .attr("stroke-width", function (d,i) { 
-          return ((delta==7 && i==0) || (delta==1 && i==6))
-            ?opts.guidelines.weekwidth*scalf
-            :opts.guidelines.width*scalf;})
-  		  .attr("stroke", function (d,i) { 
-          return ((delta==7 && i==0) || (delta==1 && i==6))
-            ?Cols.DYEL:Cols.LYEL;});
-    }
     function updateContextOldRoad() {
       if (opts.divGraph == null || roads.length == 0) return;
       // Create, update and delete road lines on the brush graph
@@ -3952,8 +3930,10 @@
     }
 
     function dpFill( pt ) {
-      var col = dotcolor(roads, goal, pt[0], pt[1]);
-      return (pt[3] == DPTYPE.AGGPAST)?col:(col+"54");
+      return dotcolor(roads, goal, pt[0], pt[1]);
+    }
+    function dpFillOp( pt ) {
+      return (pt[3] == DPTYPE.AGGPAST)?1:0.3;
     }
     function dpStroke( pt ) {
       if (opts.roadEditor) {
@@ -3986,7 +3966,8 @@
     };
     function removeDotText() { removeTextBox(dotText); }
 
-    function updateDotGroup(grp,d,cls,r,s=null,sw=null,f=null,hov=true ) {
+    function updateDotGroup(grp,d,cls,r,
+                            s=null,sw=null,f=null,hov=true,fop=null) {
       var dpelt;
 
       dpelt = grp.selectAll("."+cls).data(d);
@@ -3997,6 +3978,7 @@
       if (r != null) dpelt.attr("r", r);
       if (sw != null) dpelt.attr("stroke-width", sw);
       if (f != null) dpelt.attr("fill", f);
+      if (fop != null) dpelt.style("fill-opacity", fop);
 
       dpelt.enter().append("svg:circle")
 		    .attr("class",cls)
@@ -4006,6 +3988,7 @@
 		    .attr("stroke-width", sw)
 		    .style("stroke", s)
         .attr("fill", f)
+        .style("fill-opacity", fop)
         .style("pointer-events", function() {
           return (opts.roadEditor&&hov)?"none":"all";})
 		    .on("mouseenter",function(d) {
@@ -4047,7 +4030,7 @@
         if (goal.plotall && !opts.roadEditor) {
           updateDotGroup(gAllpts, alldataf.filter(adf), "allpts", 
                          0.7*(opts.dataPoint.size)*scalf,
-                         "none", null, dpFill);
+                         "none", null, dpFill, true, dpFillOp);
           
         } else {
           var el = gAllpts.selectAll(".allpts");
@@ -4056,7 +4039,7 @@
 
         updateDotGroup(gDpts, pts.concat(fuda), "dpts", 
                        opts.dataPoint.size*scalf,
-                       dpStroke, dpStrokeWidth, dpFill);
+                       dpStroke, dpStrokeWidth, dpFill, true, dpFillOp);
 
         var fladelt = gFlat.selectAll(".fladp");
         if (flad != null) {
@@ -4067,16 +4050,14 @@
               .attr("fill", dotcolor(roads,goal,flad[0],flad[1]))
               .attr("transform", 
                     "translate("+(nXSc((flad[0])*1000))+","
-                    +nYSc(flad[1])+"),scale("
-                    +(opts.dataPoint.fsize/50)+")")
+                    +nYSc(flad[1])+"),scale("+(opts.dataPoint.fsize/50)+")")
               .style("pointer-events", function() {
                 return (opts.roadEditor)?"none":"all";})
 		          .on("mouseenter",function() {
                 if (dotTimer != null) 
                   window.clearTimeout(dotTimer);
                 dotTimer = window.setTimeout(function() {
-                  showDotText(flad); dotTimer = null;
-			          }, 500);})
+                  showDotText(flad); dotTimer = null;}, 500);})
 		          .on("mouseout",function() { 
                 if (dotText != null) {
                   removeDotText(); dotText = null;
@@ -4108,13 +4089,10 @@
             if (ind > 0) npts = aggdataf.slice(ind, ind+2);
           }
           if (npts.length != 0) {
-            var d = "M"+nXSc(npts[0][4]*1000)+" "
-                  +nYSc(npts[0][5]);
+            var d = "M"+nXSc(npts[0][4]*1000)+" "+nYSc(npts[0][5]);
             for (i = 0; i < npts.length; i++) {
-              d += " L"+nXSc(npts[i][0]*1000)+" "+
-                nYSc(npts[i][5]);
-              d += " L"+nXSc(npts[i][0]*1000)+" "+
-                nYSc(npts[i][1]);
+              d += " L"+nXSc(npts[i][0]*1000)+" "+ nYSc(npts[i][5]);
+              d += " L"+nXSc(npts[i][0]*1000)+" "+ nYSc(npts[i][1]);
             }
             if (stpelt.empty()) {
               gSteppy.append("svg:path")
@@ -4152,11 +4130,19 @@
     function updateMovingAv() {
       var el = gMovingAv.selectAll(".movingav");
       if (!opts.roadEditor && goal.movingav && opts.showData) {
-        var d = "M"+nXSc(goal.filtpts[0][0]*1000)+" "
-              +nYSc(goal.filtpts[0][1]);
-        for (var i = 1; i < goal.filtpts.length; i++) {
-          d += " L"+nXSc(goal.filtpts[i][0]*1000)+" "+
-            nYSc(goal.filtpts[i][1]);
+        var l = [nXSc.invert(0).getTime()/1000, 
+                 nXSc.invert(plotbox.width).getTime()/1000];
+        var rdfilt = function(r) {
+          return ((r.sta[0] > l[0] && r.sta[0] < l[1])
+                  || (r.end[0] > l[0] && r.end[0] < l[1]));
+        };
+        var pts = goal.filtpts.filter(function(e){
+          return (e[0] > l[0]-2*SID && e[0] < l[1]+2*SID);});
+        var d = "M"+nXSc(pts[0][0]*1000)+" "
+              +nYSc(pts[0][1]);
+        for (var i = 1; i < pts.length; i++) {
+          d += " L"+nXSc(pts[i][0]*1000)+" "+
+            nYSc(pts[i][1]);
         }
         if (el.empty()) {
           gMovingAv.append("svg:path")
@@ -4606,7 +4592,6 @@
       updateYBHP();
       updatePinkRegion();
       updateOldRoad();
-      updateGuidelines();
       updateOldBullseye();
       updateBullseye();
       updateKnots();
