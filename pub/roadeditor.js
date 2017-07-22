@@ -1577,8 +1577,8 @@
       var sx = xrange.map(function (x){return xScB(x);});
       var sy = yrange.map(function (y){return yScB(y);});
       focusrect
-        .attr("x", sx[0]+1).attr("width", sx[1]-sx[0]-2)
-        .attr("y", sy[0]+1).attr("height", sy[1]-sy[0]-2);
+        .attr("x", sx[0]+1).attr("width", d3.max([0, sx[1]-sx[0]-2]))
+        .attr("y", sy[0]+1).attr("height", d3.max([0, sy[1]-sy[0]-2]));
 
     }
 
