@@ -191,8 +191,8 @@
   
   /** Beeminder colors for datapoints */
   Cols = {
-    DYEL:   "#ffff66",
-    LYEL:   "#ffff99",
+    DYEL:   "#ffff55",
+    LYEL:   "#ffff88",
     ROSE:   "#ff8080",
     AKRA:   "#4C4Cff",
     PURP:   "#B56bb5",
@@ -1554,7 +1554,11 @@
                                   ?alldata:aggdata,
                                   xtimes[0],xtimes[1],false);
       ae = mergeExtents(ae, de);
-      var p = {xmin:0.0, xmax:0.0, ymin:0.05, ymax:0.05};
+      var p;
+      if (opts.roadEditor)
+        p = {xmin:0.0, xmax:0.0, ymin:0.05, ymax:0.05};
+      else
+        p = {xmin:0.0, xmax:0.0, ymin:0.02, ymax:0.02};
       enlargeExtent(ae, p);
       if ((ae.yMax - ae.yMin) < 3*goal.lnw) {
         ae.yMax += 1.5*goal.lnw;
@@ -1802,9 +1806,9 @@
 
     function enlargeExtent( extent, p) {
       var xdiff = extent.xMax - extent.xMin;
-      if (xdiff < 1) xdiff = 1;
+      if (xdiff < 1e-7) xdiff = 1e-7;
       var ydiff = extent.yMax - extent.yMin;
-      if (ydiff < 1) ydiff = 1;
+      if (ydiff < 1e-7) ydiff = 1e-7;
 
       extent.xMin = extent.xMin - p.xmin*xdiff;
       extent.xMax = extent.xMax + p.xmax*xdiff;
@@ -3214,9 +3218,10 @@
     function updateWatermark() {
       if (opts.divGraph == null || roads.length == 0 || hidden) return;
 
+      console.debug(goal);
       setWatermark();
       
-      var g = null, b = null, y, bbox, newsize, newh;
+      var g = null, b = null, x, y, bbox, newsize, newh;
       if (goal.loser) g = PNG.skl;
 
       if   (goal.waterbuf === 'inf') g = PNG.inf;
@@ -3225,25 +3230,29 @@
       var wbufelt = gWatermark.select(".waterbuf");
       wbufelt.remove();
       if (g != null) {
-        y = ((plotbox.height/2-opts.watermark.height)/2);
-        if (goal.yaw<0) y+= plotbox.height/2;
+	  	  x = (plotbox.width/2-opts.watermark.height)/2;
+        y = (plotbox.height/2-opts.watermark.height)/2;
+        if (goal.dir<0 && goal.yaw<0) y+= plotbox.height/2;
+        else if (goal.dir<0 && goal.yaw>0) x+= plotbox.width/2;
+        else if (goal.dir>0 && goal.yaw<0) {x+= plotbox.width/2;y+= plotbox.height/2;}
         wbufelt = gWatermark.append("svg:image")
 	        .attr("class","waterbuf")
 	        .attr("xlink:href",g)
-	  	    .attr("x",(plotbox.width/2-opts.watermark.height)/2)
-          .attr("y",y)
+	  	    .attr("x",x).attr("y",y)
           .attr('width', opts.watermark.height)
           .attr('height', opts.watermark.height);
       } else {
+	  	  x = plotbox.width/4;
         y = plotbox.height/4+opts.watermark.fntsize/2;
-        if (goal.yaw<0) y+= plotbox.height/2;
+        if (goal.dir<0 && goal.yaw<0) y+= plotbox.height/2;
+        else if (goal.dir<0 && goal.yaw>0) x+= plotbox.width/2;
+        else if (goal.dir>0 && goal.yaw<0) {x+= plotbox.width/2;y+= plotbox.height/2;}
         wbufelt = gWatermark.append("svg:text")
 	        .attr("class","waterbuf")
           .style('font-size', opts.watermark.fntsize+"px")
           .style('font-weight', "bold")
           .style('fill', Cols.GRAY)
-	  	    .attr("x",plotbox.width/4)
-          .attr("y",y)
+	  	    .attr("x",x).attr("y",y)
           .text(goal.waterbuf);
         bbox = wbufelt.node().getBBox();
         if (bbox.width > plotbox.width/2.2) {
@@ -3251,7 +3260,7 @@
                      /bbox.width);
           newh = newsize/opts.watermark.fntsize*bbox.height;
           y = plotbox.height/4+newh/2-plotbox.height/16;
-          if (goal.yaw<0) y+= plotbox.height/2;
+          if (goal.dir<0) y+= plotbox.height/2;
           wbufelt.style('font-size', newsize+"px").attr("y", y);
         }
       }
@@ -3259,15 +3268,18 @@
       var wbuxelt = gWatermark.select(".waterbux");
       wbuxelt.remove();
       if (!opts.roadEditor) {
+	  	  x = 3*plotbox.width/4;
         y = 3*plotbox.height/4+opts.watermark.fntsize/2;
-        if (goal.yaw<0) y-= plotbox.height/2;
+        if (goal.dir<0 && goal.yaw<0) y-= plotbox.height/2;
+        else if (goal.dir<0 && goal.yaw>0) x-= plotbox.width/2;
+        else if (goal.dir>0 && goal.yaw<0) {x-= plotbox.width/2;y-= plotbox.height/2;}
+        if (goal.dir<0) y-= plotbox.height/2;
         wbuxelt = gWatermark.append("svg:text")
 	        .attr("class","waterbux")
           .style('font-size', opts.watermark.fntsize+"px")
           .style('font-weight', "bold")
           .style('fill', Cols.GRAY)
-	  	    .attr("x",3*plotbox.width/4)
-          .attr("y",y)
+	  	    .attr("x",x).attr("y",y)
           .text(goal.waterbux);
         bbox = wbuxelt.node().getBBox();
         if (bbox.width > plotbox.width/2.2) {
@@ -3275,7 +3287,7 @@
                      /bbox.width);
           newh = newsize/opts.watermark.fntsize*bbox.height;
           y = plotbox.height/4+newh/2-plotbox.height/16;
-          if (goal.yaw>0) y+= plotbox.height/2;
+          if (goal.dir>0) y+= plotbox.height/2;
           wbuxelt.style('font-size', newsize+"px").attr("y", y);
         }
       }
@@ -3597,17 +3609,17 @@
                       nYSc.invert(0)];
         var delta = 1;
         var numlines = Math.abs((yrange[1] - yrange[0])/(goal.lnw*delta));
-        if (numlines > 32) {
+        if (numlines > 36) {
           delta = 7;
           numlines = Math.abs((yrange[1] - yrange[0])/(goal.lnw*delta));
         }
-        if (numlines > 32) {
+        if (numlines > 36) {
           delta = 4*7;
           numlines = Math.abs((yrange[1] - yrange[0])/(goal.lnw*delta));
         }
-        if (numlines > 32) {
+        if (numlines > 36) {
           // We give up, just draw up to 32 guidelines wherever 
-          numlines = 32;
+          numlines = 36;
           delta = Math.abs((yrange[1] - yrange[0])/numlines)/goal.lnw;
         }
         var arr = new Array(Math.ceil(numlines)).fill(0);
