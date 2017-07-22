@@ -1156,7 +1156,7 @@
           zoomarea.call(axisZoom.scaleBy, 
                         opts.zoomButton.factor);})
         .on("mouseover", function() {
-          d3.select(this).style("fill", "red");})
+          if (!mobileOrTablet) d3.select(this).style("fill", "red");})
 	      .on("mouseout",function(d,i) {
           d3.select(this).style("fill", "black");});
       zoomout = plot.append("svg:use")
@@ -1168,7 +1168,7 @@
           zoomarea.call(axisZoom.scaleBy, 
                         1/opts.zoomButton.factor);})
         .on("mouseover", function() {
-          d3.select(this).style("fill", "red");})
+          if (!mobileOrTablet) d3.select(this).style("fill", "red");})
 	      .on("mouseout",function(d,i) {
           d3.select(this).style("fill", "black");});
 
@@ -1443,7 +1443,8 @@
     aggval = {},
     processing = false, 
     loading = false,
-    hidden = false;
+    hidden = false,
+    mobileOrTablet = onMobileOrTablet();
 
     // Initialize goal with sane values
     goal.yaw = +1; goal.dir = +1;
@@ -3512,13 +3513,19 @@
       }
       var fx = nXSc(ir[0].sta[0]*1000), fy = nYSc(ir[0].sta[1]);
       var ex = nXSc(ir[0].end[0]*1000), ey = nYSc(ir[0].end[1]);
-      fy = (fy + (0-fx)*(ey-fy)/(ex-fx));
-      fx = 0;
+      var newx = (-nXSc(iRoad[0].sta[0]*1000)) % (2*opts.oldRoadLine.dash);
+      fy = (fy + (-newx-fx)*(ey-fy)/(ex-fx));
+      fx = -newx;
       var d = "M"+fx+" "+fy;
       var i;
       for (i = 0; i < ir.length; i++) {
-        d += " L"+nXSc(ir[i].end[0]*1000)+" "+
-          nYSc(ir[i].end[1]);
+        ex = nXSc(ir[i].end[0]*1000); ey = nYSc(ir[i].end[1]);
+        if (ex > plotbox.width) {
+          fx = nXSc(ir[i].sta[0]*1000); fy = nYSc(ir[i].sta[1]);
+          ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx));
+          ex = plotbox.width;          
+        }
+        d += " L"+ex+" "+ey;
       }
 
       var roadelt = gOldCenter.select(".oldroads");
@@ -3541,18 +3548,36 @@
         var thin=Math.abs(nYSc.invert(minpx)-nYSc.invert(0));
         var lw = (goal.lnw == 0)?thin:goal.lnw;
         if (Math.abs(nYSc(lw)-nYSc(0)) < minpx) lw=thin;
-        d = "M"+nXSc(ir[0].sta[0]*1000)+" "
-          +nYSc(ir[0].sta[1]+lw);
+
+        fx = nXSc(ir[0].sta[0]*1000); fy = nYSc(ir[0].sta[1]+lw);
+        ex = nXSc(ir[0].end[0]*1000); ey = nYSc(ir[0].end[1]+lw);
+        fy = (fy + (0-fx)*(ey-fy)/(ex-fx)); fx = 0;
+        
+        console.debug("begin");
+        d = "M"+fx+" "+fy;
+        console.debug([fx, fy]);
         for (i = 0; i < ir.length; i++) {
-          d += " L"+nXSc(ir[i].end[0]*1000)+" "+
-            nYSc(ir[i].end[1]+lw);
+          ex = nXSc(ir[i].end[0]*1000); ey = nYSc(ir[i].end[1]+lw);
+          if (ex > plotbox.width) {
+            fx = nXSc(ir[i].sta[0]*1000); fy = nYSc(ir[i].sta[1]+lw);
+            ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx)); ex = plotbox.width;          
+          }
+          console.debug("end:"+[ex, ey]);
+          d += " L"+ex+" "+ey;
         }
-        for (i = ir.length; i > 0; i--) {
-          d += " L"+nXSc(ir[i-1].end[0]*1000)+" "+
-            nYSc(ir[i-1].end[1]-lw);
+        ey += (nYSc(0) - nYSc(2*lw));
+        d += " L"+ex+" "+ey;
+        console.debug("end:"+[ex, ey]);
+        for (i = ir.length-1; i >= 0; i--) {
+          fx = nXSc(ir[i].sta[0]*1000); fy = nYSc(ir[i].sta[1]-lw);
+          if (fx < 0) {
+            ex = nXSc(ir[i].end[0]*1000); ey = nYSc(ir[i].end[1]-lw);
+            fy = (fy + (0-fx)*(ey-fy)/(ex-fx)); fx = 0;          
+          }
+          d += " L"+fx+" "+fy;
+          console.debug("sta:"+[fx, fy]);
         }
-        d += " L"+nXSc(ir[0].sta[0]*1000)+" "+
-          nYSc(ir[0].sta[1]-lw)+" Z";
+        d += " Z";
         roadelt = gOldRoad.select(".oldlanes");
         if (roadelt.empty()) {
           gOldRoad.append("svg:path")
