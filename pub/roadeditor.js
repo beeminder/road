@@ -81,7 +81,7 @@
     /** Visual parameters for vertical line for asof */ 
     today:        { width: 2, ctxwidth: 1, font: 16, ctxfont: 9 },
     /** Visual parameters for watermarks */ 
-    watermark:    { height:150, fntsize:100 },
+    watermark:    { height:150, fntsize:130 },
     guidelines:   { width:2, weekwidth:3 },
     /** Visual parameters for text boxes shown during dragging */ 
     textBox:      { margin: 3 },
@@ -1679,7 +1679,7 @@
       zoomarea.call(axisZoom.transform, d3.zoomIdentity);
 
       // Relocate zoom buttons based on road yaw
-      if (goal.yaw > 0) {
+      if (goal.dir > 0) {
         zoomin.attr("transform", zoombtntr.botin);
         zoomout.attr("transform", zoombtntr.botout);
       } else {
@@ -3214,83 +3214,88 @@
       }
     }
 
+    function locateWatermark(el, pos, off) {
+      el.attr("x", pos[0] + off[0]);
+      el.attr("y", pos[1] + off[1]);
+    }
     // Creates or updates the watermark with the number of safe days
     function updateWatermark() {
       if (opts.divGraph == null || roads.length == 0 || hidden) return;
 
-      console.debug(goal);
       setWatermark();
-      
-      var g = null, b = null, x, y, bbox, newsize, newh;
       if (goal.loser) g = PNG.skl;
-
-      if   (goal.waterbuf === 'inf') g = PNG.inf;
+      if (goal.waterbuf === 'inf') g = PNG.inf;
       else if (goal.waterbuf === ':)') g = PNG.sml;
+
+
+      var tl = [0,0], bl = [0, plotbox.height/2];
+      var tr = [plotbox.width/2,0], br = [plotbox.width/2, plotbox.height/2];
+      var offg, offb, g = null, b = null, x, y, bbox, newsize, newh;
+
+      if (goal.dir>0 && goal.yaw<0) { 
+        offg = br; offb = tl;
+      } else if (goal.dir<0 && goal.yaw>0) { 
+        offg = tr; offb = bl;
+      } else if (goal.dir<0 && goal.yaw<0) { 
+        offg = bl; offb = tr;
+      } else {
+        offg = tl; offb = br;
+      }
 
       var wbufelt = gWatermark.select(".waterbuf");
       wbufelt.remove();
       if (g != null) {
 	  	  x = (plotbox.width/2-opts.watermark.height)/2;
         y = (plotbox.height/2-opts.watermark.height)/2;
-        if (goal.dir<0 && goal.yaw<0) y+= plotbox.height/2;
-        else if (goal.dir<0 && goal.yaw>0) x+= plotbox.width/2;
-        else if (goal.dir>0 && goal.yaw<0) {x+= plotbox.width/2;y+= plotbox.height/2;}
+
         wbufelt = gWatermark.append("svg:image")
 	        .attr("class","waterbuf")
 	        .attr("xlink:href",g)
-	  	    .attr("x",x).attr("y",y)
           .attr('width', opts.watermark.height)
           .attr('height', opts.watermark.height);
       } else {
 	  	  x = plotbox.width/4;
-        y = plotbox.height/4+opts.watermark.fntsize/2;
-        if (goal.dir<0 && goal.yaw<0) y+= plotbox.height/2;
-        else if (goal.dir<0 && goal.yaw>0) x+= plotbox.width/2;
-        else if (goal.dir>0 && goal.yaw<0) {x+= plotbox.width/2;y+= plotbox.height/2;}
+        y = plotbox.height/4+opts.watermark.fntsize/3;
         wbufelt = gWatermark.append("svg:text")
 	        .attr("class","waterbuf")
           .style('font-size', opts.watermark.fntsize+"px")
           .style('font-weight', "bold")
           .style('fill', Cols.GRAY)
-	  	    .attr("x",x).attr("y",y)
           .text(goal.waterbuf);
         bbox = wbufelt.node().getBBox();
         if (bbox.width > plotbox.width/2.2) {
           newsize = (opts.watermark.fntsize*(plotbox.width/2.2)
                      /bbox.width);
           newh = newsize/opts.watermark.fntsize*bbox.height;
-          y = plotbox.height/4+newh/2-plotbox.height/16;
-          if (goal.dir<0) y+= plotbox.height/2;
-          wbufelt.style('font-size', newsize+"px").attr("y", y);
-        }
+          y = plotbox.height/4+newh/3;
+          wbufelt.style('font-size', newsize+"px");
+        }        
       }
+      wbufelt.attr("x", x + offg[0])
+        .attr("y", y + offg[1]);
 
       var wbuxelt = gWatermark.select(".waterbux");
       wbuxelt.remove();
       if (!opts.roadEditor) {
-	  	  x = 3*plotbox.width/4;
-        y = 3*plotbox.height/4+opts.watermark.fntsize/2;
-        if (goal.dir<0 && goal.yaw<0) y-= plotbox.height/2;
-        else if (goal.dir<0 && goal.yaw>0) x-= plotbox.width/2;
-        else if (goal.dir>0 && goal.yaw<0) {x-= plotbox.width/2;y-= plotbox.height/2;}
-        if (goal.dir<0) y-= plotbox.height/2;
+	  	  x = plotbox.width/4;
+        y = plotbox.height/4+opts.watermark.fntsize/3;
         wbuxelt = gWatermark.append("svg:text")
 	        .attr("class","waterbux")
           .style('font-size', opts.watermark.fntsize+"px")
           .style('font-weight', "bold")
           .style('fill', Cols.GRAY)
-	  	    .attr("x",x).attr("y",y)
           .text(goal.waterbux);
         bbox = wbuxelt.node().getBBox();
         if (bbox.width > plotbox.width/2.2) {
           newsize = (opts.watermark.fntsize*(plotbox.width/2.2)
                      /bbox.width);
           newh = newsize/opts.watermark.fntsize*bbox.height;
-          y = plotbox.height/4+newh/2-plotbox.height/16;
-          if (goal.dir>0) y+= plotbox.height/2;
-          wbuxelt.style('font-size', newsize+"px").attr("y", y);
+          y = plotbox.height/4+newh/3;
+          wbuxelt.style('font-size', newsize+"px");
         }
-      }
+        wbuxelt.attr("x", x + offb[0])
+          .attr("y", y + offb[1]);
+      } else wbuxelt.remove();
     }
     
     function updateAura() {
@@ -4150,23 +4155,23 @@
         };
         var pts = goal.filtpts.filter(function(e){
           return (e[0] > l[0]-2*SID && e[0] < l[1]+2*SID);});
-        var d = "M"+nXSc(pts[0][0]*1000)+" "
-              +nYSc(pts[0][1]);
-        for (var i = 1; i < pts.length; i++) {
-          d += " L"+nXSc(pts[i][0]*1000)+" "+
-            nYSc(pts[i][1]);
-        }
-        if (el.empty()) {
-          gMovingAv.append("svg:path")
-            .attr("class","movingav")
-	  	      .attr("d", d)
-  		      .style("fill", "none")
-  		      .attr("stroke-width",3*scalf)
-  		      .style("stroke", Cols.PURP);
-        } else {
-          el.attr("d", d)
-  		      .attr("stroke-width",3*scalf);
-        }
+        if (pts.length > 0){
+          var d = "M"+nXSc(pts[0][0]*1000)+" "+nYSc(pts[0][1]);
+          for (var i = 1; i < pts.length; i++) {
+            d += " L"+nXSc(pts[i][0]*1000)+" "+nYSc(pts[i][1]);
+          }
+          if (el.empty()) {
+            gMovingAv.append("svg:path")
+              .attr("class","movingav")
+	  	        .attr("d", d)
+  		        .style("fill", "none")
+  		        .attr("stroke-width",3*scalf)
+  		        .style("stroke", Cols.PURP);
+          } else {
+            el.attr("d", d)
+  		        .attr("stroke-width",3*scalf);
+          }
+        } else el.remove();
       } else {
         el.remove();
       }
