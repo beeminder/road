@@ -3216,23 +3216,19 @@
       }
     }
 
-    function locateWatermark(el, pos, off) {
-      el.attr("x", pos[0] + off[0]);
-      el.attr("y", pos[1] + off[1]);
-    }
     // Creates or updates the watermark with the number of safe days
     function updateWatermark() {
       if (opts.divGraph == null || roads.length == 0 || hidden) return;
+
+      var tl = [0,0], bl = [0, plotbox.height/2];
+      var tr = [plotbox.width/2,0], br = [plotbox.width/2, plotbox.height/2];
+      var offg, offb, g = null, b = null, x, y, bbox, newsize, newh;
 
       setWatermark();
       if (goal.loser) g = PNG.skl;
       if (goal.waterbuf === 'inf') g = PNG.inf;
       else if (goal.waterbuf === ':)') g = PNG.sml;
 
-
-      var tl = [0,0], bl = [0, plotbox.height/2];
-      var tr = [plotbox.width/2,0], br = [plotbox.width/2, plotbox.height/2];
-      var offg, offb, g = null, b = null, x, y, bbox, newsize, newh;
 
       if (goal.dir>0 && goal.yaw<0) { 
         offg = br; offb = tl;
