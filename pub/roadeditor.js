@@ -1008,7 +1008,7 @@
         xScB, xAxisB, xAxisObjB, yScB, 
         gPB, gYBHP, gPink, gGrid, gPastText, 
         gOldRoad, gOldCenter, gOldGuides, gOldBullseye, 
-        gKnots, gSteppy, gMovingAv, gAura, gAllpts, gDpts, gFlat, 
+        gKnots, gSteppy, gSteppyPts, gMovingAv, gAura, gAllpts, gDpts, gFlat, 
         gBullseye, gRoads, gDots,  gWatermark, gHorizon, gHorizonText, 
         zoomarea, axisZoom, zoomin, zoomout,  
         brushObj, brush, focusrect, topLeft;
@@ -1136,8 +1136,9 @@
       gGrid = plot.append('g').attr('id', 'grid');
       gKnots = plot.append('g').attr('id', 'knotgrp');
       gSteppy = plot.append('g').attr('id', 'steppygrp');
-      gMovingAv = plot.append('g').attr('id', 'movingavgrp');
       gAllpts = plot.append('g').attr('id', 'allptsgrp');
+      gMovingAv = plot.append('g').attr('id', 'movingavgrp');
+      gSteppyPts = plot.append('g').attr('id', 'steppyptsgrp');
       gDpts = plot.append('g').attr('id', 'datapointgrp');
       gFlat = plot.append('g').attr('id', 'flatlinegrp');
       gBullseye = plot.append('g').attr('id', 'bullseyegrp');
@@ -1757,9 +1758,10 @@
           if (x == aggdata[i][0])
             return;
         }
+      }
+      if (!aggval.hasOwnProperty(x)) {
         var prevpt = aggdata[numpts-1];
-        flad = [x, vlast, "PPR", DPTYPE.FLATLINE, 
-                prevpt[0], prevpt[1], null];
+        flad = [x, vlast, "PPR", DPTYPE.FLATLINE, prevpt[0], prevpt[1], null];
         aggdata.push(flad);
       }
     }
@@ -2329,6 +2331,11 @@
 
       if (!goal.plotall) goal.numpts = aggdata.length;
 
+    }
+
+    function procParams( p ) {
+      flatline();
+
       if (goal.movingav) {
         // Filter data and produce moving average
         var dl = aggdata.length;
@@ -2341,11 +2348,6 @@
           = newx.map(function(d) {return [d, ema(aggdata, d)];});
       } else goal.filtpts = [];
       
-    }
-
-    function procParams( p ) {
-      flatline();
-
       goal.tcur = aggdata[aggdata.length-1][0];
       goal.vcur = aggdata[aggdata.length-1][1];
 
@@ -3214,23 +3216,19 @@
       }
     }
 
-    function locateWatermark(el, pos, off) {
-      el.attr("x", pos[0] + off[0]);
-      el.attr("y", pos[1] + off[1]);
-    }
     // Creates or updates the watermark with the number of safe days
     function updateWatermark() {
       if (opts.divGraph == null || roads.length == 0 || hidden) return;
+
+      var tl = [0,0], bl = [0, plotbox.height/2];
+      var tr = [plotbox.width/2,0], br = [plotbox.width/2, plotbox.height/2];
+      var offg, offb, g = null, b = null, x, y, bbox, newsize, newh;
 
       setWatermark();
       if (goal.loser) g = PNG.skl;
       if (goal.waterbuf === 'inf') g = PNG.inf;
       else if (goal.waterbuf === ':)') g = PNG.sml;
 
-
-      var tl = [0,0], bl = [0, plotbox.height/2];
-      var tr = [plotbox.width/2,0], br = [plotbox.width/2, plotbox.height/2];
-      var offg, offb, g = null, b = null, x, y, bbox, newsize, newh;
 
       if (goal.dir>0 && goal.yaw<0) { 
         offg = br; offb = tl;
@@ -4123,12 +4121,12 @@
   		          .attr("stroke-width",3*scalf);
             }
           } else stpelt.remove();
-          updateDotGroup(gSteppy, pts, "steppyd",
+          updateDotGroup(gSteppyPts, pts, "steppyd",
                          (opts.dataPoint.size+2)*scalf,
                          "none", null, Cols.PURP);
         } else {
           stpelt.remove();
-          var stpdelt = gSteppy.selectAll(".steppyd");
+          var stpdelt = gSteppyPts.selectAll(".steppyd");
           stpdelt.remove();
         }
       } else {

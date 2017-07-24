@@ -53,14 +53,14 @@
 
 Quibbly issues to try to make the overall graph aesthetics match or exceed Matplotlib:
 
-1. show flatlined triangle datapoint on top of other points
-2. watermarks quibble. try making the vertical gridlines display on top of the watermarks like matplotlib does it? and a bit bigger puffier font might help too.
-2.2. more on watermarks: i think the graph canvas should be divided into 4 quadrants and the watermarks should take up as much as possible of their designated quadrant as possible
-3. frame around the graph with tickmarks only pointing inward?
-4. lower priority since the blue/green aura isn't turned on for most graphs but i really like how in matplotlib it's green where it overlaps the YBR (cuz yellow and blue make green)
-5. example of svg with artifacts (only appears in chrome; firefox and safari display it fine): http://road.glitch.me/svg-with-artifacts.svg 
+1. DONE: show flatlined triangle datapoint on top of other points
+2. DONE: watermarks quibble. try making the vertical gridlines display on top of the watermarks like matplotlib does it? and a bit bigger puffier font might help too.
+2.2. DONE (as much as I could) more on watermarks: i think the graph canvas should be divided into 4 quadrants and the watermarks should take up as much as possible of their designated quadrant as possible
+3. (Not sure if it's worth the effort) frame around the graph with tickmarks only pointing inward?
+4. (Kind of tough) lower priority since the blue/green aura isn't turned on for most graphs but i really like how in matplotlib it's green where it overlaps the YBR (cuz yellow and blue make green)
+5. (Seems to be a Chrome issue) example of svg with artifacts (only appears in chrome; firefox and safari display it fine): http://road.glitch.me/svg-with-artifacts.svg 
 6. day of week for "today" should account for the beeminder deadline. for example, if it's friday night at 8pm and i've done my pushups that we due at 7pm then from beeminder's point of view it's now saturday and it's an eep day again because saturday's pushups are due in less than 24 hours. this seems counterintuitive to call it saturday when it's clearly friday but it turns out to be a can of worms to do anything other than treat the beeminder deadline as the end-of-day.
-7. don't draw the actual YBR left of tini. we do want to be able to scroll left of tini and add new knots and make tini be earlier. just show the actual YBR starting at tini. it's also possible to have datapoints to the left of tini, which is fine.
+7. (doable) don't draw the actual YBR left of tini. we do want to be able to scroll left of tini and add new knots and make tini be earlier. just show the actual YBR starting at tini. it's also possible to have datapoints to the left of tini, which is fine.
 
 General
 1. Should we allow adding duplicate road knots (helps with subsequent editing, so probably yes) [yes]
