@@ -1008,7 +1008,7 @@
         xScB, xAxisB, xAxisObjB, yScB, 
         gPB, gYBHP, gPink, gGrid, gPastText, 
         gOldRoad, gOldCenter, gOldGuides, gOldBullseye, 
-        gKnots, gSteppy, gMovingAv, gAura, gAllpts, gDpts, gFlat, 
+        gKnots, gSteppy, gSteppyPts, gMovingAv, gAura, gAllpts, gDpts, gFlat, 
         gBullseye, gRoads, gDots,  gWatermark, gHorizon, gHorizonText, 
         zoomarea, axisZoom, zoomin, zoomout,  
         brushObj, brush, focusrect, topLeft;
@@ -1135,9 +1135,10 @@
       gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp');
       gGrid = plot.append('g').attr('id', 'grid');
       gKnots = plot.append('g').attr('id', 'knotgrp');
+      gSteppy = plot.append('g').attr('id', 'steppygrp');
       gAllpts = plot.append('g').attr('id', 'allptsgrp');
       gMovingAv = plot.append('g').attr('id', 'movingavgrp');
-      gSteppy = plot.append('g').attr('id', 'steppygrp');
+      gSteppyPts = plot.append('g').attr('id', 'steppyptsgrp');
       gDpts = plot.append('g').attr('id', 'datapointgrp');
       gFlat = plot.append('g').attr('id', 'flatlinegrp');
       gBullseye = plot.append('g').attr('id', 'bullseyegrp');
@@ -4124,7 +4125,7 @@
   		          .attr("stroke-width",3*scalf);
             }
           } else stpelt.remove();
-          updateDotGroup(gSteppy, pts, "steppyd",
+          updateDotGroup(gSteppyPts, pts, "steppyd",
                          (opts.dataPoint.size+2)*scalf,
                          "none", null, Cols.PURP);
         } else {
