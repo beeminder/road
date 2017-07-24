@@ -3278,7 +3278,7 @@
       wbuxelt.remove();
       if (!opts.roadEditor) {
 	  	  x = plotbox.width/4;
-        y = plotbox.height/4+opts.watermark.fntsize/2;
+        y = plotbox.height/4+opts.watermark.fntsize/2-plotbox.height/16;
         wbuxelt = gWatermark.append("svg:text")
 	        .attr("class","waterbux")
           .style('font-size', opts.watermark.fntsize+"px")
@@ -4155,23 +4155,23 @@
         };
         var pts = goal.filtpts.filter(function(e){
           return (e[0] > l[0]-2*SID && e[0] < l[1]+2*SID);});
-        var d = "M"+nXSc(pts[0][0]*1000)+" "
-              +nYSc(pts[0][1]);
-        for (var i = 1; i < pts.length; i++) {
-          d += " L"+nXSc(pts[i][0]*1000)+" "+
-            nYSc(pts[i][1]);
-        }
-        if (el.empty()) {
-          gMovingAv.append("svg:path")
-            .attr("class","movingav")
-	  	      .attr("d", d)
-  		      .style("fill", "none")
-  		      .attr("stroke-width",3*scalf)
-  		      .style("stroke", Cols.PURP);
-        } else {
-          el.attr("d", d)
-  		      .attr("stroke-width",3*scalf);
-        }
+        if (pts.length > 0){
+          var d = "M"+nXSc(pts[0][0]*1000)+" "+nYSc(pts[0][1]);
+          for (var i = 1; i < pts.length; i++) {
+            d += " L"+nXSc(pts[i][0]*1000)+" "+nYSc(pts[i][1]);
+          }
+          if (el.empty()) {
+            gMovingAv.append("svg:path")
+              .attr("class","movingav")
+	  	        .attr("d", d)
+  		        .style("fill", "none")
+  		        .attr("stroke-width",3*scalf)
+  		        .style("stroke", Cols.PURP);
+          } else {
+            el.attr("d", d)
+  		        .attr("stroke-width",3*scalf);
+          }
+        } else el.remove();
       } else {
         el.remove();
       }
