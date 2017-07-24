@@ -81,7 +81,7 @@
     /** Visual parameters for vertical line for asof */ 
     today:        { width: 2, ctxwidth: 1, font: 16, ctxfont: 9 },
     /** Visual parameters for watermarks */ 
-    watermark:    { height:150, fntsize:100 },
+    watermark:    { height:150, fntsize:130 },
     guidelines:   { width:2, weekwidth:3 },
     /** Visual parameters for text boxes shown during dragging */ 
     textBox:      { margin: 3 },
@@ -1679,7 +1679,7 @@
       zoomarea.call(axisZoom.transform, d3.zoomIdentity);
 
       // Relocate zoom buttons based on road yaw
-      if (goal.yaw > 0) {
+      if (goal.dir > 0) {
         zoomin.attr("transform", zoombtntr.botin);
         zoomout.attr("transform", zoombtntr.botout);
       } else {
@@ -3255,7 +3255,7 @@
           .attr('height', opts.watermark.height);
       } else {
 	  	  x = plotbox.width/4;
-        y = plotbox.height/4+opts.watermark.fntsize/2;
+        y = plotbox.height/4+opts.watermark.fntsize/3;
         wbufelt = gWatermark.append("svg:text")
 	        .attr("class","waterbuf")
           .style('font-size', opts.watermark.fntsize+"px")
@@ -3267,7 +3267,7 @@
           newsize = (opts.watermark.fntsize*(plotbox.width/2.2)
                      /bbox.width);
           newh = newsize/opts.watermark.fntsize*bbox.height;
-          y = plotbox.height/4+newh/2-plotbox.height/16;
+          y = plotbox.height/4+newh/3;
           wbufelt.style('font-size', newsize+"px");
         }        
       }
@@ -3278,7 +3278,7 @@
       wbuxelt.remove();
       if (!opts.roadEditor) {
 	  	  x = plotbox.width/4;
-        y = plotbox.height/4+opts.watermark.fntsize/2-plotbox.height/16;
+        y = plotbox.height/4+opts.watermark.fntsize/3;
         wbuxelt = gWatermark.append("svg:text")
 	        .attr("class","waterbux")
           .style('font-size', opts.watermark.fntsize+"px")
@@ -3290,7 +3290,7 @@
           newsize = (opts.watermark.fntsize*(plotbox.width/2.2)
                      /bbox.width);
           newh = newsize/opts.watermark.fntsize*bbox.height;
-          y = plotbox.height/4+newh/2-plotbox.height/16;
+          y = plotbox.height/4+newh/3;
           wbuxelt.style('font-size', newsize+"px");
         }
         wbuxelt.attr("x", x + offb[0])
