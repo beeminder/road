@@ -2330,6 +2330,11 @@
 
       if (!goal.plotall) goal.numpts = aggdata.length;
 
+    }
+
+    function procParams( p ) {
+      flatline();
+
       if (goal.movingav) {
         // Filter data and produce moving average
         var dl = aggdata.length;
@@ -2342,11 +2347,6 @@
           = newx.map(function(d) {return [d, ema(aggdata, d)];});
       } else goal.filtpts = [];
       
-    }
-
-    function procParams( p ) {
-      flatline();
-
       goal.tcur = aggdata[aggdata.length-1][0];
       goal.vcur = aggdata[aggdata.length-1][1];
 
