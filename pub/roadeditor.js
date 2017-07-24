@@ -1135,9 +1135,9 @@
       gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp');
       gGrid = plot.append('g').attr('id', 'grid');
       gKnots = plot.append('g').attr('id', 'knotgrp');
-      gSteppy = plot.append('g').attr('id', 'steppygrp');
-      gMovingAv = plot.append('g').attr('id', 'movingavgrp');
       gAllpts = plot.append('g').attr('id', 'allptsgrp');
+      gMovingAv = plot.append('g').attr('id', 'movingavgrp');
+      gSteppy = plot.append('g').attr('id', 'steppygrp');
       gDpts = plot.append('g').attr('id', 'datapointgrp');
       gFlat = plot.append('g').attr('id', 'flatlinegrp');
       gBullseye = plot.append('g').attr('id', 'bullseyegrp');
