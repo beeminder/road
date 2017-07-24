@@ -1,4 +1,4 @@
-[glitch update1514]
+[glitch update1012]
 
 ## CHANGELOG
 
@@ -60,6 +60,7 @@ Quibbly issues to try to make the overall graph aesthetics match or exceed Matpl
 4. lower priority since the blue/green aura isn't turned on for most graphs but i really like how in matplotlib it's green where it overlaps the YBR (cuz yellow and blue make green)
 5. example of svg with artifacts (only appears in chrome; firefox and safari display it fine): http://road.glitch.me/svg-with-artifacts.svg 
 6. day of week for "today" should account for the beeminder deadline. for example, if it's friday night at 8pm and i've done my pushups that we due at 7pm then from beeminder's point of view it's now saturday and it's an eep day again because saturday's pushups are due in less than 24 hours. this seems counterintuitive to call it saturday when it's clearly friday but it turns out to be a can of worms to do anything other than treat the beeminder deadline as the end-of-day.
+7. don't draw the actual YBR left of tini. we do want to be able to scroll left of tini and add new knots and make tini be earlier. just show the actual YBR starting at tini. it's also possible to have datapoints to the left of tini, which is fine.
 
 General
 1. Should we allow adding duplicate road knots (helps with subsequent editing, so probably yes) [yes]
