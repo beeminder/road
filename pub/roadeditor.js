@@ -3214,45 +3214,53 @@
       }
     }
 
+    function locateWatermark(el, pos, off) {
+      el.attr("x", pos[0] + off[0]);
+      el.attr("y", pos[1] + off[1]);
+    }
     // Creates or updates the watermark with the number of safe days
     function updateWatermark() {
       if (opts.divGraph == null || roads.length == 0 || hidden) return;
 
-      console.debug(goal);
       setWatermark();
-      
-      var g = null, b = null, x, y, bbox, newsize, newh;
       if (goal.loser) g = PNG.skl;
-
-      if   (goal.waterbuf === 'inf') g = PNG.inf;
+      if (goal.waterbuf === 'inf') g = PNG.inf;
       else if (goal.waterbuf === ':)') g = PNG.sml;
+
+
+      var tl = [0,0], bl = [0, plotbox.height/2];
+      var tr = [plotbox.width/2,0], br = [plotbox.width/2, plotbox.height/2];
+      var offg, offb, g = null, b = null, x, y, bbox, newsize, newh;
+
+      if (goal.dir>0 && goal.yaw<0) { 
+        offg = br; offb = tl;
+      } else if (goal.dir<0 && goal.yaw>0) { 
+        offg = tr; offb = bl;
+      } else if (goal.dir<0 && goal.yaw<0) { 
+        offg = bl; offb = tr;
+      } else {
+        offg = tl; offb = br;
+      }
 
       var wbufelt = gWatermark.select(".waterbuf");
       wbufelt.remove();
       if (g != null) {
 	  	  x = (plotbox.width/2-opts.watermark.height)/2;
         y = (plotbox.height/2-opts.watermark.height)/2;
-        if (goal.dir<0 && goal.yaw<0) y+= plotbox.height/2;
-        else if (goal.dir<0 && goal.yaw>0) x+= plotbox.width/2;
-        else if (goal.dir>0 && goal.yaw<0) {x+= plotbox.width/2;y+= plotbox.height/2;}
+
         wbufelt = gWatermark.append("svg:image")
 	        .attr("class","waterbuf")
 	        .attr("xlink:href",g)
-	  	    .attr("x",x).attr("y",y)
           .attr('width', opts.watermark.height)
           .attr('height', opts.watermark.height);
       } else {
 	  	  x = plotbox.width/4;
         y = plotbox.height/4+opts.watermark.fntsize/2;
-        if (goal.dir<0 && goal.yaw<0) y+= plotbox.height/2;
-        else if (goal.dir<0 && goal.yaw>0) x+= plotbox.width/2;
-        else if (goal.dir>0 && goal.yaw<0) {x+= plotbox.width/2;y+= plotbox.height/2;}
         wbufelt = gWatermark.append("svg:text")
 	        .attr("class","waterbuf")
           .style('font-size', opts.watermark.fntsize+"px")
           .style('font-weight', "bold")
           .style('fill', Cols.GRAY)
-	  	    .attr("x",x).attr("y",y)
           .text(goal.waterbuf);
         bbox = wbufelt.node().getBBox();
         if (bbox.width > plotbox.width/2.2) {
@@ -3260,26 +3268,22 @@
                      /bbox.width);
           newh = newsize/opts.watermark.fntsize*bbox.height;
           y = plotbox.height/4+newh/2-plotbox.height/16;
-          if (goal.dir<0) y+= plotbox.height/2;
-          wbufelt.style('font-size', newsize+"px").attr("y", y);
-        }
+          wbufelt.style('font-size', newsize+"px");
+        }        
       }
+      wbufelt.attr("x", x + offg[0])
+        .attr("y", y + offg[1]);
 
       var wbuxelt = gWatermark.select(".waterbux");
       wbuxelt.remove();
       if (!opts.roadEditor) {
-	  	  x = 3*plotbox.width/4;
-        y = 3*plotbox.height/4+opts.watermark.fntsize/2;
-        if (goal.dir<0 && goal.yaw<0) y-= plotbox.height/2;
-        else if (goal.dir<0 && goal.yaw>0) x-= plotbox.width/2;
-        else if (goal.dir>0 && goal.yaw<0) {x-= plotbox.width/2;y-= plotbox.height/2;}
-        if (goal.dir<0) y-= plotbox.height/2;
+	  	  x = plotbox.width/4;
+        y = plotbox.height/4+opts.watermark.fntsize/2;
         wbuxelt = gWatermark.append("svg:text")
 	        .attr("class","waterbux")
           .style('font-size', opts.watermark.fntsize+"px")
           .style('font-weight', "bold")
           .style('fill', Cols.GRAY)
-	  	    .attr("x",x).attr("y",y)
           .text(goal.waterbux);
         bbox = wbuxelt.node().getBBox();
         if (bbox.width > plotbox.width/2.2) {
@@ -3287,10 +3291,11 @@
                      /bbox.width);
           newh = newsize/opts.watermark.fntsize*bbox.height;
           y = plotbox.height/4+newh/2-plotbox.height/16;
-          if (goal.dir>0) y+= plotbox.height/2;
-          wbuxelt.style('font-size', newsize+"px").attr("y", y);
+          wbuxelt.style('font-size', newsize+"px");
         }
-      }
+        wbuxelt.attr("x", x + offb[0])
+          .attr("y", y + offb[1]);
+      } else wbuxelt.remove();
     }
     
     function updateAura() {
