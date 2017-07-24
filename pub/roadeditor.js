@@ -4130,7 +4130,7 @@
                          "none", null, Cols.PURP);
         } else {
           stpelt.remove();
-          var stpdelt = gSteppy.selectAll(".steppyd");
+          var stpdelt = gSteppyPts.selectAll(".steppyd");
           stpdelt.remove();
         }
       } else {
