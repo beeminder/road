@@ -1757,9 +1757,10 @@
           if (x == aggdata[i][0])
             return;
         }
+      }
+      if (!aggval.hasOwnProperty(x)) {
         var prevpt = aggdata[numpts-1];
-        flad = [x, vlast, "PPR", DPTYPE.FLATLINE, 
-                prevpt[0], prevpt[1], null];
+        flad = [x, vlast, "PPR", DPTYPE.FLATLINE, prevpt[0], prevpt[1], null];
         aggdata.push(flad);
       }
     }
