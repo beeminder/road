@@ -53,6 +53,7 @@
 
 Prioritized To-Do list for the editor/client-side graphs
 
+- Show the rate units somewhere
 - Table headers and the first row should always be visible
 - Last (goal) row should always be visible or somehow highlighted
 - "Schedule a break" functionality (options: insert or overwrite)
