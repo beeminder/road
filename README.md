@@ -66,6 +66,8 @@ Prioritized To-Do list for the editor/client-side graphs
 - True *retro*ratchet when you originally made your rate way too conservative and want the road to match your data
 - Inverse of autoscroll so you know what part of the graph you're editing when you edit road matrix rows
 - Try out ways to "freeze" selection of roads, knots and dots to preserve highlighting of corresponding table entries.
+- Mini-editor for goal creation
+- Replace table checkmarks with proper icons and implement auto-enable on click.
 - Bug: when you drag a knot and it bumps into another knot it loses the slope it was supposed to be keeping fixed
 
 Quibbly issues to try to make the overall graph aesthetics match or exceed Matplotlib:
