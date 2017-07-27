@@ -92,7 +92,7 @@
     roadKnotCol:  { dflt: "#c2c2c2", selected: "yellow", 
                     rmbtn: "black", rmbtnsel: "red"}, 
     textBoxCol:   { bg: "#ffffff", stroke:"#d0d0d0"},
-    roadTableCol: { bg:"#ffffff", bgHighlight: "#bbffbb", 
+    roadTableCol: { bg:"#ffffff", bgHighlight: "#fffb55", 
                     text:"#000000", textDisabled: "#aaaaaa"},
     dataPointCol: { future: "#909090", stroke: "lightgray"},
     halfPlaneCol: { fill: "#ffffe8" },
@@ -2695,6 +2695,13 @@
 	      sel.attr("x1", nXSc(rd[selection].end[0]*1000))
 		  	  .attr("x2", nXSc(rd[selection].end[0]*1000));
       }
+  	  sel = gKnots.selectAll(".selectedroad");
+      if (!sel.empty() )  {
+        sel.attr("x1", nXSc(roads[selection].sta[0]*1000))
+          .attr("x2", nXSc(roads[selection].end[0]*1000))
+          .attr("y1", nYSc(roads[selection].sta[1]))
+          .attr("y2", nYSc(roads[selection].end[1]));
+      }
 
       if (opts.tableUpdateOnDrag) updateTableValues();
       updateRoadValidity();
@@ -2715,16 +2722,16 @@
       highlightDate( kind, true );
       selection = kind; selectType = RP.DATE;
       d3.select("[name=knot"+kind+"]")
-        .attr("stroke-width", opts.roadKnot.width+2);
+        .attr("stroke-width", opts.roadKnot.width);
       var x = nXSc(roads[kind].end[0]*1000);
-      console.debug(x);
       selectelt = gKnots.append("svg:line")
         .attr("class", "selectedknot")
-        .attr("pointer-event", "none")
+        .attr("pointer-events", "none")
         .attr("x1", x).attr("x2", x)
         .attr("y1",0).attr("y2",plotbox.height)
         .attr("stroke", opts.roadKnotCol.selected)
-        .attr("stroke-width", opts.roadKnot.width);
+        .attr("stroke-opacity", 0.9)
+        .attr("stroke-width", opts.roadKnot.width+4).lower();
     }
     function unselectKnot( kind ) {
       highlightDate( kind, false );
@@ -2736,8 +2743,16 @@
       highlightValue( kind, true );
       selection = kind; selectType = RP.VALUE;
       d3.select("[name=dot"+kind+"]")
+        .attr("r", opts.roadDot.size);
+      selectelt = gDots.append("svg:circle")
+        .attr("class", "selecteddot")
+        .attr("pointer-events", "none")
+        .attr("cx", nXSc(roads[kind].end[0]*1000))
+        .attr("cy", nYSc(roads[kind].end[1]))
         .attr("fill", opts.roadDotCol.selected)
-        .attr("r", opts.roadDot.size+2);
+        .attr("fill-opacity", 0.7)
+        .attr("r", opts.roadDot.size+4)
+        .attr("stroke", "none").lower();
     }
     function unselectDot( kind ) {
       highlightValue( kind, false );
@@ -2749,8 +2764,19 @@
       highlightSlope( kind, true );
       selection = kind; selectType = RP.SLOPE;
       d3.select("[name=road"+kind+"]")
-        .style("stroke",opts.roadLineCol.selected)
-        .attr("stroke-width",opts.roadLine.width+2);
+        .attr("shape-rendering", "geometricPrecision")
+        .attr("stroke-width",opts.roadLine.width);
+      selectelt = gRoads.append("svg:line")
+        .attr("class", "selectedroad")
+        .attr("shape-rendering", "geometricPrecision")
+        .attr("pointer-events", "none")
+        .attr("x1", nXSc(roads[kind].sta[0]*1000))
+        .attr("x2", nXSc(roads[kind].end[0]*1000))
+        .attr("y1", nYSc(roads[kind].sta[1]))
+        .attr("y2", nYSc(roads[kind].end[1]))
+        .attr("stroke", opts.roadKnotCol.selected)
+        .attr("stroke-opacity", 0.9)
+        .attr("stroke-width", opts.roadLine.width+4).lower();
     }
     function unselectRoad( kind ) {
       highlightSlope( kind, false );
@@ -3130,7 +3156,7 @@
     // Creates or updates the shaded box to indicate past dates
     function updatePastText() {
       if (opts.divGraph == null || roads.length == 0) return;
-      var todayelt = gPastText.select(".pastline");
+      var todayelt = gGrid.select(".pastline");
       var pasttextelt = gPastText.select(".pasttext");
       if (!opts.roadEditor) {
         todayelt.remove();
@@ -3138,7 +3164,7 @@
         return;
       }
       if (todayelt.empty()) {
-        gPastText.append("svg:line")
+        gGrid.append("svg:line")
 	        .attr("class","pastline")
 	  	    .attr("x1", nXSc(goal.asof*1000))
           .attr("y1",0)
