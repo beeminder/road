@@ -86,13 +86,13 @@
     /** Visual parameters for text boxes shown during dragging */ 
     textBox:      { margin: 3 },
 
-    roadLineCol:  { valid: "black", invalid:"#ca1212", selected:"lightgreen"},
+    roadLineCol:  { valid: "black", invalid:"#ca1212", selected:"#f8f155"},
     roadDotCol:   { fixed: "darkgray", editable:"#c2c2c2", 
-                    selected: "lightgreen"},
-    roadKnotCol:  { dflt: "#c2c2c2", selected: "lightgreen", 
+                    selected: "#f8f155"},
+    roadKnotCol:  { dflt: "#c2c2c2", selected: "#f8f155", 
                     rmbtn: "black", rmbtnsel: "red"}, 
     textBoxCol:   { bg: "#ffffff", stroke:"#d0d0d0"},
-    roadTableCol: { bg:"#ffffff", bgHighlight: "#bbffbb", 
+    roadTableCol: { bg:"#ffffff", bgHighlight: "#fffb55", 
                     text:"#000000", textDisabled: "#aaaaaa"},
     dataPointCol: { future: "#909090", stroke: "lightgray"},
     halfPlaneCol: { fill: "#ffffe8" },
