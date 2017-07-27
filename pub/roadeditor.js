@@ -86,10 +86,10 @@
     /** Visual parameters for text boxes shown during dragging */ 
     textBox:      { margin: 3 },
 
-    roadLineCol:  { valid: "black", invalid:"#ca1212", selected:"lightgreen"},
+    roadLineCol:  { valid: "black", invalid:"#ca1212", selected:"yellow"},
     roadDotCol:   { fixed: "darkgray", editable:"#c2c2c2", 
-                    selected: "lightgreen"},
-    roadKnotCol:  { dflt: "#c2c2c2", selected: "lightgreen", 
+                    selected: "yellow"},
+    roadKnotCol:  { dflt: "#c2c2c2", selected: "yellow", 
                     rmbtn: "black", rmbtnsel: "red"}, 
     textBoxCol:   { bg: "#ffffff", stroke:"#d0d0d0"},
     roadTableCol: { bg:"#ffffff", bgHighlight: "#bbffbb", 
@@ -2690,6 +2690,12 @@
   		  el.select("[name=slope"+ii+"]")
           .text(shn(rd[ii].slope*goal.siru));
       }
+  	  var sel = gKnots.selectAll(".selectedknot");
+      if (!sel.empty() )  {
+	      sel.attr("x1", nXSc(rd[selection].end[0]*1000))
+		  	  .attr("x2", nXSc(rd[selection].end[0]*1000));
+      }
+
       if (opts.tableUpdateOnDrag) updateTableValues();
       updateRoadValidity();
       updateWatermark();
@@ -2703,13 +2709,22 @@
     // -------- Functions related to selection of components --------
     var selection = null;
     var selectType = null;
+    var selectelt = null;
 
     function selectKnot( kind ) {
       highlightDate( kind, true );
       selection = kind; selectType = RP.DATE;
       d3.select("[name=knot"+kind+"]")
-        .attr("stroke", opts.roadKnotCol.selected)
         .attr("stroke-width", opts.roadKnot.width+2);
+      var x = nXSc(roads[kind].end[0]*1000);
+      console.debug(x);
+      selectelt = gKnots.append("svg:line")
+        .attr("class", "selectedknot")
+        .attr("pointer-event", "none")
+        .attr("x1", x).attr("x2", x)
+        .attr("y1",0).attr("y2",plotbox.height)
+        .attr("stroke", opts.roadKnotCol.selected)
+        .attr("stroke-width", opts.roadKnot.width);
     }
     function unselectKnot( kind ) {
       highlightDate( kind, false );
@@ -2747,6 +2762,7 @@
     }
     function unselect() {
       selection = null; selectType = null;
+      if (selectelt != null) {selectelt.remove(); selectelt=null;}
     }
     function clearSelection() {
       if (selection == null) return;
@@ -3768,9 +3784,9 @@
       knotelt.exit().remove();
       knotelt
 	      .attr("x1", function(d){ return nXSc(d.end[0]*1000);})
-	      .attr("y2", nYSc(goal.yMax + 10*(goal.yMax-goal.yMin)))
+	      .attr("y1", 0)
 	      .attr("x2", function(d){ return nXSc(d.end[0]*1000);})
-        .attr("y1", nYSc(goal.yMin - 10*(goal.yMax-goal.yMin)))
+        .attr("y2", plotbox.height)
 	      .attr("stroke", "rgb(200,200,200)") 
 	      .attr("stroke-width",opts.roadKnot.width);
       knotelt.enter().append("svg:line")
@@ -3778,9 +3794,7 @@
 	      .attr("id", function(d,i) {return i;})
 	      .attr("name", function(d,i) {return "knot"+i;})
 	      .attr("x1", function(d){ return nXSc(d.end[0]*1000);})
-	      .attr("y1",nYSc(goal.yMin))
 	      .attr("x2", function(d){ return nXSc(d.end[0]*1000);})
-	      .attr("y2",nYSc(goal.yMax))
 	      .attr("stroke", "rgb(200,200,200)") 
 	      .attr("stroke-width",opts.roadKnot.width)
         .on('wheel', function(d) { 
