@@ -1760,23 +1760,23 @@
       var now = goal.asof;
       var hor = goal.horizon;
       // Check left/right boundaries of the pink region
-      if (goal.yaw*rdf(rd, now) < goal.yaw*rdf(ir, now) + EPS) 
+      if (goal.yaw*rdf(rd, now) < goal.yaw*rdf(ir, now) - EPS) 
         return false;
-      if (goal.yaw*rdf(rd, hor) < goal.yaw*rdf(ir, hor) + EPS) 
+      if (goal.yaw*rdf(rd, hor) < goal.yaw*rdf(ir, hor) - EPS) 
         return false;
       // Iterate through and check current road points in the ping range
       var rd_i1 = findRoadSegment(rd, now);
       var rd_i2 = findRoadSegment(rd, hor);
       for (var i = rd_i1; i < rd_i2; i++) {
         if (goal.yaw*rdf(rd, rd[i].end[0]) < 
-            goal.yaw*rdf(ir, rd[i].end[0]) + EPS) return false;
+            goal.yaw*rdf(ir, rd[i].end[0]) - EPS) return false;
       }
       // Iterate through and check old road points in the ping range
       var ir_i1 = findRoadSegment(ir, now);
       var ir_i2 = findRoadSegment(ir, hor);
       for (i = ir_i1; i < ir_i2; i++) {
         if (goal.yaw*rdf(rd, ir[i].end[0]) < 
-            goal.yaw*rdf(ir, ir[i].end[0]) + EPS) return false;
+            goal.yaw*rdf(ir, ir[i].end[0]) - EPS) return false;
       }
       return true;
     }
