@@ -7,6 +7,8 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/octicons/3.5.0/octicons.min.css">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="pikaday.css">
   <link rel="stylesheet" href="roadeditor.css">
@@ -17,7 +19,8 @@
 </head>
 
 <body>
-
+<div class="container">
+  
 <h1>Beeminder Visual Road Editor and Client-Side Graphs</h1>
 
 <form name="graphType">
@@ -42,12 +45,12 @@
       <input id="showcontext" type="checkbox" onclick="editor.showContext(this.checked);" checked>Show context graph<br>
       <input id="keepslopes" type="checkbox" onclick="editor.keepSlopes(this.checked);" checked>Keep slopes fixed&nbsp;
       <input id="keepintervals" onclick="editor.keepIntervals(this.checked);" type="checkbox">Keep intervals fixed<br>
-      <button id="resetzoom" onclick="editor.zoomDefault();">Reset Zoom</button>
-      <button id="undo" onclick="editor.undo();">Undo (0)</button>
-      <button id="redo" onclick="editor.redo();">Redo (0)</button>
-      <button id="savesvg" onclick="editor.saveGraph();">Save SVG</button><br/><br/>
+      <button class="btn btn-secondary" id="resetzoom" onclick="editor.zoomDefault();">Reset Zoom</button>
+      <button class="btn btn-secondary" id="undo" onclick="editor.undo();">Undo (0)</button>
+      <button class="btn btn-secondary" id="redo" onclick="editor.redo();">Redo (0)</button>
+      <button class="btn btn-secondary" id="savesvg" onclick="editor.saveGraph();">Save SVG</button><br/><br/>
       Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">Retroratchet</button><br/><br/>
-<button id="roadsubmit" onclick="handleRoadSubmit();">Submit</button>&nbsp;<span id="submitmsg"></span><br/><br/>
+<button class="btn btn-primary" id="roadsubmit" onclick="handleRoadSubmit();">Submit</button>&nbsp;<span id="submitmsg"></span><br/><br/>
 
     </td>
     <td valign="top">
@@ -65,8 +68,8 @@
   <tr>
     <td valign="top"><div id="roadgraph2"></div>
       <input id="showalldata2" type="checkbox" onclick="if (this.checked) editor2.maxDataDays(-1); else editor2.maxDataDays(100);"  checked>Show All data<br/>
-      <button id="resetzoom2" onclick="editor2.zoomDefault();">Reset Zoom</button>
-      <button id="savesvg2" onclick="editor2.saveGraph();">Save SVG</button><br/><br/>
+      <button class="btn btn-secondary" id="resetzoom2" onclick="editor2.zoomDefault();">Reset Zoom</button>
+      <button class="btn btn-secondary" id="savesvg2" onclick="editor2.saveGraph();">Save SVG</button><br/><br/>
     </td>
     <td valign="top">
       <div id="roadtable2"></div>
@@ -93,6 +96,8 @@ or ask
 <a href="http://dreev.es">dreeves</a>
 for a link to live-edit it with us.
 </p>
+
+    </div>
 
 </body>
 </html>
