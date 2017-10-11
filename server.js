@@ -75,6 +75,8 @@ var listener = app.listen(process.env.PORT, () => {
 })
 
 app.get("/login", (req, resp) => {
+  console.log("!!!! GOT LOGIN !!!!")
+  console.log(req.session)
   if(typeof req.session.access_token === 'undefined' || 
             req.session.access_token === null) {
     

@@ -1,3 +1,4 @@
+/*
 .main text {
   font: 15px sans-serif;	
 }
@@ -10,4 +11,21 @@ body,td,th {
 textarea { 
   font-family: Consolas, Lucida Console, monospace;
   font-size: 15pt;
+}
+*/
+[class^="icon-"],
+[class*=" icon-"] {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  line-height: 14px;
+  vertical-align: text-top;
+  background-image: image-url("glyphicons-halflings.png");
+  background-position: 14px 14px;
+  background-repeat: no-repeat;
+  *margin-right: .3em;
+}
+[class^="icon-"]:last-child,
+[class*=" icon-"]:last-child {
+  *margin-left: 0;
 }

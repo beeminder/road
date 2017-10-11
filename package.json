@@ -15,7 +15,8 @@
     "sequelize": "^4.3.2",
     "connect-session-sequelize": "^4.1.0",
     "ejs": "^2.5.6",
-    "request": "^2.81.0"
+    "request": "^2.81.0",
+    "octicons": "^6.0.1"
   },
   "engines": {
     "node": "6.x"
