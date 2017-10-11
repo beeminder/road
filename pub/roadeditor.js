@@ -4560,7 +4560,7 @@
 
     function updateTableButtons() {
       if (opts.divTable == null) return;
-      // Update butons on all rows at once, including the start node.
+      // Update buttons on all rows at once, including the start node.
       var allrows = d3.select(opts.divTable)
             .selectAll(".rtable .startrow, .rtable .roadrow");
       var btncells = allrows.selectAll(".roadbtn")
@@ -4589,7 +4589,10 @@
             .attr('id', function(d) { return d.row;})
             .attr('name', function(d) { return d.name;})
             .attr('type',function(d) {return d.type;})
-            .attr('value', function(d) { return d.txt;})
+            .attr('value', function(d) { 
+              let cell = "<span class='octicon octicon-plus'></span>"
+              //return cell;
+              return d.txt;})
             .on('click', function (d) {d.evt();});
       
       btncells.exit().remove();
