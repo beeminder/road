@@ -1755,26 +1755,28 @@
     function isRoadValid( rd ) {
       var ir = iRoad;
       
+      var EPS = 0.000001; // dang floating point comparisons
+      
       var now = goal.asof;
       var hor = goal.horizon;
       // Check left/right boundaries of the pink region
-      if (goal.yaw*rdf(rd, now) < goal.yaw*rdf(ir, now)) 
+      if (goal.yaw*rdf(rd, now) < goal.yaw*rdf(ir, now) - EPS) 
         return false;
-      if (goal.yaw*rdf(rd, hor) < goal.yaw*rdf(ir, hor)) 
+      if (goal.yaw*rdf(rd, hor) < goal.yaw*rdf(ir, hor) - EPS) 
         return false;
       // Iterate through and check current road points in the ping range
       var rd_i1 = findRoadSegment(rd, now);
       var rd_i2 = findRoadSegment(rd, hor);
       for (var i = rd_i1; i < rd_i2; i++) {
         if (goal.yaw*rdf(rd, rd[i].end[0]) < 
-            goal.yaw*rdf(ir, rd[i].end[0])) return false;
+            goal.yaw*rdf(ir, rd[i].end[0]) - EPS) return false;
       }
       // Iterate through and check old road points in the ping range
       var ir_i1 = findRoadSegment(ir, now);
       var ir_i2 = findRoadSegment(ir, hor);
       for (i = ir_i1; i < ir_i2; i++) {
         if (goal.yaw*rdf(rd, ir[i].end[0]) < 
-            goal.yaw*rdf(ir, ir[i].end[0])) return false;
+            goal.yaw*rdf(ir, ir[i].end[0]) - EPS) return false;
       }
       return true;
     }
@@ -4558,7 +4560,7 @@
 
     function updateTableButtons() {
       if (opts.divTable == null) return;
-      // Update butons on all rows at once, including the start node.
+      // Update buttons on all rows at once, including the start node.
       var allrows = d3.select(opts.divTable)
             .selectAll(".rtable .startrow, .rtable .roadrow");
       var btncells = allrows.selectAll(".roadbtn")
@@ -4587,7 +4589,10 @@
             .attr('id', function(d) { return d.row;})
             .attr('name', function(d) { return d.name;})
             .attr('type',function(d) {return d.type;})
-            .attr('value', function(d) { return d.txt;})
+            .attr('value', function(d) { 
+              let cell = "<span class='octicon octicon-plus'></span>"
+              //return cell;
+              return d.txt;})
             .on('click', function (d) {d.evt();});
       
       btncells.exit().remove();
