@@ -64,15 +64,29 @@
 <button id="zoomdflt" onclick="editor.zoomDefault();">Default Zoom</button>
 <button id="undo" onclick="editor.undo();">Undo (0)</button>
 <button id="redo" onclick="editor.redo();">Redo (0)</button><br/><br/>
-Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">Retroratchet</button><br/><br/>
-Take a break starting
-<input type = "text" id="breakstart" style="width:10em">
-for
-<input type = "number" value="1" min="1" id="breakdays" style="width:4em">
-days
-<button id="insertbreak" onclick="scheduleBreak(true);">Insert</button>
-<button id="overwritebreak" onclick="scheduleBreak(false);">Overwrite</button>
+
+Reduce safety buffer to: 
+<input type = "number" value="0" min="0" id="ratchetdays"> days 
+<button id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">RETRORATCHET!</button><br/><br/>
+
+Take a break starting:
+<input type = "text" id="breakstart" style="width:10em"> for
+<input type = "number" value="1" min="1" id="breakdays" style="width:4em"> days
+<button id="insertbreak" onclick="scheduleBreak(true);">INSERT</button>
+<button id="overwritebreak" onclick="scheduleBreak(false);">OVERWRITE</button>
 <br/><br/>
+
+Commit to:
+<input type = "number" id="endslope" step="any" style="width:10em">
+<select id="slopetype" selected="604800" onchange="updateCommitFields();">
+  <option value="86400">per day</option>
+  <option value="604800">per week</option>
+  <option value="2629800">per month</option>
+  <option value="31557600">per year</option>
+</select> 
+<button id="commit" onclick="commitTo();">UPDATE</button>
+<br/><br/>
+
 <button id="submit" onclick="window.alert('new road matrix:\n'+JSON.stringify(editor.getRoad(),null,2));">Submit</button>
 <button id="savesvg" onclick="editor.saveGraph();">Save SVG</button><br/>
 
@@ -114,7 +128,10 @@ days
 <script>
   var undoBtn = document.getElementById("undo");
   var redoBtn = document.getElementById("redo");
-  var breakpicker= new Pikaday({field: document.getElementById('breakstart')});
+  var endSlope = document.getElementById("endslope");
+  var slopeType = document.getElementById("slopetype");
+  var breakpicker = new Pikaday({field: document.getElementById('breakstart')});
+
   function roadChanged() {
     var bufStates = editor.undoBufferState();
     if (bufStates.undo === 0)  {
@@ -131,19 +148,39 @@ days
       redoBtn.disabled = false;
       redoBtn.innerHTML = "Redo ("+bufStates.redo+")";
     }
+
     var road = editor.getRoad();
     var mindate=moment(moment.unix(road.horizon).utc().format("YYYY-MM-DD")).toDate();
     breakpicker.setMinDate(mindate);
     if (!breakstart.value.trim()) {
       breakpicker.setDate(mindate);
     }
+
+    slopeType.value = road.siru;
+    updateCommitFields();
   }
   
+  function updateCommitFields() {
+    var sirunew = parseInt(slopeType.value);
+    var road = editor.getRoad();
+    var siru = road.siru;
+    var rd = road.road;
+    endSlope.value = rd[rd.length-1][2]/siru*sirunew;
+  }
+
+  function commitTo() {
+    if (isNaN(endSlope.value)) return;
+    var siru = parseInt(slopeType.value);
+    var slope = parseInt(endSlope.value);
+    editor.commitTo(slope / siru);
+  }
+
   function scheduleBreak(insert) {
     var start = document.getElementById('breakstart').value; 
     var days = document.getElementById('breakdays').value; 
     if (!isNaN(days)) editor.scheduleBreak(start, days, insert);
   }
+
   var editor = new bmndr({divGraph: document.getElementById('roadgraph'),
                           divTable: document.getElementById('roadtable'),
                           roadEditor:true,
