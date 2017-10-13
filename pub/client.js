@@ -35,7 +35,7 @@ function roadChanged() {
       submitBtn.disabled = false;
       submitMsg.innerHTML = "";
     }
-    var mindate=moment(moment.unix(newRoad.horizon).format("YYYY-MM-DD")).toDate();
+    var mindate=moment(moment.unix(newRoad.horizon).utc().format("YYYY-MM-DD")).toDate();
     breakpicker.setMinDate(mindate);
     if (!breakstart.value.trim()) {
       breakpicker.setDate(mindate);
