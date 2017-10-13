@@ -1078,7 +1078,8 @@
           .on("touchend.zoom", function () { clearTimeout(pressTimer); pressTimer = null; oldTouchEnd.apply(this, arguments);} );              
       }
       function dotAdded() {
-        var newx = nXSc.invert(d3.event.x-plotpad.left);
+        var mouse = d3.mouse(svg.node())
+        var newx = nXSc.invert(mouse[0]-plotpad.left);
         addNewDot(newx/1000);
       }
       function dotAddedShift() {
@@ -2513,12 +2514,10 @@
 
       // Find or add two new dots at asof
       // We only allow the first step to record undo info.
-      var first = -1;
-      var i;
+      var first = -1, i;
       for (i = 1; i < roads.length; i++) {
         if (roads[i].sta[0] === now) {
-          first = i-1;
-          break;
+          first = i-1; break;
         }
       }
       var added = false;
@@ -2692,18 +2691,6 @@
   		  el.select("[name=slope"+ii+"]")
           .text(shn(rd[ii].slope*goal.siru));
       }
-  	  var sel = gKnots.selectAll(".selectedknot");
-      if (!sel.empty() )  {
-	      sel.attr("x1", nXSc(rd[selection].end[0]*1000))
-		  	  .attr("x2", nXSc(rd[selection].end[0]*1000));
-      }
-  	  sel = gKnots.selectAll(".selectedroad");
-      if (!sel.empty() )  {
-        sel.attr("x1", nXSc(roads[selection].sta[0]*1000))
-          .attr("x2", nXSc(roads[selection].end[0]*1000))
-          .attr("y1", nYSc(roads[selection].sta[1]))
-          .attr("y2", nYSc(roads[selection].end[1]));
-      }
 
       if (opts.tableUpdateOnDrag) updateTableValues();
       updateRoadValidity();
@@ -2752,7 +2739,7 @@
         .attr("cx", nXSc(roads[kind].end[0]*1000))
         .attr("cy", nYSc(roads[kind].end[1]))
         .attr("fill", opts.roadDotCol.selected)
-        .attr("fill-opacity", 0.7)
+        .attr("fill-opacity", 0.6)
         .attr("r", opts.roadDot.size+4)
         .attr("stroke", "none").lower();
     }
@@ -2802,7 +2789,7 @@
     }
 
     // -------------- Functions for manipulating knots ---------------
-    var roadsave, knotind, knotdate;
+    var roadsave, knotind, knotdate, prevslopes;
 
     var editingKnot = false;
     function knotDragStarted(d,i) {
@@ -2822,6 +2809,11 @@
       }
       createDragInfo( d.end );
       knottext.grp.raise();
+      // Store initial slopes to the left and right to prevent
+      // collapsed segment issues
+      prevslopes = [];
+      prevslopes[0] = roads[kind].slope;
+      prevslopes[1] = roads[kind+1].slope;
     }
 
     function knotDragged(d,i) {
@@ -2839,6 +2831,12 @@
       for (var ii = kind; ii < maxind; ii++) {
 	      rd[ii].end[0] 
           = x + roadsave[ii].end[0] - roadsave[kind].end[0];
+      }
+      if (isFinite(prevslopes[0]) && roads[kind].sta[0]!=roads[kind].end[0]) {
+        roads[kind].slope = prevslopes[0]; 
+      }
+      if (isFinite(prevslopes[1])&&roads[kind+1].sta[0]!=roads[kind+1].end[0]) {
+        roads[kind+1].slope = prevslopes[1]; 
       }
       fixRoadArray( rd, opts.keepSlopes?
                     RP.VALUE:RP.SLOPE,
@@ -4882,6 +4880,77 @@
       setSafeDays( days );  
     };
 
+    /** Performs retroratcheting function by adding new knots to
+     leave "days" number of days to derailment based on today data
+     point (which may be flatlined). */
+    self.scheduleBreak = function( start, days, insert ) {
+      if (!opts.roadEditor) return;
+      if (isNaN(days)) return;
+      var begintime = dayparse(start, '-');
+      // Find or add a new dot at the start of break
+      // We only allow the first step to record undo info.
+      var firstseg = -1, i, j;
+      for (i = 1; i < roads.length; i++) {
+        if (roads[i].sta[0] === begintime) {
+          firstseg = i; break;
+        }
+      }
+      var added = false;
+      if (firstseg < 0) {addNewDot(begintime);added = true;}
+      if (!added) pushUndoState();
+      for (i = 1; i < roads.length; i++) {
+        if (roads[i].sta[0] === begintime) {
+          firstseg = i; break;
+        }
+      }
+      if (insert) {
+        // First, shift all remaining knots right by the requested
+        // number of days
+        roads[firstseg].end[0] = daysnap(roads[firstseg].end[0]+days*SID);
+        for (j = firstseg+1; j < roads.length; j++) {
+          roads[j].sta[0] = daysnap(roads[j].sta[0]+days*SID);
+          roads[j].end[0] = daysnap(roads[j].end[0]+days*SID);
+        }
+        // Now, create and add the end segment if the value of the
+        // subsequent endpoint was different
+        if (roads[firstseg].sta[1] != roads[firstseg].end[1]) {
+          var segment = {};
+          segment.sta = roads[firstseg].sta.slice();
+          segment.sta[0] = daysnap(segment.sta[0]+days*SID);
+          segment.end = roads[firstseg].end.slice();
+          segment.slope = roadSegmentSlope(segment);
+          segment.auto = RP.VALUE;
+          roads.splice(firstseg+1, 0, segment);
+          roads[firstseg].end = segment.sta.slice();
+          roads[firstseg].slope = 0;
+          fixRoadArray( roads, RP.VALUE, false);
+        }
+      } else {
+        // Find the right boundary for the segment for overwriting
+        var endtime = daysnap(roads[firstseg].sta[0]+days*SID);
+        var lastseg = findRoadSegment( roads, endtime );
+        if (roads[lastseg].sta[0] != endtime) {
+          // If there are no dots on the endpoint, add a new one
+          addNewDot(endtime); 
+          if (added) {undoBuffer.pop(); added = true;}
+          lastseg = findRoadSegment( roads, endtime );
+        }
+        // Delete segments in between
+        for (j = firstseg+1; j < lastseg; j++) {
+          roads.splice(firstseg+1, 1);
+        }
+        roads[firstseg].end = roads[firstseg+1].sta.slice();
+        var valdiff = roads[firstseg+1].sta[1] - roads[firstseg].sta[1];
+        for (j = firstseg; j < roads.length; j++) {
+          roads[j].end[1] -= valdiff;
+          roads[j].slope = roadSegmentSlope(roads[j]);;
+          if (j+1 < roads.length) roads[j+1].sta[1] = roads[j].end[1];
+        }
+        fixRoadArray( roads, RP.SLOPE, false);
+      }
+      roadChanged();
+    };
+
     /** Returns an object with an array ('road') containing the
      current roadmatix (latest edited version), as well as a
      boolean ('valid') indicating whether the edited road
@@ -4892,7 +4961,8 @@
       var r = {}, seg, rd, kd;
       r.valid = isRoadValid(roads);
       r.loser = isLoser(roads,goal,aggdata,goal.tcur,goal.vcur);
-
+      r.asof = goal.asof;
+      r.horizon = goal.horizon;
       //r.tini = dt(roads[0].end[0]);
       //r.vini = roads[0].end[1];
       r.road = [];

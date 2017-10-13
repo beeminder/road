@@ -20,7 +20,7 @@
 <form name="graphType">
 <input type="radio" name="typeButton" value="graph" onclick="handleRadio(this);" checked >Graph&nbsp;&nbsp;
 <input type="radio" name="typeButton" value="editor" onclick="handleRadio(this);">Editor<br>
- <select id="roadselect" class="roadselect" onchange="editor.loadGoal(this.value);editor2.loadGoal(this.value);">
+ <select id="roadselect" class="roadselect" onchange="breakstart.value=&quot;&quot;;editor.loadGoal(this.value);editor2.loadGoal(this.value);">
   <option value="data/testroad0.json">Test Road 0</option>
   <option value="data/testroad1.json">Test Road 1</option>
   <option value="data/testroad2.json">Test Road 2</option>
@@ -65,6 +65,14 @@
 <button id="undo" onclick="editor.undo();">Undo (0)</button>
 <button id="redo" onclick="editor.redo();">Redo (0)</button><br/><br/>
 Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">Retroratchet</button><br/><br/>
+Take a break starting
+<input type = "text" id="breakstart" style="width:10em">
+for
+<input type = "number" value="1" min="1" id="breakdays" style="width:4em">
+days
+<button id="insertbreak" onclick="scheduleBreak(true);">Insert</button>
+<button id="overwritebreak" onclick="scheduleBreak(false);">Overwrite</button>
+<br/><br/>
 <button id="submit" onclick="window.alert('new road matrix:\n'+JSON.stringify(editor.getRoad(),null,2));">Submit</button>
 <button id="savesvg" onclick="editor.saveGraph();">Save SVG</button><br/>
 
@@ -106,6 +114,7 @@ Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id=
 <script>
   var undoBtn = document.getElementById("undo");
   var redoBtn = document.getElementById("redo");
+  var breakpicker= new Pikaday({field: document.getElementById('breakstart')});
   function roadChanged() {
     var bufStates = editor.undoBufferState();
     if (bufStates.undo === 0)  {
@@ -122,8 +131,19 @@ Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id=
       redoBtn.disabled = false;
       redoBtn.innerHTML = "Redo ("+bufStates.redo+")";
     }
+    var road = editor.getRoad();
+    var mindate=moment(moment.unix(road.horizon).format("YYYY-MM-DD")).toDate();
+    breakpicker.setMinDate(mindate);
+    if (!breakstart.value.trim()) {
+      breakpicker.setDate(mindate);
+    }
   }
   
+  function scheduleBreak(insert) {
+    var start = document.getElementById('breakstart').value; 
+    var days = document.getElementById('breakdays').value; 
+    if (!isNaN(days)) editor.scheduleBreak(start, days, insert);
+  }
   var editor = new bmndr({divGraph: document.getElementById('roadgraph'),
                           divTable: document.getElementById('roadtable'),
                           roadEditor:true,
@@ -176,6 +196,7 @@ Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id=
   editor.hide();
   editor2.show();
 
+  breakstart.value = "";
   editor.loadGoal(document.getElementById("roadselect").value);
   editor2.loadGoal(document.getElementById("roadselect").value);
 
@@ -187,6 +208,7 @@ Safe days: <input type = "number" value="0" min="0" id="ratchetdays"><button id=
   }
         
   document.onkeydown = documentKeyDown;
+
 </script>
 
 </body>

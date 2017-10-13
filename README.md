@@ -2,6 +2,9 @@
 
 ## CHANGELOG
 
+* 2017.10.13 fixed incorrect offset when adding new knots
+* 2017.10.13 implemented break scheduling functionality
+* 2017.10.13 fixed collapsing segments while dragging knots
 * 2017.07.17 fixed retroratcheting with fixed slopes
 * 2017.07.17 informative table display for duplicate road segments
 * 2017.07.17 implemented table update on drag and fixed x axis tick mark issues
@@ -53,7 +56,7 @@
 
 Prioritized To-Do list for the editor/client-side graphs
 
-- Show the rate units somewhere
+- Bug: when you drag a knot and it bumps into another knot it loses the slope it was supposed to be keeping fixed
 - Table headers and the first row should always be visible
 - Last (goal) row should always be visible or somehow highlighted
 - "Schedule a break" functionality (options: insert or overwrite)
@@ -64,11 +67,12 @@ Prioritized To-Do list for the editor/client-side graphs
 - Test out how svg and png generation would work on a node.js server with jsdom?
 - Implement a smoother editing mechanism for roads with lots of breaks.
 - True *retro*ratchet when you originally made your rate way too conservative and want the road to match your data
-- Inverse of autoscroll so you know what part of the graph you're editing when you edit road matrix rows
-- Try out ways to "freeze" selection of roads, knots and dots to preserve highlighting of corresponding table entries.
 - Mini-editor for goal creation
 - Replace table checkmarks with proper icons and implement auto-enable on click.
-- Bug: when you drag a knot and it bumps into another knot it loses the slope it was supposed to be keeping fixed
+
+- DONE (Shown in the table header): Show the rate units somewhere
+- DONE (Selection mechanism for knots, dots and roads) Try out ways to "freeze" selection of roads, knots and dots to preserve highlighting of corresponding table entries.
+- DONE (handled through the selection interface) Inverse of autoscroll so you know what part of the graph you're editing when you edit road matrix rows
 
 Quibbly issues to try to make the overall graph aesthetics match or exceed Matplotlib:
 
