@@ -2,6 +2,7 @@
 
 ## CHANGELOG
 
+* 2017.10.13 fixed incorrect offset when adding new knots
 * 2017.10.13 implemented break scheduling functionality
 * 2017.10.13 fixed collapsing segments while dragging knots
 * 2017.07.17 fixed retroratcheting with fixed slopes
