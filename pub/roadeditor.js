@@ -1488,7 +1488,7 @@
       xAxis.tickValues(tv)
         .tickSize(7)
         .tickFormat(function(d,i){ 
-          return d3.timeFormat((i%majorSkip==ind)
+          return d3.utcFormat((i%majorSkip==ind)
                                ?ticks[tickType][1]:"")(d);});
       xAxisObj.call(xAxis.scale(nXSc));
       xAxisObj.selectAll("g").classed("minor", false);
