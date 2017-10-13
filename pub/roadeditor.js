@@ -1078,7 +1078,8 @@
           .on("touchend.zoom", function () { clearTimeout(pressTimer); pressTimer = null; oldTouchEnd.apply(this, arguments);} );              
       }
       function dotAdded() {
-        var newx = nXSc.invert(d3.event.x-plotpad.left);
+        var mouse = d3.mouse(svg.node())
+        var newx = nXSc.invert(mouse[0]-plotpad.left);
         addNewDot(newx/1000);
       }
       function dotAddedShift() {

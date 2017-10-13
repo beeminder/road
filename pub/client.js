@@ -6,6 +6,7 @@ var undoBtn = document.getElementById("undo");
 var redoBtn = document.getElementById("redo");
 var submitBtn = document.getElementById("roadsubmit");
 var submitMsg = document.getElementById("submitmsg");
+var breakpicker= new Pikaday({field: document.getElementById('breakstart')});
 
 function roadChanged() {
     var bufStates = editor.undoBufferState();
@@ -34,6 +35,17 @@ function roadChanged() {
       submitBtn.disabled = false;
       submitMsg.innerHTML = "";
     }
+    var mindate=moment(moment.unix(newRoad.horizon).format("YYYY-MM-DD")).toDate();
+    breakpicker.setMinDate(mindate);
+    if (!breakstart.value.trim()) {
+      breakpicker.setDate(mindate);
+    }
+}
+
+function scheduleBreak(insert) {
+  var start = document.getElementById('breakstart').value; 
+  var days = document.getElementById('breakdays').value; 
+  if (!isNaN(days)) editor.scheduleBreak(start, days, insert);
 }
 
 var editor2 = new bmndr({divGraph: document.getElementById('roadgraph2'),
@@ -138,6 +150,8 @@ function prepareGoalSelect(goalist) {
   });
   roadSelect.addEventListener("change", handleGoalSelect);
   roadSelect.value = goalist[0];
+
+  breakstart.value = "";
   editor.loadGoal('/getgoaljson/'+roadSelect.value);
   editor2.loadGoal('/getgoaljson/'+roadSelect.value);
 }
@@ -145,6 +159,7 @@ function prepareGoalSelect(goalist) {
 function handleGoalSelect() {
   //console.log("handling goal select: "+this.value);
   //console.log(event.target.value)
+  breakstart.value="";
   editor.loadGoal('/getgoaljson/'+this.value);
   editor2.loadGoal('/getgoaljson/'+this.value);
   /*
