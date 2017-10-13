@@ -132,7 +132,7 @@ days
       redoBtn.innerHTML = "Redo ("+bufStates.redo+")";
     }
     var road = editor.getRoad();
-    var mindate=moment(moment.unix(road.horizon).format("YYYY-MM-DD")).toDate();
+    var mindate=moment(moment.unix(road.horizon).utc().format("YYYY-MM-DD")).toDate();
     breakpicker.setMinDate(mindate);
     if (!breakstart.value.trim()) {
       breakpicker.setDate(mindate);
