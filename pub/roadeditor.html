@@ -67,7 +67,7 @@
 
 Reduce safety buffer to: 
 <input type = "number" value="0" min="0" id="ratchetdays"> days 
-<button id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">RETRORATCHET!</button><br/><br/>
+<button id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">RATCHET!</button><br/><br/>
 
 Take a break starting:
 <input type = "text" id="breakstart" style="width:10em"> for
@@ -165,7 +165,7 @@ Commit to:
     var road = editor.getRoad();
     var siru = road.siru;
     var rd = road.road;
-    endSlope.value = rd[rd.length-1][2]/siru*sirunew;
+    endSlope.value = rd[rd.length-1][2]*(sirunew/siru);
   }
 
   function commitTo() {
