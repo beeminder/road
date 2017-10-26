@@ -7,6 +7,8 @@ var redoBtn = document.getElementById("redo");
 var submitBtn = document.getElementById("roadsubmit");
 var submitMsg = document.getElementById("submitmsg");
 var breakpicker= new Pikaday({field: document.getElementById('breakstart')});
+var endSlope = document.getElementById("endslope");
+var slopeType = document.getElementById("slopetype");
 
 function roadChanged() {
     var bufStates = editor.undoBufferState();
@@ -40,7 +42,26 @@ function roadChanged() {
     if (!breakstart.value.trim()) {
       breakpicker.setDate(mindate);
     }
+
+    slopeType.value = newRoad.siru;
+    updateCommitFields();
 }
+
+function updateCommitFields() {
+  var sirunew = parseInt(slopeType.value);
+  var road = editor.getRoad();
+  var siru = road.siru;
+  var rd = road.road;
+  endSlope.value = rd[rd.length-1][2]/siru*sirunew;
+}
+
+function commitTo() {
+  if (isNaN(endSlope.value)) return;
+  var siru = parseInt(slopeType.value);
+  var slope = parseInt(endSlope.value);
+  editor.commitTo(slope / siru);
+}
+
 
 function scheduleBreak(insert) {
   var start = document.getElementById('breakstart').value; 
@@ -129,7 +150,7 @@ function postJSON( url, data, callback ){
       callback(JSON.parse(xhr.responseText));
     }
   };
-  console.log("posting data to "+url)
+  console.log("posting data to "+url);
   xhr.send(JSON.stringify(data));
 }
 
