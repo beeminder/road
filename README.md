@@ -1,7 +1,7 @@
 
 ## CHANGELOG
 
-* 2017.10.13 implemented commit to interface for slope
+* 2017.10.13 implemented commit to (road dial) interface for slope
 * 2017.10.13 fixed incorrect x axis dates and timezone issue with breaks
 * 2017.10.13 fixed incorrect offset when adding new knots
 * 2017.10.13 implemented break scheduling functionality
