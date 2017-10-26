@@ -4880,9 +4880,6 @@
       setSafeDays( days );  
     };
 
-    /** Performs retroratcheting function by adding new knots to
-     leave "days" number of days to derailment based on today data
-     point (which may be flatlined). */
     self.scheduleBreak = function( start, days, insert ) {
       if (!opts.roadEditor) return;
       if (isNaN(days)) return;
@@ -4951,6 +4948,24 @@
       roadChanged();
     };
 
+    self.commitTo = function( newSlope ) {
+      if (!opts.roadEditor) return;
+      if (isNaN(newSlope)) return;
+      if (roads[roads.length-2].slope == newSlope) return;
+
+      // Find out if there are any segments beyond the horizon
+      var horseg = findRoadSegment( roads, goal.horizon );
+      if (roads[horseg].sta[0] == goal.horizon || horseg < roads.length-2) {
+        // There are knots beyond the horizon. Only adjust the last segment
+        pushUndoState();
+      } else {
+        addNewDot(goal.horizon);
+      }
+      roads[roads.length-2].slope = newSlope;
+      fixRoadArray( roads, RP.VALUE, false );
+      roadChanged();
+    };
+
     /** Returns an object with an array ('road') containing the
      current roadmatix (latest edited version), as well as a
      boolean ('valid') indicating whether the edited road
@@ -4963,6 +4978,7 @@
       r.loser = isLoser(roads,goal,aggdata,goal.tcur,goal.vcur);
       r.asof = goal.asof;
       r.horizon = goal.horizon;
+      r.siru = goal.siru;
       //r.tini = dt(roads[0].end[0]);
       //r.vini = roads[0].end[1];
       r.road = [];
