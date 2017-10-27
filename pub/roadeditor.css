@@ -86,21 +86,21 @@ line.roads {
   pointer-events: none;
 }
 
-.rtable {
+.rtable, .rtablestart, .rtablegoal {
   display: table;
   margin: 3px;
 }
-.starthdr, .roadhdr {
+.roadhdr {
   display: table-header-group;
 }
-.startbody, .roadbody {
+.roadbody {
   display: table-row-group;
 }
-.startrow, .roadrow {
+.roadrow {
   display: table-row;
   white-space: nowrap;
 }
-.starthdrrow, .roadhdrrow {
+.roadhdrrow {
   display: table-row;
   white-space: nowrap;
 }
@@ -112,14 +112,14 @@ line.roads {
   text-align: right;
   white-space: nowrap;
 }
-.roadhdrcell, .starthdrcell {
+.roadhdrcell {
   display: table-cell;
   border: 0px;
   padding: 2px;
   text-align: center;
   white-space: nowrap;
 }
-.roadcell, .startcell {
+.roadcell {
   display: table-cell;
   border: 1px solid black;
   padding: 2px 5px 2px 5px;

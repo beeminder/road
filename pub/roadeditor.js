@@ -58,7 +58,7 @@
     /** Initial padding within the context graph. */
     ctxPad:       { left:25, right:5, top:0, bottom:30 },
     /** Height of the road matrix table. Choose 0 for unspecified */
-    tableHeight:  540,
+    tableHeight:  440,
 
     /** Visual parameters for the zoom in/out buttons. "factor" 
      indicates how much to zoom in/out per click. */
@@ -1298,7 +1298,6 @@
       adjustYScale();
     }
 
-    var tbl = {}; // Holds table related objects
     function createTable() {
       var div = opts.divTable;
       if (div === null) return;
@@ -1307,13 +1306,18 @@
         div.removeChild(div.firstChild);
       }
       var divelt = d3.select(div);
+      var startelt = divelt.append("div")
+            .attr("class", "rtablestart");
+      var bodyelt = divelt.append("div")
+            .attr("class", "rtablebody");
+      var goalelt = divelt.append("div")
+            .attr("class", "rtablegoal");
       if (opts.tableHeight != 0) {
-        divelt
-          .style("height", opts.tableHeight+"px")
-          .style("width", "500px")
+        bodyelt
+          .style("max-height", opts.tableHeight+"px")
           .style("overflow-y", "auto");
       }
-      var table = divelt.append("div")
+      var table = bodyelt.append("div")
             .attr("class", "rtable");
       // This element is used to hold the Pikaday instance
       table.append("div").attr("id", "dpfloat")
@@ -1324,11 +1328,13 @@
         .style("width", "1px").style("height", "1px")
         .attr("visibility","hidden");
       if (opts.reverseTable) {
+        createGoalTable();
         createRoadTable();
         createStartTable();
       } else {
         createStartTable();
         createRoadTable();  
+        createGoalTable();
       }
     }
 
@@ -2494,7 +2500,7 @@
                    if (typeof opts.onRoadChange === 'function') {
                      opts.onRoadChange.call();
                    }
-                   updateRoadTableTitle();
+                   updateTableTitles();
                  }
                  pg.remove();
                  loading = false;
@@ -2814,6 +2820,7 @@
       prevslopes = [];
       prevslopes[0] = roads[kind].slope;
       prevslopes[1] = roads[kind+1].slope;
+
     }
 
     function knotDragged(d,i) {
@@ -3949,8 +3956,10 @@
 
     function updateRoadValidity() {
       if (opts.divGraph == null || roads.length == 0) return;
+      console.debug("updateRoadValidity()");
       var lineColor = isRoadValid( roads )?
             opts.roadLineCol.valid:opts.roadLineCol.invalid;
+      console.debug(lineColor);
 
       // Create, update and delete road lines
       var roadelt = gRoads.selectAll(".roads");
@@ -4304,7 +4313,34 @@
         .text(function (column) { return column; });
       tbody = thead.append('div').attr('class', 'roadbody');
     }
-    function updateRoadTableTitle() {
+    
+    // Create the table header and body to show the start node
+    var sthead, stbody;
+    function createStartTable() {
+      var startcolumns = ['', '', 'Start Date', '', 'Value', ''];
+      sthead = d3.select(opts.divTable).select(".rtablestart");
+      sthead.append("div").attr('class', 'roadhdr')
+        .append("div").attr('class', 'roadhdrrow')
+        .selectAll("span.roadhdrcell").data(startcolumns)
+        .enter().append('span').attr('class', 'roadhdrcell')
+        .text(function (column) { return column; });
+      stbody = sthead.append('div').attr('class', 'roadbody'); 
+   };
+
+    // Create the table header and body to show the goal node
+    var ghead, gbody;
+    function createGoalTable() {
+      var goalcolumns = ['', '', 'Goal Date', '', 'Value', '', 'Daily Slope'];
+      ghead = d3.select(opts.divTable).select(".rtablegoal");
+      ghead.append("div").attr('class', 'roadhdr')
+        .append("div").attr('class', 'roadhdrrow')
+        .selectAll("span.roadhdrcell").data(goalcolumns)
+        .enter().append('span').attr('class', 'roadhdrcell')
+        .text(function (column) { return column; });
+      gbody = ghead.append('div').attr('class', 'roadbody');
+    };
+
+    function updateTableTitles() {
       if (opts.divTable == null) return;
       var ratetext = "Daily Slope";
       if (goal.runits === 'h') ratetext = "Hourly Slope";
@@ -4317,23 +4353,12 @@
                          ratetext, ''];
       thead.selectAll("span.roadhdrcell").data(roadcolumns)
         .text(function (column) { return column; });
+      ghead.selectAll("span.roadhdrcell").data(roadcolumns)
+        .text(function (column) { return column; });
 
       d3.select(opts.divTable)
         .style("width", (tbody.node().offsetWidth+30)+"px");
     }
-    
-    // Create the table header and body to show the start node
-    var sthead, stbody;
-    function createStartTable() {
-      var startcolumns = ['', '', 'Start Date', '', 'Value', ''];
-      sthead = d3.select(opts.divTable).select(".rtable");
-      sthead.append("div").attr('class', 'starthdr')
-        .append("div").attr('class', 'starthdrrow')
-        .selectAll("span.starthdrcell").data(startcolumns)
-        .enter().append('span').attr('class', 'starthdrcell')
-        .text(function (column) { return column; });
-      stbody = sthead.append('div').attr('class', 'startbody');
-    };
 
     var focusField = null;
     var focusOldText = null;
@@ -4501,58 +4526,58 @@
     function disableDate(i) {
       roads[i].auto=RP.DATE;
       var dt = d3.select(opts.divTable);
-      dt.select('.rtable [name=enddate'+i+']')
+      dt.select('.roadrow [name=enddate'+i+']')
         .style('color', opts.roadTableCol.textDisabled)
         .attr('contenteditable', false);  
-      dt.select('.rtable [name=endvalue'+i+']')
+      dt.select('.roadrow [name=endvalue'+i+']')
         .style('color', opts.roadTableCol.text)
         .attr('contenteditable', opts.roadEditor);  
-      dt.select('.rtable [name=slope'+i+']')
+      dt.select('.roadrow [name=slope'+i+']')
         .style('color', opts.roadTableCol.text)
         .attr('contenteditable', opts.roadEditor);  
-      dt.select('.rtable [name=btndate'+i+']')
+      dt.select('.roadrow [name=btndate'+i+']')
         .property('checked', true);  
-      dt.select('.rtable [name=btnvalue'+i+']')
+      dt.select('.roadrow [name=btnvalue'+i+']')
         .property('checked', false);  
-      dt.select('.rtable [name=btnslope'+i+']')
+      dt.select('.roadrow [name=btnslope'+i+']')
         .property('checked', false);  
     }
     function disableValue(i) {
       roads[i].auto=RP.VALUE;
       var dt = d3.select(opts.divTable);
-      dt.select('.rtable [name=enddate'+i+']')
+      dt.select('.roadrow [name=enddate'+i+']')
         .style('color', opts.roadTableCol.text)
         .attr('contenteditable', opts.roadEditor);  
-      dt.select('.rtable [name=endvalue'+i+']')
+      dt.select('.roadrow [name=endvalue'+i+']')
         .style('color', opts.roadTableCol.textDisabled)
         .attr('contenteditable', false);  
-      dt.select('.rtable [name=slope'+i+']')
+      dt.select('.roadrow [name=slope'+i+']')
         .style('color', opts.roadTableCol.text)
         .attr('contenteditable', opts.roadEditor);  
-      dt.select('.rtable [name=btndate'+i+']')
+      dt.select('.roadrow [name=btndate'+i+']')
         .property('checked', false);  
-      dt.select('.rtable [name=btnvalue'+i+']')
+      dt.select('.roadrow [name=btnvalue'+i+']')
         .property('checked', true);  
-      dt.select('.rtable [name=btnslope'+i+']')
+      dt.select('.roadrow [name=btnslope'+i+']')
         .property('checked', false);  
     }
     function disableSlope(i) {
       roads[i].auto=RP.SLOPE;
       var dt = d3.select(opts.divTable);
-      dt.select('.rtable [name=enddate'+i+']')
+      dt.select('.roadrow [name=enddate'+i+']')
         .style('color', opts.roadTableCol.text)
         .attr('contenteditable', opts.roadEditor);  
-      dt.select('.rtable [name=endvalue'+i+']')
+      dt.select('.roadrow [name=endvalue'+i+']')
         .style('color', opts.roadTableCol.text)
         .attr('contenteditable', opts.roadEditor);  
-      dt.select('.rtable [name=slope'+i+']')
+      dt.select('.roadrow [name=slope'+i+']')
         .style('color', opts.roadTableCol.textDisabled)
         .attr('contenteditable', false);  
-      dt.select('.rtable [name=btndate'+i+']')
+      dt.select('.roadrow [name=btndate'+i+']')
         .property('checked', false);  
-      dt.select('.rtable [name=btnvalue'+i+']')
+      dt.select('.roadrow [name=btnvalue'+i+']')
         .property('checked', false);  
-      dt.select('.rtable [name=btnslope'+i+']')
+      dt.select('.roadrow [name=btnslope'+i+']')
         .property('checked', true);  
     }
 
@@ -4560,11 +4585,12 @@
       if (opts.divTable == null) return;
       // Update buttons on all rows at once, including the start node.
       var allrows = d3.select(opts.divTable)
-            .selectAll(".rtable .startrow, .rtable .roadrow");
+            .selectAll(".rtablestart .roadrow, .rtable .roadrow, .rtablegoal .roadrow");
       var btncells = allrows.selectAll(".roadbtn")
             .data(function(row, i) {
-              // The table row order is reversed, which means that the last road segment comes in the first row.
-              // We need to compute knot index accordingly
+              // The table row order is reversed, which means that the
+              // last road segment comes in the first row.  We need to
+              // compute knot index accordingly
               var kind;
               if (opts.reverseTable) kind = roads.length-2-i;
               else kind = i;
@@ -4588,13 +4614,13 @@
             .attr('name', function(d) { return d.name;})
             .attr('type',function(d) {return d.type;})
             .attr('value', function(d) { 
-              let cell = "<span class='octicon octicon-plus'></span>"
+              let cell = "<span class='octicon octicon-plus'></span>";
               //return cell;
               return d.txt;})
             .on('click', function (d) {d.evt();});
       
       btncells.exit().remove();
-      btncells = allrows.selectAll(".rtable .roadbtn");
+      btncells = allrows.selectAll(".rtablestart .roadbtn, .rtable .roadbtn, .rtablegoal .roadbtn");
       btncells
         .attr('id', function(d) { return d.row;})
         .attr('name', function(d) { return d.name;})
@@ -4605,7 +4631,7 @@
         })
         .property('checked', function(d) { return d.auto?true:false;});
 
-      allrows.selectAll(".roadcell, .roadbtn, .startcell")
+      allrows.selectAll(".roadcell, .roadbtn")
         .sort(function(a,b) {return a.order > b.order;});
 
       if (!opts.roadEditor) {
@@ -4613,97 +4639,93 @@
       }
     }
 
-    function updateTableValues() {
-      if (opts.divTable == null) return;
-
-      var reversetable = opts.reverseTable;
-      var srows = stbody.selectAll(".startrow")
-            .data(roads.slice(0,1));
-      srows.enter().append('div').attr('class', 'startrow')
-        .attr("name", function(d,i) { return 'startrow'+i;})
-        .attr("id", function(d,i) { return (i);})
-        .append("span")
-        .attr("class", "rowid").text(function(d,i) {return (i)+":";});
-      srows.exit().remove();
-      srows.order();
-      srows = stbody.selectAll(".startrow");
-      var scells = srows.selectAll(".rtable .startcell")
-            .data(function(row, i) {
-              var datestr = dayify(row.end[0], '-');
-              return [
-                {order: 2, value: datestr, name: "enddate"+i, i:i},
-                {order: 4, value: shn(row.end[1]), name: "endvalue"+i, i:i},
-                {order: 6, value: '', name: "slope", i:i}];
-            });
-      scells.enter().append("span").attr('class', 'startcell')
-        .attr('name', function(d) { return d.name;})
-        .style('color', opts.roadTableCol.text)
-        .attr("contenteditable", function(d,i) { return (i>1 || !opts.roadEditor)?'false':'true';})
-        .on('focusin', tableFocusIn)
-        .on('focusout', tableFocusOut)
-        .on('keydown', tableKeyDown);
-      scells.exit().remove();
-      scells = srows.selectAll(".startcell");
-      scells.text(function(d) { return d.value;});
-      
-      var rows;
-      if (reversetable)
-        rows = tbody.selectAll(".roadrow").data(roads.slice(1,roads.length-1).reverse());
-      else
-        rows = tbody.selectAll(".roadrow").data(roads.slice(1,roads.length-1));
+    function updateRowValues( elt, s, e, rev ) {
+      var data = roads.slice(s, e);
+      if (rev) data = data.reverse();
+      var rows = elt.selectAll(".roadrow").data( data );
+      var ifn = function(i) { return rev?(roads.length-1-i):i;};
       rows.enter().append("div").attr('class', 'roadrow')
-        .attr("name", function(d,i) { 
-          return 'roadrow'+(reversetable?roads.length-1-(i+1)
-                            :(i+1));})
-        .attr("id", function(d,i) { 
-          return reversetable?roads.length-1-(i+1):(i+1);})
-        .append("span")
-        .attr("class", "rowid").text(function(d,i) {return (i+1)+":";});
+        .attr("name", function(d,i) { return 'roadrow'+ifn(s+i);})
+        .attr("id", function(d,i) { return ifn(s+i);})
+        .append("div")
+        .attr("class", "rowid").text(function(d,i) {return ifn(s+i)+":";});
       rows.exit().remove();
       rows.order();
-      rows = tbody.selectAll(".roadrow");
-      rows.attr("name", function(d,i) { return 'roadrow'+(reversetable?roads.length-1-(i+1):(i+1));})
-        .attr("id", function(d,i) { return reversetable?roads.length-1-(i+1):i+1;});
+      rows = elt.selectAll(".roadrow");
+      rows.attr("name", function(d,i) { return 'roadrow'+ifn(s+i);})
+        .attr("id", function(d,i) { return ifn(s+i);});
+      rows.select("div").text(function(d,i) {return ifn(s+i)+":";});
       var cells = rows.selectAll(".roadcell")
             .data(function(row, i) {
               var datestr = dayify(row.end[0], '-');
-              var ri;
-              if (reversetable) ri = roads.length-1-(i+1);
-              else ri = i+1;
-              return [
-                {order: 2, value: datestr, name: "enddate"+(ri), 
-                 auto: (row.auto==RP.DATE), i:ri},
-                {order: 4, value: shn(row.end[1]), name: "endvalue"+(ri), 
-                 auto: (row.auto==RP.VALUE), i:ri},
-                {order: 6, value: isNaN(row.slope)?"duplicate":shn(row.slope*goal.siru), name: "slope"+(ri), 
-                 auto: (row.auto==RP.SLOPE), i:ri}];
-            });
-      cells.enter().append("span").attr('class', 'roadcell')
-        .attr('name', function(d) { return d.name;})
-        .attr("contenteditable", function(d,i) { return (d.auto || !opts.roadEditor)?'false':'true';})
-        .on('focusin', tableFocusIn)
-        .on('focusout', tableFocusOut)
-        .on('keydown', tableKeyDown);
+              var ri = ifn(s+i);
+               return [
+                 {order: 2, value: datestr, name: "enddate"+(ri), 
+                  auto: (row.auto==RP.DATE), i:ri},
+                 {order: 4, value: shn(row.end[1]), name: "endvalue"+(ri), 
+                  auto: (row.auto==RP.VALUE), i:ri},
+                 {order: 6, value: isNaN(row.slope)
+                  ?"duplicate":shn(row.slope*goal.siru), name: "slope"+(ri), 
+                  auto: (row.auto==RP.SLOPE), i:ri}];
+             });
+       cells.enter().append("div").attr('class', 'roadcell')
+         .attr('name', function(d) { return d.name;})
+         .attr("contenteditable", function(d,i) { 
+           return (d.auto || !opts.roadEditor)?'false':'true';})
+         .on('focusin', tableFocusIn)
+         .on('focusout', tableFocusOut)
+         .on('keydown', tableKeyDown);
 
-      cells.exit().remove();
-      cells = rows.selectAll(".rtable .roadcell");
-      cells.text(function(d,i) { return d.value;})
-        .attr('name', function(d) { return d.name;})
-        .style('color', function(d) {
-          if (roads[d.i].sta[0] == roads[d.i].end[0] 
-              && roads[d.i].sta[1] == roads[d.i].end[1])
-            return opts.roadLineCol.invalid;
-          return d.auto?opts.roadTableCol.textDisabled
-            :opts.roadTableCol.text;})
-        .attr("contenteditable", function(d,i) { return (d.auto || !opts.roadEditor)?'false':'true';});
+       cells.exit().remove();
+       cells = rows.selectAll(".roadcell");
+       cells.text(function(d,i) { return d.value;})
+         .attr('name', function(d) { return d.name;})
+         .style('color', function(d) {
+           if (roads[d.i].sta[0] == roads[d.i].end[0] 
+               && roads[d.i].sta[1] == roads[d.i].end[1])
+             return opts.roadLineCol.invalid;
+           return d.auto?opts.roadTableCol.textDisabled
+             :opts.roadTableCol.text;})
+         .attr("contenteditable", function(d,i) { 
+           return (d.auto || !opts.roadEditor)?'false':'true';});
+    }
+    
+    function updateTableWidths() {
+      var wfn = function(d,i) {
+        var sel = tbody.select(".roadrow").selectAll(".roadcell"); 
+        var nds = sel.nodes();
+        var w = nds[i].offsetWidth - 13; // Uluc: Hack, depends on padding
+        d3.select(this).style("width", w+"px");
+      };
+      stbody.selectAll(".roadcell").each( wfn );
+      gbody.selectAll(".roadcell").each( wfn );
 
       d3.select(opts.divTable)
         .style("width", (tbody.node().offsetWidth+30)+"px");
     }
 
+    function updateTableValues() {
+      if (opts.divTable == null) return;
+
+      var reversetable = opts.reverseTable;
+
+      updateRowValues( stbody, 0, 1, false );
+      stbody.select("[name=slope0]").style("visibility","hidden");
+      updateRowValues( tbody, 1, roads.length-2, reversetable );
+      updateRowValues( gbody, roads.length-2, roads.length-1, false ); 
+
+      if (roads.length <=3)
+        d3.select(opts.divTable).select(".rtablebody").style("display", "none");
+      else
+        d3.select(opts.divTable).select(".rtablebody").style("display", null);
+
+      updateTableWidths();
+    }
+
     function updateTable() {
       updateTableValues();
       updateTableButtons();
+      updateTableWidths();
     }
 
     function updateContextData() {
@@ -4805,11 +4827,13 @@
       if (arguments.length > 0) {
         opts.reverseTable = flag;
         if (opts.reverseTable) {
-          d3.select(opts.divTable).select(".starthdr").raise();
-          d3.select(opts.divTable).select(".startbody").raise();
+          d3.select(opts.divTable).select(".rtablegoal").raise();
+          d3.select(opts.divTable).select(".rtablebody").raise();
+          d3.select(opts.divTable).select(".rtablestart").raise();
         } else {
-          d3.select(opts.divTable).select(".roadhdr").raise();
-          d3.select(opts.divTable).select(".roadbody").raise();      
+          d3.select(opts.divTable).select(".rtablestart").raise();
+          d3.select(opts.divTable).select(".rtablebody").raise();
+          d3.select(opts.divTable).select(".rtablegoal").raise();
         }
         updateTable();
       }
