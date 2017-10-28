@@ -58,7 +58,7 @@
     /** Initial padding within the context graph. */
     ctxPad:       { left:25, right:5, top:0, bottom:30 },
     /** Height of the road matrix table. Choose 0 for unspecified */
-    tableHeight:  440,
+    tableHeight:  380,
 
     /** Visual parameters for the zoom in/out buttons. "factor" 
      indicates how much to zoom in/out per click. */
@@ -3956,10 +3956,8 @@
 
     function updateRoadValidity() {
       if (opts.divGraph == null || roads.length == 0) return;
-      console.debug("updateRoadValidity()");
       var lineColor = isRoadValid( roads )?
             opts.roadLineCol.valid:opts.roadLineCol.invalid;
-      console.debug(lineColor);
 
       // Create, update and delete road lines
       var roadelt = gRoads.selectAll(".roads");
@@ -4306,16 +4304,11 @@
       var roadcolumns = ['', '', 'End Date', '', 'Value', '',
                          'Daily Slope', ''];
       thead = d3.select(opts.divTable).select(".rtable");
-      thead.append("div").attr('class', 'roadhdr')
-        .append("div").attr('class', 'roadhdrrow')
-        .selectAll("span.roadhdrcell").data(roadcolumns)
-        .enter().append("span").attr('class', 'roadhdrcell')
-        .text(function (column) { return column; });
       tbody = thead.append('div').attr('class', 'roadbody');
     }
     
     // Create the table header and body to show the start node
-    var sthead, stbody;
+    var sthead, stbody, sttail;
     function createStartTable() {
       var startcolumns = ['', '', 'Start Date', '', 'Value', ''];
       sthead = d3.select(opts.divTable).select(".rtablestart");
@@ -4325,6 +4318,12 @@
         .enter().append('span').attr('class', 'roadhdrcell')
         .text(function (column) { return column; });
       stbody = sthead.append('div').attr('class', 'roadbody'); 
+      var tailcolumns = ['', '', 'End Date', '', 'Value', '', 'Daily Slope'];
+      sttail = sthead.append("div").attr('class', 'roadhdr');
+      sttail.append("div").attr('class', 'roadhdrrow')
+        .selectAll("span.roadhdrcell").data(tailcolumns)
+        .enter().append('span').attr('class', 'roadhdrcell')
+        .text(function (column) { return column; });
    };
 
     // Create the table header and body to show the goal node
@@ -4351,13 +4350,16 @@
 
       var roadcolumns = ['', '', 'End Date', '', 'Value', '',
                          ratetext, ''];
+      var goalcolumns = ['', '', 'Goal Date', '', 'Value', '',
+                         ratetext, ''];
+      sttail.selectAll("span.roadhdrcell").data(roadcolumns)
+        .text(function (column) { return column; });
       thead.selectAll("span.roadhdrcell").data(roadcolumns)
         .text(function (column) { return column; });
-      ghead.selectAll("span.roadhdrcell").data(roadcolumns)
+      ghead.selectAll("span.roadhdrcell").data(goalcolumns)
         .text(function (column) { return column; });
 
-      d3.select(opts.divTable)
-        .style("width", (tbody.node().offsetWidth+30)+"px");
+      updateTableWidths();
     }
 
     var focusField = null;
@@ -4643,7 +4645,7 @@
       var data = roads.slice(s, e);
       if (rev) data = data.reverse();
       var rows = elt.selectAll(".roadrow").data( data );
-      var ifn = function(i) { return rev?(roads.length-1-i):i;};
+      var ifn = function(i) { return rev?(roads.length-2-i):i;};
       rows.enter().append("div").attr('class', 'roadrow')
         .attr("name", function(d,i) { return 'roadrow'+ifn(s+i);})
         .attr("id", function(d,i) { return ifn(s+i);})
@@ -4692,16 +4694,28 @@
     
     function updateTableWidths() {
       var wfn = function(d,i) {
-        var sel = tbody.select(".roadrow").selectAll(".roadcell"); 
+        var sel = tbody.select(".roadrow").selectAll(".rowid, .roadcell"); 
         var nds = sel.nodes();
-        var w = nds[i].offsetWidth - 13; // Uluc: Hack, depends on padding
+        if (nds.length == 0) {
+          sel = gbody.select(".roadrow").selectAll(".rowid, .roadcell"); 
+          nds = sel.nodes();
+        }
+        var w = nds[i].offsetWidth;
+        // Uluc: Hack, depends on padding
+        if (i == 0) w = w - 4;
+        else w = w - 13;
         d3.select(this).style("width", w+"px");
       };
-      stbody.selectAll(".roadcell").each( wfn );
-      gbody.selectAll(".roadcell").each( wfn );
-
-      d3.select(opts.divTable)
-        .style("width", (tbody.node().offsetWidth+30)+"px");
+      stbody.selectAll(".rowid, .roadcell").each( wfn );
+      if (roads.length > 3) {
+        gbody.selectAll(".rowid, .roadcell").each( wfn );
+        d3.select(opts.divTable)
+          .style("width", (tbody.node().offsetWidth+25)+"px");
+      } else {
+        gbody.selectAll(".rowid, .roadcell").style( "width", null );
+        d3.select(opts.divTable)
+          .style("width", (gbody.node().offsetWidth+25)+"px");
+      }
     }
 
     function updateTableValues() {
