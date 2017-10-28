@@ -1083,7 +1083,7 @@
           .on("touchend.zoom", function () { clearTimeout(pressTimer); pressTimer = null; oldTouchEnd.apply(this, arguments);} );              
       }
       function dotAdded() {
-        var mouse = d3.mouse(svg.node())
+        var mouse = d3.mouse(svg.node());
         var newx = nXSc.invert(mouse[0]-plotpad.left);
         addNewDot(newx/1000);
       }
@@ -2791,6 +2791,7 @@
       if (selectelt != null) {selectelt.remove(); selectelt=null;}
     }
     function clearSelection() {
+      //console.debug("clearSelection()");
       if (selection == null) return;
       if (selectType == RP.DATE) unselectKnot( selection );
       else if (selectType == RP.VALUE) unselectDot( selection );
@@ -4466,6 +4467,7 @@
         datePicker.destroy();
         datePicker = null;
       }
+      clearSelection();
       if (text === focusOldText) return;
       if (focusOldText == null) return; // ENTER must have been hit
       var val = (i==0)?dayparse(text, '-'):text;
@@ -4529,7 +4531,6 @@
     function autoScroll( elt ) {
       if (opts.tableAutoScroll && selection == null && opts.tableHeight !== 0) {
         var topPos = elt.node().offsetTop;
-        console.debug(topPos);
         if (opts.divTable != null) {
           tcont.node().scrollTop = topPos-opts.tableHeight/2;
         }
@@ -4793,6 +4794,7 @@
       updateRowValues( stbody, 0, 1, false );
       stbody.select("[name=slope0]")
         .style("visibility","hidden")
+        .style("pointer-events","none")
         .style("border", "1px solid transparent");
 
       updateRowValues( tbody, 1, roads.length-2, reversetable );
