@@ -4716,7 +4716,11 @@
       //   d3.select(opts.divTable)
       //     .style("width", (gbody.node().offsetWidth+30)+"px");
       // }
-      d3.select(opts.divTable)
+      if (roads.length > 3)
+        d3.select(opts.divTable)
+        .style("width", (tbody.node().offsetWidth+30)+"px");
+      else
+        d3.select(opts.divTable)
         .style("width", (gbody.node().offsetWidth+30)+"px");
     }
 

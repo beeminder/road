@@ -116,6 +116,7 @@ line.roads {
   border: 0px;
   padding: 5px 2px 2px 2px;
   text-align: center;
+  font-size:90%;
   white-space: nowrap;
 }
 .roadcell {
@@ -145,6 +146,7 @@ div.roadcell {
 div.rowid {
   min-width:35px;
 }
+
 .floating {
   float: left;
   position: absolute;
