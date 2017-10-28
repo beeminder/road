@@ -4539,7 +4539,8 @@
     function highlightDate(i, state) {
       if (opts.divTable == null) return;
       var color = (state)
-            ?opts.roadTableCol.bgHighlight:opts.roadTableCol.bg;
+            ?opts.roadTableCol.bgHighlight:
+            (roads[i].auto==0?opts.roadTableCol.bgDisabled:opts.roadTableCol.bg);
       var elt = d3.select(opts.divTable)
             .select('.roadrow [name=enddate'+i+']');
       if (elt.empty()) return;
@@ -4549,7 +4550,8 @@
     function highlightValue(i, state) {
       if (opts.divTable == null) return;
       var color = (state)
-            ?opts.roadTableCol.bgHighlight:opts.roadTableCol.bg;
+            ?opts.roadTableCol.bgHighlight:
+            (roads[i].auto==1?opts.roadTableCol.bgDisabled:opts.roadTableCol.bg);
       var elt = d3.select(opts.divTable)
             .select('.roadrow [name=endvalue'+i+']');
       if (elt.empty()) return;
@@ -4559,7 +4561,8 @@
     function highlightSlope(i, state) {
       if (opts.divTable == null) return;
       var color = (state)
-            ?opts.roadTableCol.bgHighlight:opts.roadTableCol.bg;
+            ?opts.roadTableCol.bgHighlight:
+            (roads[i].auto==2?opts.roadTableCol.bgDisabled:opts.roadTableCol.bg);
       var elt = d3.select(opts.divTable)
             .select('.roadrow [name=slope'+i+']');
       if (elt.empty()) return;
