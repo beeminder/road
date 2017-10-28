@@ -3886,10 +3886,12 @@
         .style("visibility", function(d,i) {
           return (i > 0 && i < roads.length-2)
             ?"visible":"hidden";})
-		    .on("mouseenter",function() {
-			    d3.select(this).attr("fill",opts.roadKnotCol.rmbtnsel);})
-		    .on("mouseout",function() {
-			    d3.select(this).attr("fill",opts.roadKnotCol.rmbtns);})
+		    .on("mouseenter",function(d,i) {
+			    d3.select(this).attr("fill",opts.roadKnotCol.rmbtnsel); 
+          highlightDate(i, true);})
+		    .on("mouseout",function(d,i) {
+			    d3.select(this).attr("fill",opts.roadKnotCol.rmbtns);
+        highlightDate(i, false);})
 		    .on("click",knotDeleted);
     }
 
@@ -4300,10 +4302,11 @@
     }
 
     // Create the table header and body to show road segments
-    var thead, tbody;
+    var tcont, thead, tbody;
     function createRoadTable() {
       var roadcolumns = ['', '', 'End Date', '', 'Value', '',
                          'Daily Slope', ''];
+      tcont = d3.select(opts.divTable).select(".rtablebody");
       thead = d3.select(opts.divTable).select(".rtable");
       tbody = thead.append('div').attr('class', 'roadbody');
     }
@@ -4500,8 +4503,9 @@
     function autoScroll( elt ) {
       if (opts.tableAutoScroll && selection == null && opts.tableHeight !== 0) {
         var topPos = elt.node().offsetTop;
+        console.debug(topPos);
         if (opts.divTable != null) {
-          opts.divTable.scrollTop = topPos-opts.tableHeight/2;
+          tcont.node().scrollTop = topPos-opts.tableHeight/2;
         }
       }
     }
