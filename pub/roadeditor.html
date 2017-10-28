@@ -53,6 +53,7 @@
   <tr>
     <td valign="top"><div id="roadgraph"></div>
 
+<div class="gopts">
 <form action="">
 <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>Show datapoints
 <input id="showalldata" type="checkbox" onclick="if (this.checked) editor.maxDataDays(-1); else editor.maxDataDays(100);" checked>Show all datapoints
@@ -63,19 +64,24 @@
 <button id="zoomall" onclick="editor.zoomAll();">View All</button>
 <button id="zoomdflt" onclick="editor.zoomDefault();">Default Zoom</button>
 <button id="undo" onclick="editor.undo();">Undo (0)</button>
-<button id="redo" onclick="editor.redo();">Redo (0)</button><br/><br/>
+<button id="redo" onclick="editor.redo();">Redo (0)</button>
+</div>
 
+<div class="ratchet">
 Reduce safety buffer to: 
 <input type = "number" value="0" min="0" id="ratchetdays"> days 
-<button id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">RATCHET!</button><br/><br/>
+<button id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">RATCHET!</button>
+</div>
 
+<div class="break">
 Take a break starting:
 <input type = "text" id="breakstart" style="width:10em"> for
 <input type = "number" value="1" min="1" id="breakdays" style="width:4em"> days
 <button id="insertbreak" onclick="scheduleBreak(true);">INSERT</button>
 <button id="overwritebreak" onclick="scheduleBreak(false);">OVERWRITE</button>
-<br/><br/>
+</div>
 
+<div class="commit">
 Commit to:
 <input type = "number" id="endslope" step="any" style="width:10em">
 <select id="slopetype" selected="604800" onchange="updateCommitFields();">
@@ -85,7 +91,7 @@ Commit to:
   <option value="31557600">per year</option>
 </select> 
 <button id="commit" onclick="commitTo();">UPDATE</button>
-<br/><br/>
+</div>
 
 <button id="submit" onclick="window.alert('new road matrix:\n'+JSON.stringify(editor.getRoad(),null,2));">Submit</button>
 <button id="savesvg" onclick="editor.saveGraph();">Save SVG</button><br/>
@@ -107,10 +113,12 @@ Commit to:
 <table>
   <tr>
     <td valign="top"><div id="roadgraph2"></div>
+      <div class="gopts">
       <input id="showalldata2" type="checkbox" onclick="if (this.checked) editor2.maxDataDays(-1); else editor2.maxDataDays(100);" checked>Show all datapoints<br/>
       <button id="zoomall2" onclick="editor2.zoomAll();">View All</button>
-      <button id="zoomdflt2" onclick="editor2.zoomDefault();">Default Zoom</button><br/><br/>
-      <button id="savesvg" onclick="editor2.saveGraph();">Save SVG</button><br/>
+      <button id="zoomdflt2" onclick="editor2.zoomDefault();">Default Zoom</button>
+      </div>
+      <button id="savesvg" onclick="editor2.saveGraph();">Save SVG</button>
     </td>
     <td valign="top">
       <div id="roadtable2"></div>
