@@ -104,6 +104,12 @@ line.roads {
   white-space: nowrap;
 }
 
+.roadbtn {
+  margin-left: 3px;
+  margin-right: 1px;
+  visibility: collapse;
+}
+
 .rowid {
   display: table-cell;
   border: 0px;
