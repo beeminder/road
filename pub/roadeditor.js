@@ -58,7 +58,7 @@
     /** Initial padding within the context graph. */
     ctxPad:       { left:25, right:5, top:0, bottom:30 },
     /** Height of the road matrix table. Choose 0 for unspecified */
-    tableHeight:  380,
+    tableHeight:  387,
 
     /** Visual parameters for the zoom in/out buttons. "factor" 
      indicates how much to zoom in/out per click. */
@@ -4337,6 +4337,7 @@
         .enter().append('span').attr('class', 'roadhdrcell')
         .text(function (column) { return column; });
       gbody = ghead.append('div').attr('class', 'roadbody');
+      ghead.append('div').style('height', '5px');
     };
 
     function updateTableTitles() {
@@ -4702,7 +4703,7 @@
         }
         var w = nds[i].offsetWidth;
         // Uluc: Hack, depends on padding
-        if (i == 0) w = w - 4;
+        if (i == 0) w = w - 0;
         else w = w - 13;
         d3.select(this).style("width", w+"px");
       };
@@ -4710,11 +4711,11 @@
       if (roads.length > 3) {
         gbody.selectAll(".rowid, .roadcell").each( wfn );
         d3.select(opts.divTable)
-          .style("width", (tbody.node().offsetWidth+25)+"px");
+          .style("width", (tbody.node().offsetWidth+30)+"px");
       } else {
         gbody.selectAll(".rowid, .roadcell").style( "width", null );
         d3.select(opts.divTable)
-          .style("width", (gbody.node().offsetWidth+25)+"px");
+          .style("width", (gbody.node().offsetWidth+30)+"px");
       }
     }
 
