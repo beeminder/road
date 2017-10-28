@@ -126,9 +126,13 @@ line.roads {
   white-space: nowrap;
   background-color: white;
 }
+.rtablebody,.rtablestart {
+  padding: 0px 2px 4px 2px;
+  border: 1px solid white;
+}
 .rtablegoal {
   background-color: #eeffee;
-  padding: 0px 0px 4px 0px;
+  padding: 0px 2px 4px 2px;
   margin: 8px 0px 4px 0px;
   border: 1px solid black;
 }
@@ -143,10 +147,14 @@ div.roadcell {
   position: absolute;
 }
 
-.gopts, .ratchet, .break, .commit{
+.ratchet, .break {
   background-color: #f1f1f1;
   border: 1px solid #d0d0d0;
   margin: 10px 0px 10px 0px;
+  padding: 5px 15px 5px 15px;
+}
+.gopts, .commit {
+  margin: 0px 0px 10px 0px;
   padding: 5px 15px 5px 15px;
 }
 
