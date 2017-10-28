@@ -126,13 +126,13 @@ line.roads {
   white-space: nowrap;
   background-color: white;
 }
-.rtablebody,.rtablestart {
+.rtablebody, .rtablestart {
   padding: 1px 0px 4px 0px;
-  border: 1px solid white;
+  border: 1px solid transparent;
 }
 .rtablegoal {
   background-color: #eeffee;
-  padding: 0px 2px 4px 2px;
+  padding: 0px 2px 4px 0px;
   margin: 8px 0px 4px 0px;
   border: 1px solid black;
 }
