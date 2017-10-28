@@ -142,6 +142,9 @@ line.roads {
 div.roadcell {
   min-width:95px;
 }
+div.rowid {
+  min-width:35px;
+}
 .floating {
   float: left;
   position: absolute;
