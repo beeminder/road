@@ -93,7 +93,8 @@
                     rmbtn: "black", rmbtnsel: "red"}, 
     textBoxCol:   { bg: "#ffffff", stroke:"#d0d0d0"},
     roadTableCol: { bg:"#ffffff", bgHighlight: "#fffb55", 
-                    text:"#000000", textDisabled: "#aaaaaa"},
+                    text:"#000000", textDisabled: "#aaaaaa",
+                    bgDisabled:"#f2f2f2"},
     dataPointCol: { future: "#909090", stroke: "lightgray"},
     halfPlaneCol: { fill: "#ffffe8" },
     pastBoxCol:   { fill: "#f8f8f8", opacity:0.5 },
@@ -4470,6 +4471,15 @@
         focusOldText = d3.select(this).text();
       }
     }
+    function tableClick( d, i ){
+      var id = Number(this.parentNode.id);
+      if (opts.roadEditor && i == roads[id].auto) {
+        if (i == 0) disableValue(id); 
+        else if (i == 1) disableSlope(id);
+        else if (i == 2) disableDate(id);
+        this.focus();
+      }
+    }
 
     function tableDateChanged( row, value ) {
       //console.debug("tableDateChanged("+row+","+value+")");
@@ -4530,12 +4540,15 @@
       var dt = d3.select(opts.divTable);
       dt.select('.roadrow [name=enddate'+i+']')
         .style('color', opts.roadTableCol.textDisabled)
+        .style('background-color', opts.roadTableCol.bgDisabled)
         .attr('contenteditable', false);  
       dt.select('.roadrow [name=endvalue'+i+']')
         .style('color', opts.roadTableCol.text)
+        .style('background-color', opts.roadTableCol.bg)
         .attr('contenteditable', opts.roadEditor);  
       dt.select('.roadrow [name=slope'+i+']')
         .style('color', opts.roadTableCol.text)
+        .style('background-color', opts.roadTableCol.bg)
         .attr('contenteditable', opts.roadEditor);  
       dt.select('.roadrow [name=btndate'+i+']')
         .property('checked', true);  
@@ -4549,12 +4562,15 @@
       var dt = d3.select(opts.divTable);
       dt.select('.roadrow [name=enddate'+i+']')
         .style('color', opts.roadTableCol.text)
+        .style('background-color', opts.roadTableCol.bg)
         .attr('contenteditable', opts.roadEditor);  
       dt.select('.roadrow [name=endvalue'+i+']')
         .style('color', opts.roadTableCol.textDisabled)
+        .style('background-color', opts.roadTableCol.bgDisabled)
         .attr('contenteditable', false);  
       dt.select('.roadrow [name=slope'+i+']')
         .style('color', opts.roadTableCol.text)
+        .style('background-color', opts.roadTableCol.bg)
         .attr('contenteditable', opts.roadEditor);  
       dt.select('.roadrow [name=btndate'+i+']')
         .property('checked', false);  
@@ -4568,12 +4584,15 @@
       var dt = d3.select(opts.divTable);
       dt.select('.roadrow [name=enddate'+i+']')
         .style('color', opts.roadTableCol.text)
+        .style('background-color', opts.roadTableCol.bg)
         .attr('contenteditable', opts.roadEditor);  
       dt.select('.roadrow [name=endvalue'+i+']')
         .style('color', opts.roadTableCol.text)
+        .style('background-color', opts.roadTableCol.bg)
         .attr('contenteditable', opts.roadEditor);  
       dt.select('.roadrow [name=slope'+i+']')
         .style('color', opts.roadTableCol.textDisabled)
+        .style('background-color', opts.roadTableCol.bgDisabled)
         .attr('contenteditable', false);  
       dt.select('.roadrow [name=btndate'+i+']')
         .property('checked', false);  
@@ -4674,6 +4693,7 @@
          .attr('name', function(d) { return d.name;})
          .attr("contenteditable", function(d,i) { 
            return (d.auto || !opts.roadEditor)?'false':'true';})
+         .on('click', tableClick)
          .on('focusin', tableFocusIn)
          .on('focusout', tableFocusOut)
          .on('keydown', tableKeyDown);
@@ -4688,6 +4708,9 @@
              return opts.roadLineCol.invalid;
            return d.auto?opts.roadTableCol.textDisabled
              :opts.roadTableCol.text;})
+         .style('background-color', function(d) {
+           return d.auto?opts.roadTableCol.bgDisabled
+             :opts.roadTableCol.bg;})
          .attr("contenteditable", function(d,i) { 
            return (d.auto || !opts.roadEditor)?'false':'true';});
     }
