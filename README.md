@@ -1,6 +1,9 @@
 
 ## CHANGELOG
 
+* 2017.10.28 fixed auto-scroll
+* 2017.10.28 highlight date when hovering over knot delete button
+* 2017.10.28 enable table field on click
 * 2017.10.28 rearranged interface groupings
 * 2017.10.28 separated table rows for start and goal nodes
 * 2017.10.13 implemented commit to (road dial) interface for slope
@@ -69,6 +72,7 @@ Prioritized To-Do list for the editor/client-side graphs
 - Mini-editor for goal creation
 - Replace table checkmarks with proper icons and implement auto-enable on click.
 
+- DONE: Enable field on click
 - DONE: Table headers and the first row should always be visible
 - DONE: Last (goal) row should always be visible or somehow highlighted
 - DONE: "Schedule a break" functionality (options: insert or overwrite)
