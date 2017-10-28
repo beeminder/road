@@ -157,6 +157,10 @@
      dragging */
     tableUpdateOnDrag: false,
     
+    /** Chooses whether the road matrix table should include checkboxes 
+     for choosing the field to be automatically computed. */
+    tableCheckboxes: false,
+    
     /** Callback function that gets invoked when the road is edited by
      the user. Various interface functions can then be used to
      retrieve the new road state. This is also useful to update the
@@ -4304,8 +4308,12 @@
     // Create the table header and body to show road segments
     var tcont, thead, tbody;
     function createRoadTable() {
-      var roadcolumns = ['', '', 'End Date', '', 'Value', '',
-                         'Daily Slope', ''];
+      var roadcolumns;
+      if (opts.tableCheckboxes)
+        roadcolumns = ['', '', 'End Date', '', 'Value', '',
+                       'Daily Slope', ''];
+      else
+        roadcolumns = ['', '', 'End Date', 'Value', 'Daily Slope', ''];
       tcont = d3.select(opts.divTable).select(".rtablebody");
       thead = d3.select(opts.divTable).select(".rtable");
       tbody = thead.append('div').attr('class', 'roadbody');
@@ -4314,7 +4322,12 @@
     // Create the table header and body to show the start node
     var sthead, stbody, sttail;
     function createStartTable() {
-      var startcolumns = ['', '', 'Start Date', '', 'Value', ''];
+      var startcolumns, tailcolumns;
+      if (opts.tableCheckboxes)
+        startcolumns = ['', '', 'Start Date', '', 'Value', ''];
+      else
+        startcolumns = ['', '', 'Start Date', 'Value', ''];
+
       sthead = d3.select(opts.divTable).select(".rtablestart");
       sthead.append("div").attr('class', 'roadhdr')
         .append("div").attr('class', 'roadhdrrow')
@@ -4322,7 +4335,10 @@
         .enter().append('span').attr('class', 'roadhdrcell')
         .text(function (column) { return column; });
       stbody = sthead.append('div').attr('class', 'roadbody'); 
-      var tailcolumns = ['', '', 'End Date', '', 'Value', '', 'Daily Slope'];
+      if (opts.tableCheckboxes)
+        tailcolumns = ['', '', 'End Date', '', 'Value', '', 'Daily Slope'];
+      else
+        tailcolumns = ['', '', 'End Date', 'Value', 'Daily Slope'];
       sttail = sthead.append("div").attr('class', 'roadhdr');
       sttail.append("div").attr('class', 'roadhdrrow')
         .selectAll("span.roadhdrcell").data(tailcolumns)
@@ -4333,7 +4349,11 @@
     // Create the table header and body to show the goal node
     var ghead, gbody;
     function createGoalTable() {
-      var goalcolumns = ['', '', 'Goal Date', '', 'Value', '', 'Daily Slope'];
+      var goalcolumns;
+      if (opts.tableCheckboxes)
+        goalcolumns = ['', '', 'Goal Date', '', 'Value', '', 'Daily Slope'];
+      else
+        goalcolumns = ['', '', 'Goal Date', 'Value', 'Daily Slope'];
       ghead = d3.select(opts.divTable).select(".rtablegoal");
       ghead.append("div").attr('class', 'roadhdr')
         .append("div").attr('class', 'roadhdrrow')
@@ -4352,10 +4372,16 @@
       if (goal.runits === 'm') ratetext = "Monthly Slope";
       if (goal.runits === 'y') ratetext = "Yearly Slope";
 
-      var roadcolumns = ['', '', 'End Date', '', 'Value', '',
-                         ratetext, ''];
-      var goalcolumns = ['', '', 'Goal Date', '', 'Value', '',
-                         ratetext, ''];
+      var roadcolumns, goalcolumns;
+      if (opts.tableCheckboxes) {
+        roadcolumns = ['', '', 'End Date', '', 'Value', '',
+                       ratetext, ''];
+        goalcolumns = ['', '', 'Goal Date', '', 'Value', '',
+                       ratetext, ''];
+      } else {
+        roadcolumns = ['', '', 'End Date', 'Value', ratetext, ''];
+        goalcolumns = ['', '', 'Goal Date', 'Value', ratetext, ''];
+      }
       sttail.selectAll("span.roadhdrcell").data(roadcolumns)
         .text(function (column) { return column; });
       thead.selectAll("span.roadhdrcell").data(roadcolumns)
@@ -4619,18 +4645,26 @@
               var kind;
               if (opts.reverseTable) kind = roads.length-2-i;
               else kind = i;
-              return [
-                {order: -1, row:kind, name: "btndel"+kind, evt: function() {removeKnot(kind, false);}, 
-                 type: 'button', txt: 'del', auto: false},
-                {order: 3, row:kind, name: "btndate"+kind, evt: function() {disableDate(kind);}, 
-                 type: 'checkbox', txt: 'r', auto: (row.auto==RP.DATE)},
-                {order: 5, row:kind, name: "btnvalue"+kind, evt: function() {disableValue(kind);}, 
-                 type: 'checkbox', txt: 'r', auto: (row.auto==RP.VALUE)},
-                {order: 7, row:kind, name: "btnslope"+kind, evt: function() {disableSlope(kind);}, 
-                 type: 'checkbox', txt: 'r', auto: (row.auto==RP.SLOPE)},
-                {order: 8, row:kind, name: "btnadd"+kind, evt: function() {addNewKnot(kind+1);}, 
-                 type: 'button', txt: 'ins', auto: false},
-              ];
+              if (opts.tableCheckboxes) 
+                return [
+                  {order: -1, row:kind, name: "btndel"+kind, evt: function() {removeKnot(kind, false);}, 
+                   type: 'button', txt: 'del', auto: false},
+                  {order: 3, row:kind, name: "btndate"+kind, evt: function() {disableDate(kind);}, 
+                   type: 'checkbox', txt: 'r', auto: (row.auto==RP.DATE)},
+                  {order: 5, row:kind, name: "btnvalue"+kind, evt: function() {disableValue(kind);}, 
+                   type: 'checkbox', txt: 'r', auto: (row.auto==RP.VALUE)},
+                  {order: 7, row:kind, name: "btnslope"+kind, evt: function() {disableSlope(kind);}, 
+                   type: 'checkbox', txt: 'r', auto: (row.auto==RP.SLOPE)},
+                  {order: 8, row:kind, name: "btnadd"+kind, evt: function() {addNewKnot(kind+1);}, 
+                   type: 'button', txt: 'ins', auto: false},
+                ];
+              else
+                return [
+                  {order: -1, row:kind, name: "btndel"+kind, evt: function() {removeKnot(kind, false);}, 
+                   type: 'button', txt: 'del', auto: false},
+                  {order: 8, row:kind, name: "btnadd"+kind, evt: function() {addNewKnot(kind+1);}, 
+                   type: 'button', txt: 'ins', auto: false},
+                ];
             });
       
       var newbtncells = btncells.enter().append("input")
