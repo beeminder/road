@@ -4703,9 +4703,10 @@
         }
         var w = nds[i].offsetWidth;
         // Uluc: Hack, depends on padding
-        if (i == 0) w = w - 0;
-        else w = w - 13;
-        d3.select(this).style("width", w+"px");
+        if (i == 0) w = (w - 0)+"px";
+        //else w = (w - 13)+"px";
+        else w = null;
+        d3.select(this).style("width", w);
       };
       stbody.selectAll(".rowid, .roadcell").each( wfn );
       if (roads.length > 3) {
