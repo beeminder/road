@@ -59,8 +59,6 @@
 
 Prioritized To-Do list for the editor/client-side graphs
 
-- Table headers and the first row should always be visible
-- Last (goal) row should always be visible or somehow highlighted
 - Exes and pencils like in old.beeminder.com for the road rows with auto-ungray (also probably exes for deleting road rows. or maybe '+' and '-' for that?)
 - Selector for multiple overlapping node deletion buttons.
 - don't draw the actual YBR left of tini. we do want to be able to scroll left of tini and add new knots and make tini be earlier. just show the actual YBR starting at tini. it's also possible to have datapoints to the left of tini, which is fine.
@@ -71,6 +69,8 @@ Prioritized To-Do list for the editor/client-side graphs
 - Mini-editor for goal creation
 - Replace table checkmarks with proper icons and implement auto-enable on click.
 
+- DONE: Table headers and the first row should always be visible
+- DONE: Last (goal) row should always be visible or somehow highlighted
 - DONE: "Schedule a break" functionality (options: insert or overwrite)
 - FIXED: Bug: when you drag a knot and it bumps into another knot it loses the slope it was supposed to be keeping fixed
 - DONE (Shown in the table header): Show the rate units somewhere
