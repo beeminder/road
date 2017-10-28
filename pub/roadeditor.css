@@ -127,7 +127,7 @@ line.roads {
   background-color: white;
 }
 .rtablebody,.rtablestart {
-  padding: 0px 2px 4px 2px;
+  padding: 1px 0px 4px 0px;
   border: 1px solid white;
 }
 .rtablegoal {
