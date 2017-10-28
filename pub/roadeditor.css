@@ -86,9 +86,9 @@ line.roads {
   pointer-events: none;
 }
 
-#.rtable, .rtablestart, .rtablegoal {
-#  display: table;
-#}
+/*.rtable, .rtablestart, .rtablegoal {
+  display: table;
+} */
 .roadhdr {
   display: table-header-group;
 }
