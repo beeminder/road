@@ -4500,7 +4500,7 @@
       var color = (state)
             ?opts.roadTableCol.bgHighlight:opts.roadTableCol.bg;
       var elt = d3.select(opts.divTable)
-            .select('.rtable [name=enddate'+i+']');
+            .select('.roadrow [name=enddate'+i+']');
       if (elt.empty()) return;
       elt.style('background-color', color);
       autoScroll(elt);
@@ -4510,7 +4510,7 @@
       var color = (state)
             ?opts.roadTableCol.bgHighlight:opts.roadTableCol.bg;
       var elt = d3.select(opts.divTable)
-            .select('.rtable [name=endvalue'+i+']');
+            .select('.roadrow [name=endvalue'+i+']');
       if (elt.empty()) return;
       elt.style('background-color', color);
       autoScroll(elt);
@@ -4520,7 +4520,7 @@
       var color = (state)
             ?opts.roadTableCol.bgHighlight:opts.roadTableCol.bg;
       var elt = d3.select(opts.divTable)
-            .select('.rtable [name=slope'+i+']');
+            .select('.roadrow [name=slope'+i+']');
       if (elt.empty()) return;
       elt.style('background-color', color);  
       autoScroll(elt);

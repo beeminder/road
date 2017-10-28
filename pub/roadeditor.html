@@ -81,26 +81,25 @@ Take a break starting:
 <button id="overwritebreak" onclick="scheduleBreak(false);">OVERWRITE</button>
 </div>
 
-<div class="commit">
-Commit to:
-<input type = "number" id="endslope" step="any" style="width:10em">
-<select id="slopetype" selected="604800" onchange="updateCommitFields();">
-  <option value="86400">per day</option>
-  <option value="604800">per week</option>
-  <option value="2629800">per month</option>
-  <option value="31557600">per year</option>
-</select> 
-<button id="commit" onclick="commitTo();">UPDATE</button>
-</div>
-
 <button id="submit" onclick="window.alert('new road matrix:\n'+JSON.stringify(editor.getRoad(),null,2));">Submit</button>
 <button id="savesvg" onclick="editor.saveGraph();">Save SVG</button><br/>
 
 </td>
     <td valign="top">
       <div id="roadtable"></div>
-      <br/>
-      <input id="autoscroll" type="checkbox" onclick="editor.tableAutoScroll(this.checked);">Auto-scroll table<br>
+      <div class="commit">
+        Commit to:
+        <input type = "number" id="endslope" step="any" style="width:10em;">
+        <select id="slopetype" selected="604800" onchange="updateCommitFields();">
+          <option value="86400">per day</option>
+          <option value="604800">per week</option>
+          <option value="2629800">per month</option>
+          <option value="31557600">per year</option>
+        </select> 
+        <button id="commit" onclick="commitTo();">UPDATE</button>
+      </div>
+
+<input id="autoscroll" type="checkbox" onclick="editor.tableAutoScroll(this.checked);">Auto-scroll table<br>
       <input id="updateondrag" type="checkbox" onclick="editor.tableUpdateOnDrag(this.checked);">Update table on drag<br>
       <input id="reversetable" type="checkbox" onclick="editor.reverseTable(this.checked);">Reverse table order<br/>
 
