@@ -4727,7 +4727,10 @@
       var reversetable = opts.reverseTable;
 
       updateRowValues( stbody, 0, 1, false );
-      stbody.select("[name=slope0]").style("visibility","hidden");
+      stbody.select("[name=slope0]")
+        .style("visibility","hidden")
+        .style("border", "1px solid transparent");
+
       updateRowValues( tbody, 1, roads.length-2, reversetable );
       updateRowValues( gbody, roads.length-2, roads.length-1, false ); 
 
