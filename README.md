@@ -3,7 +3,7 @@
 
 * 2017.10.28 fixed auto-scroll
 * 2017.10.28 highlight date when hovering over knot delete button
-* 2017.10.28 enable table field on click
+* 2017.10.28 enable table field on click, eliminated checboxes (option)
 * 2017.10.28 rearranged interface groupings
 * 2017.10.28 separated table rows for start and goal nodes
 * 2017.10.13 implemented commit to (road dial) interface for slope
