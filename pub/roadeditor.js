@@ -4337,7 +4337,6 @@
         .enter().append('span').attr('class', 'roadhdrcell')
         .text(function (column) { return column; });
       gbody = ghead.append('div').attr('class', 'roadbody');
-      ghead.append('div').style('height', '5px');
     };
 
     function updateTableTitles() {
@@ -4734,10 +4733,13 @@
       updateRowValues( tbody, 1, roads.length-2, reversetable );
       updateRowValues( gbody, roads.length-2, roads.length-1, false ); 
 
-      if (roads.length <=3)
+      if (roads.length <=3) {
+        sttail.style("visibility", "collapse");
         d3.select(opts.divTable).select(".rtablebody").style("display", "none");
-      else
+      } else {
+        sttail.style("visibility", null);
         d3.select(opts.divTable).select(".rtablebody").style("display", null);
+      }
 
       updateTableWidths();
     }
