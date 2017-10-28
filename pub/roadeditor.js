@@ -4694,30 +4694,31 @@
     }
     
     function updateTableWidths() {
-      var wfn = function(d,i) {
-        var sel = tbody.select(".roadrow").selectAll(".rowid, .roadcell"); 
-        var nds = sel.nodes();
-        if (nds.length == 0) {
-          sel = gbody.select(".roadrow").selectAll(".rowid, .roadcell"); 
-          nds = sel.nodes();
-        }
-        var w = nds[i].offsetWidth;
-        // Uluc: Hack, depends on padding
-        if (i == 0) w = (w - 0)+"px";
-        //else w = (w - 13)+"px";
-        else w = null;
-        d3.select(this).style("width", w);
-      };
-      stbody.selectAll(".rowid, .roadcell").each( wfn );
-      if (roads.length > 3) {
-        gbody.selectAll(".rowid, .roadcell").each( wfn );
-        d3.select(opts.divTable)
-          .style("width", (tbody.node().offsetWidth+30)+"px");
-      } else {
-        gbody.selectAll(".rowid, .roadcell").style( "width", null );
-        d3.select(opts.divTable)
-          .style("width", (gbody.node().offsetWidth+30)+"px");
-      }
+      // var wfn = function(d,i) {
+      //   var sel = tbody.select(".roadrow").selectAll(".rowid, .roadcell"); 
+      //   var nds = sel.nodes();
+      //   if (nds.length == 0) {
+      //     sel = gbody.select(".roadrow").selectAll(".rowid, .roadcell"); 
+      //     nds = sel.nodes();
+      //   }
+      //   var w = nds[i].offsetWidth;
+      //   // Uluc: Hack, depends on padding
+      //   if (i == 0) w = w - 0;
+      //   else w = w - 13;
+      //   d3.select(this).style("width", w+"px");
+      // };
+      // stbody.selectAll(".rowid, .roadcell").each( wfn );
+      // if (roads.length > 3) {
+      //   gbody.selectAll(".rowid, .roadcell").each( wfn );
+      //   d3.select(opts.divTable)
+      //     .style("width", (tbody.node().offsetWidth+30)+"px");
+      // } else {
+      //   gbody.selectAll(".rowid, .roadcell").style( "width", null );
+      //   d3.select(opts.divTable)
+      //     .style("width", (gbody.node().offsetWidth+30)+"px");
+      // }
+      d3.select(opts.divTable)
+        .style("width", (gbody.node().offsetWidth+30)+"px");
     }
 
     function updateTableValues() {
