@@ -563,6 +563,7 @@
 
   // ----------------- Network utilities ----------------------
   loadJSON = function( url, callback ) {   
+    console.debug("loadJSON: "+url);
     if (url === "") return;
     var xobj = new XMLHttpRequest();
     xobj.overrideMimeType("application/json");
@@ -3205,7 +3206,8 @@
       } else {
         pasttextelt
 	  	    .attr("x", textx).attr("y", texty)
-          .attr("transform", "rotate(-90,"+textx+","+texty+")");
+          .attr("transform", "rotate(-90,"+textx+","+texty+")")
+          .text("Today"+" ("+moment.unix(goal.asof).utc().format("ddd")+")");
       }
     }
 
@@ -4783,10 +4785,10 @@
       // }
       if (roads.length > 3)
         d3.select(opts.divTable)
-        .style("width", (tbody.node().offsetWidth+30)+"px");
+        .style("width", (tbody.node().offsetWidth+35)+"px");
       else
         d3.select(opts.divTable)
-        .style("width", (gbody.node().offsetWidth+30)+"px");
+        .style("width", (gbody.node().offsetWidth+35)+"px");
     }
 
     function updateTableValues() {
