@@ -1,6 +1,8 @@
 
 ## CHANGELOG
 
+* 2017.11.02 No YBR or guidelines to the left of tini
+* 2017.11.02 fixed Today's day name problem
 * 2017.10.28 fixed auto-scroll
 * 2017.10.28 highlight date when hovering over knot delete button
 * 2017.10.28 enable table field on click, eliminated checboxes (option)
@@ -64,14 +66,14 @@ Prioritized To-Do list for the editor/client-side graphs
 
 - Exes and pencils like in old.beeminder.com for the road rows with auto-ungray (also probably exes for deleting road rows. or maybe '+' and '-' for that?)
 - Selector for multiple overlapping node deletion buttons.
-- don't draw the actual YBR left of tini. we do want to be able to scroll left of tini and add new knots and make tini be earlier. just show the actual YBR starting at tini. it's also possible to have datapoints to the left of tini, which is fine.
-- day of week for "today" should account for the beeminder deadline. for example, if it's friday night at 8pm and i've done my pushups that we due at 7pm then from beeminder's point of view it's now saturday and it's an eep day again because saturday's pushups are due in less than 24 hours. this seems counterintuitive to call it saturday when it's clearly friday but it turns out to be a can of worms to do anything other than treat the beeminder deadline as the end-of-day.
 - Test out how svg and png generation would work on a node.js server with jsdom?
 - Implement a smoother editing mechanism for roads with lots of breaks.
 - True *retro*ratchet when you originally made your rate way too conservative and want the road to match your data
 - Mini-editor for goal creation
 - Replace table checkmarks with proper icons and implement auto-enable on click.
 
+- DONE: don't draw the actual YBR left of tini. we do want to be able to scroll left of tini and add new knots and make tini be earlier. just show the actual YBR starting at tini. it's also possible to have datapoints to the left of tini, which is fine.
+- FIXED: day of week for "today" should account for the beeminder deadline. for example, if it's friday night at 8pm and i've done my pushups that we due at 7pm then from beeminder's point of view it's now saturday and it's an eep day again because saturday's pushups are due in less than 24 hours. this seems counterintuitive to call it saturday when it's clearly friday but it turns out to be a can of worms to do anything other than treat the beeminder deadline as the end-of-day.
 - DONE: Enable field on click
 - DONE: Table headers and the first row should always be visible
 - DONE: Last (goal) row should always be visible or somehow highlighted
