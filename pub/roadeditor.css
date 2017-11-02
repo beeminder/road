@@ -109,6 +109,7 @@ line.roads {
   margin-left: 3px;
   margin-right: 1px;
   visibility: collapse;
+  font-size:80%;
 }
 
 .rowid {
@@ -129,10 +130,11 @@ line.roads {
 .roadcell {
   display: table-cell;
   border: 1px solid black;
-  padding: 2px 5px 2px 5px;
+  padding: 2px 2px 2px 2px;
   text-align: center;
   white-space: nowrap;
   background-color: white;
+  font-size:90%;
 }
 .rtablebody, .rtablestart {
   padding: 1px 0px 4px 0px;
