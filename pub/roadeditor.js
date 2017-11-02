@@ -3680,8 +3680,9 @@
       var fx2 = nXSc(ir2[0].sta[0]*1000), fy2 = nYSc(ir2[0].sta[1]);
       var ex2 = nXSc(ir2[0].end[0]*1000), ey2 = nYSc(ir2[0].end[1]);
       var newx2 = (-nXSc(iRoad2[0].sta[0]*1000)) % (2*opts.oldRoadLine.dash);
-      fy2 = (fy2 + (-newx2-fx2)*(ey2-fy2)/(ex2-fx2));
-      if (fx2 < 0 || newx2 > 0) fx2 = -newx2;
+      //fy2 = (fy2 + (-newx2-fx2)*(ey2-fy2)/(ex2-fx2));
+      //if (fx2 < 0 || newx2 > 0) fx2 = -newx2;
+
       var rd2 = "M"+fx2+" "+fy2;
       for (i = 0; i < ir2.length; i++) {
         ex2 = nXSc(ir2[i].end[0]*1000); ey2 = nYSc(ir2[i].end[1]);
