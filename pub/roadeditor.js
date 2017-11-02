@@ -563,7 +563,7 @@
 
   // ----------------- Network utilities ----------------------
   loadJSON = function( url, callback ) {   
-    console.debug("loadJSON: "+url);
+    //console.debug("loadJSON: "+url);
     if (url === "") return;
     var xobj = new XMLHttpRequest();
     xobj.overrideMimeType("application/json");
@@ -3579,7 +3579,8 @@
 
       var yedge, itoday, ihor;
       var ir = roads;
-      var now = goal.xMin;
+      //var now = goal.xMin;
+      var now = roads[0].end[0];
       var hor = roads[roads.length-1].sta[0];
       // Determine good side of the road 
       if (goal.yaw < 0) yedge = goal.yMin - 5*(goal.yMax - goal.yMin);
@@ -3651,16 +3652,19 @@
         return ((r.sta[0] > l[0] && r.sta[0] < l[1])
                 || (r.end[0] > l[0] && r.end[0] < l[1]));
       };
+      var iRoad2 = iRoad.slice(1,-1), ind;
       var ir = iRoad.filter(rdfilt);
-      if (ir.length == 0) {
-        var ind = findRoadSegment(iRoad, l[0]);
-        ir = [iRoad[ind]];
-      }
+      if (ir.length == 0)
+        ir = [iRoad[findRoadSegment(iRoad, l[0])]];
+      var ir2 = iRoad2.filter(rdfilt);
+      if (ir2.length == 0)
+        ir2 = [iRoad2[findRoadSegment(iRoad2, l[0])]];
+
       var fx = nXSc(ir[0].sta[0]*1000), fy = nYSc(ir[0].sta[1]);
       var ex = nXSc(ir[0].end[0]*1000), ey = nYSc(ir[0].end[1]);
       var newx = (-nXSc(iRoad[0].sta[0]*1000)) % (2*opts.oldRoadLine.dash);
       fy = (fy + (-newx-fx)*(ey-fy)/(ex-fx));
-      fx = -newx;
+      if (fx < 0 || newx > 0) fx = -newx;
       var d, rd = "M"+fx+" "+fy;
       var i;
       for (i = 0; i < ir.length; i++) {
@@ -3673,6 +3677,21 @@
         rd += " L"+ex+" "+ey;
       }
 
+      var fx2 = nXSc(ir2[0].sta[0]*1000), fy2 = nYSc(ir2[0].sta[1]);
+      var ex2 = nXSc(ir2[0].end[0]*1000), ey2 = nYSc(ir2[0].end[1]);
+      var newx2 = (-nXSc(iRoad2[0].sta[0]*1000)) % (2*opts.oldRoadLine.dash);
+      fy2 = (fy2 + (-newx2-fx2)*(ey2-fy2)/(ex2-fx2));
+      //if (fx2 < 0 || newx2 > 0) fx2 = -newx2;
+      var rd2 = "M"+fx2+" "+fy2;
+      for (i = 0; i < ir2.length; i++) {
+        ex2 = nXSc(ir2[i].end[0]*1000); ey2 = nYSc(ir2[i].end[1]);
+        if (ex2 > plotbox.width) {
+          fx2 = nXSc(ir2[i].sta[0]*1000); fy2 = nYSc(ir2[i].sta[1]);
+          ey2 = (fy2 + (plotbox.width-fx2)*(ey2-fy2)/(ex2-fx2));
+          ex2 = plotbox.width;          
+        }
+        rd2 += " L"+ex2+" "+ey2;
+      }
       var roadelt = gOldCenter.select(".oldroads");
       if (roadelt.empty()) {
         gOldCenter.append("svg:path")
@@ -3697,25 +3716,25 @@
         var lw = (goal.lnw == 0)?thin:goal.lnw;
         if (Math.abs(nYSc(lw)-nYSc(0)) < minpx) lw=thin;
 
-        fx = nXSc(ir[0].sta[0]*1000); fy = nYSc(ir[0].sta[1]+lw);
-        ex = nXSc(ir[0].end[0]*1000); ey = nYSc(ir[0].end[1]+lw);
-        fy = (fy + (0-fx)*(ey-fy)/(ex-fx)); fx = 0;
+        fx = nXSc(ir2[0].sta[0]*1000); fy = nYSc(ir2[0].sta[1]+lw);
+        ex = nXSc(ir2[0].end[0]*1000); ey = nYSc(ir2[0].end[1]+lw);
+        //fy = (fy + (0-fx)*(ey-fy)/(ex-fx)); fx = 0;
         
         d = "M"+fx+" "+fy;
-        for (i = 0; i < ir.length; i++) {
-          ex = nXSc(ir[i].end[0]*1000); ey = nYSc(ir[i].end[1]+lw);
+        for (i = 0; i < ir2.length; i++) {
+          ex = nXSc(ir2[i].end[0]*1000); ey = nYSc(ir2[i].end[1]+lw);
           if (ex > plotbox.width) {
-            fx = nXSc(ir[i].sta[0]*1000); fy = nYSc(ir[i].sta[1]+lw);
+            fx = nXSc(ir2[i].sta[0]*1000); fy = nYSc(ir2[i].sta[1]+lw);
             ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx)); ex = plotbox.width;          
           }
           d += " L"+ex+" "+ey;
         }
         ey += (nYSc(0) - nYSc(2*lw));
         d += " L"+ex+" "+ey;
-        for (i = ir.length-1; i >= 0; i--) {
-          fx = nXSc(ir[i].sta[0]*1000); fy = nYSc(ir[i].sta[1]-lw);
+        for (i = ir2.length-1; i >= 0; i--) {
+          fx = nXSc(ir2[i].sta[0]*1000); fy = nYSc(ir2[i].sta[1]-lw);
           if (fx < 0) {
-            ex = nXSc(ir[i].end[0]*1000); ey = nYSc(ir[i].end[1]-lw);
+            ex = nXSc(ir2[i].end[0]*1000); ey = nYSc(ir2[i].end[1]-lw);
             fy = (fy + (0-fx)*(ey-fy)/(ex-fx)); fx = 0;          
           }
           d += " L"+fx+" "+fy;
@@ -3753,13 +3772,13 @@
           delta = Math.abs((yrange[1] - yrange[0])/numlines)/goal.lnw;
         }
         var arr = new Array(Math.ceil(numlines)).fill(0);
-        var shift = nYSc(ir[0].sta[1]+goal.yaw*goal.lnw) 
-              - nYSc(ir[0].sta[1]);
+        var shift = nYSc(ir2[0].sta[1]+goal.yaw*goal.lnw) 
+              - nYSc(ir2[0].sta[1]);
         guideelt = guideelt.data(arr);
         guideelt.exit().remove();
         guideelt.enter().append("svg:path")
           .attr("class","oldguides")
-	  	    .attr("d", rd)
+	  	    .attr("d", rd2)
 	  	    .attr("transform", function(d,i) { 
             return "translate(0,"+((i+1)*delta*shift)+")";})
   		    .attr("pointer-events", "none")
@@ -3771,7 +3790,7 @@
   		    .attr("stroke", function (d,i) { 
             return ((delta==7 && i==0) || (delta==1 && i==6))
               ?Cols.DYEL:Cols.LYEL;});
-        guideelt.attr("d", rd)
+        guideelt.attr("d", rd2)
           .attr("transform", function(d,i) { 
             return "translate(0,"+((i+1)*delta*shift)+")";})
   		    .attr("stroke-width", function (d,i) { 
