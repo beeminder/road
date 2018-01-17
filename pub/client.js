@@ -208,11 +208,14 @@ function handleRoadSubmit(){
     return;
   }
   postJSON("/submitroad/"+currentGoal, editor.getRoad(), function(resp) {
-    
-    submitMsg.innerHTML = "(successfully submitted road!)";
-    console.log("success!");
-    console.log(resp);
-    editor.loadGoal('/getgoaljson/'+currentGoal);
-    editor2.loadGoal('/getgoaljson/'+currentGoal);
+    if (resp.error.length > 0) {
+        submitMsg.innerHTML = "ERROR! \""+resp.error+"\". Email support@beeminder.com for more help!"
+    } else {
+      submitMsg.innerHTML = "(successfully submitted road!)";
+      console.log("success!");
+      console.log(resp);
+      editor.loadGoal('/getgoaljson/'+currentGoal);
+      editor2.loadGoal('/getgoaljson/'+currentGoal);
+    }
   });
 }
