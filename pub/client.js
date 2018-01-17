@@ -208,7 +208,7 @@ function handleRoadSubmit(){
     return;
   }
   postJSON("/submitroad/"+currentGoal, editor.getRoad(), function(resp) {
-    if (resp.error.length > 0) {
+    if (resp.error) {
         submitMsg.innerHTML = "ERROR! \""+resp.error+"\". Email support@beeminder.com for more help!"
     } else {
       submitMsg.innerHTML = "(successfully submitted road!)";
