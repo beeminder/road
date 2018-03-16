@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="roadeditor.css">
+    <script src = "https://d3js.org/d3.v4.js"></script>
+    <script src = "moment.min.js"></script>
+    <script src = "polyfit.js"></script>
+</head>
+<body>
+
+<div id="roadgraph"></div>
+
+<script src = "roadeditor.js"></script>
+<script>
+
+  var done = false;
+  var saveSVG = function() {
+    console.debug('Done loading road');
+    graph.saveGraph( true );
+  };
+
+  var graph = new bmndr({divGraph: document.getElementById('roadgraph'),
+                          svgOutput:true,
+                          maxFutureDays: 365,
+                          onRoadChange: saveSVG
+  });
+
+  graph.loadGoal('data/testroad2.json');
+
+
+</script>
+
+</body>
+</html>

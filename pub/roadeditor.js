@@ -25,23 +25,24 @@
  * 
  * Copyright © 2017 Uluc Saranli
  */
-
 ;(function (root, factory) {
   'use strict';
   if (typeof define === 'function' && define.amd) {
+    console.log("roadeditor: Using AMD module definition");
     define(['d3', 'moment', 'Pikaday', 'Polyfit'], factory);
   } else if (typeof module === 'object' && module.exports) {
-    module.exports = factory(require('d3', 'moment', 'Pikaday', 'Polyfit'));
+    console.log("roadeditor: Using CommonJS module.exports");
+    module.exports = factory(require('d3'), require('moment'), 
+                             require('pikaday'), require('Polyfit'));
   } else {
+    console.log("roadeditor: Using Browser globals");
     root.bmndr = factory(root.d3, root.moment, root.Pikaday, root.Polyfit);
   }
 }(this, function (d3, moment, Pikaday) {
   'use strict';
 
-
   /** default options */
-  var 
-  gid = 1,
+  var gid = 1,
   defaults = {
     /** Binds the graph to a div element */
     divGraph:     null,
@@ -98,6 +99,10 @@
     dataPointCol: { future: "#909090", stroke: "lightgray"},
     halfPlaneCol: { fill: "#ffffe8" },
     pastBoxCol:   { fill: "#f8f8f8", opacity:0.5 },
+
+    /** Strips the graph of all details except what is needed for svg
+     output. */
+    svgOutput:        false,
 
     /** Enables zooming by scrollwheel. When disabled, only the
      context graph and the zoom buttons will allow zooming. */
@@ -217,6 +222,8 @@
     REDDOT: "#ff0000"  // Red for off the road on the bad side
   },
 
+  SVGStyle = ".chart, .bmndrsvg { border: none; } .axis path, .axis line { fill: none; stroke: black; shape-rendering: crispEdges;} .axis .minor line { stroke: #777; stroke-dasharray:5,4; } .grid line { fill: none; stroke: #dddddd; stroke-width: 1px; shape-rendering: crispEdges; } .grid .minor line { stroke: none; } .axis text { font-family: sans-serif; font-size: 11px; } .axislabel { font-family: sans-serif; font-size: 11px; text-anchor: middle; } circle.dots { stroke: black; } line.roads { stroke: black; } .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .waterbuf, .waterbux { text-anchor: middle; font-family: sans-serif; } .zoomarea { fill: none; }",
+
   /** Enum object to identify field types for road segments. */
   RP = { DATE:0, VALUE:1, SLOPE:2},
 
@@ -251,6 +258,8 @@
   // ---------------- General Utility Functions ----------------------
 
   onMobileOrTablet = function() {
+    if (typeof navigator == 'undefined' && typeof window == 'undefined') 
+      return false;
     var check = false;
     (function(a){if(/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino|android|ipad|playbook|silk/i.test(a)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0,4))) check = true;})(navigator.userAgent||navigator.vendor||window.opera);
     return check;
@@ -569,7 +578,7 @@
     xobj.overrideMimeType("application/json");
     xobj.open('GET', url, true);
     xobj.onreadystatechange = function () {
-      if (xobj.readyState == 4 && xobj.status == "200") {
+      if (xobj.readyState == 4 && (xobj.status == "200"||xobj.status == "0")) {
         //if (xobj.readyState == 4) {
         callback(JSON.parse(xobj.responseText));
       } else if (xobj.readyState == 4) {
@@ -924,10 +933,23 @@
     }
     var opts = extend(obj.opts, options, true);
     
-    opts.divGraph = (opts.divGraph && opts.divGraph.nodeName)?
-      opts.divGraph : null;
-    opts.divTable = (opts.divTable && opts.divTable.nodeName)?
-      opts.divTable : null;
+      opts.divGraph = (opts.divGraph && opts.divGraph.nodeName)?
+        opts.divGraph : null;
+    if (opts.svgOutput) {
+      // Override options for svg output 
+      opts.divTable = null;
+      opts.scrollZoom = false;
+      opts.roadEditor = false;
+      opts.showContext = false;
+      opts.showFocusRect = false;
+      opts.focusRect.width = opts.svgSize.width;
+      opts.focusRect.height = opts.svgSize.height;
+      opts.ctxRect.y = opts.svgSize.height;
+      opts.ctxRect.height = 0;
+    } else {
+      opts.divTable = (opts.divTable && opts.divTable.nodeName)?
+        opts.divTable : null;
+    };
 
     return opts;
   },
@@ -939,7 +961,6 @@
         opts = config(self, options),
         curid = gid;
     gid++;
-
     var yaxisw = 50;
 
     var 
@@ -1044,18 +1065,22 @@
       
       var zoomingrp = defs.append("g")
             .attr("id", "zoominbtn");
-      zoomingrp.append("path").style("fill", "white")
-        .attr("d", "m 530.86356,264.94116 a 264.05649,261.30591 0 1 1 -528.1129802,0 264.05649,261.30591 0 1 1 528.1129802,0 z");
-      zoomingrp.append("path")
-        .attr("d", "m 308.21,155.10302 -76.553,0 0,76.552 -76.552,0 0,76.553 76.552,0 0,76.552 76.553,0 0,-76.552 76.552,0 0,-76.553 -76.552,0 z m 229.659,114.829 C 537.869,119.51007 420.50428,1.9980234 269.935,1.9980234 121.959,1.9980234 2.0000001,121.95602 2.0000001,269.93202 c 0,147.976 117.2473599,267.934 267.9339999,267.934 150.68664,0 267.935,-117.51205 267.935,-267.934 z m -267.935,191.381 c -105.681,0 -191.381,-85.7 -191.381,-191.381 0,-105.681 85.701,-191.380996 191.381,-191.380996 105.681,0 191.381,85.700996 191.381,191.380996 0,105.681 -85.7,191.381 -191.381,191.381 z");
-      
+      if (!opts.svgOutput) {
+        zoomingrp.append("path").style("fill", "white")
+          .attr("d", "m 530.86356,264.94116 a 264.05649,261.30591 0 1 1 -528.1129802,0 264.05649,261.30591 0 1 1 528.1129802,0 z");
+        zoomingrp.append("path")
+          .attr("d", "m 308.21,155.10302 -76.553,0 0,76.552 -76.552,0 0,76.553 76.552,0 0,76.552 76.553,0 0,-76.552 76.552,0 0,-76.553 -76.552,0 z m 229.659,114.829 C 537.869,119.51007 420.50428,1.9980234 269.935,1.9980234 121.959,1.9980234 2.0000001,121.95602 2.0000001,269.93202 c 0,147.976 117.2473599,267.934 267.9339999,267.934 150.68664,0 267.935,-117.51205 267.935,-267.934 z m -267.935,191.381 c -105.681,0 -191.381,-85.7 -191.381,-191.381 0,-105.681 85.701,-191.380996 191.381,-191.380996 105.681,0 191.381,85.700996 191.381,191.380996 0,105.681 -85.7,191.381 -191.381,191.381 z");
+      }
+
       var zoomoutgrp = defs.append("g")
             .attr("id", "zoomoutbtn");
-      zoomoutgrp.append("path").style("fill", "white")
-        .attr("d", "m 530.86356,264.94116 a 264.05649,261.30591 0 1 1 -528.1129802,0 264.05649,261.30591 0 1 1 528.1129802,0 z");
-      zoomoutgrp.append("path")
-        .attr("d", "m 155.105,231.65502 0,76.553 229.657,0 0,-76.553 c -76.55233,0 -153.10467,0 -229.657,0 z m 382.764,38.277 C 537.869,119.51007 420.50428,1.9980234 269.935,1.9980234 121.959,1.9980234 2.0000001,121.95602 2.0000001,269.93202 c 0,147.976 117.2473599,267.934 267.9339999,267.934 150.68664,0 267.935,-117.51205 267.935,-267.934 z m -267.935,191.381 c -105.681,0 -191.381,-85.7 -191.381,-191.381 0,-105.681 85.701,-191.380996 191.381,-191.380996 105.681,0 191.381,85.700996 191.381,191.380996 0,105.681 -85.7,191.381 -191.381,191.381 z");
-      
+      if (!opts.svgOutput) {
+        zoomoutgrp.append("path").style("fill", "white")
+          .attr("d", "m 530.86356,264.94116 a 264.05649,261.30591 0 1 1 -528.1129802,0 264.05649,261.30591 0 1 1 528.1129802,0 z");
+        zoomoutgrp.append("path")
+          .attr("d", "m 155.105,231.65502 0,76.553 229.657,0 0,-76.553 c -76.55233,0 -153.10467,0 -229.657,0 z m 382.764,38.277 C 537.869,119.51007 420.50428,1.9980234 269.935,1.9980234 121.959,1.9980234 2.0000001,121.95602 2.0000001,269.93202 c 0,147.976 117.2473599,267.934 267.9339999,267.934 150.68664,0 267.935,-117.51205 267.935,-267.934 z m -267.935,191.381 c -105.681,0 -191.381,-85.7 -191.381,-191.381 0,-105.681 85.701,-191.380996 191.381,-191.380996 105.681,0 191.381,85.700996 191.381,191.380996 0,105.681 -85.7,191.381 -191.381,191.381 z");
+      }
+
       // Create rectange to monitor zoom events and install handlers
       zoomarea = svg.append('rect')
         .attr("class", "zoomarea")
@@ -2483,7 +2508,7 @@
       updateContextData();
     }
 
-    function loadGoalFromURL( url ) {
+    function loadGoalFromURL( url, callback = null ) {
       //console.debug( "Loading: "+url );
       if (url == "" || loading) return;
       loading = true;
@@ -2501,6 +2526,7 @@
       loadJSON(url, 
                function(resp) { 
                  //console.debug("id="+curid+" loadGoalFromURL() done for "+url+", resp="+resp);
+                 pg.remove();
                  if (resp != null) {
                    loadGoal(resp);
                    if (typeof opts.onRoadChange === 'function') {
@@ -2508,7 +2534,6 @@
                    }
                    updateTableTitles();
                  }
-                 pg.remove();
                  loading = false;
                });  
     }
@@ -4780,6 +4805,7 @@
     }
     
     function updateTableWidths() {
+      if (opts.divTable == null) return;
       // var wfn = function(d,i) {
       //   var sel = tbody.select(".roadrow").selectAll(".rowid, .roadcell"); 
       //   var nds = sel.nodes();
@@ -5141,10 +5167,12 @@
 
     /** Opens up a new page with only a static svg graph, which
      can then be saved as a local file */
-    self.saveGraph = function() {
+    self.saveGraph = function( replace = false ) {
       //get svg element.
+      defs.selectAll('style').remove();
+      defs.insert('style', ':first-child').attr('type','text/css').text(SVGStyle);
       var svge = svg.node();
-
+      
       //get svg source.
       var serializer = new XMLSerializer();
       var source = serializer.serializeToString(svge);
@@ -5160,13 +5188,16 @@
       //add xml declaration
       source = '<?xml version="1.0" standalone="no"?>\n<?xml-stylesheet type="text/css" href="roadeditor.css"?>\r\n' + source;
 
-      //convert svg source to URI data scheme.
-      var url = "data:image/svg+xml;charset=utf-8,"
-            +encodeURIComponent(source);
-
       //set url value to a element's href attribute.
       //document.getElementById("link").href = url;
-      window.open(url, "graph.svg");
+      if (replace) {
+        document.write(source);
+        document.head.remove();
+      } else {
+        var win = window.open();
+        win.document.write(source);
+      }
+      //window.open(url, "graph.svg");
     };
 
     /** Informs the module instance that the element containing the
