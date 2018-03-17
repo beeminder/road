@@ -171,7 +171,11 @@
      retrieve the new road state. This is also useful to update the
      state of undo/redo and submit buttons based on how many edits
      have been done on the original road. */
-    onRoadChange: null
+    onRoadChange: null,
+
+    /** Callback function that gets invoked when an error is encountered 
+     in loading, processing, drawing or editing the road. */
+    onError: null
   },
 
   /** This object defines default options for mobile browsers, where
@@ -222,7 +226,7 @@
     REDDOT: "#ff0000"  // Red for off the road on the bad side
   },
 
-  SVGStyle = ".chart, .bmndrsvg { border: none; } .axis path, .axis line { fill: none; stroke: black; shape-rendering: crispEdges;} .axis .minor line { stroke: #777; stroke-dasharray:5,4; } .grid line { fill: none; stroke: #dddddd; stroke-width: 1px; shape-rendering: crispEdges; } .grid .minor line { stroke: none; } .axis text { font-family: sans-serif; font-size: 11px; } .axislabel { font-family: sans-serif; font-size: 11px; text-anchor: middle; } circle.dots { stroke: black; } line.roads { stroke: black; } .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .waterbuf, .waterbux { text-anchor: middle; font-family: sans-serif; } .zoomarea { fill: none; }",
+  SVGStyle = ".chart, .bmndrsvg { border: none; } .axis path, .axis line { fill: none; stroke: black; shape-rendering: crispEdges;} .axis .minor line { stroke: #777; stroke-dasharray:5,4; } .grid line { fill: none; stroke: #dddddd; stroke-width: 1px; shape-rendering: crispEdges; } .grid .minor line { stroke: none; } .axis text { font-family: sans-serif; font-size: 11px; } .axislabel { font-family: sans-serif; font-size: 11px; text-anchor: middle; } circle.dots { stroke: black; } line.roads { stroke: black; } .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .waterbuf, .waterbux { text-anchor: middle; font-family: sans-serif; } .loading { text-anchor: middle; font-weight: bold; font-family: sans-serif; }",
 
   /** Enum object to identify field types for road segments. */
   RP = { DATE:0, VALUE:1, SLOPE:2},
@@ -255,6 +259,15 @@
           sml: "https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fsmiley.png?1500062837171"
         },
   
+  /** Enum object to identify error types. */
+  ErrType = { NOBBFILE:0, BADBBFILE:1  },
+
+  /** Enum object to identify error types. */
+  ErrMsgs = [ "Could not find goal file.", "Bad goal file." ],
+
+  /** Type of the last error */
+  LastError = null,
+
   // ---------------- General Utility Functions ----------------------
 
   onMobileOrTablet = function() {
@@ -578,10 +591,12 @@
     xobj.overrideMimeType("application/json");
     xobj.open('GET', url, true);
     xobj.onreadystatechange = function () {
-      if (xobj.readyState == 4 && (xobj.status == "200"||xobj.status == "0")) {
-        //if (xobj.readyState == 4) {
+      if (xobj.readyState == 4 
+          && (xobj.status == "200"
+              || (xobj.status == "0" && xobj.responseText !== ""))) {
         callback(JSON.parse(xobj.responseText));
       } else if (xobj.readyState == 4) {
+        LastError = ErrType.NOBBFILE;
         callback(null);
       }
     };
@@ -945,7 +960,7 @@
       opts.focusRect.width = opts.svgSize.width;
       opts.focusRect.height = opts.svgSize.height;
       opts.ctxRect.y = opts.svgSize.height;
-      opts.ctxRect.height = 0;
+      opts.ctxRect.height = 32;
     } else {
       opts.divTable = (opts.divTable && opts.divTable.nodeName)?
         opts.divTable : null;
@@ -954,7 +969,8 @@
     return opts;
   },
 
-  /** bmndr constructor */
+  /** bmndr constructor. This is returned once the wrapper function 
+   is called. */
   bmndr = function(options) {
     //console.debug("bmndr constructor: ");console.log(options);
     var self = this,
@@ -1024,6 +1040,44 @@
         brushObj, brush, focusrect, topLeft;
     var scalf = 1;
 
+    /** Utility function to show a shaded overlay with a message 
+     consisting of multiple lines supplied in the array argument */
+    function showOverlay( msgs, fontSize = -1) {
+      var pg = svg.select("g.overlay");
+      if (pg.empty()) {
+        pg = svg.append('g').attr('class', 'overlay');
+        pg.append('svg:rect')
+          .attr('x', 0).attr('y',0)
+          .attr('width', sw).attr('height',sh)
+          .style('fill', Cols.WITE)
+          .style('fill-opacity', 0.5);
+        pg.append('svg:rect')
+          .attr('x', sw/10).attr('y',sh/5)
+          .attr('width', sw-2*sw/10).attr('height',sh-2*sh/5)
+          .attr('rx', 10)
+          .attr('ry', 10)
+          .style('stroke', Cols.BLCK)
+          .style('stroke-width', 1)
+          .style('fill', "#ffffcc")
+          .style('fill-opacity', 0.9);
+      }
+      pg.selectAll(".loading").remove();
+      var nummsgs = msgs.length;
+      if (fontSize < 0) fontSize = sh/15;
+      var lineHeight = fontSize * 1.1;
+      for (var i = 0; i < nummsgs; i++) {
+        pg.append('svg:text').attr('class', 'loading')
+          .attr('x', sw/2)
+          .attr('y',sh/2 - ((nummsgs-1)*lineHeight)/2+i*lineHeight+fontSize/2)
+          .attr('font-size', fontSize)
+          .style('font-size', fontSize)
+          .text(msgs[i]);
+      }
+    }
+    function removeOverlay() {
+      svg.selectAll("g.overlay").remove();
+    }
+
     function createGraph() {
       var div = opts.divGraph;
       if (div === null) return;
@@ -1066,6 +1120,7 @@
       var zoomingrp = defs.append("g")
             .attr("id", "zoominbtn");
       if (!opts.svgOutput) {
+        // Zoom buttons are not visible for SVG output in headless mode
         zoomingrp.append("path").style("fill", "white")
           .attr("d", "m 530.86356,264.94116 a 264.05649,261.30591 0 1 1 -528.1129802,0 264.05649,261.30591 0 1 1 528.1129802,0 z");
         zoomingrp.append("path")
@@ -1075,6 +1130,7 @@
       var zoomoutgrp = defs.append("g")
             .attr("id", "zoomoutbtn");
       if (!opts.svgOutput) {
+        // Zoom buttons are not visible for SVG output in headless mode
         zoomoutgrp.append("path").style("fill", "white")
           .attr("d", "m 530.86356,264.94116 a 264.05649,261.30591 0 1 1 -528.1129802,0 264.05649,261.30591 0 1 1 528.1129802,0 z");
         zoomoutgrp.append("path")
@@ -1103,11 +1159,14 @@
             var bbox = this.getBoundingClientRect();
             pressX = d3.event.touches.item(0).pageX - bbox.left;
             var newx = nXSc.invert(pressX);
-            if (pressTimer == null && d3.event.touches.length == 1) pressTimer = window.setTimeout(function() { if (newx != null) addNewDot(newx/1000); },1000);
+            if (pressTimer == null && d3.event.touches.length == 1) 
+              pressTimer = window.setTimeout(
+                function() { if (newx != null) addNewDot(newx/1000); },1000);
             oldTouchStart.apply(this, arguments);} )
           .on("touchmove.zoom", function () { window.clearTimeout(pressTimer); pressTimer = null; oldTouchMove.apply(this, arguments);})
           .on("touchend.zoom", function () { clearTimeout(pressTimer); pressTimer = null; oldTouchEnd.apply(this, arguments);} );              
       }
+
       function dotAdded() {
         var mouse = d3.mouse(svg.node());
         var newx = nXSc.invert(mouse[0]-plotpad.left);
@@ -2512,28 +2571,29 @@
       //console.debug( "Loading: "+url );
       if (url == "" || loading) return;
       loading = true;
-      var pg = svg.append('g').attr('class', 'progress');
-      pg.append('svg:rect')
-        .attr('x', 0).attr('y',0)
-        .attr('width', sw).attr('height',sh)
-        .attr('fill', Cols.WITE)
-        .attr('fill-opacity', 0.8);
-      pg.append('svg:text').attr('class', 'loading')
-        .attr('x', sw/2).attr('y',sh/2)
-        .attr('font-size', sh/10)
-        .style('font-size', sh/10)
-        .text("loading...");
+      showOverlay( ["loading..."], sh/10 );
       loadJSON(url, 
                function(resp) { 
                  //console.debug("id="+curid+" loadGoalFromURL() done for "+url+", resp="+resp);
-                 pg.remove();
                  if (resp != null) {
+                   removeOverlay();
                    loadGoal(resp);
                    if (typeof opts.onRoadChange === 'function') {
                      opts.onRoadChange.call();
                    }
                    updateTableTitles();
-                 }
+                 } else {
+                   if (LastError != null)
+                     showOverlay( [ErrMsgs[LastError]] );
+                   else
+                     showOverlay(["Could not load goal file."]);
+                   if (!opts.svgOutput) {
+                     setTimeout( function() {removeOverlay();}, 1500);
+                   }
+                   if (typeof opts.onError === 'function') {
+                     opts.onError.call();
+                   }
+                 } 
                  loading = false;
                });  
     }
@@ -3677,18 +3737,25 @@
         return ((r.sta[0] > l[0] && r.sta[0] < l[1])
                 || (r.end[0] > l[0] && r.end[0] < l[1]));
       };
+      // Construct a trimmed road matrix iRoad2 for the guidelines
       var iRoad2 = iRoad.slice(1,-1), ind;
       var ir = iRoad.filter(rdfilt);
       if (ir.length == 0)
         ir = [iRoad[findRoadSegment(iRoad, l[0])]];
       var ir2 = iRoad2.filter(rdfilt);
-      if (ir2.length == 0)
-        ir2 = [iRoad2[findRoadSegment(iRoad2, l[0])]];
+      if (ir2.length == 0) {
+        // Check if we can find a segment that is still suitable
+        var seg = findRoadSegment(iRoad2, l[0]);
+        if (seg < 0) ir2 = null;
+        else ir2 = [iRoad2[seg]];
+      }
 
       var fx = nXSc(ir[0].sta[0]*1000), fy = nYSc(ir[0].sta[1]);
       var ex = nXSc(ir[0].end[0]*1000), ey = nYSc(ir[0].end[1]);
+      // Adjust the beginning of the road to ensure dashes are
+      // stationary wrt to time
       var newx = (-nXSc(iRoad[0].sta[0]*1000)) % (2*opts.oldRoadLine.dash);
-      fy = (fy + (-newx-fx)*(ey-fy)/(ex-fx));
+      if (ex != fx) fy = (fy + (-newx-fx)*(ey-fy)/(ex-fx));
       if (fx < 0 || newx > 0) fx = -newx;
       var d, rd = "M"+fx+" "+fy;
       var i;
@@ -3702,22 +3769,25 @@
         rd += " L"+ex+" "+ey;
       }
 
-      var fx2 = nXSc(ir2[0].sta[0]*1000), fy2 = nYSc(ir2[0].sta[1]);
-      var ex2 = nXSc(ir2[0].end[0]*1000), ey2 = nYSc(ir2[0].end[1]);
-      var newx2 = (-nXSc(iRoad2[0].sta[0]*1000)) % (2*opts.oldRoadLine.dash);
-      //fy2 = (fy2 + (-newx2-fx2)*(ey2-fy2)/(ex2-fx2));
-      //if (fx2 < 0 || newx2 > 0) fx2 = -newx2;
+      // If no guideline was found to be in the visible range, skip guidelines
+      if (ir2 != null) {
+        var fx2 = nXSc(ir2[0].sta[0]*1000), fy2 = nYSc(ir2[0].sta[1]);
+        var ex2 = nXSc(ir2[0].end[0]*1000), ey2 = nYSc(ir2[0].end[1]);
+        var newx2 = (-nXSc(iRoad2[0].sta[0]*1000)) % (2*opts.oldRoadLine.dash);
 
-      var rd2 = "M"+fx2+" "+fy2;
-      for (i = 0; i < ir2.length; i++) {
-        ex2 = nXSc(ir2[i].end[0]*1000); ey2 = nYSc(ir2[i].end[1]);
-        if (ex2 > plotbox.width) {
-          fx2 = nXSc(ir2[i].sta[0]*1000); fy2 = nYSc(ir2[i].sta[1]);
-          ey2 = (fy2 + (plotbox.width-fx2)*(ey2-fy2)/(ex2-fx2));
-          ex2 = plotbox.width;          
+        var rd2 = "M"+fx2+" "+fy2;
+        for (i = 0; i < ir2.length; i++) {
+          ex2 = nXSc(ir2[i].end[0]*1000); ey2 = nYSc(ir2[i].end[1]);
+          if (ex2 > plotbox.width) {
+            fx2 = nXSc(ir2[i].sta[0]*1000); fy2 = nYSc(ir2[i].sta[1]);
+            if (ex2 != fx2) 
+              ey2 = (fy2 + (plotbox.width-fx2)*(ey2-fy2)/(ex2-fx2));
+            ex2 = plotbox.width;          
+          }
+          rd2 += " L"+ex2+" "+ey2;
         }
-        rd2 += " L"+ex2+" "+ey2;
       }
+
       var roadelt = gOldCenter.select(".oldroads");
       if (roadelt.empty()) {
         gOldCenter.append("svg:path")
@@ -3736,7 +3806,7 @@
 
       var laneelt = gOldRoad.select(".oldlanes");
       var guideelt = gOldGuides.selectAll(".oldguides");
-      if (!opts.roadEditor) {
+      if (!opts.roadEditor && ir2 != null) {
         var minpx = 3*scalf;
         var thin=Math.abs(nYSc.invert(minpx)-nYSc.invert(0));
         var lw = (goal.lnw == 0)?thin:goal.lnw;
@@ -4915,6 +4985,9 @@
     createTable();
     zoomAll();
 
+    /** Error codes */
+    self.ErrType = ErrType;
+
     /** Sets/gets the showData option */
     self.showData = function( flag ) {
       if (arguments.length > 0) opts.showData = flag;
@@ -5190,13 +5263,24 @@
 
       //set url value to a element's href attribute.
       //document.getElementById("link").href = url;
+      var newroot;
       if (replace) {
         document.write(source);
         document.head.remove();
+        newroot = d3.select(document.body);
       } else {
         var win = window.open();
         win.document.write(source);
+        newroot = d3.select(win.document.body);
       }
+      newroot.selectAll(".zoomarea").remove();
+      newroot.selectAll(".buttonarea").remove();
+      newroot.selectAll(".brush").remove();
+      newroot.selectAll(".zoomin").remove();
+      newroot.selectAll(".zoomout").remove();
+      newroot.selectAll(".minor").remove();
+      console.debug(newroot);
+      
       //window.open(url, "graph.svg");
     };
 
