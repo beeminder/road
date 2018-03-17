@@ -23,10 +23,11 @@
   var graph = new bmndr({divGraph: document.getElementById('roadgraph'),
                           svgOutput:true,
                           maxFutureDays: 365,
-                          onRoadChange: saveSVG
+                          onRoadChange: saveSVG,
+                          onError: saveSVG
   });
 
-  graph.loadGoal('data/bug-d-pocket.bb');
+  graph.loadGoal('data/testroad1.json');
 
 
 </script>
