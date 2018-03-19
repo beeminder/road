@@ -123,10 +123,7 @@ editor2.show();
 
 document.onkeydown = documentKeyDown;
 
-
-
 // Helper Functions. Something about function hoisting?
-
 function loadJSON( url, callback ) {   
 
     var xobj = new XMLHttpRequest();
@@ -209,7 +206,7 @@ function handleRoadSubmit(){
   }
   postJSON("/submitroad/"+currentGoal, editor.getRoad(), function(resp) {
     if (resp.error) {
-        submitMsg.innerHTML = "ERROR! \""+resp.error+"\". Email support@beeminder.com for more help!"
+        submitMsg.innerHTML = "ERROR! \""+resp.error+"\". Email support@beeminder.com for more help!";
     } else {
       submitMsg.innerHTML = "(successfully submitted road!)";
       console.log("success!");
