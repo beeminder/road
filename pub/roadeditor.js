@@ -226,7 +226,7 @@
     REDDOT: "#ff0000"  // Red for off the road on the bad side
   },
 
-  SVGStyle = ".chart, .bmndrsvg { border: none; } .axis path, .axis line { fill: none; stroke: black; shape-rendering: crispEdges;} .axis .minor line { stroke: #777; stroke-dasharray:5,4; } .grid line { fill: none; stroke: #dddddd; stroke-width: 1px; shape-rendering: crispEdges; } .grid .minor line { stroke: none; } .axis text { font-family: sans-serif; font-size: 11px; } .axislabel { font-family: sans-serif; font-size: 11px; text-anchor: middle; } circle.dots { stroke: black; } line.roads { stroke: black; } .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .waterbuf, .waterbux { text-anchor: middle; font-family: sans-serif; } .loading { text-anchor: middle; font-weight: bold; font-family: sans-serif; }",
+  SVGStyle = ".chart, .bmndrsvg { border: none; } .axis path, .axis line { fill: none; stroke: black; shape-rendering: crispEdges;} .axis .minor line { stroke: #777; stroke-dasharray:5,4; } .grid line { fill: none; stroke: #dddddd; stroke-width: 1px; shape-rendering: crispEdges; } .grid .minor line { stroke: none; } .axis text { font-family: sans-serif; font-size: 11px; } .axislabel { font-family: sans-serif; font-size: 11px; text-anchor: middle; } circle.dots { stroke: black; } line.roads { stroke: black; } .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .waterbuf, .waterbux { text-anchor: middle; font-family: sans-serif; } .loading { text-anchor: middle; font-weight: bold; font-family: sans-serif; } .zoomarea { fill: none; }",
 
   /** Enum object to identify field types for road segments. */
   RP = { DATE:0, VALUE:1, SLOPE:2},
@@ -5238,19 +5238,27 @@
       return r;
     };
 
-    /** Opens up a new page with only a static svg graph, which
-     can then be saved as a local file */
-    self.saveGraph = function( replace = false ) {
-      //get svg element.
+    /** Generates a data URI downloadable from the link element
+     supplied as an argument. If the argument is empty, replaces page
+     contents with a cleaned up graph suitable to be used with
+     headless chrome --dump-dom to retrieve the contents as a simple
+     SVG. */
+    self.saveGraph = function( linkelt = null ) {
+      // Insert styling into the SVG to ensure that it can be rendered
+      // by itself
       defs.selectAll('style').remove();
-      defs.insert('style', ':first-child').attr('type','text/css').text(SVGStyle);
+      defs.insert('style', ':first-child')
+        .attr('type','text/css').text(SVGStyle);
+
+      // retrieve svg source as a string.
       var svge = svg.node();
-      
-      //get svg source.
       var serializer = new XMLSerializer();
       var source = serializer.serializeToString(svge);
 
-      //add name spaces.
+      // Remove styling once serialization is completed
+      defs.select('style').remove();
+
+      // add name spaces.
       if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
         source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
       }
@@ -5259,29 +5267,33 @@
       }
 
       //add xml declaration
-      source = '<?xml version="1.0" standalone="no"?>\n<?xml-stylesheet type="text/css" href="roadeditor.css"?>\r\n' + source;
+      source = '<?xml version="1.0" standalone="no"?>\n' + source;
 
       //set url value to a element's href attribute.
-      //document.getElementById("link").href = url;
-      var newroot;
-      if (replace) {
+      if (opts.svgOutput || linkelt == null) {
+        // If no link is provided or we are running in headless mode ,
+        // replace page contents with the svg and eliminate
+        // unnecessary elements
         document.write(source);
         document.head.remove();
-        newroot = d3.select(document.body);
+        // Eliminate unnecessary components from the SVG file in headless mode
+        if (opts.svgOutput) {
+          var newroot = d3.select(document.body);
+          newroot.selectAll(".zoomarea").remove();
+          newroot.selectAll(".buttonarea").remove();
+          newroot.selectAll(".brush").remove();
+          newroot.selectAll(".zoomin").remove();
+          newroot.selectAll(".zoomout").remove();
+          newroot.selectAll(".minor").remove();
+        }
       } else {
-        var win = window.open();
-        win.document.write(source);
-        newroot = d3.select(win.document.body);
+        //convert svg source to URI data scheme.
+        var url = "data:image/svg+xml;charset=utf-8,"
+              +encodeURIComponent(source);
+
+        //set url value to a element's href attribute.
+        linkelt.href = url;
       }
-      newroot.selectAll(".zoomarea").remove();
-      newroot.selectAll(".buttonarea").remove();
-      newroot.selectAll(".brush").remove();
-      newroot.selectAll(".zoomin").remove();
-      newroot.selectAll(".zoomout").remove();
-      newroot.selectAll(".minor").remove();
-      console.debug(newroot);
-      
-      //window.open(url, "graph.svg");
     };
 
     /** Informs the module instance that the element containing the

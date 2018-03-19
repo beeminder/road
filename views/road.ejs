@@ -48,7 +48,7 @@
       <button class="btn btn-secondary" id="resetzoom" onclick="editor.zoomDefault();">Reset Zoom</button>
       <button class="btn btn-secondary" id="undo" onclick="editor.undo();">Undo (0)</button>
       <button class="btn btn-secondary" id="redo" onclick="editor.redo();">Redo (0)</button>
-      <button class="btn btn-secondary" id="savesvg" onclick="editor.saveGraph();">Save SVG</button><br/><br/>
+      <button class="btn btn-secondary" id="savesvg" onclick="editor.saveGraph(document.getElementById('download'));">Generate SVG</button><a id="download">Right click to download</a><br/><br/>
 
       Reduce safety buffer to: 
       <input type = "number" value="0" min="0" id="ratchetdays"> days
@@ -93,7 +93,7 @@
     <td valign="top"><div id="roadgraph2"></div>
       <input id="showalldata2" type="checkbox" onclick="if (this.checked) editor2.maxDataDays(-1); else editor2.maxDataDays(100);"  checked>Show All data<br/>
       <button class="btn btn-secondary" id="resetzoom2" onclick="editor2.zoomDefault();">Reset Zoom</button>
-      <button class="btn btn-secondary" id="savesvg2" onclick="editor2.saveGraph();">Save SVG</button><br/><br/>
+      <button class="btn btn-secondary" id="savesvg2" onclick="editor2.saveGraph(document.getElementById('download2'));">Generate SVG</button><a id="download2">Right click to download</a><br/><br/>
     </td>
     <td valign="top">
       <div id="roadtable2"></div>

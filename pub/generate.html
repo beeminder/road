@@ -17,7 +17,7 @@
   var done = false;
   var saveSVG = function() {
     console.debug('Done loading road');
-    graph.saveGraph( true );
+    graph.saveGraph( null );
   };
 
   var graph = new bmndr({divGraph: document.getElementById('roadgraph'),
@@ -27,7 +27,7 @@
                           onError: saveSVG
   });
 
-  graph.loadGoal('data/testroad1.json');
+  graph.loadGoal('data/bug-d-pocket.bb');
 
 
 </script>

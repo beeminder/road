@@ -84,8 +84,8 @@ Take a break starting:
 <button id="overwritebreak" onclick="scheduleBreak(false);">OVERWRITE</button>
 </div>
 
-<button id="submit" onclick="window.alert('new road matrix:\n'+JSON.stringify(editor.getRoad(),null,2));">Submit</button>
-<button id="savesvg" onclick="editor.saveGraph();">Save SVG</button><br/>
+<div style="margin: 10px 0px 10px 0px;"><button id="submit" onclick="window.alert('new road matrix:\n'+JSON.stringify(editor.getRoad(),null,2));">Submit</button></div>
+<div style="margin: 10px 0px 10px 0px;"><button id="savesvg" onclick="editor.saveGraph(document.getElementById('download'));">Generate SVG</button><a id="download">Right click to download</a></div>
 
 </td>
     <td valign="top">
@@ -120,7 +120,7 @@ Take a break starting:
       <button id="zoomall2" onclick="editor2.zoomAll();">View All</button>
       <button id="zoomdflt2" onclick="editor2.zoomDefault();">Default Zoom</button>
       </div>
-      <button id="savesvg" onclick="editor2.saveGraph();">Save SVG</button>
+      <button id="savesvg" onclick="editor2.saveGraph(document.getElementById('download2'));">Generate SVG</button> <a id="download2">Right click to download</a>
     </td>
     <td valign="top">
       <div id="roadtable2"></div>
@@ -168,6 +168,7 @@ Take a break starting:
 
     slopeType.value = road.siru;
     updateCommitFields();
+    document.getElementById("download").removeAttribute("href");
   }
   
   function updateCommitFields() {
