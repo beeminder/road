@@ -17,4 +17,4 @@ chromium-browser --virtual-time-budget=60000 --allow-file-access-from-files --di
 sed -n -e 's/.*<body>\(.*\)<\/body>.*/\1/p' < output.txt > output.svg
 rm output.txt
 
-#chromium-browser --allow-file-access-from-files --disable-web-security --headless --deterministic-fetch --disable-gpu --no-sandbox --window-size=710,460 --screenshot file://${PWD}/output.svg
+chromium-browser --allow-file-access-from-files --disable-web-security --headless --deterministic-fetch --disable-gpu --no-sandbox --window-size=710,460 --screenshot file://${PWD}/output.svg
