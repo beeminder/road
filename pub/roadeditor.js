@@ -599,6 +599,7 @@
         LastError = ErrType.NOBBFILE;
         callback(null);
       }
+      //console.debug(xobj);
     };
     xobj.send(null);  
   },
@@ -5255,27 +5256,15 @@
       var serializer = new XMLSerializer();
       var source = serializer.serializeToString(svge);
 
-      // Remove styling once serialization is completed
-      defs.select('style').remove();
-
-      // add name spaces.
-      if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
-        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-      }
-      if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)){
-        source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
-      }
-
-      //add xml declaration
-      source = '<?xml version="1.0" standalone="no"?>\n' + source;
-
       //set url value to a element's href attribute.
       if (opts.svgOutput || linkelt == null) {
         // If no link is provided or we are running in headless mode ,
         // replace page contents with the svg and eliminate
         // unnecessary elements
-        document.write(source);
+        //document.write(source);
         document.head.remove();
+        document.body.innerHTML = source;
+
         // Eliminate unnecessary components from the SVG file in headless mode
         if (opts.svgOutput) {
           var newroot = d3.select(document.body);
@@ -5287,6 +5276,21 @@
           newroot.selectAll(".minor").remove();
         }
       } else {
+
+        // Remove styling once serialization is completed
+        defs.select('style').remove();
+
+        // add name spaces.
+        if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
+          source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+        }
+        if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)){
+          source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+        }
+
+        //add xml declaration
+        source = '<?xml version="1.0" standalone="no"?>\n' + source;
+
         //convert svg source to URI data scheme.
         var url = "data:image/svg+xml;charset=utf-8,"
               +encodeURIComponent(source);
