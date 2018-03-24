@@ -1,0 +1,15 @@
+{
+  "name": "jsbrain_server",
+  "version": "1.0.0",
+  "description": "Node server for generating Beeminder graph files",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "Uluc Saranli",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.16.3",
+    "puppeteer": "^1.2.0"
+  }
+}
