@@ -41,6 +41,9 @@ class Renderer {
     console.time('rendering'+this.id)
     let page = await this.loadPage(url)
     const html = await page.content()
+    const svgHandle = await page.$('svg');
+    let svg = await page.evaluate(svg => svg.outerHTML, svgHandle);
+    svg = '<?xml version="1.0" standalone="no"?>\n'+svg
     console.timeEnd('rendering'+this.id)
 
     // Take screenshot of rendered page
@@ -49,8 +52,8 @@ class Renderer {
             = await page.screenshot({path:slug+".png", 
                                      clip:{x:0, y:0, width:710, height:460}})
     console.timeEnd('screenshot'+this.id)
-
-    return {html: html, png: buffer}
+    console.log(svg)
+    return {html: html, png: buffer, svg: svg}
   }
 }
 
