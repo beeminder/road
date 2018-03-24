@@ -1,55 +1,75 @@
 'use strict'
 
-const express = require('express')
-const { URL } = require('url')
-const createRenderer = require('./renderer')
+const cluster = require('cluster')
 
-const port = process.env.PORT || 3000
+if (cluster.isMaster) {
 
-const app = express()
+  // Count the machine's CPUs
+  var cpuCount = require('os').cpus().length;
 
-let renderer = null
+  cpuCount = 1; // ULUC: Override for now
 
-// Configure.
-app.disable('x-powered-by')
+  // Create a worker for each CPU
+  for (var i = 0; i < cpuCount; i += 1)
+    cluster.fork();
 
-// Render url.
-app.use(async (req, res, next) => {
-  let { bbfile, type, ...options } = req.query
+} else {
 
-  if (!bbfile) {
-    return res.status(400).send('Search with url parameter. For eaxample, ?url=http://yourdomain')
-  }
+  const port = process.env.PORT || 3000
 
-  var url = "file://"+__dirname+"/generate.html?bb="+bbfile
-  console.log(url);
-  try {
-    const html = await renderer.render(url, options)
-    res.status(200).send("Rendered "+bbfile)
-  } catch (e) {
-    next(e)
-  }
-})
+  const sleep = require('sleep')
+  const express = require('express')
+  const createRenderer = require('./renderer')
 
-// Error page.
-app.use((err, req, res, next) => {
-  console.error(err)
-  res.status(500).send('Oops, An expected error seems to have occurred.')
-})
+  const prefix = "("+cluster.worker.id+"): "
+  let renderer = null
 
-// Create renderer and start server.
-createRenderer()
-  .then(createdRenderer => {
-    renderer = createdRenderer
-    console.info('Initialized renderer.')
+  const app = express()
+  app.disable('x-powered-by')
 
-    app.listen(port, () => {
-      console.info(`Listen port on ${port}.`)
-    })
+  // Render url.
+  app.use(async (req, res, next) => {
+    let { bbfile } = req.query
+    console.log(prefix+"Request reached thread");
+
+    if (!bbfile) return res.status(400)
+      .send('Supply bbfile with ?bbfile=http://yourdomain')
+
+    var url = `file://${__dirname}/generate.html?bb=${bbfile}`
+    console.log(prefix+`Loading ${url}`);
+
+    try {
+      const resp = await renderer.render(url)
+      res
+        .set({
+          'Content-Type': 'image/png',
+          'Content-Length': resp.png.length
+        })
+        .send(resp.png)
+      //res.status(200).send("Rendered "+bbfile)
+    } catch (e) {
+      next(e)
+    }
   })
-  .catch(e => {
+
+  // Error page.
+  app.use((err, req, res, next) => {
+    console.error(err)
+    res.status(500).send('Oops, An expected error seems to have occurred.')
+  })
+
+  // Create renderer and start server.
+  createRenderer(cluster.worker.id).then(createdRenderer => {
+    renderer = createdRenderer
+    console.info(prefix+'Initialized renderer.')
+      
+    app.listen(port, () => {
+      console.info(prefix+`Listen port on ${port}.`)
+    })
+  }).catch(e => {
     console.error('Fail to initialze renderer.', e)
   })
+}
 
 // Terminate process
 process.on('SIGINT', () => {
