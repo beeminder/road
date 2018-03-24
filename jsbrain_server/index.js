@@ -17,6 +17,7 @@ if (cluster.isMaster) {
 
   const port = process.env.PORT || 3000
 
+  const fs = require('fs')
   const sleep = require('sleep')
   const express = require('express')
   const contentDisposition = require('content-disposition')
@@ -42,13 +43,14 @@ if (cluster.isMaster) {
 
     try {
       const resp = await renderer.render(url)
-      res
-        .set({
-          'Content-Type': 'image/svg+xml',
-          'Content-Length': resp.svg.length,
-          'Content-Disposition': contentDisposition(slug + '.svg')
-      })
-        .send(resp.svg)
+      // res
+      //   .set({
+      //     'Content-Type': 'image/svg+xml',
+      //     'Content-Length': resp.svg.length,
+      //     'Content-Disposition': contentDisposition(slug + '.svg')
+      // })
+      //   .send(resp.svg)
+      res.status(200).send("Rendered "+slug)
     } catch (e) {
       next(e)
     }

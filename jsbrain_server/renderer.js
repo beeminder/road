@@ -1,5 +1,6 @@
 'use strict'
 
+const fs = require('fs')
 const puppeteer = require('puppeteer')
 
 class Renderer {
@@ -44,6 +45,10 @@ class Renderer {
     const svgHandle = await page.$('svg');
     let svg = await page.evaluate(svg => svg.outerHTML, svgHandle);
     svg = '<?xml version="1.0" standalone="no"?>\n'+svg
+    // write the SVG file
+    fs.writeFile(slug+'.svg', svg, (err) => {  
+      if (err) console.log(`Error saving to ${slug}.svg`);
+    });   
     console.timeEnd('rendering'+this.id)
 
     // Take screenshot of rendered page
@@ -52,7 +57,6 @@ class Renderer {
             = await page.screenshot({path:slug+".png", 
                                      clip:{x:0, y:0, width:710, height:460}})
     console.timeEnd('screenshot'+this.id)
-    console.log(svg)
     return {html: html, png: buffer, svg: svg}
   }
 }
