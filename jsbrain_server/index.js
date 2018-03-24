@@ -25,7 +25,7 @@ app.use(async (req, res, next) => {
   console.log(url);
   try {
     const html = await renderer.render(url, options)
-    res.status(200).send("deneme")
+    res.status(200).send("Rendered "+bbfile)
   } catch (e) {
     next(e)
   }

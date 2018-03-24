@@ -3,8 +3,10 @@
 const puppeteer = require('puppeteer')
 
 class Renderer {
+  
   constructor(browser) {
     this.browser = browser
+    this.page = null
   }
 
   async createPage(url, { timeout, waitUntil }) {
@@ -13,26 +15,31 @@ class Renderer {
       waitUntil: waitUntil || 'networkidle2'
     }
 
-    const page = await this.browser.newPage()
-    page.on('console', msg => console.log('PAGE LOG:', msg.text()));    
+
+    if (this.page == null) {
+      var curPages = await this.browser.pages();
+      if (curPages.length == 0)
+        this.page = await this.browser.newPage()
+      else 
+        this.page = curPages[0]
+      this.page.on('console', msg => console.log('PAGE LOG:', msg.text()));    
+    }
+    const page = this.page;
+
     await page.goto(url, gotoOptions)
     return page
   }
 
   async render(url, options) {
     let page = null
-    try {
-      const { timeout, waitUntil } = options
-      console.time('rendering')
-      page = await this.createPage(url, { timeout, waitUntil })
-      const html = await page.content()
-      console.timeEnd('rendering')
-      return html
-    } finally {
-      if (page) {
-        await page.close()
-      }
-    }
+    const { timeout, waitUntil } = options
+
+    console.time('rendering')
+    page = await this.createPage(url, { timeout, waitUntil })
+    const html = await page.content()
+    console.timeEnd('rendering')
+
+    return html
   }
 
   async screenshot(url, options) {
@@ -61,7 +68,7 @@ class Renderer {
 }
 
 async function create() {
-  const browser = await puppeteer.launch({ args: ['--disable-gpu', '--disable-web-security', '--process-per-tab', '--no-sandbox', '--allow-file-access-from-files'] })
+  const browser = await puppeteer.launch({ args: ['--no-sandbox', '--allow-file-access-from-files'] })
   return new Renderer(browser)
 }
 
