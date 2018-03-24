@@ -9,7 +9,9 @@
   "author": "Uluc Saranli",
   "license": "MIT",
   "dependencies": {
+    "cluster": "^0.7.7",
     "express": "^4.16.3",
-    "puppeteer": "^1.2.0"
+    "puppeteer": "^1.2.0",
+    "sleep": "^5.1.1"
   }
 }
