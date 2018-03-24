@@ -19,6 +19,7 @@ if (cluster.isMaster) {
 
   const sleep = require('sleep')
   const express = require('express')
+  const contentDisposition = require('content-disposition')
   const createRenderer = require('./renderer')
 
   const prefix = "("+cluster.worker.id+"): "
@@ -36,17 +37,18 @@ if (cluster.isMaster) {
       .send('Supply bbfile with ?bbfile=http://yourdomain')
 
     var url = `file://${__dirname}/generate.html?bb=${bbfile}`
+    var slug = url.replace(/^.*[\\\/]/, '').replace(/\.[^/.]+$/, '')
     console.log(prefix+`Loading ${url}`);
 
     try {
       const resp = await renderer.render(url)
       res
         .set({
-          'Content-Type': 'image/png',
-          'Content-Length': resp.png.length
-        })
-        .send(resp.png)
-      //res.status(200).send("Rendered "+bbfile)
+          'Content-Type': 'image/svg+xml',
+          'Content-Length': resp.svg.length,
+          'Content-Disposition': contentDisposition(slug + '.svg')
+      })
+        .send(resp.svg)
     } catch (e) {
       next(e)
     }
