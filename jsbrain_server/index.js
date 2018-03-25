@@ -32,7 +32,7 @@ if (cluster.isMaster) {
   // Render url.
   app.use(async (req, res, next) => {
     let { bbfile } = req.query
-    console.log(prefix+"Request reached thread");
+    console.log(prefix+`Request reached thread, url=${req.url}, bbfile=${bbfile}`);
 
     if (!bbfile) return res.status(400)
       .send('Supply bbfile with ?bbfile=http://yourdomain')
@@ -50,7 +50,10 @@ if (cluster.isMaster) {
       //     'Content-Disposition': contentDisposition(slug + '.svg')
       // })
       //   .send(resp.svg)
-      res.status(200).send("Rendered "+slug)
+      if (resp.html)
+        res.status(200).send("<html><body>Successfully rendered "+slug+"</body></html>")
+      else
+        res.status(200).send("<html><body>Error rendering "+slug+"!</body></html>")
     } catch (e) {
       next(e)
     }
@@ -67,8 +70,8 @@ if (cluster.isMaster) {
     renderer = createdRenderer
     console.info(prefix+'Initialized renderer.')
       
-    app.listen(port, () => {
-      console.info(prefix+`Listen port on ${port}.`)
+    app.listen(port, 'localhost', () => {
+      console.info(prefix+`Listen port on localhost ${port}.`)
     })
   }).catch(e => {
     console.error('Fail to initialze renderer.', e)
