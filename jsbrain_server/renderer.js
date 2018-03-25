@@ -36,16 +36,17 @@ class Renderer {
     return page
   }
 
-  async render(url) {
+  async render(path, base) {
     let page = null
+    let url = `file://${__dirname}/generate.html?bb=file://${path}/${base}.bb`
     let newid = uuid.v1();
     var html = null, svg = null, png = null
 
     try {
-      var slug = url.replace(/^.*[\\\/]/, '').replace(/\.[^/.]+$/, '')
 
       // Load and render the page, extract html
-      console.time('rendering'+newid)
+      var time_id = `Render time (${base}, ${newid})`
+      console.time(time_id)
       page = await this.createPage(url)
       if (page) {
         html = await page.content()
@@ -53,16 +54,27 @@ class Renderer {
         svg = await page.evaluate(svg => svg.outerHTML, svgHandle);
         svg = '<?xml version="1.0" standalone="no"?>\n'+svg
         // write the SVG file
-        fs.writeFile(slug+'.svg', svg, (err) => {  
-          if (err) console.log(`Error saving to ${slug}.svg`);
+        fs.writeFile(base+'.svg', svg, (err) => {  
+          if (err) console.log(`Error saving to ${base}.svg`);
         });   
-        console.timeEnd('rendering'+newid)
+        console.timeEnd(time_id)
       
+        time_id = `Screenshot time (${base}, ${newid})`
+
         // Take screenshot of rendered page
-        console.time('screenshot'+newid)
-        png = await page.screenshot({path:slug+".png", 
-                                     clip:{x:0, y:0, width:710, height:460}})
-        console.timeEnd('screenshot'+newid)
+        console.time(time_id)
+        const rect = await page.evaluate(selector => {
+          const element = document.querySelector(selector);
+          const {x, y, width, height} = element.getBoundingClientRect();
+          return {left: x, top: y, width, height, id: element.id};
+        }, "svg");  
+        png = await page.screenshot({path:base+".png", 
+                                     clip:{x:rect.left, y:rect.top, 
+                                           width:rect.width, height:rect.height}})
+        console.timeEnd(time_id)
+      } else {
+        // Clean up leftover timing
+        console.timeEnd(time_id)
       }
     } finally {
       if (page) await page.close()
