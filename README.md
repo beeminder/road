@@ -1,6 +1,8 @@
 
 ## CHANGELOG
 
+* 2018.03.25 Saving SVG through link generation
+* 2018.03.25 Incorporated style definitions into SVG
 * 2017.11.02 No YBR or guidelines to the left of tini
 * 2017.11.02 fixed Today's day name problem
 * 2017.10.28 fixed auto-scroll
