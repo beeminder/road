@@ -26,18 +26,28 @@
   var done = false;
   var saveSVG = function() {
     console.debug('Done loading road');
-    graph.saveGraph( null );
+    var newroot = d3.select(document.body);
+    newroot.selectAll(".zoomarea").remove();
+    newroot.selectAll(".buttonarea").remove();
+    newroot.selectAll(".brush").remove();
+    newroot.selectAll("#brushclip1").remove();
+    newroot.selectAll(".zoomin").remove();
+    newroot.selectAll(".zoomout").remove();
+    newroot.selectAll(".minor").remove();
   };
 
   var graph = new bmndr({divGraph: document.getElementById('roadgraph'),
-                          svgOutput:true,
+                          headless:true,
                           maxFutureDays: 365,
                           onRoadChange: saveSVG,
                           onError: saveSVG
   });
 
-  graph.loadGoal(getParameterByName('bb'));
-
+  var bb = getParameterByName('bb');
+  if (bb) 
+    graph.loadGoal(getParameterByName('bb'));
+  else
+    d3.select("#roadgraph").text("Usage: generate.html?bb=file:///path/to/file.bb");
 
 </script>
 
