@@ -48,6 +48,8 @@
     divGraph:     null,
     /** Binds the road table to a div element */
     divTable:     null,    
+    /** Binds the goal JSON output to a div element */
+    divJSON:      null,    
     /** Size of the SVG element to hold the graph */
     svgSize:      { width: 700, height: 450 },
     /** Boundaries of the SVG group to hold the focus graph */
@@ -2565,6 +2567,10 @@
         goal.auraf = smooth(fdata);
       } else
         goal.auraf = function(e){ return 0; };
+
+      // TODO: Make sure the output here matches python beebrain
+      if (opts.divJSON)
+        opts.divJSON.innerHTML = JSON.stringify(goal)
 
       // Finally, wrap up with graph related initialization
       zoomAll();

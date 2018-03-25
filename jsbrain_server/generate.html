@@ -9,7 +9,8 @@
 </head>
 <body>
 
-<div id="roadgraph"></div>
+<div id="goalgraph"></div>
+<div id="goaljson"></div>
 
 <script src = "../pub/roadeditor.js"></script>
 <script>
@@ -36,11 +37,12 @@
     newroot.selectAll(".minor").remove();
   };
 
-  var graph = new bmndr({divGraph: document.getElementById('roadgraph'),
-                          headless:true,
-                          maxFutureDays: 365,
-                          onRoadChange: saveSVG,
-                          onError: saveSVG
+  var graph = new bmndr({divGraph: document.getElementById('goalgraph'),
+                         divJSON: document.getElementById('goaljson'),
+                         headless:true,
+                         maxFutureDays: 365,
+                         onRoadChange: saveSVG,
+                         onError: saveSVG
   });
 
   var bb = getParameterByName('bb');
