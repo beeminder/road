@@ -40,7 +40,7 @@ class Renderer {
     let page = null
     let url = `file://${__dirname}/generate.html?bb=file://${path}/${base}.bb`
     let newid = uuid.v1();
-    var html = null, svg = null, png = null
+    var html = null, svg = null, png = null, json = null
 
     try {
 
@@ -56,6 +56,12 @@ class Renderer {
         // write the SVG file
         fs.writeFile(base+'.svg', svg, (err) => {  
           if (err) console.log(`Error saving to ${base}.svg`);
+        });   
+        const jsonHandle = await page.$('div#goaljson');
+        json = await page.evaluate(json => json.innerHTML, jsonHandle);
+        // write the SVG file
+        fs.writeFile(base+'.json', json, (err) => {  
+          if (err) console.log(`Error saving to ${base}.json`);
         });   
         console.timeEnd(time_id)
       

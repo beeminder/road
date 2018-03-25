@@ -57,6 +57,7 @@ if (cluster.isMaster) {
         json.bb = (resp.html)?`${base}.bb`:null
         json.svg = (resp.svg)?`${base}.svg`:null
         json.png = (resp.png)?`${base}.png`:null
+        json.json = (resp.png)?`${base}.json`:null
         json.error = null
       }
 
