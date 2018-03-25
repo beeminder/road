@@ -54,13 +54,13 @@ class Renderer {
         svg = await page.evaluate(svg => svg.outerHTML, svgHandle);
         svg = '<?xml version="1.0" standalone="no"?>\n'+svg
         // write the SVG file
-        fs.writeFile(base+'.svg', svg, (err) => {  
+        fs.writeFile(`${path}/${base}.svg`, svg, (err) => {  
           if (err) console.log(`Error saving to ${base}.svg`);
         });   
         const jsonHandle = await page.$('div#goaljson');
         json = await page.evaluate(json => json.innerHTML, jsonHandle);
         // write the SVG file
-        fs.writeFile(base+'.json', json, (err) => {  
+        fs.writeFile(`${path}/${base}.json`, json, (err) => {  
           if (err) console.log(`Error saving to ${base}.json`);
         });   
         console.timeEnd(time_id)
@@ -74,7 +74,7 @@ class Renderer {
           const {x, y, width, height} = element.getBoundingClientRect();
           return {left: x, top: y, width, height, id: element.id};
         }, "svg");  
-        png = await page.screenshot({path:base+".png", 
+        png = await page.screenshot({path:`${path}/${base}.png`, 
                                      clip:{x:rect.left, y:rect.top, 
                                            width:rect.width, height:rect.height}})
         console.timeEnd(time_id)
