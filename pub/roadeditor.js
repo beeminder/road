@@ -102,7 +102,7 @@
 
     /** Strips the graph of all details except what is needed for svg
      output. */
-    svgOutput:        false,
+    headless:        false,
 
     /** Enables zooming by scrollwheel. When disabled, only the
      context graph and the zoom buttons will allow zooming. */
@@ -226,7 +226,7 @@
     REDDOT: "#ff0000"  // Red for off the road on the bad side
   },
 
-  SVGStyle = ".chart, .bmndrsvg { border: none; } .axis path, .axis line { fill: none; stroke: black; shape-rendering: crispEdges;} .axis .minor line { stroke: #777; stroke-dasharray:5,4; } .grid line { fill: none; stroke: #dddddd; stroke-width: 1px; shape-rendering: crispEdges; } .grid .minor line { stroke: none; } .axis text { font-family: sans-serif; font-size: 11px; } .axislabel { font-family: sans-serif; font-size: 11px; text-anchor: middle; } circle.dots { stroke: black; } line.roads { stroke: black; } .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .waterbuf, .waterbux { text-anchor: middle; font-family: sans-serif; } .loading { text-anchor: middle; font-weight: bold; font-family: sans-serif; } .zoomarea { fill: none; }",
+  SVGStyle = ".axis path, .axis line { fill: none; stroke: black; shape-rendering: crispEdges;} .axis .minor line { stroke: #777; stroke-dasharray:5,4; } .grid line { fill: none; stroke: #dddddd; stroke-width: 1px; shape-rendering: crispEdges; } .grid .minor line { stroke: none; } .axis text { font-family: sans-serif; font-size: 11px; } .axislabel { font-family: sans-serif; font-size: 11px; text-anchor: middle; } circle.dots { stroke: black; } line.roads { stroke: black; } .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .waterbuf, .waterbux { text-anchor: middle; font-family: sans-serif; } .loading { text-anchor: middle; font-weight: bold; font-family: sans-serif; } .zoomarea { fill: none; }",
 
   /** Enum object to identify field types for road segments. */
   RP = { DATE:0, VALUE:1, SLOPE:2},
@@ -957,7 +957,7 @@
     
       opts.divGraph = (opts.divGraph && opts.divGraph.nodeName)?
         opts.divGraph : null;
-    if (opts.svgOutput) {
+    if (opts.headless) {
       // Override options for svg output 
       opts.divTable = null;
       opts.scrollZoom = false;
@@ -1099,6 +1099,7 @@
 
       // Common SVG definitions, including clip paths
       defs = svg.append('defs');
+      defs.insert('style').attr('type','text/css').text(SVGStyle);
       defs.append("clipPath")
         .attr("id", "plotclip"+curid)
         .append("rect").attr("x", 0).attr("y", 0)
@@ -1126,7 +1127,7 @@
       
       var zoomingrp = defs.append("g")
             .attr("id", "zoominbtn");
-      if (!opts.svgOutput) {
+      if (!opts.headless) {
         // Zoom buttons are not visible for SVG output in headless mode
         zoomingrp.append("path").style("fill", "white")
           .attr("d", "m 530.86356,264.94116 a 264.05649,261.30591 0 1 1 -528.1129802,0 264.05649,261.30591 0 1 1 528.1129802,0 z");
@@ -1136,7 +1137,7 @@
 
       var zoomoutgrp = defs.append("g")
             .attr("id", "zoomoutbtn");
-      if (!opts.svgOutput) {
+      if (!opts.headless) {
         // Zoom buttons are not visible for SVG output in headless mode
         zoomoutgrp.append("path").style("fill", "white")
           .attr("d", "m 530.86356,264.94116 a 264.05649,261.30591 0 1 1 -528.1129802,0 264.05649,261.30591 0 1 1 528.1129802,0 z");
@@ -2594,7 +2595,7 @@
                      showOverlay( [ErrMsgs[LastError]] );
                    else
                      showOverlay(["Could not load goal file."]);
-                   if (!opts.svgOutput) {
+                   if (!opts.headless) {
                      setTimeout( function() {removeOverlay();}, 1500);
                    }
                    if (typeof opts.onError === 'function') {
@@ -5253,11 +5254,6 @@
      headless chrome --dump-dom to retrieve the contents as a simple
      SVG. */
     self.saveGraph = function( linkelt = null ) {
-      // Insert styling into the SVG to ensure that it can be rendered
-      // by itself
-      defs.selectAll('style').remove();
-      defs.insert('style', ':first-child')
-        .attr('type','text/css').text(SVGStyle);
 
       // retrieve svg source as a string.
       var svge = svg.node();
@@ -5265,16 +5261,15 @@
       var source = serializer.serializeToString(svge);
 
       //set url value to a element's href attribute.
-      if (opts.svgOutput || linkelt == null) {
+      if (opts.headless || linkelt == null) {
         // If no link is provided or we are running in headless mode ,
         // replace page contents with the svg and eliminate
         // unnecessary elements
-        //document.write(source);
         document.head.remove();
         document.body.innerHTML = source;
 
         // Eliminate unnecessary components from the SVG file in headless mode
-        if (opts.svgOutput) {
+        if (opts.headless) {
           var newroot = d3.select(document.body);
           newroot.selectAll(".zoomarea").remove();
           newroot.selectAll(".buttonarea").remove();
@@ -5286,7 +5281,7 @@
       } else {
 
         // Remove styling once serialization is completed
-        defs.select('style').remove();
+        //defs.select('style').remove();
 
         // add name spaces.
         if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){

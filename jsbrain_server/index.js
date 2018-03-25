@@ -7,7 +7,8 @@ if (cluster.isMaster) {
   // Count the machine's CPUs
   var cpuCount = require('os').cpus().length;
 
-  cpuCount = 1; // ULUC: Override for now
+  // ULUC: Override for now, chrome instances are parallel anyway
+  cpuCount = 1;
 
   // Create a worker for each CPU
   for (var i = 0; i < cpuCount; i += 1)
@@ -31,18 +32,15 @@ if (cluster.isMaster) {
 
   // Render url.
   app.use(async (req, res, next) => {
-    let { bbfile } = req.query
-    console.log(prefix+`Request reached thread, url=${req.url}, bbfile=${bbfile}`);
+    let { path, base } = req.query
+    if (!base || !path) return res.status(400)
+      .send('Supply details with ?base=nonce&path=/path/to/file')
 
-    if (!bbfile) return res.status(400)
-      .send('Supply bbfile with ?bbfile=http://yourdomain')
-
-    var url = `file://${__dirname}/generate.html?bb=${bbfile}`
-    var slug = url.replace(/^.*[\\\/]/, '').replace(/\.[^/.]+$/, '')
-    console.log(prefix+`Loading ${url}`);
+    console.log(prefix+`Request url=${req.url}`);
+    console.log(prefix+`Loading "${base}" from "${path}"`);
 
     try {
-      const resp = await renderer.render(url)
+      const resp = await renderer.render(path, base)
       // res
       //   .set({
       //     'Content-Type': 'image/svg+xml',
@@ -50,10 +48,19 @@ if (cluster.isMaster) {
       //     'Content-Disposition': contentDisposition(slug + '.svg')
       // })
       //   .send(resp.svg)
-      if (resp.html)
-        res.status(200).send("<html><body>Successfully rendered "+slug+"</body></html>")
-      else
-        res.status(200).send("<html><body>Error rendering "+slug+"!</body></html>")
+      var json = {};
+      json.path = path
+      json.base = base
+      if (resp.html == null) {
+        json.error = 'Could not process goal'
+      } else {
+        json.bb = (resp.html)?`${base}.bb`:null
+        json.svg = (resp.svg)?`${base}.svg`:null
+        json.png = (resp.png)?`${base}.png`:null
+        json.error = null
+      }
+
+      res.status(200).send(JSON.stringify(json))
     } catch (e) {
       next(e)
     }
