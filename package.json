@@ -20,7 +20,8 @@
     "pikaday": "^1.6.1",
     "request": "^2.81.0",
     "sequelize": "^4.3.2",
-    "sqlite3": "^3.1.8"
+    "sqlite3": "^3.1.8",
+    "uuid": "^3.2.1"
   },
   "engines": {
     "node": "6.x"

@@ -252,11 +252,17 @@
            'd' : 'day',
            'h' : 'hour'      },
 
-  PNG = { beye: "https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye.png?1496219226927", 
-          beyey: "https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye.png?1496219226927",
-          skl: "https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fjollyroger_sqr.png?1500062888621",
-          inf: "https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Finfinity.png?1500062867122",
-          sml: "https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fsmiley.png?1500062837171"
+  // PNG = { beye: "https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye.png?1496219226927", 
+  //         beyey: "https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye.png?1496219226927",
+  //         skl: "https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fjollyroger_sqr.png?1500062888621",
+  //         inf: "https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Finfinity.png?1500062867122",
+  //         sml: "https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fsmiley.png?1500062837171"
+  //       },
+  PNG = { beye: "../pub/bullseye.png", 
+          beyey: "../pub/bullseye.png",
+          skl: "../pub/jollyroger_sqr.png",
+          inf: "../pub/infinity.png",
+          sml: "../pub/smiley.png"
         },
   
   /** Enum object to identify error types. */
@@ -3389,7 +3395,8 @@
     // Creates or updates the Bullseye at the goal date
     function updateOldBullseye() {
       if (opts.divGraph == null || roads.length == 0) return;
-      var png = (opts.roadEditor)?"https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye_old.png?1498051783901":"https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye.png?1496219226927";
+      //var png = (opts.roadEditor)?"https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye_old.png?1498051783901":"https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye.png?1496219226927";
+      var png = (opts.roadEditor)?"../pub/bullseye_old.png":"../pub/bullseye.png";
       var bullseyeelt = gOldBullseye.select(".oldbullseye");
       var bx = nXSc(iRoad[iRoad.length-1]
                     .sta[0]*1000)-(opts.bullsEye.size/2);
@@ -3410,7 +3417,8 @@
 
     function updateContextOldBullseye() {
       if (opts.divGraph == null || roads.length == 0) return;
-      var png = (opts.roadEditor)?"https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye_old.png?1498051783901":"https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye.png?1496219226927";
+      //var png = (opts.roadEditor)?"https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye_old.png?1498051783901":"https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye.png?1496219226927";
+      var png = (opts.roadEditor)?"../pub/bullseye_old.png":"../pub/bullseye.png";
       var bullseyeelt = ctxplot.select(".ctxoldbullseye");
       var bx = xScB(iRoad[iRoad.length-1].sta[0]*1000)
         -(opts.bullsEye.ctxsize/2);
