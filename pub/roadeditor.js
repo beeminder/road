@@ -26,20 +26,20 @@
  * Copyright © 2017 Uluc Saranli
  */
 ;(function (root, factory) {
-  'use strict';
+  'use strict'
   if (typeof define === 'function' && define.amd) {
-    console.log("roadeditor: Using AMD module definition");
-    define(['d3', 'moment', 'Pikaday', 'Polyfit'], factory);
+    console.log("roadeditor: Using AMD module definition")
+    define(['d3', 'moment', 'Pikaday', 'Polyfit'], factory)
   } else if (typeof module === 'object' && module.exports) {
-    console.log("roadeditor: Using CommonJS module.exports");
+    console.log("roadeditor: Using CommonJS module.exports")
     module.exports = factory(require('d3'), require('moment'), 
-                             require('pikaday'), require('Polyfit'));
+                             require('pikaday'), require('Polyfit'))
   } else {
-    console.log("roadeditor: Using Browser globals");
-    root.bmndr = factory(root.d3, root.moment, root.Pikaday, root.Polyfit);
+    console.log("roadeditor: Using Browser globals")
+    root.bmndr = factory(root.d3, root.moment, root.Pikaday, root.Polyfit)
   }
 }(this, function (d3, moment, Pikaday) {
-  'use strict';
+  'use strict'
 
   /** default options */
   var gid = 1,
@@ -206,6 +206,55 @@
     textBox:      { margin: 3 }
   },
   
+  /** Base URL for images */
+  BBURL = "http://brain.beeminder.com",
+
+  pout = { // Out Params: Beebrain output fields
+    sadbrink : false,  // Whether we were red yest. & so will instaderail today
+    safebump : null,   // Value needed to get one additional safe day
+    dueby    : [],     // Table of daystamps, deltas, and abs amts needed by day
+    fullroad : [],     // Rd matrix w/ nulls filled in, [tfin,vfin,rfin] app.
+    pinkzone : [],     // Subset of the road matrix defining the verboten zone
+    tluz     : null,   // Timestamp of derailment ("lose") if no more data added
+    tcur     : null,   // (tcur,vcur) gives the most recent datapoint, including
+    vcur     : null,   //   flatlining; see asof 
+    rcur     : null,   // Rate at time tcur; if kink, take limit from the left
+    ravg     : null,   // Overall road rate from (tini,vini) to (tfin,vfin)
+    tdat     : null,   // Timestamp of last actually entered datapoint
+    lnw      : 0,      // Lane width at time tcur
+    dflux    : 0,      // Rec. lanewidth .9 quantile of rate-adjusted deltas
+    delta    : 0,      // How far from centerline: vcur - rdf(tcur)
+    lane     : 666,    // Lane we're in; below=-2,bottom=-1,top=1,above=2,etc 
+    color    : 'black',// One of {"green", "blue", "orange", "red"}
+    cntdn    : 0,      // Countdown: # of days from tcur till we reach the goal
+    numpts   : 0,      // Number of real datapoints entered, before munging
+    mean     : 0,      // Mean of datapoints
+    meandelt : 0,      // Mean of the deltas of the datapoints
+    proctm   : 0,      // Unixtime Beebrain was called (specifically genStats)
+    statsum  : '',     // Human-readable summary of graph statistics
+    lanesum  : '',     // Interjection like "wrong lane!"
+    ratesum  : '',     // Text saying what the rate of the YBR is
+    limsum   : '',     // Text saying your bare min or hard cap
+    deltasum : '',     // Text saying where you are wrt the centerline
+    graphsum : '',     // Text at the top of the graph image; see stathead
+    headsum  : '',     // Text in the heading of the graph page
+    titlesum : '',     // Title text for graph thumbnail
+    progsum  : '',     // Text summarizing percent progress
+    rah      : 0,      // Y-value of the centerline of YBR at the akrasia horiz
+    error    : '',     // Empty string if no errors
+    safebuf  : null,   // Number of days of safety buffer ############### DEP
+    loser    : false,  // Whether you're irredeemably off the road ###### DEP
+    gldt     : null,   // {gldt, goal, rate} are synonyms for ########### DEP
+    goal     : null,   //   for the last row of fullroad ################ DEP
+    rate     : null,   //   like a filled-in version of {tfin, vfin, rfin} DEP
+    road     : [],     // Synonym for fullroad ########################## DEP
+    tini     : null,   // Echoes input param ############################ DEP
+    vini     : null,   // Echoes input param ############################ DEP
+    tfin     : null,   // Subsumed by fullroad ########################## DEP
+    vfin     : null,   // Subsumed by fullroad ########################## DEP
+    rfin     : null    // Subsumed by fullroad ########################## DEP
+  },
+
   /** Beeminder colors for datapoints */
   Cols = {
     DYEL:   "#ffff55",
@@ -317,7 +366,7 @@
     if (dom == null) return null;
     var newdom = dom.map(f);
     var maxelt = d3.max(newdom);
-    return dom[newdom.findIndex(function (e) {return e == maxelt;})];
+    return dom[newdom.findIndex( e => (e == maxelt))];
   },
 
   /** Partitions list l into sublists whose beginning indices are
@@ -343,10 +392,10 @@
    Ernesto P. Adorio, PhD; UP Extension Program in Pampanga, Clark
    Field. */
   quantile = function(l, q, qt=1, issorted=false) {
-    var y;
-    if (issorted) y = l;
-    else y = l.slice().sort();
-    if (qt < 1 || qt > 9) return null; // error
+    var y
+    if (issorted) y = l
+    else y = l.slice().sort()
+    if (qt < 1 || qt > 9) return null // error
 
     var abcd = [         // Parameters for the Hyndman and Fan algorithm
       [0,   0,   1, 0],  // R type 1: inv. emp. CDF (mathematica's default)
@@ -366,48 +415,48 @@
         out = modf(a + (n+b)*q - 1),
         g = out[0],
         j = out[1];
-    if (j < 0) return y[0];
-    else if (j >= n) return y[n-1]; // oct.8,2010 y[n]?! off by 1 error!!
-    j = Math.floor(j);
-    return (g==0)?y[j]:(y[j] + (y[j+1] - y[j])* (c + d*g));
+    if (j < 0) return y[0]
+    else if (j >= n) return y[n-1] // oct.8,2010 y[n]?! off by 1 error!!
+    j = Math.floor(j)
+    return (g==0)?y[j]:(y[j] + (y[j+1] - y[j])* (c + d*g))
   },
 
   // Return a list with the cumulative sum of the elements in l, left
   // to right
   accumulate = function(l) {
-    var ne = l.length;
-    if (ne == 0) return l;
-    var nl = [l[0]];
-    for (var i = 1; i < ne; i++) nl.push(nl[nl.length-1]+l[i]);
-    return nl;
+    var ne = l.length
+    if (ne == 0) return l
+    var nl = [l[0]]
+    for (var i = 1; i < ne; i++) nl.push(nl[nl.length-1]+l[i])
+    return nl
   },
 
   // zip([[1,2], [3,4]]) --> [[1,3], [2,4]]
   zip = function (av) {
     return av[0].map(function(_,i){
-      return av.map(function(a){return a[i];});
-    });
+      return av.map(a => a[i])
+    })
   },
 
   // Return 0 when x is very close to 0
   chop = function (x, delta=1e-7) { 
-    return (Math.abs(x) < delta)?0:x;
+    return (Math.abs(x) < delta)?0:x
   },
 
   // Return an integer when x is very close to an integer
   ichop = function(x, delta=1e-7) {
-    var fp = x % 1, ip = x - fp;
-    if (fp < 0) {fp += 1; ip -= 1;};
-    if (fp > 0.5) fp = 1 - chop(1-fp);
-    return Math.round(ip) + chop(fp, delta);
+    var fp = x % 1, ip = x - fp
+    if (fp < 0) {fp += 1; ip -= 1;}
+    if (fp > 0.5) fp = 1 - chop(1-fp)
+    return Math.round(ip) + chop(fp, delta)
   },
 
   // clip(x, a,b) = min(b,max(a,x))
   clip = function(x, a, b) {
     if (a > b) { var tmp=a; a=b; b=tmp;}
-    if (x < a) x = a;
-    if (x > b) x = b;
-    return x;
+    if (x < a) x = a
+    if (x > b) x = b
+    return x
   },
 
   /** Show Number: convert number to string. Use at most d
@@ -415,40 +464,40 @@
    figures total (clipped to be at least i and at most i+d, where i
    is the number of digits in integer part of x). */
   shn = function(x, t=10, d=5) {
-    if (isNaN(x)) return x.toString();
-    var i = Math.round(Math.abs(x)), k, fmt, ostr;
-    i = (i==0)?0:i.toString().length; // # of digits left of the decimal
-    if (Math.abs(x) > Math.pow(10,i)-.5) i += 1;
+    if (isNaN(x)) return x.toString()
+    var i = Math.round(Math.abs(x)), k, fmt, ostr
+    i = (i==0)?0:i.toString().length // # of digits left of the decimal
+    if (Math.abs(x) > Math.pow(10,i)-.5) i += 1
     if (i == 0 && x != 0)
-      k = (Math.floor(d - Math.log(Math.abs(x), 10)));// get desired 
-    else k = d;                                          // dec. digits
+      k = (Math.floor(d - Math.log(Math.abs(x), 10))) // get desired 
+    else k = d                                          // dec. digits
     // Round input to have the desired number of decimal digits
-    var v = x * Math.pow(10,k);
+    var v = x * Math.pow(10,k)
     // Hack to prevent incorrect rounding with the decimal digits:
-    if (v % 10 >= 4.5 && v % 10 < 4.9999999) v = Math.floor(v);
-    var xn = Math.round(v) / Math.pow(10,k) + 1e-10;
+    if (v % 10 >= 4.5 && v % 10 < 4.9999999) v = Math.floor(v)
+    var xn = Math.round(v) / Math.pow(10,k) + 1e-10
     // If total significant digits < i, do something about it
     if (t < i && Math.abs(Math.pow(10,(i-1)) - xn) < .5) 
-      xn = Math.pow(10,(i-1));
-    t = clip(t, i, i+d);
+      xn = Math.pow(10,(i-1))
+    t = clip(t, i, i+d)
     // If the magnitude <= 1e-4, prevent scientific notation
     if (Math.abs(xn) < 1e-4 || Math.round(xn) == 9 
         || Math.round(xn) == 99 || Math.round(xn) == 999) {
-      ostr = parseFloat(x.toPrecision(k)).toString();
+      ostr = parseFloat(x.toPrecision(k)).toString()
     } else {
-      ostr = xn.toPrecision(t);
-      if (!ostr.includes('e')) ostr = parseFloat(ostr);
+      ostr = xn.toPrecision(t)
+      if (!ostr.includes('e')) ostr = parseFloat(ostr)
     }
-    return ostr;
+    return ostr
   },
   
   linspace = function linspace( a, b, n) {
-    if (typeof n === "undefined") n = Math.max(Math.round(b-a)+1,1);
-    if (n < 2) { return n===1?[a]:[]; }
-    var i,ret = Array(n);
-    n--;
-    for(i=n;i>=0;i--) { ret[i] = (i*b+(n-i)*a)/n; }
-    return ret;
+    if (typeof n === "undefined") n = Math.max(Math.round(b-a)+1,1)
+    if (n < 2) { return n===1?[a]:[] }
+    var i,ret = Array(n)
+    n--
+    for(i=n;i>=0;i--) { ret[i] = (i*b+(n-i)*a)/n }
+    return ret
   },
 
   // Convex combination: x rescaled to be in [c,d] as x ranges from
@@ -458,83 +507,81 @@
   // false, in which case [a,b] and [c,d] are sorted prior to
   // computing the output.
   cvx = function(x, a,b, c,d, clipQ=true) {
-    var tmp;
+    var tmp
     if (chop(a-b) == 0) {
-      if (x <= a) return d3.min([c,d]);
-      else        return d3.max([c,d]);
+      if (x <= a) return d3.min([c,d])
+      else        return d3.max([c,d])
     }
-    if (chop(c-d) == 0) return c;
+    if (chop(c-d) == 0) return c
     if (clipQ)
-      return clip(c + (x-a)/(b-a)*(d-c), (c>d)?d:c,(c>d)?c:d);
+      return clip(c + (x-a)/(b-a)*(d-c), (c>d)?d:c,(c>d)?c:d)
     else {
       if (a > b) { tmp=a; a=b; b=tmp;}
       if (c > d) { tmp=c; c=d; d=tmp;}
-      return c + (x-a)/(b-a)*(d-c);
+      return c + (x-a)/(b-a)*(d-c)
     }
   },
   
   deldups = function(a) {
-    var seen = {};
-    return a.filter(function(it) {
-      return seen.hasOwnProperty(it) ? false : (seen[it] = true);
-    });
+    var seen = {}
+    return a.filter(it=>(seen.hasOwnProperty(it)?false:(seen[it] = true)))
   },
 
   nonzero = function(a) {
-    var l = a.length, i;
-    for( i = 0; i < l; i++ ){ if (a[i] != 0) return true;}
-    return false;
+    var l = a.length, i
+    for( i = 0; i < l; i++ ){ if (a[i] != 0) return true}
+    return false
   },
 
   clocky = function(a) {
-    var s = 0, l = a.length, i;
-    for( i = 1; i < l; i+=2 ){ s += (a[i]-a[i-1]);}
-    return s;
+    var s = 0, l = a.length, i
+    for( i = 1; i < l; i+=2 ){ s += (a[i]-a[i-1])}
+    return s
   },
 
   sum = function(a) {
-    var s = 0, l = a.length, i;
-    for( i = 0; i < l; i++ ){ s += a[i];}
-    return s;
+    var s = 0, l = a.length, i
+    for( i = 0; i < l; i++ ){ s += a[i]}
+    return s
   },
 
   mean = function (a) {
-    var s = 0,l = a.length,i;
+    var s = 0,l = a.length,i
     if (l == 0) return 0;
-    for( i = 0; i < l; i++ ){ s += a[i];}
-    return s/a.length;
+    for( i = 0; i < l; i++ ){ s += a[i]}
+    return s/a.length
   },
 
   median = function(a) {
-    var m = 0, l = a.length;
-    a.sort();
-    if (l % 2 === 0) { m = (a[l / 2 - 1] + a[l / 2]) / 2; }
-    else { m = a[(l - 1) / 2];}
-    return m;
+    var m = 0, l = a.length
+    a.sort()
+    if (l % 2 === 0) { m = (a[l / 2 - 1] + a[l / 2]) / 2 }
+    else { m = a[(l - 1) / 2]}
+    return m
   },
 
   mode = function(a) {
-    var md = [], count = [], i, num, maxi = 0, al = a.length;
+    var md = [], count = [], i, num, maxi = 0, al = a.length
     
     for (i = 0; i < al; i += 1) {
-      num = a[i];
-      count[num] = (count[num] || 0) + 1;
-      if (count[num] > maxi) { maxi = count[num]; }
+      num = a[i]
+      count[num] = (count[num] || 0) + 1
+      if (count[num] > maxi) { maxi = count[num] }
     }
     
     for (i in count)
       if (count.hasOwnProperty(i)) {
-        if (count[i] === maxi) { md.push(Number(i));}
+        if (count[i] === maxi) { md.push(Number(i))}
       }
-    return md;
+    return md
   },
 
   inrange = function(x, min, max) {
-    return x >= min && x <= max;
+    return x >= min && x <= max
   },
 
   nearlyEqual = function(a, b, eps) {
-    return Math.abs(a - b) < eps;
+    return Math.abs(a - b) < eps
   },
 
   ZFUN = function(x) { return 0; },
@@ -543,26 +590,26 @@
 
   // Returns a new date object ahead by the specified number of days
   addDays = function(m, days) {
-    var result = moment(m);
-    result.add(days, 'days');
-    return result;
+    var result = moment(m)
+    result.add(days, 'days')
+    return result
   },
 
   // Fixes the supplied unixtime to 00:00:00 on the same day
   daysnap = function(ut) {
-    var d = moment.unix(ut).utc();
+    var d = moment.unix(ut).utc()
     d.hours(0); d.minutes(0); d.seconds(0); d.milliseconds(0);
-    return d.unix();
+    return d.unix()
   },
 
   formatDate = function(ut) {
-    var mm = moment.unix(ut).utc();
-    var year = mm.year();
-    var month = (mm.month()+1);
-    month = (month < 10)?"0"+month.toString():month.toString();
-    var day = mm.date();
-    day= (day < 10)?"0"+day.toString():day.toString();
-    return year+"."+month+"."+day;
+    var mm = moment.unix(ut).utc()
+    var year = mm.year()
+    var month = (mm.month()+1)
+    month = (month < 10)?"0"+month.toString():month.toString()
+    var day = mm.date()
+    day= (day < 10)?"0"+day.toString():day.toString()
+    return year+"."+month+"."+day
   },
 
   // Take a daystamp like "20170531" and return unixtime in seconds
@@ -570,88 +617,88 @@
   dayparse = function(s, sep='') {
     if (!RegExp('^\\d{4}'+sep+'\\d{2}'+sep+'\\d{2}$').test(s)) { 
       // Check if the supplied date is a timestamp or not.
-      if (!isNaN(s)) return Number(s);
-      else return NaN; 
+      if (!isNaN(s)) return Number(s)
+      else return NaN
     }
     s = s.replace(RegExp('^(\\d\\d\\d\\d)'+sep+'(\\d\\d)'+sep+'(\\d\\d)$'), 
-                  "$1-$2-$3");
-    return daysnap(moment.utc(s).unix());
+                  "$1-$2-$3")
+    return daysnap(moment.utc(s).unix())
   },
 
   // Take an integer unixtime in seconds and return a daystamp like "20170531"
   // (dreev superficially confirmed this works)
   // Uluc: Added options to disable UTC and choose a separator
   dayify = function(t, sep = '') {
-    if (isNaN(t) || t < 0) { return "ERROR"; }
-    var mm = moment.unix(t).utc();
-    var y = mm.year();
-    var m = mm.month() + 1;
-    var d = mm.date();
+    if (isNaN(t) || t < 0) { return "ERROR" }
+    var mm = moment.unix(t).utc()
+    var y = mm.year()
+    var m = mm.month() + 1
+    var d = mm.date()
     return '' + y + sep + (m < 10 ? '0' : '') + m 
-      + sep + (d < 10 ? '0' : '') + d;
+      + sep + (d < 10 ? '0' : '') + d
   },
 
   // ----------------- Network utilities ----------------------
   loadJSON = function( url, callback ) {   
-    //console.debug("loadJSON: "+url);
-    if (url === "") return;
-    var xobj = new XMLHttpRequest();
-    xobj.overrideMimeType("application/json");
-    xobj.open('GET', url, true);
+    console.debug("loadJSON: "+url);
+    if (url === "") return
+    var xobj = new XMLHttpRequest()
+    xobj.overrideMimeType("application/json")
+    xobj.open('GET', url, true)
     xobj.onreadystatechange = function () {
       if (xobj.readyState == 4 
           && (xobj.status == "200"
               || (xobj.status == "0" && xobj.responseText !== ""))) {
-        callback(JSON.parse(xobj.responseText));
+        callback(JSON.parse(xobj.responseText))
       } else if (xobj.readyState == 4) {
-        LastError = ErrType.NOBBFILE;
-        callback(null);
+        LastError = ErrType.NOBBFILE
+        callback(null)
       }
       //console.debug(xobj);
     };
-    xobj.send(null);  
+    xobj.send(null)
   },
 
   // ----------------- Beeminder Goal utilities ----------------------
 
   AGGR = {
-    last     : function (x) { return x[x.length-1]; },
-    first    : function (x) { return x[0]; },
-    min      : function (x) { return d3.min(x); },
-    max      : function (x) { return d3.max(x); },
-    truemean : function (x) { return mean(x); },
-    uniqmean : function (x) { return mean(deldups(x)); },
-    mean     : function (x) { return mean(deldups(x)); },
-    median   : function (x) { return median(x); },
-    mode     : function (x) { return mode(x); },
-    trimmean : function (x) { return mean(x); }, // Uluc: did not bother 
-    sum      : function (x) { return sum(x); },
-    jolly    : function (x) { return (x.length > 0)?1:0; },
-    binary   : function (x) { return (x.length > 0)?1:0; },
+    last     : function(x) { return x[x.length-1] },
+    first    : function(x) { return x[0] },
+    min      : function(x) { return d3.min(x) },
+    max      : function(x) { return d3.max(x) },
+    truemean : function(x) { return mean(x) },
+    uniqmean : function(x) { return mean(deldups(x)) },
+    mean     : function(x) { return mean(deldups(x)) },
+    median   : function(x) { return median(x) },
+    mode     : function(x) { return mode(x) },
+    trimmean : function(x) { return mean(x) }, // Uluc: did not bother 
+    sum      : function(x) { return sum(x) },
+    jolly    : function(x) { return (x.length > 0)?1:0 },
+    binary   : function(x) { return (x.length > 0)?1:0 },
     nonzero  : nonzero,
-    triangle : function (x) { return sum(x)*(sum(x)+1)/2; },
-    square   : function (x) { return Math.pow(sum(x),2); },
-    clocky   : function (x) { return clocky(x); /*sum of pair diff.*/ },
-    count    : function (x) { return x.length; /* number of datapoints*/ }
+    triangle : function(x) { return sum(x)*(sum(x)+1)/2 },
+    square   : function(x) { return Math.pow(sum(x),2) },
+    clocky   : function(x) { return clocky(x) /*sum of pair diff.*/ },
+    count    : function(x) { return x.length /* number of datapoints*/ }
   },
 
   printRoad = function( rd ) {
     for (var i = 0; i < rd.length; i++) {
-      var segment = rd[i];
+      var segment = rd[i]
       console.debug("[("+segment.sta[0]+","+segment.sta[1]+"),("
                     +segment.end[0]+","+segment.end[1]+"),"
-                    +segment.slope+", auto="+segment.auto+"]");
+                    +segment.slope+", auto="+segment.auto+"]")
     }
   },
 
   sameRoads = function( rda, rdb ) {
-    if (rda.length != rdb.length) return false;
+    if (rda.length != rdb.length) return false
     for (var i = 0; i < rda.length; i++) {
-      if (!nearlyEqual(rda[i].end[0], rdb[i].end[0], 10)) return false;
-      if (!nearlyEqual(rda[i].end[1], rdb[i].end[1], 10)) return false;
-      if (!nearlyEqual(rda[i].slope, rdb[i].slope, 1e-14)) return false;
+      if (!nearlyEqual(rda[i].end[0], rdb[i].end[0], 10)) return false
+      if (!nearlyEqual(rda[i].end[1], rdb[i].end[1], 10)) return false
+      if (!nearlyEqual(rda[i].slope, rdb[i].slope, 1e-14)) return false
     }
-    return true;
+    return true
   },
 
   /** Creates and returns a clone of the supplied road array */
@@ -852,8 +899,8 @@
   // always mapping to the most recent value. Cf
   // http://stackoverflow.com/q/6853787
   stepify = function( data, dflt=0 ) {
-    if (data == null) return (function (x) { return dflt; });
-    return (function(x) { return stepFunc(data, x, dflt); });
+    if (data == null) return (x => dflt);
+    return (x => stepFunc(data, x, dflt));
   },
 
   // Computes the slope of the supplied road array at the given timestamp
@@ -863,8 +910,8 @@
   },
 
   lnfraw = function( rd, goal, x ) {
-    var t = rd.map(function(elt) { return elt.end[0]; });
-    var r = rd.map(function(elt) { return Math.abs(elt.slope)*SID; });
+    var t = rd.map(elt => elt.end[0]);
+    var r = rd.map(elt => Math.abs(elt.slope)*SID );
     // pretend flat spots have the previous or next non-flat rate
     var rb = r.slice(), i;
     for (i = 1; i < rb.length; i++) 
@@ -875,8 +922,7 @@
       if (Math.abs(rf[i]) < 1e-9 || !isFinite(rf[i])) rf[i] = rf[i-1];
     rf = rf.reverse();
 
-    r = zip([rb,rf]).map(function (e) { 
-      return argmax(Math.abs, [e[0],e[1]]); });
+    r = zip([rb,rf]).map(e => argmax(Math.abs, [e[0],e[1]]) );
     var valdiff = rdf( rd, x ) - rdf( rd, x-SID );
     i = findRoadSegment(rd, x);
     return d3.max([Math.abs(valdiff), r[i]]);
@@ -2569,8 +2615,15 @@
         goal.auraf = function(e){ return 0; };
 
       // TODO: Make sure the output here matches python beebrain
-      if (opts.divJSON)
-        opts.divJSON.innerHTML = JSON.stringify(goal)
+      if (opts.divJSON) {
+        let stats = {};
+        stats.vini = goal.vini;
+        stats.thumburl = BBURL+goal.slug+"-thumb.png";
+        stats.vfin = goal.vfin;
+        stats.graphurl = BBURL+goal.slug+".png";
+        stats.color = 
+        opts.divJSON.innerHTML = JSON.stringify(goal, null, 4)
+      }
 
       // Finally, wrap up with graph related initialization
       zoomAll();

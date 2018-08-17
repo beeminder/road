@@ -10,7 +10,7 @@
 <body>
 
 <div id="goalgraph"></div>
-<div id="goaljson"></div>
+<pre id="goaljson"></pre>
 
 <script src = "../pub/roadeditor.js"></script>
 <script>
@@ -46,9 +46,9 @@
   });
 
   var bb = getParameterByName('bb');
-  if (bb) 
+  if (bb) {
     graph.loadGoal(getParameterByName('bb'));
-  else
+  } else
     d3.select("#roadgraph").text("Usage: generate.html?bb=file:///path/to/file.bb");
 
 </script>

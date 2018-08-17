@@ -11,6 +11,7 @@ class Renderer {
     this.id = id;
   }
 
+  // Creates a new page in a tab within the puppeteer chrome instance
   async createPage( url ) {
     let gotoOptions = {
       timeout: 30 * 1000,
@@ -36,6 +37,11 @@ class Renderer {
     return page
   }
 
+  /** Renders the graph associated with the BB file with the supplied
+   base name, located in the supplied path in the puppeteer
+   instance. Creates a new tab, renders the graph and json, outputs
+   the graph in PNG and SVG forms as well as the JSON output and
+   closes the tab afterwards */
   async render(path, base) {
     let page = null
     let url = `file://${__dirname}/generate.html?bb=file://${path}/${base}.bb`
@@ -57,7 +63,7 @@ class Renderer {
         fs.writeFile(`${path}/${base}.svg`, svg, (err) => {  
           if (err) console.log(`Error saving to ${base}.svg`);
         });   
-        const jsonHandle = await page.$('div#goaljson');
+        const jsonHandle = await page.$('#goaljson');
         json = await page.evaluate(json => json.innerHTML, jsonHandle);
         // write the SVG file
         fs.writeFile(`${path}/${base}.json`, json, (err) => {  
