@@ -38,7 +38,7 @@
     console.log("roadeditor: Using Browser globals")
     root.bmndr = factory(root.d3, root.moment, root.Pikaday, root.Polyfit)
   }
-}(this, function (d3, moment, Pikaday) {
+}(this, function (d3, moment, Pikaday, Polyfit) {
   'use strict'
 
   /** default options */
@@ -327,6 +327,14 @@
 
   // ---------------- General Utility Functions ----------------------
 
+  arrMin = function(arr) {
+    return Math.min.apply(null, arr);
+  },
+
+  arrMax = function(arr) {
+    return Math.max.apply(null, arr);
+  },
+
   onMobileOrTablet = function() {
     if (typeof navigator == 'undefined' && typeof window == 'undefined') 
       return false;
@@ -365,7 +373,7 @@
   argmax = function(f, dom) {
     if (dom == null) return null;
     var newdom = dom.map(f);
-    var maxelt = d3.max(newdom);
+    var maxelt = arrMax(newdom);
     return dom[newdom.findIndex( e => (e == maxelt))];
   },
 
@@ -509,8 +517,8 @@
   cvx = function(x, a,b, c,d, clipQ=true) {
     var tmp
     if (chop(a-b) == 0) {
-      if (x <= a) return d3.min([c,d])
-      else        return d3.max([c,d])
+      if (x <= a) return Math.min(c,d)
+      else        return Math.max(c,d)
     }
     if (chop(c-d) == 0) return c
     if (clipQ)
@@ -664,8 +672,8 @@
   AGGR = {
     last     : function(x) { return x[x.length-1] },
     first    : function(x) { return x[0] },
-    min      : function(x) { return d3.min(x) },
-    max      : function(x) { return d3.max(x) },
+    min      : function(x) { return arrMin(x) },
+    max      : function(x) { return arrMax(x) },
     truemean : function(x) { return mean(x) },
     uniqmean : function(x) { return mean(deldups(x)) },
     mean     : function(x) { return mean(deldups(x)) },
@@ -816,7 +824,7 @@
   // TODO: Test
   lanage = function( rd, goal, t, v, l = null ) {
     var ln = lnf( rd, goal, t );
-    if (l == null) l = (goal.noisy)?d3.max([ln, goal.nw]):ln;
+    if (l == null) l = (goal.noisy)?Math.max(ln, goal.nw):ln;
     var d = v - rdf(rd, t);
     if (chop(l) == 0) 
       return Math.round((chop(d) == 0.0)?goal.yaw:Math.sign(d)*666);
@@ -848,17 +856,17 @@
     var tnow = goal.tcur;
     var fnw = (gdelt(rd, goal, t,v) >= 0)?0.0:goal.nw;// future noisy width
     var elnf = function(x) {
-      return d3.max([lnf(rd,goal,x),fnw]);};//eff. lane width
+      return Math.max(lnf(rd,goal,x),fnw);};//eff. lane width
 
     var x = 0; // the number of steps  
     var vpess = v; // the value as we walk forward w/ pessimistic presumptive reports  
     while (aok( rd, goal, t+x*SID, vpess, elnf( t+x*SID ) ) 
-           && t+x*SID <= d3.max([goal.tfin, t])) {
+           && t+x*SID <= Math.max(goal.tfin, t)) {
       x += 1; // walk forward until we're off the YBR
       //if (t+x*SID > tnow) xt += 1;
       vpess += (goal.yaw*goal.dir < 0)?2*rtf(rd, t+x*SID)*SID:0;
     }
-    if (goal.noisy && gdelt(rd,goal,t,v) >= 0) x = d3.max([2, x]);
+    if (goal.noisy && gdelt(rd,goal,t,v) >= 0) x = Math.max(2, x);
     return x;
   },
 
@@ -925,7 +933,7 @@
     r = zip([rb,rf]).map(e => argmax(Math.abs, [e[0],e[1]]) );
     var valdiff = rdf( rd, x ) - rdf( rd, x-SID );
     i = findRoadSegment(rd, x);
-    return d3.max([Math.abs(valdiff), r[i]]);
+    return Math.max(Math.abs(valdiff), r[i]);
   },
 
   // TODO: Test
@@ -989,7 +997,7 @@
       while (i >= -n && gdelt(rd, goal, d[i][0], d[i][1]) < 0) i -= 1;
       i += 1;
       if (i > -n && d[i][0] - d[i-1][0] <= SID) 
-        nw = d3.max(nw, Math.abs(d[i][1] - rdf(rd,d[i][0])));
+        nw = Math.max(nw, Math.abs(d[i][1] - rdf(rd,d[i][0])));
     }
     return chop(nw);
   },
@@ -1691,7 +1699,7 @@
       var de  = dataExtentPartial((goal.plotall&&!opts.roadEditor)
                                   ?alldata:aggdata,
                                   xtimes[0],xtimes[1],false);
-      ae = mergeExtents(ae, de);
+      if (de != null) ae = mergeExtents(ae, de);
       var p;
       if (opts.roadEditor)
         p = {xmin:0.0, xmax:0.0, ymin:0.05, ymax:0.05};
@@ -1720,8 +1728,8 @@
       var sx = xrange.map(function (x){return xScB(x);});
       var sy = yrange.map(function (y){return yScB(y);});
       focusrect
-        .attr("x", sx[0]+1).attr("width", d3.max([0, sx[1]-sx[0]-2]))
-        .attr("y", sy[0]+1).attr("height", d3.max([0, sy[1]-sy[0]-2]));
+        .attr("x", sx[0]+1).attr("width", Math.max(0, sx[1]-sx[0]-2))
+        .attr("y", sy[0]+1).attr("height", Math.max(0, sy[1]-sy[0]-2));
 
     }
 
@@ -1938,10 +1946,10 @@
     function mergeExtents( ext1, ext2) {
       var ne = {};
 
-      ne.xMin = d3.min([ext1.xMin, ext2.xMin]);
-      ne.xMax = d3.max([ext1.xMax, ext2.xMax]);
-      ne.yMin = d3.min([ext1.yMin, ext2.yMin]);
-      ne.yMax = d3.max([ext1.yMax, ext2.yMax]);
+      ne.xMin = Math.min(ext1.xMin, ext2.xMin);
+      ne.xMax = Math.max(ext1.xMax, ext2.xMax);
+      ne.yMin = Math.min(ext1.yMin, ext2.yMin);
+      ne.yMax = Math.max(ext1.yMax, ext2.yMax);
       return ne;
     }
 
@@ -1960,10 +1968,10 @@
     function roadExtent( rd, extend = true ) {
       var extent = {};
       // Compute new limits for the current data
-      extent.xMin = d3.min(rd, function(d) { return d.end[0]; });
-      extent.xMax = d3.max(rd, function(d) { return d.sta[0]; });
-      extent.yMin = d3.min(rd, function(d) { return d.sta[1]; });
-      extent.yMax = d3.max(rd, function(d) { return d.sta[1]; });
+      extent.xMin = arrMin(rd.map(function(d) { return d.end[0]; }));
+      extent.xMax = arrMax(rd.map(function(d) { return d.sta[0]; }));
+      extent.yMin = arrMin(rd.map(function(d) { return d.sta[1]; }));
+      extent.yMax = arrMax(rd.map(function(d) { return d.sta[1]; }));
       // Extend limits by 5% so everything is visible
       var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
       if (extend) enlargeExtent(extent, p);
@@ -1984,12 +1992,15 @@
         }
         if (ind > 0) nd = data.slice(ind, ind+1);
       }
+      if (nd.length == 0) return null;
+
       // Compute new limits for the current data
       extent.xMin = d3.min(nd, function(d) { return d[0]; });
       extent.xMax = d3.max(nd, function(d) { return d[0]; });
       extent.yMin = d3.min(nd, function(d) { return d[1]; });
       extent.yMax = d3.max(nd, function(d) { return d[1]; });
 
+      console.log(extent);
       // Extend limits by 5% so everything is visible
       var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
       if (extend) enlargeExtent(extent, p);
@@ -2114,7 +2125,8 @@
       var ne = mergeExtents( cur, old );
 
       var data = dataExtentPartial((goal.plotall&&!opts.roadEditor)?alldata:aggdata,roads[0].end[0],aggdata[aggdata.length-1][0],false);
-      ne = mergeExtents(ne, data);
+
+      if (data != null) ne = mergeExtents(ne, data);
       if (fuda.length != 0) {
         var df = dataExtentPartial(fuda,roads[0].end[0],maxx,false);
         ne = mergeExtents(ne, df);
@@ -2161,7 +2173,6 @@
 
       iRoad = [];
       goal = {}; 
-
       aggdata = [];
       flad = null;
       fuda = [];
@@ -2520,6 +2531,7 @@
 
       processing = true;
       legacyIn(json.params);
+
       initGlobals();
       aggdata = stampIn(json.params, json.data);
 
@@ -2559,6 +2571,7 @@
 
       // Process datapoints
       procData();
+
       var vtmp;
       if (json.params.hasOwnProperty('tini')) {
         goal.tini = Number(json.params.tini);
