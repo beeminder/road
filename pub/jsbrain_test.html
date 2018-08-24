@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script src = "../pub/moment.min.js"></script>
+</head>
+<body>
+
+<script src = "jsbrain.js"></script>
+<script>
+  async function loadJSON( url, callback ) {   
+    console.debug("loadJSON: "+url)
+    if (url === "") return
+    var xobj = new XMLHttpRequest()
+    xobj.overrideMimeType("application/json")
+    xobj.open('GET', url, true)
+    xobj.onreadystatechange = function () {
+      if (xobj.readyState == 4 
+          && (xobj.status == "200"
+              || (xobj.status == "0" && xobj.responseText !== ""))) {
+        callback(JSON.parse(xobj.responseText))
+      } else if (xobj.readyState == 4) {
+        LastError = ErrType.NOBBFILE
+        callback(null)
+      }
+    };
+    xobj.send(null)
+  }
+
+  function loadGoalFromURL( url ) {
+    console.debug( "Loading: "+url );
+    if (url == "") return;
+    var jsb = null;
+    loadJSON(url, 
+             function(resp) { 
+               console.debug("loadGoalFromURL() done for "+url+", resp="+resp);
+               if (resp != null) {
+                 jsb = new jsbrain( resp )
+                 var stats = jsb.getStats()
+                 console.log(stats)
+               }
+             });  
+  }
+
+  loadGoalFromURL("data/testroad0.json");
+</script>
+
+</body>
+</html>
