@@ -207,7 +207,7 @@
   },
   
   /** Base URL for images */
-  BBURL = "http://brain.beeminder.com",
+  BBURL = "http://brain.beeminder.com/",
 
   pout = { // Out Params: Beebrain output fields
     sadbrink : false,  // Whether we were red yest. & so will instaderail today
@@ -1886,11 +1886,11 @@
       if (tlast > goal.tfin) return;
       var x = tlast; // x = the time we're flatlining to
       if (goal.yaw * goal.dir < 0) 
-        x = d3.min([now, goal.tfin]); // WEEN/RASH: flatline all the way
+        x = Math.min(now, goal.tfin); // WEEN/RASH: flatline all the way
       else { // for MOAR/PHAT, stop flatlining if 2 red days in a row
         var prevcolor = null;
         var newcolor;
-        while (x <= d3.min([now, goal.tfin])) { // walk forward from tlast
+        while (x <= Math.min(now, goal.tfin)) { // walk forward from tlast
           newcolor = dotcolor( roads, goal, x, vlast );
           // done iff 2 reds in a row
           if (prevcolor===newcolor && prevcolor===Cols.REDDOT) 
@@ -1898,7 +1898,7 @@
           prevcolor = newcolor;
           x += SID; // or see padm.us/ppr
         };
-        x = d3.min([x, now, goal.tfin]);
+        x = arrMin([x, now, goal.tfin]);
         for (var i = 0; i < numpts; i++) {
           if (x == aggdata[i][0])
             return;
@@ -1992,13 +1992,14 @@
         }
         if (ind > 0) nd = data.slice(ind, ind+1);
       }
+      // Inform caller if no data points are in between the supplied range.
       if (nd.length == 0) return null;
 
       // Compute new limits for the current data
-      extent.xMin = d3.min(nd, function(d) { return d[0]; });
-      extent.xMax = d3.max(nd, function(d) { return d[0]; });
-      extent.yMin = d3.min(nd, function(d) { return d[1]; });
-      extent.yMax = d3.max(nd, function(d) { return d[1]; });
+      extent.xMin = arrMin(nd.map(function(d) { return d[0]; }));
+      extent.xMax = arrMax(nd.map(function(d) { return d[0]; }));
+      extent.yMin = arrMin(nd.map(function(d) { return d[1]; }));
+      extent.yMax = arrMax(nd.map(function(d) { return d[1]; }));
 
       console.log(extent);
       // Extend limits by 5% so everything is visible
@@ -2012,12 +2013,12 @@
       // Compute new limits for the current data
       extent.xMin = xmin;
       extent.xMax = xmax;
-      extent.yMin = d3.min(rd, function(d) { 
-        return (d.sta[0] <xmin||d.sta[0]>xmax)?Infinity:d.sta[1]; });
-      extent.yMax = d3.max(rd, function(d) { 
-        return (d.sta[0] <xmin||d.sta[0]>xmax)?-Infinity:d.sta[1]; });
-      extent.yMin = d3.min([extent.yMin, rdf(rd,xmin), rdf(rd,xmax)]);
-      extent.yMax = d3.max([extent.yMax, rdf(rd,xmin), rdf(rd,xmax)]);
+      extent.yMin = arrMin(rd.map(function(d) { 
+        return (d.sta[0] <xmin||d.sta[0]>xmax)?Infinity:d.sta[1]; }));
+      extent.yMax = arrMax(rd.map(function(d) { 
+        return (d.sta[0] <xmin||d.sta[0]>xmax)?-Infinity:d.sta[1]; }));
+      extent.yMin = arrMin([extent.yMin, rdf(rd,xmin), rdf(rd,xmax)]);
+      extent.yMax = arrMax([extent.yMax, rdf(rd,xmin), rdf(rd,xmax)]);
       // Extend limits by 5% so everything is visible
       var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
       if (extend) enlargeExtent(extent, p);
@@ -2026,55 +2027,13 @@
 
     // Set any of {tmin, tmax, vmin, vmax} that don't have explicit values.
     function setDefaultRange() {
-      if (goal.tmin == null) goal.tmin = d3.min([goal.tini, goal.asof]);
+      if (goal.tmin == null) goal.tmin = Math.min(goal.tini, goal.asof);
       if (goal.tmin >= goal.asof - SID) goal.tmin -= SID;
       if (goal.tmax == null) {
         // Make more room beyond the askrasia horizon if lots of data
         var years = (goal.tcur - goal.tmin) / (DIY*SID);
         goal.tmax = daysnap((1+years/2)*2*AKH + goal.tcur);
       }
-      // No need for the following since auto-y range covers this
-      // if (goal.vmin != null && goal.vmax != null) {
-      //     if (goal.vmin == goal.vmax)  {
-      //         goal.vmin -= 1; goal.vmax += 1;
-      //     } else if  (goal.vmin >  goal.vmax) {
-      //         var tmp=goal.vmin; goal.vmin=goal.vmax; goal.vmax=tmp;
-      //     }
-      //     return;
-      // }
-      // var a = rdf(roads, goal.tmin), b = rdf(roads, goal.tmax);
-      // var d0 = aggdata.filter(function(d){
-      //     return (d[0]<=goal.tmax && d[0]>=goal.tmin); });
-      // var mind = (d0.length>0)?d3.min(d0):0;
-      // var maxd = (d0.length>0)?d3.max(d0):0;
-      // var padding = d3.max([goal.lnw/3, (maxd-mind)*PRAF*2]);
-      // var minmin = mind - padding;
-      // var maxmax = maxd + padding;
-      // if (goal.monotone!=null && goal.dir>0) { // Up, no extra padding
-      //     minmin = d3.min([minmin, a, b]); //   below (the low) vini.
-      //     maxmax = d3.max([maxmax, a+goal.lnw, b+goal.lnw]);
-      // } else if (goal.monotone!=null && goal.dir<0) { // down
-      //     minmin = d3.min([minmin, a-goal.lnw, b-goal.lnw]);
-      //     maxmax = d3.max([maxmax, a, b]);
-      // } else {
-      //     minmin = d3.min([minmin, a-goal.lnw, b-goal.lnw]);
-      //     maxmax = d3.max([maxmax, a+goal.lnw, b+goal.lnw]);
-      // }
-      // if (goal.plotall && goal.tmin<=goal.tini 
-      //     && goal.tini<=goal.tmax && allvals.hasOwnProperty(goal.tini)){
-      //     // At tini, leave room
-      //     minmin = d3.min([minmin, d3.min(allvals[goal.tini])]);
-      //     maxmax = d3.max([maxmax, d3.max(allvals[goal.tini])]);
-      // }
-      // if (goal.vmin == null && goal.vmax == null) {
-      //     var tmp=goal.vmin; goal.vmin=goal.vmax; goal.vmax=tmp;
-      //     if (goal.vmin == goal.vmax){  goal.vmin -= 1; goal.vmax += 1;
-      //     } else if (goal.vmin >  goal.vmax){
-      //         var tmp=goal.vmin; goal.vmin=goal.vmax; goal.vmax=tmp; }
-      // } else if (goal.vmin == null)  
-      //     goal.vmin = (minmin<vmax)?minmin:(vmax - 1);
-      // else if (goal.vmax ==null)
-      //     goal.vmax = (maxmax>vmin)?maxmax:(vmin-1);
     }
 
     // Convert deadline value (seconds from midnight) to
@@ -2118,8 +2077,8 @@
       if (roads.length == 0) return;
 
       var now = goal.asof;
-      var maxx = daysnap(d3.min([now+opts.maxFutureDays*SID, 
-                                 roads[roads.length-1].sta[0]]));
+      var maxx = daysnap(Math.min(now+opts.maxFutureDays*SID, 
+                                 roads[roads.length-1].sta[0]));
       var cur = roadExtentPartial( roads, roads[0].end[0], maxx, false );
       var old = roadExtentPartial(iRoad,roads[0].end[0],maxx,false);
       var ne = mergeExtents( cur, old );
@@ -2232,7 +2191,7 @@
           segment.end[0] 
             = segment.sta[0] 
             + (segment.end[1] - segment.sta[1])/segment.slope;
-          segment.end[0] = d3.min([BDUSK, segment.end[0]]);
+          segment.end[0] = Math.min(BDUSK, segment.end[0]);
           segment.auto = RP.DATE;
         } else if (rdvalue == null) {
           segment.end = [rddate, 0];
@@ -2309,7 +2268,7 @@
     // Function to generate samples for the Butterworth filter
     function griddle(a, b, maxcnt = 6000) {
       return linspace(a, b, Math.floor(clip((b-a)/(SID+1), 
-                                            d3.min([600, plotbox.width]),
+                                            Math.min(600, plotbox.width),
                                             maxcnt)));
     }
 
@@ -2506,7 +2465,7 @@
                      .filter(function(d){return d[0]>=goal.tini;}));
       goal.nw = (goal.noisy && goal.abslnw == null)
         ?autowiden(roads, goal, aggdata, goal.dflux):0;
-      goal.lnw = d3.max([goal.nw,lnfraw( iRoad, goal, goal.tcur )]);
+      goal.lnw = Math.max(goal.nw,lnfraw( iRoad, goal, goal.tcur ));
 
       goal.safebuf = dtd(roads, goal, goal.tcur, goal.vcur);
       goal.tluz = goal.tcur+goal.safebuf*SID;
@@ -2595,10 +2554,10 @@
         if (goal.tini < 1347249600) L = 3;
         else                        L = 7;
         var d = aggdata.filter(function(d){return d[0]>=goal.tini;});
-        var va = aggdata.slice(0,d3.min([L,aggdata.length])).map(
+        var va = aggdata.slice(0,Math.min(L,aggdata.length)).map(
           function(d){ return goal.yaw*d[1];});
         va.push(goal.yaw*goal.vini);
-        goal.vini = goal.yaw*d3.min(va);
+        goal.vini = goal.yaw*arrMin(va);
       }
 
       // Extract the road from the json and fill in details
@@ -2631,10 +2590,7 @@
       if (opts.divJSON) {
         let stats = {};
         stats.vini = goal.vini;
-        stats.thumburl = BBURL+goal.slug+"-thumb.png";
         stats.vfin = goal.vfin;
-        stats.graphurl = BBURL+goal.slug+".png";
-        stats.color = 
         opts.divJSON.innerHTML = JSON.stringify(goal, null, 4)
       }
 
@@ -3228,7 +3184,7 @@
       var rd = roads;
 
       roads[kind].slope 
-        = ((y - d.sta[1])/d3.max([x - d.sta[0], SID]));
+        = ((y - d.sta[1])/Math.max(x - d.sta[0], SID));
       roads[kind].end[1] = roads[kind].sta[1] 
         + roads[kind].slope*(roads[kind].end[0] 
                              - roads[kind].sta[0]);
@@ -3595,15 +3551,15 @@
       var el = gAura.selectAll(".aura");
       var el2 = gAura.selectAll(".aurapast");
       if (goal.aura && opts.showData) {
-        var aurdn = d3.min([-goal.lnw/2.0, -goal.dflux]);
-        var aurup = d3.max([goal.lnw/2.0,  goal.dflux]);
+        var aurdn = Math.min(-goal.lnw/2.0, -goal.dflux);
+        var aurup = Math.max(goal.lnw/2.0,  goal.dflux);
         var fudge = PRAF*(goal.tmax-goal.tmin);
         var xr = [nXSc.invert(0).getTime()/1000, 
                   nXSc.invert(plotbox.width).getTime()/1000];
         var xvec = griddle(goal.tmin, 
-                           d3.min([goal.asof+AKH, goal.tmax+fudge])),i;
-        xvec = griddle(d3.max([xr[0], goal.tmin]),
-                       d3.min([xr[1], goal.asof+AKH, goal.tmax+fudge]),
+                           Math.min(goal.asof+AKH, goal.tmax+fudge)),i;
+        xvec = griddle(Math.max(xr[0], goal.tmin),
+                       arrMin([xr[1], goal.asof+AKH, goal.tmax+fudge]),
                        plotbox.width/2);
         // Generate a path string for the aura
         var d = "M"+nXSc(xvec[0]*1000)+" "
