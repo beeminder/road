@@ -721,6 +721,26 @@
     return x;
   },
 
+// Given the endpoint of the last road segment (tprev,vprev) and 2 out of 3 of
+//   t = goal date for a road segment (unixtime)
+//   v = goal value 
+//   r = rate in hertz (s^-1), ie, road rate per second
+// return the third, namely, whichever one is passed in as null.
+  tvr = function(tprev, vprev, t, v, r) {
+    
+    if (t == null) {
+      if (r == 0) return BDUSK
+      else  return Math.min(BDUSK, tprev + (v-vprev)/r)
+    }
+    if (v == null)
+      return vprev+r*(t-tprev)
+    if (r == null) {
+      if (t == tprev) return 0 // special case: zero-length road segment
+      return (v-vprev)/(t-tprev)
+    }
+    return 0
+  },
+
   odomify = function( data ) {
     var ln = data.length;
     if (ln == 0) return;
@@ -895,6 +915,26 @@
         p.yoog = p.usr + "/" + p.graph;
     }
     
+    /** Last in genStats, filter params for backward compatibility */
+    function legacyOut(p) {
+      //p['fullroad'] = [rowfix(r) for r in p['fullroad']]
+      p['road']     = p['fullroad']
+      if (p['error']) {
+        p['gldt'] = dayify(goal.tfin)
+        p['goal'] = goal.vfin
+        p['rate'] = goal.rfin*goal.siru
+      } else {
+        //p['gldt'] = p['fullroad'][-1][0]
+        //p['goal'] = p['fullroad'][-1][1]
+        //p['rate'] = p['fullroad'][-1][2]
+      }
+      p['tini'] = dayify(goal.tini)
+      p['vini'] = goal.vini
+      p['tfin'] = dayify(goal.tfin)
+      p['vfin'] = goal.vfin
+      p['rfin'] = goal.rfin*goal.siru
+    }
+
     /** Initialize various global variables before use */
     function initGlobals() {
       iRoad = [];
@@ -1168,6 +1208,7 @@
 
       if (!goal.plotall) goal.numpts = aggdata.length;
 
+      goal.tdat = aggdata[aggdata.length-1][0] // tstamp of last ent. datapoint pre-flatline
     }
 
     function procRoad( json ) {
@@ -1307,69 +1348,75 @@
 
       goal.safebuf = dtd(roads, goal, goal.tcur, goal.vcur);
       goal.tluz = goal.tcur+goal.safebuf*SID;
+      goal.delta = chop(goal.vcur - rdf(roads, goal.tcur))
+      goal.rah = rdf(roads, goal.tcur+AKH)
+
+      goal.rcur = rtf(roads, goal.tcur)*goal.siru  
+      goal.ravg = tvr(goal.tini, goal.vini, goal.tfin,goal.vfin,null)*goal.siru
+      goal.cntdn = Math.ceil((goal.tfin-goal.tcur)/SID)
+      goal.lane = clip(lanage(roads, goal, goal.tcur,goal.vcur), -32768, 32767)
+
       setDefaultRange();
     }
 
     function getNumParam(p, n, dflt) {
-      return (p.hasOwnProperty(n))?Number(p[n]):dflt;
+      return (p.hasOwnProperty(n))?Number(p[n]):dflt
     }
     function getBoolParam(p, n, dflt) {
-      return (p.hasOwnProperty(n))?p[n]:dflt;
+      return (p.hasOwnProperty(n))?p[n]:dflt
     }
     function getStrParam(p, n, dflt) {
-      return (p.hasOwnProperty(n))?p[n]:dflt;
+      return (p.hasOwnProperty(n))?p[n]:dflt
     }
 
+    var stats = {};
+
     /** Process goal details */
-    function genStats( bbin ) {
-      console.debug("genStats: id="+curid+", "+bbin.params.yoog)
+    function genStats( p, d, tm=null ) {
+      console.debug("genStats: id="+curid+", "+p.yoog)
 
-      var p = bbin.params;
-      var d = bbin.data;
+      // start the clock immediately
+      if (tm == null) tm = moment.utc().unix()
 
-      var tm = moment.utc().unix() // start the clock immediately
+      legacyIn( p )
+      initGlobals()
+      goal.proctm = tm
 
-      legacyIn(bbin.params);
-      initGlobals();
-      goal.proctm = tm;
+      aggdata = stampIn(p, d)
 
-      aggdata = stampIn(p, d);
-
-      for (var property in p) {
-        if (p.hasOwnProperty(property)) {
-          if (!pin.hasOwnProperty(property) && (!pig.includes(property)))
-            goal.error += "Unknown param: "+property+"="+p[property]+","
+      for (var prop in p) {
+        if (p.hasOwnProperty(prop)) {
+          if (!pin.hasOwnProperty(prop) && (!pig.includes(prop)))
+            goal.error += "Unknown param: "+prop+"="+p[prop]+","
           else
-            goal[property] = p[property];
+            goal[prop] = p[prop]
         }
       }
-      if ( p.hasOwnProperty('aggday'))
-        goal.aggday = p.aggday;
-      else {
-        if (goal.kyoom) p.aggday = "sum";
-        else p.aggday = "last";
+      if ( !p.hasOwnProperty('aggday')) {
+        if (goal.kyoom) p.aggday = "sum"
+        else p.aggday = "last"
       }
 
-      goal.siru = SECS[p.runits];
-      goal.horizon = goal.asof+AKH;
+      goal.siru = SECS[p.runits]
+      goal.horizon = goal.asof+AKH
 
       // Process datapoints
-      procData();
+      procData()
 
-      var vtmp;
-      if (p.hasOwnProperty('tini'))  goal.tini = Number(p.tini);
-      else goal.tini = aggdata[0][0];
+      var vtmp
+      if (p.hasOwnProperty('tini'))  goal.tini = Number(p.tini)
+      else goal.tini = aggdata[0][0]
 
       if (allvals.hasOwnProperty(goal.tini)) {
         vtmp = (goal.plotall)
-          ?allvals[goal.tini][0][0]:aggval[goal.tini][0];
-      } else vtmp = Number(p.vini);
+          ?allvals[goal.tini][0][0]:aggval[goal.tini][0]
+      } else vtmp = Number(p.vini)
 
-      if (p.hasOwnProperty('vini')) goal.vini = p.vini;
-      else goal.vini = (goal.kyoom)?0:vtmp;
+      if (p.hasOwnProperty('vini')) goal.vini = p.vini
+      else goal.vini = (goal.kyoom)?0:vtmp
 
-      procRoad( p.road );
-      procParams( p );
+      procRoad( p.road )
+      procParams( p )
 
       // TODO: Implement opts.maxDataDays
       // Now that the flatlined datapoint is in place, we can
@@ -1387,30 +1434,29 @@
       // Generate the aura function now that the flatlined
       // datapoint is also computed.
       if (goal.aura) {
-        var adata = aggdata.filter(function(e){
-          return e[0]>=goal.tmin;});
-        var fdata = gapFill(adata);
-        goal.auraf = smooth(fdata);
+        var adata = aggdata.filter(function(e){return e[0]>=goal.tmin})
+        var fdata = gapFill(adata)
+        goal.auraf = smooth(fdata)
       } else
-        goal.auraf = function(e){ return 0; };
+        goal.auraf = function(e){ return 0 }
 
+      // Generate beebrain stats (use getStats tp retrieve)
+      stats = Object.assign({}, pout)
+      for (prop in stats) stats[prop] = goal[prop]
+      stampOut(stats)
+      legacyOut(stats)
     }
 
-    genStats( bbin )
+    genStats( bbin.params, bbin.data )
 
     // -----------------------------------------------------------
     // ----------------- JSBRAIN OBJECT EXPORTS ------------------
 
-    function getStats() {
-      let stats = {};
-      stats.vini = goal.vini;
-      stats.vfin = goal.vfin;
-      return stats;
-    };
+    function getStats() { return Object.assign({}, stats) }
 
     /** jsbrain object ID for the current instance */
-    self.id = 1;
-    self.getStats = getStats;
+    self.id = 1
+    self.getStats = getStats
   };
 
   return jsbrain;

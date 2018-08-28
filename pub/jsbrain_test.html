@@ -8,41 +8,54 @@
 
 <script src = "jsbrain.js"></script>
 <script>
-  async function loadJSON( url, callback ) {   
+  function loadJSON( url ) {   
     console.debug("loadJSON: "+url)
-    if (url === "") return
-    var xobj = new XMLHttpRequest()
-    xobj.overrideMimeType("application/json")
-    xobj.open('GET', url, true)
-    xobj.onreadystatechange = function () {
-      if (xobj.readyState == 4 
-          && (xobj.status == "200"
-              || (xobj.status == "0" && xobj.responseText !== ""))) {
-        callback(JSON.parse(xobj.responseText))
-      } else if (xobj.readyState == 4) {
-        LastError = ErrType.NOBBFILE
-        callback(null)
+    return new Promise(function(resolve, reject) {
+      if (url === "") resolve(null)
+      var xobj = new XMLHttpRequest()
+      xobj.overrideMimeType("application/json")
+      xobj.onreadystatechange = function () {
+        if (xobj.readyState == 4 
+            && (xobj.status == "200"
+                || (xobj.status == "0" && xobj.responseText !== ""))) {
+          resolve(JSON.parse(xobj.responseText))
+        } else if (xobj.readyState == 4) {
+          resolve(null)
+        }
       }
-    };
-    xobj.send(null)
+      xobj.open('GET', url, true)
+      xobj.send(null)
+    })
   }
 
-  function loadGoalFromURL( url ) {
+  async function testGoal( url, outurl ) {
     console.debug( "Loading: "+url );
     if (url == "") return;
     var jsb = null;
-    loadJSON(url, 
-             function(resp) { 
-               console.debug("loadGoalFromURL() done for "+url+", resp="+resp);
-               if (resp != null) {
-                 jsb = new jsbrain( resp )
-                 var stats = jsb.getStats()
-                 console.log(stats)
-               }
-             });  
+    var resp = await loadJSON(url);
+    console.debug("Loaded goal details from "+url+", resp=")
+    console.debug(resp)
+    var bbr = await loadJSON(outurl);
+    console.debug("Loaded beebrain output from "+outurl+", resp=")
+    console.debug(bbr)
+
+    if (resp != null && bbr != null) {
+      // Create new jsbrain object
+      jsb = new jsbrain( resp )
+      // Retrieve stats output
+      var stats = jsb.getStats()
+      console.log( stats )
+      // Compare properties
+      for (prop in bbr) {
+        if (!stats.hasOwnProperty(prop))
+          console.log("Property "+prop+" is missing from the output")
+        else if (stats[prop] !== bbr[prop]) 
+          console.log("Property "+prop+" differs: "+stats[prop]+ " !== "+bbr[prop])
+      }
+    }
   }
 
-  loadGoalFromURL("data/testroad0.json");
+  testGoal("data/testroad0.bb", "data/testroad0_beebrain.json");
 </script>
 
 </body>
