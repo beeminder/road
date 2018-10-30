@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script src = "../pub/moment.min.js"></script>
+</head>
+<body>
+
+<script src = "blib.js"></script>
+<script src = "broad.js"></script>
+<script src = "beebrain.js"></script>
+<script>
+  // Warn if overriding existing method
+  if(Array.prototype.equals)
+      console.warn("Overriding existing Array.prototype.equals. Possible causes: New API defines the method, there's a framework conflict or you've got double inclusions in your code.");
+  // attach the .equals method to Array's prototype to call it on any array
+  Array.prototype.equals = function (array) {
+      // if the other array is a falsy value, return
+      if (!array)
+          return false;
+
+      // compare lengths - can save a lot of time 
+      if (this.length != array.length)
+        return false;
+
+      for (var i = 0, l=this.length; i < l; i++) {
+          // Check if we have nested arrays
+          if (this[i] instanceof Array && array[i] instanceof Array) {
+              // recurse into the nested arrays
+              if (!this[i].equals(array[i]))
+                  return false;       
+          }           
+          else if (this[i] != array[i]) { 
+              // Warning - two different object instances will never be equal: {x:20} != {x:20}
+              return false;   
+          }           
+      }       
+      return true;
+  }
+  // Hide method from for-in loops
+  Object.defineProperty(Array.prototype, "equals", {enumerable: false});
+
+
+  function loadJSON( url ) {   
+    console.debug("loadJSON: "+url)
+    return new Promise(function(resolve, reject) {
+      if (url === "") resolve(null)
+      var xobj = new XMLHttpRequest()
+      xobj.overrideMimeType("application/json")
+      xobj.onreadystatechange = function () {
+        if (xobj.readyState == 4 
+            && (xobj.status == "200"
+                || (xobj.status == "0" && xobj.responseText !== ""))) {
+          resolve(JSON.parse(xobj.responseText))
+        } else if (xobj.readyState == 4) {
+          resolve(null)
+        }
+      }
+      xobj.open('GET', url, true)
+      xobj.send(null)
+    })
+  }
+
+  function validate_output(stats, bbr) {
+    for (prop in bbr) {
+      if (!stats.hasOwnProperty(prop))
+        console.log("Prp "+prop+" is missing from the output")
+      else {
+        if (Array.isArray(stats[prop])) {
+          if (!(stats[prop].equals(bbr[prop])))
+           console.log("Arr "+prop+" differs: "+stats[prop]+ " !== "+bbr[prop])
+        } else if (!(stats[prop] === bbr[prop]))
+          console.log("Prp "+prop+" differs: "+stats[prop]+ " !== "+bbr[prop])
+      }
+    }
+  }
+
+  async function testGoal( url, outurl ) {
+    console.debug( "Loading: "+url );
+    if (url == "") return;
+    var jsb = null;
+    var resp = await loadJSON(url);
+    console.debug("Loaded goal details from "+url+", resp=")
+    console.debug(resp)
+    var bbr = await loadJSON(outurl);
+    console.debug("Loaded beebrain output from "+outurl+", resp=")
+    console.debug(bbr)
+
+    if (resp != null && bbr != null) {
+
+      // Create new beebrain object
+      jsb = new beebrain( resp )
+      // Retrieve stats output
+      var stats = jsb.getStats()
+
+      validate_output(stats, bbr)
+    }
+  }
+
+  testGoal("data/testroad0.bb", "data/testroad0_beebrain.json");
+</script>
+
+</body>
+</html>
