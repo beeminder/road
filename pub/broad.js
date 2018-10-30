@@ -4,11 +4,11 @@
  * Dependencies: moment, blib
  * 
  * Javascript library of road utilities for beebrain, provided as a
- * UMD module. Provides a "broad" function, which can be used to
- * construct independent broad objects each with their unique ID.
+ * UMD module. Returns a "broad" object, whose public members provide
+ * a number of road related constants and functions. Does not hold any
+ * internal state.
  *
- * The following member variables and methods are exported within
- * constructed broad objects:
+ * The following member variables and methods are provided:
  *
  * Copyright © 2018 Uluc Saranli
  */
@@ -31,12 +31,8 @@
 })(this, function (moment, bl) {
   'use strict'
 
-  var gid = 1,
-  broad = function() {
-    console.debug("broad constructor ("+gid+")")
-    var self = this,
-        curid = gid
-    gid++
+  var broad = function() {
+    var self = this
 
     /** Enum object to identify field types for road segments. */
     self.RP = { DATE:0, VALUE:1, SLOPE:2}
