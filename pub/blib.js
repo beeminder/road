@@ -3,13 +3,12 @@
  *
  * Dependencies: moment
  * 
- * Javascript library of utilities for beebrain, provided as a UMD
- * module. Provides a "blib" function, which can be used to
- * construct independent blib objects each with their unique
- * ID. 
+ * Javascript library of general purpose utilities for beebrain,
+ * provided as a UMD module. Provides a "blib" object, which holds
+ * various constants and utility functions to be used. Does not hold
+ * any internal state.
  *
- * The following member variables and methods are exported within
- * constructed blib objects:
+ * The following member variables and methods are provided:
  *
  *  BBURL : Base URL for images
  *  Cols  : Beeminder colors for datapoints
@@ -42,12 +41,8 @@
 })(this, function (moment) {
   'use strict'
 
-  var gid = 1,
-  blib = function() {
-    console.debug("blib constructor ("+gid+")")
-    var self = this,
-        curid = gid
-    gid++
+  var blib = function() {
+    var self = this
 
     // -----------------------------------------------------------------
     // --------------------- Useful constants --------------------------
