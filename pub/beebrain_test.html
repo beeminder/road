@@ -6,7 +6,7 @@
 </head>
 <body>
 
-<script src = "blib.js"></script>
+<script src = "butil.js"></script>
 <script src = "broad.js"></script>
 <script src = "beebrain.js"></script>
 <script>
@@ -41,26 +41,6 @@
   Object.defineProperty(Array.prototype, "equals", {enumerable: false});
 
 
-  function loadJSON( url ) {   
-    console.debug("loadJSON: "+url)
-    return new Promise(function(resolve, reject) {
-      if (url === "") resolve(null)
-      var xobj = new XMLHttpRequest()
-      xobj.overrideMimeType("application/json")
-      xobj.onreadystatechange = function () {
-        if (xobj.readyState == 4 
-            && (xobj.status == "200"
-                || (xobj.status == "0" && xobj.responseText !== ""))) {
-          resolve(JSON.parse(xobj.responseText))
-        } else if (xobj.readyState == 4) {
-          resolve(null)
-        }
-      }
-      xobj.open('GET', url, true)
-      xobj.send(null)
-    })
-  }
-
   function validate_output(stats, bbr) {
     for (prop in bbr) {
       if (!stats.hasOwnProperty(prop))
@@ -79,10 +59,10 @@
     console.debug( "Loading: "+url );
     if (url == "") return;
     var jsb = null;
-    var resp = await loadJSON(url);
+    var resp = await butil.loadJSON(url);
     console.debug("Loaded goal details from "+url+", resp=")
     console.debug(resp)
-    var bbr = await loadJSON(outurl);
+    var bbr = await butil.loadJSON(outurl);
     console.debug("Loaded beebrain output from "+outurl+", resp=")
     console.debug(bbr)
 

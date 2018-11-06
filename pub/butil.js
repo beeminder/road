@@ -1,10 +1,10 @@
 /*!
- * blib
+ * butil
  *
  * Dependencies: moment
  * 
  * Javascript library of general purpose utilities for beebrain,
- * provided as a UMD module. Provides a "blib" object, which holds
+ * provided as a UMD module. Provides a "butil" object, which holds
  * various constants and utility functions to be used. Does not hold
  * any internal state.
  *
@@ -26,22 +26,22 @@
   'use strict'
   if (typeof define === 'function' && define.amd) {
     // AMD. Register as an anonymous module.
-    console.log("blib: Using AMD module definition")
+    console.log("butil: Using AMD module definition")
     define(['moment'], factory)
   } else if (typeof module === 'object' && module.exports) {
     // Node. Does not work with strict CommonJS, but
     // only CommonJS-like environments that support module.exports,
     // like Node.    
-    console.log("blib: Using CommonJS module.exports")
+    console.log("butil: Using CommonJS module.exports")
     module.exports = factory(require('moment'))
   } else {
-    console.log("blib: Using Browser globals")
-    root.blib = factory(root.moment)
+    console.log("butil: Using Browser globals")
+    root.butil = factory(root.moment)
   }
 })(this, function (moment) {
   'use strict'
 
-  var blib = function() {
+  var butil = function() {
     var self = this
 
     // -----------------------------------------------------------------
@@ -74,7 +74,9 @@
     self.SID   = 86400      // Seconds in day
     self.AKH   = 7*self.SID // Akrasia Horizon, in seconds
     self.BDUSK = 2147317201 // ~2038, rails's ENDOFDAYS+1 (was 2^31-2weeks)
-
+    self.ZFUN = function(x) { return 0 } // Function that always returns zero
+    // TODO?: IMGMAG
+    
     // Number of seconds in a year, month, etc
     self.SECS = { 'y' : self.DIY*self.SID, 
                   'm' : self.DIY/12*self.SID,
@@ -253,7 +255,15 @@
       }
       return ostr
     }
-  
+
+    // Rate as a string
+    self.shr = function(r) {
+      if (r == null) r = 0
+      // show as a percentage if exprd is true #SCHDEL
+      //return shn((100.0 if exprd else 1.0)*r, 4,2) + ("%" if exprd else "")
+      return self.shn(r, 4,2)
+    }
+
     self.linspace = function linspace( a, b, n) {
       if (typeof n === "undefined") n = Math.max(Math.round(b-a)+1,1)
       if (n < 2) { return n===1?[a]:[] }
@@ -347,8 +357,6 @@
       return Math.abs(a - b) < eps
     }
 
-    self.ZFUN = function(x) { return 0 }
-
   // --------------------------------------------------------
   // ----------------- Date facilities ----------------------
 
@@ -401,7 +409,33 @@
       return '' + y + sep + (m < 10 ? '0' : '') + m 
         + sep + (d < 10 ? '0' : '') + d
     }
+
+    /** Converts a number to an integer string */
+    self.sint = function(x){ return Math.round(x).toString(); }
+
+    // Returns a promise that loads a JSON file from the supplied URL
+    self.loadJSON = function( url ) {   
+      //console.debug("butil.loadJSON: "+url)
+      return new Promise(function(resolve, reject) {
+        if (url === "") resolve(null)
+        var xobj = new XMLHttpRequest()
+        xobj.overrideMimeType("application/json")
+        xobj.onreadystatechange = function () {
+          if (xobj.readyState == 4 
+              && (xobj.status == "200"
+                  || (xobj.status == "0" && xobj.responseText !== ""))) {
+            resolve(JSON.parse(xobj.responseText))
+          } else if (xobj.readyState == 4) {
+            resolve(null)
+          }
+        }
+        xobj.open('GET', url, true)
+        xobj.send(null)
+      })
+    }
+
+    
   }
 
-  return new blib()
+  return new butil()
 }));

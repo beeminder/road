@@ -17,24 +17,24 @@
  *
  * Copyright © 2017 Uluc Saranli
  */
-;((function (root, factory) {
+((function (root, factory) {
   'use strict'
   if (typeof define === 'function' && define.amd) {
     // AMD. Register as an anonymous module.
     console.log("beebrain: Using AMD module definition")
-    define(['blib', 'broad', 'moment', 'polyfit'], factory)
+    define(['moment', 'butil', 'broad'], factory)
   } else if (typeof module === 'object' && module.exports) {
     // Node. Does not work with strict CommonJS, but
     // only CommonJS-like environments that support module.exports,
     // like Node.    
     console.log("beebrain: Using CommonJS module.exports")
-    module.exports = factory(require('blib'), require('broad'), 
-                             require('moment'), require('polyfit'))
+    module.exports = factory(require('moment'), require('butil'), 
+                             require('broad'))
   } else {
     console.log("beebrain: Using Browser globals")
-    root.beebrain = factory(root.blib, root.broad, root.moment, root.polyfit)
+    root.beebrain = factory(root.moment, root.butil, root.broad)
   }
-})(this, function (bl, br, moment, Polyfit) {
+})(this, function (moment, bu, br) {
   'use strict'
 
   // -------------------------------------------------------------
@@ -99,7 +99,7 @@
     ravg     : null,   // Overall road rate from (tini,vini) to (tfin,vfin)
     tdat     : null,   // Timestamp of last actually entered datapoint
     lnw      : 0,      // Lane width at time tcur
-    dflux    : 0,      // Rec. lanewidth .9 quantile of rate-adjusted deltas
+    stdflux  : 0,      // Rec. lanewidth .9 quantile of rate-adjusted deltas
     delta    : 0,      // How far from centerline: vcur - rdf(tcur)
     lane     : 666,    // Lane we're in; below=-2,bottom=-1,top=1,above=2,etc 
     color    : 'black',// One of {"green", "blue", "orange", "red"}
@@ -161,27 +161,6 @@
 
   // ----------------- Beeminder Goal utilities ----------------------
 
-  AGGR = {
-    last     : function(x) { return x[x.length-1] },
-    first    : function(x) { return x[0] },
-    min      : function(x) { return bl.arrMin(x) },
-    max      : function(x) { return bl.arrMax(x) },
-    truemean : function(x) { return bl.mean(x) },
-    uniqmean : function(x) { return bl.mean(bl.deldups(x)) },
-    mean     : function(x) { return bl.mean(bl.deldups(x)) },
-    median   : function(x) { return bl.median(x) },
-    mode     : function(x) { return bl.mode(x) },
-    trimmean : function(x) { return bl.mean(x) }, // Uluc: did not bother 
-    sum      : function(x) { return bl.sum(x) },
-    jolly    : function(x) { return (x.length > 0)?1:0 },
-    binary   : function(x) { return (x.length > 0)?1:0 },
-    nonzero  : bl.nonzero,
-    triangle : function(x) { return bl.sum(x)*(bl.sum(x)+1)/2 },
-    square   : function(x) { return Math.pow(bl.sum(x),2) },
-    clocky   : function(x) { return bl.clocky(x) /*sum of pair diff.*/ },
-    count    : function(x) { return x.length /* number of datapoints*/ }
-  },
-
   /** Version of fillroad that assumes tini/vini is the first row of road */
   //fillroadall = function(road) {
   //(tini, vini) = (road[0][0], road[0][1])
@@ -216,15 +195,18 @@
     redoBuffer = [], // Array of future roads for redo
     oresets = [],    // Odometer resets
     allvals = {},    // Dictionary holding values for each timestamp
-    aggval = {}      // Dictionary holding aggregated value for each timestamp
-
+    aggval = {},     // Dictionary holding aggregated value for each timestamp
+    worstval = {},   // Maps timestamp to min/max (depending on yaw) value that day
+    derails = [],    // List of derail timestamps
+    hashhash = {}    // Maps timestamp to sets of hashtags to display on the graph
+    
     // Initialize goal with sane values
     goal.yaw = +1; goal.dir = +1;
     goal.tcur = 0; goal.vcur = 0;
     var now = moment.utc();
     now.hour(0); now.minute(0); now.second(0); now.millisecond(0);
     goal.asof = now.unix();
-    goal.horizon = goal.asof+bl.AKH;
+    goal.horizon = goal.asof+bu.AKH;
     goal.xMin = goal.asof;  goal.xMax = goal.horizon;
     goal.yMin = -1;    goal.yMax = 1;
 
@@ -254,72 +236,78 @@
       p.fullroad = p.fullroad.map( r=>rowfix(r) )
       p['road']     = p['fullroad']
       if (p['error']) {
-        p['gldt'] = bl.dayify(goal.tfin)
+        p['gldt'] = bu.dayify(goal.tfin)
         p['goal'] = goal.vfin
         p['rate'] = goal.rfin*goal.siru
       } else {
-        //p['gldt'] = p['fullroad'][-1][0]
-        //p['goal'] = p['fullroad'][-1][1]
-        //p['rate'] = p['fullroad'][-1][2]
+        var len = p['fullroad'].length
+        p['gldt'] = p['fullroad'][len-1][0]
+        p['goal'] = p['fullroad'][len-1][1]
+        p['rate'] = p['fullroad'][len-1][2]
       }
-      p['tini'] = bl.dayify(goal.tini)
+      p['tini'] = bu.dayify(goal.tini)
       p['vini'] = goal.vini
-      p['tfin'] = bl.dayify(goal.tfin)
+      p['tfin'] = bu.dayify(goal.tfin)
       p['vfin'] = goal.vfin
       p['rfin'] = goal.rfin*goal.siru
     }
 
     /** Initialize various global variables before use */
     function initGlobals() {
-      CNAME[bl.Cols.GRNDOT] = "green",
-      CNAME[bl.Cols.BLUDOT] = "blue",
-      CNAME[bl.Cols.ORNDOT] = "orange",
-      CNAME[bl.Cols.REDDOT] = "red",
-      CNAME[bl.Cols.BLCK]   = "black" 
+      CNAME[bu.Cols.GRNDOT] = "green",
+      CNAME[bu.Cols.BLUDOT] = "blue",
+      CNAME[bu.Cols.ORNDOT] = "orange",
+      CNAME[bu.Cols.REDDOT] = "red",
+      CNAME[bu.Cols.BLCK]   = "black" 
   
       iRoad = []
+
       aggdata = []
       flad = null
       fuda = []
       allvals = {}
       aggval = {}
+      worstval = {}
+
       goal = {}
       goal.nw = 0
       goal.siru = null
       oresets = []
+      derails = []
+      hashhash = {}
 
       // All the in and out params are also global variables!
       var prop;
-      for (prop in pin) {
-        if (pin.hasOwnProperty(prop))
-          goal[prop] = pin[prop]
-      }
       for (prop in pout) {
         if (pout.hasOwnProperty(prop))
           goal[prop] = pout[prop]
+      }
+      for (prop in pin) {
+        if (pin.hasOwnProperty(prop))
+          goal[prop] = pin[prop]
       }
     }
 
     function parserow(row) {
       if (!Array.isArray(row) || row.length != 3) return row
-      return [bl.dayparse(row[0]), row[1], row[2]]
+      return [bu.dayparse(row[0]), row[1], row[2]]
     }
 
     // Helper function for stampOut
     function dayifyrow( row ) {
       if (row.length < 1) return row
       var newrow = row.slice()
-      newrow[0] = bl.dayify(row[0])
+      newrow[0] = bu.dayify(row[0])
       return newrow
     }
 
     /** Processes fields with timestamps in the input */
     function stampIn( p,d ) {
-      if (p.hasOwnProperty('asof')) p.asof = bl.dayparse(p.asof)
-      if (p.hasOwnProperty('tini')) p.tini = bl.dayparse(p.tini)
-      if (p.hasOwnProperty('tfin')) p.tfin = bl.dayparse(p.tfin)
-      if (p.hasOwnProperty('tmin')) p.tmin = bl.dayparse(p.tmin)
-      if (p.hasOwnProperty('tmax')) p.tmax = bl.dayparse(p.tmax)
+      if (p.hasOwnProperty('asof')) p.asof = bu.dayparse(p.asof)
+      if (p.hasOwnProperty('tini')) p.tini = bu.dayparse(p.tini)
+      if (p.hasOwnProperty('tfin')) p.tfin = bu.dayparse(p.tfin)
+      if (p.hasOwnProperty('tmin')) p.tmin = bu.dayparse(p.tmin)
+      if (p.hasOwnProperty('tmax')) p.tmax = bu.dayparse(p.tmax)
       if (p.hasOwnProperty('road')) p.road = p.road.map(parserow)
 
       // Stable-sort by timestamp before dayparsing the timestamps
@@ -328,16 +316,16 @@
       var numpts = d.length
       return d
         .sort(function(a,b){return (a[0]!== b[0])?(a[0]-b[0]):(a[3]-b[3]);})
-        .map(function(r,i) {return [bl.dayparse(r[0]),r[1],r[2],i,r[1]];})
+        .map(function(r,i) {return [bu.dayparse(r[0]),r[1],r[2],i,r[1]];})
     }
 
     /** Convert unixtimes back to daystamps */
     function stampOut( p ) {
       p['fullroad'] = p['fullroad'].map(dayifyrow)
       p['pinkzone'] = p['pinkzone'].map(dayifyrow)
-      p['tluz'] = bl.dayify(p['tluz'])
-      p['tcur'] = bl.dayify(p['tcur'])
-      p['tdat'] = bl.dayify(p['tdat'])
+      p['tluz'] = bu.dayify(p['tluz'])
+      p['tcur'] = bu.dayify(p['tcur'])
+      p['tdat'] = bu.dayify(p['tdat'])
     }
 
     // Helper function for Exponential Moving Average; returns
@@ -348,9 +336,9 @@
       // The Hacker's Diet recommends 0.1 Uluc had .0864
       // http://forum.beeminder.com/t/control-exp-moving-av/2938/7
       // suggests 0.25
-      var KEXP = .25/bl.SID; 
-      if (goal.yoog==='meta/derev') KEXP = .03/bl.SID;  //.015 for meta/derev
-      if (goal.yoog==='meta/dpledge') KEXP = .03/bl.SID;// .1 jagged
+      var KEXP = .25/bu.SID; 
+      if (goal.yoog==='meta/derev') KEXP = .03/bu.SID;  //.015 for meta/derev
+      if (goal.yoog==='meta/dpledge') KEXP = .03/bu.SID;// .1 jagged
       var xp = d[0][0],
           yp = d[0][1];
       var prev = yp, dt, i, ii, A, B;
@@ -376,71 +364,14 @@
 
     // Function to generate samples for the Butterworth filter
     function griddlefilt(a, b) {
-      return bl.linspace(a, b, Math.floor(bl.clip((b-a)/(bl.SID+1), 40, 2000)));
+      return bu.linspace(a, b, Math.floor(bu.clip((b-a)/(bu.SID+1), 40, 2000)));
     }
 
     // Function to generate samples for the Butterworth filter
     function griddle(a, b, maxcnt = 6000) {
-      return bl.linspace(a, b, Math.floor(bl.clip((b-a)/(bl.SID+1), 
+      return bu.linspace(a, b, Math.floor(bu.clip((b-a)/(bu.SID+1), 
                                             Math.min(600, plotbox.width),
                                             maxcnt)));
-    }
-
-    /** Converts a number to an integer string */
-    function sint(x){ return Math.round(x).toString(); }
-    
-    // Used with grAura() and for computing mean and meandelt,
-    // this adds dummy datapoints on every day that doesn't have a
-    // datapoint, interpolating linearly.
-    function gapFill(d) {
-      var interp = function (before, after, atPoint) {
-        return before + (after - before) * atPoint;
-      };
-      var start = d[0][0], end = d[d.length-1][0];
-      var n = Math.floor((end-start)/bl.SID);
-      var out = Array(n), i, j = 0, t = start;
-      for (i = 0; i < d.length-1; i++) {
-        var den = (d[i+1][0]-d[i][0]);
-        while (t <= d[i+1][0]) {
-          out[j] = [t,interp(d[i][1], d[i+1][1], (t-d[i][0])/den)];
-          j++; t += bl.SID;
-        }
-      }
-      return out;
-    }
-
-    // Return a pure function that fits the data smoothly, used by grAura
-    function smooth(data) {
-      var SMOOTH = (data[0][0] + data[data.length-1][0])/2;
-      var dz = bl.zip(data);
-      var xnew = dz[0].map(function(e){return e-SMOOTH;});
-      var poly = new Polyfit(xnew, dz[1]);
-      var solver = poly.getPolynomial(3);
-      return function(x){ return solver(x-SMOOTH);};
-    }
-
-    // Assumes both datapoints and the x values are sorted
-    function interpData(d, xv) {
-      var interp = function (before, after, atPoint) {
-        return before + (after - before) * atPoint;
-      };
-      var di = 0, dl = d.length, od = [];
-      if (dl == 0) return null;
-      if (dl == 1) return xv.map(function(d){return [d, d[0][1]];});
-      for (var i = 0; i < xv.length; i++) {
-        var xi = xv[i];
-        if (xi <= d[0][0]) od.push([xi, d[0][1]]);
-        else if (xi >= d[dl-1][0]) od.push([xi, d[dl-1][1]]);
-        else if (xi < d[di+1][0] ) { 
-          od.push([xi, interp(d[di][1], d[di+1][1],
-                              (xi-d[di][0])/(d[di+1][0]-d[di][0]))]);
-        } else {
-          while (xi > d[di+1][0]) di++;
-          od.push([xi, interp(d[di][1], d[di+1][1],
-                              (xi-d[di][0])/(d[di+1][0]-d[di][0]))]);
-        }
-      }
-      return od;
     }
 
     function procData() { 
@@ -467,7 +398,7 @@
         else {
           var ind;
           if (goal.kyoom && goal.aggday === "sum") 
-            ind = bl.accumulate(vl.map(dval)).indexOf(v);
+            ind = bu.accumulate(vl.map(dval)).indexOf(v);
           else ind = vl.map(dval).indexOf(v);
           if (ind < 0) return [goal.aggday, null];
           else return [vl[ind][1]+" ("+goal.aggday+")", vl[ind][2]];
@@ -483,7 +414,7 @@
           vl.push([aggdata[i][1],aggdata[i][2],aggdata[i][4]]);
         } else {
           vlv = vl.map(dval);
-          ad = AGGR[goal.aggday](vlv);
+          ad = br.AGGR[goal.aggday](vlv);
           if (newpts.length > 0) prevpt = newpts[newpts.length-1];
           else prevpt = [ct, ad+pre];
           //pre remains 0 for non-kyoom
@@ -493,7 +424,7 @@
                        prevpt[0], prevpt[1], ptinf[1]]);
           if (goal.kyoom) {
             if (goal.aggday === "sum") {
-              allvals[ct] = bl.accumulate(vlv).map(function(e,i){
+              allvals[ct] = bu.accumulate(vlv).map(function(e,i){
                 return [e+pre, vl[i][1], vl[i][2]];});
             } else allvals[ct] = vl.map(function(e) {
               return [e[0]+pre, e[1], e[2]];});
@@ -509,7 +440,7 @@
         }
       }
       vlv = vl.map(dval);
-      ad = AGGR[goal.aggday](vlv);
+      ad = br.AGGR[goal.aggday](vlv);
       if (newpts.length > 0) prevpt = newpts[newpts.length-1];
       else prevpt = [ct, ad+pre];
       ptinf = aggpt(vl, ad);
@@ -518,7 +449,7 @@
                    prevpt[0], prevpt[1], ptinf[1]]);
       if (goal.kyoom) {
         if (goal.aggday === "sum") {
-          allvals[ct] = bl.accumulate(vlv).map(function(e,i){
+          allvals[ct] = bu.accumulate(vlv).map(function(e,i){
             return [e+pre, vl[i][1], vl[i][2]];});
         } else allvals[ct] = vl.map(function(e) { 
           return [e[0]+pre, e[1], e[2]];});
@@ -554,10 +485,10 @@
       var firstsegment;
 
       firstsegment = {
-        sta: [bl.dayparse(goal.tini), Number(goal.vini)],
+        sta: [bu.dayparse(goal.tini), Number(goal.vini)],
         slope: 0, auto: br.RP.SLOPE };
       firstsegment.end = firstsegment.sta.slice();
-      firstsegment.sta[0] = bl.daysnap(firstsegment.sta[0]-100*bl.DIY*bl.SID);
+      firstsegment.sta[0] = bu.daysnap(firstsegment.sta[0]-100*bu.DIY*bu.SID);
       roads.push(firstsegment);
       for (var i = 0; i < nk; i++) {
         var segment = {};
@@ -574,7 +505,7 @@
           segment.end[0] 
             = segment.sta[0] 
             + (segment.end[1] - segment.sta[1])/segment.slope;
-          segment.end[0] = Math.min(bl.BDUSK, segment.end[0]);
+          segment.end[0] = Math.min(bu.BDUSK, segment.end[0]);
           segment.auto = br.RP.DATE;
         } else if (rdvalue == null) {
           segment.end = [rddate, 0];
@@ -601,7 +532,7 @@
         sta: goalseg.end.slice(),
         end: goalseg.end.slice(),
         slope: 0, auto: br.RP.VALUE };
-      finalsegment.end[0] = bl.daysnap(finalsegment.end[0]+100*bl.DIY*bl.SID);
+      finalsegment.end[0] = bu.daysnap(finalsegment.end[0]+100*bu.DIY*bu.SID);
       roads.push(finalsegment);
 
       br.fixRoadArray( roads );
@@ -627,12 +558,12 @@
         while (x <= Math.min(now, goal.tfin)) { // walk forward from tlast
           newcolor = br.dotcolor( roads, goal, x, vlast );
           // done iff 2 reds in a row
-          if (prevcolor===newcolor && prevcolor===bl.Cols.REDDOT) 
+          if (prevcolor===newcolor && prevcolor===bu.Cols.REDDOT) 
             break;
           prevcolor = newcolor;
-          x += bl.SID; // or see eth.pad/ppr
+          x += bu.SID; // or see eth.pad/ppr
         };
-        x = bl.arrMin([x, now, goal.tfin]);
+        x = bu.arrMin([x, now, goal.tfin]);
         for (var i = 0; i < numpts; i++) {
           if (x == aggdata[i][0])
             return;
@@ -648,11 +579,11 @@
     // Set any of {tmin, tmax, vmin, vmax} that don't have explicit values.
     function setDefaultRange() {
       if (goal.tmin == null) goal.tmin = Math.min(goal.tini, goal.asof);
-      if (goal.tmin >= goal.asof - bl.SID) goal.tmin -= bl.SID;
+      if (goal.tmin >= goal.asof - bu.SID) goal.tmin -= bu.SID;
       if (goal.tmax == null) {
         // Make more room beyond the askrasia horizon if lots of data
-        var years = (goal.tcur - goal.tmin) / (bl.DIY*bl.SID);
-        goal.tmax = bl.daysnap((1+years/2)*2*bl.AKH + goal.tcur);
+        var years = (goal.tcur - goal.tmin) / (bu.DIY*bu.SID);
+        goal.tmax = bu.daysnap((1+years/2)*2*bu.AKH + goal.tcur);
       }
     }
 
@@ -688,25 +619,69 @@
       goal.tcur = aggdata[aggdata.length-1][0];
       goal.vcur = aggdata[aggdata.length-1][1];
 
-      goal.dflux 
+      goal.stdflux 
         = br.noisyWidth(roads, aggdata
                      .filter(function(d){return d[0]>=goal.tini;}));
       goal.nw = (goal.noisy && goal.abslnw == null)
-        ?br.autowiden(roads, goal, aggdata, goal.dflux):0;
+        ?br.autowiden(roads, goal, aggdata, goal.stdflux):0;
       goal.lnw = Math.max(goal.nw,br.lnfraw( iRoad, goal, goal.tcur ));
 
       goal.safebuf = br.dtd(roads, goal, goal.tcur, goal.vcur);
-      goal.tluz = goal.tcur+goal.safebuf*bl.SID;
-      goal.delta = bl.chop(goal.vcur - br.rdf(roads, goal.tcur))
-      goal.rah = br.rdf(roads, goal.tcur+bl.AKH)
+      goal.tluz = goal.tcur+goal.safebuf*bu.SID;
+      goal.delta = bu.chop(goal.vcur - br.rdf(roads, goal.tcur))
+      goal.rah = br.rdf(roads, goal.tcur+bu.AKH)
+
+      goal.dueby = [...Array(7).keys()]
+        .map(i => [bu.dayify(goal.tcur+i*bu.SID),
+                   br.limd(roads, goal, i),
+                   br.lim(roads, goal, i)])
+      // TODO: Monotonize dueby
+
+      goal.safebump = br.lim(roads, goal, goal.safebuf)
 
       goal.rcur = br.rtf(roads, goal.tcur)*goal.siru  
       goal.ravg = br.tvr(goal.tini, goal.vini, goal.tfin,goal.vfin,null)*goal.siru
-      goal.cntdn = Math.ceil((goal.tfin-goal.tcur)/bl.SID)
-      goal.lane = bl.clip(br.lanage(roads, goal, goal.tcur,goal.vcur), -32768, 32767)
+      goal.cntdn = Math.ceil((goal.tfin-goal.tcur)/bu.SID)
+      goal.lane = bu.clip(br.lanage(roads, goal, goal.tcur,goal.vcur), -32768, 32767)
       goal.color = CNAME[br.dotcolor(roads, goal, goal.tcur,goal.vcur)]
 
       setDefaultRange();
+    }
+    function sumSet(rd, goal) {
+      console.log("sumSet()")
+      var y = goal.y, d = goal.dir, l = goal.lane, w = goal.lnw, dlt = goal.delta
+      var MOAR = (y>0 && d>0),
+          PHAT = (y<0 && d<0),
+          WEEN = (y<0 && d>0),
+          RASH = (y>0 && d<0)
+
+      if (goal.error != "") {
+        goal.statsum = " error:    "+goal.error+"\\n"; return
+      }
+      var rz = (bu.zip(goal.road))[2]
+      var minr = bu.arrMin(rz), maxr = bu.arrMax(rz)
+      if (Math.abs(minr) > Math.abs(maxr)) {
+        var tmp = minr
+        minr = maxr; maxr = tmp
+      }
+      goal.ratesum = 
+        ((minr == maxr)?bu.shr(minr):"between "+bu.shr(minr)+" and "+bu.shr(maxr)) +
+        " per "+bu.UNAM[goal.runits] + 
+        ((minr != maxr)?" ("+"current: "+bu.shr(goal.rcur)
+         +", average: " + bu.shr(goal.ravg)+')':"")
+
+      // What we actually want is timesum and togosum (aka, progtsum & progvsum) 
+      // which will be displayed with labels TO GO and TIME LEFT in the stats box and
+      // will have both the absolute amounts remaining as well as the percents done 
+      // as calculated here.
+      var pt = bu.shn(bu.cvx(bu.daysnap(goal.tcur),
+                             [goal.tini,bu.daysnap(goal.tfin)],
+                             [0,100], false), 1,1)
+      var pv = bu.cvx(goal.vcur, [goal.vini,goal.vfin],[0,100],false)
+      pv = bu.shn((goal.vini<goal.vfin)?pv:100 - pv, 1,1) // meant shn(n,1,2) here?
+      if (pt==pv) goal.progsum = pt+"% done"
+      else goal.progsum = pt+"% done by time -- "+pv+"% by value"
+
     }
 
     function getNumParam(p, n, dflt) {
@@ -731,7 +706,6 @@
       legacyIn( p )
       initGlobals()
       goal.proctm = tm
-
       aggdata = stampIn(p, d)
 
       // make sure all supplied params are recognized 
@@ -747,12 +721,12 @@
         else p.aggday = "last"
       }
 
-      goal.horizon = goal.asof+bl.AKH
+      goal.horizon = goal.asof+bu.AKH
 
-      goal.siru = bl.SECS[p.runits]
+      goal.siru = bu.SECS[p.runits]
       goal.road.push([goal.tfin, goal.vfin, goal.rfin])
       
-      // Process datapoints
+      // TODO: vetParams()
       procData()
 
       var vtmp
@@ -769,7 +743,8 @@
 
       procRoad( p.road )
       procParams( p )
-
+      sumSet(roads, goal)
+      
       goal.fullroad = goal.road.slice()
 
       // TODO: Implement opts.maxDataDays
@@ -789,8 +764,8 @@
       // datapoint is also computed.
       if (goal.aura) {
         var adata = aggdata.filter(function(e){return e[0]>=goal.tmin})
-        var fdata = gapFill(adata)
-        goal.auraf = smooth(fdata)
+        var fdata = br.gapFill(adata)
+        goal.auraf = br.smooth(fdata)
       } else
         goal.auraf = function(e){ return 0 }
 
@@ -802,6 +777,8 @@
     }
 
     genStats( bbin.params, bbin.data )
+    goal.graphurl = bu.BBURL
+    goal.thumburl = bu.BBURL
 
     // -----------------------------------------------------------
     // ----------------- BEEBRAIN OBJECT EXPORTS ------------------
