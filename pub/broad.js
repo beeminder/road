@@ -1,7 +1,7 @@
 /*!
  * broad
  *
- * Dependencies: moment, blib
+ * Dependencies: moment, butil
  * 
  * Javascript library of road utilities for beebrain, provided as a
  * UMD module. Returns a "broad" object, whose public members provide
@@ -17,22 +17,44 @@
   if (typeof define === 'function' && define.amd) {
     // AMD. Register as an anonymous module.
     console.log("broad: Using AMD module definition")
-    define(['moment', 'blib'], factory)
+    define(['moment', 'Polyfit', 'butil'], factory)
   } else if (typeof module === 'object' && module.exports) {
     // Node. Does not work with strict CommonJS, but
     // only CommonJS-like environments that support module.exports,
     // like Node.    
     console.log("broad: Using CommonJS module.exports")
-    module.exports = factory(require('moment'), require('blib'))
+    module.exports = factory(require('moment'), require('Polyfit'), 
+                             require('butil'))
   } else {
     console.log("broad: Using Browser globals")
-    root.broad = factory(root.moment, root.blib)
+    root.broad = factory(root.moment, root.Polyfit, root.butil)
   }
-})(this, function (moment, bl) {
+})(this, function (moment, Polyfit, bu) {
   'use strict'
 
   var broad = function() {
     var self = this
+
+    self.AGGR = {
+      last     : function(x) { return x[x.length-1] },
+      first    : function(x) { return x[0] },
+      min      : function(x) { return bu.arrMin(x) },
+      max      : function(x) { return bu.arrMax(x) },
+      truemean : function(x) { return bu.mean(x) },
+      uniqmean : function(x) { return bu.mean(bu.deldups(x)) },
+      mean     : function(x) { return bu.mean(bu.deldups(x)) },
+      median   : function(x) { return bu.median(x) },
+      mode     : function(x) { return bu.mode(x) },
+      trimmean : function(x) { return bu.mean(x) }, // Uluc: did not bother 
+      sum      : function(x) { return bu.sum(x) },
+      jolly    : function(x) { return (x.length > 0)?1:0 },
+      binary   : function(x) { return (x.length > 0)?1:0 },
+      nonzero  : bu.nonzero,
+      triangle : function(x) { return bu.sum(x)*(bu.sum(x)+1)/2 },
+      square   : function(x) { return Math.pow(bu.sum(x),2) },
+      clocky   : function(x) { return bu.clocky(x) /*sum of pair diff.*/ },
+      count    : function(x) { return x.length /* number of datapoints*/ }
+    }
 
     /** Enum object to identify field types for road segments. */
     self.RP = { DATE:0, VALUE:1, SLOPE:2}
@@ -49,9 +71,9 @@
     self.sameRoads = function( rda, rdb ) {
       if (rda.length != rdb.length) return false
       for (var i = 0; i < rda.length; i++) {
-        if (!bl.nearlyEqual(rda[i].end[0], rdb[i].end[0], 10)) return false
-        if (!bl.nearlyEqual(rda[i].end[1], rdb[i].end[1], 10)) return false
-        if (!bl.nearlyEqual(rda[i].slope, rdb[i].slope, 1e-14)) return false
+        if (!bu.nearlyEqual(rda[i].end[0], rdb[i].end[0], 10)) return false
+        if (!bu.nearlyEqual(rda[i].end[1], rdb[i].end[1], 10)) return false
+        if (!bu.nearlyEqual(rda[i].slope, rdb[i].slope, 1e-14)) return false
       }
       return true
     }
@@ -104,7 +126,7 @@
                                   edited=self.RP.VALUE) {
       var nr = rd.length;
       // Fix the special first road segment, whose slope will always be 0.
-      rd[0].sta[0] = rd[0].end[0] - 100*bl.DIY*bl.SID;
+      rd[0].sta[0] = rd[0].end[0] - 100*bu.DIY*bu.SID;
       rd[0].sta[1] = rd[0].end[1];
       
       // Iterate through the remaining segments until the last one
@@ -120,12 +142,12 @@
         
         if (autop == self.RP.DATE) {
           if (isFinite(rd[i].slope) && rd[i].slope != 0) {
-            rd[i].end[0] = bl.daysnap(
+            rd[i].end[0] = bu.daysnap(
               rd[i].sta[0]+(rd[i].end[1]-rd[i].sta[1])/rd[i].slope);
           }
           // Sanity check
           if (rd[i].end[0] <= rd[i].sta[0]) {
-            rd[i].end[0] = bl.daysnap(rd[i].sta[0]+bl.SID);
+            rd[i].end[0] = bu.daysnap(rd[i].sta[0]+bu.SID);
           }
           if (edited == self.RP.SLOPE) {
             // Readjust value if slope was edited
@@ -154,7 +176,7 @@
       if (nr > 1) {
         rd[nr-1].sta[0] = rd[nr-2].end[0];
         rd[nr-1].sta[1] = rd[nr-2].end[1];
-        rd[nr-1].end[0] = rd[nr-1].sta[0] + 100*bl.DIY*bl.SID;
+        rd[nr-1].end[0] = rd[nr-1].sta[0] + 100*bu.DIY*bu.SID;
         rd[nr-1].end[1] = rd[nr-1].sta[1];
       }
     }
@@ -164,7 +186,7 @@
      good side of the road gives a positive delta and being on the
      wrong side gives a negative delta. */
     self.gdelt = function( rd, goal, t, v ) {
-      return bl.chop( goal.yaw*(v - self.rdf(rd, t)));
+      return bu.chop( goal.yaw*(v - self.rdf(rd, t)));
     }
 
     // TODO: Test
@@ -172,16 +194,16 @@
       var ln = self.lnf( rd, goal, t );
       if (l == null) l = (goal.noisy)?Math.max(ln, goal.nw):ln;
       var d = v - self.rdf(rd, t);
-      if (bl.chop(l) == 0) 
-      return Math.round((bl.chop(d) == 0.0)?goal.yaw:Math.sign(d)*666);
-      var x = bl.ichop(d/l);
+      if (bu.chop(l) == 0) 
+      return Math.round((bu.chop(d) == 0.0)?goal.yaw:Math.sign(d)*666);
+      var x = bu.ichop(d/l);
       var fracp = x % 1;
       var intp = x -fracp;
       if (fracp > .99999999) {
         intp += 1;
         fracp = 0;
       }
-      if (bl.chop(fracp) == 0) {
+      if (bu.chop(fracp) == 0) {
         if (goal.yaw > 0 && intp >= 0) return Math.round(intp+1);
         if (goal.yaw < 0 && intp <= 0) return Math.round(intp-1);
         return Math.round(Math.sign(x)*Math.ceil(Math.abs(x)));
@@ -206,11 +228,11 @@
 
       var x = 0; // the number of steps  
       var vpess = v; // the value as we walk forward w/ pessimistic presumptive reports  
-      while (self.aok( rd, goal, t+x*bl.SID, vpess, elnf( t+x*bl.SID ) ) 
-           && t+x*bl.SID <= Math.max(goal.tfin, t)) {
+      while (self.aok( rd, goal, t+x*bu.SID, vpess, elnf( t+x*bu.SID ) ) 
+           && t+x*bu.SID <= Math.max(goal.tfin, t)) {
         x += 1; // walk forward until we're off the YBR
         //if (t+x*SID > tnow) xt += 1;
-        vpess += (goal.yaw*goal.dir < 0)?2*self.rtf(rd, t+x*bl.SID)*bl.SID:0;
+        vpess += (goal.yaw*goal.dir < 0)?2*self.rtf(rd, t+x*bu.SID)*bu.SID:0;
       }
       if (goal.noisy && self.gdelt(rd,goal,t,v) >= 0) x = Math.max(2, x);
       return x;
@@ -220,7 +242,7 @@
     // centerline/tfin if nothing reported
     self.dtc = function(rd, goal, t, v) {
       var x = 0;
-      while(self.gdelt(rd, goal, t+x*bl.SID, v) >= 0 && t+x*bl.SID <= goal.tfin)
+      while(self.gdelt(rd, goal, t+x*bu.SID, v) >= 0 && t+x*bu.SID <= goal.tfin)
         x += 1; // dpl
       return x;
     }
@@ -233,8 +255,8 @@
     self.tvr = function(tprev, vprev, t, v, r) {
     
       if (t == null) {
-        if (r == 0) return bl.BDUSK
-        else  return Math.min(bl.BDUSK, tprev + (v-vprev)/r)
+        if (r == 0) return bu.BDUSK
+        else  return Math.min(bu.BDUSK, tprev + (v-vprev)/r)
       }
       if (v == null) return vprev+r*(t-tprev)
       if (r == null) {
@@ -275,7 +297,7 @@
 
     self.lnfraw = function( rd, goal, x ) {
       var t = rd.map(elt => elt.end[0]);
-      var r = rd.map(elt => Math.abs(elt.slope)*bl.SID );
+      var r = rd.map(elt => Math.abs(elt.slope)*bu.SID );
       // pretend flat spots have the previous or next non-flat rate
       var rb = r.slice(), i;
       for (i = 1; i < rb.length; i++) 
@@ -286,8 +308,8 @@
         if (Math.abs(rf[i]) < 1e-9 || !isFinite(rf[i])) rf[i] = rf[i-1];
       rf = rf.reverse();
       
-      r = bl.zip([rb,rf]).map(e => bl.argmax(Math.abs, [e[0],e[1]]) );
-      var valdiff = self.rdf( rd, x ) - self.rdf( rd, x-bl.SID );
+      r = bu.zip([rb,rf]).map(e => bu.argmax(Math.abs, [e[0],e[1]]) );
+      var valdiff = self.rdf( rd, x ) - self.rdf( rd, x-bu.SID );
       i = self.findRoadSegment(rd, x);
       return Math.max(Math.abs(valdiff), r[i]);
     }
@@ -333,20 +355,20 @@
     // Appropriate color for a datapoint
     self.dotcolor = function( rd, goal, t, v) {
       var l = self.lanage( rd, goal, t, v );
-      if (goal.yaw==0 && Math.abs(l) > 1.0) return bl.Cols.GRNDOT;
-      if (goal.yaw==0 && (l==0 && l==1.0)) return bl.Cols.BLUDOT;
-      if (goal.yaw==0 && l == -1.0) return bl.Cols.ORNDOT;
-      if (l*goal.yaw >=  2.0) return bl.Cols.GRNDOT;
-      if (l*goal.yaw ==  1.0) return bl.Cols.BLUDOT;
-      if (l*goal.yaw == -1.0) return bl.Cols.ORNDOT;
-      if (l*goal.yaw <= -2.0) return bl.Cols.REDDOT;
-      return bl.Cols.BLCK;
+      if (goal.yaw==0 && Math.abs(l) > 1.0) return bu.Cols.GRNDOT;
+      if (goal.yaw==0 && (l==0 && l==1.0)) return bu.Cols.BLUDOT;
+      if (goal.yaw==0 && l == -1.0) return bu.Cols.ORNDOT;
+      if (l*goal.yaw >=  2.0) return bu.Cols.GRNDOT;
+      if (l*goal.yaw ==  1.0) return bu.Cols.BLUDOT;
+      if (l*goal.yaw == -1.0) return bu.Cols.ORNDOT;
+      if (l*goal.yaw <= -2.0) return bu.Cols.REDDOT;
+      return bu.Cols.BLCK;
     }
 
     self.isLoser = function(rd, goal, data, t, v) {
-      return (self.dotcolor( rd, goal, t, v ) === bl.Cols.REDDOT 
-            && self.dotcolor(rd, goal,t-bl.SID,
-                             self.stepFunc(data,t-bl.SID))===bl.Cols.REDDOT);
+      return (self.dotcolor( rd, goal, t, v ) === bu.Cols.REDDOT 
+            && self.dotcolor(rd, goal,t-bu.SID,
+                             self.stepFunc(data,t-bu.SID))===bu.Cols.REDDOT);
     }
 
     // For noisy graphs, compute the lane width (or half aura width)
@@ -357,16 +379,16 @@
     // those adjusted deltas.
     self.noisyWidth = function(rd, d) {
       if (d.length <= 1) return 0;
-      var p = bl.partition(d,2,1), el, ad = [];
+      var p = bu.partition(d,2,1), el, ad = [];
       var t,v,u,w;
       for (var i = 0; i < p.length; i++) {
         t = p[i][0][0];
         v = p[i][0][1];
         u = p[i][1][0];
         w = p[i][1][1];
-        ad.push(Math.abs(w-v-self.rdf(rd,u)+self.rdf(rd,t))/(u-t)*bl.SID);
+        ad.push(Math.abs(w-v-self.rdf(rd,u)+self.rdf(rd,t))/(u-t)*bu.SID);
       }
-      return bl.chop((ad.length==1)?ad[0]:bl.quantile(ad, .90));
+      return bu.chop((ad.length==1)?ad[0]:bu.quantile(ad, .90));
     }
 
     // Increase the width if necessary for the guarantee that you
@@ -385,13 +407,85 @@
       if (self.gdelt(rd, goal, d[d.length-1][0], d[d.length-1][1]) < 0) {
         while (i >= -n && self.gdelt(rd, goal, d[i][0], d[i][1]) < 0) i -= 1;
         i += 1;
-        if (i > -n && d[i][0] - d[i-1][0] <= bl.SID) 
+        if (i > -n && d[i][0] - d[i-1][0] <= bu.SID) 
           nw = Math.max(nw, Math.abs(d[i][1] - self.rdf(rd,d[i][0])));
       }
-      return bl.chop(nw);
+      return bu.chop(nw);
     }
 
 
+    // Used with grAura() and for computing mean and meandelt,
+    // this adds dummy datapoints on every day that doesn't have a
+    // datapoint, interpolating linearly.
+    self.gapFill = function(d) {
+      var interp = function (before, after, atPoint) {
+        return before + (after - before) * atPoint;
+      };
+      var start = d[0][0], end = d[d.length-1][0];
+      var n = Math.floor((end-start)/bu.SID);
+      var out = Array(n), i, j = 0, t = start;
+      for (i = 0; i < d.length-1; i++) {
+        var den = (d[i+1][0]-d[i][0]);
+        while (t <= d[i+1][0]) {
+          out[j] = [t,interp(d[i][1], d[i+1][1], (t-d[i][0])/den)];
+          j++; t += bu.SID;
+        }
+      }
+      return out;
+    }
+
+    // Return a pure function that fits the data smoothly, used by grAura
+    self.smooth = function(data) {
+      var SMOOTH = (data[0][0] + data[data.length-1][0])/2;
+      var dz = bu.zip(data);
+      var xnew = dz[0].map(function(e){return e-SMOOTH;});
+      var poly = new Polyfit(xnew, dz[1]);
+      var solver = poly.getPolynomial(3);
+      return function(x){ return solver(x-SMOOTH);};
+    }
+
+    // Assumes both datapoints and the x values are sorted
+    self.interpData = function (d, xv) {
+      var interp = function (before, after, atPoint) {
+        return before + (after - before) * atPoint;
+      };
+      var di = 0, dl = d.length, od = [];
+      if (dl == 0) return null;
+      if (dl == 1) return xv.map(function(d){return [d, d[0][1]];});
+      for (var i = 0; i < xv.length; i++) {
+        var xi = xv[i];
+        if (xi <= d[0][0]) od.push([xi, d[0][1]]);
+        else if (xi >= d[dl-1][0]) od.push([xi, d[dl-1][1]]);
+        else if (xi < d[di+1][0] ) { 
+          od.push([xi, interp(d[di][1], d[di+1][1],
+                              (xi-d[di][0])/(d[di+1][0]-d[di][0]))]);
+        } else {
+          while (xi > d[di+1][0]) di++;
+          od.push([xi, interp(d[di][1], d[di+1][1],
+                              (xi-d[di][0])/(d[di+1][0]-d[di][0]))]);
+        }
+      }
+      return od;
+    }
+
+    // The value of the relevant/critical edge of the YBR in n days
+    self.lim = function(rd, goal, n) {
+      var t = goal.tcur+n*bu.SID
+      return self.rdf(rd, t)
+        - Math.sign(goal.yaw)
+        *(goal.noisy?(Math.max(goal.nw, self.lnf(rd, goal, t))):self.lnf(rd, goal, t))
+    }
+
+    // The bare minimum needed from vcur to the critical edge of the YBR in n days
+    self.limd = function(rd, goal, n) {
+      var x = self.lim(rd, goal, n)-goal.vcur
+      if (!goal.integery) return x
+      if (goal.yaw>0 && goal.dir>0 && x>0) return bu.ceil(x)  // MOAR
+      if (goal.yaw<0 && goal.dir<0 && x<0) return bu.floor(x) // PHAT
+      if (goal.yaw<0 && goal.dir>0 && x>0) return bu.floor(x) // WEEN
+      if (goal.yaw>0 && goal.dir<0 && x<0) return bu.ceil(x)  // RASH
+      return x
+    }
   }
 
   return new broad()
