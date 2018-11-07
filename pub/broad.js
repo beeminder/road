@@ -289,6 +289,19 @@
       return road
     }
 
+    /** Version of fillroad that assumes tini/vini is the first row of road */
+    self.fillroadall = function(road, goal) {
+      var tini = road[0][0], vini = road[0][1]
+      road.splice(0,1)
+      road.forEach( e => (e[2] = (null==e[2])?e[2]:e[2]/goal.siru))
+      road[0] = nextrow([tini, vini, 0, 0], road[0])
+      for (var i = 1; i < road.length; i++)
+        road[i] = nextrow(road[i-1], road[i])
+      road.forEach( e => (e[2] = (null==e[2])?e[2]:e[2]*goal.siru))
+      road.unshift([tini, vini, 0, 2])
+      return road
+    }
+
     // Computes the slope of the supplied road array at the given timestamp
     self.rtf = function(rd, t) {
       var i = self.findRoadSegment( rd, t );
