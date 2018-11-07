@@ -256,6 +256,71 @@
       return ostr
     }
 
+    // Show Number with Sign: include the sign explicitly
+    self.shns = function(x, t=16, d=5) {
+      return ((x>=0)?"+":"")+self.shn(x, t, d)
+    }
+
+    // Same as above but with conservarounding
+    self.shnsc = function(x, e, t=16, d=5) {
+      return ((x>=0)?"+":"")+self.shnc(x, e, t, d)
+    }
+
+    // Show Date: take timestamp and return something like 2012.10.22
+    self.shd = function(t) {
+      return (t == null)?'null':self.formatDate(t)
+    }
+
+    //Show Date/Time: take timestamp and return something like 2012.10.22 15:27:03
+    self.shdt = function(t) {
+      return (t == null)?'null':self.formatDateTime(t)
+    }
+
+    // TODO: need to DRY this and shn() up but want to totally revamp shownum anyway.
+    // Show Number, rounded conservatively (variant of shn where you pass which
+    // direction, +1 or -1, is safe to err on). Aka conservaround!
+    // Eg, shnc(.0000003, +1, 2) -> .01
+    self.shnc = function(x, errdir, t=10, d=5) {
+      if (isNaN(x)) return x.toString()
+      var i = Math.round(Math.abs(x)), k, fmt, ostr
+      i = (i==0)?0:i.toString().length // # of digits left of the decimal
+      if (Math.abs(x) > Math.pow(10,i)-.5) i += 1
+      if (i == 0 && x != 0)
+        k = (Math.floor(d - Math.log(Math.abs(x), 10))) // get desired 
+      else k = d                                          // dec. digits
+      // Round input to have the desired number of decimal digits
+      var v = x * Math.pow(10,k)
+      // Hack to prevent incorrect rounding with the decimal digits:
+      if (v % 10 >= 4.5 && v % 10 < 4.9999999) v = Math.floor(v)
+      var xn = Math.round(v) / Math.pow(10,k) + 1e-10
+      //Conservaround
+      if ((errdir < 0 && xn > x) || ((errdir > 0) && (xn < x))) { 
+        if (d >= 10) xn = x
+        else return self.shnc(x, errdir, t, d+1)
+      }
+      // If total significant digits < i, do something about it
+      if (t < i && Math.abs(Math.pow(10,(i-1)) - xn) < .5) 
+        xn = Math.pow(10,(i-1))
+      t = self.clip(t, i, i+d)
+      // If the magnitude <= 1e-4, prevent scientific notation
+      if (Math.abs(xn) < 1e-4 || Math.round(xn) == 9 
+          || Math.round(xn) == 99 || Math.round(xn) == 999) {
+        ostr = parseFloat(x.toPrecision(k)).toString()
+      } else {
+        ostr = xn.toPrecision(t)
+        if (!ostr.includes('e')) ostr = parseFloat(ostr)
+      }
+      return ostr
+    }
+
+    // Singular or Plural: Pluralize the given noun properly, if n is not 1. 
+    // Provide the plural version if irregular.
+    // Eg: splur(3, "boy") -> "3 boys", splur(3, "man", "men") -> "3 men"
+    self.splur = function(n, noun, nounp='') {
+      if (nounp=='') nounp = noun+'s'
+      return self.shn(n)+' '+((n == 1)?noun:nounp)
+    }
+    
     // Rate as a string
     self.shr = function(r) {
       if (r == null) r = 0
@@ -263,6 +328,12 @@
       //return shn((100.0 if exprd else 1.0)*r, 4,2) + ("%" if exprd else "")
       return self.shn(r, 4,2)
     }
+    
+    // Shortcuts for common ways to show numbers
+    self.sh1 = function(x)      { return self.shn(  self.chop(x),    4,2) }
+    self.sh1c = function(x, e)  { return self.shnc( self.chop(x), e, 4,2) }
+    self.sh1s = function(x)     { return self.shns( self.chop(x),    4,2) }
+    self.sh1sc = function(x, e) { return self.shnsc(self.chop(x), e, 4,2) }
 
     self.linspace = function linspace( a, b, n) {
       if (typeof n === "undefined") n = Math.max(Math.round(b-a)+1,1)
@@ -384,6 +455,17 @@
       return year+"."+month+"."+day
     }
 
+    self.formatDateTime = function(ut) {
+      var mm = moment.unix(ut).utc()
+      var hour = mm.hour()
+      hour = (hour < 10)?"0"+hour.toString():hour.toString()
+      var minute = mm.minute()
+      minute = (minute < 10)?"0"+minute.toString():minute.toString()
+      var second = mm.second()
+      second = (second < 10)?"0"+second.toString():second.toString()
+      return self.formatDate(ut)+" "+hour+":"+minute+":"+second
+    }
+
     // Take a daystamp like "20170531" and return unixtime in seconds
     // (dreev confirmed this seems to match Beebrain's function)
     self.dayparse = function(s, sep='') {
@@ -434,7 +516,14 @@
       })
     }
 
-    
+    self.toTitleCase = function(str) {
+      return str.replace(
+          /\w\S*/g,
+        function(txt) {
+          return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+        }
+      );
+    }    
   }
 
   return new butil()

@@ -649,7 +649,7 @@
     }
     function sumSet(rd, goal) {
       console.log("sumSet()")
-      var y = goal.y, d = goal.dir, l = goal.lane, w = goal.lnw, dlt = goal.delta
+      var y = goal.yaw, d = goal.dir, l = goal.lane, w = goal.lnw, dlt = goal.delta
       var MOAR = (y>0 && d>0),
           PHAT = (y<0 && d<0),
           WEEN = (y<0 && d>0),
@@ -675,15 +675,151 @@
       // will have both the absolute amounts remaining as well as the percents done 
       // as calculated here.
       var pt = bu.shn(bu.cvx(bu.daysnap(goal.tcur),
-                             [goal.tini,bu.daysnap(goal.tfin)],
-                             [0,100], false), 1,1)
-      var pv = bu.cvx(goal.vcur, [goal.vini,goal.vfin],[0,100],false)
+                             goal.tini,bu.daysnap(goal.tfin),
+                             0,100, false), 1,1)
+      var pv = bu.cvx(goal.vcur, goal.vini,goal.vfin,0,100,false)
       pv = bu.shn((goal.vini<goal.vfin)?pv:100 - pv, 1,1) // meant shn(n,1,2) here?
+
       if (pt==pv) goal.progsum = pt+"% done"
       else goal.progsum = pt+"% done by time -- "+pv+"% by value"
 
-    }
+      var x, ybrStr;
+      if (goal.cntdn < 7) {
+        x = Math.sign(goal.rfin) * (goal.vfin - goal.vcur)
+        ybrStr = "To go to goal: "+bu.shn(x,2,1)+"."
+      } else {
+        x = br.rdf(roads, goal.tcur+goal.siru) - br.rdf(roads, goal.tcur)
+        ybrStr = "Yellow Brick Rd = "+bu.shns(x,2,1)+" / "+bu.UNAM[goal.runits]+"."
+      }
 
+      var ugprefix = false // debug mode: prefix yoog to graph title
+      goal.graphsum = 
+        ((ugprefix)?goal.yoog:"")
+        + bu.shn(goal.vcur,3,1)+" on "+bu.shd(goal.tcur)+" ("
+        + bu.splur(goal.numpts, "datapoint")+" in "
+        + bu.splur(1+Math.floor((goal.tcur-goal.tini)/bu.SID),"day")+") "
+        + "targeting "+bu.shn(goal.vfin,3,1)+" on "+bu.shd(goal.tfin)+" ("
+        + bu.splur(bu.shn(goal.cntdn,1,1), "more day")+"). "+ybrStr
+
+      goal.deltasum = bu.shn(Math.abs(dlt),4,2)
+        + ((dlt<0)?" below":" above")+" the centerline"
+      var s
+      if (w == 0)                    s = ""
+      else if (y>0 && l>=-1 && l<=1) s = " and "+bu.sh1(w-dlt)+" to go till top edge"
+      else if (y>0 && l>=2)          s = " and "+bu.sh1(dlt-w)+" above the top edge"
+      else if (y>0 && l<=-2)         s = " and "+bu.sh1(-w-dlt)+" to go till bottom edge"
+      else if (y<0 && l>=-1 && l<=1) s = " and "+bu.sh1(w-dlt)+" below top edge"
+      else if (y<0 && l<=-2)         s = " and "+bu.sh1(-w-dlt)+" below bottom edge"
+      else if (y<0 && l>1)           s = " and "+bu.sh1(dlt-w)+" above top edge"
+      else                           s = ""
+      goal.deltasum += s
+
+      var c = goal.safebuf // countdown to derailment, in days
+      var cd = bu.splur(c, "day")
+      if (goal.kyoom) {
+        if (MOAR) goal.limsum= bu.sh1sc(br.limd(roads, goal, c),  y)+" in "+cd
+        if (PHAT) goal.limsum= bu.sh1sc(br.limd(roads, goal, c),  y)+" in "+cd
+        if (WEEN) goal.limsum= bu.sh1sc(br.limd(roads, goal, 0),  y)+" today" 
+        if (RASH) goal.limsum= bu.sh1sc(br.limd(roads, goal, 0),  y)+" today" 
+      } else {
+        if (MOAR) goal.limsum= bu.sh1sc(br.limd(roads, goal, c), y)+" in "+cd+" ("
+          +bu.sh1c(br.lim(roads, goal, c), y)+")"
+        if (PHAT) goal.limsum= bu.sh1sc(br.limd(roads, goal, c), y)+" in "+cd+" ("
+          +bu.sh1c(br.lim(roads, goal, c), y)+")"
+        if (WEEN) goal.limsum= bu.sh1sc(br.limd(roads, goal, 0), y)+" today ("
+          +bu.sh1c(br.lim(roads, goal, 0), y)+")"    
+        if (RASH) goal.limsum= bu.sh1sc(br.limd(roads, goal, 0), y)+" today ("
+          +bu.sh1c(br.lim(roads, goal, 0), y)+")"    
+      }
+      if (y*d<0)      goal.safeblurb = "unknown days of safety buffer"
+      else if (c>999) goal.safeblurb = "more than 999 days of safety buffer"
+      else            goal.safeblurb = "~"+cd+" of safety buffer"
+
+      if (goal.loser) {
+        goal.headsum = "Officially off the yellow brick road"
+        goal.lanesum = "officially off the road"
+      } else if (w==0) {
+        goal.headsum = "Coasting on a currently flat yellow brick road"
+        goal.lanesum = "currently on a flat road"
+      } else if (MOAR && l==1) {
+        goal.headsum = "Right on track in the top lane of the yellow brick road"
+        goal.lanesum = "in the top lane: perfect!"
+      } else if (MOAR &&  l==2) {
+        goal.headsum = "Sitting pretty just above the yellow brick road"
+        goal.lanesum = "above the road: awesome!"
+      } else if (MOAR &&  l==3) {
+        goal.headsum = "Well above the yellow brick road with "+goal.safeblurb
+        goal.lanesum = "well above the road: "+goal.safeblurb+"!"
+      } else if (MOAR &&  l>3) {
+        goal.headsum = "Way above the yellow brick road with "+goal.safeblurb
+        goal.lanesum = "way above the road: "+goal.safeblurb+"!"
+      } else if (MOAR &&  l==-1) {
+        goal.headsum = "On track but in the wrong lane of the yellow brick road "
+          +"and in danger of derailing tomorrow"  
+        goal.lanesum = "in the wrong lane: could derail tomorrow!"
+      } else if (MOAR &&  l<=-2) {
+        goal.headsum = "Below the yellow brick road and will derail if still here "
+          +"at the end of the day"
+        goal.lanesum = "below the road: will derail at end of day!"
+      } else if (PHAT &&  l==-1) {
+        goal.headsum = "Right on track in the right lane of the yellow brick road"
+        goal.lanesum = "in the right lane: perfect!"
+      } else if (PHAT &&  l==-2) {
+        goal.headsum = "Sitting pretty just below the yellow brick road"
+        goal.lanesum = "below the road: awesome!"
+      } else if (PHAT &&  l==-3) {
+        goal.headsum = "Well below the yellow brick road with "+goal.safeblurb
+        goal.lanesum = "well below the road: "+goal.safeblurb+"!"
+      } else if (PHAT &&  l<-3) {
+        goal.headsum = "Way below the yellow brick road with "+goal.safeblurb
+        goal.lanesum = "way below the road: "+goal.safeblurb+"!"
+      } else if (PHAT &&  l==1) {
+        goal.headsum = "On track but in the wrong lane of the yellow brick road "
+          +"and in danger of derailing tomorrow"
+        goal.lanesum = "in the wrong lane: could derail tomorrow!"
+      } else if (PHAT &&  l>=2) {
+        goal.headsum = "Above the yellow brick road and will derail if still here "
+          +"at the end of the day"
+        goal.lanesum = "above the road: will derail at end of day!"
+      } else if (l==0) {
+        goal.headsum = "Precisely on the centerline of the yellow brick road"
+        goal.lanesum = "precisely on the centerline: beautiful!"
+      } else if (l==1) {
+        goal.headsum = "In the top lane of the yellow brick road"
+        goal.lanesum = "in the top lane"
+      } else if (l==-1) {
+        goal.headsum = "In the bottom lane of the yellow brick road"
+        goal.lanesum = "in the bottom lane"
+      } else if (l>1) {
+        goal.headsum = "Above the yellow brick road"
+        goal.lanesum = "above the road"
+      } else if (l<-1) {
+        goal.headsum = "Below the yellow brick road"
+        goal.lanesum = "below the road"
+      }
+      goal.titlesum
+        = bu.toTitleCase(CNAME[br.dotcolor(roads, goal, goal.tcur, goal.vcur)]) + ". "
+        + "bmndr.com/"+goal.yoog+" is " + goal.lanesum
+        + ((y*d>0)?" (safe to stay flat for ~"+cd+")":"")
+
+      goal.statsum =
+        " progress: "+bu.shd(goal.tini)+"  "
+        +((aggdata == null)?"?":bu.sh1(goal.vini))+"\\n"
+        +"           "+bu.shd(goal.tcur)+"  "+bu.sh1(goal.vcur)
+        +"   ["+goal.progsum+"]\\n"
+        +"           "+bu.shd(goal.tfin)+"  "+bu.sh1(goal.vfin)+"\\n"
+        +" rate:     "+goal.ratesum+"\\n"
+        +" lane:     " +((Math.abs(l) == 666)?"n/a":l)
+        +" ("+goal.lanesum+")\\n"
+        +" safebuf:  "+goal.safebuf+"\\n"
+        +" delta:    "+goal.deltasum+"\\n"
+        +" "
+      if   (y==0)     goal.statsum += "limit:    "
+      else if (y<0)   goal.statsum += "hard cap: "
+      else            goal.statsum += "bare min: "
+      goal.statsum += goal.limsum+"\\n"
+    }
+    
     function getNumParam(p, n, dflt) {
       return (p.hasOwnProperty(n))?Number(p[n]):dflt
     }
@@ -747,6 +883,19 @@
       
       goal.fullroad = goal.road.slice()
 
+      if (goal.error == "") {
+        goal.pinkzone = [[goal.asof,br.rdf(roads, goal.asof),0]]
+        goal.road.forEach(
+          function(r) {
+            if (r[0] > goal.asof && r[0] < goal.asof+bu.AKH) {
+              goal.pinkzone.push([r[0], r[1], null]);
+            }
+          }
+        )
+        goal.pinkzone.push([goal.asof+bu.AKH, br.rdf(roads, goal.asof+bu.AKH),null])
+        goal.pinkzone = br.fillroadall(goal.pinkzone, goal)
+      }
+      
       // TODO: Implement opts.maxDataDays
       // Now that the flatlined datapoint is in place, we can
       // extract limited data
