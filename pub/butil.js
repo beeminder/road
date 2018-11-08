@@ -159,7 +159,7 @@
     self.quantile = function(l, q, qt=1, issorted=false) {
       var y
       if (issorted) y = l
-      else y = l.slice().sort()
+      else y = l.slice().sort((a,b)=>(a-b))
       if (qt < 1 || qt > 9) return null // error
       
       var abcd = [         // Parameters for the Hyndman and Fan algorithm
@@ -183,6 +183,7 @@
       if (j < 0) return y[0]
       else if (j >= n) return y[n-1] // oct.8,2010 y[n]?! off by 1 error!!
       j = Math.floor(j)
+      console.log(y.slice(1450,1550))
       return (g==0)?y[j]:(y[j] + (y[j+1] - y[j])* (c + d*g))
     }
 
@@ -404,7 +405,7 @@
 
     self.median = function(a) {
       var m = 0, l = a.length
-      a.sort()
+      a.sort((a,b)=>(a-b))
       if (l % 2 === 0) { m = (a[l / 2 - 1] + a[l / 2]) / 2 }
       else { m = a[(l - 1) / 2]}
       return m
