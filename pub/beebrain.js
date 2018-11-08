@@ -1,7 +1,7 @@
 /*!
  * beebrain
  *
- * Dependencies: moment, Polyfit
+ * Dependencies: moment, butil, broad
  * 
  * Javascript implementation of beebrain, provided as a UMD
  * module. Provides a "beebrain" function, which can be used to
@@ -176,7 +176,7 @@
    functions and member variables. The argument is expected to include
    the contents of the BB file as a javascript object.*/
   beebrain = function( bbin ) {
-    console.debug("beebrain constructor ("+gid+"): "); console.log(bbin);
+    //console.debug("beebrain constructor ("+gid+"): ");
     var self = this,
         curid = gid
     gid++
@@ -225,7 +225,6 @@
     
     /** Helper function for legacyOut */
     function rowfix(row) {
-      console.log()
       if (!Array.isArray(row)) return row
       if (row.length <= 3) return row
       return row.slice(0,3)
@@ -370,7 +369,7 @@
     // Function to generate samples for the Butterworth filter
     function griddle(a, b, maxcnt = 6000) {
       return bu.linspace(a, b, Math.floor(bu.clip((b-a)/(bu.SID+1), 
-                                            Math.min(600, plotbox.width),
+                                            Math.min(600, /*plotbox.width*/ 640),
                                             maxcnt)));
     }
 
@@ -470,11 +469,16 @@
         }
       }
       alldata = allpts;
-      aggdata = newpts.filter(function(e){return e[0]<=goal.asof;});
       fuda = newpts.filter(function(e){return e[0]>goal.asof;});
-
+      aggdata = newpts.filter(function(e){return e[0]<=goal.asof;});
       if (!goal.plotall) goal.numpts = aggdata.length;
-
+      var gfd = br.gapFill(aggdata)
+      var gfdv = gfd.map(e => (e[1]))
+      if (aggdata.length > 0) goal.mean = bu.mean(gfdv)
+      if (aggdata.length > 1) {
+        goal.meandelt = bu.mean(bu.partition(gfdv,2,1).map(e => (e[1] - e[0])))
+      }
+      
       goal.tdat = aggdata[aggdata.length-1][0] // tstamp of last ent. datapoint pre-flatline
     }
 
@@ -602,6 +606,12 @@
 
       // rtf function is implemented above
 
+      goal.stdflux 
+        = br.noisyWidth(roads, aggdata
+                     .filter(function(d){return d[0]>=goal.tini;}));
+      goal.nw = (goal.noisy && goal.abslnw == null)
+        ?br.autowiden(roads, goal, aggdata, goal.stdflux):0;
+
       flatline();
 
       if (goal.movingav) {
@@ -619,11 +629,6 @@
       goal.tcur = aggdata[aggdata.length-1][0];
       goal.vcur = aggdata[aggdata.length-1][1];
 
-      goal.stdflux 
-        = br.noisyWidth(roads, aggdata
-                     .filter(function(d){return d[0]>=goal.tini;}));
-      goal.nw = (goal.noisy && goal.abslnw == null)
-        ?br.autowiden(roads, goal, aggdata, goal.stdflux):0;
       goal.lnw = Math.max(goal.nw,br.lnfraw( iRoad, goal, goal.tcur ));
 
       goal.safebuf = br.dtd(roads, goal, goal.tcur, goal.vcur);
@@ -644,11 +649,13 @@
       goal.cntdn = Math.ceil((goal.tfin-goal.tcur)/bu.SID)
       goal.lane = bu.clip(br.lanage(roads, goal, goal.tcur,goal.vcur), -32768, 32767)
       goal.color = CNAME[br.dotcolor(roads, goal, goal.tcur,goal.vcur)]
-
+      goal.loser = br.isLoser(roads, goal, aggdata, goal.tcur, goal.vcur)
+      goal.sadbrink = (goal.tcur-bu.SID>goal.tini)
+        &&(br.dotcolor(roads,goal,goal.tcur-bu.SID,goal.dtf(goal.tcur-bu.SID))==bu.Cols.REDDOT)
+        
       setDefaultRange();
     }
     function sumSet(rd, goal) {
-      console.log("sumSet()")
       var y = goal.yaw, d = goal.dir, l = goal.lane, w = goal.lnw, dlt = goal.delta
       var MOAR = (y>0 && d>0),
           PHAT = (y<0 && d<0),
@@ -699,7 +706,7 @@
         + bu.splur(goal.numpts, "datapoint")+" in "
         + bu.splur(1+Math.floor((goal.tcur-goal.tini)/bu.SID),"day")+") "
         + "targeting "+bu.shn(goal.vfin,3,1)+" on "+bu.shd(goal.tfin)+" ("
-        + bu.splur(bu.shn(goal.cntdn,1,1), "more day")+"). "+ybrStr
+        + bu.splur(parseFloat(bu.shn(goal.cntdn,1,1)), "more day")+"). "+ybrStr
 
       goal.deltasum = bu.shn(Math.abs(dlt),4,2)
         + ((dlt<0)?" below":" above")+" the centerline"
@@ -834,7 +841,7 @@
 
     /** Process goal details */
     function genStats( p, d, tm=null ) {
-      console.debug("genStats: id="+curid+", "+p.yoog)
+      //console.debug("genStats: id="+curid+", "+p.yoog)
 
       // start the clock immediately
       if (tm == null) tm = moment.utc().unix()
@@ -882,6 +889,7 @@
       sumSet(roads, goal)
       
       goal.fullroad = goal.road.slice()
+      goal.fullroad.unshift( [goal.tini, goal.vini, 0, 0] )
 
       if (goal.error == "") {
         goal.pinkzone = [[goal.asof,br.rdf(roads, goal.asof),0]]
