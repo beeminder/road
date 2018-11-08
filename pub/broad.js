@@ -53,7 +53,9 @@
       triangle : function(x) { return bu.sum(x)*(bu.sum(x)+1)/2 },
       square   : function(x) { return Math.pow(bu.sum(x),2) },
       clocky   : function(x) { return bu.clocky(x) /*sum of pair diff.*/ },
-      count    : function(x) { return x.length /* number of datapoints*/ }
+      count    : function(x) { return x.length /* number of datapoints*/ },
+      kyshoc   : function(x) { return Math.min(2600, bu.sum(x)) }, /* ad hoc, guineapigging*/
+      skatesum : function(x) { return Math.min(6666, bu.sum(x)) } /* only count the daily min. TODO: Cannot use rfin here. No idea what this is for*/
     }
 
     /** Enum object to identify field types for road segments. */
@@ -282,7 +284,8 @@
      column, n, giving the position (0, 1, or 2) of the original null. */
     self.fillroad = function(road, goal) {
       road.forEach( e => (e[2] = (null==e[2])?e[2]:e[2]/goal.siru))
-      road.unshift( [goal.tini, goal.vini, 0, 0] )
+      road[0] = nextrow([goal.tini, goal.vini, 0, 0], road[0])
+      //road.unshift( [goal.tini, goal.vini, 0, 0] )
       for (var i = 1; i < road.length; i++)
         road[i] = nextrow(road[i-1], road[i])
       road.forEach( e => (e[2] = (null==e[2])?e[2]:e[2]*goal.siru))
@@ -493,10 +496,10 @@
     self.limd = function(rd, goal, n) {
       var x = self.lim(rd, goal, n)-goal.vcur
       if (!goal.integery) return x
-      if (goal.yaw>0 && goal.dir>0 && x>0) return bu.ceil(x)  // MOAR
-      if (goal.yaw<0 && goal.dir<0 && x<0) return bu.floor(x) // PHAT
-      if (goal.yaw<0 && goal.dir>0 && x>0) return bu.floor(x) // WEEN
-      if (goal.yaw>0 && goal.dir<0 && x<0) return bu.ceil(x)  // RASH
+      if (goal.yaw>0 && goal.dir>0 && x>0) return Math.ceil(x)  // MOAR
+      if (goal.yaw<0 && goal.dir<0 && x<0) return Math.floor(x) // PHAT
+      if (goal.yaw<0 && goal.dir>0 && x>0) return Math.floor(x) // WEEN
+      if (goal.yaw>0 && goal.dir<0 && x<0) return Math.ceil(x)  // RASH
       return x
     }
   }

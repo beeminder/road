@@ -188,6 +188,12 @@
 
     // Return a list with the cumulative sum of the elements in l, left
     // to right
+    self.sum = function(l) {
+      return l.reduce((a,b)=>(a+b), 0)
+    }
+    
+    // Return a list with the cumulative sum of the elements in l, left
+    // to right
     self.accumulate = function(l) {
       var ne = l.length
       if (ne == 0) return l
@@ -524,6 +530,26 @@
         }
       );
     }    
+
+    self.arrayEquals = function(a1, a2) {
+      // if the other array is a falsy value, return
+      if (!(a1 instanceof Array) || !(a2 instanceof Array)) return false
+
+      // compare lengths - can save a lot of time 
+      if (a1.length != a2.length) return false;
+
+      for (var i = 0, l=a1.length; i < l; i++) {
+          // Check if we have nested arrays
+          if (a1[i] instanceof Array && a2[i] instanceof Array) {
+              // recurse into the nested arrays
+            if (!self.arrayEquals(a1[i], a2[i])) return false
+          } else if (a1[i] != a2[i]) { 
+              // Warning - two different object instances will never be equal: {x:20} != {x:20}
+              return false;   
+          }           
+      }       
+      return true;
+    }
   }
 
   return new butil()
