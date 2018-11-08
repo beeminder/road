@@ -6,6 +6,8 @@
 </head>
 <body>
 
+  <div id="results"></div>
+  
 <script src = "polyfit.js"></script>
 <script src = "butil.js"></script>
 <script src = "broad.js"></script>
@@ -78,6 +80,7 @@
   "zachzaslow+sleep",
   "zarbockc+eating"
   ];
+  //files = ["afcuttin+gmailzero"]
   
   async function testGoal( url, outurl ) {
     if (url == "") return;
@@ -99,11 +102,29 @@
   }
 
   async function testAll() {
-    var i;
+    const rDiv = document.getElementById('results'); 
+    while (rDiv.firstChild) {
+      rDiv.removeChild(rDiv.firstChild);
+    }
+
+    var i, innerDiv;
     for (i = 0; i < files.length; i++) {
       console.log("Processing "+files[i])
       res = await testGoal("testbb/"+files[i]+".bb", "testbb/"+files[i]+".json");
-      console.debug(res.result)
+
+      innerDiv = document.createElement('div');
+      innerDiv.className = 'resulttitle';
+      if (res.valid)
+        innerDiv.style.background = '#aaffaa';
+      else
+        innerDiv.style.background = '#ffaaaa';
+      rDiv.appendChild(innerDiv);
+      innerDiv.innerHTML = "Goal "+files[i];
+
+      innerDiv = document.createElement('div');
+      innerDiv.className = 'result';
+      rDiv.appendChild(innerDiv);
+      innerDiv.innerHTML = res.result
     }
   }
   testAll()

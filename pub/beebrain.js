@@ -652,6 +652,8 @@
       goal.loser = br.isLoser(roads, goal, aggdata, goal.tcur, goal.vcur)
       goal.sadbrink = (goal.tcur-bu.SID>goal.tini)
         &&(br.dotcolor(roads,goal,goal.tcur-bu.SID,goal.dtf(goal.tcur-bu.SID))==bu.Cols.REDDOT)
+      if (goal.safebuf <= 0) goal.tluz = goal.tcur
+      if (goal.tfin < goal.tluz)  goal.tluz = bu.BDUSK
         
       setDefaultRange();
     }
