@@ -44,17 +44,18 @@
     self.compareOutputs = function(stats, bbr) {
       var valid = true, str = ""
       for (var prop in bbr) {
+        if (prop == "proctm" || prop == "thumburl" || prop == "graphurl") continue
         if (!stats.hasOwnProperty(prop)) {
-          str += "Prp "+prop+" is missing from the output\n"
+          str += "Prp "+prop+" is missing from the output<br/>\n"
           valid = false
         } else {
           if (Array.isArray(stats[prop])) {
             if (!(bu.arrayEquals(stats[prop],bbr[prop]))) {
-              str += "Arr "+prop+" differs: "+stats[prop]+ " !== "+bbr[prop]+"\n"
+              str += "Arr "+prop+" differs: "+stats[prop]+ " !== "+bbr[prop]+"<br/>\n"
               valid = false
             }
           } else if (!(stats[prop] === bbr[prop])) {
-            str += "Prp "+prop+" differs: "+stats[prop]+ " !== "+bbr[prop]+"\n"
+            str += "Prp "+prop+" differs: "+stats[prop]+ " !== "+bbr[prop]+"<br/>\n"
             valid = false
           }
         }

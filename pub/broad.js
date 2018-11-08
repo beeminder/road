@@ -404,6 +404,7 @@
         w = p[i][1][1];
         ad.push(Math.abs(w-v-self.rdf(rd,u)+self.rdf(rd,t))/(u-t)*bu.SID);
       }
+      console.log(ad)
       return bu.chop((ad.length==1)?ad[0]:bu.quantile(ad, .90));
     }
 
