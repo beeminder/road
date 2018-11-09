@@ -183,7 +183,6 @@
       if (j < 0) return y[0]
       else if (j >= n) return y[n-1] // oct.8,2010 y[n]?! off by 1 error!!
       j = Math.floor(j)
-      console.log(y.slice(1450,1550))
       return (g==0)?y[j]:(y[j] + (y[j+1] - y[j])* (c + d*g))
     }
 
@@ -220,7 +219,7 @@
       var fp = x % 1, ip = x - fp
       if (fp < 0) {fp += 1; ip -= 1;}
       if (fp > 0.5) fp = 1 - self.chop(1-fp)
-      return Math.round(ip) + self.chop(fp, delta)
+      return Math.floor(ip) + self.chop(fp, delta)
     }
 
     // clip(x, a,b) = min(b,max(a,x))
@@ -237,24 +236,25 @@
      is the number of digits in integer part of x). */
     self.shn = function(x, t=10, d=5) {
       if (isNaN(x)) return x.toString()
-      var i = Math.round(Math.abs(x)), k, fmt, ostr
+      var i = Math.floor(Math.abs(x)), k, fmt, ostr
       i = (i==0)?0:i.toString().length // # of digits left of the decimal
       if (Math.abs(x) > Math.pow(10,i)-.5) i += 1
       if (i == 0 && x != 0)
-        k = (Math.floor(d - Math.log(Math.abs(x), 10))) // get desired 
+        k = (Math.floor(d - Math.log10(Math.abs(x)))) // get desired 
       else k = d                                          // dec. digits
       // Round input to have the desired number of decimal digits
-      var v = x * Math.pow(10,k)
+      var v = x * Math.pow(10,k), vm = v % 10
+      if (vm < 0) vm += 10
       // Hack to prevent incorrect rounding with the decimal digits:
-      if (v % 10 >= 4.5 && v % 10 < 4.9999999) v = Math.floor(v)
+      if (vm >= 4.5 && vm < 4.9999999) v = Math.floor(v)
       var xn = Math.round(v) / Math.pow(10,k) + 1e-10
       // If total significant digits < i, do something about it
       if (t < i && Math.abs(Math.pow(10,(i-1)) - xn) < .5) 
         xn = Math.pow(10,(i-1))
       t = self.clip(t, i, i+d)
       // If the magnitude <= 1e-4, prevent scientific notation
-      if (Math.abs(xn) < 1e-4 || Math.round(xn) == 9 
-          || Math.round(xn) == 99 || Math.round(xn) == 999) {
+      if (Math.abs(xn) < 1e-4 || Math.floor(xn) == 9 
+          || Math.floor(xn) == 99 || Math.floor(xn) == 999) {
         ostr = parseFloat(x.toPrecision(k)).toString()
       } else {
         ostr = xn.toPrecision(t)
@@ -289,16 +289,17 @@
     // Eg, shnc(.0000003, +1, 2) -> .01
     self.shnc = function(x, errdir, t=10, d=5) {
       if (isNaN(x)) return x.toString()
-      var i = Math.round(Math.abs(x)), k, fmt, ostr
+      var i = Math.floor(Math.abs(x)), k, fmt, ostr
       i = (i==0)?0:i.toString().length // # of digits left of the decimal
       if (Math.abs(x) > Math.pow(10,i)-.5) i += 1
       if (i == 0 && x != 0)
-        k = (Math.floor(d - Math.log(Math.abs(x), 10))) // get desired 
+        k = (Math.floor(d - Math.log10(Math.abs(x)))) // get desired 
       else k = d                                          // dec. digits
       // Round input to have the desired number of decimal digits
-      var v = x * Math.pow(10,k)
+      var v = x * Math.pow(10,k), vm = v % 10
+      if (vm < 0) vm += 10
       // Hack to prevent incorrect rounding with the decimal digits:
-      if (v % 10 >= 4.5 && v % 10 < 4.9999999) v = Math.floor(v)
+      if (vm >= 4.5 && vm < 4.9999999) v = Math.floor(v)
       var xn = Math.round(v) / Math.pow(10,k) + 1e-10
       //Conservaround
       if ((errdir < 0 && xn > x) || ((errdir > 0) && (xn < x))) { 
@@ -310,8 +311,8 @@
         xn = Math.pow(10,(i-1))
       t = self.clip(t, i, i+d)
       // If the magnitude <= 1e-4, prevent scientific notation
-      if (Math.abs(xn) < 1e-4 || Math.round(xn) == 9 
-          || Math.round(xn) == 99 || Math.round(xn) == 999) {
+      if (Math.abs(xn) < 1e-4 || Math.floor(xn) == 9 
+          || Math.floor(xn) == 99 || Math.floor(xn) == 999) {
         ostr = parseFloat(x.toPrecision(k)).toString()
       } else {
         ostr = xn.toPrecision(t)
@@ -551,6 +552,10 @@
       }       
       return true;
     }
+    self.isNumeric = function(n) {
+      return !isNaN(parseFloat(n)) && isFinite(n);
+    }
+
   }
 
   return new butil()
