@@ -314,8 +314,8 @@
       // then dayparse works like dayfloor and we lose fidelity.
       var numpts = d.length
       return d
-        .sort(function(a,b){return (a[0]!== b[0])?(a[0]-b[0]):(a[3]-b[3]);})
-        .map(function(r,i) {return [bu.dayparse(r[0]),r[1],r[2],i,r[1]];})
+        .map(function(r,i) {return [bu.dayparse(r[0]),r[1],r[2],i,r[1]];})   // Store indices
+        .sort(function(a,b){return (a[0]!== b[0])?(a[0]-b[0]):(a[3]-b[3]);}) 
     }
 
     /** Convert unixtimes back to daystamps */
@@ -380,7 +380,7 @@
       // [t, v, comment, original index, v(original)]
       //
       if (goal.odom) {
-        oresets = aggdata.filter(function(e){ return (e[1]==0);});
+        oresets = aggdata.filter(function(e){ return (e[1]==0);}).map(e=>(e[0]));
         br.odomify(aggdata);
       }
 
@@ -474,11 +474,11 @@
       if (!goal.plotall) goal.numpts = aggdata.length;
       var gfd = br.gapFill(aggdata)
       var gfdv = gfd.map(e => (e[1]))
+      console.log(aggdata)
       if (aggdata.length > 0) goal.mean = bu.mean(gfdv)
       if (aggdata.length > 1) {
         goal.meandelt = bu.mean(bu.partition(gfdv,2,1).map(e => (e[1] - e[0])))
       }
-      
       goal.tdat = aggdata[aggdata.length-1][0] // tstamp of last ent. datapoint pre-flatline
     }
 
@@ -539,7 +539,10 @@
       finalsegment.end[0] = bu.daysnap(finalsegment.end[0]+100*bu.DIY*bu.SID);
       roads.push(finalsegment);
 
-      br.fixRoadArray( roads );
+      // TODO: Calling this results in small numerical errors. This
+      // should not be necessary after constructing the road with the
+      // function above.
+      // br.fixRoadArray( roads, br.RP.VALUE, true );
 
       iRoad = br.copyRoad( roads );
     }
@@ -597,7 +600,7 @@
       goal.dtf = br.stepify(aggdata)
 
       goal.road = br.fillroad(goal.road, goal)
-
+      
       // tfin, vfin, rfin are set in procRoad
       
       // TODO: Implement road dial error in beebrain
@@ -611,7 +614,7 @@
                      .filter(function(d){return d[0]>=goal.tini;}));
       goal.nw = (goal.noisy && goal.abslnw == null)
         ?br.autowiden(roads, goal, aggdata, goal.stdflux):0;
-
+      
       flatline();
 
       if (goal.movingav) {
@@ -629,7 +632,7 @@
       goal.tcur = aggdata[aggdata.length-1][0];
       goal.vcur = aggdata[aggdata.length-1][1];
 
-      goal.lnw = Math.max(goal.nw,br.lnfraw( iRoad, goal, goal.tcur ));
+      goal.lnw = Math.max(goal.nw,br.lnf( iRoad, goal, goal.tcur ));
 
       goal.safebuf = br.dtd(roads, goal, goal.tcur, goal.vcur);
       goal.tluz = goal.tcur+goal.safebuf*bu.SID;

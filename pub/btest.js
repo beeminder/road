@@ -43,6 +43,10 @@
     
     self.compareOutputs = function(stats, bbr) {
       var valid = true, str = ""
+      if (stats['error'] != "") {
+        str += "Processing error: "+stats['error']+"<br/>\n"
+        return {valid: false, result: str}
+      }
       for (var prop in bbr) {
         if (prop == "proctm" || prop == "thumburl" || prop == "graphurl") continue
         if (!stats.hasOwnProperty(prop)) {
@@ -56,7 +60,12 @@
             }
           } else if (!(stats[prop] === bbr[prop])) {
             str += "Prp "+prop+" differs: "+stats[prop]+ " !== "+bbr[prop]+"<br/>\n"
-            valid = false
+            if (bu.isNumeric(stats[prop]) && bu.isNumeric(bbr[prop])) {
+              if (Math.abs(bbr[prop]-stats[prop]) > 1e-8)
+                valid = false
+            } else
+              valid = false
+              
           }
         }
       }
