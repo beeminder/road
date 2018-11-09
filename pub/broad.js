@@ -130,7 +130,7 @@
       // Fix the special first road segment, whose slope will always be 0.
       rd[0].sta[0] = rd[0].end[0] - 100*bu.DIY*bu.SID;
       rd[0].sta[1] = rd[0].end[1];
-      
+
       // Iterate through the remaining segments until the last one
       for (var i = 1; i < nr-1; i++) {
         //console.debug("before("+i+"):[("+rd[i].sta[0]+","+rd[i].sta[1]+"),("+rd[i].end[0]+","+rd[i].end[1]+"),"+rd[i].slope+"]");
@@ -342,9 +342,9 @@
       var curadd = 0;
       var prev = data[0][1];
       for (var i=1; i<ln; i++) {
-        if (data[i][1] == 0) curadd += prev;
+        if (data[i][1] == 0) {curadd += prev}
         prev = data[i][1];
-        data[i][1] += curadd;
+        data[i][1] += curadd
       }
     }
 
@@ -404,7 +404,6 @@
         w = p[i][1][1];
         ad.push(Math.abs(w-v-self.rdf(rd,u)+self.rdf(rd,t))/(u-t)*bu.SID);
       }
-      console.log(ad)
       return bu.chop((ad.length==1)?ad[0]:bu.quantile(ad, .90));
     }
 
@@ -448,6 +447,7 @@
           j++; t += bu.SID;
         }
       }
+      if (out.length == 0) out.push(d[0])
       return out;
     }
 
