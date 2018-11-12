@@ -16,26 +16,26 @@
 <script>
 
   var files = [
-  <!-- "afcuttin+gmailzero", -->
-  <!-- "aimeeg+weight", -->
-  <!-- "a+job", -->
-  <!-- "aj+travel", -->
-  <!-- "alicegong+moneytimesleep", -->
-  <!-- "ardeibel+math", -->
-  <!-- "ardeibel+reading", -->
-  <!-- "avogadro+programiranje", -->
-  <!-- "b+coffee", -->
-  <!-- "b+fdl", -->
-  <!-- "bluetulip+work-oops-tagtime", -->
-  <!-- "b+meta", -->
-  <!-- "b+weight", -->
-  <!-- "byorgey+bites", -->
-  <!-- "caillu+duolingo-spanish", -->
-  <!-- "cambienta+limit_outbursts", -->
-  <!-- "chris_s+audible_listening", -->
-  <!-- "dan+ankicards", -->
-  <!-- "denizsurmeli+coding", -->
-  <!-- "divide+housework", -->
+  "afcuttin+gmailzero",
+  "aimeeg+weight",
+  "a+job",
+  "aj+travel",
+  "alicegong+moneytimesleep",
+  "ardeibel+math",
+  "ardeibel+reading",
+  "avogadro+programiranje",
+  "b+coffee",
+  "b+fdl", // Differs due to a Math.round difference between python and Javascript
+  "bluetulip+work-oops-tagtime",
+  "b+meta",
+  "b+weight",
+  "byorgey+bites",
+  "caillu+duolingo-spanish",
+  "cambienta+limit_outbursts",
+  "chris_s+audible_listening",
+  "dan+ankicards",
+  "denizsurmeli+coding",
+  "divide+housework",
   "dmiheler+rbook",
   "drtall+gmailzero",
   "elwyn+waist",
@@ -49,7 +49,6 @@
   "justyn+gmailzero",
   "kdmprincess+net_calories",
   "ku+weight",
-  "kyshoc+nutrition",
   "lharringtonmissin+weight",
   "mbork+journal",
   "mbork+ledger",
@@ -74,7 +73,7 @@
   "vinciamorim+bodygym",
   "volya+french",
   "whackedspinach+inbox-zero",
-  "xenocid+gmailzero",
+  "xenocid+gmailzero", // Fails because of the last road segment with 0 slope, no date
   "yatsynych+guitar",
   "yebyenw+20-minutes",
   "zachzaslow+sleep",
@@ -107,19 +106,28 @@
       rDiv.removeChild(rDiv.firstChild);
     }
 
-    var i, innerDiv;
+    var i, innerDiv, info;
     for (i = 0; i < files.length; i++) {
       console.log("Processing "+files[i])
       res = await testGoal("testbb/"+files[i]+".bb", "testbb/"+files[i]+".json");
 
       innerDiv = document.createElement('div');
       innerDiv.className = 'resulttitle';
-      if (res.valid)
-        innerDiv.style.background = '#aaffaa';
-      else
+      innerDiv.style.margin = '4px';
+      if (res.valid) {
+        if (res.numeric) {
+          info = "(numeric errors)"
+          innerDiv.style.background = '#aaaaff';
+        } else {
+          info = ""
+          innerDiv.style.background = '#aaffaa';
+        }
+      } else {
+        info = "(critical or string errors)"
         innerDiv.style.background = '#ffaaaa';
+      }
       rDiv.appendChild(innerDiv);
-      innerDiv.innerHTML = "Goal "+files[i];
+      innerDiv.innerHTML = "Goal "+files[i]+" "+info;
 
       innerDiv = document.createElement('div');
       innerDiv.className = 'result';
