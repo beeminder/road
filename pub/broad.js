@@ -311,23 +311,26 @@
       return (rd[i].slope);
     }
 
+    // TODO: It seems like I need to fix the lnf implementation based on the new beebrain
     self.lnfraw = function( rd, goal, x ) {
-      var t = rd.map(elt => elt.end[0]);
-      var r = rd.map(elt => Math.abs(elt.slope)*bu.SID );
+      var r0 = bu.deldups(rd, e=>e.end[0])
+      var t = r0.map(elt => elt.end[0]);
+      var r = r0.map(elt => Math.abs(elt.slope)*bu.SID );
       // pretend flat spots have the previous or next non-flat rate
       var rb = r.slice(), i;
       for (i = 1; i < rb.length; i++) 
-        if (Math.abs(rb[i]) < 1e-9 || !isFinite(rb[i])) rb[i] = rb[i-1];
+        if (Math.abs(rb[i]) < 1e-7 || !isFinite(rb[i])) rb[i] = rb[i-1];
       var rr = r.reverse();
       var rf = rr.slice();
       for (i = 1; i < rf.length; i++) 
-        if (Math.abs(rf[i]) < 1e-9 || !isFinite(rf[i])) rf[i] = rf[i-1];
+        if (Math.abs(rf[i]) < 1e-7 || !isFinite(rf[i])) rf[i] = rf[i-1];
       rf = rf.reverse();
-      
       r = bu.zip([rb,rf]).map(e => bu.argmax(Math.abs, [e[0],e[1]]) );
+      t.pop()
+      r.splice(0,1)
+      var rtf0 = self.stepify(bu.zip([t,r]))
       var valdiff = self.rdf( rd, x ) - self.rdf( rd, x-bu.SID );
-      i = self.findRoadSegment(rd, x);
-      return Math.max(Math.abs(valdiff), r[i]);
+      return Math.max(Math.abs(valdiff), rtf0(x));
     }
 
     // TODO: Test

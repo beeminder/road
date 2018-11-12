@@ -474,7 +474,6 @@
       if (!goal.plotall) goal.numpts = aggdata.length;
       var gfd = br.gapFill(aggdata)
       var gfdv = gfd.map(e => (e[1]))
-      console.log(aggdata)
       if (aggdata.length > 0) goal.mean = bu.mean(gfdv)
       if (aggdata.length > 1) {
         goal.meandelt = bu.mean(bu.partition(gfdv,2,1).map(e => (e[1] - e[0])))
@@ -532,6 +531,7 @@
       goal.tfin = goalseg.end[0];
       goal.vfin = goalseg.end[1];
       goal.rfin = goalseg.slope;
+      
       var finalsegment = {
         sta: goalseg.end.slice(),
         end: goalseg.end.slice(),
@@ -555,6 +555,7 @@
       var numpts = aggdata.length;
       var tlast = aggdata[numpts-1][0];
       var vlast = aggdata[numpts-1][1];
+
       if (tlast > goal.tfin) return;
       var x = tlast; // x = the time we're flatlining to
       if (goal.yaw * goal.dir < 0) 
@@ -643,6 +644,10 @@
         .map(i => [bu.dayify(goal.tcur+i*bu.SID),
                    br.limd(roads, goal, i),
                    br.lim(roads, goal, i)])
+      var tmpdueby = bu.zip(goal.dueby)
+      goal.dueby = bu.zip([tmpdueby[0], bu.monotonize(tmpdueby[1],goal.dir),
+                      bu.monotonize(tmpdueby[2],goal.dir)])
+      
       // TODO: Monotonize dueby
 
       goal.safebump = br.lim(roads, goal, goal.safebuf)
@@ -876,7 +881,7 @@
       
       // TODO: vetParams()
       procData()
-
+      
       var vtmp
       if (p.hasOwnProperty('tini'))  goal.tini = Number(p.tini)
       else goal.tini = aggdata[0][0]
