@@ -202,6 +202,20 @@
       return nl
     }
 
+    // Takes a list like [1,2,1] and make it like [1,2,2] (monotone increasing)
+    //Or if dir==-1 then min with the previous value to make it monotone decreasing
+    self.monotonize = function(l, dir=1) {
+      var lo = l.slice(), i
+      if (dir == 1) {
+        for (i = 1; i < lo.length; i++)
+          lo[i] = Math.max(lo[i-1],lo[i])
+      } else {
+        for (i = 1; i < lo.length; i++)
+          lo[i] = Math.min(lo[i-1],lo[i])
+      }
+      return lo
+    }
+
     // zip([[1,2], [3,4]]) --> [[1,3], [2,4]]
     self.zip = function (av) {
       return av[0].map(function(_,i){
@@ -374,9 +388,10 @@
       }
     }
   
-    self.deldups = function(a) {
+    self.deldups = function(a, idfun = (x=>x)) {
       var seen = {}
-      return a.filter(it=>(seen.hasOwnProperty(it)?false:(seen[it] = true)))
+      return a.filter(it=>{var marker = JSON.stringify(idfun(it));
+                           return seen.hasOwnProperty(marker)?false:(seen[marker] = true)})
     }
 
     self.nonzero = function(a) {
