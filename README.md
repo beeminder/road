@@ -1,3 +1,13 @@
+## Dev environment notes
+
+Uluc recommends Indium for Emacs.
+
+Uluc runs chromium with the following for local debugging:
+
+`chromium-browser --allow-file-access-from-files --disable-web-security --user-data-dir=~/user-data --remote-debugging-port=9222&`
+
+Allows scripts to open local files etc.
+
 
 ## CHANGELOG
 
