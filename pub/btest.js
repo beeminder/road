@@ -50,20 +50,26 @@
       for (var prop in bbr) {
         if (prop == "proctm" || prop == "thumburl" || prop == "graphurl") continue
         if (!stats.hasOwnProperty(prop)) {
-          str += "Prp "+prop+" is missing from the output<br/>\n"
+          str += "Prp <b>"+prop+"</b> is missing from the output<br/>\n"
           valid = false
         } else {
           if (Array.isArray(stats[prop])) {
             if (!(bu.arrayEquals(stats[prop],bbr[prop]))) {
-              str += "Arr "+prop+" differs: "+stats[prop]+ " !== "+bbr[prop]+"<br/>\n"
+              str += "Arr <b>"+prop+"</b> differs:<br/>\n<tt>&nbsp;py:</tt>"
+                +stats[prop]+ "<br/>\n<tt>&nbsp;js:</tt>"+bbr[prop]+"<br/>\n"
               valid = false
             }
           } else if (!(stats[prop] === bbr[prop])) {
-            str += "Prp "+prop+" differs: "+stats[prop]+ " !== "+bbr[prop]+"<br/>\n"
             if (bu.isNumeric(stats[prop]) && bu.isNumeric(bbr[prop])) {
+              str += "Numeric value <b>"+prop+"</b> differs:<br/>\n<tt>&nbsp;py:</tt>"
+                +stats[prop]+ "<br/>\n<tt>&nbsp;js:</tt>"+bbr[prop]+"<br/>\n"
               numeric = true
               if (Math.abs(bbr[prop]-stats[prop]) > 1e-8)
                 valid = false
+            } else if ((typeof stats[prop] == 'string') || typeof (bbr[prop] == 'string')) {
+              str += "String <b>"+prop+"</b> differs:<br/>\n<tt>&nbsp;py:</tt>"
+                +stats[prop]+ "<br/>\n<tt>&nbsp;js:</tt>"+bbr[prop]+"<br/>\n"
+              valid = false
             } else
               valid = false
               
