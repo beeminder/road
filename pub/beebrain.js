@@ -181,16 +181,19 @@
         curid = gid
     gid++
     
+    // Make a new copy of the input to prevent overwriting
+    bbin = bu.extend({}, bbin, {})
+      
     // Private variables holding goal, road and datapoint info
     var 
-    goal = {},       // Holds loaded goal parameters
     roads = [],      // Holds the current road matrix
-    iRoad = [],      // Holds the initial road matrix
+
+    goal = {},       // Holds loaded goal parameters
     alldata = [],    // Holds the entire set of data points
-    aggdata = [],    // Holds past aggregated data
+    data = [],    // Holds past aggregated data
     fuda = [],       // Holds all future data
-    alldataf = [],   // Holds all data up to a limited days before asof
-    aggdataf = [],   // Holds past aggregated data (limited)
+    //alldataf = [],   // Holds all data up to a limited days before asof
+    //dataf = [],   // Holds past aggregated data (limited)
     undoBuffer = [], // Array of previous roads for undo
     redoBuffer = [], // Array of future roads for redo
     oresets = [],    // Odometer resets
@@ -253,15 +256,15 @@
 
     /** Initialize various global variables before use */
     function initGlobals() {
+      // This is here because object member initialization with dynamic names is not possible
       CNAME[bu.Cols.GRNDOT] = "green",
       CNAME[bu.Cols.BLUDOT] = "blue",
       CNAME[bu.Cols.ORNDOT] = "orange",
       CNAME[bu.Cols.REDDOT] = "red",
       CNAME[bu.Cols.BLCK]   = "black" 
   
-      iRoad = []
-
-      aggdata = []
+      // Data related variables
+      data = []
       flad = null
       fuda = []
       allvals = {}
@@ -375,17 +378,17 @@
 
     function procData() { 
 
-      // Coming here, we assume that aggdata has entries with
+      // Coming here, we assume that data has entries with
       // the following format:
       // [t, v, comment, original index, v(original)]
       //
       if (goal.odom) {
-        oresets = aggdata.filter(function(e){ return (e[1]==0);}).map(e=>(e[0]));
-        br.odomify(aggdata);
+        oresets = data.filter(function(e){ return (e[1]==0);}).map(e=>(e[0]));
+        br.odomify(data);
       }
 
-      var numpts = aggdata.length, i;
-      var nonfuda = aggdata.filter(function(e){
+      var numpts = data.length, i;
+      var nonfuda = data.filter(function(e){
         return e[0]<=goal.asof;});
       if (goal.plotall) goal.numpts = nonfuda.length;
 
@@ -405,12 +408,12 @@
       };
       // Aggregate datapoints and handle kyoom
       var newpts = [];
-      var ct = aggdata[0][0], 
-          vl = [[aggdata[0][1],aggdata[0][2],aggdata[0][4]]], vlv;
+      var ct = data[0][0], 
+          vl = [[data[0][1],data[0][2],data[0][4]]], vlv;
       var pre = 0, prevpt, ad, cmt, ptinf;
-      for (i = 1; i < aggdata.length; i++) {
-        if (aggdata[i][0] == ct) {
-          vl.push([aggdata[i][1],aggdata[i][2],aggdata[i][4]]);
+      for (i = 1; i < data.length; i++) {
+        if (data[i][0] == ct) {
+          vl.push([data[i][1],data[i][2],data[i][4]]);
         } else {
           vlv = vl.map(dval);
           ad = br.AGGR[goal.aggday](vlv);
@@ -434,8 +437,8 @@
             aggval[ct] = [ad, ptinf[0], ptinf[1]];
           }
 
-          ct = aggdata[i][0];
-          vl = [[aggdata[i][1],aggdata[i][2],aggdata[i][4]]];
+          ct = data[i][0];
+          vl = [[data[i][1],data[i][2],data[i][4]]];
         }
       }
       vlv = vl.map(dval);
@@ -470,30 +473,45 @@
       }
       alldata = allpts;
       fuda = newpts.filter(function(e){return e[0]>goal.asof;});
-      aggdata = newpts.filter(function(e){return e[0]<=goal.asof;});
-      if (!goal.plotall) goal.numpts = aggdata.length;
-      var gfd = br.gapFill(aggdata)
+      data = newpts.filter(function(e){return e[0]<=goal.asof;});
+      if (!goal.plotall) goal.numpts = data.length;
+      var gfd = br.gapFill(data)
       var gfdv = gfd.map(e => (e[1]))
-      if (aggdata.length > 0) goal.mean = bu.mean(gfdv)
-      if (aggdata.length > 1) {
+      if (data.length > 0) goal.mean = bu.mean(gfdv)
+      if (data.length > 1) {
         goal.meandelt = bu.mean(bu.partition(gfdv,2,1).map(e => (e[1] - e[0])))
       }
-      goal.tdat = aggdata[aggdata.length-1][0] // tstamp of last ent. datapoint pre-flatline
+      goal.tdat = data[data.length-1][0] // tstamp of last ent. datapoint pre-flatline
     }
 
+    /** Extracts road segments from the supplied road matrix in the *
+     input parameters as well as tini and vini. Upon compeltion, the *
+     'roads' variable contains an array of road segments as javascript
+     objects in the following format:
+
+     {sta: [startt, startv], end: [endt, endv], slope, auto}
+
+     Initial and final flat segments are added from starting days
+     before tini and ending after 100 days after tfin.
+    */
     function procRoad( json ) {
       roads = [];
       var rdData = json;
       var nk = rdData.length;
       var firstsegment;
 
+      // First segment starts from [tini-100days, vini], ends at [tini, vini]
       firstsegment = {
         sta: [bu.dayparse(goal.tini), Number(goal.vini)],
         slope: 0, auto: br.RP.SLOPE };
       firstsegment.end = firstsegment.sta.slice();
       firstsegment.sta[0] = bu.daysnap(firstsegment.sta[0]-100*bu.DIY*bu.SID);
       roads.push(firstsegment);
+
       for (var i = 0; i < nk; i++) {
+        // Each segment i starts from the end of the previous segment
+        // and continues until road[i], filling in empty fields in the
+        // road matrix
         var segment = {};
         segment.sta = roads[roads.length-1].end.slice();
         var rddate = null, rdvalue = null, rdslope = null;
@@ -527,11 +545,13 @@
           roads.push(segment);
         }
       }
+      // Extract computed values for tfin, vfin and rfin
       var goalseg = roads[roads.length-1];
       goal.tfin = goalseg.end[0];
       goal.vfin = goalseg.end[1];
       goal.rfin = goalseg.slope;
       
+      // A final segment is added, ending 100 days after tfin
       var finalsegment = {
         sta: goalseg.end.slice(),
         end: goalseg.end.slice(),
@@ -539,12 +559,8 @@
       finalsegment.end[0] = bu.daysnap(finalsegment.end[0]+100*bu.DIY*bu.SID);
       roads.push(finalsegment);
 
-      // TODO: Calling this results in small numerical errors. This
-      // should not be necessary after constructing the road with the
-      // function above.
-      // br.fixRoadArray( roads, br.RP.VALUE, true );
-
-      iRoad = br.copyRoad( roads );
+      // Uluc: Does not seem necessary if the above extraction is correct
+      //br.fixRoadArray( roads, br.RP.VALUE, true );
     }
 
 
@@ -552,9 +568,9 @@
     function flatline() {
       flad = null;
       var now = goal.asof;
-      var numpts = aggdata.length;
-      var tlast = aggdata[numpts-1][0];
-      var vlast = aggdata[numpts-1][1];
+      var numpts = data.length;
+      var tlast = data[numpts-1][0];
+      var vlast = data[numpts-1][1];
 
       if (tlast > goal.tfin) return;
       var x = tlast; // x = the time we're flatlining to
@@ -573,14 +589,14 @@
         };
         x = bu.arrMin([x, now, goal.tfin]);
         for (var i = 0; i < numpts; i++) {
-          if (x == aggdata[i][0])
+          if (x == data[i][0])
             return;
         }
       }
       if (!aggval.hasOwnProperty(x)) {
-        var prevpt = aggdata[numpts-1];
+        var prevpt = data[numpts-1];
         flad = [x, vlast, "PPR", DPTYPE.FLATLINE, prevpt[0], prevpt[1], null];
-        aggdata.push(flad);
+        data.push(flad);
       }
     }
 
@@ -598,42 +614,49 @@
     function procParams( p ) {
 
       // maps timestamps to most recent datapoint value
-      goal.dtf = br.stepify(aggdata)
+      goal.dtf = br.stepify(data)
 
       goal.road = br.fillroad(goal.road, goal)
       
       // tfin, vfin, rfin are set in procRoad
       
-      // TODO: Implement road dial error in beebrain
+      if (!bu.orderedq(goal.road.map(e=>e[0]))) {
+        var parenerr = 
+            "(Your goal date, goal "+(goal.kyoom?"total":"value")+
+            ", and rate are inconsistent!\\n"+
+            "Is your rate positive when you meant negative?\\n"+
+            "Or is your goal "+(goal.kyoom?"total":"value")+
+            " such that the implied goal date is in the past?)";
+        return "Road dial error\\n" + parenerr
+      }
 
-      // rdf function is implemented above
-
-      // rtf function is implemented above
+      // rdf function is implemented in broad.js
+      // rtf function is implemented in broad.js
 
       goal.stdflux 
-        = br.noisyWidth(roads, aggdata
+        = br.noisyWidth(roads, data
                      .filter(function(d){return d[0]>=goal.tini;}));
       goal.nw = (goal.noisy && goal.abslnw == null)
-        ?br.autowiden(roads, goal, aggdata, goal.stdflux):0;
+        ?br.autowiden(roads, goal, data, goal.stdflux):0;
       
       flatline();
 
       if (goal.movingav) {
         // Filter data and produce moving average
-        var dl = aggdata.length;
-        if (dl <= 1 || aggdata[dl-1][0]-aggdata[0][0] <= 0) 
+        var dl = data.length;
+        if (dl <= 1 || data[dl-1][0]-data[0][0] <= 0) 
           return;
         
         // Create new vector for filtering datapoints
-        var newx = griddle(aggdata[0][0], aggdata[dl-1][0]);
+        var newx = griddle(data[0][0], data[dl-1][0]);
         goal.filtpts 
-          = newx.map(function(d) {return [d, ema(aggdata, d)];});
+          = newx.map(function(d) {return [d, ema(data, d)];});
       } else goal.filtpts = [];
       
-      goal.tcur = aggdata[aggdata.length-1][0];
-      goal.vcur = aggdata[aggdata.length-1][1];
+      goal.tcur = data[data.length-1][0];
+      goal.vcur = data[data.length-1][1];
 
-      goal.lnw = Math.max(goal.nw,br.lnf( iRoad, goal, goal.tcur ));
+      goal.lnw = Math.max(goal.nw,br.lnf( roads, goal, goal.tcur ));
 
       goal.safebuf = br.dtd(roads, goal, goal.tcur, goal.vcur);
       goal.tluz = goal.tcur+goal.safebuf*bu.SID;
@@ -657,7 +680,7 @@
       goal.cntdn = Math.ceil((goal.tfin-goal.tcur)/bu.SID)
       goal.lane = bu.clip(br.lanage(roads, goal, goal.tcur,goal.vcur), -32768, 32767)
       goal.color = CNAME[br.dotcolor(roads, goal, goal.tcur,goal.vcur)]
-      goal.loser = br.isLoser(roads, goal, aggdata, goal.tcur, goal.vcur)
+      goal.loser = br.isLoser(roads, goal, data, goal.tcur, goal.vcur)
       goal.sadbrink = (goal.tcur-bu.SID>goal.tini)
         &&(br.dotcolor(roads,goal,goal.tcur-bu.SID,goal.dtf(goal.tcur-bu.SID))==bu.Cols.REDDOT)
       if (goal.safebuf <= 0) goal.tluz = goal.tcur
@@ -821,7 +844,7 @@
 
       goal.statsum =
         " progress: "+bu.shd(goal.tini)+"  "
-        +((aggdata == null)?"?":bu.sh1(goal.vini))+"\\n"
+        +((data == null)?"?":bu.sh1(goal.vini))+"\\n"
         +"           "+bu.shd(goal.tcur)+"  "+bu.sh1(goal.vcur)
         +"   ["+goal.progsum+"]\\n"
         +"           "+bu.shd(goal.tfin)+"  "+bu.sh1(goal.vfin)+"\\n"
@@ -859,7 +882,7 @@
       legacyIn( p )
       initGlobals()
       goal.proctm = tm
-      aggdata = stampIn(p, d)
+      data = stampIn(p, d)
 
       // make sure all supplied params are recognized 
       for (var prop in p) {
@@ -869,31 +892,38 @@
           else goal[prop] = p[prop]
         }
       }
+
+      // Process and extract various parameters that are independent of road and data
+      // maybe just default to aggday=last; no such thing as aggday=null
       if ( !p.hasOwnProperty('aggday')) {
         if (goal.kyoom) p.aggday = "sum"
         else p.aggday = "last"
       }
-
+      goal.siru = bu.SECS[p.runits]
       goal.horizon = goal.asof+bu.AKH
 
-      goal.siru = bu.SECS[p.runits]
+      // Append final segment to the road array. These values will be
+      // reextracted after filling in road in procParams
       goal.road.push([goal.tfin, goal.vfin, goal.rfin])
       
-      // TODO: vetParams()
-      procData()
+      // TODO: if (goal.error == "") vetParams()
+      if (goal.error == "") procData()
       
-      var vtmp
-      if (p.hasOwnProperty('tini'))  goal.tini = Number(p.tini)
-      else goal.tini = aggdata[0][0]
+      // TODO: SCHEDULED for removal
+      // var vtmp
+      // if (p.hasOwnProperty('tini'))  goal.tini = Number(p.tini)
+      // else goal.tini = data[0][0]
 
-      if (allvals.hasOwnProperty(goal.tini)) {
-        vtmp = (goal.plotall)
-          ?allvals[goal.tini][0][0]:aggval[goal.tini][0]
-      } else vtmp = Number(p.vini)
+      // if (allvals.hasOwnProperty(goal.tini)) {
+      //   vtmp = (goal.plotall)
+      //     ?allvals[goal.tini][0][0]:aggval[goal.tini][0]
+      // } else vtmp = Number(p.vini)
 
-      if (p.hasOwnProperty('vini')) goal.vini = p.vini
-      else goal.vini = (goal.kyoom)?0:vtmp
+      // if (p.hasOwnProperty('vini')) goal.vini = p.vini
+      // else goal.vini = (goal.kyoom)?0:vtmp
 
+      // Extract road infor into our internal format consisting of road segments:
+      // [ [startt, startv], [endt, endv], slope, autofield]
       procRoad( p.road )
       procParams( p )
       sumSet(roads, goal)
@@ -919,18 +949,18 @@
       // extract limited data
       //if (opts.maxDataDays < 0) {
       //alldataf = alldata.slice();
-      //aggdataf = aggdata.slice();
+      //dataf = data.slice();
       //} else {
       //  alldataf = alldata.filter(function(e){
       //    return e[0]>(goal.asof-opts.maxDataDays*SID);});
-      //  aggdataf = aggdata.filter(function(e){
+      //  dataf = data.filter(function(e){
       //    return e[0]>(goal.asof-opts.maxDataDays*SID);});
        // }
 
       // Generate the aura function now that the flatlined
       // datapoint is also computed.
       if (goal.aura) {
-        var adata = aggdata.filter(function(e){return e[0]>=goal.tmin})
+        var adata = data.filter(function(e){return e[0]>=goal.tmin})
         var fdata = br.gapFill(adata)
         goal.auraf = br.smooth(fdata)
       } else
@@ -950,7 +980,7 @@
     // -----------------------------------------------------------
     // ----------------- BEEBRAIN OBJECT EXPORTS ------------------
 
-    function getStats() { return Object.assign({}, stats) }
+    function getStats() { return bu.extend({}, stats, {}) }
 
     /** beebrain object ID for the current instance */
     self.id = 1
