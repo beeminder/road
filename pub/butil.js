@@ -394,6 +394,13 @@
                            return seen.hasOwnProperty(marker)?false:(seen[marker] = true)})
     }
 
+    // Whether list l is sorted in increasing order
+    self.orderedq = function(l) {
+      for (var i = 0; i < l.length-1; i++)
+        if (l[i] > l[i+1]) return false;
+      return true;
+    }
+
     self.nonzero = function(a) {
       var l = a.length, i
       for( i = 0; i < l; i++ ){ if (a[i] != 0) return true}

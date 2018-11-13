@@ -106,34 +106,44 @@
       rDiv.removeChild(rDiv.firstChild);
     }
 
-    var i, innerDiv, info;
+    var i, innerDiv, info, exact = 0, numeric = 0, error = 0;
     for (i = 0; i < files.length; i++) {
       console.log("Processing "+files[i])
       res = await testGoal("testbb/"+files[i]+".bb", "testbb/"+files[i]+".json");
 
-      innerDiv = document.createElement('div');
-      innerDiv.className = 'resulttitle';
-      innerDiv.style.margin = '4px';
+      innerDiv = document.createElement('div')
+      innerDiv.className = 'resulttitle'
+      innerDiv.style.margin = '4px'
       if (res.valid) {
         if (res.numeric) {
           info = "(numeric errors)"
-          innerDiv.style.background = '#aaaaff';
+          numeric = numeric+1
+          innerDiv.style.background = '#aaaaff'
         } else {
-          info = ""
-          innerDiv.style.background = '#aaffaa';
+          info = "(exact match)"
+          exact = exact+1
+          innerDiv.style.background = '#aaffaa'
         }
       } else {
-        info = "(critical or string errors)"
-        innerDiv.style.background = '#ffaaaa';
+        info = "(string or critical errors)"
+        error = error+1
+        innerDiv.style.background = '#ffaaaa'
       }
-      rDiv.appendChild(innerDiv);
-      innerDiv.innerHTML = "Goal "+files[i]+" "+info;
+      rDiv.appendChild(innerDiv)
+      innerDiv.innerHTML = "Goal "+files[i]+" "+info
 
-      innerDiv = document.createElement('div');
-      innerDiv.className = 'result';
-      rDiv.appendChild(innerDiv);
+      innerDiv = document.createElement('div')
+      innerDiv.className = 'result'
+      rDiv.appendChild(innerDiv)
       innerDiv.innerHTML = res.result
     }
+    innerDiv = document.createElement('div')
+    innerDiv.className = 'result'
+    innerDiv.style.border = '2px solid black'
+    innerDiv.style.padding = '5px'
+    rDiv.prepend(innerDiv);
+    innerDiv.innerHTML = "RESULTS ("+files.length+" goals): Exact matches: "+exact+", Numeric errors: "+numeric
+                    +", string or critical: "+error
   }
   testAll()
 </script>

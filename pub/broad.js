@@ -122,9 +122,9 @@
 
     /** Recomputes the road array starting from the first node and
      assuming that the one of slope, enddate or endvalue parameters is
-     chosen to be automatically computed. If usetable is true,
-     autocompute parameter selections from the table are used */
-    self.fixRoadArray = function( rd, autop=self.RP.VALUE, usetable=false, 
+     chosen to be automatically computed. If usematrix is true,
+     autocompute parameter selections from the road matrix are used */
+    self.fixRoadArray = function( rd, autop=self.RP.VALUE, usematrix=false, 
                                   edited=self.RP.VALUE) {
       var nr = rd.length;
       // Fix the special first road segment, whose slope will always be 0.
@@ -134,7 +134,7 @@
       // Iterate through the remaining segments until the last one
       for (var i = 1; i < nr-1; i++) {
         //console.debug("before("+i+"):[("+rd[i].sta[0]+","+rd[i].sta[1]+"),("+rd[i].end[0]+","+rd[i].end[1]+"),"+rd[i].slope+"]");
-        if (usetable) autop = rd[i].auto;
+        if (usematrix) autop = rd[i].auto;
         
         var difftime = rd[i].end[0] - rd[i].sta[0]; 
         var diffval = rd[i].end[1] - rd[i].sta[1]; 
@@ -167,7 +167,9 @@
             // If slope is infinite, preserve previous delta
             rd[i].end[1] = rd[i].sta[1]+diffval;
           }
-          rd[i].slope = self.roadSegmentSlope(rd[i]);
+          // TODO: Commented this out, but verify graph during generation
+          // if (difftime != 0 && diffval != 0)
+          //   rd[i].slope = self.roadSegmentSlope(rd[i]);
         } else if (autop == self.RP.SLOPE) {
           rd[i].slope = self.roadSegmentSlope(rd[i]);
         }
