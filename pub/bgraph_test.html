@@ -27,15 +27,15 @@
   Graph&nbsp;&nbsp;
   <input type="radio" name="typeButton" value="editor" onclick="handleRadio(this);">Editor<br>
   
-  <select id="roadselect" class="roadselect" onchange="breakstart.value=&quot;&quot;;editor.loadGoal(this.value);editor2.loadGoal(this.value);">
-    <option value="data/testroad0.json">Test Road 1</option>
-    <option value="data/testroad1.json">Test Road 1</option>
-    <option value="data/testroad2.json">Test Road 2</option>
-    <option value="data/testroad3.json">Test Road 3</option>
-    <option value="data/testroad4.json">Test Road 4</option>
-    <option value="data/testroad5.json">Test Road 5</option>
-    <option value="data/testroad6.json">Test Road 6</option>
-    <option value="data/testroad7.json">Test Road 7</option>
+  <select id="roadselect" class="roadselect" onchange="breakstart.value=&quot;&quot;;editor.loadGoal(this.value);graph.loadGoal(this.value);">
+    <option value="data/testroad0.bb">Test Road 0</option>
+    <option value="data/testroad1.bb">Test Road 1</option>
+    <option value="data/testroad2.bb">Test Road 2</option>
+    <option value="data/testroad3.bb">Test Road 3</option>
+    <option value="data/testroad4.bb">Test Road 4</option>
+    <option value="data/testroad5.bb">Test Road 5</option>
+    <option value="data/testroad6.bb">Test Road 6</option>
+    <option value="data/testroad7.bb">Test Road 7</option>
   </select> 
  
 </form>
@@ -49,7 +49,8 @@ new node, Ctrl-Z to undo, Ctrl-y to redo</li>
 <table>
 
 <tr>
-<td valign="top"><div id="roadgraph"></div>
+<td valign="top">
+<div id="roadgraph"></div>
 
 <div class="gopts">
 <form action="">
@@ -133,18 +134,18 @@ new node, Ctrl-Z to undo, Ctrl-y to redo</li>
 
 <div class="gopts">
   <input id="showalldata2" type="checkbox"
-         onclick="if (this.checked) editor2.maxDataDays(-1); else editor2.maxDataDays(100);"
+         onclick="if (this.checked) graph.maxDataDays(-1); else graph.maxDataDays(100);"
          checked>Show all datapoints<br/>
-  <button id="zoomall2" onclick="editor2.zoomAll();">View All</button>
-  <button id="zoomdflt2" onclick="editor2.zoomDefault();">Default Zoom</button>
+  <button id="zoomall2" onclick="graph.zoomAll();">View All</button>
+  <button id="zoomdflt2" onclick="graph.zoomDefault();">Default Zoom</button>
 </div>
-<button id="savesvg" onclick="editor2.saveGraph(document.getElementById('download2'));">
+<button id="savesvg" onclick="graph.saveGraph(document.getElementById('download2'));">
   Generate SVG</button> <a id="download2">Right click to download</a>
 </td>
 <td valign="top">
   <div id="roadtable2"></div>
   <br/>
-  <input id="reversetable2" type="checkbox"  onclick="editor2.reverseTable(this.checked);">
+  <input id="reversetable2" type="checkbox"  onclick="graph.reverseTable(this.checked);">
   Reverse table order<br/>
 </td>
 </tr>
@@ -158,17 +159,122 @@ new node, Ctrl-Z to undo, Ctrl-y to redo</li>
   var slopeType = document.getElementById("slopetype");
   var breakpicker = new Pikaday({field: document.getElementById('breakstart')});
 
-  function roadChanged() {
+  function editorChanged() {
+    console.log("Editor changed")
+    if (graph.getRoadObj().length != 0) graph.setRoadObj(editor.getRoadObj())
+
+    var bufStates = editor.undoBufferState();
+    if (bufStates.undo === 0)  {
+      undoBtn.disabled = true;
+      undoBtn.innerHTML = "Undo (0)";
+    } else {
+      undoBtn.disabled = false;
+      undoBtn.innerHTML = "Undo ("+bufStates.undo+")";
+    }
+    if (bufStates.redo === 0)  {
+      redoBtn.disabled = true;
+      redoBtn.innerHTML = "Redo (0)";
+    } else {
+      redoBtn.disabled = false;
+      redoBtn.innerHTML = "Redo ("+bufStates.redo+")";
+    }
+
+    var road = editor.getRoad();
+    var mindate=moment(moment.unix(road.horizon).utc().format("YYYY-MM-DD")).toDate();
+    breakpicker.setMinDate(mindate);
+    if (!breakstart.value.trim()) {
+      breakpicker.setDate(mindate);
+    }
+
+    slopeType.value = road.siru;
+    updateCommitFields();
+    document.getElementById("download").removeAttribute("href");
+  }
+
+  function updateCommitFields() {
+    var sirunew = parseInt(slopeType.value);
+    var road = editor.getRoad();
+    var siru = road.siru;
+    var rd = road.road;
+    endSlope.value = rd[rd.length-1][2]*(sirunew/siru);
+  }
+
+  function commitTo() {
+    if (isNaN(endSlope.value)) return;
+    var siru = parseInt(slopeType.value);
+    var slope = parseInt(endSlope.value);
+    editor.commitTo(slope / siru);
+  }
+
+  function scheduleBreak(insert) {
+    var start = document.getElementById('breakstart').value; 
+    var days = document.getElementById('breakdays').value; 
+    if (!isNaN(days)) editor.scheduleBreak(start, days, insert);
   }
 
   var editor = new bgraph({divGraph: document.getElementById('roadgraph'),
                           divTable: document.getElementById('roadtable'),
-                          roadEditor:false,
+                          roadEditor:true,
                           maxFutureDays: 365,
                           showFocusRect: false,
                           showContext: true,
-                          onRoadChange: roadChanged});
-  editor.loadGoal( 'data/testroad5.bb' )
+                          onRoadChange: editorChanged});
+  editor.showData(document.getElementById("showdata").checked);
+  if (document.getElementById("showalldata").checked) editor.maxDataDays(-1); else editor.maxDataDays(100);
+  editor.showData(document.getElementById("showdata").checked);
+  editor.showContext(document.getElementById("showcontext").checked);
+  editor.keepSlopes(document.getElementById("keepslopes").checked);
+  editor.keepIntervals(document.getElementById("keepintervals").checked);
+  editor.reverseTable(document.getElementById("reversetable").checked);
+  editor.tableAutoScroll(document.getElementById("autoscroll").checked);
+  editor.tableUpdateOnDrag(document.getElementById("updateondrag").checked);
+
+  var graph = new bgraph({divGraph: document.getElementById('roadgraph2'),
+                          divTable: document.getElementById('roadtable2'),
+                          roadEditor:false,
+                          maxFutureDays: 365,
+                          showFocusRect: false,
+                          showContext: true});
+  if (document.getElementById("showalldata2").checked) graph.maxDataDays(-1); else graph.maxDataDays(100);
+  graph.reverseTable(document.getElementById("reversetable2").checked);
+
+  var curRadio = 0;
+  var divEditor = document.getElementById("diveditor");
+  var divGraph = document.getElementById("divgraph");
+  function handleRadio(myRadio) {
+    if (curRadio !== myRadio.value) {
+      curRadio = myRadio.value;
+      if (curRadio === "editor") { 
+        divEditor.style.display = "block";
+        divGraph.style.display = "none";
+        editor.show();
+        graph.hide();
+     } else {
+        divEditor.style.display = "none";
+        divGraph.style.display = "block";
+        editor.hide();
+        graph.show();
+      }
+    }
+  }
+  document.graphType.typeButton[0].checked = true;
+  divEditor.style.display = "none";
+  divGraph.style.display = "block";
+  editor.hide();
+  graph.show();
+
+  breakstart.value = "";
+  editor.loadGoal( 'data/testroad0.bb' )
+  graph.loadGoal( 'data/testroad0.bb' )
+
+  function documentKeyDown(e) {
+    var evtobj = window.event? window.event : e;
+    if (evtobj.keyCode == 89 && evtobj.ctrlKey) editor.redo();
+    if (evtobj.keyCode == 90 && evtobj.ctrlKey) editor.undo();
+  }
+        
+  document.onkeydown = documentKeyDown;
+
 </script>
 
 </body>
