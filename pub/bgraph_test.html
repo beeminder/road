@@ -163,12 +163,12 @@ new node, Ctrl-Z to undo, Ctrl-y to redo</li>
 
   var editor = new bgraph({divGraph: document.getElementById('roadgraph'),
                           divTable: document.getElementById('roadtable'),
-                          roadEditor:true,
+                          roadEditor:false,
                           maxFutureDays: 365,
                           showFocusRect: false,
                           showContext: true,
                           onRoadChange: roadChanged});
-  editor.loadGoal( 'data/testroad0.bb' )
+  editor.loadGoal( 'data/testroad5.bb' )
 </script>
 
 </body>
