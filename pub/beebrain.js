@@ -308,7 +308,8 @@
       if (p.hasOwnProperty('tfin')) p.tfin = bu.dayparse(p.tfin)
       if (p.hasOwnProperty('tmin')) p.tmin = bu.dayparse(p.tmin)
       if (p.hasOwnProperty('tmax')) p.tmax = bu.dayparse(p.tmax)
-      if (p.hasOwnProperty('road')) p.road = p.road.map(parserow)
+      if (p.hasOwnProperty('road'))
+        if (bu.listy(p.road)) p.road = p.road.map(parserow)
 
       // Stable-sort by timestamp before dayparsing the timestamps
       // because if the timestamps were actually given as unixtime
@@ -480,6 +481,7 @@
         goal.meandelt = bu.mean(bu.partition(gfdv,2,1).map(e => (e[1] - e[0])))
       }
       goal.tdat = data[data.length-1][0] // tstamp of last ent. datapoint pre-flatline
+      return "";
     }
 
     /** Extracts road segments from the supplied road matrix in the *
@@ -559,6 +561,7 @@
 
       // Uluc: Does not seem necessary if the above extraction is correct
       //br.fixRoadArray( roads, br.RP.VALUE, true );
+      return "";
     }
 
 
@@ -609,8 +612,90 @@
       }
     }
 
+    // Sanity check a row of the road matrix; exactly one-out-of-three is null
+    function validrow(r) {
+      if (!bu.listy(r) || r.length != 3) return false
+      return (r[0]==null && bu.nummy(r[1])  && bu.nummy(r[2]) ) ||
+        (bu.nummy(r[0]) && r[1]==null && bu.nummy(r[2]) ) ||
+        (bu.nummy(r[0]) && bu.nummy(r[1]) && r[2]==null)
+    }
+
+    // Stringified version of a road matrix row
+    function showrow(row) {
+      return JSON.stringify(row)
+    }
+
+    // Sanity check the input parameters. Return non-empty string if it fails.
+    function vetParams() {
+      // I'm a bit too obsessed with fitting things in 80 cha
+      var s = (y => JSON.stringify(y)), i
+
+      if (!((6-24)*3600 <= goal.deadline <= 6*3600))
+        return "'deadline' outside 6am earlybird to 6am nightowl: "       +s(goal.deadline)
+      if (goal.asof == null)    return "'asof' can't be null! Tell support!"
+      if (!bu.torn(goal.asof))  return "'asof' isn't a valid timestamp: "  +s(goal.asof)
+      if (!bu.timy(goal.tini))  return "'tini' isn't a valid timestamp: "  +s(goal.tini)
+      if (!bu.nummy(goal.vini)) return "'vini' isn't numeric: "            +s(goal.vini)
+      if (!bu.listy(goal.road)) return "Road matrix ('road') isn't a list: "  +s(goal.road)
+      for (i = 0; i < goal.road.length; i++)
+        if (!validrow(goal.road[i])) return "Invalid road matrix row: "+showrow(goal.road[i])
+      // At this point road is guaranteed to be a list of length-3 lists
+      // I guess we don't mind a redundant final road row
+      var mostroad = goal.road.slice(1,goal.road.length-1)
+      if (mostroad.length != bu.deldups(mostroad).length) {
+        var prev = mostroad[0] // previous row
+        for (i = 1; i < mostroad.length; i++) {
+          console.log(mostroad[i] + " " + prev)
+          if (bu.arrayEquals(mostroad[i], prev))
+            return "Road matrix has duplicate row: "+showrow(mostroad[i])
+          prev = mostroad[i]
+        }
+        return "Road matrix duplicate row error! Tell support!" //seems unreachable
+      }
+      if (!bu.torn(goal.tfin))    return "'tfin' isn't a valid timestamp: " +s(goal.tfin)
+      if (!bu.norn(goal.vfin))    return "'vfin' isn't numeric or null: "   +s(goal.vfin)
+      if (!bu.norn(goal.rfin))    return "'rfin' isn't numeric or null: "   +s(goal.rfin)
+      if (!bu.SECS.hasOwnProperty(goal.runits))
+          return "Bad rate units ('runits'): "+s(goal.runits)
+      if (!(goal.yaw==0 || goal.yaw==1 || goal.yaw==-1))
+        return "'yaw' isn't in [0,-1,1]: "        +s(goal.yaw)
+      if (!(goal.dir==1 || goal.dir==-1))
+        return "'dir' isn't in [-1,1]: "          +s(goal.dir)
+      if (!bu.norn(goal.tmin))    return "'tmin' isn't a number/timestamp: "+s(goal.tmin)
+      if (!bu.torn(goal.tmax))    return "'tmax' isn't a valid timestamp: " +s(goal.tmax)
+      if (!bu.norn(goal.vmin))    return "'vmin' isn't numeric or null: "   +s(goal.vmin)
+      if (!bu.norn(goal.vmax))    return "'vmax' isn't numeric or null: "   +s(goal.vmax)
+      if (!bu.torf(goal.kyoom))   return "'kyoom' isn't boolean: "          +s(goal.kyoom)
+      if (!bu.torf(goal.odom))    return "'odom' isn't boolean: "           +s(goal.odom)
+      if (!bu.norn(goal.abslnw))  return "'abslnw' isn't numeric or null: " +s(goal.abslnw)
+      if (!bu.torf(goal.noisy))   return "'noisy' isn't boolean: "          +s(goal.noisy)
+      if (!bu.torf(goal.integery))return "'integery' isn't boolean: "       +s(goal.integery)
+      if (!bu.torf(goal.monotone))return "'monotone' isn't boolean: "       +s(goal.monotone)
+      if (!br.AGGR.hasOwnProperty(goal.aggday))
+        return "'aggday' = "+s(goal.aggday)+" isn't one of max, sum, last, mean, etc"
+      if (!bu.torf(goal.plotall)) return "'plotall' isn't boolean: "       +s(goal.plotall)
+      if (!bu.torf(goal.steppy))  return "'steppy' isn't boolean: "        +s(goal.steppy)
+      if (!bu.torf(goal.rosy))    return "'rosy' isn't boolean: "          +s(goal.rosy)
+      if (!bu.torf(goal.movingav))return "'movingav' isn't boolean: "      +s(goal.movingav)
+      if (!bu.torf(goal.aura))    return "'aura' isn't boolean: "          +s(goal.aura)
+      if (!bu.stringy(goal.yaxis))return "'yaxis' isn't a string: "        +s(goal.yaxis)
+      if (goal.yaxis.length > 80) return "Y-axis label is too long:\n"     +goal.yaxis
+      if (!bu.sorn(goal.waterbuf))return "'waterbuf' isn't string or null: "+s(goal.waterbuf)
+      if (!bu.stringy(goal.waterbux)) return "'waterbux' isn't a string: "  +s(goal.waterbux)
+      if (!bu.torf(goal.hidey))   return "'hidey' isn't boolean: "          +s(goal.hidey)
+      if (!bu.torf(goal.stathead))return "'stathead' isn't boolean: "       +s(goal.stathead)
+      if (!bu.nummy(goal.imgsz))  return "'imgsz' isn't numeric: "          +s(goal.imgsz)
+      if (!bu.stringy(goal.yoog)) return "'yoog' isn't a string: "          +s(goal.yoog)
+      if (goal.kyoom && goal.odom)
+        return "The odometer setting doesn't make sense for an auto-summing goal!"
+      return "";
+    }
+    
     function procParams( p ) {
 
+      // Save initial waterbuf value for comparison
+      goal.waterbuf0 = goal.waterbuf
+      
       // maps timestamps to most recent datapoint value
       goal.dtf = br.stepify(data)
 
@@ -643,7 +728,7 @@
         // Filter data and produce moving average
         var dl = data.length;
         if (dl <= 1 || data[dl-1][0]-data[0][0] <= 0) 
-          return;
+          return "Insufficient data for moving average";
         
         // Create new vector for filtering datapoints
         var newx = griddle(data[0][0], data[dl-1][0]);
@@ -685,6 +770,7 @@
       if (goal.tfin < goal.tluz)  goal.tluz = bu.BDUSK
         
       setDefaultRange();
+      return "";
     }
     function sumSet(rd, goal) {
       var y = goal.yaw, d = goal.dir, l = goal.lane, w = goal.lnw, dlt = goal.delta
@@ -902,10 +988,10 @@
 
       // Append final segment to the road array. These values will be
       // reextracted after filling in road in procParams
-      goal.road.push([goal.tfin, goal.vfin, goal.rfin])
+      if (bu.listy(goal.road)) goal.road.push([goal.tfin, goal.vfin, goal.rfin])
       
-      // TODO: if (goal.error == "") vetParams()
-      if (goal.error == "") procData()
+      if (goal.error == "") goal.error = vetParams()
+      if (goal.error == "") goal.error = procData()
       
       // TODO: SCHEDULED for removal
       // var vtmp
@@ -922,8 +1008,12 @@
 
       // Extract road infor into our internal format consisting of road segments:
       // [ [startt, startv], [endt, endv], slope, autofield]
-      procRoad( p.road )
-      procParams( p )
+      if (goal.error == "") goal.error = procRoad( p.road )
+      if (goal.error == "") goal.error = procParams( p )
+
+      // Abort on error
+      if (goal.error != "") return
+
       sumSet(roads, goal)
       
       goal.fullroad = goal.road.slice()
