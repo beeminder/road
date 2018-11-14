@@ -306,10 +306,11 @@
         hidden = false,
         mobileOrTablet = onMobileOrTablet(),
         dataf, alldataf,
-        horindex = null // Road segment index including the horizon
+        horindex = null, // Road segment index including the horizon
+        iroad = []  // Initial road 
     
     // Beebrain state objects
-    var bbr, goal = {}, road = [], iroad = [],
+    var bbr, goal = {}, road = [],
         data = [], alldata = []
     
     function resetGoal() {
@@ -367,6 +368,7 @@
     /** Utility function to show a shaded overlay with a message 
      consisting of multiple lines supplied in the array argument */
     function showOverlay( msgs, fontSize = -1) {
+      if (opts.divGraph == null) return
       var pg = svg.select("g.overlay")
       if (pg.empty()) {
         pg = svg.append('g').attr('class', 'overlay')
@@ -399,6 +401,8 @@
       }
     }
     function removeOverlay() {
+      console.debug("removeOverlay("+self.id+")")
+      if (opts.divGraph == null) return
       svg.selectAll("g.overlay").remove()
     }
 
@@ -1039,6 +1043,7 @@
     }
 
     function zoomDefault() {
+      if (opts.divGraph == null) return;
       //console.debug("id="+curid+", zoomDefault()");
       var ta = goal.tmin - PRAF*(goal.tmax-goal.tmin);
       var tb = goal.tmax + PRAF*(goal.tmax-goal.tmin);
@@ -1346,7 +1351,8 @@
       if (bbr.goal.error != "") {
         console.log("Beebrain error: "+ bbr.goal.error)
         lastError = ErrType.BBERROR
-        showOverlay( [ErrMsgs[lastError]+":",bbr.goal.error], sh/25 )
+        var errors = bbr.goal.error.split("\\n")
+        showOverlay( ([ErrMsgs[lastError]+":"]).concat(errors), sh/25 )
         resetGoal()
         return
       }
@@ -1373,15 +1379,16 @@
         opts.divJSON.innerHTML = JSON.stringify(goal, null, 4)
       }
 
-      console.log(goal.stathead)
-      if (!opts.roadEditor && goal.stathead)
-        stathead.text(goal.graphsum)
-      
+
+      if (opts.divGraph) {
+        if (!opts.roadEditor && goal.stathead)
+          stathead.text(goal.graphsum)
+      }
       // Finally, wrap up with graph related initialization
       zoomAll();
       processing = false;
-
       zoomDefault();
+
       updateTable();
       updateContextData();
 
@@ -1500,7 +1507,9 @@
 
     function addNewKnot(kind) {
       if (kind < road.length-1) {
-        addNewDot((road[kind].sta[0] + road[kind+1].sta[0])/2);
+        var newt = (road[kind].sta[0] + road[kind+1].sta[0])/2
+        if (newt - road[kind].sta[0] > 30*bu.SID) newt = road[kind].sta[0]+30*bu.SID
+        addNewDot(newt);
       } else {
         addNewDot(road[kind].sta[0] + 7*bu.SID);
       }
@@ -1623,6 +1632,7 @@
     var selectelt = null;
 
     function selectKnot( kind ) {
+      if (opts.divGraph == null) return
       highlightDate( kind, true );
       selection = kind; selectType = br.RP.DATE;
       d3.select("[name=knot"+kind+"]")
@@ -1644,6 +1654,7 @@
         .attr("stroke-width", opts.roadKnot.width);
     }
     function selectDot( kind ) {
+      if (opts.divGraph == null) return
       highlightValue( kind, true );
       selection = kind; selectType = br.RP.VALUE;
       d3.select("[name=dot"+kind+"]")
@@ -1665,6 +1676,7 @@
         .attr("r", opts.roadDot.size);
     }
     function selectRoad( kind ) {
+      if (opts.divGraph == null) return
       highlightSlope( kind, true );
       selection = kind; selectType = br.RP.SLOPE;
       d3.select("[name=road"+kind+"]")
@@ -3373,9 +3385,11 @@
             var val = bu.dayparse(newdate, '-');
             if (newdate === focusOldText) return;
             if (!isNaN(val)) {
-              focusField.text(newdate);
-              tableDateChanged( Number(kind), val);
-              focusOldText = newdate;
+              focusField.text(newdate)
+              tableDateChanged( Number(kind), val)
+              focusOldText = newdate
+              datePicker.destroy()
+              document.activeElement.blur();
             }
           },
           minDate: mindate.toDate(),
@@ -3759,6 +3773,8 @@
     }
 
     function updateContextData() {
+      if (opts.divGraph == null) return;
+
       if (opts.showContext) {
         context.attr("visibility", "visible");
         updateContextOldRoad();
@@ -3777,6 +3793,7 @@
     }
 
     function updateGraphData() {
+      if (opts.divGraph == null) return;
       clearSelection();
       var limits = [nXSc.invert(0).getTime()/1000, 
                     nXSc.invert(plotbox.width).getTime()/1000];
@@ -3960,17 +3977,17 @@
       if (insert) {
         // First, shift all remaining knots right by the requested
         // number of days
-        road[firstseg].end[0] = bu.daysnap(road[firstseg].end[0]+days*SID);
+        road[firstseg].end[0] = bu.daysnap(road[firstseg].end[0]+days*bu.SID);
         for (j = firstseg+1; j < road.length; j++) {
-          road[j].sta[0] = bu.daysnap(road[j].sta[0]+days*SID);
-          road[j].end[0] = bu.daysnap(road[j].end[0]+days*SID);
+          road[j].sta[0] = bu.daysnap(road[j].sta[0]+days*bu.SID);
+          road[j].end[0] = bu.daysnap(road[j].end[0]+days*bu.SID);
         }
         // Now, create and add the end segment if the value of the
         // subsequent endpoint was different
         if (road[firstseg].sta[1] != road[firstseg].end[1]) {
           var segment = {};
           segment.sta = road[firstseg].sta.slice();
-          segment.sta[0] = bu.daysnap(segment.sta[0]+days*SID);
+          segment.sta[0] = bu.daysnap(segment.sta[0]+days*bu.SID);
           segment.end = road[firstseg].end.slice();
           segment.slope = br.roadSegmentSlope(segment);
           segment.auto = br.RP.VALUE;
@@ -3981,7 +3998,7 @@
         }
       } else {
         // Find the right boundary for the segment for overwriting
-        var endtime = bu.daysnap(road[firstseg].sta[0]+days*SID);
+        var endtime = bu.daysnap(road[firstseg].sta[0]+days*bu.SID);
         var lastseg = br.findRoadSegment( road, endtime );
         if (road[lastseg].sta[0] != endtime) {
           // If there are no dots on the endpoint, add a new one
@@ -4119,7 +4136,7 @@
     self.hide = function() {
       //console.debug("curid="+curid+", hide()");
       hidden = true;
-    };
+    }
 
     /** Informs the module instance that the element containing the
      visuals will be shown again. This forces an update of all visual
@@ -4136,7 +4153,27 @@
       updateTable();
       updateContextData();
       updateGraphData();
-    };
+    }
+
+    self.getRoadObj = function() {
+      return br.copyRoad(road)
+    }
+
+    var settingRoad = false;
+    self.setRoadObj = function( newroad, resetinitial = true ) {
+      if (settingRoad) return
+      settingRoad = true
+      // Create a fresh copy to be safe
+      pushUndoState();
+      road = br.copyRoad(newroad)
+      if (resetinitial) {
+        iroad = br.copyRoad(newroad)
+        clearUndoBuffer();
+      }
+      roadChanged()
+      settingRoad = false
+    }
+
   }
 
   return bgraph;
