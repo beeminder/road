@@ -192,8 +192,6 @@
     alldata = [],    // Holds the entire set of data points
     data = [],    // Holds past aggregated data
     fuda = [],       // Holds all future data
-    //alldataf = [],   // Holds all data up to a limited days before asof
-    //dataf = [],   // Holds past aggregated data (limited)
     undoBuffer = [], // Array of previous roads for undo
     redoBuffer = [], // Array of future roads for redo
     oresets = [],    // Odometer resets
@@ -985,6 +983,13 @@
     /** beebrain object ID for the current instance */
     self.id = 1
     self.getStats = getStats
+    self.roads = roads
+    self.goal = goal
+    self.data = data
+    self.alldata = alldata
+    self.fuda = fuda
+    self.flad = flad
+    self.DPTYPE = DPTYPE
   };
 
   return beebrain;

@@ -38,7 +38,8 @@
   // -------------------------------------------------------------
   // ------------------- FACTORY GLOBALS ---------------------
   /** Global counter to Generate unique IDs for multiple bgraph instances. */
-  var gid = 1,
+  var
+  gid = 1,
 
   defaults = {
     /** Binds the graph to a div element */
@@ -59,9 +60,9 @@
     ctxPad:       { left:25, right:5, top:0, bottom:30 },
     /** Height of the road matrix table. Choose 0 for unspecified */
     tableHeight:  387,
-
+    
     /** Visual parameters for the zoom in/out buttons. "factor" 
-     indicates how much to zoom in/out per click. */
+        indicates how much to zoom in/out per click. */
     zoomButton:   { size: 40, opacity: 0.6, factor: 1.5 },
     /** Size of the bullseye image in the focus and context graphs */ 
     bullsEye:     { size: 40, ctxsize: 20 },
@@ -85,7 +86,7 @@
     guidelines:   { width:2, weekwidth:3 },
     /** Visual parameters for text boxes shown during dragging */ 
     textBox:      { margin: 3 },
-
+    
     roadLineCol:  { valid: "black", invalid:"#ca1212", selected:"yellow"},
     roadDotCol:   { fixed: "darkgray", editable:"#c2c2c2", 
                     selected: "yellow"},
@@ -98,82 +99,82 @@
     dataPointCol: { future: "#909090", stroke: "lightgray"},
     halfPlaneCol: { fill: "#ffffe8" },
     pastBoxCol:   { fill: "#f8f8f8", opacity:0.5 },
-
+    
     /** Strips the graph of all details except what is needed for svg
-     output. */
+        output. */
     headless:        false,
-
+    
     /** Enables zooming by scrollwheel. When disabled, only the
-     context graph and the zoom buttons will allow zooming. */
+        context graph and the zoom buttons will allow zooming. */
     scrollZoom:        true,
-
+    
     /** Enables the road editor. When disabled, the generated graph
-     mirrors beebrain output as closely as possible. */
+        mirrors beebrain output as closely as possible. */
     roadEditor:        false,
-
+    
     /** Enables the display of the context graph within the SVG */
     showContext:       false,
-
+    
     /** Enables showing a dashed rectange in the context graph
-     visualizing the current graph limits on the y-axis */
+        visualizing the current graph limits on the y-axis */
     showFocusRect:     false,
-
+    
     /** Enables displaying datapoints on the graph */ 
     showData:          true,
-
+    
     /** When datapoint display is enabled, indicates the number of
-     days before asof to show data for. This can be used to speed up
-     display refresh for large goals. Choose -1 to display all
-     datapoints. */ 
+        days before asof to show data for. This can be used to speed up
+        display refresh for large goals. Choose -1 to display all
+        datapoints. */ 
     maxDataDays:   -1, // Choose -1 to show all points
-
+    
     /** Indicates how many days beyond asof should be included in the
-     fully zoomed out graph. This is useful for when the goal date is
-     too far beyond asof, making the context graph somewhat useless in
-     terms of its interface utility. */
+        fully zoomed out graph. This is useful for when the goal date is
+        too far beyond asof, making the context graph somewhat useless in
+        terms of its interface utility. */
     maxFutureDays: 365,
-
+    
     /** Indicates whether slopes for segments beyond the currently
-     dragged element should be kept constant during editing. */
+        dragged element should be kept constant during editing. */
     keepSlopes:        true,
-
+    
     /** Indicates whether intervals between the knots for segments
-     beyond the currently dragged element should be kept constant
-     during editing. */
+        beyond the currently dragged element should be kept constant
+        during editing. */
     keepIntervals:     false,
-
+    
     /** Indicates whether the road matrix table should be shown with
-     the earliest rows first (normal) or most recent rows first
-     (reversed). */ 
+        the earliest rows first (normal) or most recent rows first
+        (reversed). */ 
     reverseTable:      false,
-
+    
     /** Indicates whether the auto-scrolling feature for the road
-     matrix table should be enabled such that when the mouse moves
-     over knots, dots or road elements, the corresponding table row is
-     scrolled to be visible in the table. This is particularly useful
-     when tableHeight is explicitly specified and is nonzero. */ 
+        matrix table should be enabled such that when the mouse moves
+        over knots, dots or road elements, the corresponding table row is
+        scrolled to be visible in the table. This is particularly useful
+        when tableHeight is explicitly specified and is nonzero. */ 
     tableAutoScroll:   true,
-
+    
     /** Chooses whether the road matrix table should be dynamically
-     updated during the dragging of road knots, dots and
-     segments. Enabling this may induce some lagginess, particularly
-     on Firefox due to more components being updated during
-     dragging */
+        updated during the dragging of road knots, dots and
+        segments. Enabling this may induce some lagginess, particularly
+        on Firefox due to more components being updated during
+        dragging */
     tableUpdateOnDrag: false,
     
     /** Chooses whether the road matrix table should include checkboxes 
-     for choosing the field to be automatically computed. */
+        for choosing the field to be automatically computed. */
     tableCheckboxes: false,
     
     /** Callback function that gets invoked when the road is edited by
-     the user. Various interface functions can then be used to
-     retrieve the new road state. This is also useful to update the
-     state of undo/redo and submit buttons based on how many edits
-     have been done on the original road. */
+        the user. Various interface functions can then be used to
+        retrieve the new road state. This is also useful to update the
+        state of undo/redo and submit buttons based on how many edits
+        have been done on the original road. */
     onRoadChange: null,
 
     /** Callback function that gets invoked when an error is encountered 
-     in loading, processing, drawing or editing the road. */
+        in loading, processing, drawing or editing the road. */
     onError: null
   },
 
@@ -204,6 +205,21 @@
   },
   
   SVGStyle = ".axis path, .axis line { fill: none; stroke: black; shape-rendering: crispEdges;} .axis .minor line { stroke: #777; stroke-dasharray:5,4; } .grid line { fill: none; stroke: #dddddd; stroke-width: 1px; shape-rendering: crispEdges; } .grid .minor line { stroke: none; } .axis text { font-family: sans-serif; font-size: 11px; } .axislabel { font-family: sans-serif; font-size: 11px; text-anchor: middle; } circle.dots { stroke: black; } line.roads { stroke: black; } .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .waterbuf, .waterbux { text-anchor: middle; font-family: sans-serif; } .loading { text-anchor: middle; font-weight: bold; font-family: sans-serif; } .zoomarea { fill: none; }",
+
+  PRAF  = .015,       // Fraction of plot range that the axes extend beyond
+
+  PNG = { beye: "../pub/bullseye.png", 
+          beyey: "../pub/bullseye.png",
+          skl: "../pub/jollyroger_sqr.png",
+          inf: "../pub/infinity.png",
+          sml: "../pub/smiley.png"
+        },
+  
+  /** Enum object to identify error types. */
+  ErrType = { NOBBFILE:0, BADBBFILE:1, BBERROR:2  },
+
+  /** Enum object to identify error types. */
+  ErrMsgs = [ "Could not find goal file.", "Bad goal file.", "Beebrain error" ],
 
   onMobileOrTablet = function() {
     if (typeof navigator == 'undefined' && typeof window == 'undefined') 
@@ -280,15 +296,20 @@
         scalf = 1
 
     // Internal state for the graph
-    var undoBuffer = [], // Array of previous roads for undo
+    var lastError = null,
+        undoBuffer = [], // Array of previous roads for undo
         redoBuffer = [], // Array of future roads for redo
         processing = false, 
         loading = false,
         hidden = false,
-        mobileOrTablet = onMobileOrTablet()
+        mobileOrTablet = onMobileOrTablet(),
+        dataf, alldataf,
+        horindex = null // Road segment index including the horizon
+
     
     // Beebrain state objects
-    var bbr, goal = {}, road = [], iroad = [], data = []
+    var bbr, goal = {}, road = [], iroad = [],
+        data = [], alldata = []
     
     // Initialize goal with sane values
     goal.yaw = +1; goal.dir = +1;
@@ -345,14 +366,14 @@
         pg.append('svg:rect')
           .attr('x', 0).attr('y',0)
           .attr('width', sw).attr('height',sh)
-          .style('fill', Cols.WITE)
+          .style('fill', bu.Cols.WITE)
           .style('fill-opacity', 0.5);
         pg.append('svg:rect')
           .attr('x', sw/10).attr('y',sh/5)
           .attr('width', sw-2*sw/10).attr('height',sh-2*sh/5)
           .attr('rx', 10)
           .attr('ry', 10)
-          .style('stroke', Cols.BLCK)
+          .style('stroke', bu.Cols.BLCK)
           .style('stroke-width', 1)
           .style('fill', "#ffffcc")
           .style('fill-opacity', 0.9);
@@ -779,6 +800,7 @@
     }
 
     function updateTextBox( obj, x, y, text ) {
+      if (!obj) return
       if (y < 20-plotpad.top) y = 20 -plotpad.top;
       if (y > plotbox.height-15) y = plotbox.height-15;
       obj.text.text(text);
@@ -797,10 +819,12 @@
     }
 
     function removeTextBox( obj ) {
+      if (!obj) return
       obj.grp.remove();
     }
 
     function hideTextBox( obj, hide ) {
+      if (!obj) return
       obj.grp.attr("visibility", (hide)?"hidden":"visible");
     }
 
@@ -1057,7 +1081,7 @@
       //console.debug("undoLastEdit: Undo Buffer has "+undoBuffer.length+" entries");
       if (undoBuffer.length == 0) return;
       if (undoBuffer.length == 0 || 
-          !sameRoads(undoBuffer[undoBuffer.length-1], road)) {
+          !br.sameRoads(undoBuffer[undoBuffer.length-1], road)) {
         redoBuffer.push(road);
       }
       road = undoBuffer.pop();
@@ -1068,8 +1092,8 @@
     function pushUndoState(fromredo = false) {
       //console.debug("pushUndoState: Undo Buffer has "+undoBuffer.length+" entries");
       if (undoBuffer.length == 0 || 
-          !sameRoads(undoBuffer[undoBuffer.length-1], road)) {
-        undoBuffer.push(copyRoad(road));
+          !br.sameRoads(undoBuffer[undoBuffer.length-1], road)) {
+        undoBuffer.push(br.copyRoad(road));
         if (!fromredo) {
           redoBuffer = [];        
         }
@@ -1086,23 +1110,23 @@
       var now = goal.asof;
       var hor = goal.horizon;
       // Check left/right boundaries of the pink region
-      if (goal.yaw*rdf(rd, now) < goal.yaw*rdf(ir, now) - EPS) 
+      if (goal.yaw*br.rdf(rd, now) < goal.yaw*br.rdf(ir, now) - EPS) 
         return false;
-      if (goal.yaw*rdf(rd, hor) < goal.yaw*rdf(ir, hor) - EPS) 
+      if (goal.yaw*br.rdf(rd, hor) < goal.yaw*br.rdf(ir, hor) - EPS) 
         return false;
       // Iterate through and check current road points in the ping range
       var rd_i1 = br.findRoadSegment(rd, now);
       var rd_i2 = br.findRoadSegment(rd, hor);
       for (var i = rd_i1; i < rd_i2; i++) {
-        if (goal.yaw*rdf(rd, rd[i].end[0]) < 
-            goal.yaw*rdf(ir, rd[i].end[0]) - EPS) return false;
+        if (goal.yaw*br.rdf(rd, rd[i].end[0]) < 
+            goal.yaw*br.rdf(ir, rd[i].end[0]) - EPS) return false;
       }
       // Iterate through and check old road points in the ping range
       var ir_i1 = br.findRoadSegment(ir, now);
       var ir_i2 = br.findRoadSegment(ir, hor);
       for (i = ir_i1; i < ir_i2; i++) {
-        if (goal.yaw*rdf(rd, ir[i].end[0]) < 
-            goal.yaw*rdf(ir, ir[i].end[0]) - EPS) return false;
+        if (goal.yaw*br.rdf(rd, ir[i].end[0]) < 
+            goal.yaw*br.rdf(ir, ir[i].end[0]) - EPS) return false;
       }
       return true;
     }
@@ -1133,10 +1157,10 @@
     function roadExtent( rd, extend = true ) {
       var extent = {};
       // Compute new limits for the current data
-      extent.xMin = arrMin(rd.map(function(d) { return d.end[0]; }));
-      extent.xMax = arrMax(rd.map(function(d) { return d.sta[0]; }));
-      extent.yMin = arrMin(rd.map(function(d) { return d.sta[1]; }));
-      extent.yMax = arrMax(rd.map(function(d) { return d.sta[1]; }));
+      extent.xMin = bu.arrMin(rd.map(function(d) { return d.end[0]; }));
+      extent.xMax = bu.arrMax(rd.map(function(d) { return d.sta[0]; }));
+      extent.yMin = bu.arrMin(rd.map(function(d) { return d.sta[1]; }));
+      extent.yMax = bu.arrMax(rd.map(function(d) { return d.sta[1]; }));
       // Extend limits by 5% so everything is visible
       var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
       if (extend) enlargeExtent(extent, p);
@@ -1161,12 +1185,11 @@
       if (nd.length == 0) return null;
 
       // Compute new limits for the current data
-      extent.xMin = arrMin(nd.map(function(d) { return d[0]; }));
-      extent.xMax = arrMax(nd.map(function(d) { return d[0]; }));
-      extent.yMin = arrMin(nd.map(function(d) { return d[1]; }));
-      extent.yMax = arrMax(nd.map(function(d) { return d[1]; }));
+      extent.xMin = bu.arrMin(nd.map(function(d) { return d[0]; }));
+      extent.xMax = bu.arrMax(nd.map(function(d) { return d[0]; }));
+      extent.yMin = bu.arrMin(nd.map(function(d) { return d[1]; }));
+      extent.yMax = bu.arrMax(nd.map(function(d) { return d[1]; }));
 
-      console.log(extent);
       // Extend limits by 5% so everything is visible
       var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
       if (extend) enlargeExtent(extent, p);
@@ -1178,12 +1201,12 @@
       // Compute new limits for the current data
       extent.xMin = xmin;
       extent.xMax = xmax;
-      extent.yMin = arrMin(rd.map(function(d) { 
+      extent.yMin = bu.arrMin(rd.map(function(d) { 
         return (d.sta[0] <xmin||d.sta[0]>xmax)?Infinity:d.sta[1]; }));
-      extent.yMax = arrMax(rd.map(function(d) { 
+      extent.yMax = bu.arrMax(rd.map(function(d) { 
         return (d.sta[0] <xmin||d.sta[0]>xmax)?-Infinity:d.sta[1]; }));
-      extent.yMin = arrMin([extent.yMin, rdf(rd,xmin), rdf(rd,xmax)]);
-      extent.yMax = arrMax([extent.yMax, rdf(rd,xmin), rdf(rd,xmax)]);
+      extent.yMin = bu.arrMin([extent.yMin, br.rdf(rd,xmin), br.rdf(rd,xmax)]);
+      extent.yMax = bu.arrMax([extent.yMax, br.rdf(rd,xmin), br.rdf(rd,xmax)]);
       // Extend limits by 5% so everything is visible
       var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
       if (extend) enlargeExtent(extent, p);
@@ -1217,10 +1240,10 @@
     // given explicitly.
     function setWatermark() {
 
-      goal.safebuf = dtd(road, goal, goal.tcur, goal.vcur);
+      goal.safebuf = br.dtd(road, goal, goal.tcur, goal.vcur);
       goal.tluz = goal.tcur+goal.safebuf*bu.SID;
       if (goal.tfin < goal.tluz) goal.tluz = bu.BDUSK;
-      goal.loser = isLoser(road,goal,data,goal.tcur,goal.vcur);
+      goal.loser = br.isLoser(road,goal,data,goal.tcur,goal.vcur);
 
       if  (goal.asof >= goal.tfin && !goal.loser)  {
         goal.waterbuf = ":)";
@@ -1248,11 +1271,11 @@
       var old = roadExtentPartial(iroad,road[0].end[0],maxx,false);
       var ne = mergeExtents( cur, old );
 
-      var data = dataExtentPartial((goal.plotall&&!opts.roadEditor)?alldata:data,road[0].end[0],data[data.length-1][0],false);
+      var d = dataExtentPartial((goal.plotall&&!opts.roadEditor)?alldata:data,road[0].end[0],data[data.length-1][0],false);
 
-      if (data != null) ne = mergeExtents(ne, data);
-      if (fuda.length != 0) {
-        var df = dataExtentPartial(fuda,road[0].end[0],maxx,false);
+      if (d != null) ne = mergeExtents(ne, d);
+      if (bbr.fuda.length != 0) {
+        var df = dataExtentPartial(bbr.fuda,road[0].end[0],maxx,false);
         ne = mergeExtents(ne, df);
       }
 
@@ -1279,14 +1302,45 @@
       }
     }
 
+    // Function to generate samples for the Butterworth filter
+    function griddlefilt(a, b) {
+      return bu.linspace(a, b, Math.floor(bu.clip((b-a)/(bu.SID+1), 40, 2000)));
+    }
+
+    // Function to generate samples for the Butterworth filter
+    function griddle(a, b, maxcnt = 6000) {
+      return bu.linspace(a, b, Math.floor(bu.clip((b-a)/(bu.SID+1), 
+                                            Math.min(600, plotbox.width),
+                                            maxcnt)));
+    }
+
     // Recreates the road array from the "rawknots" array, which includes
     // only timestamp,value pairs
     function loadGoal( json ) {
-      //console.debug("id="+curid+", loadGoal()->"+json.params.yoog);
+      console.debug("id="+curid+", loadGoal()->"+json.params.yoog);
       clearUndoBuffer();
 
       processing = true;
 
+      // Create beebrain processor
+      bbr = new bb(json)
+      road = bbr.roads
+      iroad = br.copyRoad( road );
+      goal = bbr.goal
+      data = bbr.data
+      alldata = bbr.alldata
+
+      // Extract limited data
+      if (opts.maxDataDays < 0) {
+        dataf = data.slice();
+        alldataf = alldata.slice();
+      } else {
+        dataf = data.filter(function(e){
+          return e[0]>(goal.asof-opts.maxDataDays*bu.SID);});
+        alldataf = alldata.filter(function(e){
+          return e[0]>(goal.asof-opts.maxDataDays*bu.SID);});
+      }
+      
       // TODO: Make sure the output here matches python beebrain
       if (opts.divJSON) {
         let stats = {};
@@ -1303,16 +1357,45 @@
 
     }
 
-        function setSafeDays( days ) {
+    async function loadGoalFromURL( url, callback = null ) {
+      console.debug( "Loading: "+url );
+      if (url == "" || loading) return
+      loading = true
+      showOverlay( ["loading..."], sh/10 )
+      var resp = await bu.loadJSON( url )
+
+      if (resp != null) {
+        removeOverlay();
+        loadGoal( resp );
+        if (typeof opts.onRoadChange === 'function') {
+          opts.onRoadChange.call();
+        }
+        updateTableTitles();
+      } else {
+        if (lastError != null)
+          showOverlay( [ErrMsgs[lastError]] );
+        else
+          showOverlay(["Could not load goal file."]);
+        if (!opts.headless) {
+          setTimeout( function() {removeOverlay();}, 1500);
+        }
+        if (typeof opts.onError === 'function') {
+          opts.onError.call();
+        }
+      } 
+      loading = false;
+    }
+
+    function setSafeDays( days ) {
       //console.debug("setSafeDays()");
-      var curdtd = dtd(road, goal, goal.tcur, goal.vcur);
+      var curdtd = br.dtd(road, goal, goal.tcur, goal.vcur);
       var now = goal.asof;
       if (days < 0) days = 0;
       // Look into the future to see the road value to ratchet to
       var daydiff = curdtd - (days - 1) - 1;
       if (daydiff <= 0) return;
       var futureDate= goal.asof + daydiff*bu.SID;
-      var ratchetValue = rdf( road, futureDate);
+      var ratchetValue = br.rdf( road, futureDate);
 
       // Find or add two new dots at asof
       // We only allow the first step to record undo info.
@@ -1600,7 +1683,7 @@
       editingKnot = true;
       pushUndoState();
       var kind = Number(this.id);
-      roadsave = copyRoad( road );
+      roadsave = br.copyRoad( road );
       if (selection == null) {
         selectKnot(kind);
       } else if (selection != null 
@@ -1713,7 +1796,7 @@
       d3.event.sourceEvent.stopPropagation();
       editingDot = true;
       pushUndoState();
-      roadsave = copyRoad( road );
+      roadsave = br.copyRoad( road );
       var kind = id;
       if (selection == null) {
         selectDot(kind);
@@ -1823,7 +1906,7 @@
       editingRoad = true;
       roadedit_x = bu.daysnap(nXSc.invert(d3.event.x)/1000);
       pushUndoState();
-      roadsave = copyRoad( road );
+      roadsave = br.copyRoad( road );
 
       if (selection == null) {
         selectRoad(id);
@@ -1974,7 +2057,7 @@
           .attr("y1",0)
 		      .attr("x2", nXSc(goal.asof*1000))
           .attr("y2",plotbox.height)
-          .style("stroke", Cols.AKRA) 
+          .style("stroke", bu.Cols.AKRA) 
 		      .style("stroke-width",opts.today.width);
       } else {
         todayelt
@@ -1990,7 +2073,7 @@
 	        .attr("class","pasttext")
 	  	    .attr("x",textx ).attr("y",texty)
           .attr("transform", "rotate(-90,"+textx+","+texty+")")
-          .attr("fill", Cols.AKRA) 
+          .attr("fill", bu.Cols.AKRA) 
           .style("font-size", opts.horizon.font+"px") 
           .text("Today"+" ("+moment.unix(goal.asof).utc().format("ddd")+")");
       } else {
@@ -2177,7 +2260,7 @@
 	        .attr("class","waterbuf")
           .style('font-size', opts.watermark.fntsize+"px")
           .style('font-weight', "bold")
-          .style('fill', Cols.GRAY)
+          .style('fill', bu.Cols.GRAY)
           .text(goal.waterbuf);
         bbox = wbufelt.node().getBBox();
         if (bbox.width > plotbox.width/2.2) {
@@ -2200,7 +2283,7 @@
 	        .attr("class","waterbux")
           .style('font-size', opts.watermark.fntsize+"px")
           .style('font-weight', "bold")
-          .style('fill', Cols.GRAY)
+          .style('fill', bu.Cols.GRAY)
           .text(goal.waterbux);
         bbox = wbuxelt.node().getBBox();
         if (bbox.width > plotbox.width/2.2) {
@@ -2228,7 +2311,7 @@
         var xvec = griddle(goal.tmin, 
                            Math.min(goal.asof+bu.AKH, goal.tmax+fudge)),i;
         xvec = griddle(Math.max(xr[0], goal.tmin),
-                       arrMin([xr[1], goal.asof+bu.AKH, goal.tmax+fudge]),
+                       bu.arrMin([xr[1], goal.asof+bu.AKH, goal.tmax+fudge]),
                        plotbox.width/2);
         // Generate a path string for the aura
         var d = "M"+nXSc(xvec[0]*1000)+" "
@@ -2243,8 +2326,8 @@
         if (el.empty()) {
           gAura.append("svg:path")
             .attr("class","aura").attr("d", d)
-  		      .style("fill", Cols.BLUE)
-  		      .style("stroke-width", 2).style("stroke", Cols.BLUE);
+  		      .style("fill", bu.Cols.BLUE)
+  		      .style("stroke-width", 2).style("stroke", bu.Cols.BLUE);
         } else {
           el.attr("d", d);
         }
@@ -2262,11 +2345,11 @@
           if (el2.empty()) {
             gAura.append("svg:path")
               .attr("class","aurapast").attr("d", d)
-  		        .style("fill", Cols.BLUE)
+  		        .style("fill", bu.Cols.BLUE)
   		        .style("fill-opacity", 0.3)
   		        .style("stroke-width", 2)
   		        .style("stroke-dasharray", "4,4")
-              .style("stroke", Cols.BLUE);
+              .style("stroke", bu.Cols.BLUE);
           } else {
             el2.attr("d", d);
           }
@@ -2290,7 +2373,7 @@
           .attr("y1",0)
 		      .attr("x2", nXSc(goal.horizon*1000))
           .attr("y2",plotbox.height)
-          .style("stroke", Cols.AKRA) 
+          .style("stroke", bu.Cols.AKRA) 
           .style("stroke-dasharray", 
                  (opts.horizon.dash)+","+(opts.horizon.dash)) 
 		      .attr("stroke-width",opts.horizon.width*scalf);
@@ -2310,7 +2393,7 @@
 	        .attr("class","horizontext")
 	  	    .attr("x",textx ).attr("y",texty)
           .attr("transform", "rotate(-90,"+textx+","+texty+")")
-          .attr("fill", Cols.AKRA) 
+          .attr("fill", bu.Cols.AKRA) 
           .style("font-size", (opts.horizon.font)+"px") 
           .text("Akrasia Horizon");
       } else {
@@ -2330,7 +2413,7 @@
           .attr("y1",yScB(goal.yMin-5*(goal.yMax-goal.yMin)))
 		      .attr("x2", xScB(goal.horizon*1000))
           .attr("y2",yScB(goal.yMax+5*(goal.yMax-goal.yMin)))
-          .style("stroke", Cols.AKRA) 
+          .style("stroke", bu.Cols.AKRA) 
           .style("stroke-dasharray", (opts.horizon.ctxdash)+","
                  +(opts.horizon.ctxdash)) 
 		      .style("stroke-width",opts.horizon.ctxwidth);
@@ -2351,7 +2434,7 @@
 	        .attr("class","ctxhortext")
 	  	    .attr("x",textx ).attr("y",texty)
           .attr("transform", "rotate(-90,"+textx+","+texty+")")
-          .attr("fill", Cols.AKRA) 
+          .attr("fill", bu.Cols.AKRA) 
           .style("font-size", (opts.horizon.ctxfont)+"px") 
           .text("Horizon");
       } else {
@@ -2381,12 +2464,12 @@
       itoday = br.findRoadSegment(ir, now);
       ihor = br.findRoadSegment(ir, hor);
       var d = "M"+nXSc(now*1000)+" "
-            +nYSc(rdf(ir, now));
+            +nYSc(br.rdf(ir, now));
       for (var i = itoday; i < ihor; i++) {
         d += " L"+nXSc(ir[i].end[0]*1000)+" "
           +nYSc(ir[i].end[1]);
       }
-      d+=" L"+nXSc(hor*1000)+" "+nYSc(rdf(ir, hor));
+      d+=" L"+nXSc(hor*1000)+" "+nYSc(br.rdf(ir, hor));
       d+=" L"+nXSc(hor*1000)+" "+nYSc(yedge);
       d+=" L"+nXSc(now*1000)+" "+nYSc(yedge);
       d+=" Z";
@@ -2414,12 +2497,12 @@
       itoday = br.findRoadSegment(ir, now);
       ihor = br.findRoadSegment(ir, hor);
       var d = "M"+nXSc(now*1000)+" "
-            +nYSc(rdf(ir, now));
+            +nYSc(br.rdf(ir, now));
       for (var i = itoday; i < ihor; i++) {
         d += " L"+nXSc(ir[i].end[0]*1000)+" "+
           nYSc(ir[i].end[1]);
       }
-      d+=" L"+nXSc(hor*1000)+" "+nYSc(rdf(ir, hor));
+      d+=" L"+nXSc(hor*1000)+" "+nYSc(br.rdf(ir, hor));
       d+=" L"+nXSc(hor*1000)+" "+nYSc(yedge);
       d+=" L"+nXSc(now*1000)+" "+nYSc(yedge);
       d+=" Z";
@@ -2428,7 +2511,7 @@
           .attr("class","pinkregion")
 	  	    .attr("d", d)
 	  	    .attr("fill-opacity", 0.4)
-          .attr("fill", Cols.PINK);
+          .attr("fill", bu.Cols.PINK);
       } else {
         pinkelt.attr("d", d);
       }
@@ -2505,7 +2588,7 @@
                  +(opts.oldRoadLine.dash)) 
   		    .style("fill", "none")
   		    .style("stroke-width",opts.oldRoadLine.width*scalf)
-  		    .style("stroke", Cols.ORNG);
+  		    .style("stroke", bu.Cols.ORNG);
       } else {
         roadelt.attr("d", rd)
   		    .style("stroke-width",opts.oldRoadLine.width*scalf);
@@ -2548,7 +2631,7 @@
             .attr("class","oldlanes")
   		      .attr("pointer-events", "none")
 	  	      .attr("d", d)
-  		      .style("fill", Cols.DYEL)
+  		      .style("fill", bu.Cols.DYEL)
   		      .style("fill-opacity", 0.5)
   		      .style("stroke", "none");
         } else {
@@ -2592,7 +2675,7 @@
               :opts.guidelines.width*scalf;})
   		    .attr("stroke", function (d,i) { 
             return ((delta==7 && i==0) || (delta==1 && i==6))
-              ?Cols.DYEL:Cols.LYEL;});
+              ?bu.Cols.DYEL:bu.Cols.LYEL;});
         guideelt.attr("d", rd2)
           .attr("transform", function(d,i) { 
             return "translate(0,"+((i+1)*delta*shift)+")";})
@@ -2602,7 +2685,7 @@
               :opts.guidelines.width*scalf;})
   		    .attr("stroke", function (d,i) { 
             return ((delta==7 && i==0) || (delta==1 && i==6))
-              ?Cols.DYEL:Cols.LYEL;});
+              ?bu.Cols.DYEL:bu.Cols.LYEL;});
       } else {
         laneelt.remove();
         guideelt.remove();
@@ -2628,7 +2711,7 @@
                  +(opts.oldRoadLine.ctxdash)) 
   		    .style("fill", "none")
   		    .style("stroke-width",opts.oldRoadLine.ctxwidth)
-  		    .style("stroke", Cols.ORNG);
+  		    .style("stroke", bu.Cols.ORNG);
       } else {
         roadelt.attr("d", d);
       }
@@ -2900,10 +2983,10 @@
     }
 
     function dpFill( pt ) {
-      return dotcolor(road, goal, pt[0], pt[1]);
+      return br.dotcolor(road, goal, pt[0], pt[1]);
     }
     function dpFillOp( pt ) {
-      return (pt[3] == DPTYPE.AGGPAST)?1:0.3;
+      return (pt[3] == bbr.DPTYPE.AGGPAST)?1:0.3;
     }
     function dpStroke( pt ) {
       if (opts.roadEditor) {
@@ -2916,7 +2999,7 @@
       if (opts.roadEditor) {
         return (opts.dataPoint.border*scalf)+"px";
       } else {
-        return (((pt[2] == DPTYPE.AGGPAST)?1:0.5)*scalf)+"px";
+        return (((pt[2] == bbr.DPTYPE.AGGPAST)?1:0.5)*scalf)+"px";
       }
     }
 
@@ -2930,7 +3013,7 @@
       var info = [];
       if (d[2] !== "") info.push("\""+d[2]+"\"");
       if (d[6] !== null && d[1] !== d[6]) info.push("total:"+d[1]);
-      var col = dotcolor(road, goal, d[0], d[1]);
+      var col = br.dotcolor(road, goal, d[0], d[1]);
       dotText = createTextBox(ptx, pty-(15+18*info.length), txt, 
                               col, info );
     };
@@ -2992,7 +3075,7 @@
       var now = goal.asof;
       var dpelt;
       if (opts.showData || !opts.roadEditor) {
-        var pts = (flad != null)?
+        var pts = (bbr.flad != null)?
               dataf.slice(0,dataf.length-1):
               dataf;
         // Filter data to only include visible points
@@ -3007,27 +3090,27 @@
           el.remove();
         }
 
-        updateDotGroup(gDpts, pts.concat(fuda), "dpts", 
+        updateDotGroup(gDpts, pts.concat(bbr.fuda), "dpts", 
                        opts.dataPoint.size*scalf,
                        dpStroke, dpStrokeWidth, dpFill, true, dpFillOp);
 
         var fladelt = gFlat.selectAll(".fladp");
-        if (flad != null) {
+        if (bbr.flad != null) {
           if (fladelt.empty()) {
             gFlat.append("svg:use")
 		          .attr("class","fladp")
               .attr("xlink:href", "#rightarrow")
-              .attr("fill", dotcolor(road,goal,flad[0],flad[1]))
+              .attr("fill", br.dotcolor(road,goal,bbr.flad[0],bbr.flad[1]))
               .attr("transform", 
-                    "translate("+(nXSc((flad[0])*1000))+","
-                    +nYSc(flad[1])+"),scale("+(opts.dataPoint.fsize/50)+")")
+                    "translate("+(nXSc((bbr.flad[0])*1000))+","
+                    +nYSc(bbr.flad[1])+"),scale("+(opts.dataPoint.fsize/50)+")")
               .style("pointer-events", function() {
                 return (opts.roadEditor)?"none":"all";})
 		          .on("mouseenter",function() {
                 if (dotTimer != null) 
                   window.clearTimeout(dotTimer);
                 dotTimer = window.setTimeout(function() {
-                  showDotText(flad); dotTimer = null;}, 500);})
+                  showDotText(bbr.flad); dotTimer = null;}, 500);})
 		          .on("mouseout",function() { 
                 if (dotText != null) {
                   removeDotText(); dotText = null;
@@ -3036,10 +3119,10 @@
                 dotTimer = null;});
           } else {
             fladelt
-              .attr("fill", dotcolor(road,goal,flad[0],flad[1]))
+              .attr("fill", br.dotcolor(road,goal,bbr.flad[0],bbr.flad[1]))
               .attr("transform", 
-                    "translate("+(nXSc((flad[0])*1000))+","
-                    +nYSc(flad[1])+"),scale("
+                    "translate("+(nXSc((bbr.flad[0])*1000))+","
+                    +nYSc(bbr.flad[1])+"),scale("
                     +(opts.dataPoint.fsize/50)+")");
           }
         } else {
@@ -3070,7 +3153,7 @@
 	  	          .attr("d", d)
   		          .style("fill", "none")
   		          .attr("stroke-width",3*scalf)
-  		          .style("stroke", Cols.PURP);
+  		          .style("stroke", bu.Cols.PURP);
             } else {
               stpelt.attr("d", d)
   		          .attr("stroke-width",3*scalf);
@@ -3078,7 +3161,7 @@
           } else stpelt.remove();
           updateDotGroup(gSteppyPts, pts, "steppyd",
                          (opts.dataPoint.size+2)*scalf,
-                         "none", null, Cols.PURP);
+                         "none", null, bu.Cols.PURP);
         } else {
           stpelt.remove();
           var stpdelt = gSteppyPts.selectAll(".steppyd");
@@ -3119,7 +3202,7 @@
 	  	        .attr("d", d)
   		        .style("fill", "none")
   		        .attr("stroke-width",3*scalf)
-  		        .style("stroke", Cols.PURP);
+  		        .style("stroke", bu.Cols.PURP);
           } else {
             el.attr("d", d)
   		        .attr("stroke-width",3*scalf);
@@ -3668,9 +3751,9 @@
       var limits = [nXSc.invert(0).getTime()/1000, 
                     nXSc.invert(plotbox.width).getTime()/1000];
       if (opts.roadEditor)
-        scalf = cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.7);
+        scalf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.7);
       else 
-        scalf = cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.5);
+        scalf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.5);
       updatePastBox();
       updateYBHP();
       updatePinkRegion();
@@ -3919,7 +4002,7 @@
       // Format the current road matrix to be submitted to Beeminder
       var r = {}, seg, rd, kd;
       r.valid = isRoadValid(road);
-      r.loser = isLoser(road,goal,data,goal.tcur,goal.vcur);
+      r.loser = br.isLoser(road,goal,data,goal.tcur,goal.vcur);
       r.asof = goal.asof;
       r.horizon = goal.horizon;
       r.siru = goal.siru;
