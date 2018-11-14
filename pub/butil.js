@@ -574,9 +574,17 @@
       }       
       return true;
     }
-    self.isNumeric = function(n) {
-      return !isNaN(parseFloat(n)) && isFinite(n);
-    }
+    self.nummy = function(n)  { return !isNaN(parseFloat(n)) && isFinite(n) }
+    self.stringy = function(x){ return  typeof x == "string" }
+    self.listy = function(x)  { return  Array.isArray(x) }
+
+    // Type-checking convenience functions
+    self.torf = function(x){ return typeof x == "boolean"}            // True or False
+    self.born = function(x){ return self.torf(x) | (x == null) }      // Boolean or Null
+    self.norn = function(x){ return self.nummy(x) || (x == null) }    // Numeric or Null
+    self.timy = function(x){ return self.nummy(x) && 0<x && x<self.BDUSK } // Valid time
+    self.torn = function(x){ return self.timy(x) || (x == null) }     // ValidTime or Null
+    self.sorn = function(x){ return typeof x == "string" || (x == null) } //String or Null
 
   }
 
