@@ -1083,6 +1083,7 @@
     self.alldata = alldata
     self.fuda = fuda
     self.flad = flad
+    self.oresets = oresets
     self.DPTYPE = DPTYPE
   };
 
