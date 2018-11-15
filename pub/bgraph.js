@@ -775,6 +775,7 @@
     }
 
     function roadChanged() {
+      if (!settingRoad) bbr.reloadRoad()
       computePlotLimits( true );
       horindex = br.findRoadSegment(road, goal.horizon);
       reloadBrush();
@@ -4206,6 +4207,7 @@
         iroad = br.copyRoad(newroad)
         clearUndoBuffer();
       }
+      bbr.setRoadObj(newroad)
       roadChanged()
       settingRoad = false
     }
