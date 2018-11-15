@@ -21,17 +21,17 @@
   'use strict'
   if (typeof define === 'function' && define.amd) {
     // AMD. Register as an anonymous module.
-    console.log("btest: Using AMD module definition")
+    //console.log("btest: Using AMD module definition")
     define(['moment', 'butil', 'broad', 'beebrain'], factory)
   } else if (typeof module === 'object' && module.exports) {
     // Node. Does not work with strict CommonJS, but
     // only CommonJS-like environments that support module.exports,
     // like Node.    
-    console.log("btest: Using CommonJS module.exports")
+    //console.log("btest: Using CommonJS module.exports")
     module.exports = factory(require('moment'), require('butil'), 
                              require('broad'), require('beebrain'))
   } else {
-    console.log("btest: Using Browser globals")
+    //console.log("btest: Using Browser globals")
     root.btest = factory(root.moment, root.butil, root.broad, root.beebrain)
   }
 })(this, function (moment, bu, br, bb) {
@@ -78,6 +78,36 @@
       }
       return {valid: valid, numeric: numeric, result: str}
     }
+
+    self.compareWithPybrain = async function( url, pyouturl ) {
+      if (url == "") return null;
+      var resp = await bu.loadJSON(url);
+      var bbr = await bu.loadJSON(pyouturl);
+
+      if (resp != null && bbr != null) {
+
+        var jsb = new bb( resp ),
+            stats = jsb.getStats()
+        var res = await self.compareOutputs(stats, bbr)
+        res.typestr = self.goalTypeString(jsb.goal)
+        res.stats = stats;
+        res.pyout = bbr;
+        return res
+      }
+      return null
+    }
+
+    self.goalTypeString = function( goal ) {
+      var r = "<span style=\"color:red\">"
+      var g = "<span style=\"color:green\">"
+      var b = "<span style=\"color:black\">"
+      var e = "</span>"
+      var v = (s=>((goal[s]?(b+s+e+","):"")))
+      var str = v("kyoom")+v("odom")+v("noisy")+v("steppy")+v("rosy")
+          +v("aura")+v("plotall")+v("movingav")+v("hidey")+v("stathead")
+      return str.slice(0,str.length-1)
+    }
+
   }
 
   return new btest()

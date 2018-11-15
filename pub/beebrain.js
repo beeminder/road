@@ -21,17 +21,17 @@
   'use strict'
   if (typeof define === 'function' && define.amd) {
     // AMD. Register as an anonymous module.
-    console.log("beebrain: Using AMD module definition")
+    //console.log("beebrain: Using AMD module definition")
     define(['moment', 'butil', 'broad'], factory)
   } else if (typeof module === 'object' && module.exports) {
     // Node. Does not work with strict CommonJS, but
     // only CommonJS-like environments that support module.exports,
     // like Node.    
-    console.log("beebrain: Using CommonJS module.exports")
+    //console.log("beebrain: Using CommonJS module.exports")
     module.exports = factory(require('moment'), require('butil'), 
                              require('broad'))
   } else {
-    console.log("beebrain: Using Browser globals")
+    //console.log("beebrain: Using Browser globals")
     root.beebrain = factory(root.moment, root.butil, root.broad)
   }
 })(this, function (moment, bu, br) {
@@ -960,105 +960,108 @@
     function genStats( p, d, tm=null ) {
       //console.debug("genStats: id="+curid+", "+p.yoog)
 
-      // start the clock immediately
-      if (tm == null) tm = moment.utc().unix()
+      try {
+        // start the clock immediately
+        if (tm == null) tm = moment.utc().unix()
 
-      legacyIn( p )
-      initGlobals()
-      goal.proctm = tm
-      data = stampIn(p, d)
-
-      // make sure all supplied params are recognized 
-      for (var prop in p) {
-        if (p.hasOwnProperty(prop)) {
-          if (!pin.hasOwnProperty(prop) && (!pig.includes(prop)))
-            goal.error += "Unknown param: "+prop+"="+p[prop]+","
-          else goal[prop] = p[prop]
-        }
-      }
-
-      // Process and extract various parameters that are independent of road and data
-      // maybe just default to aggday=last; no such thing as aggday=null
-      if ( !p.hasOwnProperty('aggday')) {
-        if (goal.kyoom) p.aggday = "sum"
-        else p.aggday = "last"
-      }
-      goal.siru = bu.SECS[p.runits]
-      goal.horizon = goal.asof+bu.AKH
-
-      // Append final segment to the road array. These values will be
-      // reextracted after filling in road in procParams
-      if (bu.listy(goal.road)) goal.road.push([goal.tfin, goal.vfin, goal.rfin])
-      
-      if (goal.error == "") goal.error = vetParams()
-      if (goal.error == "") goal.error = procData()
-      
-      // TODO: SCHEDULED for removal
-      // var vtmp
-      // if (p.hasOwnProperty('tini'))  goal.tini = Number(p.tini)
-      // else goal.tini = data[0][0]
-
-      // if (allvals.hasOwnProperty(goal.tini)) {
-      //   vtmp = (goal.plotall)
-      //     ?allvals[goal.tini][0][0]:aggval[goal.tini][0]
-      // } else vtmp = Number(p.vini)
-
-      // if (p.hasOwnProperty('vini')) goal.vini = p.vini
-      // else goal.vini = (goal.kyoom)?0:vtmp
-
-      // Extract road infor into our internal format consisting of road segments:
-      // [ [startt, startv], [endt, endv], slope, autofield]
-      if (goal.error == "") goal.error = procRoad( p.road )
-      if (goal.error == "") goal.error = procParams( p )
-
-      // Abort on error
-      if (goal.error != "") return
-
-      sumSet(roads, goal)
-      
-      goal.fullroad = goal.road.slice()
-      goal.fullroad.unshift( [goal.tini, goal.vini, 0, 0] )
-
-      if (goal.error == "") {
-        goal.pinkzone = [[goal.asof,br.rdf(roads, goal.asof),0]]
-        goal.road.forEach(
-          function(r) {
-            if (r[0] > goal.asof && r[0] < goal.asof+bu.AKH) {
-              goal.pinkzone.push([r[0], r[1], null]);
-            }
+        legacyIn( p )
+        initGlobals()
+        goal.proctm = tm
+        data = stampIn(p, d)
+        
+        // make sure all supplied params are recognized 
+        for (var prop in p) {
+          if (p.hasOwnProperty(prop)) {
+            if (!pin.hasOwnProperty(prop) && (!pig.includes(prop)))
+              goal.error += "Unknown param: "+prop+"="+p[prop]+","
+            else goal[prop] = p[prop]
           }
-        )
-        goal.pinkzone.push([goal.asof+bu.AKH, br.rdf(roads, goal.asof+bu.AKH),null])
-        goal.pinkzone = br.fillroadall(goal.pinkzone, goal)
-      }
+        }
+
+        // Process and extract various parameters that are independent of road and data
+        // maybe just default to aggday=last; no such thing as aggday=null
+        if ( !p.hasOwnProperty('aggday')) {
+          if (goal.kyoom) p.aggday = "sum"
+          else p.aggday = "last"
+        }
+        goal.siru = bu.SECS[p.runits]
+        goal.horizon = goal.asof+bu.AKH
+        
+        // Append final segment to the road array. These values will be
+        // reextracted after filling in road in procParams
+        if (bu.listy(goal.road)) goal.road.push([goal.tfin, goal.vfin, goal.rfin])
       
-      // TODO: Implement opts.maxDataDays
-      // Now that the flatlined datapoint is in place, we can
-      // extract limited data
-      //if (opts.maxDataDays < 0) {
-      //alldataf = alldata.slice();
-      //dataf = data.slice();
-      //} else {
-      //  alldataf = alldata.filter(function(e){
-      //    return e[0]>(goal.asof-opts.maxDataDays*SID);});
-      //  dataf = data.filter(function(e){
-      //    return e[0]>(goal.asof-opts.maxDataDays*SID);});
-       // }
+        if (goal.error == "") goal.error = vetParams()
+        if (goal.error == "") goal.error = procData()
+      
+        // TODO: SCHEDULED for removal
+        // var vtmp
+        // if (p.hasOwnProperty('tini'))  goal.tini = Number(p.tini)
+        // else goal.tini = data[0][0]
+        
+        // if (allvals.hasOwnProperty(goal.tini)) {
+        //   vtmp = (goal.plotall)
+        //     ?allvals[goal.tini][0][0]:aggval[goal.tini][0]
+        // } else vtmp = Number(p.vini)
+        
+        // if (p.hasOwnProperty('vini')) goal.vini = p.vini
+        // else goal.vini = (goal.kyoom)?0:vtmp
+        
+        // Extract road infor into our internal format consisting of road segments:
+        // [ [startt, startv], [endt, endv], slope, autofield]
+        if (goal.error == "") goal.error = procRoad( p.road )
+        if (goal.error == "") goal.error = procParams( p )
+        
+        // Abort on error
+        if (goal.error != "") return
+        
+        sumSet(roads, goal)
+        
+        goal.fullroad = goal.road.slice()
+        goal.fullroad.unshift( [goal.tini, goal.vini, 0, 0] )
 
-      // Generate the aura function now that the flatlined
-      // datapoint is also computed.
-      if (goal.aura) {
-        var adata = data.filter(function(e){return e[0]>=goal.tmin})
-        var fdata = br.gapFill(adata)
-        goal.auraf = br.smooth(fdata)
-      } else
-        goal.auraf = function(e){ return 0 }
+        if (goal.error == "") {
+          goal.pinkzone = [[goal.asof,br.rdf(roads, goal.asof),0]]
+          goal.road.forEach(
+            function(r) {
+              if (r[0] > goal.asof && r[0] < goal.asof+bu.AKH) {
+                goal.pinkzone.push([r[0], r[1], null]);
+              }
+            }
+          )
+          goal.pinkzone.push([goal.asof+bu.AKH, br.rdf(roads, goal.asof+bu.AKH),null])
+          goal.pinkzone = br.fillroadall(goal.pinkzone, goal)
+        }
+      
+        // TODO: Implement opts.maxDataDays
+        // Now that the flatlined datapoint is in place, we can
+        // extract limited data
+        //if (opts.maxDataDays < 0) {
+        //alldataf = alldata.slice();
+        //dataf = data.slice();
+        //} else {
+        //  alldataf = alldata.filter(function(e){
+        //    return e[0]>(goal.asof-opts.maxDataDays*SID);});
+        //  dataf = data.filter(function(e){
+        //    return e[0]>(goal.asof-opts.maxDataDays*SID);});
+        // }
+        
+        // Generate the aura function now that the flatlined
+        // datapoint is also computed.
+        if (goal.aura) {
+          var adata = data.filter(function(e){return e[0]>=goal.tmin})
+          var fdata = br.gapFill(adata)
+          goal.auraf = br.smooth(fdata)
+        } else
+          goal.auraf = function(e){ return 0 }
 
-      // Generate beebrain stats (use getStats tp retrieve)
-      stats = Object.assign({}, pout)
-      for (prop in stats) stats[prop] = goal[prop]
-      stampOut(stats)
-      legacyOut(stats)
+      } finally {
+        // Generate beebrain stats (use getStats tp retrieve)
+        stats = Object.assign({}, pout)
+        for (prop in stats) stats[prop] = goal[prop]
+        stampOut(stats)
+        legacyOut(stats)
+      }
     }
 
     genStats( bbin.params, bbin.data )

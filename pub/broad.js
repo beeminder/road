@@ -16,17 +16,17 @@
   'use strict'
   if (typeof define === 'function' && define.amd) {
     // AMD. Register as an anonymous module.
-    console.log("broad: Using AMD module definition")
+    //console.log("broad: Using AMD module definition")
     define(['moment', 'Polyfit', 'butil'], factory)
   } else if (typeof module === 'object' && module.exports) {
     // Node. Does not work with strict CommonJS, but
     // only CommonJS-like environments that support module.exports,
     // like Node.    
-    console.log("broad: Using CommonJS module.exports")
+    //console.log("broad: Using CommonJS module.exports")
     module.exports = factory(require('moment'), require('Polyfit'), 
                              require('butil'))
   } else {
-    console.log("broad: Using Browser globals")
+    //console.log("broad: Using Browser globals")
     root.broad = factory(root.moment, root.Polyfit, root.butil)
   }
 })(this, function (moment, Polyfit, bu) {
