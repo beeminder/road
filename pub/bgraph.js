@@ -86,6 +86,8 @@
     guidelines:   { width:2, weekwidth:4 },
     /** Visual parameters for text boxes shown during dragging */ 
     textBox:      { margin: 3 },
+    /** Visual parameters for odometer resets */ 
+    odomReset:    { width: 0.5, dash: 8 },
     
     roadLineCol:  { valid: "black", invalid:"#ca1212", selected:"yellow"},
     roadDotCol:   { fixed: "darkgray", editable:"#c2c2c2", 
@@ -99,6 +101,7 @@
     dataPointCol: { future: "#909090", stroke: "lightgray"},
     halfPlaneCol: { fill: "#ffffe8" },
     pastBoxCol:   { fill: "#f8f8f8", opacity:0.5 },
+    odomResetCol: { dflt: "#c2c2c2" }, 
     
     /** Strips the graph of all details except what is needed for svg
         output. */
@@ -289,7 +292,7 @@
         xSc, nXSc, xAxis, xGrid, xAxisObj, xGridObj,
         ySc, nYSc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel,
         xScB, xAxisB, xAxisObjB, yScB, 
-        gPB, gYBHP, gPink, gGrid, gPastText, 
+        gPB, gYBHP, gPink, gGrid, gOResets, gPastText, 
         gOldRoad, gOldCenter, gOldGuides, gOldBullseye, 
         gKnots, gSteppy, gSteppyPts, gMovingAv, gAura, gAllpts, gDpts, gFlat, 
         gBullseye, gRoads, gDots,  gWatermark, gHorizon, gHorizonText, 
@@ -543,6 +546,7 @@
       gOldCenter = plot.append('g').attr('id', 'oldcentergrp');
       gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp');
       gGrid = plot.append('g').attr('id', 'grid');
+      gOResets = plot.append('g').attr('id', 'oresetgrp');
       gKnots = plot.append('g').attr('id', 'knotgrp');
       gSteppy = plot.append('g').attr('id', 'steppygrp');
       gAllpts = plot.append('g').attr('id', 'allptsgrp');
@@ -1373,7 +1377,6 @@
           return e[0]>(goal.asof-opts.maxDataDays*bu.SID);});
       }
       
-      // TODO: Make sure the output here matches python beebrain
       if (opts.divJSON) {
         let stats = {};
         opts.divJSON.innerHTML = JSON.stringify(goal, null, 4)
@@ -2082,6 +2085,7 @@
                                     -nYSc(goal.yMax)));
       }
     }
+
     // Creates or updates the shaded box to indicate past dates
     function updatePastText() {
       if (opts.divGraph == null || road.length == 0) return;
@@ -2755,10 +2759,38 @@
       }
     }
 
+    // Creates or updates vertical lines for odometer resets
+    function updateOdomResets() {
+      if (opts.divGraph == null || road.length == 0 || bbr.oresets.length == 0) return;
+
+      // Create, update and delete vertical knot lines
+      var orelt = gOResets.selectAll(".oresets").data(bbr.oresets);
+      if (opts.roadEditor) {
+        orelt.remove(); return
+      }
+      orelt.exit().remove();
+      orelt
+	      .attr("x1", function(d){ return nXSc(d*1000);})
+	      .attr("y1", 0)
+	      .attr("x2", function(d){ return nXSc(d*1000);})
+        .attr("y2", plotbox.height)
+      orelt.enter().append("svg:line")
+	      .attr("class","oresets")
+	      .attr("id", function(d,i) {return i;})
+	      .attr("name", function(d,i) {return "oreset"+i;})
+	      .attr("x1", function(d){ return nXSc(d*1000);})
+	      .attr("x2", function(d){ return nXSc(d*1000);})
+	      .attr("stroke", "rgb(200,200,200)") 
+          .style("stroke-dasharray", 
+                 (opts.odomReset.dash)+","+(opts.odomReset.dash)) 
+	      .attr("stroke-width",opts.odomReset.width);
+    }
+
     function updateKnots() {
       if (opts.divGraph == null || road.length == 0) return;
       // Create, update and delete vertical knot lines
       var knotelt = gKnots.selectAll(".knots").data(road);
+      console.log(knotelt)
       var knotrmelt = buttonarea.selectAll(".remove").data(road);
       if (!opts.roadEditor) {
         knotelt.remove();
@@ -3809,6 +3841,7 @@
       updateRoads();
       updateDots();
       updateHorizon();
+      updateOdomResets();
       updatePastText();
       updateAura();
       updateWatermark();
