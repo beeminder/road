@@ -378,6 +378,10 @@
 
     function procData() { 
 
+      // TODO: Data sanity checka
+      // TODO: hashtags
+      // TODO: derails
+      
       // Coming here, we assume that data has entries with
       // the following format:
       // [t, v, comment, original index, v(original)]
