@@ -2,17 +2,20 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <script src = "../pub/moment.min.js"></script>
+    <script src = "https://d3js.org/d3.v4.js"></script>
+    <script src = "moment.min.js"></script>
+    <script src = "pikaday.js"></script>
+    <script src = "polyfit.js"></script>
+    <script src = "butil.js"></script>
+    <script src = "broad.js"></script>
+    <script src = "beebrain.js"></script>
+    <script src = "bgraph.js"></script>
+    <script src = "btest.js"></script>
 </head>
 <body>
 
-  <div id="results"></div>
+<div id="results"></div>
   
-<script src = "polyfit.js"></script>
-<script src = "butil.js"></script>
-<script src = "broad.js"></script>
-<script src = "beebrain.js"></script>
-<script src = "btest.js"></script>
 <script>
 
   var files = [
@@ -79,15 +82,14 @@
   "zachzaslow+sleep",
   "zarbockc+eating"
   ];
-  //files = ["afcuttin+gmailzero"]
   
-  async function testGoal( url, outurl ) {
+  async function testGoal( url, pyouturl ) {
     if (url == "") return;
     console.debug("Loading "+url)
     var resp = await butil.loadJSON(url);
     console.debug(resp)
-    console.debug("Loading "+outurl)
-    var bbr = await butil.loadJSON(outurl);
+    console.debug("Loading "+pyouturl)
+    var bbr = await butil.loadJSON(pyouturl);
     console.debug(bbr)
 
     if (resp != null && bbr != null) {
@@ -131,6 +133,7 @@
       }
       rDiv.appendChild(innerDiv)
       innerDiv.innerHTML = "Goal "+files[i]+" "+info
+        +" <a href=\"compare.html?base="+files[i]+"&path=testbb\" target=\"blank\"=>Graph comparison</a>"
 
       innerDiv = document.createElement('div')
       innerDiv.className = 'result'
