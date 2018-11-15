@@ -19,17 +19,17 @@
   'use strict'
   if (typeof define === 'function' && define.amd) {
     // AMD. Register as an anonymous module.
-    console.log("bgraph: Using AMD module definition")
+    //console.log("bgraph: Using AMD module definition")
     define(['d3', 'moment', 'butil', 'broad', 'beebrain'], factory)
   } else if (typeof module === 'object' && module.exports) {
     // Node. Does not work with strict CommonJS, but
     // only CommonJS-like environments that support module.exports,
     // like Node.    
-    console.log("bgraph: Using CommonJS module.exports")
+    //console.log("bgraph: Using CommonJS module.exports")
     module.exports = factory(require('d3'), require('moment'), require('butil'), 
                              require('broad'), require('beebrain'))
   } else {
-    console.log("bgraph: Using Browser globals")
+    //console.log("bgraph: Using Browser globals")
     root.bgraph = factory(root.d3, root.moment, root.butil, root.broad, root.beebrain)
   }
 })(this, function (d3, moment, bu, br, bb) {
@@ -401,7 +401,7 @@
       }
     }
     function removeOverlay() {
-      console.debug("removeOverlay("+self.id+")")
+      //console.debug("removeOverlay("+self.id+")")
       if (opts.divGraph == null) return
       svg.selectAll("g.overlay").remove()
     }
@@ -1341,7 +1341,7 @@
     // Recreates the road array from the "rawknots" array, which includes
     // only timestamp,value pairs
     function loadGoal( json ) {
-      console.debug("id="+curid+", loadGoal()->"+json.params.yoog);
+      //console.debug("id="+curid+", loadGoal()->"+json.params.yoog);
       clearUndoBuffer();
 
       processing = true;
