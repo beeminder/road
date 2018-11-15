@@ -43,6 +43,7 @@
   var gid = 1,
 
   pin = { // In Params: Graph settings and their defaults
+    offred   : false,// Whether to use new yesterday-is-red criteria for derails
     deadline : 0,    // Time of deadline given as seconds bfr or after midnight
     sadlhole : true, // Allow the do-less l.hole where you can eke back onto YBR
     asof     : null, // Compute everything as if it were this date
@@ -145,7 +146,7 @@
 
   /** Enum object to identify different types of datapoints. */
   DPTYPE = {
-    AGGPAST:0, AGGFUTURE:1, RAWPAST:2, RAWFUTURE:3, FLATLINE:4, HOLLOW: 5
+    AGGPAST:0, AGGFUTURE:1, RAWPAST:2, RAWFUTURE:3, FLATLINE:4, HOLLOW: 5, DERAIL: 6
   },
 
   /** Enum object to identify error types. */
