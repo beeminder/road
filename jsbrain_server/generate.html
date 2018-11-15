@@ -12,7 +12,10 @@
 <div id="goalgraph"></div>
 <pre id="goaljson"></pre>
 
-<script src = "../pub/roadeditor.js"></script>
+<script src = "../pub/butil.js"></script>
+<script src = "../pub/broad.js"></script>
+<script src = "../pub/beebrain.js"></script>
+<script src = "../pub/bgraph.js"></script>
 <script>
   function getParameterByName(name, url) {
     if (!url) url = window.location.href;
@@ -37,7 +40,7 @@
     newroot.selectAll(".minor").remove();
   };
 
-  var graph = new bmndr({divGraph: document.getElementById('goalgraph'),
+  var graph = new bgraph({divGraph: document.getElementById('goalgraph'),
                          divJSON: document.getElementById('goaljson'),
                          headless:true,
                          maxFutureDays: 365,
