@@ -20,27 +20,6 @@
   
 <script>
 
-  async function testGoal( url, pyouturl ) {
-    if (url == "") return;
-    console.debug("Loading "+url)
-    var resp = await butil.loadJSON(url);
-    console.debug(resp)
-    console.debug("Loading "+pyouturl)
-    var bbr = await butil.loadJSON(pyouturl);
-    console.debug(bbr)
-
-    if (resp != null && bbr != null) {
-
-      var jsb = new beebrain( resp ),
-          stats = jsb.getStats()
-      var res = await btest.compareOutputs(stats, bbr)
-
-      res.stats = stats;
-      res.pyout = bbr;
-      return res
-    }
-  }
-
   function getSearchParameters() {
     var prmstr = window.location.search.substr(1);
     return prmstr != null && prmstr != "" ? transformToAssocArray(prmstr) : {};
@@ -65,7 +44,7 @@
     var i, innerDiv, info, exact = 0, numeric = 0, error = 0, imgDiv, graphDiv;
     var filebase = params["path"]+"/"+params["base"]
 
-    res = await testGoal(filebase+".bb", filebase+".json");
+    res = await btest.compareWithPybrain(filebase+".bb", filebase+".json");
 
     innerDiv = document.createElement('div')
     innerDiv.className = 'resulttitle'
@@ -74,17 +53,17 @@
     innerDiv.style.fontSize = "120%"
     if (res.valid) {
       if (res.numeric) {
-        info = "(numeric errors)"
+        info = "[NUMERIC ERRORS]"
         innerDiv.style.background = '#aaaaff'
       } else {
-        info = "(exact match)"
+        info = "[EXACT MATCH]"
         innerDiv.style.background = '#aaffaa'
       }
     } else {
-      info = "(string or critical errors)"
+      info = "[OTHER ERRORS]"
       innerDiv.style.background = '#ffaaaa'
     }
-    innerDiv.innerHTML = "Goal "+params["base"]+" "+info
+    innerDiv.innerHTML = "Goal <b>"+params["base"]+"</b> "+" ("+res.typestr+") "+info
     rDiv.appendChild(innerDiv)
 
     innerDiv = document.createElement('div')
