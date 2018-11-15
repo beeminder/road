@@ -7,11 +7,15 @@ through a headless chrome instance.
 
 pub : Includes implementations for javascript beebrain packages.
 
-butil.js : Various utility functions for beebrain
+  butil.js : Various utility functions for beebrain
   broad.js : Road related utility functions
   beebrain.js : Beebrain core functionality
   bgraph.js : Graph generation, road table and road editor functionality
-
+  btest.js : Facilities for testing and json comparison
+  
+  beebrain_test.html : Automated testing and comparison with python
+  bgraph_test.html : Road editor demo
+  
 jsbrain_server : node server for graph png and svg generation
 
   Running 'node index' starts up a server on localhost:3000, which

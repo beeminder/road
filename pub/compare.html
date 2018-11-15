@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="pikaday.css">
+    <link rel="stylesheet" href="roadeditor.css">
+    <script src = "https://d3js.org/d3.v4.js"></script>
+    <script src = "moment.min.js"></script>
+    <script src = "pikaday.js"></script>
+    <script src = "polyfit.js"></script>
+    <script src = "butil.js"></script>
+    <script src = "broad.js"></script>
+    <script src = "beebrain.js"></script>
+    <script src = "bgraph.js"></script>
+    <script src = "btest.js"></script>
+</head>
+<body>
+
+<div id="results"></div>
+  
+<script>
+
+  async function testGoal( url, pyouturl ) {
+    if (url == "") return;
+    console.debug("Loading "+url)
+    var resp = await butil.loadJSON(url);
+    console.debug(resp)
+    console.debug("Loading "+pyouturl)
+    var bbr = await butil.loadJSON(pyouturl);
+    console.debug(bbr)
+
+    if (resp != null && bbr != null) {
+
+      var jsb = new beebrain( resp ),
+          stats = jsb.getStats()
+      var res = await btest.compareOutputs(stats, bbr)
+
+      res.stats = stats;
+      res.pyout = bbr;
+      return res
+    }
+  }
+
+  function getSearchParameters() {
+    var prmstr = window.location.search.substr(1);
+    return prmstr != null && prmstr != "" ? transformToAssocArray(prmstr) : {};
+  }
+
+  function transformToAssocArray( prmstr ) {
+    var params = {};
+    var prmarr = prmstr.split("&");
+    for ( var i = 0; i < prmarr.length; i++) {
+        var tmparr = prmarr[i].split("=");
+        params[tmparr[0]] = tmparr[1];
+    }
+    return params;
+  }
+
+  async function compare() {
+    const rDiv = document.getElementById('results'); 
+    while (rDiv.firstChild) {
+      rDiv.removeChild(rDiv.firstChild);
+    }
+    var params = getSearchParameters()
+    var i, innerDiv, info, exact = 0, numeric = 0, error = 0, imgDiv, graphDiv;
+    var filebase = params["path"]+"/"+params["base"]
+
+    res = await testGoal(filebase+".bb", filebase+".json");
+
+    innerDiv = document.createElement('div')
+    innerDiv.className = 'resulttitle'
+    innerDiv.style.margin = '4px'
+    innerDiv.style.padding = '4px'
+    innerDiv.style.fontSize = "120%"
+    if (res.valid) {
+      if (res.numeric) {
+        info = "(numeric errors)"
+        innerDiv.style.background = '#aaaaff'
+      } else {
+        info = "(exact match)"
+        innerDiv.style.background = '#aaffaa'
+      }
+    } else {
+      info = "(string or critical errors)"
+      innerDiv.style.background = '#ffaaaa'
+    }
+    innerDiv.innerHTML = "Goal "+params["base"]+" "+info
+    rDiv.appendChild(innerDiv)
+
+    innerDiv = document.createElement('div')
+    innerDiv.className = 'result'
+    innerDiv.innerHTML = res.result
+    rDiv.appendChild(innerDiv)
+
+    imgDiv = document.createElement('img')
+    imgDiv.src = filebase+".png"
+    rDiv.appendChild(imgDiv)
+
+    graphDiv = document.createElement('div')
+    rDiv.appendChild(graphDiv)
+    var graph = new bgraph({divGraph: graphDiv,
+                            roadEditor:false,
+                            svgSize: { width: 690, height: 430 },
+                            focusRect: { x:0, y:0, width:690, height: 440 },
+                            ctxRect: { x:0, y:440, width:690, height: 10 },
+                            maxFutureDays: 365,
+                            showFocusRect: false,
+                            showContext: false
+                         });
+    graph.loadGoal( filebase+".bb")
+
+    innerDiv = document.createElement('div')
+    innerDiv.className = 'result'
+    innerDiv.innerHTML = "Javascript beebrain JSON output:"
+    rDiv.appendChild(innerDiv)
+
+    innerDiv = document.createElement('pre')
+    innerDiv.className = 'result'
+    innerDiv.innerHTML = JSON.stringify(res.stats, null, 1)
+    rDiv.appendChild(innerDiv)
+  }
+
+  compare()
+</script>
+
+</body>
+</html>
