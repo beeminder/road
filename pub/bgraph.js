@@ -441,6 +441,14 @@
         .style("stroke", "none").attr("id", "rightarrow")
         .attr("d", "M 55,0 -35,45 -35,-45 z")
       
+      defs.append("path")
+        .style("stroke", "none").attr("id", "downarrow")
+        .attr("d", "M 0,55 45,-35 -45,-35 z")
+      
+      defs.append("path")
+        .style("stroke", "none").attr("id", "uparrow")
+        .attr("d", "M 0,-55 45,35 -45,35 z")
+      
       var buttongrp = defs.append("g")
             .attr("id", "removebutton")
       buttongrp.append("circle")
@@ -2790,7 +2798,6 @@
       if (opts.divGraph == null || road.length == 0) return;
       // Create, update and delete vertical knot lines
       var knotelt = gKnots.selectAll(".knots").data(road);
-      console.log(knotelt)
       var knotrmelt = buttonarea.selectAll(".remove").data(road);
       if (!opts.roadEditor) {
         knotelt.remove();

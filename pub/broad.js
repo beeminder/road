@@ -401,9 +401,11 @@
     }
 
     self.isLoser = function(rd, goal, data, t, v) {
-      return (self.dotcolor( rd, goal, t, v ) === bu.Cols.REDDOT 
-            && self.dotcolor(rd, goal,t-bu.SID,
-                             self.stepFunc(data,t-bu.SID))===bu.Cols.REDDOT);
+      if (goal.offred)
+        return self.dotcolor(rd, goal, t-bu.SID, goal.dtf(t-bu.SID))
+      else
+        return (self.dotcolor( rd, goal, t, v ) === bu.Cols.REDDOT 
+                && self.dotcolor(rd, goal,t-bu.SID, goal.dtf(data,t-bu.SID))===bu.Cols.REDDOT);
     }
 
     // For noisy graphs, compute the lane width (or half aura width)
