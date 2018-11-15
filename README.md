@@ -1,14 +1,30 @@
 ## Javascript implementation of Beebrain and an Interactive Road Editor
 
-This is a Javascript package that implements Beebrain functionality,
-in addition to an interactive editor for Beeminder roads. The same
-library (ideally) will be usable both on the client and server sides
-for graph generation. The interactive editing is only available on the
-browser client side. 
+This repository includes Javascript packages implementing Beebrain
+functionality and an interactive editor for Beeminder roads. The same
+functionality can be used both on the client and on a node server
+through a headless chrome instance.
+
+pub : Includes implementations for javascript beebrain packages.
+
+butil.js : Various utility functions for beebrain
+  broad.js : Road related utility functions
+  beebrain.js : Beebrain core functionality
+  bgraph.js : Graph generation, road table and road editor functionality
+
+jsbrain_server : node server for graph png and svg generation
+
+  Running 'node index' starts up a server on localhost:3000, which
+  performs graph generation when supplied with arguments
+  '?base=nonce&path=/path/to/file'
+
+jsbrain_manual : script for generating graph and json using headless chrome
+
+  Run 'generate.sh base path' to generate base.png, base.svg and base.json
 
 Testing on chrome:
 
-chromium-browser --allow-file-access-from-files --disable-web-security --user-data-dir=~/user-data --remote-debugging-port=9222&
+chromium-browser --allow-file-access-from-files --disable-web-security --user-data-dir=~/user-data --remote-debugging-port=9222 --single-process&
 
 Emacs environment:
 - indium works well
