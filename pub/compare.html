@@ -53,15 +53,12 @@
     innerDiv.style.fontSize = "120%"
     if (res.valid) {
       if (res.numeric) {
-        info = "[NUMERIC ERRORS]"
-        innerDiv.style.background = '#aaaaff'
+        info = "[NUMERIC ERRORS]"; innerDiv.style.background = '#aaaaff'
       } else {
-        info = "[EXACT MATCH]"
-        innerDiv.style.background = '#aaffaa'
+        info = "[EXACT MATCH]";    innerDiv.style.background = '#aaffaa'
       }
     } else {
-      info = "[OTHER ERRORS]"
-      innerDiv.style.background = '#ffaaaa'
+      info = "[OTHER ERRORS]";     innerDiv.style.background = '#ffaaaa'
     }
     innerDiv.innerHTML = "Goal <b>"+params["base"]+"</b> "+" ("+res.typestr+") "+info
     rDiv.appendChild(innerDiv)

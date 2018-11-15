@@ -203,26 +203,22 @@
     hashhash = {}    // Maps timestamp to sets of hashtags to display on the graph
     
     // Initialize goal with sane values
-    goal.yaw = +1; goal.dir = +1;
-    goal.tcur = 0; goal.vcur = 0;
-    var now = moment.utc();
-    now.hour(0); now.minute(0); now.second(0); now.millisecond(0);
-    goal.asof = now.unix();
-    goal.horizon = goal.asof+bu.AKH;
-    goal.xMin = goal.asof;  goal.xMax = goal.horizon;
-    goal.yMin = -1;    goal.yMax = 1;
+    goal.yaw = +1; goal.dir = +1
+    goal.tcur = 0; goal.vcur = 0
+    var now = moment.utc()
+    now.hour(0); now.minute(0); now.second(0); now.millisecond(0)
+    goal.asof = now.unix()
+    goal.horizon = goal.asof+bu.AKH
+    goal.xMin = goal.asof;  goal.xMax = goal.horizon
+    goal.yMin = -1;    goal.yMax = 1
 
     /** Convery legacy parameters to up-to-date entries */
     function legacyIn( p ) {
-      if (p.hasOwnProperty('gldt') && !p.hasOwnProperty('tfin')) 
-        p.tfin = p.gldt;
-      if (p.hasOwnProperty('goal') && !p.hasOwnProperty('vfin')) 
-        p.vfin = p.goal;
-      if (p.hasOwnProperty('rate') && !p.hasOwnProperty('rfin')) 
-        p.rfin = p.rate;
-      if (p.hasOwnProperty('usr') && p.hasOwnProperty('graph') 
-          && !p.hasOwnProperty('yoog')) 
-        p.yoog = p.usr + "/" + p.graph;
+      if (p.hasOwnProperty('gldt') && !p.hasOwnProperty('tfin'))  p.tfin = p.gldt
+      if (p.hasOwnProperty('goal') && !p.hasOwnProperty('vfin'))  p.vfin = p.goal
+      if (p.hasOwnProperty('rate') && !p.hasOwnProperty('rfin'))  p.rfin = p.rate
+      if (p.hasOwnProperty('usr') && p.hasOwnProperty('graph') && !p.hasOwnProperty('yoog')) 
+        p.yoog = p.usr + "/" + p.graph
     }
     
     /** Helper function for legacyOut */
@@ -338,42 +334,42 @@
       // The Hacker's Diet recommends 0.1 Uluc had .0864
       // http://forum.beeminder.com/t/control-exp-moving-av/2938/7
       // suggests 0.25
-      var KEXP = .25/bu.SID; 
-      if (goal.yoog==='meta/derev') KEXP = .03/bu.SID;  //.015 for meta/derev
-      if (goal.yoog==='meta/dpledge') KEXP = .03/bu.SID;// .1 jagged
+      var KEXP = .25/bu.SID 
+      if (goal.yoog==='meta/derev') KEXP = .03/bu.SID   //.015 for meta/derev
+      if (goal.yoog==='meta/dpledge') KEXP = .03/bu.SID // .1 jagged
       var xp = d[0][0],
-          yp = d[0][1];
-      var prev = yp, dt, i, ii, A, B;
-      if (x < xp) return prev;
+          yp = d[0][1]
+      var prev = yp, dt, i, ii, A, B
+      if (x < xp) return prev
       for (ii = 1; ii < d.length; ii++) { // compute line equation
-        i = d[ii]; 
-        dt = i[0] - xp;
-        A = (i[1]-yp)/dt;  // (why was this line marked as a to-do?)
-        B = yp;
+        i = d[ii]
+        dt = i[0] - xp
+        A = (i[1]-yp)/dt  // (why was this line marked as a to-do?)
+        B = yp
         if (x < i[0]) { // found interval; compute intermediate point
-          dt = x-xp;
-          return B+A*dt-A/KEXP + (prev-B+A/KEXP) * Math.exp(-KEXP*dt);
+          dt = x-xp
+          return B+A*dt-A/KEXP + (prev-B+A/KEXP) * Math.exp(-KEXP*dt)
         } else { // not the current interval; compute next point
-          prev = B+A*dt-A/KEXP + (prev-B+A/KEXP) * Math.exp(-KEXP*dt);
-          xp = i[0];
-          yp = i[1];
+          prev = B+A*dt-A/KEXP + (prev-B+A/KEXP) * Math.exp(-KEXP*dt)
+          xp = i[0]
+          yp = i[1]
         }
       }
       // keep computing exponential past the last datapoint if needed
-      dt = x-xp;
-      return B + A*dt - A/KEXP + (prev-B+A/KEXP) * Math.exp(-KEXP*dt);
+      dt = x-xp
+      return B + A*dt - A/KEXP + (prev-B+A/KEXP) * Math.exp(-KEXP*dt)
     }
 
     // Function to generate samples for the Butterworth filter
     function griddlefilt(a, b) {
-      return bu.linspace(a, b, Math.floor(bu.clip((b-a)/(bu.SID+1), 40, 2000)));
+      return bu.linspace(a, b, Math.floor(bu.clip((b-a)/(bu.SID+1), 40, 2000)))
     }
 
     // Function to generate samples for the Butterworth filter
     function griddle(a, b, maxcnt = 6000) {
       return bu.linspace(a, b, Math.floor(bu.clip((b-a)/(bu.SID+1), 
                                             Math.min(600, /*plotbox.width*/ 640),
-                                            maxcnt)));
+                                            maxcnt)))
     }
 
     function procData() { 
@@ -387,82 +383,82 @@
       // [t, v, comment, original index, v(original)]
       //
       if (goal.odom) {
-        oresets = data.filter(function(e){ return (e[1]==0);}).map(e=>(e[0]));
-        br.odomify(data);
+        oresets = data.filter(function(e){ return (e[1]==0);}).map(e=>(e[0]))
+        br.odomify(data)
       }
 
-      var numpts = data.length, i;
-      var nonfuda = data.filter(function(e){
-        return e[0]<=goal.asof;});
-      if (goal.plotall) goal.numpts = nonfuda.length;
+      var numpts = data.length, i
+      var nonfuda = data.filter(function(e) {
+        return e[0]<=goal.asof;})
+      if (goal.plotall) goal.numpts = nonfuda.length
 
-      aggval = {};
-      allvals = {};
-      var dval = function(d) { return d[0];};
+      aggval = {}
+      allvals = {}
+      var dval = function(d) { return d[0];}
       var aggpt = function(vl, v) { 
-        if (vl.length == 1) return [vl[0][1], vl[0][2]];
+        if (vl.length == 1) return [vl[0][1], vl[0][2]]
         else {
-          var ind;
+          var ind
           if (goal.kyoom && goal.aggday === "sum") 
-            ind = bu.accumulate(vl.map(dval)).indexOf(v);
-          else ind = vl.map(dval).indexOf(v);
-          if (ind < 0) return [goal.aggday, null];
-          else return [vl[ind][1]+" ("+goal.aggday+")", vl[ind][2]];
+            ind = bu.accumulate(vl.map(dval)).indexOf(v)
+          else ind = vl.map(dval).indexOf(v)
+          if (ind < 0) return [goal.aggday, null]
+          else return [vl[ind][1]+" ("+goal.aggday+")", vl[ind][2]]
         }
-      };
+      }
       // Aggregate datapoints and handle kyoom
-      var newpts = [];
+      var newpts = []
       var ct = data[0][0], 
-          vl = [[data[0][1],data[0][2],data[0][4]]], vlv;
-      var pre = 0, prevpt, ad, cmt, ptinf;
+          vl = [[data[0][1],data[0][2],data[0][4]]], vlv
+      var pre = 0, prevpt, ad, cmt, ptinf
       for (i = 1; i < data.length; i++) {
         if (data[i][0] == ct) {
-          vl.push([data[i][1],data[i][2],data[i][4]]);
+          vl.push([data[i][1],data[i][2],data[i][4]])
         } else {
-          vlv = vl.map(dval);
-          ad = br.AGGR[goal.aggday](vlv);
-          if (newpts.length > 0) prevpt = newpts[newpts.length-1];
-          else prevpt = [ct, ad+pre];
+          vlv = vl.map(dval)
+          ad = br.AGGR[goal.aggday](vlv)
+          if (newpts.length > 0) prevpt = newpts[newpts.length-1]
+          else prevpt = [ct, ad+pre]
           //pre remains 0 for non-kyoom
-          ptinf = aggpt(vl, ad);
+          ptinf = aggpt(vl, ad)
           newpts.push([ct, pre+ad, ptinf[0], (ct <= goal.asof)
                        ?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE, 
-                       prevpt[0], prevpt[1], ptinf[1]]);
+                       prevpt[0], prevpt[1], ptinf[1]])
           if (goal.kyoom) {
             if (goal.aggday === "sum") {
               allvals[ct] = bu.accumulate(vlv).map(function(e,i){
-                return [e+pre, vl[i][1], vl[i][2]];});
+                return [e+pre, vl[i][1], vl[i][2]];})
             } else allvals[ct] = vl.map(function(e) {
-              return [e[0]+pre, e[1], e[2]];});
-            aggval[ct] = [pre+ad, ptinf[0], ptinf[1]];
-            pre += ad; 
+              return [e[0]+pre, e[1], e[2]];})
+            aggval[ct] = [pre+ad, ptinf[0], ptinf[1]]
+            pre += ad
           } else {
-            allvals[ct] = vl;
-            aggval[ct] = [ad, ptinf[0], ptinf[1]];
+            allvals[ct] = vl
+            aggval[ct] = [ad, ptinf[0], ptinf[1]]
           }
 
-          ct = data[i][0];
-          vl = [[data[i][1],data[i][2],data[i][4]]];
+          ct = data[i][0]
+          vl = [[data[i][1],data[i][2],data[i][4]]]
         }
       }
-      vlv = vl.map(dval);
-      ad = br.AGGR[goal.aggday](vlv);
-      if (newpts.length > 0) prevpt = newpts[newpts.length-1];
-      else prevpt = [ct, ad+pre];
-      ptinf = aggpt(vl, ad);
+      vlv = vl.map(dval)
+      ad = br.AGGR[goal.aggday](vlv)
+      if (newpts.length > 0) prevpt = newpts[newpts.length-1]
+      else prevpt = [ct, ad+pre]
+      ptinf = aggpt(vl, ad)
       newpts.push([ct, ad+pre, ptinf[0], 
                    (ct <= goal.asof)?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE,
-                   prevpt[0], prevpt[1], ptinf[1]]);
+                   prevpt[0], prevpt[1], ptinf[1]])
       if (goal.kyoom) {
         if (goal.aggday === "sum") {
           allvals[ct] = bu.accumulate(vlv).map(function(e,i){
-            return [e+pre, vl[i][1], vl[i][2]];});
+            return [e+pre, vl[i][1], vl[i][2]];})
         } else allvals[ct] = vl.map(function(e) { 
-          return [e[0]+pre, e[1], e[2]];});
-        aggval[ct] = [pre+ad, ptinf[0], ptinf[1]];
+          return [e[0]+pre, e[1], e[2]];})
+        aggval[ct] = [pre+ad, ptinf[0], ptinf[1]]
       } else {
-        allvals[ct] = vl;
-        aggval[ct] = [ad, , ptinf[0], ptinf[1]];
+        allvals[ct] = vl
+        aggval[ct] = [ad, , ptinf[0], ptinf[1]]
       }
       var allpts = [];
       for (var t in allvals) {
@@ -472,13 +468,13 @@
               return [Number(t), d[0], d[1], 
                       (Number(t) <= goal.asof)
                       ?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE,
-                      d[0], d[1], d[2]];}));
+                      d[0], d[1], d[2]];}))
         }
       }
-      alldata = allpts;
-      fuda = newpts.filter(function(e){return e[0]>goal.asof;});
-      data = newpts.filter(function(e){return e[0]<=goal.asof;});
-      if (!goal.plotall) goal.numpts = data.length;
+      alldata = allpts
+      fuda = newpts.filter(function(e){return e[0]>goal.asof;})
+      data = newpts.filter(function(e){return e[0]<=goal.asof;})
+      if (!goal.plotall) goal.numpts = data.length
       var gfd = br.gapFill(data)
       var gfdv = gfd.map(e => (e[1]))
       if (data.length > 0) goal.mean = bu.mean(gfdv)
@@ -486,7 +482,7 @@
         goal.meandelt = bu.mean(bu.partition(gfdv,2,1).map(e => (e[1] - e[0])))
       }
       goal.tdat = data[data.length-1][0] // tstamp of last ent. datapoint pre-flatline
-      return "";
+      return ""
     }
 
     /** Extracts road segments from the supplied road matrix in the *
@@ -500,50 +496,50 @@
      before tini and ending after 100 days after tfin.
     */
     function procRoad( json ) {
-      roads = [];
-      var rdData = json;
-      var nk = rdData.length;
-      var firstsegment;
+      roads = []
+      var rdData = json
+      var nk = rdData.length
+      var firstsegment
 
       // First segment starts from [tini-100days, vini], ends at [tini, vini]
       firstsegment = {
         sta: [bu.dayparse(goal.tini), Number(goal.vini)],
         slope: 0, auto: br.RP.SLOPE };
-      firstsegment.end = firstsegment.sta.slice();
-      firstsegment.sta[0] = bu.daysnap(firstsegment.sta[0]-100*bu.DIY*bu.SID);
-      roads.push(firstsegment);
+      firstsegment.end = firstsegment.sta.slice()
+      firstsegment.sta[0] = bu.daysnap(firstsegment.sta[0]-100*bu.DIY*bu.SID)
+      roads.push(firstsegment)
 
       for (var i = 0; i < nk; i++) {
         // Each segment i starts from the end of the previous segment
         // and continues until road[i], filling in empty fields in the
         // road matrix
-        var segment = {};
-        segment.sta = roads[roads.length-1].end.slice();
-        var rddate = null, rdvalue = null, rdslope = null;
+        var segment = {}
+        segment.sta = roads[roads.length-1].end.slice()
+        var rddate = null, rdvalue = null, rdslope = null
 
-        rddate = rdData[i][0];
-        rdvalue = rdData[i][1];
-        rdslope = rdData[i][2];
+        rddate = rdData[i][0]
+        rdvalue = rdData[i][1]
+        rdslope = rdData[i][2]
 
         if (rddate == null) {
-          segment.end = [0, Number(rdvalue)];
-          segment.slope = Number(rdslope)/(goal.siru);
+          segment.end = [0, Number(rdvalue)]
+          segment.slope = Number(rdslope)/(goal.siru)
           segment.end[0] 
             = segment.sta[0] 
-            + (segment.end[1] - segment.sta[1])/segment.slope;
-          segment.end[0] = Math.min(bu.BDUSK, segment.end[0]);
-          segment.auto = br.RP.DATE;
+            + (segment.end[1] - segment.sta[1])/segment.slope
+          segment.end[0] = Math.min(bu.BDUSK, segment.end[0])
+          segment.auto = br.RP.DATE
         } else if (rdvalue == null) {
-          segment.end = [rddate, 0];
-          segment.slope = Number(rdslope)/(goal.siru);
+          segment.end = [rddate, 0]
+          segment.slope = Number(rdslope)/(goal.siru)
           segment.end[1] = 
             segment.sta[1]
-            +segment.slope*(segment.end[0]-segment.sta[0]);
-          segment.auto = br.RP.VALUE;
+            +segment.slope*(segment.end[0]-segment.sta[0])
+          segment.auto = br.RP.VALUE
         } else if (rdslope == null) {
-          segment.end = [rddate, Number(rdvalue)];
-          segment.slope = br.roadSegmentSlope(segment);
-          segment.auto = br.RP.SLOPE;
+          segment.end = [rddate, Number(rdvalue)]
+          segment.slope = br.roadSegmentSlope(segment)
+          segment.auto = br.RP.SLOPE
         } 
         // Skip adding segment if it is earlier than the first segment
         if (segment.end[0] >= segment.sta[0]) {
@@ -650,7 +646,6 @@
       if (mostroad.length != bu.deldups(mostroad).length) {
         var prev = mostroad[0] // previous row
         for (i = 1; i < mostroad.length; i++) {
-          console.log(mostroad[i] + " " + prev)
           if (bu.arrayEquals(mostroad[i], prev))
             return "Road matrix has duplicate row: "+showrow(mostroad[i])
           prev = mostroad[i]
@@ -696,11 +691,8 @@
       return "";
     }
     
-    function procParams( p ) {
+    function procParams() {
 
-      // Save initial waterbuf value for comparison
-      goal.waterbuf0 = goal.waterbuf
-      
       // maps timestamps to most recent datapoint value
       goal.dtf = br.stepify(data)
 
@@ -960,6 +952,55 @@
       return (p.hasOwnProperty(n))?p[n]:dflt
     }
 
+    function reloadRoad() {
+      console.debug("id="+curid+", reloadRoad()")
+      var error = procParams()
+      
+      if (error != "") return error
+      
+      sumSet(roads, goal)
+        
+      goal.fullroad = goal.road.slice()
+      goal.fullroad.unshift( [goal.tini, goal.vini, 0, 0] )
+      
+      if (goal.error == "") {
+        goal.pinkzone = [[goal.asof,br.rdf(roads, goal.asof),0]]
+        goal.road.forEach(
+          function(r) {
+            if (r[0] > goal.asof && r[0] < goal.asof+bu.AKH) {
+              goal.pinkzone.push([r[0], r[1], null]);
+            }
+          }
+        )
+        goal.pinkzone.push([goal.asof+bu.AKH, br.rdf(roads, goal.asof+bu.AKH),null])
+        goal.pinkzone = br.fillroadall(goal.pinkzone, goal)
+      }
+      
+      // TODO: Implement opts.maxDataDays
+      // Now that the flatlined datapoint is in place, we can
+      // extract limited data
+      //if (opts.maxDataDays < 0) {
+      //alldataf = alldata.slice();
+      //dataf = data.slice();
+      //} else {
+      //  alldataf = alldata.filter(function(e){
+      //    return e[0]>(goal.asof-opts.maxDataDays*SID);});
+      //  dataf = data.filter(function(e){
+      //    return e[0]>(goal.asof-opts.maxDataDays*SID);});
+      // }
+        
+      // Generate the aura function now that the flatlined
+      // datapoint is also computed.
+      if (goal.aura) {
+        var adata = data.filter(function(e){return e[0]>=goal.tmin})
+        var fdata = br.gapFill(adata)
+        goal.auraf = br.smooth(fdata)
+      } else
+        goal.auraf = function(e){ return 0 }
+
+      return ""
+    }
+
     var stats = {};
 
     /** Process goal details */
@@ -992,7 +1033,10 @@
         }
         goal.siru = bu.SECS[p.runits]
         goal.horizon = goal.asof+bu.AKH
-        
+        // Save initial waterbuf value for comparison
+        goal.waterbuf0 = goal.waterbuf
+      
+
         // Append final segment to the road array. These values will be
         // reextracted after filling in road in procParams
         if (bu.listy(goal.road)) goal.road.push([goal.tfin, goal.vfin, goal.rfin])
@@ -1016,51 +1060,8 @@
         // Extract road infor into our internal format consisting of road segments:
         // [ [startt, startv], [endt, endv], slope, autofield]
         if (goal.error == "") goal.error = procRoad( p.road )
-        if (goal.error == "") goal.error = procParams( p )
+        if (goal.error == "") goal.error = reloadRoad()
         
-        // Abort on error
-        if (goal.error != "") return
-        
-        sumSet(roads, goal)
-        
-        goal.fullroad = goal.road.slice()
-        goal.fullroad.unshift( [goal.tini, goal.vini, 0, 0] )
-
-        if (goal.error == "") {
-          goal.pinkzone = [[goal.asof,br.rdf(roads, goal.asof),0]]
-          goal.road.forEach(
-            function(r) {
-              if (r[0] > goal.asof && r[0] < goal.asof+bu.AKH) {
-                goal.pinkzone.push([r[0], r[1], null]);
-              }
-            }
-          )
-          goal.pinkzone.push([goal.asof+bu.AKH, br.rdf(roads, goal.asof+bu.AKH),null])
-          goal.pinkzone = br.fillroadall(goal.pinkzone, goal)
-        }
-      
-        // TODO: Implement opts.maxDataDays
-        // Now that the flatlined datapoint is in place, we can
-        // extract limited data
-        //if (opts.maxDataDays < 0) {
-        //alldataf = alldata.slice();
-        //dataf = data.slice();
-        //} else {
-        //  alldataf = alldata.filter(function(e){
-        //    return e[0]>(goal.asof-opts.maxDataDays*SID);});
-        //  dataf = data.filter(function(e){
-        //    return e[0]>(goal.asof-opts.maxDataDays*SID);});
-        // }
-        
-        // Generate the aura function now that the flatlined
-        // datapoint is also computed.
-        if (goal.aura) {
-          var adata = data.filter(function(e){return e[0]>=goal.tmin})
-          var fdata = br.gapFill(adata)
-          goal.auraf = br.smooth(fdata)
-        } else
-          goal.auraf = function(e){ return 0 }
-
       } finally {
         // Generate beebrain stats (use getStats tp retrieve)
         stats = Object.assign({}, pout)
@@ -1070,18 +1071,28 @@
       }
     }
 
+    function getStats() { return bu.extend({}, stats, {}) }
+
+    function setRoadObj( newroad ) {
+      console.debug("id="+curid+", setRoadObj()")
+      roads = newroad
+      self.roads = roads
+      reloadRoad()
+    }
+    
     genStats( bbin.params, bbin.data )
     goal.graphurl = bu.BBURL
     goal.thumburl = bu.BBURL
-
+    
     // -----------------------------------------------------------
     // ----------------- BEEBRAIN OBJECT EXPORTS ------------------
 
-    function getStats() { return bu.extend({}, stats, {}) }
-
     /** beebrain object ID for the current instance */
-    self.id = 1
+    self.id = curid
     self.getStats = getStats
+    self.setRoadObj = setRoadObj
+    self.reloadRoad = reloadRoad
+
     self.roads = roads
     self.goal = goal
     self.data = data
@@ -1090,7 +1101,7 @@
     self.flad = flad
     self.oresets = oresets
     self.DPTYPE = DPTYPE
-  };
+  }
 
   return beebrain;
 }));
