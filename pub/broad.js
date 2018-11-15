@@ -250,7 +250,21 @@
         x += 1; // dpl
       return x;
     }
-    
+
+    // What delta from the centerline yields n days of safety buffer till centerline?
+    self.bufcap = function(rd, goal, n=7) {
+      var t = goal.tcur, v = self.rdf(rd, t), r = self.rtf(rd, t), d, i
+      if (r == 0) r = goal.lnw
+      r = Math.abs(r)
+      d = 0
+      i = 0
+      while(self.dtc(rd, goal, t,v+d) < n && i <= 70) { 
+        d += goal.yaw*r*bu.SID
+        i += 1
+      }
+      return [d, i]
+    }
+
     // Given the endpt of the last road segment (tprev,vprev) and 2 out of 3 of
     //   t = goal date for a road segment (unixtime)
     //   v = goal value 

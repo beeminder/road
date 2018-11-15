@@ -83,7 +83,7 @@
     today:        { width: 2, ctxwidth: 1, font: 12, ctxfont: 9 },
     /** Visual parameters for watermarks */ 
     watermark:    { height:150, fntsize:130 },
-    guidelines:   { width:2, weekwidth:3 },
+    guidelines:   { width:2, weekwidth:4 },
     /** Visual parameters for text boxes shown during dragging */ 
     textBox:      { margin: 3 },
     
@@ -200,7 +200,7 @@
                     font: 16, ctxfont: 10 },
     today:        { width: 2, ctxwidth: 1, font: 16, ctxfont: 10 },
     watermark:    { height:150, fntsize:100 },
-    guidelines:   { width:2, weekwidth:3 },
+    guidelines:   { width:2, weekwidth:4 },
     textBox:      { margin: 3 }
   },
   
@@ -2345,8 +2345,8 @@
       var el = gAura.selectAll(".aura");
       var el2 = gAura.selectAll(".aurapast");
       if (goal.aura && opts.showData) {
-        var aurdn = Math.min(-goal.lnw/2.0, -goal.dflux);
-        var aurup = Math.max(goal.lnw/2.0,  goal.dflux);
+        var aurdn = Math.min(-goal.lnw/2.0, -goal.stdflux);
+        var aurup = Math.max(goal.lnw/2.0,  goal.stdflux);
         var fudge = PRAF*(goal.tmax-goal.tmin);
         var xr = [nXSc.invert(0).getTime()/1000, 
                   nXSc.invert(plotbox.width).getTime()/1000];
@@ -2684,49 +2684,45 @@
         // Compute Y range
         var yrange = [nYSc.invert(plotbox.height), 
                       nYSc.invert(0)];
-        var delta = 1;
-        var numlines = Math.abs((yrange[1] - yrange[0])/(goal.lnw*delta));
-        if (numlines > 36) {
-          delta = 7;
-          numlines = Math.abs((yrange[1] - yrange[0])/(goal.lnw*delta));
+        var delta = 1, oneshift, yr = Math.abs(yrange[1] - yrange[0]);
+        var bc = br.bufcap(road, goal)
+
+        if (goal.lnw > 0 && yr / goal.lnw <= 32) delta = goal.lnw
+        else if (goal.lnw > 0 && yr / (6*goal.lnw) <= 32) {
+          delta = 6* goal.lnw; bc[1] = bc[1]/6
+        } else {
+          delta = yr / 32; bc[1] = 0 // Disable the week line
         }
-        if (numlines > 36) {
-          delta = 4*7;
-          numlines = Math.abs((yrange[1] - yrange[0])/(goal.lnw*delta));
-        }
-        if (numlines > 36) {
-          // We give up, just draw up to 32 guidelines wherever 
-          numlines = 36;
-          delta = Math.abs((yrange[1] - yrange[0])/numlines)/goal.lnw;
-        }
+        oneshift = goal.yaw * delta
+        var numlines = Math.floor(Math.abs((yrange[1] - yrange[0])/oneshift))
+
         var arr = new Array(Math.ceil(numlines)).fill(0);
-        var shift = nYSc(ir2[0].sta[1]+goal.yaw*goal.lnw) 
-              - nYSc(ir2[0].sta[1]);
+        var shift = nYSc(ir2[0].sta[1]+oneshift) - nYSc(ir2[0].sta[1]);
         guideelt = guideelt.data(arr);
         guideelt.exit().remove();
         guideelt.enter().append("svg:path")
           .attr("class","oldguides")
 	  	    .attr("d", rd2)
 	  	    .attr("transform", function(d,i) { 
-            return "translate(0,"+((i+1)*delta*shift)+")";})
+            return "translate(0,"+((i+1)*shift)+")";})
   		    .attr("pointer-events", "none")
   		    .style("fill", "none")
   		    .attr("stroke-width", function (d,i) { 
-            return ((delta==7 && i==0) || (delta==1 && i==6))
+            return (i == bc[1]-1)
               ?opts.guidelines.weekwidth*scalf
               :opts.guidelines.width*scalf;})
   		    .attr("stroke", function (d,i) { 
-            return ((delta==7 && i==0) || (delta==1 && i==6))
+            return (i == bc[1]-1)
               ?bu.Cols.DYEL:bu.Cols.LYEL;});
         guideelt.attr("d", rd2)
           .attr("transform", function(d,i) { 
-            return "translate(0,"+((i+1)*delta*shift)+")";})
+            return "translate(0,"+((i+1)*shift)+")";})
   		    .attr("stroke-width", function (d,i) { 
-            return ((delta==7 && i==0) || (delta==1 && i==6))
+            return (i == bc[1]-1)
               ?opts.guidelines.weekwidth*scalf
               :opts.guidelines.width*scalf;})
   		    .attr("stroke", function (d,i) { 
-            return ((delta==7 && i==0) || (delta==1 && i==6))
+            return (i == bc[1]-1)
               ?bu.Cols.DYEL:bu.Cols.LYEL;});
       } else {
         laneelt.remove();
