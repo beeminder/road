@@ -732,6 +732,7 @@
         
         // Create new vector for filtering datapoints
         var newx = griddle(data[0][0], data[dl-1][0]);
+        JSON.stringify(newx)
         goal.filtpts 
           = newx.map(function(d) {return [d, ema(data, d)];});
       } else goal.filtpts = [];
