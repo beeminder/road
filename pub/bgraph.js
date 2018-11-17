@@ -2729,7 +2729,7 @@
               :opts.guidelines.width*scalf;})
   		    .attr("stroke", function (d,i) { 
             return (i == bc[1]-1)
-              ?bu.Cols.DYEL:bu.Cols.LYEL;});
+              ?bu.Cols.BIGG:bu.Cols.LYEL;});
         guideelt.attr("d", rd2)
           .attr("transform", function(d,i) { 
             return "translate(0,"+((i+1)*shift)+")";})
@@ -2739,7 +2739,7 @@
               :opts.guidelines.width*scalf;})
   		    .attr("stroke", function (d,i) { 
             return (i == bc[1]-1)
-              ?bu.Cols.DYEL:bu.Cols.LYEL;});
+              ?bu.Cols.BIGG:bu.Cols.LYEL;});
       } else {
         laneelt.remove();
         guideelt.remove();
