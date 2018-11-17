@@ -394,6 +394,7 @@
     }
 
     function computeRosy() {
+      if (!goal.rosy) return
       // Pre-compute rosy datapoints
       var delta = Math.max(goal.lnw, goal.stdflux), lo, hi
       if (goal.dir > 0) {
@@ -409,9 +410,10 @@
       var xvec = data.map(e=>e[0])
       rosydata = bu.zip([xvec, yvec])
       rosydata = rosydata.map(e=>[e[0],e[1],"rosy data", DPTYPE.RAWPAST, e[0],e[1],e[1]])
-      for (var i = 0; i < rosydata.length-2; i++)
+      for (var i = 0; i < rosydata.length-2; i++) {
         rosydata[i][4] = rosydata[i+1][0]
         rosydata[i][5] = rosydata[i+1][1]
+      }
     }
 
     // Take string like "shark jumping #yolo :) #sharks", return {"#yolo", "#sharks"}
