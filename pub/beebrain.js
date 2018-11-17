@@ -412,9 +412,10 @@
 
     function procData() { 
 
-      // TODO: Data sanity checka
+      // TODO: Data sanity checks
       // TODO: hashtags
-      // TODO: derails
+
+      // Derailments are taken care of by labeling datapoints in procData
       
       // Coming here, we assume that data has entries with
       // the following format:
