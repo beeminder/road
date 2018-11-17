@@ -27,7 +27,7 @@
   Graph&nbsp;&nbsp;
   <input type="radio" name="typeButton" value="editor" onclick="handleRadio(this);">Editor<br>
   
-  <select id="roadselect" class="roadselect" onchange="breakstart.value=&quot;&quot;;editor.loadGoal(this.value);graph.loadGoal(this.value);">
+  <select id="roadselect" class="roadselect" onchange="breakstart.value=&quot;&quot;;eload=true; gload = true;loadGoals(this.value);">
     <option value="data/testroad0.bb">Test Road 0</option>
     <option value="data/testroad1.bb">Test Road 1</option>
     <option value="data/testroad2.bb">Test Road 2</option>
@@ -158,8 +158,15 @@ new node, Ctrl-z to undo, Ctrl-y to redo</li>
   var endSlope = document.getElementById("endslope");
   var slopeType = document.getElementById("slopetype");
   var breakpicker = new Pikaday({field: document.getElementById('breakstart')});
-
+  var eload = false, gload = false
+  
+  function graphChanged() {
+    gload = false
+  }
+  
   function editorChanged() {
+    eload = false
+    if (eload || gload) return
     console.log("Editor changed")
     if (graph.getRoadObj().length != 0) graph.setRoadObj(editor.getRoadObj())
 
@@ -234,13 +241,18 @@ new node, Ctrl-z to undo, Ctrl-y to redo</li>
                           roadEditor:false,
                           maxFutureDays: 365,
                           showFocusRect: false,
-                          showContext: true});
+                          showContext: true, onRoadChange: graphChanged});
   if (document.getElementById("showalldata2").checked) graph.maxDataDays(-1); else graph.maxDataDays(100);
   graph.reverseTable(document.getElementById("reversetable2").checked);
 
   var curRadio = 0;
   var divEditor = document.getElementById("diveditor");
   var divGraph = document.getElementById("divgraph");
+
+  async function loadGoals(goal) {
+    await editor.loadGoal( goal )
+    await graph.loadGoal( goal )
+  }
   function handleRadio(myRadio) {
     if (curRadio !== myRadio.value) {
       curRadio = myRadio.value;
@@ -264,9 +276,8 @@ new node, Ctrl-z to undo, Ctrl-y to redo</li>
   graph.show();
 
   breakstart.value = "";
-  editor.loadGoal( 'data/testroad0.bb' )
-  graph.loadGoal( 'data/testroad0.bb' )
-
+  loadGoals('data/testroad0.bb')
+  
   function documentKeyDown(e) {
     var evtobj = window.event? window.event : e;
     if (evtobj.keyCode == 89 && evtobj.ctrlKey) editor.redo();
