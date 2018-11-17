@@ -208,7 +208,7 @@
   },
   
   /** This style text gets embedded into the SVG object to enable proper saving of the SVG */
-  SVGStyle = ".axis path, .axis line { fill: none; stroke: black; shape-rendering: crispEdges;} .axis .minor line { stroke: #777; stroke-dasharray:5,4; } .grid line { fill: none; stroke: #dddddd; stroke-width: 1px; shape-rendering: crispEdges; } .grid .minor line { stroke: none; } .axis text { font-family: sans-serif; font-size: 11px; } .axislabel { font-family: sans-serif; font-size: 11px; text-anchor: middle; } circle.dots { stroke: black; } line.roads { stroke: black; } .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .waterbuf, .waterbux { text-anchor: middle; font-family: sans-serif; } .loading { text-anchor: middle; font-family: sans-serif; } .zoomarea { fill: none; }",
+  SVGStyle = ".axis path, .axis line { fill: none; stroke: black; shape-rendering: crispEdges;} .axis .minor line { stroke: #777; stroke-dasharray:5,4; } .grid line { fill: none; stroke: #dddddd; stroke-width: 1px; shape-rendering: crispEdges; } .grid .minor line { stroke: none; } .axis text { font-family: sans-serif; font-size: 11px; } .axislabel { font-family: sans-serif; font-size: 11px; text-anchor: middle; } circle.dots { stroke: black; } line.roads { stroke: black; } .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .waterbuf, .waterbux { text-anchor: middle; font-family: sans-serif; } .loading { text-anchor: middle; font-family: sans-serif; } .zoomarea { fill: none; } .hashtag { text-anchor: middle; font-family: sans-serif; }",
 
   /** Fraction of plot range that the axes extend beyond */
   PRAF  = .015,
@@ -296,7 +296,7 @@
         gOldRoad, gOldCenter, gOldGuides, gOldBullseye, 
         gKnots, gSteppy, gSteppyPts, gRosy, gRosyPts, gMovingAv,
         gAura, gDerails, gAllpts, gDpts, gFlat, 
-        gBullseye, gRoads, gDots,  gWatermark, gHorizon, gHorizonText, 
+        gBullseye, gRoads, gDots,  gWatermark, gHashtags, gHorizon, gHorizonText, 
         zoomarea, axisZoom, zoomin, zoomout,  
         brushObj, brush, focusrect, topLeft,
         scalf = 1
@@ -567,6 +567,7 @@
       gSteppyPts = plot.append('g').attr('id', 'steppyptsgrp');
       gDpts = plot.append('g').attr('id', 'datapointgrp');
       gFlat = plot.append('g').attr('id', 'flatlinegrp');
+      gHashtags = plot.append('g').attr('id', 'hashtaggrp');
       gBullseye = plot.append('g').attr('id', 'bullseyegrp');
       gRoads = plot.append('g').attr('id', 'roadgrp');
       gDots = plot.append('g').attr('id', 'dotgrp');
@@ -1637,13 +1638,13 @@
       }
 
       if (opts.tableUpdateOnDrag) updateTableValues();
-      updateRoadValidity();
-      updateWatermark();
-      updateBullseye();
-      updateContextBullseye();
-      updateDataPoints();
-      updateMovingAv();
-      updateYBHP();
+      updateRoadValidity()
+      updateWatermark()
+      updateBullseye()
+      updateContextBullseye()
+      updateDataPoints()
+      updateMovingAv()
+      updateYBHP()
     }
 
     // -------- Functions related to selection of components --------
@@ -3361,7 +3362,32 @@
       }
     }
 
-    // Other ideas for data smoothing...  Double Exponential
+    function updateHashtags() {
+      if (processing) return;
+      
+      var hashel
+      if (!opts.roadEditor) {
+        hashel = gHashtags.selectAll(".hashtag").data(bbr.hashtags);
+        hashel.exit().remove();
+        hashel
+		      .attr("x", function(d){ return nXSc((d[0])*1000);})
+          .attr("transform", d=>("rotate(-90,"+nXSc((d[0])*1000)+","+(plotbox.height/2)+")"))
+        hashel.enter().append("svg:text")
+	        .attr("class","hashtag")
+		      .attr("x", d=>(nXSc((d[0])*1000)))
+		      .attr("y", plotbox.height/2)
+          .attr("transform", d=>("rotate(-90,"+nXSc((d[0])*1000)+","+(plotbox.height/2)+")"))
+          .attr("fill", bu.Cols.BLACK) 
+          .style("font-size", opts.horizon.font+"px") 
+          .text(d=>(d[1]))
+        
+      } else {
+        hashel = gHashtags.selectAll(".hashtag");
+        hashel.remove()
+      }
+    }
+    
+      // Other ideas for data smoothing...  Double Exponential
     // Moving Average: http://stackoverflow.com/q/5533544 Uluc
     // notes that we should use an acausal filter to prevent the
     // lag in the thin purple line.
@@ -3944,25 +3970,26 @@
         scalf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.7);
       else 
         scalf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.55);
-      updatePastBox();
-      updateYBHP();
-      updatePinkRegion();
-      updateOldRoad();
-      updateOldBullseye();
-      updateBullseye();
-      updateKnots();
-      updateDataPoints();
-      updateDerails();
-      updateRosy();
-      updateSteppy();
-      updateMovingAv();
-      updateRoads();
-      updateDots();
-      updateHorizon();
-      updateOdomResets();
-      updatePastText();
-      updateAura();
-      updateWatermark();
+      updatePastBox()
+      updateYBHP()
+      updatePinkRegion()
+      updateOldRoad()
+      updateOldBullseye()
+      updateBullseye()
+      updateKnots()
+      updateDataPoints()
+      updateDerails()
+      updateRosy()
+      updateSteppy()
+      updateHashtags()
+      updateMovingAv()
+      updateRoads()
+      updateDots()
+      updateHorizon()
+      updateOdomResets()
+      updatePastText()
+      updateAura()
+      updateWatermark()
     }
 
     createGraph();
@@ -3977,6 +4004,9 @@
       if (arguments.length > 0) opts.showData = flag;
       if (alldata.length != 0) {
         updateDataPoints();
+        updateDerails();
+        updateRosy();
+        updateSteppy();
         updateMovingAv();
         updateAura();
       }
@@ -4013,8 +4043,12 @@
           dataf = data.filter(function(e){
             return e[0]>(goal.asof-opts.maxDataDays*SID);});
         }
-        if (alldata.length != 0)
-          updateDataPoints();
+        if (alldata.length != 0) {
+          updateDataPoints()
+          updateDerails()
+          updateRosy()
+          updateSteppy()
+        }
       }
       return opts.maxDataDays;
     };
