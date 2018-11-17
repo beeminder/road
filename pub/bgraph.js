@@ -295,7 +295,7 @@
         gPB, gYBHP, gPink, gGrid, gOResets, gPastText, 
         gOldRoad, gOldCenter, gOldGuides, gOldBullseye, 
         gKnots, gSteppy, gSteppyPts, gRosy, gRosyPts, gMovingAv,
-        gAura, gAllpts, gDpts, gFlat, 
+        gAura, gDerails, gAllpts, gDpts, gFlat, 
         gBullseye, gRoads, gDots,  gWatermark, gHorizon, gHorizonText, 
         zoomarea, axisZoom, zoomin, zoomout,  
         brushObj, brush, focusrect, topLeft,
@@ -560,6 +560,7 @@
       gSteppy = plot.append('g').attr('id', 'steppygrp');
       gRosy = plot.append('g').attr('id', 'rosygrp');
       gRosyPts = plot.append('g').attr('id', 'rosygrp');
+      gDerails = plot.append('g').attr('id', 'derailsgrp');
       gAllpts = plot.append('g').attr('id', 'allptsgrp');
       gMovingAv = plot.append('g').attr('id', 'movingavgrp');
       gSteppyPts = plot.append('g').attr('id', 'steppyptsgrp');
@@ -3149,6 +3150,9 @@
       var adf = function(d) {
         return (d[0] >= l[0] && d[0] <= l[1]);
       };
+      var ddf = function(d) { // Filter to extract derailments
+        return (d[0] >= l[0] && d[0] <= l[1] && d[3] == bbr.DPTYPE.DERAIL);
+      };
 
       if (opts.divGraph == null || road.length == 0) return;
       var now = goal.asof;
@@ -3169,10 +3173,29 @@
           var el = gAllpts.selectAll(".allpts");
           el.remove();
         }
-
         updateDotGroup(gDpts, pts.concat(bbr.fuda), "dpts", 
                        opts.dataPoint.size*scalf,
                        dpStroke, dpStrokeWidth, dpFill, true, dpFillOp);
+
+        // *** Plot derailments ***
+        var drpts = pts.filter(ddf);
+        var drelt, adj = goal.offred?0:bu.SID, arrow = (goal.yaw>0)?"#downarrow":"#uparrow"
+        drelt = gDerails.selectAll(".derails").data(drpts);
+        drelt.exit().remove();
+        drelt
+		      .attr("transform", function(d){ return "translate("+(nXSc((d[0]-adj)*1000))+","
+                                          +nYSc(d[1])+"),scale("
+                                          +(opts.dataPoint.fsize*scalf/23)+")"})
+
+        drelt.enter().append("svg:use")
+		      .attr("class","derails")
+          .attr("xlink:href", arrow)
+		      .attr("transform", function(d){ return "translate("+(nXSc((d[0]-adj)*1000))+","
+                                          +nYSc(d[1])+"),scale("
+                                          +(opts.dataPoint.fsize*scalf/23)+")"})
+          .attr("fill", bu.Cols.REDDOT)
+          .style("pointer-events", "none")
+        
 
         // *** Plot rosy lines ***
         var rosyelt = gRosy.selectAll(".rosy");
