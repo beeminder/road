@@ -192,7 +192,15 @@
       return l.reduce((a,b)=>(a+b), 0)
     }
     
-    // Return a list with the cumulative sum of the elements in l, left
+    // foldlist(f,x, [e1, e2, ...]) -> [x, f(x,e1), f(f(x,e1), e2), ...]
+    self.foldlist = function(f, x, l) {
+      var out = [x]
+      for (var i = 0; i < l.length; i++)
+        out.push(f(out[i], l[i]))
+      return out
+    }
+
+  // Return a list with the cumulative sum of the elements in l, left
     // to right
     self.accumulate = function(l) {
       var ne = l.length
