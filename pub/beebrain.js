@@ -524,6 +524,7 @@
       }
       goal.tdat = data[data.length-1][0] // tstamp of last ent. datapoint pre-flatline
 
+      data.map(e=>{if (e[2].startsWith("RECOMMITTED")) e[3] = DPTYPE.DERAIL})
       return ""
     }
 
