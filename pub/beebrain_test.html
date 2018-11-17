@@ -113,7 +113,7 @@
         innerDiv.style.background = '#ffaaaa'
       }
       rDiv.appendChild(innerDiv)
-      innerDiv.innerHTML = "GOAL <b>"+files[i]+"</b> "+" ("+res.typestr+") "+info
+      innerDiv.innerHTML = (i+1)+": GOAL <b>"+files[i]+"</b> "+" ("+res.typestr+") "+info
         +"</br> &nbsp;&nbsp;>>> <a href=\"compare.html?base="+files[i]+"&path=testbb\" target=\"blank\"=>Click to compare graphs</a>"
 
       innerDiv = document.createElement('div')
