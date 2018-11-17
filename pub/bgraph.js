@@ -208,7 +208,7 @@
   },
   
   /** This style text gets embedded into the SVG object to enable proper saving of the SVG */
-  SVGStyle = ".axis path, .axis line { fill: none; stroke: black; shape-rendering: crispEdges;} .axis .minor line { stroke: #777; stroke-dasharray:5,4; } .grid line { fill: none; stroke: #dddddd; stroke-width: 1px; shape-rendering: crispEdges; } .grid .minor line { stroke: none; } .axis text { font-family: sans-serif; font-size: 11px; } .axislabel { font-family: sans-serif; font-size: 11px; text-anchor: middle; } circle.dots { stroke: black; } line.roads { stroke: black; } .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .waterbuf, .waterbux { text-anchor: middle; font-family: sans-serif; } .loading { text-anchor: middle; font-weight: bold; font-family: sans-serif; } .zoomarea { fill: none; }",
+  SVGStyle = ".axis path, .axis line { fill: none; stroke: black; shape-rendering: crispEdges;} .axis .minor line { stroke: #777; stroke-dasharray:5,4; } .grid line { fill: none; stroke: #dddddd; stroke-width: 1px; shape-rendering: crispEdges; } .grid .minor line { stroke: none; } .axis text { font-family: sans-serif; font-size: 11px; } .axislabel { font-family: sans-serif; font-size: 11px; text-anchor: middle; } circle.dots { stroke: black; } line.roads { stroke: black; } .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .waterbuf, .waterbux { text-anchor: middle; font-family: sans-serif; } .loading { text-anchor: middle; font-family: sans-serif; } .zoomarea { fill: none; }",
 
   /** Fraction of plot range that the axes extend beyond */
   PRAF  = .015,
@@ -225,7 +225,7 @@
   ErrType = { NOBBFILE:0, BADBBFILE:1, BBERROR:2  },
 
   /** Enum object to identify error types. */
-  ErrMsgs = [ "Could not find goal file.", "Bad goal file.", "Beebrain error" ],
+  ErrMsgs = [ "Could not find goal file.", "Bad goal file.", "Beeminder error" ],
 
   /** This function attempts to determine whether the page was loaded
    * from a mobikle device or not. */
@@ -371,7 +371,7 @@
 
     /** Utility function to show a shaded overlay with a message 
      consisting of multiple lines supplied in the array argument */
-    function showOverlay( msgs, fontSize = -1) {
+    function showOverlay( msgs, fontSize = -1, fontWeight="bold") {
       if (opts.divGraph == null) return
       var pg = svg.select("g.overlay")
       if (pg.empty()) {
@@ -384,8 +384,8 @@
         pg.append('svg:rect')
           .attr('x', sw/20).attr('y',sh/5)
           .attr('width', sw-2*sw/20).attr('height',sh-2*sh/5)
-          .attr('rx', 10)
-          .attr('ry', 10)
+          .attr('rx', 5)
+          .attr('ry', 5)
           .style('stroke', bu.Cols.BLCK)
           .style('stroke-width', 1)
           .style('fill', "#ffffcc")
@@ -401,6 +401,7 @@
           .attr('y',sh/2 - ((nummsgs-1)*lineHeight)/2+i*lineHeight+fontSize/2)
           .attr('font-size', fontSize)
           .style('font-size', fontSize)
+          .style('font-weight', fontWeight)
           .text(msgs[i])
       }
     }
@@ -1369,7 +1370,10 @@
         console.log("Beebrain error: "+ bbr.goal.error)
         lastError = ErrType.BBERROR
         var errors = bbr.goal.error.split("\\n")
-        showOverlay( ([ErrMsgs[lastError]+":"]).concat(errors), sh/25 )
+        showOverlay( (["The following errors prevented us from generating "+bbr.goal.yoog,
+                       "(We've pinged Beeminder support to come help fix things up here!)",
+                       ""])
+                     .concat(errors), sh/30, null )
         resetGoal()
         return
       }
