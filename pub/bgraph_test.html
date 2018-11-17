@@ -28,6 +28,7 @@
   <input type="radio" name="typeButton" value="editor" onclick="handleRadio(this);">Editor<br>
   
   <select id="roadselect" class="roadselect" onchange="breakstart.value=&quot;&quot;;eload=true; gload = true;loadGoals(this.value);">
+    <option value="data/four.bb">Palette Four</option>
     <option value="data/testroad0.bb">Test Road 0</option>
     <option value="data/testroad1.bb">Test Road 1</option>
     <option value="data/testroad2.bb">Test Road 2</option>
@@ -251,8 +252,8 @@ new node, Ctrl-z to undo, Ctrl-y to redo</li>
   var divGraph = document.getElementById("divgraph");
 
   async function loadGoals(goal) {
-    await editor.loadGoal( goal )
     await graph.loadGoal( goal )
+    await editor.loadGoal( goal )
   }
   function handleRadio(myRadio) {
     if (curRadio !== myRadio.value) {
@@ -277,7 +278,7 @@ new node, Ctrl-z to undo, Ctrl-y to redo</li>
   graph.show();
 
   breakstart.value = "";
-  loadGoals('data/testroad3.bb')
+  loadGoals('data/four.bb')
   
   function documentKeyDown(e) {
     var evtobj = window.event? window.event : e;

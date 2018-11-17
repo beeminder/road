@@ -94,14 +94,23 @@
 
     /** Finds index for the road segment containing the supplied x value */
     self.findRoadSegment = function(rd, x) {
-      var found = -1;
-      for (var i = 0; i < rd.length; i++) {
-        if ((x >= rd[i].sta[0]) && (x < rd[i].end[0])) {
-          found = i;
-          break;
-        }
+      var nums = rd.length, s = 0, e = nums-1, m
+      if (x < rd[0].sta[0] || x > rd[nums-1].end[0]) return -1;
+      while (e-s > 1) {
+        m = Math.floor((s+e)/2)
+        if (rd[m].end[0] > x) e = m
+        else s = m
       }
-      return found;
+      return m
+      // Below was a HORRIBLE linear search, replaced with binary search
+      // var found = -1;
+      // for (var i = 0; i < rd.length; i++) {
+      //   if ((x >= rd[i].sta[0]) && (x < rd[i].end[0])) {
+      //     found = i;
+      //     break;
+      //   }
+      // }
+      // return found;
     }
 
     /** Computes the slope of the supplied road segment */
@@ -370,12 +379,21 @@
     // Utility function for stepify
     self.stepFunc = function( data, x, dflt=0 ) {
       if (x < data[0][0]) return dflt;
-      var prevval = data[0][1];
-      for (var i = 0; i < data.length; i++) {
-        if (data[i][0] > x) return prevval;
-        else  prevval = data[i][1];
+      var numpts = data.length, s = 0, e = numpts-1, m
+      if (x > data[numpts-1][0]) return data[numpts-1][1];
+      while (e-s > 1) {
+        m = Math.floor((s+e)/2)
+        if (data[m] > x) e = m
+        else s = m
       }
-      return data[data.length-1][1];
+      return data[s][1]
+      // Below is a HORRIBLE linear search. Replaced with binary search
+      // var prevval = data[0][1];
+      // for (var i = 0; i < data.length; i++) {
+      //   if (data[i][0] > x) return prevval;
+      //   else  prevval = data[i][1];
+      // }
+      // return data[data.length-1][1];
     }
 
     // Take a list of datapoints sorted by x-value and returns a pure
