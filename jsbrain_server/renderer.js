@@ -14,7 +14,7 @@ class Renderer {
   // Creates a new page in a tab within the puppeteer chrome instance
   async createPage( url ) {
     let gotoOptions = {
-      timeout: 30 * 1000,
+      timeout: 60 * 1000,
       waitUntil: 'networkidle2'
     }
 
