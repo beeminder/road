@@ -98,11 +98,12 @@
       if (x < rd[0].sta[0] || x > rd[nums-1].end[0]) return -1;
       while (e-s > 1) {
         m = Math.floor((s+e)/2)
-        if (rd[m].end[0] > x) e = m
-        else s = m
+        if (rd[m].sta[0] <= x) s = m
+        else e = m
       }
-      return m
-      // Below was a HORRIBLE linear search, replaced with binary search
+      if ((x >= rd[e].sta[0]) && (x < rd[e].end[0])) s = e
+      return s
+      // Below was a bad linear search, replaced with binary search
       // var found = -1;
       // for (var i = 0; i < rd.length; i++) {
       //   if ((x >= rd[i].sta[0]) && (x < rd[i].end[0])) {
@@ -379,21 +380,22 @@
     // Utility function for stepify
     self.stepFunc = function( data, x, dflt=0 ) {
       if (x < data[0][0]) return dflt;
+      // TODO: Test the below binary search with duplicate timestamps
       var numpts = data.length, s = 0, e = numpts-1, m
       if (x > data[numpts-1][0]) return data[numpts-1][1];
       while (e-s > 1) {
         m = Math.floor((s+e)/2)
-        if (data[m] > x) e = m
-        else s = m
+        if (data[m][0] <= x) s = m
+        else e = m
       }
       return data[s][1]
-      // Below is a HORRIBLE linear search. Replaced with binary search
-      // var prevval = data[0][1];
-      // for (var i = 0; i < data.length; i++) {
+      // Below is a bad linear search. Replaced with binary search
+      // var prevval = data[0][1], l = data.length;
+      // for (var i = 0; i < l; i++) {
       //   if (data[i][0] > x) return prevval;
       //   else  prevval = data[i][1];
       // }
-      // return data[data.length-1][1];
+      // return data[l-1][1];
     }
 
     // Take a list of datapoints sorted by x-value and returns a pure
@@ -423,7 +425,7 @@
         return self.dotcolor(rd, goal, t-bu.SID, goal.dtf(t-bu.SID))
       else
         return (self.dotcolor( rd, goal, t, v ) === bu.Cols.REDDOT 
-                && self.dotcolor(rd, goal,t-bu.SID, goal.dtf(data,t-bu.SID))===bu.Cols.REDDOT);
+                && self.dotcolor(rd, goal,t-bu.SID, goal.dtf(t-bu.SID))===bu.Cols.REDDOT);
     }
 
     // For noisy graphs, compute the lane width (or half aura width)
