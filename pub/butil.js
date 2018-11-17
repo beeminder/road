@@ -50,7 +50,7 @@
 
     /** Beeminder colors for datapoints */
     self.Cols = {
-      DYEL:   "#ffff55",
+      DYEL:   "#ffff44",
       LYEL:   "#ffff88",
       ROSE:   "#ff8080",
       AKRA:   "#4C4Cff",
