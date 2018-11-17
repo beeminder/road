@@ -73,6 +73,7 @@
     rosy     : false,// Show the rose-colored dots and connecting line
     movingav : false,// Show moving average line superimposed on the data
     aura     : false,// Show blue-green/turquoise aura/swath
+    hashtags : true, // Show annotations on graph for hashtags in datapt comments 
     yaxis    : '',   // Label for the y-axis, eg, "kilograms"
     waterbuf : null, // Watermark on the good side of the YBR; safebuf if null
     waterbux : '',   // Watermark on the bad side, ie, pledge amount
@@ -201,8 +202,9 @@
     aggval = {},     // Dictionary holding aggregated value for each timestamp
     worstval = {},   // Maps timestamp to min/max (depending on yaw) value that day
     derails = [],    // List of derail timestamps
-    hashhash = {}    // Maps timestamp to sets of hashtags to display on the graph
-    
+    hashhash = {},   // Maps timestamp to sets of hashtags to display on the graph
+    hashtags = []    // Array of timestamp string pairs for hashtag lists
+     
     // Initialize goal with sane values
     goal.yaw = +1; goal.dir = +1
     goal.tcur = 0; goal.vcur = 0
@@ -239,9 +241,11 @@
         p['rate'] = goal.rfin*goal.siru
       } else {
         var len = p['fullroad'].length
-        p['gldt'] = p['fullroad'][len-1][0]
-        p['goal'] = p['fullroad'][len-1][1]
-        p['rate'] = p['fullroad'][len-1][2]
+        if (len > 0) {
+          p['gldt'] = p['fullroad'][len-1][0]
+          p['goal'] = p['fullroad'][len-1][1]
+          p['rate'] = p['fullroad'][len-1][2]
+        }
       }
       p['tini'] = bu.dayify(goal.tini)
       p['vini'] = goal.vini
@@ -410,11 +414,40 @@
         rosydata[i][5] = rosydata[i+1][1]
     }
 
+    // Take string like "shark jumping #yolo :) #sharks", return {"#yolo", "#sharks"}
+    var hre = /(?:^|\s)(#[a-zA-Z]\w+)(?=$|\s)/g
+    function hashextract(s){
+      var set = new Set(), m
+      hre.lastIndex = 0
+      while ( (m = hre.exec(s)) != null )
+        if (m[1] != "") set.add(m[1])
+      return set
+    }
     function procData() { 
 
-      // TODO: Data sanity checks
-      // TODO: hashtags
+      if (data == null || data.length == 0) return "No datapoints"
+      var numpts = data.length, i, d
 
+      for (i = 0; i < numpts; i++) {
+        d = data[i]
+        if (!(bu.nummy(d[0]) && d[0]>0 && bu.nummy(d[1]) &&bu.stringy(d[2])))
+          return "Invalid datapoint: "+d[0]+" "+d[1]+' "'+d[3]
+
+        if (goal.hashtags) {
+          var hset = hashextract(d[2]), elem
+          if (hset.size == 0) continue
+          if (!hashhash.hasOwnProperty(d[0])) hashhash[d[0]] = new Set()
+          for (elem of hset) {
+            hashhash[d[0]].add(elem)
+          }
+        }
+      }
+      if (goal.hashtags) {
+        hashtags = []
+        var keys = Object.keys(hashhash);
+        for (var key in hashhash)
+          hashtags.push([key, Array.from(hashhash[key]).join(" ")])
+      }
       // Derailments are taken care of by labeling datapoints in procData
       
       // Coming here, we assume that data has entries with
@@ -429,7 +462,6 @@
         br.odomify(data)
       }
 
-      var numpts = data.length, i
       var nonfuda = data.filter(function(e) {
         return e[0]<=goal.asof;})
       if (goal.plotall) goal.numpts = nonfuda.length
@@ -1134,6 +1166,7 @@
     self.fuda = fuda
     self.flad = flad
     self.oresets = oresets
+    self.hashtags = hashtags
     self.DPTYPE = DPTYPE
   }
 
