@@ -3138,69 +3138,21 @@
           window.clearTimeout(dotTimer); dotTimer = null;});
     }
 
-    function updateDataPoints() {
+    function updateRosy() {
       if (processing) return;
-      //console.debug("id="+curid+", updateDataPoints()");
-      //console.trace();
+
       var l = [nXSc.invert(0).getTime()/1000, 
                nXSc.invert(plotbox.width).getTime()/1000];
       var df = function(d) {
         return ((d[0] >= l[0] && d[0] <= l[1]) || (d[4] >= l[0] && d[4] <= l[1]));
-      };
-      var adf = function(d) {
-        return (d[0] >= l[0] && d[0] <= l[1]);
-      };
-      var ddf = function(d) { // Filter to extract derailments
-        return (d[0] >= l[0] && d[0] <= l[1] && d[3] == bbr.DPTYPE.DERAIL);
-      };
+      }
 
-      if (opts.divGraph == null || road.length == 0) return;
-      var now = goal.asof;
-      var dpelt;
+      // *** Plot rosy lines ***
+      var rosyelt = gRosy.selectAll(".rosy");
+      var rosydelt = gRosyPts.selectAll(".rosyd");
       if (opts.showData || !opts.roadEditor) {
-        var pts = (bbr.flad != null)?
-              dataf.slice(0,dataf.length-1):
-              dataf;
-        // *** Plot datapoints ***
-        // Filter data to only include visible points
-        pts = pts.filter(df);
-        if (goal.plotall && !opts.roadEditor) {
-          updateDotGroup(gAllpts, alldataf.filter(adf), "allpts", 
-                         0.7*(opts.dataPoint.size)*scalf,
-                         "none", null, dpFill, true, dpFillOp);
-          
-        } else {
-          var el = gAllpts.selectAll(".allpts");
-          el.remove();
-        }
-        updateDotGroup(gDpts, pts.concat(bbr.fuda), "dpts", 
-                       opts.dataPoint.size*scalf,
-                       dpStroke, dpStrokeWidth, dpFill, true, dpFillOp);
-
-        // *** Plot derailments ***
-        var drpts = pts.filter(ddf);
-        var drelt, adj = goal.offred?0:bu.SID, arrow = (goal.yaw>0)?"#downarrow":"#uparrow"
-        drelt = gDerails.selectAll(".derails").data(drpts);
-        drelt.exit().remove();
-        drelt
-		      .attr("transform", function(d){ return "translate("+(nXSc((d[0]-adj)*1000))+","
-                                          +nYSc(d[1])+"),scale("
-                                          +(opts.dataPoint.fsize*scalf/24)+")"})
-
-        drelt.enter().append("svg:use")
-		      .attr("class","derails")
-          .attr("xlink:href", arrow)
-		      .attr("transform", function(d){ console.log(d[0]); return "translate("+(nXSc((d[0]-adj)*1000))+","
-                                          +nYSc(d[1])+"),scale("
-                                          +(opts.dataPoint.fsize*scalf/24)+")"})
-          .attr("fill", bu.Cols.REDDOT)
-          .style("pointer-events", "none")
-        
-
-        // *** Plot rosy lines ***
-        var rosyelt = gRosy.selectAll(".rosy");
         if (goal.rosy) {
-          var npts = bbr.rosydata, i;
+          var npts = bbr.rosydata.filter(df), i;
           if (bbr.rosydata.length == 0) {
             // no points are in range, find enclosing two
             var ind = -1;
@@ -3233,43 +3185,26 @@
                          "none", null, bu.Cols.ROSE, true, null);
         } else {
           rosyelt.remove();
-          var rosydelt = gSteppyPts.selectAll(".rosyd");
           rosydelt.remove();
         }
+      } else {
+        rosyelt.remove();
+        rosydelt.remove();
+      }
+    }
+    
+    function updateSteppy() {
+      if (processing) return;
 
-        // *** Plot flatlined datapoint ***
-        var fladelt = gFlat.selectAll(".fladp");
-        if (bbr.flad != null) {
-          if (fladelt.empty()) {
-            gFlat.append("svg:use")
-		          .attr("class","fladp").attr("xlink:href", "#rightarrow")
-              .attr("fill", br.dotcolor(road,goal,bbr.flad[0],bbr.flad[1]))
-              .attr("transform", "translate("+(nXSc((bbr.flad[0])*1000))+","
-                    +nYSc(bbr.flad[1])+"),scale("+(opts.dataPoint.fsize/50)+")")
-              .style("pointer-events", function() {
-                return (opts.roadEditor)?"none":"all";})
-		          .on("mouseenter",function() {
-                if (dotTimer != null)  window.clearTimeout(dotTimer);
-                dotTimer = window.setTimeout(function() {
-                  showDotText(bbr.flad); dotTimer = null;}, 500);})
-		          .on("mouseout",function() { 
-                if (dotText != null) { removeDotText(); dotText = null; }
-                window.clearTimeout(dotTimer); 
-                dotTimer = null;});
-          } else {
-            fladelt
-              .attr("fill", br.dotcolor(road,goal,bbr.flad[0],bbr.flad[1]))
-              .attr("transform", 
-                    "translate("+(nXSc((bbr.flad[0])*1000))+","
-                    +nYSc(bbr.flad[1])+"),scale("
-                    +(opts.dataPoint.fsize/50)+")");
-          }
-        } else {
-          if (!fladelt.empty()) fladelt.remove();
-        }
-        
-        // *** Plot steppy lines ***
-        var stpelt = gSteppy.selectAll(".steppy");
+      var l = [nXSc.invert(0).getTime()/1000, nXSc.invert(plotbox.width).getTime()/1000];
+      var df = function(d) {
+        return ((d[0] >= l[0] && d[0] <= l[1]) || (d[4] >= l[0] && d[4] <= l[1]));
+      }
+
+      // *** Plot steppy lines ***
+      var stpelt = gSteppy.selectAll(".steppy");
+      var stpdelt = gSteppyPts.selectAll(".steppyd");
+      if (opts.showData || !opts.roadEditor) {
         if (!opts.roadEditor && goal.steppy && dataf.length != 0) {
           var npts = dataf.filter(df), i;
           if (npts.length == 0) {
@@ -3300,29 +3235,132 @@
   		          .attr("stroke-width",3*scalf);
             }
           } else stpelt.remove();
-          updateDotGroup(gSteppyPts, pts, "steppyd",
+          updateDotGroup(gSteppyPts, bbr.flad?npts.slice(0,npts.length-1):npts, "steppyd",
                          (opts.dataPoint.size+2)*scalf,
                          "none", null, bu.Cols.PURP);
         } else {
           stpelt.remove();
-          var stpdelt = gSteppyPts.selectAll(".steppyd");
           stpdelt.remove();
         }
+      } else {
+        stpelt.remove();
+        stpdelt.remove();
+      }
+    }
+    
+    function updateDerails() {
+      if (processing) return;
+
+      var l = [nXSc.invert(0).getTime()/1000, 
+               nXSc.invert(plotbox.width).getTime()/1000];
+      
+      function ddf(d) {// Filter to extract derailments
+        return (d[0] >= l[0] && d[0] <= l[1] && d[3] == bbr.DPTYPE.DERAIL);
+      }
+
+      var drelt
+      // *** Plot derailments ***
+      if (opts.showData || !opts.roadEditor) {
+        var drpts = data.filter(ddf);
+        var adj = goal.offred?0:bu.SID, arrow = (goal.yaw>0)?"#downarrow":"#uparrow"
+        drelt = gDerails.selectAll(".derails").data(drpts);
+        drelt.exit().remove();
+        drelt
+		      .attr("transform", function(d){ return "translate("+(nXSc((d[0]-adj)*1000))+","
+                                          +nYSc(d[1])+"),scale("
+                                          +(opts.dataPoint.fsize*scalf/24)+")"})
+      
+        drelt.enter().append("svg:use")
+		      .attr("class","derails")
+          .attr("xlink:href", arrow)
+		      .attr("transform", function(d){ return "translate("+(nXSc((d[0]-adj)*1000))+","
+                                          +nYSc(d[1])+"),scale("
+                                          +(opts.dataPoint.fsize*scalf/24)+")"})
+          .attr("fill", bu.Cols.REDDOT)
+          .style("pointer-events", "none")
+      } else {
+        drelt = gDerails.selectAll(".derails");
+        drelt.remove();
+      }        
+    }
+    
+    function updateDataPoints() {
+      if (processing) return;
+      //console.debug("id="+curid+", updateDataPoints()");
+      //console.trace();
+      var l = [nXSc.invert(0).getTime()/1000, 
+               nXSc.invert(plotbox.width).getTime()/1000];
+      var df = function(d) {
+        return ((d[0] >= l[0] && d[0] <= l[1]) || (d[4] >= l[0] && d[4] <= l[1]));
+      }
+      var adf = function(d) {
+        return (d[0] >= l[0] && d[0] <= l[1]);
+      }
+      if (opts.divGraph == null || road.length == 0) return;
+      var now = goal.asof;
+      var dpelt;
+      if (opts.showData || !opts.roadEditor) {
+        var pts = (bbr.flad != null)?dataf.slice(0,dataf.length-1):dataf;
+        
+        // *** Plot datapoints ***
+        // Filter data to only include visible points
+        pts = pts.filter(df);
+        if (goal.plotall && !opts.roadEditor) {
+          updateDotGroup(gAllpts, alldataf.filter(adf), "allpts", 
+                         0.7*(opts.dataPoint.size)*scalf,
+                         "none", null, dpFill, true, dpFillOp);
+          
+        } else {
+          var el = gAllpts.selectAll(".allpts");
+          el.remove();
+        }
+        updateDotGroup(gDpts, pts.concat(bbr.fuda), "dpts", 
+                       opts.dataPoint.size*scalf,
+                       dpStroke, dpStrokeWidth, dpFill, true, dpFillOp);
+
+        // *** Plot flatlined datapoint ***
+        var fladelt = gFlat.selectAll(".fladp");
+        if (bbr.flad != null) {
+          if (fladelt.empty()) {
+            gFlat.append("svg:use")
+		          .attr("class","fladp").attr("xlink:href", "#rightarrow")
+              .attr("fill", br.dotcolor(road,goal,bbr.flad[0],bbr.flad[1]))
+              .attr("transform", "translate("+(nXSc((bbr.flad[0])*1000))+","
+                    +nYSc(bbr.flad[1])+"),scale("+(opts.dataPoint.fsize*scalf/24)+")")
+              .style("pointer-events", function() {
+                return (opts.roadEditor)?"none":"all";})
+		          .on("mouseenter",function() {
+                if (dotTimer != null)  window.clearTimeout(dotTimer);
+                dotTimer = window.setTimeout(function() {
+                  showDotText(bbr.flad); dotTimer = null;}, 500);})
+		          .on("mouseout",function() { 
+                if (dotText != null) { removeDotText(); dotText = null; }
+                window.clearTimeout(dotTimer); 
+                dotTimer = null;});
+          } else {
+            fladelt
+              .attr("fill", br.dotcolor(road,goal,bbr.flad[0],bbr.flad[1]))
+              .attr("transform", 
+                    "translate("+(nXSc((bbr.flad[0])*1000))+","
+                    +nYSc(bbr.flad[1])+"),scale("
+                    +(opts.dataPoint.fsize*scalf/35)+")");
+          }
+        } else {
+          if (!fladelt.empty()) fladelt.remove();
+        }
+        
       } else {
         dpelt = gDpts.selectAll(".dpts");
         dpelt.remove();
         fladelt = gDpts.selectAll(".fladp");
         fladelt.remove();
       }
-
-
     }
+
     // Other ideas for data smoothing...  Double Exponential
     // Moving Average: http://stackoverflow.com/q/5533544 Uluc
     // notes that we should use an acausal filter to prevent the
     // lag in the thin purple line.
-
-    
     function updateMovingAv() {
       var el = gMovingAv.selectAll(".movingav");
       if (!opts.roadEditor && goal.movingav && opts.showData) {
@@ -3910,6 +3948,9 @@
       updateBullseye();
       updateKnots();
       updateDataPoints();
+      updateDerails();
+      updateRosy();
+      updateSteppy();
       updateMovingAv();
       updateRoads();
       updateDots();
