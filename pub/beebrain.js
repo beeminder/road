@@ -191,7 +191,8 @@
 
     goal = {},       // Holds loaded goal parameters
     alldata = [],    // Holds the entire set of data points
-    data = [],    // Holds past aggregated data
+    data = [],       // Holds past aggregated data
+    rosydata = [],   // Holds rosy data
     fuda = [],       // Holds all future data
     undoBuffer = [], // Array of previous roads for undo
     redoBuffer = [], // Array of future roads for redo
@@ -372,6 +373,43 @@
                                             maxcnt)))
     }
 
+    // Start at the first data point plus sign*delta and walk forward making the next
+    // point be equal to the previous point, clipped by the next point plus or minus 
+    // delta. Used for the rose-colored dots.
+    function inertia0(x, d, sgn) {
+      return bu.foldlist( ((a, b)=>bu.clip(a, b-d, b+d)), x[0]+sgn*d, x.slice(1,x.length))
+    }
+    function inertia(dat, delt, sgn) {  // data, delta, sign (-1 or +1)
+      var tdata = bu.zip(dat) // transpose of data
+      tdata[1] = inertia0(tdata[1], delt, sgn)
+      return bu.zip(tdata)
+    }
+    // Same thing but start at the last data point and walk backwards.
+    function inertiaRev(dat, dlt, sgn) {
+      return inertia(dat.slice().reverse(), dlt, sgn).reverse()
+    }
+
+    function computeRosy() {
+      // Pre-compute rosy datapoints
+      var delta = Math.max(goal.lnw, goal.stdflux), lo, hi
+      if (goal.dir > 0) {
+        lo = inertia(   data, delta, -1)
+        hi = inertiaRev(data, delta, +1)
+      } else {
+        lo = inertiaRev(data, delta, -1)
+        hi = inertia(   data, delta, +1)
+      }
+      var yveclo = lo.map(e=>e[1])
+      var yvechi = hi.map(e=>e[1])
+      var yvec = bu.zip([yveclo, yvechi]).map(e=>((e[0]+e[1])/2))
+      var xvec = data.map(e=>e[0])
+      rosydata = bu.zip([xvec, yvec])
+      rosydata = rosydata.map(e=>[e[0],e[1],"rosy data", DPTYPE.RAWPAST, e[0],e[1],e[1]])
+      for (var i = 0; i < rosydata.length-2; i++)
+        rosydata[i][4] = rosydata[i+1][0]
+        rosydata[i][5] = rosydata[i+1][1]
+    }
+
     function procData() { 
 
       // TODO: Data sanity checka
@@ -382,6 +420,9 @@
       // the following format:
       // [t, v, comment, original index, v(original)]
       //
+      // Coming out, datapoints have the following format:
+      // [t, v, comment, type, nextt, nextv, aggval]
+      
       if (goal.odom) {
         oresets = data.filter(function(e){ return (e[1]==0);}).map(e=>(e[0]))
         br.odomify(data)
@@ -482,6 +523,7 @@
         goal.meandelt = bu.mean(bu.partition(gfdv,2,1).map(e => (e[1] - e[0])))
       }
       goal.tdat = data[data.length-1][0] // tstamp of last ent. datapoint pre-flatline
+
       return ""
     }
 
@@ -976,19 +1018,6 @@
         goal.pinkzone = br.fillroadall(goal.pinkzone, goal)
       }
       
-      // TODO: Implement opts.maxDataDays
-      // Now that the flatlined datapoint is in place, we can
-      // extract limited data
-      //if (opts.maxDataDays < 0) {
-      //alldataf = alldata.slice();
-      //dataf = data.slice();
-      //} else {
-      //  alldataf = alldata.filter(function(e){
-      //    return e[0]>(goal.asof-opts.maxDataDays*SID);});
-      //  dataf = data.filter(function(e){
-      //    return e[0]>(goal.asof-opts.maxDataDays*SID);});
-      // }
-        
       // Generate the aura function now that the flatlined
       // datapoint is also computed.
       if (goal.aura) {
@@ -1061,6 +1090,8 @@
         // [ [startt, startv], [endt, endv], slope, autofield]
         if (goal.error == "") goal.error = procRoad( p.road )
         if (goal.error == "") goal.error = reloadRoad()
+
+        computeRosy()
         
       } finally {
         // Generate beebrain stats (use getStats tp retrieve)
@@ -1096,6 +1127,7 @@
     self.roads = roads
     self.goal = goal
     self.data = data
+    self.rosydata = rosydata
     self.alldata = alldata
     self.fuda = fuda
     self.flad = flad

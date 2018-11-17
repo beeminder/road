@@ -294,7 +294,8 @@
         xScB, xAxisB, xAxisObjB, yScB, 
         gPB, gYBHP, gPink, gGrid, gOResets, gPastText, 
         gOldRoad, gOldCenter, gOldGuides, gOldBullseye, 
-        gKnots, gSteppy, gSteppyPts, gMovingAv, gAura, gAllpts, gDpts, gFlat, 
+        gKnots, gSteppy, gSteppyPts, gRosy, gRosyPts, gMovingAv,
+        gAura, gAllpts, gDpts, gFlat, 
         gBullseye, gRoads, gDots,  gWatermark, gHorizon, gHorizonText, 
         zoomarea, axisZoom, zoomin, zoomout,  
         brushObj, brush, focusrect, topLeft,
@@ -557,6 +558,8 @@
       gOResets = plot.append('g').attr('id', 'oresetgrp');
       gKnots = plot.append('g').attr('id', 'knotgrp');
       gSteppy = plot.append('g').attr('id', 'steppygrp');
+      gRosy = plot.append('g').attr('id', 'rosygrp');
+      gRosyPts = plot.append('g').attr('id', 'rosygrp');
       gAllpts = plot.append('g').attr('id', 'allptsgrp');
       gMovingAv = plot.append('g').attr('id', 'movingavgrp');
       gSteppyPts = plot.append('g').attr('id', 'steppyptsgrp');
@@ -1313,7 +1316,7 @@
       if (d != null) ne = mergeExtents(ne, d);
       if (bbr.fuda.length != 0) {
         var df = dataExtentPartial(bbr.fuda,road[0].end[0],maxx,false);
-        ne = mergeExtents(ne, df);
+        if (df != null) ne = mergeExtents(ne, df);
       }
 
       var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
@@ -3077,7 +3080,7 @@
       if (opts.roadEditor) {
         return (opts.dataPoint.border*scalf)+"px";
       } else {
-        return (((pt[2] == bbr.DPTYPE.AGGPAST)?1:0.5)*scalf)+"px";
+        return (((pt[3] == bbr.DPTYPE.AGGPAST)?1:0.5)*scalf)+"px";
       }
     }
 
@@ -3100,7 +3103,6 @@
     function updateDotGroup(grp,d,cls,r,
                             s=null,sw=null,f=null,hov=true,fop=null) {
       var dpelt;
-
       dpelt = grp.selectAll("."+cls).data(d);
       dpelt.exit().remove();
       dpelt
@@ -3142,8 +3144,7 @@
       var l = [nXSc.invert(0).getTime()/1000, 
                nXSc.invert(plotbox.width).getTime()/1000];
       var df = function(d) {
-        return ((d[0] >= l[0] && d[0] <= l[1]) 
-                || (d[4] >= l[0] && d[4] <= l[1]));
+        return ((d[0] >= l[0] && d[0] <= l[1]) || (d[4] >= l[0] && d[4] <= l[1]));
       };
       var adf = function(d) {
         return (d[0] >= l[0] && d[0] <= l[1]);
@@ -3156,6 +3157,7 @@
         var pts = (bbr.flad != null)?
               dataf.slice(0,dataf.length-1):
               dataf;
+        // *** Plot datapoints ***
         // Filter data to only include visible points
         pts = pts.filter(df);
         if (goal.plotall && !opts.roadEditor) {
@@ -3172,27 +3174,63 @@
                        opts.dataPoint.size*scalf,
                        dpStroke, dpStrokeWidth, dpFill, true, dpFillOp);
 
+        // *** Plot rosy lines ***
+        var rosyelt = gRosy.selectAll(".rosy");
+        if (goal.rosy) {
+          var npts = bbr.rosydata, i;
+          if (bbr.rosydata.length == 0) {
+            // no points are in range, find enclosing two
+            var ind = -1;
+            for (i = 0; i < bbr.rosydata.length-1; i++) {
+              if (bbr.rosydata[i][0]<=l[0]&&bbr.rosydata[i+1][0]>=l[1]) {
+                ind = i; break;
+              }
+            }
+            if (ind > 0) npts = bbr.rosydata.slice(ind, ind+2);
+          }
+          if (npts.length != 0) {
+            var d = "M"+nXSc(npts[0][0]*1000)+" "+nYSc(npts[0][1]);
+            for (i = 0; i < npts.length; i++) {
+              d += " L"+nXSc(npts[i][0]*1000)+" "+ nYSc(npts[i][1]);
+            }
+            if (rosyelt.empty()) {
+              gRosy.append("svg:path")
+                .attr("class","rosy")
+	  	          .attr("d", d)
+  		          .style("fill", "none")
+  		          .attr("stroke-width",4*scalf)
+  		          .style("stroke", bu.Cols.ROSE);
+            } else {
+              rosyelt.attr("d", d)
+  		          .attr("stroke-width",4*scalf);
+            }
+          } else rosyelt.remove();
+          updateDotGroup(gRosyPts, bbr.rosydata, "rosyd", 
+                         opts.dataPoint.size*scalf,
+                         "none", null, bu.Cols.ROSE, true, null);
+        } else {
+          rosyelt.remove();
+          var rosydelt = gSteppyPts.selectAll(".rosyd");
+          rosydelt.remove();
+        }
+
+        // *** Plot flatlined datapoint ***
         var fladelt = gFlat.selectAll(".fladp");
         if (bbr.flad != null) {
           if (fladelt.empty()) {
             gFlat.append("svg:use")
-		          .attr("class","fladp")
-              .attr("xlink:href", "#rightarrow")
+		          .attr("class","fladp").attr("xlink:href", "#rightarrow")
               .attr("fill", br.dotcolor(road,goal,bbr.flad[0],bbr.flad[1]))
-              .attr("transform", 
-                    "translate("+(nXSc((bbr.flad[0])*1000))+","
+              .attr("transform", "translate("+(nXSc((bbr.flad[0])*1000))+","
                     +nYSc(bbr.flad[1])+"),scale("+(opts.dataPoint.fsize/50)+")")
               .style("pointer-events", function() {
                 return (opts.roadEditor)?"none":"all";})
 		          .on("mouseenter",function() {
-                if (dotTimer != null) 
-                  window.clearTimeout(dotTimer);
+                if (dotTimer != null)  window.clearTimeout(dotTimer);
                 dotTimer = window.setTimeout(function() {
                   showDotText(bbr.flad); dotTimer = null;}, 500);})
 		          .on("mouseout",function() { 
-                if (dotText != null) {
-                  removeDotText(); dotText = null;
-                }
+                if (dotText != null) { removeDotText(); dotText = null; }
                 window.clearTimeout(dotTimer); 
                 dotTimer = null;});
           } else {
@@ -3206,6 +3244,8 @@
         } else {
           if (!fladelt.empty()) fladelt.remove();
         }
+        
+        // *** Plot steppy lines ***
         var stpelt = gSteppy.selectAll(".steppy");
         if (!opts.roadEditor && goal.steppy && dataf.length != 0) {
           var npts = dataf.filter(df), i;
@@ -3251,6 +3291,8 @@
         fladelt = gDpts.selectAll(".fladp");
         fladelt.remove();
       }
+
+
     }
     // Other ideas for data smoothing...  Double Exponential
     // Moving Average: http://stackoverflow.com/q/5533544 Uluc
@@ -3836,7 +3878,7 @@
       if (opts.roadEditor)
         scalf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.7);
       else 
-        scalf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.5);
+        scalf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.55);
       updatePastBox();
       updateYBHP();
       updatePinkRegion();
