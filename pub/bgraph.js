@@ -3068,7 +3068,7 @@
       return br.dotcolor(road, goal, pt[0], pt[1]);
     }
     function dpFillOp( pt ) {
-      return (pt[3] == bbr.DPTYPE.AGGPAST)?1:0.3;
+      return (pt[3] == bbr.DPTYPE.AGGPAST || pt[3] == bbr.DPTYPE.DERAIL)?1:0.3;
     }
     function dpStroke( pt ) {
       if (opts.roadEditor) {
@@ -3190,7 +3190,7 @@
         drelt.enter().append("svg:use")
 		      .attr("class","derails")
           .attr("xlink:href", arrow)
-		      .attr("transform", function(d){ return "translate("+(nXSc((d[0]-adj)*1000))+","
+		      .attr("transform", function(d){ console.log(d[0]); return "translate("+(nXSc((d[0]-adj)*1000))+","
                                           +nYSc(d[1])+"),scale("
                                           +(opts.dataPoint.fsize*scalf/24)+")"})
           .attr("fill", bu.Cols.REDDOT)
