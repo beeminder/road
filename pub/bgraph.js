@@ -3185,14 +3185,14 @@
         drelt
 		      .attr("transform", function(d){ return "translate("+(nXSc((d[0]-adj)*1000))+","
                                           +nYSc(d[1])+"),scale("
-                                          +(opts.dataPoint.fsize*scalf/23)+")"})
+                                          +(opts.dataPoint.fsize*scalf/24)+")"})
 
         drelt.enter().append("svg:use")
 		      .attr("class","derails")
           .attr("xlink:href", arrow)
 		      .attr("transform", function(d){ return "translate("+(nXSc((d[0]-adj)*1000))+","
                                           +nYSc(d[1])+"),scale("
-                                          +(opts.dataPoint.fsize*scalf/23)+")"})
+                                          +(opts.dataPoint.fsize*scalf/24)+")"})
           .attr("fill", bu.Cols.REDDOT)
           .style("pointer-events", "none")
         
