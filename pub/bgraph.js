@@ -1445,6 +1445,10 @@
     }
 
     function setSafeDays( days ) {
+      if (road.length == 0) {
+        console.log("bgraph("+curid+"):setSafeDays(), road is empty!")
+        return
+      }
       //console.debug("setSafeDays()");
       var curdtd = br.dtd(road, goal, goal.tcur, goal.vcur);
       var now = goal.asof;
@@ -4114,12 +4118,12 @@
     /** Zooms out the goal graph to make the entire range from
      tini to tfin visible, with additional slack before and after
      to facilitate adding new knots. */
-    self.zoomAll = function() { zoomAll(); };
+    self.zoomAll = function() { if (road.length == 0) return; else zoomAll(); };
 
     /** Brings the zoom level to include the range from tini to
      slightly beyond the akrasia horizon. This is expected to be
      consistent with beebrain generated graphs. */ 
-    self.zoomDefault = function() { zoomDefault(); };
+    self.zoomDefault = function() { if (road.length == 0) return; else zoomDefault(); };
 
     /** Initiates loading a new goal from the indicated url.
      Expected input format is the same as beebrain. Once the input
@@ -4138,6 +4142,10 @@
     self.scheduleBreak = function( start, days, insert ) {
       if (!opts.roadEditor) return;
       if (isNaN(days)) return;
+      if (road.length == 0) {
+        console.log("bgraph("+curid+"):scheduleBreak(), road is empty!")
+        return
+      }
       var begintime = bu.dayparse(start, '-');
       // Find or add a new dot at the start of break
       // We only allow the first step to record undo info.
@@ -4206,6 +4214,10 @@
     self.commitTo = function( newSlope ) {
       if (!opts.roadEditor) return;
       if (isNaN(newSlope)) return;
+      if (road.length == 0) {
+        console.log("bgraph("+curid+"):commitTo(), road is empty!")
+        return
+      }
       if (road[road.length-2].slope == newSlope) return;
 
       // Find out if there are any segments beyond the horizon
@@ -4229,6 +4241,10 @@
       function dt(d) { return moment.unix(d).utc().format("YYYYMMDD");};
       // Format the current road matrix to be submitted to Beeminder
       var r = {}, seg, rd, kd;
+      if (road.length == 0) {
+        console.log("bgraph("+curid+"):getRoad(), road is empty!")
+        return null
+      }
       r.valid = isRoadValid(road);
       r.loser = br.isLoser(road,goal,data,goal.tcur,goal.vcur);
       r.asof = goal.asof;
@@ -4326,7 +4342,10 @@
     self.show = function() {
       //console.debug("curid="+curid+", show()");
       hidden = false;
-      if (road.length == 0) return;
+      if (road.length == 0) {
+        console.log("bgraph("+curid+"):show(), road is empty!")
+        return;
+      }
       redrawXTicks();
       adjustYScale();
       handleYAxisWidth();
@@ -4343,13 +4362,18 @@
     var settingRoad = false;
     self.setRoadObj = function( newroad, resetinitial = true ) {
       if (settingRoad) return
+      if (newroad.length == 0) {
+        // TODO: More extensive sanity checking
+        console.log("bgraph("+curid+"):setRoadObj(), new road is empty!")
+        return
+      }
       settingRoad = true
       // Create a fresh copy to be safe
-      pushUndoState();
+      pushUndoState()
       road = br.copyRoad(newroad)
       if (resetinitial) {
         iroad = br.copyRoad(newroad)
-        clearUndoBuffer();
+        clearUndoBuffer()
       }
       bbr.setRoadObj(newroad)
       roadChanged()
