@@ -187,6 +187,7 @@ new node, Ctrl-z to undo, Ctrl-y to redo</li>
     }
 
     var road = editor.getRoad();
+    if( road == null ) return
     var mindate=moment(moment.unix(road.horizon).utc().format("YYYY-MM-DD")).toDate();
     breakpicker.setMinDate(mindate);
     if (!breakstart.value.trim()) {
@@ -276,7 +277,7 @@ new node, Ctrl-z to undo, Ctrl-y to redo</li>
   graph.show();
 
   breakstart.value = "";
-  loadGoals('data/testroad0.bb')
+  loadGoals('data/testroad3.bb')
   
   function documentKeyDown(e) {
     var evtobj = window.event? window.event : e;

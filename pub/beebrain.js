@@ -1031,7 +1031,7 @@
     }
 
     function reloadRoad() {
-      console.debug("id="+curid+", reloadRoad()")
+      //console.debug("id="+curid+", reloadRoad()")
       var error = procParams()
       
       if (error != "") return error
@@ -1141,7 +1141,10 @@
     function getStats() { return bu.extend({}, stats, {}) }
 
     function setRoadObj( newroad ) {
-      console.debug("id="+curid+", setRoadObj()")
+      if (newroad.length == 0) {
+        console.log("id="+curid+", setRoadObj(), null road!")
+        return
+      }
       roads = newroad
       self.roads = roads
       reloadRoad()
