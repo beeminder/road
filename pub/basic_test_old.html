@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="pikaday.css">
+    <link rel="stylesheet" href="roadeditor.css">
+    <script src = "https://d3js.org/d3.v4.js"></script>
+    <script src = "moment.min.js"></script>
+    <script src = "pikaday.js"></script>
+    <script src = "polyfit.js"></script>
+    <script src = "roadeditor.js"></script>
+</head>
+
+<body>
+
+<div id="graph"></div>
+
+<script>
+  var graph = new bmndr({divGraph: document.getElementById('graph'),
+                          roadEditor:false,
+                          maxFutureDays: 365,
+                          showFocusRect: false,
+                          showContext: true})
+  graph.loadGoal( "data/four.bb" )
+</script>
+
+</body>
+</html>
