@@ -445,11 +445,11 @@
       
       defs.append("path")
         .style("stroke", "none").attr("id", "downarrow")
-        .attr("d", "M 0,55 45,-35 -45,-35 z")
+        .attr("d", "M 0,40 45,-50 -45,-50 z")
       
       defs.append("path")
         .style("stroke", "none").attr("id", "uparrow")
-        .attr("d", "M 0,-55 45,35 -45,35 z")
+        .attr("d", "M 0,-40 45,50 -45,50 z")
       
       var buttongrp = defs.append("g")
             .attr("id", "removebutton")
