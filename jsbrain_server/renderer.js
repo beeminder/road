@@ -42,9 +42,9 @@ class Renderer {
    instance. Creates a new tab, renders the graph and json, outputs
    the graph in PNG and SVG forms as well as the JSON output and
    closes the tab afterwards */
-  async render(path, base) {
+  async render(inpath, outpath, base) {
     let page = null
-    let url = `file://${__dirname}/generate.html?bb=file://${path}/${base}.bb`
+    let url = `file://${__dirname}/generate.html?bb=file://${encodeURIComponent(inpath)}/${encodeURIComponent(base)}.bb`
     let newid = uuid.v1();
     var html = null, svg = null, png = null, json = null
 
@@ -53,6 +53,10 @@ class Renderer {
       // Load and render the page, extract html
       var time_id = `Render time (${base}, ${newid})`
       console.time(time_id)
+      if (!fs.existsSync(`${inpath}/${base}.bb`))
+        return { error:`Could not find file ${inpath}/${base}.bb` }
+      if (!fs.existsSync(`${outpath}`))
+        return { error:`Directory ${outpath} does not exist` }
       page = await this.createPage(url)
       if (page) {
         html = await page.content()
@@ -60,13 +64,13 @@ class Renderer {
         svg = await page.evaluate(svg => svg.outerHTML, svgHandle);
         svg = '<?xml version="1.0" standalone="no"?>\n'+svg
         // write the SVG file
-        fs.writeFile(`${path}/${base}.svg`, svg, (err) => {  
+        fs.writeFile(`${outpath}/${base}.svg`, svg, (err) => {  
           if (err) console.log(`Error saving to ${base}.svg`);
         });   
         const jsonHandle = await page.$('#goaljson');
         json = await page.evaluate(json => json.innerHTML, jsonHandle);
         // write the SVG file
-        fs.writeFile(`${path}/${base}.json`, json, (err) => {  
+        fs.writeFile(`${outpath}/${base}.json`, json, (err) => {  
           if (err) console.log(`Error saving to ${base}.json`);
         });   
         console.timeEnd(time_id)
@@ -80,7 +84,7 @@ class Renderer {
           const {x, y, width, height} = element.getBoundingClientRect();
           return {left: x, top: y, width, height, id: element.id};
         }, "svg");  
-        png = await page.screenshot({path:`${path}/${base}.png`, 
+        png = await page.screenshot({path:`${outpath}/${base}.png`, 
                                      clip:{x:rect.left, y:rect.top, 
                                            width:rect.width, height:rect.height}})
         console.timeEnd(time_id)
@@ -91,7 +95,7 @@ class Renderer {
     } finally {
       if (page) await page.close()
     }
-    return {html: html, png: png, svg: svg}
+    return {html: html, png: png, svg: svg, error:null}
   }
 }
 
