@@ -35,6 +35,7 @@
   var broad = function() {
     var self = this
 
+    self.rfin = 0
     self.AGGR = {
       last     : function(x) { return x[x.length-1] },
       first    : function(x) { return x[0] },
@@ -55,7 +56,7 @@
       clocky   : function(x) { return bu.clocky(x) /*sum of pair diff.*/ },
       count    : function(x) { return x.length /* number of datapoints*/ },
       kyshoc   : function(x) { return Math.min(2600, bu.sum(x)) }, /* ad hoc, guineapigging*/
-      skatesum : function(x) { return Math.min(6666, bu.sum(x)) } /* only count the daily min. TODO: Cannot use rfin here. No idea what this is for*/
+      skatesum : function(x) { return Math.min(self.rfin, bu.sum(x)) } /* only count the daily min. TODO: FIXHACK?: Introduced internal state for rfin*/
     }
 
     /** Enum object to identify field types for road segments. */
@@ -355,7 +356,7 @@
       t.pop()
       r.splice(0,1)
       var rtf0 = self.stepify(bu.zip([t,r]))
-      var valdiff = self.rdf( rd, x ) - self.rdf( rd, x-bu.SID );
+      var valdiff = self.vertseg(rd,x)?0:(self.rdf( rd, x ) - self.rdf( rd, x-bu.SID ));
       return Math.max(Math.abs(valdiff), rtf0(x));
     }
 
@@ -468,6 +469,11 @@
           nw = Math.max(nw, Math.abs(d[i][1] - self.rdf(rd,d[i][0])));
       }
       return bu.chop(nw);
+    }
+
+    // Whether the road has a vertical segment at time t
+    self.vertseg = function(rd, t){
+      return (rd.filter(e=>(e.sta[0] == t)).length > 1)
     }
 
 

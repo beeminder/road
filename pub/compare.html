@@ -68,9 +68,43 @@
     innerDiv.innerHTML = res.result
     rDiv.appendChild(innerDiv)
 
+    innerDiv = document.createElement('div')
+    innerDiv.className = 'result'
+    innerDiv.innerHTML = "Python beebrain output:"
+    innerDiv.style.background = "yellow"                        
+    rDiv.appendChild(innerDiv)
+
     imgDiv = document.createElement('img')
     imgDiv.src = filebase+".png"
     rDiv.appendChild(imgDiv)
+
+    <!-- innerDiv = document.createElement('div') -->
+    <!-- innerDiv.className = 'result' -->
+    <!-- innerDiv.innerHTML = "Javascript server-side PNG:" -->
+    <!-- innerDiv.style.background = "yellow"                         -->
+    <!-- rDiv.appendChild(innerDiv) -->
+
+    <!-- var testpath = "/home/saranli/Research/road/pub/testbb" -->
+    <!-- var resp = await butil.loadJSON( "http://localhost:3000?base="+params["base"]+"&inpath="+testpath ) -->
+    <!-- innerDiv = document.createElement('div') -->
+    <!-- innerDiv.className = 'result' -->
+    <!-- if (resp) {                          -->
+    <!--   innerDiv.innerHTML = JSON.stringify(resp) -->
+    <!--   imgDiv = document.createElement('img') -->
+    <!--   imgDiv.src = testpath+"/"+filebase+".png" -->
+    <!--   rDiv.appendChild(imgDiv) -->
+
+    <!-- } else { -->
+    <!--   innerDiv.innerHTML = "Response is null. Did you start the node server?" -->
+    <!-- } -->
+    <!-- rDiv.appendChild(innerDiv) -->
+
+
+    innerDiv = document.createElement('div')
+    innerDiv.className = 'result'
+    innerDiv.innerHTML = "Javascript client-side graph:"
+    innerDiv.style.background = "yellow"                        
+    rDiv.appendChild(innerDiv)
 
     graphDiv = document.createElement('div')
     rDiv.appendChild(graphDiv)

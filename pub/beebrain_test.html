@@ -46,7 +46,7 @@
   "fightdiet+team1",
   "jabee+weight",
   "jalexwood+notlookquitesospherical",
-  "johnmarkos+booze",
+  "johnmarkos+booze", // Very small numeric differences result in lane difference
   "johnmarkos+weight2",
   "jonathandupont+units",
   "justyn+gmailzero",
@@ -56,7 +56,7 @@
   "lharringtonmissin+weight",
   "mbork+journal",
   "mbork+ledger",
-  "muskwalker+weight",
+  "muskwalker+weight", // rate=0 and date=null in final row
   "nacks+nacks",
   "neinei+stay_dance_eye_contact",
   "njberry+riseup",
@@ -77,7 +77,7 @@
   "vinciamorim+bodygym",
   "volya+french",
   "whackedspinach+inbox-zero",
-  "xenocid+gmailzero",
+  "xenocid+gmailzero", // This has rate=0 and date=null as the final row
   "yatsynych+guitar",
   "yebyenw+20-minutes",
   "zachzaslow+sleep",
@@ -94,7 +94,7 @@
     for (i = 0; i < files.length; i++) {
       console.log("Processing "+files[i])
       res = await btest.compareWithPybrain("testbb/"+files[i]+".bb", "testbb/"+files[i]+".json");
-
+      
       innerDiv = document.createElement('div')
       innerDiv.className = 'resulttitle'
       innerDiv.style.margin = '4px'
