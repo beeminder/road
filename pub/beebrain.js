@@ -64,6 +64,7 @@
     kyoom    : false,// Cumulative; plot vals as the sum of those entered so far
     odom     : false,// Treat zeros as accidental odom resets
     abslnw   : null, // Override road width algorithm with a fixed lane width
+    maxflux  : 0,    // User-specified max daily fluctuation                      
     noisy    : false,// Compute road width based on data, not just road rate
     integery : false,// Whether vals are necessarily integers (used in limsum)  
     monotone : false,// Whether data is necessarily monotone (used in limsum) 
@@ -483,6 +484,8 @@
         }
       }
       // Aggregate datapoints and handle kyoom
+      // HACK: aggday=skatesum requires knowledge of rfin
+      br.rfin = goal.rfin
       var newpts = []
       var ct = data[0][0], 
           vl = [[data[0][1],data[0][2],data[0][4]]], vlv
@@ -559,7 +562,6 @@
       }
       goal.tdat = data[data.length-1][0] // tstamp of last ent. datapoint pre-flatline
 
-      data.map(e=>{if (e[2].startsWith("RECOMMITTED")) e[3] = DPTYPE.DERAIL})
       return ""
     }
 
@@ -775,7 +777,6 @@
       goal.dtf = br.stepify(data)
 
       goal.road = br.fillroad(goal.road, goal)
-      
       // tfin, vfin, rfin are set in procRoad
       
       if (!bu.orderedq(goal.road.map(e=>e[0]))) {
@@ -816,12 +817,11 @@
       goal.vcur = data[data.length-1][1];
 
       goal.lnw = Math.max(goal.nw,br.lnf( roads, goal, goal.tcur ));
-
       goal.safebuf = br.dtd(roads, goal, goal.tcur, goal.vcur);
       goal.tluz = goal.tcur+goal.safebuf*bu.SID;
       goal.delta = bu.chop(goal.vcur - br.rdf(roads, goal.tcur))
       goal.rah = br.rdf(roads, goal.tcur+bu.AKH)
-
+      
       goal.dueby = [...Array(7).keys()]
         .map(i => [bu.dayify(goal.tcur+i*bu.SID),
                    br.limd(roads, goal, i),
@@ -830,8 +830,6 @@
       goal.dueby = bu.zip([tmpdueby[0], bu.monotonize(tmpdueby[1],goal.dir),
                       bu.monotonize(tmpdueby[2],goal.dir)])
       
-      // TODO: Monotonize dueby
-
       goal.safebump = br.lim(roads, goal, goal.safebuf)
 
       goal.rcur = br.rtf(roads, goal.tcur)*goal.siru  
@@ -1101,7 +1099,6 @@
         // Save initial waterbuf value for comparison
         goal.waterbuf0 = goal.waterbuf
       
-
         // Append final segment to the road array. These values will be
         // reextracted after filling in road in procParams
         if (bu.listy(goal.road)) goal.road.push([goal.tfin, goal.vfin, goal.rfin])
@@ -1109,19 +1106,6 @@
         if (goal.error == "") goal.error = vetParams()
         if (goal.error == "") goal.error = procData()
       
-        // TODO: SCHEDULED for removal
-        // var vtmp
-        // if (p.hasOwnProperty('tini'))  goal.tini = Number(p.tini)
-        // else goal.tini = data[0][0]
-        
-        // if (allvals.hasOwnProperty(goal.tini)) {
-        //   vtmp = (goal.plotall)
-        //     ?allvals[goal.tini][0][0]:aggval[goal.tini][0]
-        // } else vtmp = Number(p.vini)
-        
-        // if (p.hasOwnProperty('vini')) goal.vini = p.vini
-        // else goal.vini = (goal.kyoom)?0:vtmp
-        
         // Extract road infor into our internal format consisting of road segments:
         // [ [startt, startv], [endt, endv], slope, autofield]
         if (goal.error == "") goal.error = procRoad( p.road )
