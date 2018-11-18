@@ -2,6 +2,7 @@
 
 const uuid = require('uuid')
 const fs = require('fs')
+const gm = require('gm').subClass({imageMagick: true})
 const puppeteer = require('puppeteer')
 
 class Renderer {
@@ -60,7 +61,7 @@ class Renderer {
       page = await this.createPage(url)
       if (page) {
         html = await page.content()
-        const svgHandle = await page.$('svg');
+        const svgHandle = await page.$('svg')
         svg = await page.evaluate(svg => svg.outerHTML, svgHandle);
         svg = '<?xml version="1.0" standalone="no"?>\n'+svg
         // write the SVG file
@@ -73,6 +74,18 @@ class Renderer {
         fs.writeFile(`${outpath}/${base}.json`, json, (err) => {  
           if (err) console.log(`Error saving to ${base}.json`);
         });   
+
+        // Extract the bounding box for the zoom area to generate the thumbnail
+        var za = await page.$('.zoomarea')
+        var zi = await page.evaluate(()=>{
+          var z = document.getElementsByClassName('zoomarea')[0]
+          var b = z.getBBox()
+          var c = z.getAttribute('color')
+          return {x:Math.round(b.x+1), y:Math.round(b.y),
+                  width:Math.round(b.width-2), height:Math.round(b.height),
+                  color:c};})
+        console.info("Zoom area bounding box is "+JSON.stringify(zi))
+        
         console.timeEnd(time_id)
       
         time_id = `Screenshot time (${base}, ${newid})`
@@ -84,9 +97,28 @@ class Renderer {
           const {x, y, width, height} = element.getBoundingClientRect();
           return {left: x, top: y, width, height, id: element.id};
         }, "svg");  
-        png = await page.screenshot({path:`${outpath}/${base}.png`, 
+        var pngfile = `${outpath}/${base}.png`
+        var thumbfile = `${outpath}/${base}-thumb.png`
+        png = await page.screenshot({path:pngfile, 
                                      clip:{x:rect.left, y:rect.top, 
                                            width:rect.width, height:rect.height}})
+        // Generate thumbnail
+        gm(pngfile)
+          .in('-remap').in('palette.png')
+          .in('-colors').in('256')
+          .in('+dither')
+          .in('-crop').in(zi.width+"x"+zi.height+"+"+zi.x+"+"+zi.y)
+          .in('-resize').in('30%')
+          .in('-bordercolor').in(zi.color)
+          .in('-border').in('2x2')
+          .write(thumbfile, (err)=>{if (err) console.log(err)})
+        // Perform palette remap using ImageMagick
+        gm(pngfile)
+          .in('-filter').in('Box')
+          .in('-remap').in('palette.png')
+          .in('-colors').in('256')
+          .in('+dither')
+          .write(pngfile, (err)=>{if (err) console.log(err)})
         console.timeEnd(time_id)
       } else {
         // Clean up leftover timing

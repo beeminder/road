@@ -483,6 +483,7 @@
       zoomarea = svg.append('rect')
         .attr("class", "zoomarea")
         .attr("x", plotbox.x).attr("y", plotbox.y)
+        .attr("color", bu.Cols.REDDOT)
         .attr("width", plotbox.width).attr("height", plotbox.height)
       axisZoom = d3.zoom()
         .extent([[0, 0], [plotbox.width, plotbox.height]])
@@ -3994,6 +3995,9 @@
       updatePastText()
       updateAura()
       updateWatermark()
+      // Record current dot color so it can be retrieved from the SVG
+      // for the thumbnail border
+      zoomarea.attr('color', br.dotcolor(road, goal, goal.tcur, goal.vcur))
     }
 
     createGraph();
@@ -4295,7 +4299,7 @@
         // Eliminate unnecessary components from the SVG file in headless mode
         if (opts.headless) {
           var newroot = d3.select(document.body);
-          newroot.selectAll(".zoomarea").remove();
+          //newroot.selectAll(".zoomarea").remove();
           newroot.selectAll(".buttonarea").remove();
           newroot.selectAll(".brush").remove();
           newroot.selectAll(".zoomin").remove();
