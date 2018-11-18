@@ -20,7 +20,10 @@ jsbrain_server : node server for graph png and svg generation
 
   Running 'node index' starts up a server on localhost:3000, which
   performs graph generation when supplied with arguments
-  '?base=nonce&path=/path/to/file'
+    '?base=filebase&inpath=/path/to/dir' OR
+    '?user=username&slug=goalslug&inpath=/path/to/dir'
+  You can also supply a different path for generated files with the
+  'outpath' parameter
 
 jsbrain_manual : script for generating graph and json using headless chrome
 

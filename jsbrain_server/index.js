@@ -32,9 +32,8 @@ if (cluster.isMaster) {
 
   var usage =
       "Usage:<br/>"
-    +"URL?base=filebase&inpath=/path/to/file OR<br/>"
-    +"URL?user=username&slug=goalslug&inpath=/path/to/file OR<br/>"
-    +"URL?user=username&slug=goalslug&inpath=/path/to/file OR<br/>"
+    +"URL?base=filebase&inpath=/path/to/dir OR<br/>"
+    +"URL?user=username&slug=goalslug&inpath=/path/to/dir<br/>"
     +"<br/>You can also supply a path for output files with the \"outpath\" parameter<br/>"
   var noinpath = "Bad URL parameters: Missing \"inpath\"<br/><br/>"+usage
   var nofile = `Bad URL parameters: One of "base" or ("user","slug") must be supplied!<br/><br/>`+usage
