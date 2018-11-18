@@ -56,19 +56,19 @@
           if (Array.isArray(stats[prop])) {
             if (!(bu.arrayEquals(stats[prop],bbr[prop]))) {
               str += "Arr <b>"+prop+"</b> differs:<br/>\n<tt>&nbsp;py:</tt>"
-                +stats[prop]+ "<br/>\n<tt>&nbsp;js:</tt>"+bbr[prop]+"<br/>\n"
+                +bbr[prop]+ "<br/>\n<tt>&nbsp;js:</tt>"+stats[prop]+"<br/>\n"
               valid = false
             }
           } else if (!(stats[prop] === bbr[prop])) {
             if (bu.nummy(stats[prop]) && bu.nummy(bbr[prop])) {
               str += "Numeric value <b>"+prop+"</b> differs:<br/>\n<tt>&nbsp;py:</tt>"
-                +stats[prop]+ "<br/>\n<tt>&nbsp;js:</tt>"+bbr[prop]+"<br/>\n"
+                +bbr[prop]+ "<br/>\n<tt>&nbsp;js:</tt>"+stats[prop]+"<br/>\n"
               numeric = true
               if (Math.abs(bbr[prop]-stats[prop]) > 1e-8)
                 valid = false
             } else if ((typeof stats[prop] == 'string') || typeof (bbr[prop] == 'string')) {
               str += "String <b>"+prop+"</b> differs:<br/>\n<tt>&nbsp;py:</tt>"
-                +stats[prop]+ "<br/>\n<tt>&nbsp;js:</tt>"+bbr[prop]+"<br/>\n"
+                +bbr[prop]+ "<br/>\n<tt>&nbsp;js:</tt>"+stats[prop]+"<br/>\n"
               valid = false
             } else
               valid = false
