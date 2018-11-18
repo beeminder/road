@@ -11,6 +11,7 @@
   "dependencies": {
     "cluster": "^0.7.7",
     "express": "^4.16.4",
+    "gm": "^1.23.1",
     "puppeteer": "^1.10.0",
     "sleep": "^5.2.3",
     "uuid": "^3.3.2"
