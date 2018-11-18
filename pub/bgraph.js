@@ -3237,11 +3237,11 @@
                 .attr("class","steppy")
 	  	          .attr("d", d)
   		          .style("fill", "none")
-  		          .attr("stroke-width",3*scalf)
+  		          .attr("stroke-width",4*scalf)
   		          .style("stroke", bu.Cols.PURP);
             } else {
               stpelt.attr("d", d)
-  		          .attr("stroke-width",3*scalf);
+  		          .attr("stroke-width",4*scalf);
             }
           } else stpelt.remove();
           updateDotGroup(gSteppyPts, bbr.flad?npts.slice(0,npts.length-1):npts, "steppyd",

@@ -28,7 +28,7 @@ jsbrain_manual : script for generating graph and json using headless chrome
 
 Testing on chrome:
 
-chromium-browser --allow-file-access-from-files --disable-web-security --user-data-dir=~/user-data --remote-debugging-port=9222 --single-process&
+chromium-browser --allow-file-access-from-files --disable-web-security --user-data-dir=$PWD/user-data --remote-debugging-port=9222 --single-process&
 
 Emacs environment:
 - indium works well
