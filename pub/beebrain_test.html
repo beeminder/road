@@ -84,53 +84,10 @@
   "zarbockc+eating"
   ];
   
-  async function testAll() {
-    const rDiv = document.getElementById('results'); 
-    while (rDiv.firstChild) {
-      rDiv.removeChild(rDiv.firstChild);
-    }
+  const rDiv = document.getElementById('results');
+  var opts = {div: rDiv, goals:files, baseurl:"testbb" }
+  btest.batchCompare( opts )
 
-    var i, innerDiv, info, exact = 0, numeric = 0, error = 0;
-    for (i = 0; i < files.length; i++) {
-      console.log("Processing "+files[i])
-      res = await btest.compareWithPybrain("testbb/"+files[i]+".bb", "testbb/"+files[i]+".json");
-      
-      innerDiv = document.createElement('div')
-      innerDiv.className = 'resulttitle'
-      innerDiv.style.margin = '4px'
-      if (res.valid) {
-        if (res.numeric) {
-          info = "[NUMERIC ERRORS]"
-          numeric = numeric+1
-          innerDiv.style.background = '#aaaaff'
-        } else {
-          info = "[EXACT MATCH]"
-          exact = exact+1
-          innerDiv.style.background = '#aaffaa'
-        }
-      } else {
-        info = "[OTHER ERRORS]"
-        error = error+1
-        innerDiv.style.background = '#ffaaaa'
-      }
-      rDiv.appendChild(innerDiv)
-      innerDiv.innerHTML = (i+1)+": GOAL <b>"+files[i]+"</b> "+" ("+res.typestr+") "+info
-        +"</br> &nbsp;&nbsp;>>> <a href=\"compare.html?base="+files[i]+"&path=testbb\" target=\"blank\"=>Click to compare graphs</a>"
-
-      innerDiv = document.createElement('div')
-      innerDiv.className = 'result'
-      rDiv.appendChild(innerDiv)
-      innerDiv.innerHTML = res.result
-    }
-    innerDiv = document.createElement('div')
-    innerDiv.className = 'result'
-    innerDiv.style.border = '2px solid black'
-    innerDiv.style.padding = '5px'
-    rDiv.prepend(innerDiv);
-    innerDiv.innerHTML = "RESULTS ("+files.length+" goals): Exact matches: "+exact+", Numeric errors: "+numeric
-                    +", string or critical: "+error
-  }
-  testAll()
 </script>
 
 </body>
