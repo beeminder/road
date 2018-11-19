@@ -108,18 +108,100 @@
     }
 
     self.createDiv = function( cdiv, text, bg=null, top=false ) {
-      var ndiv
-      ndiv = document.createElement('div')
+      var ndiv = document.createElement('div')
       ndiv.style.margin = '4px'
-      ndiv.style.background = bg
-      ndiv.innerHTML = text
+      if (bg != null) ndiv.style.background = bg
+      if (text != null) ndiv.innerHTML = text
       if (!top) cdiv.appendChild( ndiv )
       else cdiv.prepend( ndiv )
       return ndiv
     }
     
+    self.createImg = function( cdiv, href ) {
+      var ndiv = document.createElement('img')
+      ndiv.src = href
+      cdiv.appendChild(ndiv)
+      return ndiv
+    }
+    
+    self.graphCompare = async function( opts ) {
+      if (!opts.hasOwnProperty("div") || !opts.hasOwnProperty("goal")
+          || !opts.hasOwnProperty("baseurl") || !opts.hasOwnProperty("abspath")) {
+        console.log("btest.graphCompare(): Missing div, goal, baseurl or abspath options")
+
+        return
+      }
+
+      var div = opts.div
+      var g = opts.goal
+      var bburl = opts.baseurl+"/"
+      var jsurl = opts.baseurl+"/jsout/"
+      var pyurl = opts.baseurl+"/pyout/"
+      var inpath= opts.abspath
+      var outpath= opts.abspath+"/jsout"
+      
+      // Prepare div for results
+      while (div.firstChild) div.removeChild(div.firstChild);
+
+      var res, info, bg, txt
+      res = await self.compareWithPybrain(bburl+g+".bb", pyurl+g+".json");
+
+      if (res == null) {
+        txt = "GOAL <b>"+g+"</b> "+" Processing error, file not found?"
+        self.createDiv( div, txt, '#ffaaaa')
+        return
+      }
+
+      if (res.valid) {
+        if (res.numeric) {
+          info = "[NUMERIC ERRORS]"; bg = '#aaaaff'
+        } else {
+          info = "[EXACT MATCH]";    bg = '#aaffaa'
+        }
+      } else {
+        info = "[OTHER ERRORS]";     bg = '#ffaaaa'
+      }
+      txt = "Goal <b>"+g+"</b> "+" ("+res.typestr+") "+info
+      self.createDiv( div, txt, bg )
+      self.createDiv( div, res.result)
+
+      self.createDiv( div, "Python beebrain graph:", "yellow" )
+      self.createImg( div, pyurl+g+".png" )
+
+      self.createDiv( div, "Javascript beebrain graph:", "yellow" )
+      var resp =
+          await butil.loadJSON( "http://localhost:3000?base="+encodeURIComponent(g)+
+                                "&inpath="+inpath+"&outpath="+outpath )
+      var pythm = null, jsthm = null
+      if (resp) {
+        self.createImg( div, jsurl+g+".png" )
+        self.createDiv( div, "Thumbnails (python, javascript):", "yellow" )
+        pythm = self.createImg( div, "" )
+        pythm.style.margin="5px"
+        jsthm = self.createImg( div, "" )
+        jsthm.style.margin="5px"
+        setTimeout(()=>{pythm.src = pyurl+g+"-thumb.png";
+                        jsthm.src = jsurl+g+"-thumb.png" }, 1000)
+      } else self.createDiv( div, "Response is null. jsbrain_server started?" )
+      
+      self.createDiv( div, "Javascript client-side graph:", "yellow" )
+      var gdiv = self.createDiv( div, null )
+      var graph = new bgraph({divGraph: gdiv,
+                              roadEditor:false,
+                              svgSize: { width: 690, height: 430 },
+                              focusRect: { x:0, y:0, width:690, height: 440 },
+                              ctxRect: { x:0, y:440, width:690, height: 40 },
+                              maxFutureDays: 365,
+                              showFocusRect: false,
+                              showContext: false
+                             });
+      graph.loadGoal( bburl+g+".bb")
+      self.createDiv( div, "Javascript beebrain JSON output:", "yellow" )
+      var ndiv = document.createElement('pre')
+      ndiv.innerHTML = JSON.stringify(res.stats, null, 1)
+      div.appendChild(ndiv)
+    }
     self.batchCompare = async function( opts ) {
-      console.log(JSON.stringify(opts))
       if (!opts.hasOwnProperty("div") || !opts.hasOwnProperty("goals")
           || !opts.hasOwnProperty("baseurl")) {
         console.log("btest.batchCompare(): Missing div, goals or baseurl options")
@@ -128,7 +210,6 @@
       var div = opts.div
       var g = opts.goals
       var bburl = opts.baseurl+"/"
-      var jsurl = opts.baseurl+"/jsout/"
       var pyurl = opts.baseurl+"/pyout/"
 
       // Prepare div for results
