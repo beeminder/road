@@ -36,98 +36,11 @@
   }
 
   async function compare() {
-    const rDiv = document.getElementById('results'); 
-    while (rDiv.firstChild) {
-      rDiv.removeChild(rDiv.firstChild);
-    }
-    var params = getSearchParameters()
-    var i, innerDiv, info, exact = 0, numeric = 0, error = 0, imgDiv, graphDiv;
-    var filebase = params["path"]+"/"+params["base"]
+    const params = getSearchParameters()
+    const rDiv = document.getElementById('results');
+    var opts = {div:rDiv, goal:params["base"], baseurl:"testbb", abspath:"/home/saranli/Research/Projects/road/pub/testbb"}
+    btest.graphCompare( opts )
 
-    res = await btest.compareWithPybrain(filebase+".bb", filebase+".json");
-
-    innerDiv = document.createElement('div')
-    innerDiv.className = 'resulttitle'
-    innerDiv.style.margin = '4px'
-    innerDiv.style.padding = '4px'
-    innerDiv.style.fontSize = "120%"
-    if (res.valid) {
-      if (res.numeric) {
-        info = "[NUMERIC ERRORS]"; innerDiv.style.background = '#aaaaff'
-      } else {
-        info = "[EXACT MATCH]";    innerDiv.style.background = '#aaffaa'
-      }
-    } else {
-      info = "[OTHER ERRORS]";     innerDiv.style.background = '#ffaaaa'
-    }
-    innerDiv.innerHTML = "Goal <b>"+params["base"]+"</b> "+" ("+res.typestr+") "+info
-    rDiv.appendChild(innerDiv)
-
-    innerDiv = document.createElement('div')
-    innerDiv.className = 'result'
-    innerDiv.innerHTML = res.result
-    rDiv.appendChild(innerDiv)
-
-    innerDiv = document.createElement('div')
-    innerDiv.className = 'result'
-    innerDiv.innerHTML = "Python beebrain output:"
-    innerDiv.style.background = "yellow"                        
-    rDiv.appendChild(innerDiv)
-
-    imgDiv = document.createElement('img')
-    imgDiv.src = filebase+".png"
-    rDiv.appendChild(imgDiv)
-
-    <!-- innerDiv = document.createElement('div') -->
-    <!-- innerDiv.className = 'result' -->
-    <!-- innerDiv.innerHTML = "Javascript server-side PNG:" -->
-    <!-- innerDiv.style.background = "yellow"                         -->
-    <!-- rDiv.appendChild(innerDiv) -->
-
-    <!-- var testpath = "/home/saranli/Research/road/pub/testbb" -->
-    <!-- var resp = await butil.loadJSON( "http://localhost:3000?base="+params["base"]+"&inpath="+testpath ) -->
-    <!-- innerDiv = document.createElement('div') -->
-    <!-- innerDiv.className = 'result' -->
-    <!-- if (resp) {                          -->
-    <!--   innerDiv.innerHTML = JSON.stringify(resp) -->
-    <!--   imgDiv = document.createElement('img') -->
-    <!--   imgDiv.src = testpath+"/"+filebase+".png" -->
-    <!--   rDiv.appendChild(imgDiv) -->
-
-    <!-- } else { -->
-    <!--   innerDiv.innerHTML = "Response is null. Did you start the node server?" -->
-    <!-- } -->
-    <!-- rDiv.appendChild(innerDiv) -->
-
-
-    innerDiv = document.createElement('div')
-    innerDiv.className = 'result'
-    innerDiv.innerHTML = "Javascript client-side graph:"
-    innerDiv.style.background = "yellow"                        
-    rDiv.appendChild(innerDiv)
-
-    graphDiv = document.createElement('div')
-    rDiv.appendChild(graphDiv)
-    var graph = new bgraph({divGraph: graphDiv,
-                            roadEditor:false,
-                            svgSize: { width: 690, height: 430 },
-                            focusRect: { x:0, y:0, width:690, height: 440 },
-                            ctxRect: { x:0, y:440, width:690, height: 40 },
-                            maxFutureDays: 365,
-                            showFocusRect: false,
-                            showContext: false
-                         });
-    graph.loadGoal( filebase+".bb")
-
-    innerDiv = document.createElement('div')
-    innerDiv.className = 'result'
-    innerDiv.innerHTML = "Javascript beebrain JSON output:"
-    rDiv.appendChild(innerDiv)
-
-    innerDiv = document.createElement('pre')
-    innerDiv.className = 'result'
-    innerDiv.innerHTML = JSON.stringify(res.stats, null, 1)
-    rDiv.appendChild(innerDiv)
   }
 
   compare()

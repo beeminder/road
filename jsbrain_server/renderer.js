@@ -108,7 +108,7 @@ class Renderer {
           .in('-colors').in('256')
           .in('+dither')
           .in('-crop').in(zi.width+"x"+zi.height+"+"+zi.x+"+"+zi.y)
-          .in('-resize').in('30%')
+          .in('-resize').in('35%')
           .in('-bordercolor').in(zi.color)
           .in('-border').in('2x2')
           .write(thumbfile, (err)=>{if (err) console.log(err)})
