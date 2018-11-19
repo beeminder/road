@@ -147,24 +147,25 @@
       res = await self.compareWithPybrain(bburl+g+".bb", pyurl+g+".json");
 
       if (res == null) {
-        txt = "GOAL <b>"+g+"</b> "+" Processing error, file not found?"
+        txt = "GOAL <b>"+g+"</b> "+" Processing error, some files not found?"
         self.createDiv( div, txt, '#ffaaaa')
-        return
       }
 
-      if (res.valid) {
-        if (res.numeric) {
-          info = "[NUMERIC ERRORS]"; bg = '#aaaaff'
+      if (res != null) {
+        if (res.valid) {
+          if (res.numeric) {
+            info = "[NUMERIC ERRORS]"; bg = '#aaaaff'
+          } else {
+            info = "[EXACT MATCH]";    bg = '#aaffaa'
+          }
         } else {
-          info = "[EXACT MATCH]";    bg = '#aaffaa'
+          info = "[OTHER ERRORS]";     bg = '#ffaaaa'
         }
-      } else {
-        info = "[OTHER ERRORS]";     bg = '#ffaaaa'
+        txt = "Goal <b>"+g+"</b> "+" ("+res.typestr+") "+info
+        self.createDiv( div, txt, bg )
+        self.createDiv( div, res.result)
       }
-      txt = "Goal <b>"+g+"</b> "+" ("+res.typestr+") "+info
-      self.createDiv( div, txt, bg )
-      self.createDiv( div, res.result)
-
+      
       self.createDiv( div, "Python beebrain graph:", "yellow" )
       self.createImg( div, pyurl+g+".png" )
 
@@ -182,7 +183,7 @@
         jsthm.style.margin="5px"
         setTimeout(()=>{pythm.src = pyurl+g+"-thumb.png";
                         jsthm.src = jsurl+g+"-thumb.png" }, 1000)
-      } else self.createDiv( div, "Response is null. jsbrain_server started?" )
+      } else self.createDiv( div, "Response is null. Did you start jsbrain_server?" )
       
       self.createDiv( div, "Javascript client-side graph:", "yellow" )
       var gdiv = self.createDiv( div, null )
@@ -196,10 +197,12 @@
                               showContext: false
                              });
       graph.loadGoal( bburl+g+".bb")
-      self.createDiv( div, "Javascript beebrain JSON output:", "yellow" )
-      var ndiv = document.createElement('pre')
-      ndiv.innerHTML = JSON.stringify(res.stats, null, 1)
-      div.appendChild(ndiv)
+      if (res != null) {
+        self.createDiv( div, "Javascript beebrain JSON output:", "yellow" )
+        var ndiv = document.createElement('pre')
+        ndiv.innerHTML = JSON.stringify(res.stats, null, 1)
+        div.appendChild(ndiv)
+      }
     }
     self.batchCompare = async function( opts ) {
       if (!opts.hasOwnProperty("div") || !opts.hasOwnProperty("goals")
@@ -220,7 +223,9 @@
         console.log("btest.batchCompare: Processing "+g[i])
         res = await self.compareWithPybrain(bburl+g[i]+".bb", pyurl+g[i]+".json");
         if (res == null) {
-          txt = (i+1)+": GOAL <b>"+g[i]+"</b> "+" Processing error, file not found?"
+          txt = (i+1)+": GOAL <b>"+g[i]+"</b> "
+            +" Processing error, some files not found?  <a href=\"compare.html?base="
+            +g[i]+"&path=testbb\" target=\"blank\"=>Click to compare graphs</a>"
           self.createDiv( div, txt, '#ffaaaa')
           err = err+1
           continue
