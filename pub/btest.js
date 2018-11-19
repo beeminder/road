@@ -17,7 +17,7 @@
  *
  * Copyright © 2017 Uluc Saranli
  */
-((function (root, factory) {
+;((function (root, factory) {
   'use strict'
   if (typeof define === 'function' && define.amd) {
     // AMD. Register as an anonymous module.
@@ -40,7 +40,6 @@
   var btest = function() {
     var self = this
 
-    
     self.compareOutputs = function(stats, bbr) {
       var valid = true, numeric = false, str = ""
       if (stats['error'] != "") {
@@ -108,6 +107,70 @@
       return str.slice(0,str.length-1)
     }
 
+    self.createDiv = function( cdiv, text, bg=null, top=false ) {
+      var ndiv
+      ndiv = document.createElement('div')
+      ndiv.style.margin = '4px'
+      ndiv.style.background = bg
+      ndiv.innerHTML = text
+      if (!top) cdiv.appendChild( ndiv )
+      else cdiv.prepend( ndiv )
+      return ndiv
+    }
+    
+    self.batchCompare = async function( opts ) {
+      console.log(JSON.stringify(opts))
+      if (!opts.hasOwnProperty("div") || !opts.hasOwnProperty("goals")
+          || !opts.hasOwnProperty("baseurl")) {
+        console.log("btest.batchCompare(): Missing div, goals or baseurl options")
+        return
+      }
+      var div = opts.div
+      var g = opts.goals
+      var bburl = opts.baseurl+"/"
+      var jsurl = opts.baseurl+"/jsout/"
+      var pyurl = opts.baseurl+"/pyout/"
+
+      // Prepare div for results
+      while (div.firstChild) div.removeChild(div.firstChild);
+
+      var i, res, info, ex = 0, num = 0, err = 0, bg, txt
+      for (i = 0; i < g.length; i++) {
+        console.log("btest.batchCompare: Processing "+g[i])
+        res = await self.compareWithPybrain(bburl+g[i]+".bb", pyurl+g[i]+".json");
+        if (res == null) {
+          txt = (i+1)+": GOAL <b>"+g[i]+"</b> "+" Processing error, file not found?"
+          self.createDiv( div, txt, '#ffaaaa')
+          err = err+1
+          continue
+        }
+        if (res.valid) {
+          if (res.numeric) {
+            info = "[NUMERIC ERRORS]"
+            num = num+1
+            bg = '#aaaaff'
+          } else {
+            info = "[EXACT MATCH]"
+            ex = ex+1
+            bg = '#aaffaa'
+          }
+        } else {
+          info = "[OTHER ERRORS]"
+          err = err+1
+          bg = '#ffaaaa'
+        }
+        txt = (i+1)+": GOAL <b>"+g[i]+"</b> "+" ("+res.typestr+") "+info
+          +"</br> &nbsp;&nbsp;>>> <a href=\"compare.html?base="+g[i]
+          +"&path=testbb\" target=\"blank\"=>Click to compare graphs</a>"
+        self.createDiv( div, txt, bg)
+        self.createDiv( div, res.result)
+      }
+      txt = "RESULTS ("+g.length+" goals): Exact matches: "+ex+", Numeric errors: "
+        +num+", string or critical: "+err
+      var sum = self.createDiv( div, txt, null, true)
+      sum.style.border = '2px solid black'
+      sum.style.padding = '5px'
+    }
   }
 
   return new btest()
