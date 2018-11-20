@@ -253,10 +253,6 @@
       opts.roadEditor = false
       opts.showContext = false
       opts.showFocusRect = false
-      opts.focusRect.width = opts.svgSize.width
-      opts.focusRect.height = opts.svgSize.height
-      opts.ctxRect.y = opts.svgSize.height
-      opts.ctxRect.height = 32
     } else {
       opts.divTable = (opts.divTable && opts.divTable.nodeName)?opts.divTable : null
     }
@@ -554,8 +550,8 @@
       gOldGuides = plot.append('g').attr('id', 'oldguidegrp');
       gOldRoad = plot.append('g').attr('id', 'oldroadgrp');
       gPink = plot.append('g').attr('id', 'pinkgrp');
-      gOldCenter = plot.append('g').attr('id', 'oldcentergrp');
       gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp');
+      gOldCenter = plot.append('g').attr('id', 'oldcentergrp');
       gGrid = plot.append('g').attr('id', 'grid');
       gOResets = plot.append('g').attr('id', 'oresetgrp');
       gKnots = plot.append('g').attr('id', 'knotgrp');
@@ -3078,7 +3074,7 @@
       return br.dotcolor(road, goal, pt[0], pt[1]);
     }
     function dpFillOp( pt ) {
-      return (pt[3] == bbr.DPTYPE.AGGPAST || pt[3] == bbr.DPTYPE.DERAIL)?1:0.3;
+      return (pt[3] == bbr.DPTYPE.AGGPAST)?1:0.3;
     }
     function dpStroke( pt ) {
       if (opts.roadEditor) {
@@ -3265,26 +3261,25 @@
                nXSc.invert(plotbox.width).getTime()/1000];
       
       function ddf(d) {// Filter to extract derailments
-        return (d[0] >= l[0] && d[0] <= l[1] && d[3] == bbr.DPTYPE.DERAIL);
+        return (d[0] >= l[0] && d[0] <= l[1]);
       }
 
       var drelt
       // *** Plot derailments ***
       if (opts.showData || !opts.roadEditor) {
-        var drpts = data.filter(ddf);
-        console.log(JSON.stringify(data.map(e=>e[3])))
-        var adj = goal.offred?0:bu.SID, arrow = (goal.yaw>0)?"#downarrow":"#uparrow"
+        var drpts = bbr.derails.filter(ddf);
+        var arrow = (goal.yaw>0)?"#downarrow":"#uparrow"
         drelt = gDerails.selectAll(".derails").data(drpts);
         drelt.exit().remove();
         drelt
-		      .attr("transform", function(d){ return "translate("+(nXSc((d[0]-adj)*1000))+","
+		      .attr("transform", function(d){ return "translate("+(nXSc((d[0])*1000))+","
                                           +nYSc(d[1])+"),scale("
                                           +(opts.dataPoint.fsize*scalf/24)+")"})
       
         drelt.enter().append("svg:use")
 		      .attr("class","derails")
           .attr("xlink:href", arrow)
-		      .attr("transform", function(d){ return "translate("+(nXSc((d[0]-adj)*1000))+","
+		      .attr("transform", function(d){ return "translate("+(nXSc((d[0])*1000))+","
                                           +nYSc(d[1])+"),scale("
                                           +(opts.dataPoint.fsize*scalf/24)+")"})
           .attr("fill", bu.Cols.REDDOT)
