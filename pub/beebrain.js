@@ -148,7 +148,7 @@
 
   /** Enum object to identify different types of datapoints. */
   DPTYPE = {
-    AGGPAST:0, AGGFUTURE:1, RAWPAST:2, RAWFUTURE:3, FLATLINE:4, HOLLOW: 5, DERAIL: 6
+    AGGPAST:0, AGGFUTURE:1, RAWPAST:2, RAWFUTURE:3, FLATLINE:4, HOLLOW: 5
   },
 
   /** Enum object to identify error types. */
@@ -199,6 +199,7 @@
     undoBuffer = [], // Array of previous roads for undo
     redoBuffer = [], // Array of future roads for redo
     oresets = [],    // Odometer resets
+    derails = [],    // Derailments
     allvals = {},    // Dictionary holding values for each timestamp
     aggval = {},     // Dictionary holding aggregated value for each timestamp
     worstval = {},   // Maps timestamp to min/max (depending on yaw) value that day
@@ -275,6 +276,7 @@
       goal.nw = 0
       goal.siru = null
       oresets = []
+      derails = []
       hashhash = {}
 
       // All the in and out params are also global variables!
@@ -424,6 +426,13 @@
         if (m[1] != "") set.add(m[1])
       return set
     }
+
+    // Coming here, we assume that data has entries with
+    // the following format:
+    // [t, v, comment, original index, v(original)]
+    //
+    // Coming out, datapoints have the following format:
+    // [t, v, comment, type, nextt, nextv, aggval]
     function procData() { 
 
       if (data == null || data.length == 0) return "No datapoints"
@@ -449,14 +458,12 @@
         for (var key in hashhash)
           hashtags.push([key, Array.from(hashhash[key]).join(" ")])
       }
-      // Derailments are taken care of by labeling datapoints in procData
-      
-      // Coming here, we assume that data has entries with
-      // the following format:
-      // [t, v, comment, original index, v(original)]
-      //
-      // Coming out, datapoints have the following format:
-      // [t, v, comment, type, nextt, nextv, aggval]
+
+      // Identify derailments and construct a copied array
+      derails = data.filter(e=>(e[2].startsWith("RECOMMITTED")))
+      derails = derails.map(e=>e.slice())
+      if (!goal.offred)
+        for (i = 0; i < derails.length; i++) derails[i][0] = derails[i][0]-bu.SID
       
       if (goal.odom) {
         oresets = data.filter(function(e){ return (e[1]==0);}).map(e=>(e[0]))
@@ -481,13 +488,14 @@
           else return [vl[ind][1]+" ("+goal.aggday+")", vl[ind][2]]
         }
       }
+        
       // Aggregate datapoints and handle kyoom
       // HACK: aggday=skatesum requires knowledge of rfin
       br.rfin = goal.rfin
       var newpts = []
       var ct = data[0][0], 
           vl = [[data[0][1],data[0][2],data[0][4]]], vlv
-      var pre = 0, prevpt, ad, cmt, ptinf
+      var pre = 0, prevpt, ad, cmt, ptinf,vw
       for (i = 1; i < data.length; i++) {
         if (data[i][0] == ct) {
           vl.push([data[i][1],data[i][2],data[i][4]])
@@ -513,11 +521,14 @@
             allvals[ct] = vl
             aggval[ct] = [ad, ptinf[0], ptinf[1]]
           }
-
+          vw = allvals[ct].map(e=>e[0])
+          worstval[ct] = (goal.yaw<0)?bu.arrMax(vw):bu.arrMin(vw)
+          
           ct = data[i][0]
           vl = [[data[i][1],data[i][2],data[i][4]]]
         }
       }
+      
       vlv = vl.map(dval)
       ad = br.AGGR[goal.aggday](vlv)
       if (newpts.length > 0) prevpt = newpts[newpts.length-1]
@@ -537,6 +548,8 @@
         allvals[ct] = vl
         aggval[ct] = [ad, , ptinf[0], ptinf[1]]
       }
+      vw = allvals[ct].map(e=>e[0])
+      worstval[ct] = (goal.yaw<0)?bu.arrMax(vw):bu.arrMin(vw)
       var allpts = [];
       for (var t in allvals) {
         if (allvals.hasOwnProperty(t)) {
@@ -560,9 +573,10 @@
       }
       goal.tdat = data[data.length-1][0] // tstamp of last ent. datapoint pre-flatline
 
-      // Label derailments
-      data.map(e=>{if (e[2].startsWith("RECOMMITTED")) e[3] = DPTYPE.DERAIL})
-      
+      for (i = 0; i < derails.length; i++) {
+        ct = derails[i][0]+bu.SID
+        if (worstval.hasOwnProperty(ct)) derails[i][1] = worstval[ct]
+      }
       return ""
     }
 
@@ -1079,7 +1093,7 @@
         initGlobals()
         goal.proctm = tm
         data = stampIn(p, d)
-        
+
         // make sure all supplied params are recognized 
         for (var prop in p) {
           if (p.hasOwnProperty(prop)) {
@@ -1156,6 +1170,7 @@
     self.fuda = fuda
     self.flad = flad
     self.oresets = oresets
+    self.derails = derails
     self.hashtags = hashtags
     self.DPTYPE = DPTYPE
   }
