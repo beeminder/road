@@ -189,9 +189,9 @@
       var gdiv = self.createDiv( div, null )
       var graph = new bgraph({divGraph: gdiv,
                               roadEditor:false,
-                              svgSize: { width: 690, height: 430 },
-                              focusRect: { x:0, y:0, width:690, height: 440 },
-                              ctxRect: { x:0, y:440, width:690, height: 40 },
+                              svgSize: { width: 696, height: 453 },
+                              focusRect: { x:0, y:0, width:690, height: 453 },
+                              ctxRect: { x:0, y:453, width:690, height: 40 },
                               maxFutureDays: 365,
                               showFocusRect: false,
                               showContext: false

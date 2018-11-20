@@ -103,12 +103,18 @@ class Renderer {
                                      clip:{x:rect.left, y:rect.top, 
                                            width:rect.width, height:rect.height}})
         // Generate thumbnail
+        var thmratio = 140/zi.height
+        var thmw = Math.round(zi.width*thmratio)-4
+        var thmh = Math.round(zi.height*thmratio)-4
+        thmw = 212-4; thmh = 140-4
+        console.info(thmw)
+        console.info(thmh)
         gm(pngfile)
           .in('-remap').in('palette.png')
           .in('-colors').in('256')
           .in('+dither')
           .in('-crop').in(zi.width+"x"+zi.height+"+"+zi.x+"+"+zi.y)
-          .in('-resize').in('35%')
+          .in('-resize').in(thmw+'x'+thmh)
           .in('-bordercolor').in(zi.color)
           .in('-border').in('2x2')
           .write(thumbfile, (err)=>{if (err) console.log(err)})
