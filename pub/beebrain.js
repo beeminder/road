@@ -202,7 +202,6 @@
     allvals = {},    // Dictionary holding values for each timestamp
     aggval = {},     // Dictionary holding aggregated value for each timestamp
     worstval = {},   // Maps timestamp to min/max (depending on yaw) value that day
-    derails = [],    // List of derail timestamps
     hashhash = {},   // Maps timestamp to sets of hashtags to display on the graph
     hashtags = []    // Array of timestamp string pairs for hashtag lists
      
@@ -276,7 +275,6 @@
       goal.nw = 0
       goal.siru = null
       oresets = []
-      derails = []
       hashhash = {}
 
       // All the in and out params are also global variables!
@@ -562,6 +560,9 @@
       }
       goal.tdat = data[data.length-1][0] // tstamp of last ent. datapoint pre-flatline
 
+      // Label derailments
+      data.map(e=>{if (e[2].startsWith("RECOMMITTED")) e[3] = DPTYPE.DERAIL})
+      
       return ""
     }
 
