@@ -3272,6 +3272,7 @@
       // *** Plot derailments ***
       if (opts.showData || !opts.roadEditor) {
         var drpts = data.filter(ddf);
+        console.log(JSON.stringify(data.map(e=>e[3])))
         var adj = goal.offred?0:bu.SID, arrow = (goal.yaw>0)?"#downarrow":"#uparrow"
         drelt = gDerails.selectAll(".derails").data(drpts);
         drelt.exit().remove();
