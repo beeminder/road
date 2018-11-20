@@ -43,10 +43,13 @@
   var graph = new bgraph({divGraph: document.getElementById('goalgraph'),
                          divJSON: document.getElementById('goaljson'),
                          svgSize: { width: 696, height: 453 },
-                         focusRect: { x:0, y:0, width:690, height: 453 },
-                         ctxRect: { x:0, y:453, width:690, height: 40 },
+                         focusRect: { x:0, y:0, width:696, height: 453 },
+                         ctxRect: { x:0, y:453, width:696, height: 32 },
+                         roadEditor:false,
                          headless:true,
                          maxFutureDays: 365,
+                         showFocusRect: false,
+                         showContext: false,
                          onRoadChange: saveSVG,
                          onError: saveSVG
   });

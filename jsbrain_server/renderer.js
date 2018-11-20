@@ -107,8 +107,6 @@ class Renderer {
         var thmw = Math.round(zi.width*thmratio)-4
         var thmh = Math.round(zi.height*thmratio)-4
         thmw = 212-4; thmh = 140-4
-        console.info(thmw)
-        console.info(thmh)
         gm(pngfile)
           .in('-crop').in(zi.width+"x"+zi.height+"+"+zi.x+"+"+zi.y)
           .in('-resize').in(thmw+'x'+thmh)
