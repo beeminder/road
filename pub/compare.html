@@ -37,7 +37,7 @@
 
   async function compare() {
     var path = window.location.pathname
-    path = console.log(path.substring(0, path.lastIndexOf("/")))
+    path = path.substring(0, path.lastIndexOf("/"))
     const params = getSearchParameters()
     const rDiv = document.getElementById('results');
     var opts = {div:rDiv, goal:params["base"], baseurl:"testbb", abspath:path+"/testbb"}
