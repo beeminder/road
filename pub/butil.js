@@ -26,16 +26,16 @@
   'use strict'
   if (typeof define === 'function' && define.amd) {
     // AMD. Register as an anonymous module.
-    //console.log("butil: Using AMD module definition")
+    console.log("butil: Using AMD module definition")
     define(['moment'], factory)
   } else if (typeof module === 'object' && module.exports) {
     // Node. Does not work with strict CommonJS, but
     // only CommonJS-like environments that support module.exports,
     // like Node.    
-    //console.log("butil: Using CommonJS module.exports")
+    console.log("butil: Using CommonJS module.exports")
     module.exports = factory(require('moment'))
   } else {
-    //console.log("butil: Using Browser globals")
+    console.log("butil: Using Browser globals")
     root.butil = factory(root.moment)
   }
 })(this, function (moment) {
