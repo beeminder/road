@@ -30,17 +30,32 @@ if (cluster.isMaster) {
   const app = express()
   app.disable('x-powered-by')
 
+  var usage =
+      "Usage:<br/>"
+    +"URL?base=filebase&inpath=/path/to/dir OR<br/>"
+    +"URL?user=username&slug=goalslug&inpath=/path/to/dir<br/>"
+    +"<br/>You can also supply a path for output files with the \"outpath\" parameter<br/>"
+  var noinpath = "Bad URL parameters: Missing \"inpath\"<br/><br/>"+usage
+  var nofile = `Bad URL parameters: One of "base" or ("user","slug") must be supplied!<br/><br/>`+usage
+  var paramconflict = 'Bad URL parameters: "base\" and ("user\","slug") cannot be used together!<br/><br/>'+usage
+  
   // Render url.
   app.use(async (req, res, next) => {
-    let { path, base } = req.query
-    if (!base || !path) return res.status(400)
-      .send('Supply details with ?base=nonce&path=/path/to/file')
+    let { inpath, outpath, base, user, slug } = req.query
+    if (!inpath) return res.status(400).send(noinpath)
+    if ((!base && (!user || !slug)))
+      return res.status(400).send(nofile)
+    if ((base && (user || slug)))
+      return res.status(400).send(paramconflict)
 
+    if (!outpath) outpath = inpath
+    if (!base) base = user+"+"+slug
+    
     console.log(prefix+`Request url=${req.url}`);
-    console.log(prefix+`Loading "${base}" from "${path}"`);
+    console.log(prefix+`Loading "${base}" from "${inpath}"`);
 
     try {
-      const resp = await renderer.render(path, base)
+      const resp = await renderer.render(inpath, outpath, base)
       // res
       //   .set({
       //     'Content-Type': 'image/svg+xml',
@@ -49,15 +64,16 @@ if (cluster.isMaster) {
       // })
       //   .send(resp.svg)
       var json = {};
-      json.path = path
+      json.inpath = inpath
+      json.outpath = inpath
       json.base = base
       if (resp.html == null) {
-        json.error = 'Could not process goal'
+        json.error = 'Processing error: '+resp.error
       } else {
-        json.bb = (resp.html)?`${base}.bb`:null
-        json.svg = (resp.svg)?`${base}.svg`:null
-        json.png = (resp.png)?`${base}.png`:null
-        json.json = (resp.png)?`${base}.json`:null
+        json.bb = (resp.html)?`${outpath}/${base}.bb`:null
+        json.svg = (resp.svg)?`${outpath}/${base}.svg`:null
+        json.png = (resp.png)?`${outpath}/${base}.png`:null
+        json.json = (resp.png)?`${outpath}/${base}.json`:null
         json.error = null
       }
 
