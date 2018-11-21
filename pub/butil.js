@@ -124,9 +124,8 @@
       return to
     }
     
-    /** Tested, but this does not seem like "argmax" functionality to
-     me, argmax should return the index. This is just max with a
-     filter */
+    /** Applies f on elements of dom, picks the maximum and returns
+      the domain element that achieves that maximum. */
     self.argmax = function(f, dom) {
       if (dom == null) return null
       var newdom = dom.map(f)
@@ -186,13 +185,12 @@
       return (g==0)?y[j]:(y[j] + (y[j+1] - y[j])* (c + d*g))
     }
 
-    // Return a list with the cumulative sum of the elements in l, left
-    // to right
+    /** Return a list with the sum of the elements in l */
     self.sum = function(l) {
       return l.reduce((a,b)=>(a+b), 0)
     }
     
-    // foldlist(f,x, [e1, e2, ...]) -> [x, f(x,e1), f(f(x,e1), e2), ...]
+    /**  foldlist(f,x, [e1, e2, ...]) -> [x, f(x,e1), f(f(x,e1), e2), ...] */
     self.foldlist = function(f, x, l) {
       var out = [x]
       for (let i = 0; i < l.length; i++)
@@ -200,8 +198,8 @@
       return out
     }
 
-  // Return a list with the cumulative sum of the elements in l, left
-    // to right
+    /** Return a list with the cumulative sum of the elements in l,
+      left to right */
     self.accumulate = function(l) {
       var ne = l.length
       if (ne == 0) return l
@@ -210,33 +208,30 @@
       return nl
     }
 
-    // Takes a list like [1,2,1] and make it like [1,2,2] (monotone increasing)
-    //Or if dir==-1 then min with the previous value to make it monotone decreasing
+    /** Takes a list like [1,2,1] and make it like [1,2,2] (monotone
+     increasing) Or if dir==-1 then min with the previous value to
+     make it monotone decreasing */
     self.monotonize = function(l, dir=1) {
       var lo = l.slice(), i
       if (dir == 1) {
-        for (i = 1; i < lo.length; i++)
-          lo[i] = Math.max(lo[i-1],lo[i])
+        for (i = 1; i < lo.length; i++) lo[i] = Math.max(lo[i-1],lo[i])
       } else {
-        for (i = 1; i < lo.length; i++)
-          lo[i] = Math.min(lo[i-1],lo[i])
+        for (i = 1; i < lo.length; i++) lo[i] = Math.min(lo[i-1],lo[i])
       }
       return lo
     }
 
-    // zip([[1,2], [3,4]]) --> [[1,3], [2,4]]
+    /** zip([[1,2], [3,4]]) --> [[1,3], [2,4]] */
     self.zip = function (av) {
-      return av[0].map(function(_,i){
-        return av.map(a => a[i])
-      })
+      return av[0].map(function(_,i){return av.map(a => a[i]) })
     }
 
-    // Return 0 when x is very close to 0
+    /** Return 0 when x is very close to 0 */
     self.chop = function (x, delta=1e-7) { 
       return (Math.abs(x) < delta)?0:x
     }
 
-    // Return an integer when x is very close to an integer
+    /** Return an integer when x is very close to an integer */
     self.ichop = function(x, delta=1e-7) {
       var fp = x % 1, ip = x - fp
       if (fp < 0) {fp += 1; ip -= 1;}
@@ -244,7 +239,7 @@
       return Math.floor(ip) + self.chop(fp, delta)
     }
 
-    // clip(x, a,b) = min(b,max(a,x))
+    /** clip(x, a,b) = min(b,max(a,x)) */
     self.clip = function(x, a, b) {
       if (a > b) { var tmp=a; a=b; b=tmp;}
       if (x < a) x = a
@@ -285,30 +280,31 @@
       return ostr
     }
 
-    // Show Number with Sign: include the sign explicitly
+    /** Show Number with Sign: include the sign explicitly */
     self.shns = function(x, t=16, d=5) {
       return ((x>=0)?"+":"")+self.shn(x, t, d)
     }
 
-    // Same as above but with conservarounding
+    /** Same as shns but with conservarounding */
     self.shnsc = function(x, e, t=16, d=5) {
       return ((x>=0)?"+":"")+self.shnc(x, e, t, d)
     }
 
-    // Show Date: take timestamp and return something like 2012.10.22
+    /** Show Date: take timestamp and return something like 2012.10.22 */
     self.shd = function(t) {
       return (t == null)?'null':self.formatDate(t)
     }
 
-    //Show Date/Time: take timestamp and return something like 2012.10.22 15:27:03
+    /** Show Date/Time: take timestamp and return something like
+     2012.10.22 15:27:03 */
     self.shdt = function(t) {
       return (t == null)?'null':self.formatDateTime(t)
     }
 
     // TODO: need to DRY this and shn() up but want to totally revamp shownum anyway.
-    // Show Number, rounded conservatively (variant of shn where you pass which
-    // direction, +1 or -1, is safe to err on). Aka conservaround!
-    // Eg, shnc(.0000003, +1, 2) -> .01
+    /** Show Number, rounded conservatively (variant of shn where you
+       pass which direction, +1 or -1, is safe to err on). Aka
+       conservaround!  Eg, shnc(.0000003, +1, 2) -> .01 */
     self.shnc = function(x, errdir, t=10, d=5) {
       if (isNaN(x)) return x.toString()
       var i = Math.floor(Math.abs(x)), k, fmt, ostr
@@ -343,15 +339,15 @@
       return ostr
     }
 
-    // Singular or Plural: Pluralize the given noun properly, if n is not 1. 
-    // Provide the plural version if irregular.
-    // Eg: splur(3, "boy") -> "3 boys", splur(3, "man", "men") -> "3 men"
+    /** Singular or Plural: Pluralize the given noun properly, if n is
+     not 1.  Provide the plural version if irregular.  Eg: splur(3,
+     "boy") -> "3 boys", splur(3, "man", "men") -> "3 men" */
     self.splur = function(n, noun, nounp='') {
       if (nounp=='') nounp = noun+'s'
       return self.shn(n)+' '+((n == 1)?noun:nounp)
     }
     
-    // Rate as a string
+    /** Rate as a string */
     self.shr = function(r) {
       if (r == null) r = 0
       // show as a percentage if exprd is true #SCHDEL
@@ -365,6 +361,8 @@
     self.sh1s = function(x)     { return self.shns( self.chop(x),    4,2) }
     self.sh1sc = function(x, e) { return self.shnsc(self.chop(x), e, 4,2) }
 
+    /** Returns an array with n elements uniformly spaced between a
+     * and b */
     self.linspace = function linspace( a, b, n) {
       if (typeof n === "undefined") n = Math.max(Math.round(b-a)+1,1)
       if (n < 2) { return n===1?[a]:[] }
@@ -374,12 +372,12 @@
       return ret
     }
 
-    // Convex combination: x rescaled to be in [c,d] as x ranges from
-    // a to b.  clipQ indicates whether the output value should be
-    // clipped to [c,d].  Unsorted inputs [a,b] and [c,d] are also
-    // supported and work in the expected way except when clipQ =
-    // false, in which case [a,b] and [c,d] are sorted prior to
-    // computing the output.
+    /** Convex combination: x rescaled to be in [c,d] as x ranges from
+     a to b.  clipQ indicates whether the output value should be
+     clipped to [c,d].  Unsorted inputs [a,b] and [c,d] are also
+     supported and work in the expected way except when clipQ = false,
+     in which case [a,b] and [c,d] are sorted prior to computing the
+     output. */
     self.cvx = function(x, a,b, c,d, clipQ=true) {
       var tmp
       if (self.chop(a-b) == 0) {
@@ -395,38 +393,46 @@
         return c + (x-a)/(b-a)*(d-c)
       }
     }
-  
+
+    /** Delete Duplicates. The ID function maps elements to something
+      that defines equivalence classes.*/
     self.deldups = function(a, idfun = (x=>x)) {
       var seen = {}
       return a.filter(it=>{var marker = JSON.stringify(idfun(it));
-                           return seen.hasOwnProperty(marker)?false:(seen[marker] = true)})
+                           return seen.hasOwnProperty(marker)?false
+                           :(seen[marker] = true)})
     }
 
-    // Whether list l is sorted in increasing order
+    /** Whether list l is sorted in increasing order */
     self.orderedq = function(l) {
       for (let i = 0; i < l.length-1; i++)
         if (l[i] > l[i+1]) return false;
       return true;
     }
 
+    /** Whether all elements in a list are zero */
     self.nonzero = function(a) {
       var l = a.length, i
       for( i = 0; i < l; i++ ){ if (a[i] != 0) return true}
       return false
     }
 
+    /** Sum of differences of pairs, eg, [1,2,6,9] -> 2-1 + 9-6 = 1+3
+     * = 4 */
     self.clocky = function(a) {
       var s = 0, l = a.length, i
       for( i = 1; i < l; i+=2 ){ s += (a[i]-a[i-1])}
       return s
     }
 
-    self.sum = function(a) {
-      var s = 0, l = a.length, i
-      for( i = 0; i < l; i++ ){ s += a[i]}
-      return s
-    }
+    /** Return a list with the sum of the elements in l */
+    // self.sum = function(a) {
+    //   var s = 0, l = a.length
+    //   for( let i = 0; i < l; i++ ){ s += a[i]}
+    //   return s
+    // }
 
+    /** Arithmetic mean of values in list a */
     self.mean = function (a) {
       var s = 0,l = a.length,i
       if (l == 0) return 0
@@ -434,6 +440,7 @@
       return s/a.length
     }
 
+    /** Median of values in list a */
     self.median = function(a) {
       var m = 0, l = a.length
       a.sort((a,b)=>(a-b))
@@ -442,6 +449,7 @@
       return m
     }
 
+    /** Mode of values in list a */
     self.mode = function(a) {
       var md = [], count = [], i, num, maxi = 0, al = a.length
       
@@ -458,10 +466,12 @@
       return md
     }
 
+    /** Whether min <= x <= max */
     self.inrange = function(x, min, max) {
       return x >= min && x <= max
     }
 
+    /** Whether abs(a-b) < eps */
     self.nearlyEqual = function(a, b, eps) {
       return Math.abs(a - b) < eps
     }
@@ -469,20 +479,22 @@
   // --------------------------------------------------------
   // ----------------- Date facilities ----------------------
 
-    // Returns a new date object ahead by the specified number of days
+    /** Returns a new date object ahead by the specified number of
+     * days (moment)*/
     self.addDays = function(m, days) {
       var result = moment(m)
       result.add(days, 'days')
       return result
     }
 
-    // Fixes the supplied unixtime to 00:00:00 on the same day
+    /** Fixes the supplied unixtime to 00:00:00 on the same day (moment) */
     self.daysnap = function(ut) {
       var d = moment.unix(ut).utc()
-      d.hours(0); d.minutes(0); d.seconds(0); d.milliseconds(0);
+      d.hours(0); d.minutes(0); d.seconds(0); d.milliseconds(0)
       return d.unix()
     }
 
+    /** Formats the supplied unix time as YYYY.MM.DD */
     self.formatDate = function(ut) {
       var mm = moment.unix(ut).utc()
       var year = mm.year()
@@ -493,6 +505,7 @@
       return year+"."+month+"."+day
     }
 
+    /** Formats the supplied unix time as YYYY.MM.DD HH.MM.SS */
     self.formatDateTime = function(ut) {
       var mm = moment.unix(ut).utc()
       var hour = mm.hour()
@@ -504,8 +517,8 @@
       return self.formatDate(ut)+" "+hour+":"+minute+":"+second
     }
 
-    // Take a daystamp like "20170531" and return unixtime in seconds
-    // (dreev confirmed this seems to match Beebrain's function)
+    /** Take a daystamp like "20170531" and return unixtime in seconds
+     (dreev confirmed this seems to match Beebrain's function) */
     self.dayparse = function(s, sep='') {
       if (!RegExp('^\\d{4}'+sep+'\\d{2}'+sep+'\\d{2}$').test(s)) { 
         // Check if the supplied date is a timestamp or not.
@@ -517,9 +530,9 @@
       return self.daysnap(moment.utc(s).unix())
     }
 
-    // Take an integer unixtime in seconds and return a daystamp like "20170531"
-    // (dreev superficially confirmed this works)
-    // Uluc: Added option choose a separator
+    /** Take an integer unixtime in seconds and return a daystamp like
+     "20170531" (dreev superficially confirmed this works) Uluc: Added
+     option to choose a separator */
     self.dayify = function(t, sep = '') {
       if (isNaN(t) || t < 0) { return "ERROR" }
       var mm = moment.unix(t).utc()
@@ -533,9 +546,10 @@
     /** Converts a number to an integer string */
     self.sint = function(x){ return Math.round(x).toString(); }
 
-    // Returns a promise that loads a JSON file from the supplied URL
+    /** Returns a promise that loads a JSON file from the supplied
+     URL. Resolves to null on error, parsed JSON object on
+     success. */
     self.loadJSON = function( url ) {   
-      //console.debug("butil.loadJSON: "+url)
       return new Promise(function(resolve, reject) {
         if (url === "") resolve(null)
         var xobj = new XMLHttpRequest()
@@ -554,21 +568,23 @@
       })
     }
 
+    /** Changes first letter of each word to uppercase */
     self.toTitleCase = function(str) {
-      return str.replace(
-          /\w\S*/g,
+      return str.replace( /\w\S*/g,
         function(txt) {
-          return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+          return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
         }
       );
     }    
 
+    /** Deep compares array a1 and a2 for equality. Does not work on
+     * objects within the array */
     self.arrayEquals = function(a1, a2) {
       // if the other array is a falsy value, return
       if (!(a1 instanceof Array) || !(a2 instanceof Array)) return false
 
       // compare lengths - can save a lot of time 
-      if (a1.length != a2.length) return false;
+      if (a1.length != a2.length) return false
 
       for (let i = 0, l=a1.length; i < l; i++) {
           // Check if we have nested arrays
@@ -576,12 +592,14 @@
               // recurse into the nested arrays
             if (!self.arrayEquals(a1[i], a2[i])) return false
           } else if (a1[i] != a2[i]) { 
-              // Warning - two different object instances will never be equal: {x:20} != {x:20}
-              return false;   
+              // Warning - two separate object instances will never
+              // be equal: {x:20} != {x:20}
+              return false
           }           
       }       
       return true;
     }
+    // Convenience functions to check object types
     self.nummy = function(n)  { return !isNaN(parseFloat(n)) && isFinite(n) }
     self.stringy = function(x){ return  typeof x == "string" }
     self.listy = function(x)  { return  Array.isArray(x) }
