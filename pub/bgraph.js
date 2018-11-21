@@ -325,6 +325,7 @@
       goal.asof = now.unix()
       goal.horizon = goal.asof+bu.AKH
       goal.xMin = goal.asof;  goal.xMax = goal.horizon
+      goal.tmin = goal.asof;  goal.tmax = goal.horizon
       goal.yMin = -1;    goal.yMax = 1
 
       road = []; iroad = []; data = [], alldata = []
@@ -868,7 +869,6 @@
     var ticks, tickType = 1, majorSkip = 7;
     function computeXTicks() {
       var xr = xSc.domain();
-      console.log(xr)
       ticks = [];
       ticks.push([d3.utcDay.range(xr[0], xr[1], 1),"%b %d"]);
       ticks.push([d3.utcDay.range(xr[0], xr[1], 2),"%b %d"]);
