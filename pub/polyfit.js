@@ -12,7 +12,7 @@
     module.exports = factory()
   } else {
     //console.log("Polyfit: Using Browser globals")
-    root.broad = factory()
+    root.Polyfit = factory()
   }
 })(this, function () {
   'use strict'
