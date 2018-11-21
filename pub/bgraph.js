@@ -42,6 +42,8 @@
   gid = 1,
 
   defaults = {
+    /** Generates an empty graph and JSON */
+    noGraph:      false,
     /** Binds the graph to a div element */
     divGraph:     null,
     /** Binds the road table to a div element */
@@ -391,7 +393,7 @@
       var nummsgs = msgs.length
       if (fontSize < 0) fontSize = sh/15
       var lineHeight = fontSize * 1.1
-      for (var i = 0; i < nummsgs; i++) {
+      for (let i = 0; i < nummsgs; i++) {
         pg.append('svg:text').attr('class', 'loading')
           .attr('x', sw/2)
           .attr('y',sh/2 - ((nummsgs-1)*lineHeight)/2+i*lineHeight+fontSize/2)
@@ -809,7 +811,7 @@
         textobj.text.append("tspan")
           .attr("x", 0).attr("dy", "0.6em")
           .text(text).attr('class', 'svgtxt');
-        for (var i = 0; i < textr.length; i++) {
+        for (let i = 0; i < textr.length; i++) {
           textobj.text.append("tspan").attr("dy", "1.2em")
             .attr("x", 0).text(textr[i])
             .attr("font-size", "0.7em");
@@ -1155,14 +1157,14 @@
       // Iterate through and check current road points in the ping range
       var rd_i1 = br.findRoadSegment(rd, now);
       var rd_i2 = br.findRoadSegment(rd, hor);
-      for (var i = rd_i1; i < rd_i2; i++) {
+      for (let i = rd_i1; i < rd_i2; i++) {
         if (goal.yaw*br.rdf(rd, rd[i].end[0]) < 
             goal.yaw*br.rdf(ir, rd[i].end[0]) - EPS) return false;
       }
       // Iterate through and check old road points in the ping range
       var ir_i1 = br.findRoadSegment(ir, now);
       var ir_i2 = br.findRoadSegment(ir, hor);
-      for (i = ir_i1; i < ir_i2; i++) {
+      for (let i = ir_i1; i < ir_i2; i++) {
         if (goal.yaw*br.rdf(rd, ir[i].end[0]) < 
             goal.yaw*br.rdf(ir, ir[i].end[0]) - EPS) return false;
       }
@@ -1212,7 +1214,7 @@
       if (nd.length == 0) {
         // no points are in range, find enclosing two
         var ind = -1;
-        for (var i = 0; i < data.length-1; i++) {
+        for (let i = 0; i < data.length-1; i++) {
           if (data[i][0]<=xmin && data[i+1][0]>=xmax) {
             ind = i; break;
           }
@@ -1361,10 +1363,15 @@
       clearUndoBuffer();
 
       processing = true;
-
+      
       // Create beebrain processor
       bbr = new bb(json)
-      if (bbr.goal.error != "") {
+      goal = bbr.goal
+
+      if (opts.divJSON)
+        opts.divJSON.innerHTML = JSON.stringify(bbr.getStats(), null, 4)
+
+      if (goal.error != "") {
         console.log("Beebrain error: "+ bbr.goal.error)
         lastError = ErrType.BBERROR
         var errors = bbr.goal.error.split("\\n")
@@ -1373,11 +1380,21 @@
                        ""])
                      .concat(errors), sh/30, null )
         resetGoal()
+        processing = false
         return
       }
+
+      if (opts.noGraph) {
+        showOverlay( (["Beebrain was called with 'NOGRAPH_*' as the slug",
+                       "so no graph or thumbnail was generated, just this",
+                       "static placeholder!"]), sh/30, null )
+        resetGoal()
+        processing = false
+        return
+      }
+      
       road = bbr.roads
       iroad = br.copyRoad( road );
-      goal = bbr.goal
       data = bbr.data
       alldata = bbr.alldata
 
@@ -1392,11 +1409,6 @@
           return e[0]>(goal.asof-opts.maxDataDays*bu.SID);});
       }
       
-      if (opts.divJSON) {
-        let stats = {};
-        opts.divJSON.innerHTML = JSON.stringify(goal, null, 4)
-      }
-
 
       if (opts.divGraph) {
         if (!opts.roadEditor && goal.stathead)
@@ -1413,7 +1425,7 @@
     }
 
     async function loadGoalFromURL( url, callback = null ) {
-      console.debug( "Loading: "+url );
+      //console.debug( "Loading: "+url );
       if (url == "" || loading) return
       loading = true
       showOverlay( ["loading..."], sh/10 )
@@ -1600,7 +1612,7 @@
     function updateDragPositions( kind, updateKnots ) {
       var rd = road;
       var el = d3.select(opts.divGraph);
-      for (var ii = kind; ii < rd.length; ii++) {
+      for (let ii = kind; ii < rd.length; ii++) {
   	    el.select("[name=dot"+ii+"]")
 	        .attr("cx", nXSc(rd[ii].end[0]*1000))
 		      .attr("cy", nYSc(rd[ii].end[1]));
@@ -1779,7 +1791,7 @@
       var maxind = kind+1;
       if (opts.keepIntervals) maxind = rd.length;
 
-      for (var ii = kind; ii < maxind; ii++) {
+      for (let ii = kind; ii < maxind; ii++) {
 	      rd[ii].end[0] 
           = x + roadsave[ii].end[0] - roadsave[kind].end[0];
       }
@@ -2530,7 +2542,7 @@
       ihor = br.findRoadSegment(ir, hor);
       var d = "M"+nXSc(now*1000)+" "
             +nYSc(br.rdf(ir, now));
-      for (var i = itoday; i < ihor; i++) {
+      for (let i = itoday; i < ihor; i++) {
         d += " L"+nXSc(ir[i].end[0]*1000)+" "
           +nYSc(ir[i].end[1]);
       }
@@ -2563,7 +2575,7 @@
       ihor = br.findRoadSegment(ir, hor);
       var d = "M"+nXSc(now*1000)+" "
             +nYSc(br.rdf(ir, now));
-      for (var i = itoday; i < ihor; i++) {
+      for (let i = itoday; i < ihor; i++) {
         d += " L"+nXSc(ir[i].end[0]*1000)+" "+
           nYSc(ir[i].end[1]);
       }
@@ -2709,7 +2721,6 @@
                       nYSc.invert(0)];
         var delta = 1, oneshift, yr = Math.abs(yrange[1] - yrange[0]);
         var bc = br.bufcap(road, goal)
-
         if (goal.lnw > 0 && yr / goal.lnw <= 32) delta = goal.lnw
         else if (goal.lnw > 0 && yr / (6*goal.lnw) <= 32) {
           delta = 6* goal.lnw; bc[1] = bc[1]/6
@@ -2760,7 +2771,7 @@
       var ir = iroad;
       var d = "M"+xScB(ir[0].sta[0]*1000)+" "
             +yScB(ir[0].sta[1]);
-      for (var i = 0; i < ir.length; i++) {
+      for (let i = 0; i < ir.length; i++) {
         d += " L"+xScB(ir[i].end[0]*1000)+" "+
           yScB(ir[i].end[1]);
       }
@@ -3405,7 +3416,7 @@
           return (e[0] > l[0]-2*bu.SID && e[0] < l[1]+2*bu.SID);});
         if (pts.length > 0){
           var d = "M"+nXSc(pts[0][0]*1000)+" "+nYSc(pts[0][1]);
-          for (var i = 1; i < pts.length; i++) {
+          for (let i = 1; i < pts.length; i++) {
             d += " L"+nXSc(pts[i][0]*1000)+" "+nYSc(pts[i][1]);
           }
           if (el.empty()) {
@@ -4253,7 +4264,7 @@
       //r.tini = dt(road[0].end[0]);
       //r.vini = road[0].end[1];
       r.road = [];
-      for (var i = 0; i < road.length-1; i++) {
+      for (let i = 0; i < road.length-1; i++) {
         seg = road[i];
         if (seg.sta[0] == seg.end[0] && seg.sta[1] == seg.end[1])
           continue;
