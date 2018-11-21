@@ -7,7 +7,6 @@
   ],
   "tfin":"20170730", "rfin":7,
   "runits":"w",
-  "exprd":false,
   "kyoom":true,
   "odom":false,
   "edgy":false,
