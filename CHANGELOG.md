@@ -1,6 +1,14 @@
 
 ## CHANGELOG
 
+* 2018.11.18 jsbrain_server thumbnail generation
+* 2018.11.18 jsbrain_server palette optimized PNG output
+* 2018.11.17 implemented hashtags
+* 2018.11.16 rosy lines are finished
+* 2018.11.16 Visual testing output for all goals in testbb
+* 2018.11.15 JSON output to match python beebrain
+* 2018.11.15 Refactoring into separate js files done
+* 2018.11.15 node server for server-side graph generation using headless chrome
 * 2018.03.25 Saving SVG through link generation
 * 2018.03.25 Incorporated style definitions into SVG
 * 2017.11.02 No YBR or guidelines to the left of tini

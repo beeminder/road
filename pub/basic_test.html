@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="pikaday.css">
+    <link rel="stylesheet" href="roadeditor.css">
+    <script src = "https://d3js.org/d3.v4.js"></script>
+    <script src = "moment.min.js"></script>
+    <script src = "pikaday.js"></script>
+    <script src = "polyfit.js"></script>
+    <script src = "butil.js"></script>
+    <script src = "broad.js"></script>
+    <script src = "beebrain.js"></script>
+    <script src = "bgraph.js"></script>
+</head>
+
+<body>
+
+<div id="graph"></div>
+<div id="json"></div>
+
+<script>
+  var graph = new bgraph({divGraph: document.getElementById('graph'),
+                          divJSON: document.getElementById('json'),
+                          svgSize: { width: 696, height: 453 },
+                          focusRect: { x:0, y:0, width:690, height: 453 },
+                          ctxRect: { x:0, y:453, width:690, height: 40 },
+                          roadEditor:false,
+                          maxFutureDays: 365,
+                          showFocusRect: false,
+                          showContext: false})
+  graph.loadGoal( "testbb/divide+housework.bb" )
+</script>
+
+</body>
+</html>

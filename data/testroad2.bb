@@ -6,7 +6,6 @@
           ["20141204",0,null]], 
   "tfin":"20141216", "rfin":7, 
   "runits":"w", 
-  "exprd":false, 
   "kyoom":true, 
   "odom":false, 
   "asof":"20141208", 

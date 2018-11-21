@@ -12,7 +12,10 @@
 <div id="goalgraph"></div>
 <pre id="goaljson"></pre>
 
-<script src = "../pub/roadeditor.js"></script>
+<script src = "../pub/butil.js"></script>
+<script src = "../pub/broad.js"></script>
+<script src = "../pub/beebrain.js"></script>
+<script src = "../pub/bgraph.js"></script>
 <script>
   function getParameterByName(name, url) {
     if (!url) url = window.location.href;
@@ -28,7 +31,7 @@
   var saveSVG = function() {
     console.debug('Done loading road');
     var newroot = d3.select(document.body);
-    newroot.selectAll(".zoomarea").remove();
+    //newroot.selectAll(".zoomarea").remove();
     newroot.selectAll(".buttonarea").remove();
     newroot.selectAll(".brush").remove();
     newroot.selectAll("#brushclip1").remove();
@@ -37,10 +40,16 @@
     newroot.selectAll(".minor").remove();
   };
 
-  var graph = new bmndr({divGraph: document.getElementById('goalgraph'),
+  var graph = new bgraph({divGraph: document.getElementById('goalgraph'),
                          divJSON: document.getElementById('goaljson'),
+                         svgSize: { width: 696, height: 453 },
+                         focusRect: { x:0, y:0, width:696, height: 453 },
+                         ctxRect: { x:0, y:453, width:696, height: 32 },
+                         roadEditor:false,
                          headless:true,
                          maxFutureDays: 365,
+                         showFocusRect: false,
+                         showContext: false,
                          onRoadChange: saveSVG,
                          onError: saveSVG
   });
