@@ -28,8 +28,8 @@
     // only CommonJS-like environments that support module.exports,
     // like Node.    
     //console.log("btest: Using CommonJS module.exports")
-    module.exports = factory(require('moment'), require('butil'), 
-                             require('broad'), require('beebrain'))
+    module.exports = factory(require('moment'), require('./butil'), 
+                             require('./broad'), require('./beebrain'))
   } else {
     //console.log("btest: Using Browser globals")
     root.btest = factory(root.moment, root.butil, root.broad, root.beebrain)
