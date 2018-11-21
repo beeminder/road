@@ -1,36 +1,50 @@
-'use strict';
-var Polyfit = (function () {
-    /**
-     * Polyfit
-     * @constructor
-     * @param {number[]|Float32Array|Float64Array} x
-     * @param {number[]|Float32Array|Float64Array} y
-     */
-    function Polyfit(x, y) {
-        // Make sure we return an instance
-        if (!(this instanceof Polyfit)) {
-            return new Polyfit(x, y);
-        }
-        // Check that x any y are both arrays of the same type
-        if (!((x instanceof Array && y instanceof Array) ||
-            (x instanceof Float32Array && y instanceof Float32Array) ||
-            (x instanceof Float64Array && y instanceof Float64Array))) {
-            throw new Error('x and y must be arrays');
-        }
-        if (x instanceof Float32Array) {
-            this.FloatXArray = Float32Array;
-        }
-        else if (x instanceof Float64Array) {
-            this.FloatXArray = Float64Array;
-        }
-        // Make sure we have equal lengths
-        if (x.length !== y.length) {
-            throw new Error('x and y must have the same length');
-        }
-        this.x = x;
-        this.y = y;
-        return this;
+;((function (root, factory) {
+  'use strict'
+  if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    //console.log("Polyfit: Using AMD module definition")
+    define([], factory)
+  } else if (typeof module === 'object' && module.exports) {
+    // Node. Does not work with strict CommonJS, but
+    // only CommonJS-like environments that support module.exports,
+    // like Node.    
+    //console.log("Polyfit: Using CommonJS module.exports")
+    module.exports = factory()
+  } else {
+    //console.log("Polyfit: Using Browser globals")
+    root.broad = factory()
+  }
+})(this, function () {
+  'use strict'
+
+  /**
+   * Polyfit
+   * @constructor
+   * @param {number[]|Float32Array|Float64Array} x
+   * @param {number[]|Float32Array|Float64Array} y
+   */
+  function Polyfit(x, y) {
+    var self = this;
+
+    // Check that x any y are both arrays of the same type
+    if (!((x instanceof Array && y instanceof Array) ||
+          (x instanceof Float32Array && y instanceof Float32Array) ||
+          (x instanceof Float64Array && y instanceof Float64Array))) {
+      throw new Error('x and y must be arrays');
     }
+    if (x instanceof Float32Array) {
+      this.FloatXArray = Float32Array;
+    }
+    else if (x instanceof Float64Array) {
+      this.FloatXArray = Float64Array;
+    }
+    // Make sure we have equal lengths
+    if (x.length !== y.length) {
+      throw new Error('x and y must have the same length');
+    }
+    this.x = x;
+    this.y = y;
+
     /**
      * Perform gauss-jordan division
      *
@@ -40,7 +54,7 @@ var Polyfit = (function () {
      * @param {number} numCols
      * @returns void
      */
-    Polyfit.gaussJordanDivide = function (matrix, row, col, numCols) {
+    const gaussJordanDivide = function (matrix, row, col, numCols) {
         for (var i = col + 1; i < numCols; i++) {
             matrix[row][i] /= matrix[row][col];
         }
@@ -56,7 +70,7 @@ var Polyfit = (function () {
      * @param {number} numCols
      * @returns void
      */
-    Polyfit.gaussJordanEliminate = function (matrix, row, col, numRows, numCols) {
+    const gaussJordanEliminate = function (matrix, row, col, numRows, numCols) {
         for (var i = 0; i < numRows; i++) {
             if (i !== row && matrix[i][col] !== 0) {
                 for (var j = col + 1; j < numCols; j++) {
@@ -72,7 +86,7 @@ var Polyfit = (function () {
      * @param {number[][]|Float32Array[]|Float64Array[]} matrix - gets modified
      * @returns {number[][]|Float32Array[]|Float64Array[]} matrix
      */
-    Polyfit.gaussJordanEchelonize = function (matrix) {
+    const gaussJordanEchelonize = function (matrix) {
         var rows = matrix.length;
         var cols = matrix[0].length;
         var i = 0;
@@ -95,10 +109,10 @@ var Polyfit = (function () {
                 }
                 // If matrix[i][j] is != 1, divide row i by matrix[i][j]
                 if (matrix[i][j] !== 1) {
-                    Polyfit.gaussJordanDivide(matrix, i, j, cols);
+                    gaussJordanDivide(matrix, i, j, cols);
                 }
                 // Eliminate all other non-zero entries
-                Polyfit.gaussJordanEliminate(matrix, i, j, rows, cols);
+                gaussJordanEliminate(matrix, i, j, rows, cols);
                 i++;
             }
             j++;
@@ -112,7 +126,7 @@ var Polyfit = (function () {
      * @param {number[]|Float32Array[]|Float64Array[]} terms
      * @returns {number}
      */
-    Polyfit.regress = function (x, terms) {
+    const regress = function (x, terms) {
         var a = 0;
         var exp = 0;
         for (var i = 0, len = terms.length; i < len; i++) {
@@ -137,7 +151,7 @@ var Polyfit = (function () {
         var x;
         var y;
         for (var i = 0; i < n; i++) {
-            x = Polyfit.regress(this.x[i], terms);
+            x = regress(this.x[i], terms);
             y = this.y[i];
             sx += x;
             sy += y;
@@ -163,7 +177,7 @@ var Polyfit = (function () {
         if (n > 2) {
             var a = 0;
             for (var i = 0; i < n; i++) {
-                a += Math.pow((Polyfit.regress(this.x[i], terms) - this.y[i]), 2);
+                a += Math.pow((regress(this.x[i], terms) - this.y[i]), 2);
             }
             r = Math.sqrt(a / (n - 2));
         }
@@ -225,7 +239,7 @@ var Polyfit = (function () {
                 m[r][c] = mpc[r + c];
             }
         }
-        Polyfit.gaussJordanEchelonize(m);
+        gaussJordanEchelonize(m);
         var terms = this.FloatXArray && new this.FloatXArray(m.length) || [];
         for (i = m.length - 1; i >= 0; i--) {
             terms[i] = m[i][p];
@@ -274,5 +288,7 @@ var Polyfit = (function () {
         }
         return eqParts.join(' + ');
     };
-    return Polyfit;
-})();
+  }
+
+  return Polyfit;
+}));

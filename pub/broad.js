@@ -23,8 +23,8 @@
     // only CommonJS-like environments that support module.exports,
     // like Node.    
     //console.log("broad: Using CommonJS module.exports")
-    module.exports = factory(require('moment'), require('polyfit'), 
-                             require('butil'))
+    module.exports = factory(require('moment'), require('./polyfit'), 
+                             require('./butil'))
   } else {
     //console.log("broad: Using Browser globals")
     root.broad = factory(root.moment, root.Polyfit, root.butil)
