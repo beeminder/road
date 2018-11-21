@@ -171,7 +171,7 @@
 
       self.createDiv( div, "Javascript beebrain graph:", "yellow" )
       var resp =
-          await butil.loadJSON( "http://localhost:3000?base="+encodeURIComponent(g)+
+          await butil.loadJSON( "http://localhost:3000?slug="+encodeURIComponent(g)+
                                 "&inpath="+inpath+"&outpath="+outpath )
       var pythm = null, jsthm = null
       if (resp) {
@@ -179,10 +179,12 @@
         self.createDiv( div, "Thumbnails (python, javascript):", "yellow" )
         pythm = self.createImg( div, "" )
         pythm.style.margin="5px"
+        pythm.src = pyurl+g+"-thumb.png"
+
         jsthm = self.createImg( div, "" )
         jsthm.style.margin="5px"
-        setTimeout(()=>{pythm.src = pyurl+g+"-thumb.png";
-                        jsthm.src = jsurl+g+"-thumb.png" }, 1000)
+        jsthm.src = jsurl+g+"-thumb.png"
+        
       } else self.createDiv( div, "Response is null. Did you start jsbrain_server?" )
       
       self.createDiv( div, "Javascript client-side graph:", "yellow" )

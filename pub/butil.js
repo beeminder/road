@@ -141,7 +141,7 @@
     self.partition = function(l, n, d) {
       var il = l.length
       var ol = []
-      for (var i=0; i < il; i+=d)
+      for (let i=0; i < il; i+=d)
         if (i+n <= il) ol.push(l.slice(i,i+n))
       return ol
     }
@@ -195,7 +195,7 @@
     // foldlist(f,x, [e1, e2, ...]) -> [x, f(x,e1), f(f(x,e1), e2), ...]
     self.foldlist = function(f, x, l) {
       var out = [x]
-      for (var i = 0; i < l.length; i++)
+      for (let i = 0; i < l.length; i++)
         out.push(f(out[i], l[i]))
       return out
     }
@@ -206,7 +206,7 @@
       var ne = l.length
       if (ne == 0) return l
       var nl = [l[0]]
-      for (var i = 1; i < ne; i++) nl.push(nl[nl.length-1]+l[i])
+      for (let i = 1; i < ne; i++) nl.push(nl[nl.length-1]+l[i])
       return nl
     }
 
@@ -404,7 +404,7 @@
 
     // Whether list l is sorted in increasing order
     self.orderedq = function(l) {
-      for (var i = 0; i < l.length-1; i++)
+      for (let i = 0; i < l.length-1; i++)
         if (l[i] > l[i+1]) return false;
       return true;
     }
@@ -570,7 +570,7 @@
       // compare lengths - can save a lot of time 
       if (a1.length != a2.length) return false;
 
-      for (var i = 0, l=a1.length; i < l; i++) {
+      for (let i = 0, l=a1.length; i < l; i++) {
           // Check if we have nested arrays
           if (a1[i] instanceof Array && a2[i] instanceof Array) {
               // recurse into the nested arrays

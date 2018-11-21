@@ -411,7 +411,7 @@
       var xvec = data.map(e=>e[0])
       rosydata = bu.zip([xvec, yvec])
       rosydata = rosydata.map(e=>[e[0],e[1],"rosy data", DPTYPE.RAWPAST, e[0],e[1],e[1]])
-      for (var i = 0; i < rosydata.length-2; i++) {
+      for (let i = 0; i < rosydata.length-2; i++) {
         rosydata[i][4] = rosydata[i+1][0]
         rosydata[i][5] = rosydata[i+1][1]
       }
@@ -455,7 +455,7 @@
       if (goal.hashtags) {
         hashtags = []
         var keys = Object.keys(hashhash);
-        for (var key in hashhash)
+        for (let key in hashhash)
           hashtags.push([key, Array.from(hashhash[key]).join(" ")])
       }
 
@@ -551,7 +551,7 @@
       vw = allvals[ct].map(e=>e[0])
       worstval[ct] = (goal.yaw<0)?bu.arrMax(vw):bu.arrMin(vw)
       var allpts = [];
-      for (var t in allvals) {
+      for (let t in allvals) {
         if (allvals.hasOwnProperty(t)) {
           allpts = allpts.concat(allvals[t].map(
             function(d){
@@ -604,7 +604,7 @@
       firstsegment.sta[0] = bu.daysnap(firstsegment.sta[0]-100*bu.DIY*bu.SID)
       roads.push(firstsegment)
 
-      for (var i = 0; i < nk; i++) {
+      for (let i = 0; i < nk; i++) {
         // Each segment i starts from the end of the previous segment
         // and continues until road[i], filling in empty fields in the
         // road matrix
@@ -685,7 +685,7 @@
           x += bu.SID; // or see padm.us/ppr
         };
         x = bu.arrMin([x, now, goal.tfin]);
-        for (var i = 0; i < numpts; i++) {
+        for (let i = 0; i < numpts; i++) {
           if (x == data[i][0])
             return;
         }
@@ -1095,7 +1095,7 @@
         data = stampIn(p, d)
 
         // make sure all supplied params are recognized 
-        for (var prop in p) {
+        for (let prop in p) {
           if (p.hasOwnProperty(prop)) {
             if (!pin.hasOwnProperty(prop) && (!pig.includes(prop)))
               goal.error += "Unknown param: "+prop+"="+p[prop]+","
@@ -1131,7 +1131,7 @@
       } finally {
         // Generate beebrain stats (use getStats tp retrieve)
         stats = Object.assign({}, pout)
-        for (prop in stats) stats[prop] = goal[prop]
+        for (let prop in stats) stats[prop] = goal[prop]
         stampOut(stats)
         legacyOut(stats)
       }

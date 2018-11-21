@@ -1,6 +1,8 @@
 
 ## CHANGELOG
 
+* 2018.11.20 Fixed issues with various graph components
+* 2018.11.19 Improved testing facilities
 * 2018.11.18 jsbrain_server thumbnail generation
 * 2018.11.18 jsbrain_server palette optimized PNG output
 * 2018.11.17 implemented hashtags
