@@ -198,8 +198,10 @@ class Renderer {
           })
         }
         if (fs.existsSync(imgftmp)) fs.renameSync(imgftmp, imgf )
-        
         console.timeEnd(time_id)
+
+        process.stdout.write("</BEEBRAIN>\n")
+        
       } else {
 
         let err = "Could not create headless chrome page!"
