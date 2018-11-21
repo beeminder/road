@@ -63,7 +63,7 @@
     self.RP = { DATE:0, VALUE:1, SLOPE:2}
 
     self.printRoad = function( rd ) {
-      for (var i = 0; i < rd.length; i++) {
+      for (let i = 0; i < rd.length; i++) {
         var segment = rd[i]
         console.debug("[("+segment.sta[0]+","+segment.sta[1]+"),("
                       +segment.end[0]+","+segment.end[1]+"),"
@@ -73,7 +73,7 @@
 
     self.sameRoads = function( rda, rdb ) {
       if (rda.length != rdb.length) return false
-      for (var i = 0; i < rda.length; i++) {
+      for (let i = 0; i < rda.length; i++) {
         if (!bu.nearlyEqual(rda[i].end[0], rdb[i].end[0], 10)) return false
         if (!bu.nearlyEqual(rda[i].end[1], rdb[i].end[1], 10)) return false
         if (!bu.nearlyEqual(rda[i].slope, rdb[i].slope, 1e-14)) return false
@@ -84,7 +84,7 @@
     /** Creates and returns a clone of the supplied road array */
     self.copyRoad = function( rd ) {
       var newroad = [];
-      for (var i = 0; i < rd.length; i++) {
+      for (let i = 0; i < rd.length; i++) {
         var segment = {
           sta: rd[i].sta.slice(), end: rd[i].end.slice(),
           slope: rd[i].slope, auto: rd[i].auto };
@@ -106,7 +106,7 @@
       return s
       // Below was a bad linear search, replaced with binary search
       // var found = -1;
-      // for (var i = 0; i < rd.length; i++) {
+      // for (let i = 0; i < rd.length; i++) {
       //   if ((x >= rd[i].sta[0]) && (x < rd[i].end[0])) {
       //     found = i;
       //     break;
@@ -143,7 +143,7 @@
       rd[0].sta[1] = rd[0].end[1];
 
       // Iterate through the remaining segments until the last one
-      for (var i = 1; i < nr-1; i++) {
+      for (let i = 1; i < nr-1; i++) {
         //console.debug("before("+i+"):[("+rd[i].sta[0]+","+rd[i].sta[1]+"),("+rd[i].end[0]+","+rd[i].end[1]+"),"+rd[i].slope+"]");
         if (usematrix) autop = rd[i].auto;
         
@@ -313,7 +313,7 @@
       road.forEach( e => (e[2] = (null==e[2])?e[2]:e[2]/goal.siru))
       road[0] = nextrow([goal.tini, goal.vini, 0, 0], road[0])
       //road.unshift( [goal.tini, goal.vini, 0, 0] )
-      for (var i = 1; i < road.length; i++)
+      for (let i = 1; i < road.length; i++)
         road[i] = nextrow(road[i-1], road[i])
       road.forEach( e => (e[2] = (null==e[2])?e[2]:e[2]*goal.siru))
       return road
@@ -325,7 +325,7 @@
       road.splice(0,1)
       road.forEach( e => (e[2] = (null==e[2])?e[2]:e[2]/goal.siru))
       road[0] = nextrow([tini, vini, 0, 0], road[0])
-      for (var i = 1; i < road.length; i++)
+      for (let i = 1; i < road.length; i++)
         road[i] = nextrow(road[i-1], road[i])
       road.forEach( e => (e[2] = (null==e[2])?e[2]:e[2]*goal.siru))
       road.unshift([tini, vini, 0, 2])
@@ -371,7 +371,7 @@
       if (ln == 0) return;
       var curadd = 0;
       var prev = data[0][1];
-      for (var i=1; i<ln; i++) {
+      for (let i=1; i<ln; i++) {
         if (data[i][1] == 0) {curadd += prev}
         prev = data[i][1];
         data[i][1] += curadd
@@ -392,7 +392,7 @@
       return data[s][1]
       // Below is a bad linear search. Replaced with binary search
       // var prevval = data[0][1], l = data.length;
-      // for (var i = 0; i < l; i++) {
+      // for (let i = 0; i < l; i++) {
       //   if (data[i][0] > x) return prevval;
       //   else  prevval = data[i][1];
       // }
@@ -439,7 +439,7 @@
       if (d.length <= 1) return 0;
       var p = bu.partition(d,2,1), el, ad = [];
       var t,v,u,w;
-      for (var i = 0; i < p.length; i++) {
+      for (let i = 0; i < p.length; i++) {
         t = p[i][0][0];
         v = p[i][0][1];
         u = p[i][1][0];
@@ -516,7 +516,7 @@
       var di = 0, dl = d.length, od = [];
       if (dl == 0) return null;
       if (dl == 1) return xv.map(function(d){return [d, d[0][1]];});
-      for (var i = 0; i < xv.length; i++) {
+      for (let i = 0; i < xv.length; i++) {
         var xi = xv[i];
         if (xi <= d[0][0]) od.push([xi, d[0][1]]);
         else if (xi >= d[dl-1][0]) od.push([xi, d[dl-1][1]]);
