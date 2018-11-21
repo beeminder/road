@@ -164,7 +164,6 @@ class Renderer {
           //var thmratio = 140/zi.height
           var thmw = 212-4 // = Math.round(zi.width*thmratio)-4
           var thmh = 140-4 // = Math.round(zi.height*thmratio)-4
-          console.info("thm request begin");
           var res
           res = await new Promise( (resolve, reject) => {
             gm(imgftmp)
@@ -180,15 +179,12 @@ class Renderer {
               .in('+repage')
               .write(thmftmp, (err) => {
                 if (err) reject(err)
-                console.info("thm completed");
                 resolve(null)
               })
           })
-          console.info("thm request end");
           if (fs.existsSync(thmftmp)) fs.renameSync(thmftmp, thmf )
           
           // Generate final graph PNG by palette remapping using ImageMagick
-          console.info("img request begin");
           res = await new Promise( (resolve, reject) => {
             gm(imgftmp)
               .in('-filter').in('Box')
@@ -197,12 +193,10 @@ class Renderer {
               .in('+dither')
               .write(imgftmp, (err) => {
                 if (err) reject(err)
-                console.info("img completed");
                 resolve(null)
               })
           })
         }
-        console.info("img request end");
         if (fs.existsSync(imgftmp)) fs.renameSync(imgftmp, imgf )
         
         console.timeEnd(time_id)
