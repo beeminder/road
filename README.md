@@ -44,3 +44,14 @@ Emacs environment:
   Hack: https://github.com/source-foundry/Hack
   OfficeCodePro: https://github.com/nathco/Office-Code-Pro
   Font rendering: https://wiki.manjaro.org/index.php?title=Improve_Font_Rendering
+
+# Appendix A: deploying road-staging to glitch
+
+When deploying a new version of the road editor to glitch (as in setting up a 
+new road-staging glitch)
+
+- create a new beeminder client at https://www.beeminder.com/apps/new
+- the redirect uri is https://[project].glitch.me/connect
+- add the client id to your .env file
+- add the redirct uri in your .env file
+- launch the glitch console and create .data/database.sqlite for the session store to connect to
