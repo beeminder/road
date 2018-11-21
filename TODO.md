@@ -1,4 +1,8 @@
+## New stuff
 
+- Put png paths into the output JSON
+- Review and finalize PNG URL locations
+- Rename PNG files to temporary files while generating new ones as in beebrain.py
 
 ## Pre-deployment UI decisions
 
@@ -6,12 +10,12 @@ Prioritized To-Do list for the editor/client-side graphs
 
 - Exes and pencils like in old.beeminder.com for the road rows with auto-ungray (also probably exes for deleting road rows. or maybe '+' and '-' for that?)
 - Selector for multiple overlapping node deletion buttons.
-- Test out how svg and png generation would work on a node.js server with jsdom?
 - Implement a smoother editing mechanism for roads with lots of breaks.
 - True *retro*ratchet when you originally made your rate way too conservative and want the road to match your data
 - Mini-editor for goal creation
 - Replace table checkmarks with proper icons and implement auto-enable on click.
 
+- DONE: Test out how svg and png generation would work on a node.js server with jsdom?
 - DONE: don't draw the actual YBR left of tini. we do want to be able to scroll left of tini and add new knots and make tini be earlier. just show the actual YBR starting at tini. it's also possible to have datapoints to the left of tini, which is fine.
 - FIXED: day of week for "today" should account for the beeminder deadline. for example, if it's friday night at 8pm and i've done my pushups that we due at 7pm then from beeminder's point of view it's now saturday and it's an eep day again because saturday's pushups are due in less than 24 hours. this seems counterintuitive to call it saturday when it's clearly friday but it turns out to be a can of worms to do anything other than treat the beeminder deadline as the end-of-day.
 - DONE: Enable field on click
@@ -30,7 +34,7 @@ Quibbly issues to try to make the overall graph aesthetics match or exceed Matpl
 2.2. DONE (as much as I could) more on watermarks: i think the graph canvas should be divided into 4 quadrants and the watermarks should take up as much as possible of their designated quadrant as possible
 3. (Not sure if it's worth the effort) frame around the graph with tickmarks only pointing inward?
 4. (Kind of tough) lower priority since the blue/green aura isn't turned on for most graphs but i really like how in matplotlib it's green where it overlaps the YBR (cuz yellow and blue make green)
-5. (Seems to be a Chrome issue) example of svg with artifacts (only appears in chrome; firefox and safari display it fine): http://road.glitch.me/svg-with-artifacts.svg 
+5. DISAPPEARED?: (Seems to be a Chrome issue) example of svg with artifacts (only appears in chrome; firefox and safari display it fine): http://road.glitch.me/svg-with-artifacts.svg 
 
 General
 1. Should we allow adding duplicate road knots (helps with subsequent editing, so probably yes) [yes]
