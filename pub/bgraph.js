@@ -868,6 +868,7 @@
     var ticks, tickType = 1, majorSkip = 7;
     function computeXTicks() {
       var xr = xSc.domain();
+      console.log(xr)
       ticks = [];
       ticks.push([d3.utcDay.range(xr[0], xr[1], 1),"%b %d"]);
       ticks.push([d3.utcDay.range(xr[0], xr[1], 2),"%b %d"]);
@@ -999,8 +1000,8 @@
 
     function resizeContext(){
       if (opts.divGraph == null) return;
-      xScB.domain([new Date(goal.xMin*1000), 
-                   new Date(goal.xMax*1000)]);
+      xScB.domain([new Date(Math.min(goal.tmin, goal.xMin)*1000), 
+                   new Date(Math.max(goal.tmax, goal.xMax)*1000)]);
       xAxisObjB.call(xAxisB.scale(xScB));
       yScB.domain([goal.yMin, goal.yMax]);
     }
@@ -1081,8 +1082,8 @@
       //console.debug("id="+curid+", zoomAll()");
       if (opts.divGraph == null) return;
       computePlotLimits( false );
-      xSc.domain([new Date(goal.xMin*1000), 
-                  new Date(goal.xMax*1000)]);
+      xSc.domain([new Date(Math.min(goal.tmin, goal.xMin)*1000), 
+                  new Date(Math.max(goal.tmax, goal.xMax)*1000)]);
       computeXTicks();
       ySc.domain([goal.yMin, goal.yMax]);
       nXSc = xSc; nYSc = ySc;
@@ -1332,8 +1333,8 @@
                       nXSc.invert(plotbox.width)];
         var yrange = [nYSc.invert(0), 
                       nYSc.invert(plotbox.height)];
-        xSc.domain([new Date(goal.xMin*1000), 
-                    new Date(goal.xMax*1000)]);
+        xSc.domain([new Date(Math.min(goal.tmin, goal.xMin)*1000), 
+                    new Date(Math.max(goal.tmax, goal.xMax)*1000)]);
         computeXTicks();
         ySc.domain([goal.yMin, goal.yMax]);
         var newtr = d3.zoomIdentity.scale(plotbox.width
