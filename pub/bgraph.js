@@ -26,8 +26,8 @@
     // only CommonJS-like environments that support module.exports,
     // like Node.    
     //console.log("bgraph: Using CommonJS module.exports")
-    module.exports = factory(require('d3'), require('moment'), require('butil'), 
-                             require('broad'), require('beebrain'))
+    module.exports = factory(require('d3'), require('moment'), require('./butil'), 
+                             require('./broad'), require('./beebrain'))
   } else {
     //console.log("bgraph: Using Browser globals")
     root.bgraph = factory(root.d3, root.moment, root.butil, root.broad, root.beebrain)
