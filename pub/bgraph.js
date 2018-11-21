@@ -15,7 +15,7 @@
  *
  * Copyright © 2017 Uluc Saranli
  */
-((function (root, factory) {
+;((function (root, factory) {
   'use strict'
   if (typeof define === 'function' && define.amd) {
     // AMD. Register as an anonymous module.
@@ -234,7 +234,7 @@
   onMobileOrTablet = function() {
     if (typeof navigator == 'undefined' && typeof window == 'undefined') return false
     var check = false;
-    (function(a){if(/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino|android|ipad|playbook|silk/i.test(a)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0,4))) check = true;})(navigator.userAgent||navigator.vendor||window.opera)
+    (function(a){if(/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino|android|ipad|playbook|silk/i.test(a)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0,4))) check = true})(navigator.userAgent||navigator.vendor||window.opera)
     return check
   },
   
@@ -268,7 +268,7 @@
    functions and member variables. The argument is expected to include
    plotting options.*/
   bgraph = function( options ) {
-    //console.debug("beebrain constructor ("+gid+"): ");
+    //console.debug("beebrain constructor ("+gid+"): ")
     var self = this,
         opts = config(self, options),
         curid = gid
@@ -364,9 +364,9 @@
                    topin:"translate("+(plotbox.width-2*(zoombtnsize+5))
                    +",5) scale("+zoombtnscale+","+zoombtnscale+")",
                    topout:"translate("+(plotbox.width-(zoombtnsize+5))
-                   +",5) scale("+zoombtnscale+","+zoombtnscale+")"};
-    };
-    computeBoxes();
+                   +",5) scale("+zoombtnscale+","+zoombtnscale+")"}
+    }
+    computeBoxes()
 
     /** Utility function to show a shaded overlay with a message 
      consisting of multiple lines supplied in the array argument */
@@ -411,10 +411,10 @@
     }
 
     function createGraph() {
-      var div = opts.divGraph;
-      if (div === null) return;
+      var div = opts.divGraph
+      if (div === null) return
       // First, remove all children from the div
-      while (div.firstChild) div.removeChild(div.firstChild);
+      while (div.firstChild) div.removeChild(div.firstChild)
 
       // Initialize the div and the SVG
       svg = d3.select(div).attr("class", "bmndrgraph")
@@ -503,27 +503,26 @@
             var newx = nXSc.invert(pressX)
             if (pressTimer == null && d3.event.touches.length == 1) 
               pressTimer = window.setTimeout(
-                function() { if (newx != null) addNewDot(newx/1000); },1000);
+                function() { if (newx != null) addNewDot(newx/1000) },1000)
             oldTouchStart.apply(this, arguments);} )
-          .on("touchmove.zoom", function () { window.clearTimeout(pressTimer); pressTimer = null; oldTouchMove.apply(this, arguments);})
-          .on("touchend.zoom", function () { clearTimeout(pressTimer); pressTimer = null; oldTouchEnd.apply(this, arguments);} );              
+          .on("touchmove.zoom", function () { window.clearTimeout(pressTimer); pressTimer = null; oldTouchMove.apply(this, arguments)})
+          .on("touchend.zoom", function () { clearTimeout(pressTimer); pressTimer = null; oldTouchEnd.apply(this, arguments)} );              
       }
       function dotAdded() {
-        var mouse = d3.mouse(svg.node());
-        var newx = nXSc.invert(mouse[0]-plotpad.left);
-        addNewDot(newx/1000);
+        var mouse = d3.mouse(svg.node())
+        var newx = nXSc.invert(mouse[0]-plotpad.left)
+        addNewDot(newx/1000)
       }
       function dotAddedShift() {
-        if (d3.event.shiftKey) {
-          dotAdded();
-        } else clearSelection();
+        if (d3.event.shiftKey) dotAdded()
+        else clearSelection()
         
       }
       if (opts.roadEditor) {
-        zoomarea.on("click", dotAddedShift);
-        zoomarea.on("dblclick.zoom", dotAdded);
+        zoomarea.on("click", dotAddedShift)
+        zoomarea.on("dblclick.zoom", dotAdded)
       } else {
-        zoomarea.on("dblclick.zoom", null);            
+        zoomarea.on("dblclick.zoom", null)
       }
       
       focus = svg.append('g')
@@ -3770,18 +3769,18 @@
     }
 
     function updateTableButtons() {
-      if (opts.divTable == null) return;
+      if (opts.divTable == null) return
       // Update buttons on all rows at once, including the start node.
       var allrows = d3.select(opts.divTable)
-            .selectAll(".rtablestart .roadrow, .rtable .roadrow, .rtablegoal .roadrow");
+            .selectAll(".rtablestart .roadrow, .rtable .roadrow, .rtablegoal .roadrow")
       var btncells = allrows.selectAll(".roadbtn")
             .data(function(row, i) {
               // The table row order is reversed, which means that the
               // last road segment comes in the first row.  We need to
               // compute knot index accordingly
-              var kind;
-              if (opts.reverseTable) kind = road.length-2-i;
-              else kind = i;
+              var kind
+              if (opts.reverseTable) kind = road.length-2-i
+              else kind = i
               if (opts.tableCheckboxes) 
                 return [
                   {order: -1, row:kind, name: "btndel"+kind, evt: function() {removeKnot(kind, false);}, 
@@ -3802,59 +3801,58 @@
                   {order: 8, row:kind, name: "btnadd"+kind, evt: function() {addNewKnot(kind+1);}, 
                    type: 'button', txt: 'ins', auto: false},
                 ];
-            });
+            })
       
       var newbtncells = btncells.enter().append("input")
             .attr('class', 'roadbtn')
-            .attr('id', function(d) { return d.row;})
-            .attr('name', function(d) { return d.name;})
-            .attr('type',function(d) {return d.type;})
+            .attr('id', function(d) { return d.row})
+            .attr('name', function(d) { return d.name})
+            .attr('type',function(d) {return d.type})
             .attr('value', function(d) { 
               let cell = "<span class='octicon octicon-plus'></span>";
-              //return cell;
-              return d.txt;})
-            .on('click', function (d) {d.evt();});
+              return d.txt})
+            .on('click', function (d) {d.evt();})
       
-      btncells.exit().remove();
-      btncells = allrows.selectAll(".rtablestart .roadbtn, .rtable .roadbtn, .rtablegoal .roadbtn");
+      btncells.exit().remove()
+      btncells = allrows.selectAll(".rtablestart .roadbtn, .rtable .roadbtn, .rtablegoal .roadbtn")
       btncells
-        .attr('id', function(d) { return d.row;})
-        .attr('name', function(d) { return d.name;})
+        .attr('id', function(d) { return d.row})
+        .attr('name', function(d) { return d.name})
         .style('visibility', function(d,i) {
           return ((Number(d.row)>0 && Number(d.row)<(road.length-2)) 
                   || i==4 
                   || (i>0 && Number(d.row)>0 ))?"visible":"hidden";
         })
-        .property('checked', function(d) { return d.auto?true:false;});
+        .property('checked', function(d) { return d.auto?true:false;})
 
       allrows.selectAll(".roadcell, .roadbtn")
-        .sort(function(a,b) {return a.order > b.order;});
+        .sort(function(a,b) {return a.order > b.order;})
 
       if (!opts.roadEditor) {
-        allrows.selectAll(".roadbtn").style('visibility', "collapse").attr("value","");
+        allrows.selectAll(".roadbtn").style('visibility', "collapse").attr("value","")
       }
     }
 
     function updateRowValues( elt, s, e, rev ) {
-      var data = road.slice(s, e);
-      if (rev) data = data.reverse();
-      var rows = elt.selectAll(".roadrow").data( data );
-      var ifn = function(i) { return rev?(road.length-2-i):i;};
+      var data = road.slice(s, e)
+      if (rev) data = data.reverse()
+      var rows = elt.selectAll(".roadrow").data( data )
+      var ifn = function(i) { return rev?(road.length-2-i):i;}
       rows.enter().append("div").attr('class', 'roadrow')
         .attr("name", function(d,i) { return 'roadrow'+ifn(s+i);})
         .attr("id", function(d,i) { return ifn(s+i);})
         .append("div")
-        .attr("class", "rowid").text(function(d,i) {return ifn(s+i)+":";});
-      rows.exit().remove();
-      rows.order();
-      rows = elt.selectAll(".roadrow");
+        .attr("class", "rowid").text(function(d,i) {return ifn(s+i)+":";})
+      rows.exit().remove()
+      rows.order()
+      rows = elt.selectAll(".roadrow")
       rows.attr("name", function(d,i) { return 'roadrow'+ifn(s+i);})
-        .attr("id", function(d,i) { return ifn(s+i);});
-      rows.select("div").text(function(d,i) {return ifn(s+i)+":";});
+        .attr("id", function(d,i) { return ifn(s+i);})
+      rows.select("div").text(function(d,i) {return ifn(s+i)+":";})
       var cells = rows.selectAll(".roadcell")
             .data(function(row, i) {
-              var datestr = bu.dayify(row.end[0], '-');
-              var ri = ifn(s+i);
+              var datestr = bu.dayify(row.end[0], '-')
+              var ri = ifn(s+i)
                return [
                  {order: 2, value: datestr, name: "enddate"+(ri), 
                   auto: (row.auto==br.RP.DATE), i:ri},
@@ -3862,32 +3860,32 @@
                   auto: (row.auto==br.RP.VALUE), i:ri},
                  {order: 6, value: isNaN(row.slope)
                   ?"duplicate":bu.shn(row.slope*goal.siru), name: "slope"+(ri), 
-                  auto: (row.auto==br.RP.SLOPE), i:ri}];
+                  auto: (row.auto==br.RP.SLOPE), i:ri}]
              });
        cells.enter().append("div").attr('class', 'roadcell')
-         .attr('name', function(d) { return d.name;})
+         .attr('name', function(d) { return d.name})
          .attr("contenteditable", function(d,i) { 
-           return (d.auto || !opts.roadEditor)?'false':'true';})
+           return (d.auto || !opts.roadEditor)?'false':'true'})
          .on('click', tableClick)
          .on('focusin', tableFocusIn)
          .on('focusout', tableFocusOut)
-         .on('keydown', tableKeyDown);
+         .on('keydown', tableKeyDown)
 
-       cells.exit().remove();
-       cells = rows.selectAll(".roadcell");
-       cells.text(function(d,i) { return d.value;})
-         .attr('name', function(d) { return d.name;})
+       cells.exit().remove()
+       cells = rows.selectAll(".roadcell")
+       cells.text(function(d,i) { return d.value})
+         .attr('name', function(d) { return d.name})
          .style('color', function(d) {
            if (road[d.i].sta[0] == road[d.i].end[0] 
                && road[d.i].sta[1] == road[d.i].end[1])
-             return opts.roadLineCol.invalid;
+             return opts.roadLineCol.invalid
            return d.auto?opts.roadTableCol.textDisabled
-             :opts.roadTableCol.text;})
+             :opts.roadTableCol.text})
          .style('background-color', function(d) {
            return d.auto?opts.roadTableCol.bgDisabled
-             :opts.roadTableCol.bg;})
+             :opts.roadTableCol.bg})
          .attr("contenteditable", function(d,i) { 
-           return (d.auto || !opts.roadEditor)?'false':'true';});
+           return (d.auto || !opts.roadEditor)?'false':'true'})
     }
     
     function updateTableWidths() {
@@ -3917,72 +3915,72 @@
       // }
       if (road.length > 3)
         d3.select(opts.divTable)
-        .style("width", (tbody.node().offsetWidth+35)+"px");
+        .style("width", (tbody.node().offsetWidth+35)+"px")
       else
         d3.select(opts.divTable)
-        .style("width", (gbody.node().offsetWidth+35)+"px");
+        .style("width", (gbody.node().offsetWidth+35)+"px")
     }
 
     function updateTableValues() {
-      if (opts.divTable == null) return;
+      if (opts.divTable == null) return
 
-      var reversetable = opts.reverseTable;
+      var reversetable = opts.reverseTable
 
-      updateRowValues( stbody, 0, 1, false );
+      updateRowValues( stbody, 0, 1, false )
       stbody.select("[name=slope0]")
         .style("visibility","hidden")
         .style("pointer-events","none")
-        .style("border", "1px solid transparent");
+        .style("border", "1px solid transparent")
 
-      updateRowValues( tbody, 1, road.length-2, reversetable );
-      updateRowValues( gbody, road.length-2, road.length-1, false ); 
+      updateRowValues( tbody, 1, road.length-2, reversetable )
+      updateRowValues( gbody, road.length-2, road.length-1, false )
 
       if (road.length <=3) {
-        sttail.style("visibility", "collapse");
-        d3.select(opts.divTable).select(".rtablebody").style("display", "none");
+        sttail.style("visibility", "collapse")
+        d3.select(opts.divTable).select(".rtablebody").style("display", "none")
       } else {
-        sttail.style("visibility", null);
-        d3.select(opts.divTable).select(".rtablebody").style("display", null);
+        sttail.style("visibility", null)
+        d3.select(opts.divTable).select(".rtablebody").style("display", null)
       }
 
-      updateTableWidths();
+      updateTableWidths()
     }
 
     function updateTable() {
-      updateTableValues();
-      updateTableButtons();
-      updateTableWidths();
+      updateTableValues()
+      updateTableButtons()
+      updateTableWidths()
     }
 
     function updateContextData() {
-      if (opts.divGraph == null) return;
+      if (opts.divGraph == null) return
 
       if (opts.showContext) {
-        context.attr("visibility", "visible");
-        updateContextOldRoad();
-        updateContextOldBullseye();
-        updateContextBullseye();
-        updateContextRoads();
-        updateContextDots();
-        updateContextHorizon();
-        updateContextToday();
-        if (opts.showFocusRect) focusrect.attr("visibility", "visible");
-        else focusrect.attr("visibility", "hidden");
+        context.attr("visibility", "visible")
+        updateContextOldRoad()
+        updateContextOldBullseye()
+        updateContextBullseye()
+        updateContextRoads()
+        updateContextDots()
+        updateContextHorizon()
+        updateContextToday()
+        if (opts.showFocusRect) focusrect.attr("visibility", "visible")
+        else focusrect.attr("visibility", "hidden")
       } else {
-        context.attr("visibility", "hidden");
-        focusrect.attr("visibility", "hidden");
+        context.attr("visibility", "hidden")
+        focusrect.attr("visibility", "hidden")
       }
     }
 
     function updateGraphData() {
-      if (opts.divGraph == null) return;
-      clearSelection();
+      if (opts.divGraph == null) return
+      clearSelection()
       var limits = [nXSc.invert(0).getTime()/1000, 
                     nXSc.invert(plotbox.width).getTime()/1000];
       if (opts.roadEditor)
-        scalf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.7);
+        scalf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.7)
       else 
-        scalf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.55);
+        scalf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.55)
       updatePastBox()
       updateYBHP()
       updatePinkRegion()
@@ -4008,56 +4006,60 @@
       zoomarea.attr('color', br.dotcolor(road, goal, goal.tcur, goal.vcur))
     }
 
-    createGraph();
-    createTable();
-    zoomAll();
+    createGraph()
+    createTable()
+    zoomAll()
 
     /** bgraph object ID for the current instance */
     self.id = 1
 
     /** Sets/gets the showData option */
     self.showData = function( flag ) {
-      if (arguments.length > 0) opts.showData = flag;
+      if (arguments.length > 0) opts.showData = flag
       if (alldata.length != 0) {
-        updateDataPoints();
-        updateDerails();
-        updateRosy();
-        updateSteppy();
-        updateMovingAv();
-        updateAura();
+        updateDataPoints()
+        updateDerails()
+        updateRosy()
+        updateSteppy()
+        updateMovingAv()
+        updateAura()
       }
-      return opts.showData;
-    };
+      return opts.showData
+    }
+    
     /** Sets/gets the showContext option */
     self.showContext = function( flag ) {
-      if (arguments.length > 0) opts.showContext = flag;
+      if (arguments.length > 0) opts.showContext = flag
       if (road.length != 0)
-        updateContextData();
-      return opts.showContext;
-    };
+        updateContextData()
+      return opts.showContext
+    }
+    
     /** Sets/gets the keepSlopes option */
     self.keepSlopes = function( flag ) {
-      if (arguments.length > 0) opts.keepSlopes = flag;
-      return opts.keepSlopes;
-    };
+      if (arguments.length > 0) opts.keepSlopes = flag
+      return opts.keepSlopes
+    }
+    
     /** Sets/gets the keepIntervals option */
     self.keepIntervals = function( flag ) {
-      if (arguments.length > 0) opts.keepIntervals = flag;
-      return opts.keepIntervals;
-    };
+      if (arguments.length > 0) opts.keepIntervals = flag
+      return opts.keepIntervals
+    }
+    
     /** Sets/gets the maxDataDays option. Updates the datapoint
      display if the option is changed. */
     self.maxDataDays = function( days ) {
       if (arguments.length > 0) {
-        opts.maxDataDays = days;
+        opts.maxDataDays = days
         if (opts.maxDataDays < 0) {
-          alldataf = alldata.slice();
-          dataf = data.slice();
+          alldataf = alldata.slice()
+          dataf = data.slice()
         } else {
           alldataf = alldata.filter(function(e){
-            return e[0]>(goal.asof-opts.maxDataDays*SID);});
+            return e[0]>(goal.asof-opts.maxDataDays*SID);})
           dataf = data.filter(function(e){
-            return e[0]>(goal.asof-opts.maxDataDays*SID);});
+            return e[0]>(goal.asof-opts.maxDataDays*SID);})
         }
         if (alldata.length != 0) {
           updateDataPoints()
@@ -4066,184 +4068,185 @@
           updateSteppy()
         }
       }
-      return opts.maxDataDays;
-    };
+      return opts.maxDataDays
+    }
+    
     /** Sets/gets the reverseTable option. Updates the table if
      the option is changed. */
     self.reverseTable = function( flag ) {
       if (arguments.length > 0) {
-        opts.reverseTable = flag;
+        opts.reverseTable = flag
         if (opts.reverseTable) {
-          d3.select(opts.divTable).select(".rtablegoal").raise();
-          d3.select(opts.divTable).select(".rtablebody").raise();
-          d3.select(opts.divTable).select(".rtablestart").raise();
+          d3.select(opts.divTable).select(".rtablegoal").raise()
+          d3.select(opts.divTable).select(".rtablebody").raise()
+          d3.select(opts.divTable).select(".rtablestart").raise()
         } else {
-          d3.select(opts.divTable).select(".rtablestart").raise();
-          d3.select(opts.divTable).select(".rtablebody").raise();
-          d3.select(opts.divTable).select(".rtablegoal").raise();
+          d3.select(opts.divTable).select(".rtablestart").raise()
+          d3.select(opts.divTable).select(".rtablebody").raise()
+          d3.select(opts.divTable).select(".rtablegoal").raise()
         }
-        updateTable();
+        updateTable()
       }
-      return opts.reverseTable;
-    };
+      return opts.reverseTable
+    }
+    
     /** Sets/gets the tableUpdateOnDrag option. */
     self.tableUpdateOnDrag = function( flag ) {
       if (arguments.length > 0) {
-        opts.tableUpdateOnDrag = flag;
-        updateTable();
+        opts.tableUpdateOnDrag = flag
+        updateTable()
       }
-      return opts.tableUpdateOnDrag;
-    };
+      return opts.tableUpdateOnDrag
+    }
+    
     /** Sets/gets the tableAutoScroll option. */
     self.tableAutoScroll = function( flag ) {
-      if (arguments.length > 0) opts.tableAutoScroll = flag;
-      return opts.tableAutoScroll;
-    };
+      if (arguments.length > 0) opts.tableAutoScroll = flag
+      return opts.tableAutoScroll
+    }
 
     /** Returns an object with the lengths of the undo and redo
      buffers */
     self.undoBufferState = function() {
-      return({undo: undoBuffer.length, redo: redoBuffer.length});
-    };
+      return({undo: undoBuffer.length, redo: redoBuffer.length})
+    }
 
     /** Undoes the last edit */
     self.undo = function() {
-      if (!opts.roadEditor) return;
-      document.activeElement.blur();
-      undoLastEdit();
-    };
+      if (!opts.roadEditor) return
+      document.activeElement.blur()
+      undoLastEdit()
+    }
 
     /** Redoes the last edit that was undone */
     self.redo = function() {
-      if (!opts.roadEditor) return;
-      document.activeElement.blur();
-      redoLastEdit();
-    };
+      if (!opts.roadEditor) return
+      document.activeElement.blur()
+      redoLastEdit()
+    }
 
     /** Clears the undo buffer. May be useful after the new
      road is submitted to Beeminder and past edits need to be
      forgotten. */
-    self.clearUndo = function() {
-      clearUndoBuffer();
-    };
+    self.clearUndo = function() { clearUndoBuffer() }
 
     /** Zooms out the goal graph to make the entire range from
      tini to tfin visible, with additional slack before and after
      to facilitate adding new knots. */
-    self.zoomAll = function() { if (road.length == 0) return; else zoomAll(); };
+    self.zoomAll = function() { if (road.length == 0) return; else zoomAll() }
 
     /** Brings the zoom level to include the range from tini to
      slightly beyond the akrasia horizon. This is expected to be
      consistent with beebrain generated graphs. */ 
-    self.zoomDefault = function() { if (road.length == 0) return; else zoomDefault(); };
+    self.zoomDefault = function() { if (road.length == 0) return; else zoomDefault() }
 
     /** Initiates loading a new goal from the indicated url.
      Expected input format is the same as beebrain. Once the input
      file is fetched, the goal graph and road matrix table are
      updated accordingly. */
-    self.loadGoal = function( url ) { loadGoalFromURL( url ); };
+    self.loadGoal = function( url ) { loadGoalFromURL( url ) }
 
     /** Performs retroratcheting function by adding new knots to
      leave "days" number of days to derailment based on today data
      point (which may be flatlined). */
     self.retroRatchet = function( days ) {
-      if (!opts.roadEditor) return;
-      setSafeDays( days );  
-    };
+      if (!opts.roadEditor) return
+      setSafeDays( days )
+    }
 
     self.scheduleBreak = function( start, days, insert ) {
-      if (!opts.roadEditor) return;
-      if (isNaN(days)) return;
+      if (!opts.roadEditor) return
+      if (isNaN(days)) return
       if (road.length == 0) {
         console.log("bgraph("+curid+"):scheduleBreak(), road is empty!")
         return
       }
-      var begintime = bu.dayparse(start, '-');
+      var begintime = bu.dayparse(start, '-')
       // Find or add a new dot at the start of break
       // We only allow the first step to record undo info.
-      var firstseg = -1, i, j;
+      var firstseg = -1, i, j
       for (i = 1; i < road.length; i++) {
         if (road[i].sta[0] === begintime) {
-          firstseg = i; break;
+          firstseg = i; break
         }
       }
       var added = false;
       if (firstseg < 0) {addNewDot(begintime);added = true;}
-      if (!added) pushUndoState();
+      if (!added) pushUndoState()
       for (i = 1; i < road.length; i++) {
         if (road[i].sta[0] === begintime) {
-          firstseg = i; break;
+          firstseg = i; break
         }
       }
       if (insert) {
         // First, shift all remaining knots right by the requested
         // number of days
-        road[firstseg].end[0] = bu.daysnap(road[firstseg].end[0]+days*bu.SID);
+        road[firstseg].end[0] = bu.daysnap(road[firstseg].end[0]+days*bu.SID)
         for (j = firstseg+1; j < road.length; j++) {
-          road[j].sta[0] = bu.daysnap(road[j].sta[0]+days*bu.SID);
-          road[j].end[0] = bu.daysnap(road[j].end[0]+days*bu.SID);
+          road[j].sta[0] = bu.daysnap(road[j].sta[0]+days*bu.SID)
+          road[j].end[0] = bu.daysnap(road[j].end[0]+days*bu.SID)
         }
         // Now, create and add the end segment if the value of the
         // subsequent endpoint was different
         if (road[firstseg].sta[1] != road[firstseg].end[1]) {
-          var segment = {};
-          segment.sta = road[firstseg].sta.slice();
-          segment.sta[0] = bu.daysnap(segment.sta[0]+days*bu.SID);
-          segment.end = road[firstseg].end.slice();
-          segment.slope = br.roadSegmentSlope(segment);
-          segment.auto = br.RP.VALUE;
-          road.splice(firstseg+1, 0, segment);
-          road[firstseg].end = segment.sta.slice();
-          road[firstseg].slope = 0;
-          br.fixRoadArray( road, br.RP.VALUE, false);
+          var segment = {}
+          segment.sta = road[firstseg].sta.slice()
+          segment.sta[0] = bu.daysnap(segment.sta[0]+days*bu.SID)
+          segment.end = road[firstseg].end.slice()
+          segment.slope = br.roadSegmentSlope(segment)
+          segment.auto = br.RP.VALUE
+          road.splice(firstseg+1, 0, segment)
+          road[firstseg].end = segment.sta.slice()
+          road[firstseg].slope = 0
+          br.fixRoadArray( road, br.RP.VALUE, false)
         }
       } else {
         // Find the right boundary for the segment for overwriting
-        var endtime = bu.daysnap(road[firstseg].sta[0]+days*bu.SID);
-        var lastseg = br.findRoadSegment( road, endtime );
+        var endtime = bu.daysnap(road[firstseg].sta[0]+days*bu.SID)
+        var lastseg = br.findRoadSegment( road, endtime )
         if (road[lastseg].sta[0] != endtime) {
           // If there are no dots on the endpoint, add a new one
           addNewDot(endtime); 
-          if (added) {undoBuffer.pop(); added = true;}
-          lastseg = br.findRoadSegment( road, endtime );
+          if (added) {undoBuffer.pop(); added = true}
+          lastseg = br.findRoadSegment( road, endtime )
         }
         // Delete segments in between
         for (j = firstseg+1; j < lastseg; j++) {
-          road.splice(firstseg+1, 1);
+          road.splice(firstseg+1, 1)
         }
-        road[firstseg].end = road[firstseg+1].sta.slice();
-        var valdiff = road[firstseg+1].sta[1] - road[firstseg].sta[1];
+        road[firstseg].end = road[firstseg+1].sta.slice()
+        var valdiff = road[firstseg+1].sta[1] - road[firstseg].sta[1]
         for (j = firstseg; j < road.length; j++) {
-          road[j].end[1] -= valdiff;
-          road[j].slope = br.roadSegmentSlope(road[j]);;
-          if (j+1 < road.length) road[j+1].sta[1] = road[j].end[1];
+          road[j].end[1] -= valdiff
+          road[j].slope = br.roadSegmentSlope(road[j])
+          if (j+1 < road.length) road[j+1].sta[1] = road[j].end[1]
         }
-        br.fixRoadArray( road, br.RP.SLOPE, false);
+        br.fixRoadArray( road, br.RP.SLOPE, false)
       }
-      roadChanged();
-    };
+      roadChanged()
+    }
 
     self.commitTo = function( newSlope ) {
-      if (!opts.roadEditor) return;
-      if (isNaN(newSlope)) return;
+      if (!opts.roadEditor) return
+      if (isNaN(newSlope)) return
       if (road.length == 0) {
         console.log("bgraph("+curid+"):commitTo(), road is empty!")
         return
       }
-      if (road[road.length-2].slope == newSlope) return;
+      if (road[road.length-2].slope == newSlope) return
 
       // Find out if there are any segments beyond the horizon
       var horseg = br.findRoadSegment( road, goal.horizon );
       if (road[horseg].sta[0] == goal.horizon || horseg < road.length-2) {
         // There are knots beyond the horizon. Only adjust the last segment
-        pushUndoState();
+        pushUndoState()
       } else {
-        addNewDot(goal.horizon);
+        addNewDot(goal.horizon)
       }
-      road[road.length-2].slope = newSlope;
-      br.fixRoadArray( road, br.RP.VALUE, false );
-      roadChanged();
-    };
+      road[road.length-2].slope = newSlope
+      br.fixRoadArray( road, br.RP.VALUE, false )
+      roadChanged()
+    }
 
     /** Returns an object with an array ('road') containing the
      current roadmatix (latest edited version), as well as a
@@ -4257,32 +4260,32 @@
         console.log("bgraph("+curid+"):getRoad(), road is empty!")
         return null
       }
-      r.valid = isRoadValid(road);
-      r.loser = br.isLoser(road,goal,data,goal.tcur,goal.vcur);
-      r.asof = goal.asof;
-      r.horizon = goal.horizon;
-      r.siru = goal.siru;
+      r.valid = isRoadValid(road)
+      r.loser = br.isLoser(road,goal,data,goal.tcur,goal.vcur)
+      r.asof = goal.asof
+      r.horizon = goal.horizon
+      r.siru = goal.siru
       //r.tini = dt(road[0].end[0]);
       //r.vini = road[0].end[1];
-      r.road = [];
+      r.road = []
       for (let i = 0; i < road.length-1; i++) {
-        seg = road[i];
+        seg = road[i]
         if (seg.sta[0] == seg.end[0] && seg.sta[1] == seg.end[1])
-          continue;
-        kd = moment.unix(seg.end[0]).utc();
-        rd = [kd.format("YYYYMMDD"), seg.end[1], seg.slope*goal.siru];
-        if (seg.auto == br.RP.DATE) rd[2] = null; // Exception here since roadall does not support null dates.
-        if (seg.auto == br.RP.VALUE) rd[1] = null;
-        if (seg.auto == br.RP.SLOPE) rd[2] = null;
+          continue
+        kd = moment.unix(seg.end[0]).utc()
+        rd = [kd.format("YYYYMMDD"), seg.end[1], seg.slope*goal.siru]
+        if (seg.auto == br.RP.DATE) rd[2] = null // Exception here since roadall does not support null dates.
+        if (seg.auto == br.RP.VALUE) rd[1] = null
+        if (seg.auto == br.RP.SLOPE) rd[2] = null
         //if (i == road.length-2) {
         //    r.tfin = rd[0];
         //    r.vfin = rd[1];
         //    r.rfin = rd[2];
         //} else 
-        r.road.push(rd);
+        r.road.push(rd)
       }
-      return r;
-    };
+      return r
+    }
 
     /** Generates a data URI downloadable from the link element
      supplied as an argument. If the argument is empty, replaces page
@@ -4292,27 +4295,27 @@
     self.saveGraph = function( linkelt = null ) {
 
       // retrieve svg source as a string.
-      var svge = svg.node();
-      var serializer = new XMLSerializer();
-      var source = serializer.serializeToString(svge);
+      var svge = svg.node()
+      var serializer = new XMLSerializer()
+      var source = serializer.serializeToString(svge)
 
       //set url value to a element's href attribute.
       if (opts.headless || linkelt == null) {
         // If no link is provided or we are running in headless mode ,
         // replace page contents with the svg and eliminate
         // unnecessary elements
-        document.head.remove();
-        document.body.innerHTML = source;
+        document.head.remove()
+        document.body.innerHTML = source
 
         // Eliminate unnecessary components from the SVG file in headless mode
         if (opts.headless) {
-          var newroot = d3.select(document.body);
+          var newroot = d3.select(document.body)
           //newroot.selectAll(".zoomarea").remove();
-          newroot.selectAll(".buttonarea").remove();
-          newroot.selectAll(".brush").remove();
-          newroot.selectAll(".zoomin").remove();
-          newroot.selectAll(".zoomout").remove();
-          newroot.selectAll(".minor").remove();
+          newroot.selectAll(".buttonarea").remove()
+          newroot.selectAll(".brush").remove()
+          newroot.selectAll(".zoomin").remove()
+          newroot.selectAll(".zoomout").remove()
+          newroot.selectAll(".minor").remove()
         }
       } else {
 
@@ -4321,30 +4324,30 @@
 
         // add name spaces.
         if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
-          source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+          source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"')
         }
         if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)){
-          source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+          source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"')
         }
 
         //add xml declaration
-        source = '<?xml version="1.0" standalone="no"?>\n' + source;
+        source = '<?xml version="1.0" standalone="no"?>\n' + source
 
         //convert svg source to URI data scheme.
         var url = "data:image/svg+xml;charset=utf-8,"
-              +encodeURIComponent(source);
+              +encodeURIComponent(source)
 
         //set url value to a element's href attribute.
-        linkelt.href = url;
+        linkelt.href = url
       }
-    };
+    }
 
     /** Informs the module instance that the element containing the
      visuals will be hidden. Internally, this prevents calls to
      getBBox(), eliminating associated exceptions and errors. */
     self.hide = function() {
       //console.debug("curid="+curid+", hide()");
-      hidden = true;
+      hidden = true
     }
 
     /** Informs the module instance that the element containing the
@@ -4353,18 +4356,18 @@
      if hidden. */
     self.show = function() {
       //console.debug("curid="+curid+", show()");
-      hidden = false;
+      hidden = false
       if (road.length == 0) {
         console.log("bgraph("+curid+"):show(), road is empty!")
-        return;
+        return
       }
-      redrawXTicks();
-      adjustYScale();
-      handleYAxisWidth();
-      resizeBrush();
-      updateTable();
-      updateContextData();
-      updateGraphData();
+      redrawXTicks()
+      adjustYScale()
+      handleYAxisWidth()
+      resizeBrush()
+      updateTable()
+      updateContextData()
+      updateGraphData()
     }
 
     self.getRoadObj = function() {
