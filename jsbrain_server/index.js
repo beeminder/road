@@ -32,48 +32,42 @@ if (cluster.isMaster) {
 
   var usage =
       "Usage:<br/>"
-    +"URL?base=filebase&inpath=/path/to/dir OR<br/>"
-    +"URL?user=username&slug=goalslug&inpath=/path/to/dir<br/>"
+    +"URL?slug=filebase&inpath=/path/to/dir OR<br/>"
+    +"URL?user=username&goal=goalname&inpath=/path/to/dir<br/>"
     +"<br/>You can also supply a path for output files with the \"outpath\" parameter<br/>"
   var noinpath = "Bad URL parameters: Missing \"inpath\"<br/><br/>"+usage
-  var nofile = `Bad URL parameters: One of "base" or ("user","slug") must be supplied!<br/><br/>`+usage
-  var paramconflict = 'Bad URL parameters: "base\" and ("user\","slug") cannot be used together!<br/><br/>'+usage
+  var nofile = `Bad URL parameters: One of "slug" or ("user","goal") must be supplied!<br/><br/>`+usage
+  var paramconflict = 'Bad URL parameters: "slug\" and ("user\","goal") cannot be used together!<br/><br/>'+usage
   
   // Render url.
   app.use(async (req, res, next) => {
-    let { inpath, outpath, base, user, slug } = req.query
-    if (!inpath) return res.status(400).send(noinpath)
-    if ((!base && (!user || !slug)))
-      return res.status(400).send(nofile)
-    if ((base && (user || slug)))
-      return res.status(400).send(paramconflict)
+    let { inpath, outpath, slug, user, goal } = req.query
+    if (!inpath)                     return res.status(400).send(noinpath)
+    if ((!slug && (!user || !goal))) return res.status(400).send(nofile)
+    if ((slug && (user || goal)))    return res.status(400).send(paramconflict)
 
     if (!outpath) outpath = inpath
-    if (!base) base = user+"+"+slug
+    if (!slug) slug = user+"+"+goal
     
     console.log(prefix+`Request url=${req.url}`);
-    console.log(prefix+`Loading "${base}" from "${inpath}"`);
+
+    process.stdout.write("<BEEBRAIN> ")
+    process.umask(0)
 
     try {
-      const resp = await renderer.render(inpath, outpath, base)
-      // res
-      //   .set({
-      //     'Content-Type': 'image/svg+xml',
-      //     'Content-Length': resp.svg.length,
-      //     'Content-Disposition': contentDisposition(slug + '.svg')
-      // })
-      //   .send(resp.svg)
+      const resp = await renderer.render(inpath, outpath, slug)
+
       var json = {};
       json.inpath = inpath
       json.outpath = inpath
-      json.base = base
+      json.slug = slug
       if (resp.html == null) {
         json.error = 'Processing error: '+resp.error
       } else {
-        json.bb = (resp.html)?`${outpath}/${base}.bb`:null
-        json.svg = (resp.svg)?`${outpath}/${base}.svg`:null
-        json.png = (resp.png)?`${outpath}/${base}.png`:null
-        json.json = (resp.png)?`${outpath}/${base}.json`:null
+        json.bb = (resp.html)?`${inpath}/${slug}.bb`:null
+        json.svg = (resp.svg)?`${outpath}/${slug}.svg`:null
+        json.png = (resp.png)?`${outpath}/${slug}.png`:null
+        json.json = (resp.png)?`${outpath}/${slug}.json`:null
         json.error = null
       }
 

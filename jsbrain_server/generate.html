@@ -29,7 +29,7 @@
 
   var done = false;
   var saveSVG = function() {
-    console.debug('Done loading road');
+    //console.debug('Done loading road');
     var newroot = d3.select(document.body);
     //newroot.selectAll(".zoomarea").remove();
     newroot.selectAll(".buttonarea").remove();
@@ -45,6 +45,7 @@
                          svgSize: { width: 696, height: 453 },
                          focusRect: { x:0, y:0, width:696, height: 453 },
                          ctxRect: { x:0, y:453, width:696, height: 32 },
+                         noGraph:(getParameterByName('NOGRAPH') == "true")?true:false,
                          roadEditor:false,
                          headless:true,
                          maxFutureDays: 365,
