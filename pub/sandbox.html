@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="pikaday.css">
+    <link rel="stylesheet" href="roadeditor.css">
+    <script src = "https://d3js.org/d3.v4.js"></script>
+    <script src = "moment.min.js"></script>
+    <script src = "pikaday.js"></script>
+    <script src = "polyfit.js"></script>
+    <script src = "butil.js"></script>
+    <script src = "broad.js"></script>
+    <script src = "beebrain.js"></script>
+    <script src = "bgraph.js"></script>
+    <script src = "bsandbox.js"></script>
+</head>
+
+<body>
+  <h1>Beeminder Sandbox: Create and experiment with goals</h1>
+  
+  <span>Select goal type:</span>
+  <select id="typeselect" class="typeselect">
+    <option value="hustler">Do More</option>
+    <option value="fatloser">Lose Weight</option>
+    <option value="biker">Use an Odometer</option>
+    <option value="drinker">Do Less</option>
+    <option value="gainer">Gain Weight</option>
+    <option value="inboxer">Whittle Down</option>
+  </select> 
+  at a rate of
+  <input type = "number" value="1" id="rate" style="width:4em;text-align:center;">
+  </input>
+  per 
+  <select id="rateunit" class="typeselect">
+    <option value="d">day</option>
+    <option value="w">week</option>
+    <option value="m">month</option>
+    <option value="y">year</option>
+  </select>
+  starting today at
+  <input type = "number" value="0" id="value" style="width:4em;text-align:center;">
+  </input>
+  <br/>
+  <input type = "checkbox" id="buffer" checked></input>
+  Start one week from today
+  
+  <br/>
+  <br/>
+  <button id="newgoal"
+          onclick="bs.newGoal(gtype.options[gtype.selectedIndex].value,
+                   runits.options[runits.selectedIndex].value,
+                   rfin.value, vini.value, buffer.checked);">
+    Create New Goal!</button>
+  <br/>
+
+  <div id="sandbox"></div>
+  
+  <script>
+    console.log("Starting script")
+    gtype = document.getElementById("typeselect");
+    rfin = document.getElementById("rate");
+    vini = document.getElementById("value");
+    buffer = document.getElementById("buffer");
+    gdiv = document.getElementById("sandbox");
+    runits = document.getElementById("rateunit");
+    
+    bs = new bsandbox(gdiv)
+  </script>
+
+</body>
+  
+</html>

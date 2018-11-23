@@ -29,7 +29,34 @@
                           maxFutureDays: 365,
                           showFocusRect: false,
                           showContext: false})
-  graph.loadGoal( "testbb/xenocid+gmailzero.bb" )
+  graph.loadGoal( "data/testroad0.bb" )
+
+  function extend(to, fr, owr) {
+      var prop, hasProp
+      for (prop in fr) {
+        hasProp = to[prop] !== undefined
+        if (hasProp && typeof fr[prop] === 'object' 
+            && fr[prop] !== null  && fr[prop].nodeName === undefined ) {
+              if (self.isArray(fr[prop])) {
+                if (owr) {
+                  to[prop] = fr[prop].slice(0)
+                }
+              } else {
+                to[prop] = self.extend({}, fr[prop], owr)
+              }
+            } else if (owr || !hasProp) {
+              to[prop] = fr[prop]
+            }
+      }
+      return to
+  }
+  a = {A:[1,2,3], B:[4,5,6]}
+  b = extend({}, a, true)
+  console.log(JSON.stringify(a))
+  console.log(JSON.stringify(b))
+  b.A[1] = 10
+  console.log(JSON.stringify(a))
+  console.log(JSON.stringify(b))
 </script>
 
 </body>
