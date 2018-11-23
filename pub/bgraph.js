@@ -4152,6 +4152,12 @@
      updated accordingly. */
     self.loadGoal = function( url ) { loadGoalFromURL( url ) }
 
+    /** Initiates loading a new goal from the indicated url.
+     Expected input format is the same as beebrain. Once the input
+     file is fetched, the goal graph and road matrix table are
+     updated accordingly. */
+    self.loadGoalJSON = function( json ) { loadGoal( json ) }
+
     /** Performs retroratcheting function by adding new knots to
      leave "days" number of days to derailment based on today data
      point (which may be flatlined). */

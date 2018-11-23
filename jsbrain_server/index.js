@@ -7,8 +7,9 @@ if (cluster.isMaster) {
   // Count the machine's CPUs
   var cpuCount = require('os').cpus().length;
 
-  // ULUC: Override for now, chrome instances are parallel anyway
-  cpuCount = 2;
+  // Number of "parallel" renderer instances. Actual parallelism is
+  // because chromium instances run as processes.
+  cpuCount = 1;
 
   // Create a worker for each CPU
   for (var i = 0; i < cpuCount; i += 1)
