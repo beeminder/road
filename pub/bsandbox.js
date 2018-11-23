@@ -90,40 +90,51 @@
       drinker: newDoLess, 
       gainer: newGainWeight, inboxer: newWhittleDown
     }
+
+    var undoBuffer = []
+    function undo() {
+      if (undoBuffer.length == 0) return
+      goal.bb = undoBuffer.pop()
+      reloadGoal()
+    }
+    function saveState() {
+      undoBuffer.push(JSON.parse(JSON.stringify(goal.bb)))
+    }
+    function clearUndoBuffer() {
+      undoBuffer = []
+    }
+
     function reloadGoal() {
-      goal.bb = {params: JSON.parse(JSON.stringify(goal.params)),
-                 data: JSON.parse(JSON.stringify(goal.data))}
-      goal.graph.loadGoalJSON( goal.bb )
+      var bb = JSON.parse(JSON.stringify(goal.bb))
+      goal.graph.loadGoalJSON( bb )
     }
     
     function nextDay() {
-      console.log("Next day")
-      goal.params.asof = bu.dayify(bu.daysnap(bu.dayparse(goal.params.asof)+bu.SID))
-      console.log(goal.params.asof)
+      saveState()
+      goal.bb.params.asof
+        = bu.dayify(bu.daysnap(bu.dayparse(goal.bb.params.asof)+bu.SID))
       reloadGoal()
     }
-    function newData() {
-      const v = goal.dataval.property('value')
+    function newData( v ) {
       if (!bu.nummy(v)) return;
-      goal.data.push([goal.params.asof, Number(v), ""])
+      saveState()
+      goal.bb.data.push([goal.bb.params.asof, Number(v), ""])
       reloadGoal()
     }
     
-    function newRate() {
-      const r = goal.rateval.property('value')
+    function newRate( r ) {
       if (!bu.nummy(r)) return;
-      console.log(Number(r))
+      saveState()
       // check if there is a road segment ending a week from now
-      var asof = bu.dayparse(goal.params.asof)
+      var asof = bu.dayparse(goal.bb.params.asof)
       var nextweek = bu.daysnap(asof + 7*bu.SID)
-      var road = goal.params.road
+      var road = goal.bb.params.road
       var roadlast = bu.dayparse(road[road.length-1][0])
 
-      console.log(JSON.stringify(road))
       if (roadlast < nextweek) {
-        road.push([bu.dayify(nextweek), null, goal.params.rfin])
+        road.push([bu.dayify(nextweek), null, goal.bb.params.rfin])
       }
-      goal.params.rfin = Number(r)
+      goal.bb.params.rfin = Number(r)
       reloadGoal()
     }
     
@@ -178,8 +189,7 @@
 
       data = [[params.tini, Number(params.vini), "initial datapoint of "+params.vini]]
 
-      goal.params = params
-      goal.data = data
+      goal.bb = {params: params, data: data}
       
       // Delete div contents
       while (goal.div.firstChild) goal.div.removeChild(goal.div.firstChild);
@@ -192,30 +202,16 @@
                                maxFutureDays: 365,
                                showFocusRect: false,
                                showContext: false});
+      clearUndoBuffer()
       reloadGoal()
-      d3.select(goal.div).append('br')
-      d3.select(goal.div).append('button').text("Next Day").on('click', nextDay)
-        .style('margin', '4px')
-
-      d3.select(goal.div).append('br')
-      d3.select(goal.div).append('span').text("New data:")
-        .style('margin', '4px')
-      goal.dataval = d3.select(goal.div).append('input').attr('type', 'number')
-        .style('margin', '4px')
-      d3.select(goal.div).append('button').text("Add").on('click', newData)
-      .style('margin', '4px')
-
-      d3.select(goal.div).append('br')
-      d3.select(goal.div).append('span').text("Change rate to:")
-        .style('margin', '4px')
-      goal.rateval = d3.select(goal.div).append('input').attr('type', 'number')
-        .style('margin', '4px')
-      d3.select(goal.div).append('button').text("Dial!").on('click', newRate)
-      .style('margin', '4px')
     }
     /** bsandbox object ID for the current instance */
     self.id = curid
     self.newGoal = newGoal
+    self.nextDay = nextDay
+    self.newData = newData
+    self.newRate = newRate
+    self.undo = undo
   }
 
   return bsandbox
