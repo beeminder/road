@@ -16,15 +16,15 @@ class Renderer {
   async createPage( url ) {
     let gotoOptions = {
       timeout: 60 * 1000,
-      waitUntil: 'networkidle2'
+      waitUntil: 'load'
     }
 
     // Create a new tab so parallel requests do not mess with each
     // other
     const page = await this.browser.newPage()
     page.on('console', 
-            msg => console.log("("+this.id+"): PAGE LOG:", msg.text()))
-    page.on('error', msg => console.log("ERROR: "+msg))
+            msg => console.log(" ("+this.id+"): LOG:", msg.text()))
+    page.on('error', msg => console.log(" ERROR: "+msg))
 
     // Render the page and return result
     try {
@@ -101,13 +101,16 @@ class Renderer {
     try {
 
       // Load and render the page, extract html
-      var time_id = `Render time (${slug}, ${newid})`
+      var time_id = ` Page creation (${slug}, ${newid})`
       console.time(time_id)
-
       page = await this.createPage(url)
+      console.timeEnd(time_id)
 
       if (page) {
+        time_id = ` Page render (${slug}, ${newid})`
+        console.time(time_id)
         html = await page.content()
+        await page.waitForFunction('done')
         console.timeEnd(time_id)
       
         // Extract goal stats from the JSON field and extend with file locations
@@ -147,7 +150,7 @@ class Renderer {
           //console.info("Zoom area bounding box is "+JSON.stringify(zi))
         
           // Take a screenshot to generate PNG files
-          time_id = `Screenshot time (${slug}, ${newid})`
+          time_id = ` Screenshot (${slug}, ${newid})`
           console.time(time_id)
 
           // Extract SVG boundaries on page

@@ -49,7 +49,8 @@ if (cluster.isMaster) {
     if (!outpath) outpath = inpath
     if (!slug) slug = user+"+"+goal
     
-    console.log(prefix+`Request url=${req.url}`);
+    console.log("============================================")
+    console.log(prefix+`Request url=${req.url}`)
 
     process.stdout.write("<BEEBRAIN> ")
     process.umask(0)
