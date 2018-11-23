@@ -17,7 +17,7 @@
  *
  * Copyright © 2017 Uluc Saranli
  */
-((function (root, factory) {
+;((function (root, factory) {
   'use strict'
   if (typeof define === 'function' && define.amd) {
     // AMD. Register as an anonymous module.
