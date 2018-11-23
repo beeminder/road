@@ -1356,6 +1356,8 @@
                                             maxcnt)));
     }
 
+    const stats_timeid = "beebrain: Goal stats" 
+    const graph_timeid = "beebrain: Goal graph" 
     // Recreates the road array from the "rawknots" array, which includes
     // only timestamp,value pairs
     function loadGoal( json ) {
@@ -1365,11 +1367,13 @@
       processing = true;
       
       // Create beebrain processor
+      console.time(stats_timeid)
       bbr = new bb(json)
       goal = bbr.goal
 
       if (opts.divJSON)
         opts.divJSON.innerHTML = JSON.stringify(bbr.getStats(), null, 4)
+      console.timeEnd(stats_timeid)
 
       if (goal.error != "") {
         console.log("Beebrain error: "+ bbr.goal.error)
@@ -1414,6 +1418,7 @@
         if (!opts.roadEditor && goal.stathead)
           stathead.text(goal.graphsum)
       }
+      console.time(graph_timeid)
       // Finally, wrap up with graph related initialization
       zoomAll();
       processing = false;
@@ -1422,6 +1427,7 @@
       updateTable();
       updateContextData();
 
+      console.timeEnd(graph_timeid)
     }
 
     async function loadGoalFromURL( url, callback = null ) {
