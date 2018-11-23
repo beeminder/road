@@ -10,8 +10,12 @@ class Renderer {
   constructor(browser, id) {
     this.browser = browser
     this.id = id
+    this.prf = "("+this.id+") "
   }
 
+  getId() { return this.id }
+  getPrf() { return this.prf }
+  
   // Creates a new page in a tab within the puppeteer chrome instance
   async createPage( url ) {
     let gotoOptions = {
@@ -23,8 +27,8 @@ class Renderer {
     // other
     const page = await this.browser.newPage()
     page.on('console', 
-            msg => console.log(" ("+this.id+"): LOG:", msg.text()))
-    page.on('error', msg => console.log(" ERROR: "+msg))
+            msg => console.log(this.prf+" PAGE LOG:", msg.text()))
+    page.on('error', msg => console.log(this.prf+" PAGE ERROR: "+msg))
 
     // Render the page and return result
     try {
@@ -101,13 +105,13 @@ class Renderer {
     try {
 
       // Load and render the page, extract html
-      var time_id = ` Page creation (${slug}, ${newid})`
+      var time_id = this.prf+` Page creation (${slug}, ${newid})`
       console.time(time_id)
       page = await this.createPage(url)
       console.timeEnd(time_id)
 
       if (page) {
-        time_id = ` Page render (${slug}, ${newid})`
+        time_id = this.prf+` Page render (${slug}, ${newid})`
         console.time(time_id)
         html = await page.content()
         await page.waitForFunction('done')
@@ -128,7 +132,7 @@ class Renderer {
         fs.writeFileSync(jtmp, JSON.stringify(json));  
         if (fs.existsSync(jtmp)) fs.renameSync(jtmp, jf )
         // Display statsum on node console
-        process.stdout.write(json.statsum.replace(/\\n/g, '\n'))
+        process.stdout.write(this.prf+json.statsum.replace(/\\n/g, '\n'+this.prf))
         
         if (graphit) {
           // Extract and write the SVG file
