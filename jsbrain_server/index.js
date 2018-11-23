@@ -8,7 +8,7 @@ if (cluster.isMaster) {
   var cpuCount = require('os').cpus().length;
 
   // ULUC: Override for now, chrome instances are parallel anyway
-  cpuCount = 1;
+  cpuCount = 2;
 
   // Create a worker for each CPU
   for (var i = 0; i < cpuCount; i += 1)
@@ -51,14 +51,15 @@ if (cluster.isMaster) {
     if (!outpath) outpath = inpath
     if (!slug) slug = user+"+"+goal
     
-    console.log("============================================")
-    console.log(prefix+`Request url=${req.url}`)
+    console.log(renderer.getPrf()+"============================================")
+    console.log(renderer.getPrf()+`Request url=${req.url}`)
 
-    process.stdout.write("<BEEBRAIN> ")
+    process.stdout.write(renderer.getPrf()+"<BEEBRAIN> ")
     process.umask(0)
 
     try {
-      console.time(proc_timeid)
+      var timeid = renderer.getPrf()+proc_timeid
+      console.time(timeid)
       const resp = await renderer.render(inpath, outpath, slug)
 
       var json = {};
@@ -75,8 +76,8 @@ if (cluster.isMaster) {
         json.error = null
       }
 
-      console.timeEnd(proc_timeid)
-      process.stdout.write("</BEEBRAIN>\n")
+      console.timeEnd(timeid)
+      process.stdout.write(renderer.getPrf()+"</BEEBRAIN>\n")
       return res.status(200).send(JSON.stringify(json))
     } catch (e) {
       next(e)
