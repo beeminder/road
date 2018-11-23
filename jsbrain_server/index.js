@@ -38,8 +38,10 @@ if (cluster.isMaster) {
   var noinpath = "Bad URL parameters: Missing \"inpath\"<br/><br/>"+usage
   var nofile = `Bad URL parameters: One of "slug" or ("user","goal") must be supplied!<br/><br/>`+usage
   var paramconflict = 'Bad URL parameters: "slug\" and ("user\","goal") cannot be used together!<br/><br/>'+usage
+  var unknown = "Unknown error!<br/><br/>"+usage
   
   // Render url.
+  const proc_timeid = " Total processing"
   app.use(async (req, res, next) => {
     let { inpath, outpath, slug, user, goal } = req.query
     if (!inpath)                     return res.status(400).send(noinpath)
@@ -56,6 +58,7 @@ if (cluster.isMaster) {
     process.umask(0)
 
     try {
+      console.time(proc_timeid)
       const resp = await renderer.render(inpath, outpath, slug)
 
       var json = {};
@@ -72,10 +75,14 @@ if (cluster.isMaster) {
         json.error = null
       }
 
-      res.status(200).send(JSON.stringify(json))
+      console.timeEnd(proc_timeid)
+      process.stdout.write("</BEEBRAIN>\n")
+      return res.status(200).send(JSON.stringify(json))
     } catch (e) {
       next(e)
     }
+
+    return res.status(400).send(noinpath)
   })
 
   // Error page.
