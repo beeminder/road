@@ -1356,8 +1356,8 @@
                                             maxcnt)));
     }
 
-    const stats_timeid = "beebrain: Goal stats" 
-    const graph_timeid = "beebrain: Goal graph" 
+    const stats_timeid = "bgraph: Goal stats" 
+    const graph_timeid = "bgraph: Goal graph" 
     // Recreates the road array from the "rawknots" array, which includes
     // only timestamp,value pairs
     function loadGoal( json ) {
@@ -1370,7 +1370,7 @@
       console.time(stats_timeid)
       bbr = new bb(json)
       goal = bbr.goal
-
+      
       if (opts.divJSON)
         opts.divJSON.innerHTML = JSON.stringify(bbr.getStats(), null, 4)
       console.timeEnd(stats_timeid)
@@ -4156,7 +4156,10 @@
      Expected input format is the same as beebrain. Once the input
      file is fetched, the goal graph and road matrix table are
      updated accordingly. */
-    self.loadGoalJSON = function( json ) { loadGoal( json ) }
+    self.loadGoalJSON = function( json ) {
+      removeOverlay()
+      loadGoal( json )
+    }
 
     /** Performs retroratcheting function by adding new knots to
      leave "days" number of days to derailment based on today data
@@ -4407,6 +4410,15 @@
       settingRoad = false
     }
 
+    self.isLoser = function() {
+      if (goal && road.length != 0)
+        return br.isLoser(road,goal,data,goal.tcur,goal.vcur)
+      else return false
+    }
+    self.curState = function() {
+      if (goal) return [goal.tcur, goal.vcur, br.rdf(road, goal.tcur)]
+      else return null
+    }
   }
 
   return bgraph;
