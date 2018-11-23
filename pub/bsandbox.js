@@ -92,10 +92,10 @@
     }
 
     var undoBuffer = []
-    function undo() {
+    function undo(reload=true) {
       if (undoBuffer.length == 0) return
       goal.bb = undoBuffer.pop()
-      reloadGoal()
+      if (reload) reloadGoal()
     }
     function saveState() {
       undoBuffer.push(JSON.parse(JSON.stringify(goal.bb)))
@@ -105,8 +105,26 @@
     }
 
     function reloadGoal() {
-      var bb = JSON.parse(JSON.stringify(goal.bb))
+      let bb = JSON.parse(JSON.stringify(goal.bb))
       goal.graph.loadGoalJSON( bb )
+      // If the goal has derailed, perform rerailments automatically
+      if (goal.graph.isLoser()) {
+        undo(false)
+        let bb = JSON.parse(JSON.stringify(goal.bb))
+        goal.graph.loadGoalJSON( bb )
+
+        let cur = goal.graph.curState()
+        // Clean up road ahead
+        goal.bb.params.road = goal.bb.params.road.filter(e=>(bu.dayparse(e[0])<cur[0]))
+        let road = goal.bb.params.road
+        var nextweek = bu.daysnap(cur[0]+7*bu.SID)
+        road.push([bu.dayify(cur[0]), null, cur[2]])
+        road.push([bu.dayify(cur[0]), Number(cur[1]), null])
+        road.push([bu.dayify(nextweek), null, 0])
+
+        bb = JSON.parse(JSON.stringify(goal.bb))
+        goal.graph.loadGoalJSON( bb )
+      }
     }
     
     function nextDay() {
@@ -139,7 +157,7 @@
     }
     
     function newGoal( gtype, runits, rfin, vini, buffer ) {
-      console.log(`newGoal(${gtype}, ${runits}, ${rfin}, ${vini}, ${buffer})`)
+      //console.log(`newGoal(${gtype}, ${runits}, ${rfin}, ${vini}, ${buffer})`)
       if (!typefn.hasOwnProperty(gtype)) {
         console.error("bsandbox.newGoal: Invalid goal type!")
         return
@@ -171,11 +189,11 @@
       params.asof = bu.dayify(now)
 
       params.tfin = bu.dayify(nextyear)
-      params.rfin = rfin * params.yaw
+      params.rfin = Number(rfin) * params.yaw
       params.runits = runits
       
       params.tini = params.asof
-      params.vini = vini
+      params.vini = Number(vini)
 
       params.road = [[buffer?bu.dayify(nextweek):params.asof, null, 0]]
 
