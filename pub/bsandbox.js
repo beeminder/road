@@ -121,6 +121,8 @@
         road.push([bu.dayify(cur[0]), null, cur[2]])
         road.push([bu.dayify(cur[0]), Number(cur[1]), null])
         road.push([bu.dayify(nextweek), null, 0])
+        goal.bb.data.push([bu.dayify(cur[0]),
+                           (goal.bb.params.kyoom)?0:Number(cur[1]), "RECOMMITTED"])
 
         bb = JSON.parse(JSON.stringify(goal.bb))
         goal.graph.loadGoalJSON( bb )

@@ -4416,7 +4416,7 @@
       else return false
     }
     self.curState = function() {
-      if (goal) return [goal.tcur, goal.vcur, br.rdf(road, goal.tcur)]
+      if (goal) return [goal.tcur, goal.vcur, goal.rcur, br.rdf(road, goal.tcur)]
       else return null
     }
   }
