@@ -114,15 +114,16 @@
       bb.params.waterbux = "$"+pledges[Math.min(pledges.length-1, goal.derails.length)]
       goal.graph.loadGoalJSON( bb )
     }
-    function reloadGoal() {
+    function reloadGoal(undofirst = true) {
       console.log("bsandbox.reloadGoal(): Regenerating graph ********")
       reGraph()
       // If the goal has derailed, perform rerailments automatically
       if (goal.graph.isLoser()) {
-        console.log("bsandbox.reloadGoal(): Derailed! Rolling back...")
-        undo(false)
-        reGraph()
-
+        if (undofirst) {
+          console.log("bsandbox.reloadGoal(): Derailed! Rolling back...")
+          undo(false)
+          reGraph()
+        }
         console.log("bsandbox.reloadGoal(): Derailed! Rerailing...")
         let cur = goal.graph.curState()
         // Clean up road ahead
@@ -140,6 +141,7 @@
         goal.derails.push(derail)
 
         reGraph()
+        console.log(undoBuffer.length)
       }
       console.log("bsandbox.reloadGoal(): Done **********************")
     }
@@ -156,6 +158,7 @@
       saveState()
       goal.bb.data.push([goal.bb.params.asof, Number(v),
                          (c=="")?`Added in sandbox (#${goal.bb.data.length})`:c])
+      console.log(JSON.stringify(goal.bb.data))
       reloadGoal()
     }
     
@@ -185,13 +188,13 @@
     }
 
     const goalProps
-          = ['offred','yaw','dir','kyoom','odom','noisy','integery','monotone']
+          = ['offred','yaw','dir','kyoom','odom','noisy','integery','monotone','aggday']
     function setGoalConfig( opts ) {
       saveState()
       goalProps.map(e=>{
         if (opts.hasOwnProperty(e)) goal.bb.params[e] = opts[e]
       })
-      reloadGoal()
+      reloadGoal( false )
     }
 
     function newGoal( gtype, runits, rfin, vini, buffer ) {
