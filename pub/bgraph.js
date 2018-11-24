@@ -4420,11 +4420,20 @@
       if (goal) return [goal.tcur, goal.vcur, goal.rcur, br.rdf(road, goal.tcur)]
       else return null
     }
+
     const visualProps
-            = ['plotall', 'steppy', 'rosy', 'movingav', 'aura', 'hidey', 'stathead']
+          = ['plotall','steppy','rosy','movingav','aura','hidey','stathead','hashtags']
     self.getVisualConfig = function( opts ) {
       var out = {}
       visualProps.map(e=>{ out[e] = goal[e] })
+      return out
+    }
+
+    const goalProps
+          = ['offred','yaw','dir','kyoom','odom','noisy','integery','monotone']
+    self.getGoalConfig = function( opts ) {
+      var out = {}
+      goalProps.map(e=>{ out[e] = goal[e] })
       return out
     }
 

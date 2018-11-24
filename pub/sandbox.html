@@ -60,12 +60,18 @@
   <button style="margin:4px;" onclick="bs.nextDay()">Next Day</button><br/>
 
   <span style="margin:4px;">New data:</span>
-  <input id="dataval" type="number"  style="margin:4px;"></input>
-  <button onclick="bs.newData(dataval.value)" style="margin:4px;">Add</button><br/>
+  <input id="dataval" type="number"  style="width:5em;margin:4px;"></input>
+  <span style="margin:4px;">Comment:</span>
+  <input id="datacmt" type="text"  style="margin:4px;"></input>
+  <button onclick="bs.newData(dataval.value, datacmt.value)" style="margin:4px;">
+    Add</button><br/>
+
   <span style="margin:4px;">Change rate to:</span>
   <input id="rateval" type="number"  style="margin:4px;"></input>
-  <button onclick="bs.newRate(rateval.value)" style="margin:4px;">Add</button><br/>
-  <button style="margin:4px;" onclick="bs.undo()">Undo</button><br/>
+  <button onclick="bs.newRate(rateval.value)" style="margin:4px;">
+    Add</button><br/>
+
+  <button style="margin:4px;" onclick="bs.undo();updateConfigInput()">Undo</button><br/>
 
   <hr/>
   Visual graph configuration:<br/>
@@ -80,10 +86,49 @@
   <input type="checkbox" id="aura" onclick="setVisualConfig()" checked></input>
   Show aura
   <input type="checkbox" id="hidey" onclick="setVisualConfig()" checked></input>
-  Hide y-axis labels
+  Hide y-axis labels0
   <input type="checkbox" id="stathead" onclick="setVisualConfig()" checked></input>
   Show title with statistics
+  <input type="checkbox" id="hashtags" onclick="setVisualConfig()" checked></input>
+  Show hashtags
+  <hr/>
+  Goal configuration (change with CAUTION!):<br/>
+  <input type="checkbox" id="yaw" onclick="setGoalConfig()" checked></input>
+  yaw
+  <input type="checkbox" id="dir" onclick="setGoalConfig()" checked></input>
+  dir
+  <input type="checkbox" id="kyoom" onclick="setGoalConfig()" checked></input>
+  kyoom
+  <input type="checkbox" id="odom" onclick="setGoalConfig()" checked></input>
+  odom
+  <input type="checkbox" id="noisy" onclick="setGoalConfig()" checked></input>
+  noisy
+  <input type="checkbox" id="integery" onclick="setGoalConfig()" checked></input>
+  integery
+  <input type="checkbox" id="monotone" onclick="setGoalConfig()" checked></input>
+  monotone
+  <input type="checkbox" id="offred" onclick="setGoalConfig()" checked></input>
+  offred
+
   <script>
+    const visualProps
+      = ['plotall','steppy','rosy','movingav','aura','hidey','stathead','hashtags']
+    const goalProps
+      = ['offred','yaw','dir','kyoom','odom','noisy','integery','monotone']
+
+    function updateConfigInput() {
+      var curconfig = bs.getVisualConfig()
+      visualProps.map(e=>{document.getElementById(e).checked = curconfig[e]})
+
+      var curconfig = bs.getGoalConfig()
+      goalProps.map(e=>{
+        if (e=='yaw' || e=='dir')
+          document.getElementById(e).checked = (curconfig[e]==1)
+        else
+          document.getElementById(e).checked = curconfig[e]
+      })
+    }
+    
     gtype = document.getElementById("typeselect");
     rfin = document.getElementById("rate");
     vini = document.getElementById("value");
@@ -91,22 +136,29 @@
     gdiv = document.getElementById("sandbox");
     runits = document.getElementById("rateunit");
     dataval = document.getElementById("dataval");
-    
+    datacmt = document.getElementById("datacmt");
+
     bs = new bsandbox(gdiv)
     bs.newGoal(gtype.options[gtype.selectedIndex].value,
               runits.options[runits.selectedIndex].value,
               rfin.value, vini.value, buffer.checked);
 
-    const visualProps
-     = ['plotall', 'steppy', 'rosy', 'movingav', 'aura', 'hidey', 'stathead']
-
-    var curconfig = bs.getVisualConfig()
-    visualProps.map(e=>{document.getElementById(e).checked = curconfig[e]})
-
+    updateConfigInput()
+    
     function setVisualConfig() {
       var newconfig = {}
       visualProps.map(e=>{newconfig[e] = document.getElementById(e).checked})
       bs.setVisualConfig(newconfig)
+    }
+    function setGoalConfig() {
+      var newconfig = {}
+      goalProps.map(e=>{
+        if (e=='yaw' || e=='dir')
+          newconfig[e] = document.getElementById(e).checked?1:-1
+        else
+          newconfig[e] = document.getElementById(e).checked
+      })
+      bs.setGoalConfig(newconfig)
     }
     
   </script>
