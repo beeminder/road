@@ -141,11 +141,11 @@
       reloadGoal()
     }
     
-    function newData( v ) {
-      if (!bu.nummy(v)) return;
+    function newData( v, c ) {
+      if (!bu.nummy(v) || !bu.stringy(v)) return;
       saveState()
       goal.bb.data.push([goal.bb.params.asof, Number(v),
-                         `Added in sandbox (#${goal.bb.data.length})`])
+                         (c=="")?`Added in sandbox (#${goal.bb.data.length})`:c])
       reloadGoal()
     }
     
@@ -166,10 +166,20 @@
     }
 
     const visualProps
-            = ['plotall', 'steppy', 'rosy', 'movingav', 'aura', 'hidey', 'stathead']
+          = ['plotall','steppy','rosy','movingav','aura','hidey','stathead','hashtags']
     function setVisualConfig( opts ) {
       visualProps.map(e=>{
         if (opts.hasOwnProperty(e) && bu.torf(opts[e])) goal.bb.params[e] = opts[e]
+      })
+      reloadGoal()
+    }
+
+    const goalProps
+          = ['offred','yaw','dir','kyoom','odom','noisy','integery','monotone']
+    function setGoalConfig( opts ) {
+      saveState()
+      goalProps.map(e=>{
+        if (opts.hasOwnProperty(e)) goal.bb.params[e] = opts[e]
       })
       reloadGoal()
     }
@@ -249,6 +259,8 @@
     self.newRate = newRate
     self.setVisualConfig = setVisualConfig
     self.getVisualConfig = function() {return goal.graph.getVisualConfig()}
+    self.setGoalConfig = setGoalConfig
+    self.getGoalConfig = function() {return goal.graph.getGoalConfig()}
     self.undo = undo
   }
 
