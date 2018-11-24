@@ -48,6 +48,8 @@
     
     var goal = {div: div}
 
+    var pledges = [0, 5, 10, 30, 90, 270, 810, 2430]
+    
     function newDoMore() {
       return {yaw:1, dir:1, kyoom:true,
               odom: false, movingav:false,
@@ -95,26 +97,31 @@
     var undoBuffer = []
     function undo(reload=true) {
       if (undoBuffer.length == 0) return
-      goal.bb = undoBuffer.pop()
+      var restore = undoBuffer.pop()
+      goal.bb = restore.bb
+      goal.derails = restore.derails
       if (reload) reloadGoal()
     }
     function saveState() {
-      undoBuffer.push(JSON.parse(JSON.stringify(goal.bb)))
+      undoBuffer.push(JSON.parse(JSON.stringify({bb:goal.bb, derails:goal.derails})))
     }
     function clearUndoBuffer() {
       undoBuffer = []
     }
 
+    function reGraph() {
+      let bb = JSON.parse(JSON.stringify(goal.bb))
+      bb.params.waterbux = "$"+pledges[Math.min(pledges.length-1, goal.derails.length)]
+      goal.graph.loadGoalJSON( bb )
+    }
     function reloadGoal() {
       console.log("bsandbox.reloadGoal(): Regenerating graph ********")
-      let bb = JSON.parse(JSON.stringify(goal.bb))
-      goal.graph.loadGoalJSON( bb )
+      reGraph()
       // If the goal has derailed, perform rerailments automatically
       if (goal.graph.isLoser()) {
         console.log("bsandbox.reloadGoal(): Derailed! Rolling back...")
         undo(false)
-        let bb = JSON.parse(JSON.stringify(goal.bb))
-        goal.graph.loadGoalJSON( bb )
+        reGraph()
 
         console.log("bsandbox.reloadGoal(): Derailed! Rerailing...")
         let cur = goal.graph.curState()
@@ -122,14 +129,17 @@
         goal.bb.params.road = goal.bb.params.road.filter(e=>(bu.dayparse(e[0])<cur[0]))
         let road = goal.bb.params.road
         var nextweek = bu.daysnap(cur[0]+7*bu.SID)
-        road.push([bu.dayify(cur[0]), null, cur[2]])
-        road.push([bu.dayify(cur[0]), Number(cur[1]), null])
+        var derail = bu.dayify(cur[0])
+        road.push([derail, null, cur[2]])
+        road.push([derail, Number(cur[1]), null])
         road.push([bu.dayify(nextweek), null, 0])
-        goal.bb.data.push([bu.dayify(cur[0]),
-                           (goal.bb.params.kyoom)?0:Number(cur[1]), "RECOMMITTED"])
+        goal.bb.data.push([derail,
+                           (goal.bb.params.kyoom)?0:Number(cur[1]),
+                           "RECOMMITTED at "+derail])
 
-        bb = JSON.parse(JSON.stringify(goal.bb))
-        goal.graph.loadGoalJSON( bb )
+        goal.derails.push(derail)
+
+        reGraph()
       }
       console.log("bsandbox.reloadGoal(): Done **********************")
     }
@@ -227,7 +237,7 @@
 
       // Some other defaults
       params.deadline = 0
-      params.waterbux = "$0"
+      params.waterbux = "$"+pledges[0]
       params.yoog = "test/sandbox"
       params.timezone = "America/Los_Angeles"
       params.imgsz = 696
@@ -236,6 +246,7 @@
       data = [[params.tini, Number(params.vini), "initial datapoint of "+params.vini]]
 
       goal.bb = {params: params, data: data}
+      goal.derails = []
       
       // Delete div contents
       while (goal.div.firstChild) goal.div.removeChild(goal.div.firstChild);
