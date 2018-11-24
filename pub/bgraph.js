@@ -1370,7 +1370,6 @@
       console.time(stats_timeid)
       bbr = new bb(json)
       goal = bbr.goal
-      
       if (opts.divJSON)
         opts.divJSON.innerHTML = JSON.stringify(bbr.getStats(), null, 4)
       console.timeEnd(stats_timeid)
@@ -1417,6 +1416,8 @@
       if (opts.divGraph) {
         if (!opts.roadEditor && goal.stathead)
           stathead.text(goal.graphsum)
+        else
+          stathead.text("")
       }
       console.time(graph_timeid)
       // Finally, wrap up with graph related initialization
@@ -4419,8 +4420,17 @@
       if (goal) return [goal.tcur, goal.vcur, goal.rcur, br.rdf(road, goal.tcur)]
       else return null
     }
-  }
+    const visualProps
+            = ['plotall', 'steppy', 'rosy', 'movingav', 'aura', 'hidey', 'stathead']
+    self.getVisualConfig = function( opts ) {
+      var out = {}
+      visualProps.map(e=>{ out[e] = goal[e] })
+      return out
+    }
 
+
+  }
+  
   return bgraph;
 }));
 

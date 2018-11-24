@@ -8,7 +8,7 @@
  * The following member variables and methods are exported within
  * constructed objects:
  *
- *  id         : beebrain instance ID 
+ *  id         : bsandbox instance ID 
  *
  * Copyright © 2017 Uluc Saranli
  */
@@ -36,7 +36,8 @@
 
   // -------------------------------------------------------------
   // ------------------- FACTORY GLOBALS ---------------------
-  /** Global counter to Generate unique IDs for multiple beebrain instances. */
+  /** Global counter to Generate unique IDs for multiple bsandbox
+   * instances. */
   var gid = 1,
 
   bsandbox = function( div ) {
@@ -105,14 +106,17 @@
     }
 
     function reloadGoal() {
+      console.log("bsandbox.reloadGoal(): Regenerating graph ********")
       let bb = JSON.parse(JSON.stringify(goal.bb))
       goal.graph.loadGoalJSON( bb )
       // If the goal has derailed, perform rerailments automatically
       if (goal.graph.isLoser()) {
+        console.log("bsandbox.reloadGoal(): Derailed! Rolling back...")
         undo(false)
         let bb = JSON.parse(JSON.stringify(goal.bb))
         goal.graph.loadGoalJSON( bb )
 
+        console.log("bsandbox.reloadGoal(): Derailed! Rerailing...")
         let cur = goal.graph.curState()
         // Clean up road ahead
         goal.bb.params.road = goal.bb.params.road.filter(e=>(bu.dayparse(e[0])<cur[0]))
@@ -127,6 +131,7 @@
         bb = JSON.parse(JSON.stringify(goal.bb))
         goal.graph.loadGoalJSON( bb )
       }
+      console.log("bsandbox.reloadGoal(): Done **********************")
     }
     
     function nextDay() {
@@ -135,15 +140,17 @@
         = bu.dayify(bu.daysnap(bu.dayparse(goal.bb.params.asof)+bu.SID))
       reloadGoal()
     }
+    
     function newData( v ) {
       if (!bu.nummy(v)) return;
       saveState()
-      goal.bb.data.push([goal.bb.params.asof, Number(v), ""])
+      goal.bb.data.push([goal.bb.params.asof, Number(v),
+                         `Added in sandbox (#${goal.bb.data.length})`])
       reloadGoal()
     }
     
     function newRate( r ) {
-      if (!bu.nummy(r)) return;
+      if (!bu.nummy(r)) return
       saveState()
       // check if there is a road segment ending a week from now
       var asof = bu.dayparse(goal.bb.params.asof)
@@ -157,7 +164,16 @@
       goal.bb.params.rfin = Number(r)
       reloadGoal()
     }
-    
+
+    const visualProps
+            = ['plotall', 'steppy', 'rosy', 'movingav', 'aura', 'hidey', 'stathead']
+    function setVisualConfig( opts ) {
+      visualProps.map(e=>{
+        if (opts.hasOwnProperty(e) && bu.torf(opts[e])) goal.bb.params[e] = opts[e]
+      })
+      reloadGoal()
+    }
+
     function newGoal( gtype, runits, rfin, vini, buffer ) {
       //console.log(`newGoal(${gtype}, ${runits}, ${rfin}, ${vini}, ${buffer})`)
       if (!typefn.hasOwnProperty(gtype)) {
@@ -231,6 +247,8 @@
     self.nextDay = nextDay
     self.newData = newData
     self.newRate = newRate
+    self.setVisualConfig = setVisualConfig
+    self.getVisualConfig = function() {return goal.graph.getVisualConfig()}
     self.undo = undo
   }
 
