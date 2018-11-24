@@ -3282,6 +3282,7 @@
         return (d[0] >= l[0] && d[0] <= l[1]);
       }
 
+      console.log(bbr.derails)
       var drelt
       // *** Plot derailments ***
       if (opts.showData || !opts.roadEditor) {
@@ -4430,7 +4431,7 @@
     }
 
     const goalProps
-          = ['offred','yaw','dir','kyoom','odom','noisy','integery','monotone']
+          = ['offred','yaw','dir','kyoom','odom','noisy','integery','monotone','aggday']
     self.getGoalConfig = function( opts ) {
       var out = {}
       goalProps.map(e=>{ out[e] = goal[e] })
