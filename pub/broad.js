@@ -422,7 +422,7 @@
 
     self.isLoser = function(rd, goal, data, t, v) {
       if (goal.offred)
-        return self.dotcolor(rd, goal, t-bu.SID, goal.dtf(t-bu.SID))
+        return (self.dotcolor(rd, goal, t-bu.SID, goal.dtf(t-bu.SID))=== bu.Cols.REDDOT)
       else
         return (self.dotcolor( rd, goal, t, v ) === bu.Cols.REDDOT 
                 && self.dotcolor(rd, goal,t-bu.SID,
