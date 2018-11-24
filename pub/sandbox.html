@@ -120,13 +120,13 @@
       var curconfig = bs.getVisualConfig()
       visualProps.map(e=>{document.getElementById(e).checked = curconfig[e]})
 
-      var curconfig = bs.getGoalConfig()
-      goalProps.map(e=>{
-        if (e=='yaw' || e=='dir')
-          document.getElementById(e).checked = (curconfig[e]==1)
-        else
-          document.getElementById(e).checked = curconfig[e]
-      })
+      <!-- var curconfig = bs.getGoalConfig() -->
+      <!-- goalProps.map(e=>{ -->
+      <!--   if (e=='yaw' || e=='dir') -->
+      <!--     document.getElementById(e).checked = (curconfig[e]==1) -->
+      <!--   else -->
+      <!--     document.getElementById(e).checked = curconfig[e] -->
+      <!-- }) -->
     }
     
     gtype = document.getElementById("typeselect");
