@@ -81,8 +81,8 @@
   Show steppy data lines
   <input type="checkbox" id="rosy" onclick="setVisualConfig()" checked></input>
   Show rosy points
-  <input type="checkbox" id="movingav" onclick="setVisualConfig()" checked></input>
-  Show moving average<br/>
+  <input type="checkbox" id="movingav" onclick="setVisualConfig()" checked></input><br/>
+  Show moving average
   <input type="checkbox" id="aura" onclick="setVisualConfig()" checked></input>
   Show aura
   <input type="checkbox" id="hidey" onclick="setVisualConfig()" checked></input>
@@ -93,28 +93,45 @@
   Show hashtags
   <hr/>
   Goal configuration (change with CAUTION!):<br/>
-  <input type="checkbox" id="yaw" onclick="setGoalConfig()" checked></input>
-  yaw
-  <input type="checkbox" id="dir" onclick="setGoalConfig()" checked></input>
-  dir
-  <input type="checkbox" id="kyoom" onclick="setGoalConfig()" checked></input>
-  kyoom
-  <input type="checkbox" id="odom" onclick="setGoalConfig()" checked></input>
-  odom
-  <input type="checkbox" id="noisy" onclick="setGoalConfig()" checked></input>
-  noisy
-  <input type="checkbox" id="integery" onclick="setGoalConfig()" checked></input>
-  integery
-  <input type="checkbox" id="monotone" onclick="setGoalConfig()" checked></input>
-  monotone
-  <input type="checkbox" id="offred" onclick="setGoalConfig()" checked></input>
-  offred
+  <input type="checkbox" id="yaw"checked></input> yaw
+  <input type="checkbox" id="dir"checked></input> dir
+  <input type="checkbox" id="kyoom"checked></input> kyoom
+  <input type="checkbox" id="odom"checked></input> odom
+  <input type="checkbox" id="noisy"checked></input> noisy
+  <input type="checkbox" id="integery"checked></input> integery
+  <input type="checkbox" id="monotone"checked></input> monotone
+  <input type="checkbox" id="offred" checked></input> offred<br/>
+  aggday:
+  <select id="aggday" class="typeselect">
+    <option value="last">last</option>
+    <option value="first">first</option>
+    <option value="min">min</option>
+    <option value="max">max</option>
+    <option value="truemean">truemean</option>
+    <option value="uniqmean">uniqmean</option>
+    <option value="mean">mean</option>
+    <option value="median">median</option>
+    <option value="mode">mode</option>
+    <option value="trimmean">trimmean</option>
+    <option value="sum">sum</option>
+    <option value="jolly">jolly</option>
+    <option value="binary">binary</option>
+    <option value="nonzero">nonzero</option>
+    <option value="triangle">triangle</option>
+    <option value="square">square</option>
+    <option value="clocky">clocky</option>
+    <option value="count">count</option>
+    <option value="kyshoc">kyshoc</option>
+    <option value="skatesum">skatesum</option>
+  </select><br/>
+  <button onclick="setGoalConfig()" style="margin:4px;">
+    SET!</button><br/>
 
   <script>
     const visualProps
       = ['plotall','steppy','rosy','movingav','aura','hidey','stathead','hashtags']
     const goalProps
-      = ['offred','yaw','dir','kyoom','odom','noisy','integery','monotone']
+      = ['offred','yaw','dir','kyoom','odom','noisy','integery','monotone','aggday']
 
     function updateConfigInput() {
       var curconfig = bs.getVisualConfig()
@@ -124,6 +141,8 @@
       goalProps.map(e=>{
         if (e=='yaw' || e=='dir')
           document.getElementById(e).checked = (curconfig[e]==1)
+        else if (e=='aggday' || e=='dir')
+          document.getElementById(e).value = curconfig[e]
         else
           document.getElementById(e).checked = curconfig[e]
       })
@@ -155,9 +174,12 @@
       goalProps.map(e=>{
         if (e=='yaw' || e=='dir')
           newconfig[e] = document.getElementById(e).checked?1:-1
+        if (e=='aggday')
+          newconfig[e] = document.getElementById(e).value
         else
           newconfig[e] = document.getElementById(e).checked
       })
+      console.log(JSON.stringify(newconfig))
       bs.setGoalConfig(newconfig)
     }
     
