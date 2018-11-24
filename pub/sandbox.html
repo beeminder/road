@@ -91,24 +91,24 @@
   Show title with statistics
   <input type="checkbox" id="hashtags" onclick="setVisualConfig()" checked></input>
   Show hashtags
-  <!-- <hr/> -->
-  <!-- Goal configuration (change with CAUTION!):<br/> -->
-  <!-- <input type="checkbox" id="yaw" onclick="setGoalConfig()" checked></input> -->
-  <!-- yaw -->
-  <!-- <input type="checkbox" id="dir" onclick="setGoalConfig()" checked></input> -->
-  <!-- dir -->
-  <!-- <input type="checkbox" id="kyoom" onclick="setGoalConfig()" checked></input> -->
-  <!-- kyoom -->
-  <!-- <input type="checkbox" id="odom" onclick="setGoalConfig()" checked></input> -->
-  <!-- odom -->
-  <!-- <input type="checkbox" id="noisy" onclick="setGoalConfig()" checked></input> -->
-  <!-- noisy -->
-  <!-- <input type="checkbox" id="integery" onclick="setGoalConfig()" checked></input> -->
-  <!-- integery -->
-  <!-- <input type="checkbox" id="monotone" onclick="setGoalConfig()" checked></input> -->
-  <!-- monotone -->
-  <!-- <input type="checkbox" id="offred" onclick="setGoalConfig()" checked></input> -->
-  <!-- offred -->
+  <hr/>
+  Goal configuration (change with CAUTION!):<br/>
+  <input type="checkbox" id="yaw" onclick="setGoalConfig()" checked></input>
+  yaw
+  <input type="checkbox" id="dir" onclick="setGoalConfig()" checked></input>
+  dir
+  <input type="checkbox" id="kyoom" onclick="setGoalConfig()" checked></input>
+  kyoom
+  <input type="checkbox" id="odom" onclick="setGoalConfig()" checked></input>
+  odom
+  <input type="checkbox" id="noisy" onclick="setGoalConfig()" checked></input>
+  noisy
+  <input type="checkbox" id="integery" onclick="setGoalConfig()" checked></input>
+  integery
+  <input type="checkbox" id="monotone" onclick="setGoalConfig()" checked></input>
+  monotone
+  <input type="checkbox" id="offred" onclick="setGoalConfig()" checked></input>
+  offred
 
   <script>
     const visualProps
@@ -120,13 +120,13 @@
       var curconfig = bs.getVisualConfig()
       visualProps.map(e=>{document.getElementById(e).checked = curconfig[e]})
 
-      <!-- var curconfig = bs.getGoalConfig() -->
-      <!-- goalProps.map(e=>{ -->
-      <!--   if (e=='yaw' || e=='dir') -->
-      <!--     document.getElementById(e).checked = (curconfig[e]==1) -->
-      <!--   else -->
-      <!--     document.getElementById(e).checked = curconfig[e] -->
-      <!-- }) -->
+      var curconfig = bs.getGoalConfig()
+      goalProps.map(e=>{
+        if (e=='yaw' || e=='dir')
+          document.getElementById(e).checked = (curconfig[e]==1)
+        else
+          document.getElementById(e).checked = curconfig[e]
+      })
     }
     
     gtype = document.getElementById("typeselect");
