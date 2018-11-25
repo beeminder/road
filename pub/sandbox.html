@@ -124,8 +124,9 @@
     <option value="kyshoc">kyshoc</option>
     <option value="skatesum">skatesum</option>
   </select><br/>
-  <button onclick="setGoalConfig()" style="margin:4px;">
-    SET!</button><br/>
+  <button onclick="setGoalConfig()" style="margin:4px;">SET!</button>
+  <hr/>
+  <a target="_blank" id="download" download="sandbox.bb">Right click to download BB file</a>
 
   <script>
     const visualProps
@@ -148,26 +149,28 @@
       })
     }
     
-    gtype = document.getElementById("typeselect");
-    rfin = document.getElementById("rate");
-    vini = document.getElementById("value");
-    buffer = document.getElementById("buffer");
-    gdiv = document.getElementById("sandbox");
-    runits = document.getElementById("rateunit");
-    dataval = document.getElementById("dataval");
-    datacmt = document.getElementById("datacmt");
+    gtype = document.getElementById("typeselect")
+    rfin = document.getElementById("rate")
+    vini = document.getElementById("value")
+    buffer = document.getElementById("buffer")
+    gdiv = document.getElementById("sandbox")
+    runits = document.getElementById("rateunit")
+    dataval = document.getElementById("dataval")
+    datacmt = document.getElementById("datacmt")
+    download = document.getElementById("download")
 
     bs = new bsandbox(gdiv)
     bs.newGoal(gtype.options[gtype.selectedIndex].value,
               runits.options[runits.selectedIndex].value,
               rfin.value, vini.value, buffer.checked);
-
+    bs.saveBB(download)
     updateConfigInput()
     
     function setVisualConfig() {
       var newconfig = {}
       visualProps.map(e=>{newconfig[e] = document.getElementById(e).checked})
       bs.setVisualConfig(newconfig)
+      bs.saveBB(download)
     }
     function setGoalConfig() {
       var newconfig = {}
@@ -179,8 +182,8 @@
         else
           newconfig[e] = document.getElementById(e).checked
       })
-      console.log(JSON.stringify(newconfig))
       bs.setGoalConfig(newconfig)
+      bs.saveBB(download)
     }
     
   </script>
