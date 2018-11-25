@@ -2605,25 +2605,19 @@
     function updateOldRoad() {
       if (opts.divGraph == null || road.length == 0) return;
 
+      // Find road segments intersecting current x-axis range
       var l = [nXSc.invert(0).getTime()/1000, 
                nXSc.invert(plotbox.width).getTime()/1000];
       var rdfilt = function(r) {
         return ((r.sta[0] > l[0] && r.sta[0] < l[1])
                 || (r.end[0] > l[0] && r.end[0] < l[1]));
       };
-      // Construct a trimmed road matrix iroad2 for the guidelines
-      var iroad2 = iroad.slice(1,-1), ind;
       var ir = iroad.filter(rdfilt);
-      if (ir.length == 0)
-        ir = [iroad[br.findRoadSegment(iroad, l[0])]];
-      var ir2 = iroad2.filter(rdfilt);
-      if (ir2.length == 0) {
-        // Check if we can find a segment that is still suitable
-        var seg = br.findRoadSegment(iroad2, l[0]);
-        if (seg < 0) ir2 = null;
-        else ir2 = [iroad2[seg]];
-      }
+      if (ir.length == 0) ir = [iroad[br.findRoadSegment(iroad, l[0])]];
 
+      // **** Construct the centerline path element ****
+      // fx,fy: Start of the current line segment
+      // ex,ey: End of the current line segment
       var fx = nXSc(ir[0].sta[0]*1000), fy = nYSc(ir[0].sta[1]);
       var ex = nXSc(ir[0].end[0]*1000), ey = nYSc(ir[0].end[1]);
       // Adjust the beginning of the road to ensure dashes are
@@ -2643,11 +2637,39 @@
         rd += " L"+ex+" "+ey;
       }
 
+      var roadelt = gOldCenter.select(".oldroads");
+      if (roadelt.empty()) {
+        gOldCenter.append("svg:path")
+          .attr("class","oldroads")
+	  	    .attr("d", rd)
+  		    .attr("pointer-events", "none")
+          .style("stroke-dasharray", (opts.oldRoadLine.dash)+","
+                 +(opts.oldRoadLine.dash))
+  		    .style("fill", "none")
+  		    .style("stroke-width",opts.oldRoadLine.width*scalf)
+  		    .style("stroke", bu.Cols.ORNG);
+      } else {
+        roadelt.attr("d", rd)
+  		    .style("stroke-width",opts.oldRoadLine.width*scalf);
+      }
+
+      // **** Construct the guideline path element ****
+      // Construct and filter a trimmed road matrix iroad2 for the guidelines
+      var iroad2 = iroad.slice(1,-1), ind;
+      var ir2 = iroad2.filter(rdfilt);
+      if (ir2.length == 0) {
+        // If no segmens were found, check if we can find a segment
+        // that traverses the current x-axis range
+        var seg = br.findRoadSegment(iroad2, l[0]);
+        if (seg < 0) ir2 = null;
+        else ir2 = [iroad2[seg]];
+      }
       // If no guideline was found to be in the visible range, skip guidelines
       if (ir2 != null) {
+        // fx2,fy2: Start of the current segment
+        // ex2,ey2: End of the current segment
         var fx2 = nXSc(ir2[0].sta[0]*1000), fy2 = nYSc(ir2[0].sta[1]);
         var ex2 = nXSc(ir2[0].end[0]*1000), ey2 = nYSc(ir2[0].end[1]);
-        var newx2 = (-nXSc(iroad2[0].sta[0]*1000)) % (2*opts.oldRoadLine.dash);
 
         var rd2 = "M"+fx2+" "+fy2;
         for (i = 0; i < ir2.length; i++) {
@@ -2662,43 +2684,30 @@
         }
       }
 
-      var roadelt = gOldCenter.select(".oldroads");
-      if (roadelt.empty()) {
-        gOldCenter.append("svg:path")
-          .attr("class","oldroads")
-	  	    .attr("d", rd)
-  		    .attr("pointer-events", "none")
-          .style("stroke-dasharray", (opts.oldRoadLine.dash)+","
-                 +(opts.oldRoadLine.dash)) 
-  		    .style("fill", "none")
-  		    .style("stroke-width",opts.oldRoadLine.width*scalf)
-  		    .style("stroke", bu.Cols.ORNG);
-      } else {
-        roadelt.attr("d", rd)
-  		    .style("stroke-width",opts.oldRoadLine.width*scalf);
-      }
-
+      // YBR and guidelines are only drawn when the editor is disabled
       var laneelt = gOldRoad.select(".oldlanes");
       var guideelt = gOldGuides.selectAll(".oldguides");
       if (!opts.roadEditor && ir2 != null) {
-        var minpx = 3*scalf;
-        var thin=Math.abs(nYSc.invert(minpx)-nYSc.invert(0));
+
+        var minpx = 3*scalf; // Minimum visual width for YBR
+        var thin = Math.abs(nYSc.invert(minpx)-nYSc.invert(0));
         var lw = (goal.lnw == 0)?thin:goal.lnw;
         if (Math.abs(nYSc(lw)-nYSc(0)) < minpx) lw=thin;
 
         fx = nXSc(ir2[0].sta[0]*1000); fy = nYSc(ir2[0].sta[1]+lw);
         ex = nXSc(ir2[0].end[0]*1000); ey = nYSc(ir2[0].end[1]+lw);
-        //fy = (fy + (0-fx)*(ey-fy)/(ex-fx)); fx = 0;
         
+        // Go forward to draw the top side of YBR
         d = "M"+fx+" "+fy;
         for (i = 0; i < ir2.length; i++) {
           ex = nXSc(ir2[i].end[0]*1000); ey = nYSc(ir2[i].end[1]+lw);
           if (ex > plotbox.width) {
             fx = nXSc(ir2[i].sta[0]*1000); fy = nYSc(ir2[i].sta[1]+lw);
-            ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx)); ex = plotbox.width;          
+            ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx)); ex = plotbox.width;
           }
           d += " L"+ex+" "+ey;
         }
+        // Go down and backward for the bottom side of the YBR
         ey += (nYSc(0) - nYSc(2*lw));
         d += " L"+ex+" "+ey;
         for (i = ir2.length-1; i >= 0; i--) {
@@ -2710,6 +2719,7 @@
           d += " L"+fx+" "+fy;
         }
         d += " Z";
+        // **** Draw the YBR ****
         if (laneelt.empty()) {
           gOldRoad.append("svg:path")
             .attr("class","oldlanes")
@@ -2722,48 +2732,51 @@
           laneelt.attr("d", d);
         }
 
-        // Update guidelines
-        // Compute Y range
-        var yrange = [nYSc.invert(plotbox.height), 
-                      nYSc.invert(0)];
+        // **** Update guidelines ****
+        var yrange = [nYSc.invert(plotbox.height), nYSc.invert(0)];
         var delta = 1, oneshift, yr = Math.abs(yrange[1] - yrange[0]);
         var bc = br.bufcap(road, goal)
+        console.log("bc="+bc)
+        bc[0] = nYSc(bc[0])-nYSc(0)
         if (goal.lnw > 0 && yr / goal.lnw <= 32) delta = goal.lnw
         else if (goal.lnw > 0 && yr / (6*goal.lnw) <= 32) {
-          delta = 6* goal.lnw; bc[1] = bc[1]/6
+          delta = 6* goal.lnw
         } else {
-          delta = yr / 32; bc[1] = 0 // Disable the week line
+          delta = yr / 32
         }
         oneshift = goal.yaw * delta
         var numlines = Math.floor(Math.abs((yrange[1] - yrange[0])/oneshift))
 
+        // Create a dummy array as d3 data for guidelines
         var arr = new Array(Math.ceil(numlines)).fill(0);
+        // Add a final data entry for the thick guideline
+        arr.push(-1)
         var shift = nYSc(ir2[0].sta[1]+oneshift) - nYSc(ir2[0].sta[1]);
         guideelt = guideelt.data(arr);
         guideelt.exit().remove();
         guideelt.enter().append("svg:path")
           .attr("class","oldguides")
 	  	    .attr("d", rd2)
-	  	    .attr("transform", function(d,i) { 
-            return "translate(0,"+((i+1)*shift)+")";})
+	  	    .attr("transform", function(d,i) {
+            return "translate(0,"+((d<0)?bc[0]:((i+1)*shift))+")";})
   		    .attr("pointer-events", "none")
   		    .style("fill", "none")
   		    .attr("stroke-width", function (d,i) { 
-            return (i == bc[1]-1)
+            return (d<0)
               ?opts.guidelines.weekwidth*scalf
               :opts.guidelines.width*scalf;})
   		    .attr("stroke", function (d,i) { 
-            return (i == bc[1]-1)
+            return (d<0)
               ?bu.Cols.BIGG:bu.Cols.LYEL;});
         guideelt.attr("d", rd2)
           .attr("transform", function(d,i) { 
-            return "translate(0,"+((i+1)*shift)+")";})
+            return "translate(0,"+((d<0)?bc[0]:((i+1)*shift))+")";})
   		    .attr("stroke-width", function (d,i) { 
-            return (i == bc[1]-1)
+            return (d<0)
               ?opts.guidelines.weekwidth*scalf
               :opts.guidelines.width*scalf;})
   		    .attr("stroke", function (d,i) { 
-            return (i == bc[1]-1)
+            return (d<0)
               ?bu.Cols.BIGG:bu.Cols.LYEL;});
       } else {
         laneelt.remove();
@@ -3282,7 +3295,6 @@
         return (d[0] >= l[0] && d[0] <= l[1]);
       }
 
-      console.log(bbr.derails)
       var drelt
       // *** Plot derailments ***
       if (opts.showData || !opts.roadEditor) {

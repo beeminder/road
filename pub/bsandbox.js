@@ -112,6 +112,7 @@
     function reGraph() {
       let bb = JSON.parse(JSON.stringify(goal.bb))
       bb.params.waterbux = "$"+pledges[Math.min(pledges.length-1, goal.derails.length)]
+      console.log(JSON.stringify(bb))
       goal.graph.loadGoalJSON( bb )
     }
     function reloadGoal(undofirst = true) {
@@ -141,7 +142,6 @@
         goal.derails.push(derail)
 
         reGraph()
-        console.log(undoBuffer.length)
       }
       console.log("bsandbox.reloadGoal(): Done **********************")
     }
@@ -158,7 +158,6 @@
       saveState()
       goal.bb.data.push([goal.bb.params.asof, Number(v),
                          (c=="")?`Added in sandbox (#${goal.bb.data.length})`:c])
-      console.log(JSON.stringify(goal.bb.data))
       reloadGoal()
     }
     
@@ -276,6 +275,13 @@
     self.setGoalConfig = setGoalConfig
     self.getGoalConfig = function() {return goal.graph.getGoalConfig()}
     self.undo = undo
+    self.saveBB = function(linkelt) {
+      var source = JSON.stringify(goal.bb)
+        //convert svg source to URI data scheme.
+        var url = "data:application/json;charset=utf-8,"+encodeURIComponent(source)
+        //set url value to a element's href attribute.
+        linkelt.href = url
+    }
   }
 
   return bsandbox
