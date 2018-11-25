@@ -3412,7 +3412,9 @@
         hashel.exit().remove();
         hashel
 		      .attr("x", function(d){ return nXSc((d[0])*1000);})
-          .attr("transform", d=>("rotate(-90,"+nXSc((d[0])*1000)+","+(plotbox.height/2)+")"))
+          .attr("transform", d=>("rotate(-90,"+nXSc((d[0])*1000)
+                                 +","+(plotbox.height/2)+")"))
+          .text(d=>(d[1]))
         hashel.enter().append("svg:text")
 	        .attr("class","hashtag")
 		      .attr("x", d=>(nXSc((d[0])*1000)))
