@@ -202,7 +202,7 @@
     derails = [],    // Derailments
     hollow = [],     // Hollow points
     allvals = {},    // Dictionary holding values for each timestamp
-    aggval = {},     // Dictionary holding aggregated value for each timestamp
+    aggvals = {},    // Dictionary holding aggregated value for each timestamp
     worstval = {},   // Maps timestamp to min/max (depending on yaw) value that day
     hashhash = {},   // Maps timestamp to sets of hashtags to display on the graph
     hashtags = []    // Array of timestamp string pairs for hashtag lists
@@ -270,7 +270,7 @@
       flad = null
       fuda = []
       allvals = {}
-      aggval = {}
+      aggvals = {}
       worstval = {}
 
       goal = {}
@@ -435,7 +435,7 @@
     // [t, v, comment, original index, v(original)]
     //
     // Coming out, datapoints have the following format:
-    // [t, v, comment, type, prevt, prevv, aggval]
+    // [t, v, comment, type, prevt, prevv, v(original) or null]
     //
     // Each point also records coordinates for the preceding point to
     // enable connecting plots such as steppy and rosy even after
@@ -447,9 +447,11 @@
 
       for (i = 0; i < numpts; i++) {
         d = data[i]
+        // Sanity check data element
         if (!(bu.nummy(d[0]) && d[0]>0 && bu.nummy(d[1]) &&bu.stringy(d[2])))
           return "Invalid datapoint: "+d[0]+" "+d[1]+' "'+d[3]
 
+        // Extract and record hashtags
         if (goal.hashtags) {
           var hset = hashextract(d[2]), elem
           if (hset.size == 0) continue
@@ -459,6 +461,8 @@
           }
         }
       }
+
+      // Precompute list of [t, hashtext] pairs for efficient display
       if (goal.hashtags) {
         hashtags = []
         var keys = Object.keys(hashhash);
@@ -472,105 +476,105 @@
       if (!goal.offred)
         for (i = 0; i < derails.length; i++) derails[i][0] = derails[i][0]-bu.SID
       
+      // Identify, record and process odometer reset for odom goals
       if (goal.odom) {
         oresets = data.filter(function(e){ return (e[1]==0);}).map(e=>(e[0]))
         br.odomify(data)
       }
 
-      var nonfuda = data.filter(function(e) {
-        return e[0]<=goal.asof;})
+      var nonfuda = data.filter(e=>(e[0]<=goal.asof))
       if (goal.plotall) goal.numpts = nonfuda.length
 
-      aggval = {}
+      aggvals = {}
       allvals = {}
-      var dval = function(d) { return d[0];}
-      var aggpt = function(vl, v) { 
-        if (vl.length == 1) return [vl[0][1], vl[0][2]]
-        else {
-          var ind
-          if (goal.kyoom && goal.aggday === "sum") 
-            ind = bu.accumulate(vl.map(dval)).indexOf(v)
-          else ind = vl.map(dval).indexOf(v)
-          if (ind < 0) return [goal.aggday, null]
-          else return [vl[ind][1]+" ("+goal.aggday+")", vl[ind][2]]
-        }
-      }
-        
       // Aggregate datapoints and handle kyoom
       // HACK: aggday=skatesum requires knowledge of rfin
       br.rfin = goal.rfin
       var newpts = []
-      var ct = data[0][0], 
-          vl = [[data[0][1],data[0][2],data[0][4]]], vlv
-      var pre = 0, prevpt, ad, cmt, ptinf,vw
-      for (i = 1; i < data.length; i++) {
-        if (data[i][0] == ct) {
+      var ct = data[0][0], // Current time
+          // Value list: All values [val, cmt, originalv] for current time ct
+          vl = [],
+          vlv
+      var pre = 0, // Current cumulative sum
+          prevpt,
+          ad,      // Aggregated data
+          cmt, ptinf,vw
+
+      // Helper fn: Extract values from vl
+      var dval = (d=>d[0])
+      // Helper fn: Compute [informative comment,originalv] for aggregated points
+      var aggpt = function(vl, v) { 
+        if (vl.length == 1) return [vl[0][1], vl[0][2]]
+        else {
+          var ind
+          // Check if aggregated value is one of the explicit points for today
+          if (goal.kyoom && goal.aggday === "sum") 
+            ind = bu.accumulate(vl.map(dval)).indexOf(v)
+          else ind = vl.map(dval).indexOf(v)
+          // If not, aggregated point stands alone
+          if (ind < 0) return [goal.aggday, null]
+          // If found, append (aggday) to comment and record original value
+          else return [vl[ind][1]+" ("+goal.aggday+")", vl[ind][2]]
+        }
+      }
+
+      // Process all datapoints
+      for (i = 0; i <= data.length; i++) {
+        if (i < data.length && data[i][0] == ct) {
+          // Record all points for the current timestamp in vl
           vl.push([data[i][1],data[i][2],data[i][4]])
-        } else {
-          vlv = vl.map(dval)
-          ad = br.AGGR[goal.aggday](vlv)
+        }
+
+        if ( (i >= data.length) || data[i][0] != ct) {
+          // Done recording all data for today
+          vlv = vl.map(dval)             // Extract all values for today
+          ad = br.AGGR[goal.aggday](vlv) // Compute aggregated value
+          // Find previous point to record its info in the aggregated pt.
           if (newpts.length > 0) prevpt = newpts[newpts.length-1]
           else prevpt = [ct, ad+pre]
           //pre remains 0 for non-kyoom
           ptinf = aggpt(vl, ad)
-          newpts.push([ct, pre+ad, ptinf[0], (ct <= goal.asof)
-                       ?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE, 
-                       prevpt[0], prevpt[1], ptinf[1]])
+          // Create new datapoint
+          newpts.push([ct, pre+ad, ptinf[0], // This is the processed datapoint
+                       (ct <= goal.asof)?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE, 
+                       prevpt[0], prevpt[1], // This is the previous point
+                       ptinf[1]])            // v(original)
+
+          // Update allvals and aggvals associative arrays
           if (goal.kyoom) {
             if (goal.aggday === "sum") {
-              allvals[ct] = bu.accumulate(vlv).map(function(e,i){
-                return [e+pre, vl[i][1], vl[i][2]];})
+              allvals[ct] = bu.accumulate(vlv).map((e,i)=>([e+pre, vl[i][1], vl[i][2]]))
             } else allvals[ct] = vl.map(function(e) {
               return [e[0]+pre, e[1], e[2]];})
-            aggval[ct] = [pre+ad, ptinf[0], ptinf[1]]
+            aggvals[ct] = [pre+ad, ptinf[0], ptinf[1]]
             pre += ad
           } else {
             allvals[ct] = vl
-            aggval[ct] = [ad, ptinf[0], ptinf[1]]
+            aggvals[ct] = [ad, ptinf[0], ptinf[1]]
           }
           vw = allvals[ct].map(e=>e[0])
           worstval[ct] = (goal.yaw<0)?bu.arrMax(vw):bu.arrMin(vw)
           
-          ct = data[i][0]
-          vl = [[data[i][1],data[i][2],data[i][4]]]
+          if (i < data.length) {
+            ct = data[i][0]
+            vl = [[data[i][1],data[i][2],data[i][4]]]
+          }
         }
       }
       
-      vlv = vl.map(dval)
-      ad = br.AGGR[goal.aggday](vlv)
-      if (newpts.length > 0) prevpt = newpts[newpts.length-1]
-      else prevpt = [ct, ad+pre]
-      ptinf = aggpt(vl, ad)
-      newpts.push([ct, ad+pre, ptinf[0], 
-                   (ct <= goal.asof)?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE,
-                   prevpt[0], prevpt[1], ptinf[1]])
-      if (goal.kyoom) {
-        if (goal.aggday === "sum") {
-          allvals[ct] = bu.accumulate(vlv).map(function(e,i){
-            return [e+pre, vl[i][1], vl[i][2]];})
-        } else allvals[ct] = vl.map(function(e) { 
-          return [e[0]+pre, e[1], e[2]];})
-        aggval[ct] = [pre+ad, ptinf[0], ptinf[1]]
-      } else {
-        allvals[ct] = vl
-        aggval[ct] = [ad, , ptinf[0], ptinf[1]]
-      }
-      vw = allvals[ct].map(e=>e[0])
-      worstval[ct] = (goal.yaw<0)?bu.arrMax(vw):bu.arrMin(vw)
+      // Recompute an array of all datapoints based on allvals,
+      // having incorporated aggregation and other processing steps.
       var allpts = [];
       for (let t in allvals) {
-        if (allvals.hasOwnProperty(t)) {
-          allpts = allpts.concat(allvals[t].map(
-            function(d){
-              return [Number(t), d[0], d[1], 
-                      (Number(t) <= goal.asof)
-                      ?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE,
-                      d[0], d[1], d[2]];}))
-        }
+        allpts = allpts.concat(allvals[t].map(
+          d=>([Number(t), d[0], d[1], 
+               (Number(t) <= goal.asof)?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE,
+               d[0], d[1], d[2]])))
       }
       alldata = allpts
-      fuda = newpts.filter(function(e){return e[0]>goal.asof;})
-      data = newpts.filter(function(e){return e[0]<=goal.asof;})
+      
+      fuda = newpts.filter(e=>(e[0]>goal.asof))
+      data = newpts.filter(e=>(e[0]<=goal.asof))
       if (!goal.plotall) goal.numpts = data.length
       var gfd = br.gapFill(data)
       var gfdv = gfd.map(e => (e[1]))
@@ -705,7 +709,7 @@
             return;
         }
       }
-      if (!aggval.hasOwnProperty(x)) {
+      if (!aggvals.hasOwnProperty(x)) {
         var prevpt = data[numpts-1];
         flad = [x, vlast, "PPR", DPTYPE.FLATLINE, prevpt[0], prevpt[1], null];
         data.push(flad);
