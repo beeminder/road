@@ -77,7 +77,7 @@
     /** Visual parameters for fixed lines for the original road */ 
     oldRoadLine:  { width: 3, ctxwidth: 2, dash: 32, ctxdash: 16 },
     /** Visual parameters for data points (past, flatlined and hollow) */ 
-    dataPoint:    { size: 5, fsize: 5, hsize: 2 }, 
+    dataPoint:    { size: 5, fsize: 5, hsize: 2.5 }, 
     /** Visual parameters for the akrasia horizon */ 
     horizon:      { width: 2, ctxwidth: 1, dash: 8, ctxdash: 6, 
                     font: 12, ctxfont: 9 },
@@ -293,7 +293,7 @@
         gPB, gYBHP, gPink, gGrid, gOResets, gPastText, 
         gOldRoad, gOldCenter, gOldGuides, gOldBullseye, 
         gKnots, gSteppy, gSteppyPts, gRosy, gRosyPts, gMovingAv,
-        gAura, gDerails, gAllpts, gDpts, gFlat, 
+        gAura, gDerails, gAllpts, gDpts, gHollow, gFlat, 
         gBullseye, gRoads, gDots,  gWatermark, gHashtags, gHorizon, gHorizonText, 
         zoomarea, axisZoom, zoomin, zoomout,  
         brushObj, brush, focusrect, topLeft,
@@ -559,12 +559,13 @@
       gKnots = plot.append('g').attr('id', 'knotgrp');
       gSteppy = plot.append('g').attr('id', 'steppygrp');
       gRosy = plot.append('g').attr('id', 'rosygrp');
-      gRosyPts = plot.append('g').attr('id', 'rosygrp');
+      gRosyPts = plot.append('g').attr('id', 'rosyptsgrp');
       gDerails = plot.append('g').attr('id', 'derailsgrp');
       gAllpts = plot.append('g').attr('id', 'allptsgrp');
       gMovingAv = plot.append('g').attr('id', 'movingavgrp');
       gSteppyPts = plot.append('g').attr('id', 'steppyptsgrp');
       gDpts = plot.append('g').attr('id', 'datapointgrp');
+      gHollow = plot.append('g').attr('id', 'hollowgrp');
       gFlat = plot.append('g').attr('id', 'flatlinegrp');
       gHashtags = plot.append('g').attr('id', 'hashtaggrp');
       gBullseye = plot.append('g').attr('id', 'bullseyegrp');
@@ -3200,7 +3201,7 @@
             if (ind > 0) npts = bbr.rosydata.slice(ind, ind+2);
           }
           if (npts.length != 0) {
-            var d = "M"+nXSc(npts[0][0]*1000)+" "+nYSc(npts[0][1]);
+            var d = "M"+nXSc(npts[0][4]*1000)+" "+nYSc(npts[0][5]);
             for (i = 0; i < npts.length; i++) {
               d += " L"+nXSc(npts[i][0]*1000)+" "+ nYSc(npts[i][1]);
             }
@@ -3232,7 +3233,8 @@
     function updateSteppy() {
       if (processing) return;
 
-      var l = [nXSc.invert(0).getTime()/1000, nXSc.invert(plotbox.width).getTime()/1000];
+      var l = [nXSc.invert(0).getTime()/1000,
+               nXSc.invert(plotbox.width).getTime()/1000];
       var df = function(d) {
         return ((d[0] >= l[0] && d[0] <= l[1]) || (d[4] >= l[0] && d[4] <= l[1]));
       }
@@ -3271,8 +3273,8 @@
   		          .attr("stroke-width",4*scalf);
             }
           } else stpelt.remove();
-          updateDotGroup(gSteppyPts, bbr.flad?npts.slice(0,npts.length-1):npts, "steppyd",
-                         (opts.dataPoint.size+2)*scalf,
+          updateDotGroup(gSteppyPts, bbr.flad?npts.slice(0,npts.length-1):npts,
+                         "steppyd",(opts.dataPoint.size+2)*scalf,
                          "none", null, bu.Cols.PURP);
         } else {
           stpelt.remove();
@@ -3322,17 +3324,18 @@
     
     function updateDataPoints() {
       if (processing) return;
+      if (opts.divGraph == null || road.length == 0) return;
       //console.debug("id="+curid+", updateDataPoints()");
-      //console.trace();
       var l = [nXSc.invert(0).getTime()/1000, 
                nXSc.invert(plotbox.width).getTime()/1000];
+      // Filter to apply to normal datapoints
       var df = function(d) {
         return ((d[0] >= l[0] && d[0] <= l[1]) || (d[4] >= l[0] && d[4] <= l[1]));
       }
+      // Filter to apply to all datapoints
       var adf = function(d) {
         return (d[0] >= l[0] && d[0] <= l[1]);
       }
-      if (opts.divGraph == null || road.length == 0) return;
       var now = goal.asof;
       var dpelt;
       if (opts.showData || !opts.roadEditor) {
@@ -3356,11 +3359,7 @@
 
         // Compute and plot hollow datapoints
         if (!opts.roadEditor) {
-          var hollow = pts.filter(e=>{
-            if (!bbr.allvals.hasOwnProperty(e[0])) return false
-            return (e[0]<goal.asof && !bbr.allvals[e[0]].map(e=>e[0]).includes(e[1]))
-          })
-          updateDotGroup(gDpts, hollow, "hpts", 
+          updateDotGroup(gHollow, bbr.hollow.filter(df), "hpts", 
                          opts.dataPoint.hsize*scalf, null,
                          null, bu.Cols.WITE, true, 1);
         }

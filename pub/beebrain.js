@@ -200,6 +200,7 @@
     redoBuffer = [], // Array of future roads for redo
     oresets = [],    // Odometer resets
     derails = [],    // Derailments
+    hollow = [],     // Hollow points
     allvals = {},    // Dictionary holding values for each timestamp
     aggval = {},     // Dictionary holding aggregated value for each timestamp
     worstval = {},   // Maps timestamp to min/max (depending on yaw) value that day
@@ -410,11 +411,13 @@
       var yvec = bu.zip([yveclo, yvechi]).map(e=>((e[0]+e[1])/2))
       var xvec = data.map(e=>e[0])
       rosydata = bu.zip([xvec, yvec])
-      rosydata = rosydata.map(e=>[e[0],e[1],"rosy data", DPTYPE.RAWPAST, e[0],e[1],e[1]])
-      for (let i = 0; i < rosydata.length-2; i++) {
-        rosydata[i][4] = rosydata[i+1][0]
-        rosydata[i][5] = rosydata[i+1][1]
+      rosydata = rosydata.map(e=>[e[0],e[1],"rosy data",
+                                  DPTYPE.RAWPAST, e[0],e[1],e[1]])
+      for (let i = 1; i < rosydata.length-1; i++) {
+        rosydata[i][4] = rosydata[i-1][0]
+        rosydata[i][5] = rosydata[i-1][1]
       }
+      console.log(JSON.stringify(rosydata))
     }
 
     // Take string like "shark jumping #yolo :) #sharks", return {"#yolo", "#sharks"}
@@ -432,7 +435,11 @@
     // [t, v, comment, original index, v(original)]
     //
     // Coming out, datapoints have the following format:
-    // [t, v, comment, type, nextt, nextv, aggval]
+    // [t, v, comment, type, prevt, prevv, aggval]
+    //
+    // Each point also records coordinates for the preceding point to
+    // enable connecting plots such as steppy and rosy even after
+    // filtering based on visibility in graph
     function procData() { 
 
       if (data == null || data.length == 0) return "No datapoints"
@@ -577,6 +584,14 @@
         ct = derails[i][0]+bu.SID
         if (worstval.hasOwnProperty(ct)) derails[i][1] = worstval[ct]
       }
+      
+      // Extract computed points that are different than any entered
+      // data (hollow pts)
+      hollow = data.filter(e=>{
+        if (!allvals.hasOwnProperty(e[0])) return false
+        return (e[0]<goal.asof && !allvals[e[0]].map(e=>e[0]).includes(e[1]))
+      })
+      
       return ""
     }
 
@@ -1172,6 +1187,7 @@
     self.flad = flad
     self.oresets = oresets
     self.derails = derails
+    self.hollow = hollow
     self.hashtags = hashtags
     self.DPTYPE = DPTYPE
   }
