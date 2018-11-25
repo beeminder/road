@@ -492,13 +492,10 @@
       br.rfin = goal.rfin
       var newpts = []
       var ct = data[0][0], // Current time
-          // Value list: All values [val, cmt, originalv] for current time ct
-          vl = [],
-          vlv
+          vl = []  // Value list: All values [val, cmt, originalv] for current time ct
+          
       var pre = 0, // Current cumulative sum
-          prevpt,
-          ad,      // Aggregated data
-          cmt, ptinf,vw
+          prevpt
 
       // Helper fn: Extract values from vl
       var dval = (d=>d[0])
@@ -527,13 +524,13 @@
 
         if ( (i >= data.length) || data[i][0] != ct) {
           // Done recording all data for today
-          vlv = vl.map(dval)             // Extract all values for today
-          ad = br.AGGR[goal.aggday](vlv) // Compute aggregated value
+          let vlv = vl.map(dval)             // Extract all values for today
+          let ad = br.AGGR[goal.aggday](vlv) // Compute aggregated value
           // Find previous point to record its info in the aggregated pt.
           if (newpts.length > 0) prevpt = newpts[newpts.length-1]
           else prevpt = [ct, ad+pre]
           //pre remains 0 for non-kyoom
-          ptinf = aggpt(vl, ad)
+          let ptinf = aggpt(vl, ad)
           // Create new datapoint
           newpts.push([ct, pre+ad, ptinf[0], // This is the processed datapoint
                        (ct <= goal.asof)?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE, 
@@ -543,16 +540,15 @@
           // Update allvals and aggvals associative arrays
           if (goal.kyoom) {
             if (goal.aggday === "sum") {
-              allvals[ct] = bu.accumulate(vlv).map((e,i)=>([e+pre, vl[i][1], vl[i][2]]))
-            } else allvals[ct] = vl.map(function(e) {
-              return [e[0]+pre, e[1], e[2]];})
-            aggvals[ct] = [pre+ad, ptinf[0], ptinf[1]]
+              allvals[ct] = bu.accumulate(vlv).map((e,j)=>([e+pre, vl[j][1], vl[j][2]]))
+            } else allvals[ct] = vl.map(e=>([e[0]+pre, e[1], e[2]]))
+            aggvals[ct] = pre+ad
             pre += ad
           } else {
             allvals[ct] = vl
-            aggvals[ct] = [ad, ptinf[0], ptinf[1]]
+            aggvals[ct] = ad
           }
-          vw = allvals[ct].map(e=>e[0])
+          let vw = allvals[ct].map(e=>e[0])
           worstval[ct] = (goal.yaw<0)?bu.arrMax(vw):bu.arrMin(vw)
           
           if (i < data.length) {
@@ -576,14 +572,18 @@
       fuda = newpts.filter(e=>(e[0]>goal.asof))
       data = newpts.filter(e=>(e[0]<=goal.asof))
       if (!goal.plotall) goal.numpts = data.length
+
+      // Compute data mean after filling in gaps
       var gfd = br.gapFill(data)
       var gfdv = gfd.map(e => (e[1]))
       if (data.length > 0) goal.mean = bu.mean(gfdv)
-      if (data.length > 1) {
+      if (data.length > 1)
         goal.meandelt = bu.mean(bu.partition(gfdv,2,1).map(e => (e[1] - e[0])))
-      }
-      goal.tdat = data[data.length-1][0] // tstamp of last ent. datapoint pre-flatline
 
+      // tstamp of last ent. datapoint pre-flatline
+      goal.tdat = data[data.length-1][0]
+
+      // Adjust derailment markers to indicate worst value for that day
       for (i = 0; i < derails.length; i++) {
         ct = derails[i][0]+bu.SID
         if (worstval.hasOwnProperty(ct)) derails[i][1] = worstval[ct]
