@@ -1167,6 +1167,7 @@
     self.data = data
     self.rosydata = rosydata
     self.alldata = alldata
+    self.allvals = allvals
     self.fuda = fuda
     self.flad = flad
     self.oresets = oresets

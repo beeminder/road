@@ -76,8 +76,8 @@
     roadLine:     { width: 3, ctxwidth: 2 },
     /** Visual parameters for fixed lines for the original road */ 
     oldRoadLine:  { width: 3, ctxwidth: 2, dash: 32, ctxdash: 16 },
-    /** Visual parameters for data points (past and flatlined) */ 
-    dataPoint:    { size: 5, fsize: 5 }, 
+    /** Visual parameters for data points (past, flatlined and hollow) */ 
+    dataPoint:    { size: 5, fsize: 5, hsize: 2 }, 
     /** Visual parameters for the akrasia horizon */ 
     horizon:      { width: 2, ctxwidth: 1, dash: 8, ctxdash: 6, 
                     font: 12, ctxfont: 9 },
@@ -2736,7 +2736,6 @@
         var yrange = [nYSc.invert(plotbox.height), nYSc.invert(0)];
         var delta = 1, oneshift, yr = Math.abs(yrange[1] - yrange[0]);
         var bc = br.bufcap(road, goal)
-        console.log("bc="+bc)
         bc[0] = nYSc(bc[0])-nYSc(0)
         if (goal.lnw > 0 && yr / goal.lnw <= 32) delta = goal.lnw
         else if (goal.lnw > 0 && yr / (6*goal.lnw) <= 32) {
@@ -3355,6 +3354,17 @@
                        opts.dataPoint.size*scalf,
                        dpStroke, dpStrokeWidth, dpFill, true, dpFillOp);
 
+        // Compute and plot hollow datapoints
+        if (!opts.roadEditor) {
+          var hollow = pts.filter(e=>{
+            if (!bbr.allvals.hasOwnProperty(e[0])) return false
+            return (e[0]<goal.asof && !bbr.allvals[e[0]].map(e=>e[0]).includes(e[1]))
+          })
+          updateDotGroup(gDpts, hollow, "hpts", 
+                         opts.dataPoint.hsize*scalf, null,
+                         null, bu.Cols.WITE, true, 1);
+        }
+        
         // *** Plot flatlined datapoint ***
         var fladelt = gFlat.selectAll(".fladp");
         if (bbr.flad != null) {

@@ -112,7 +112,6 @@
     function reGraph() {
       let bb = JSON.parse(JSON.stringify(goal.bb))
       bb.params.waterbux = "$"+pledges[Math.min(pledges.length-1, goal.derails.length)]
-      console.log(JSON.stringify(bb))
       goal.graph.loadGoalJSON( bb )
     }
     function reloadGoal(undofirst = true) {
