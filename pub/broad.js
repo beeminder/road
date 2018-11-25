@@ -372,6 +372,15 @@
       return self.lnfraw( rd, goal, x )
     }
 
+    // Transform datapoints as follows: every time there's a decrease
+    // in value from one element to the next where the second value is
+    // zero, say V followed by 0, add V to every element afterwards.
+    // This is what you want if you're reporting odometer readings (eg,
+    // your page number in a book can be thought of that way) and the
+    // odometer gets accidentally reset (or you start a new book but want
+    // to track total pages read over a set of books). This should be done
+    // before kyoomify and will have no effect on data that has actually
+    // been kyoomified since kyoomification leaves no nonmonotonicities.
     self.odomify = function( data ) {
       var ln = data.length
       if (ln == 0) return
