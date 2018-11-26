@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="../lib/css/pikaday.css">
+    <link rel="stylesheet" href="../lib/css/jsbrain.css">
+    <script src = "https://d3js.org/d3.v4.js"></script>
+    <script src = "../node_modules/moment/min/moment.min.js"></script>
+    <script src = "../lib/js/pikaday.js"></script>
+    <script src = "../lib/js/polyfit.js"></script>
+    <script src = "../lib/js/jsbrain.js"></script>
+    <script src = "../lib/js/bgraph.js"></script>
+    <script src = "../lib/js/btest.js"></script>
+</head>
+<body>
+
+<div id="results"></div>
+  
+<script>
+
+  function getSearchParameters() {
+    var prmstr = window.location.search.substr(1);
+    return prmstr != null && prmstr != "" ? transformToAssocArray(prmstr) : {};
+  }
+
+  function transformToAssocArray( prmstr ) {
+    var params = {};
+    var prmarr = prmstr.split("&");
+    for ( var i = 0; i < prmarr.length; i++) {
+        var tmparr = prmarr[i].split("=");
+        params[tmparr[0]] = tmparr[1];
+    }
+    return params;
+  }
+
+  async function compare() {
+    var path = window.location.pathname
+    path = path.substring(0, path.lastIndexOf("/"))
+    const params = getSearchParameters()
+    const rDiv = document.getElementById('results');
+    var opts = {div:rDiv, goal:params["base"], baseurl:"testbb", abspath:path+"/testbb"}
+    btest.graphCompare( opts )
+  }
+
+  compare()
+</script>
+
+</body>
+</html>

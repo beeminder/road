@@ -5,8 +5,6 @@
           [1369843200,3.0,null]], 
   "gldt":1358658000,"rate":0.0, 
   "runits":"w", 
-  "exprd":false, 
-  "reset":1369843200, 
   "kyoom":false, 
   "odom":false, 
   "edgy":false, 
@@ -26,7 +24,6 @@
   "usr":"joe", 
   "graph":"email", 
   "imgsz":696, 
-  "nytz":0.0, 
   "waterbux":"$0", 
   "asof":1369843200 },  
 "data":[[1369843200,3.0,"reset road at 3 on the 29th"]]

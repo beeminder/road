@@ -4,24 +4,29 @@
   "description": "Experimental Road Editor interface",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node app/server.js",
+    "jsbrain": "node app/jsbrain_server.js",
+    "sanity": "node app/sanity.js"
   },
   "dependencies": {
     "beeminder": "^1.5.2",
-    "body-parser": "^1.17.2",
+    "body-parser": "^1.18.3",
+    "cluster": "^0.7.7",
     "connect-session-sequelize": "^4.1.0",
     "d3": "4.11.0",
-    "ejs": "^2.5.6",
-    "express": "^4.15.3",
+    "ejs": "^2.6.1",
+    "express": "^4.16.4",
     "express-session": "^1.15.3",
-    "moment": "^2.19.1",
+    "gm": "^1.23.1",
+    "moment": "^2.22.2",
     "octicons": "^6.0.1",
-    "phantom": "^4.0.5",
-    "pikaday": "^1.6.1",
-    "request": "^2.81.0",
-    "sequelize": "^4.3.2",
+    "phantom": "^4.0.12",
+    "puppeteer": "^1.10.0",
+    "request": "^2.88.0",
+    "sequelize": "^4.41.2",
+    "sleep": "^5.2.3",
     "sqlite3": "^3.1.8",
-    "uuid": "^3.2.1"
+    "uuid": "^3.3.2"
   },
   "engines": {
     "node": "6.x"
@@ -34,5 +39,13 @@
     "node",
     "beeminder"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "dotenv": "^6.1.0",
+    "gulp": "^4.0.0",
+    "gulp-changed": "^3.2.0",
+    "gulp-clean-css": "^4.0.0",
+    "gulp-concat": "^2.6.1",
+    "gulp-minify": "^3.1.0"
+  }
 }

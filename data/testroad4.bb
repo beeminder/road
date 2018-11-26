@@ -5,7 +5,6 @@
           ["20150223",null,-1.0] ],
   "gldt":"20160723", "rate":-1.0,
   "runits":"d",
-  "exprd":false,
   "kyoom":false,
   "odom":false,
   "edgy":false,
