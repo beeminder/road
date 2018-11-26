@@ -169,16 +169,14 @@ class Renderer {
 
           // Generate palette optimized thumbnail through cropping with ImageMagick
           //var thmratio = 140/zi.height
-          var thmw = 212-4 // = Math.round(zi.width*thmratio)-4
-          var thmh = 140-4 // = Math.round(zi.height*thmratio)-4
-          var res
-          res = await new Promise( (resolve, reject) => {
+          //var thmw = 212-4 // = Math.round(zi.width*thmratio)-4
+          //var thmh = 140-4 // = Math.round(zi.height*thmratio)-4
+          var res = await new Promise( (resolve, reject) => {
             gm(imgftmp)
               .in('-crop').in(zi.width+"x"+zi.height+"+"+zi.x+"+"+zi.y)
-              .in('-resize').in(thmw+'x'+thmh)
+              .in('-resize').in('208x136!')
               .in('-bordercolor').in(json.color)
               .in('-border').in('2x2')
-              .in('-filter').in('Box')
               .in('-filter').in('Box')
               .in('-remap').in('palette.png')
               .in('-colors').in('256')

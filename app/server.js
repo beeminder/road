@@ -1,6 +1,8 @@
 "use strict";
 // -------------------------------- (80chars) --------------------------------->
 
+require('dotenv').config()
+
 var express = require('express')
 var https = require('https')
 var http = require('http')
@@ -34,12 +36,12 @@ var sequelize = new Sequelize('database', process.env.DB_USER,
   pool: {
     max: 5,
     min: 0,
-    idle: 10000,
+    idle: 10000
   },
   // Security note: the database is saved to the file `database.sqlite` in 
   // the local filesystem. It's deliberately placed in the `.data` directory
   // which doesn't get copied if someone remixes the project.
-  storage: '.data/database.sqlite',
+  storage: '.data/database.sqlite'
 })
 
 // Setting up session parameters
@@ -49,7 +51,7 @@ app.use(session({
   saveUninitialized: false,
   resave: false,
   cookie: { secure: true },
-  trustProxie: true,
+  trustProxie: true
 }))
 
 // Connecting to the database and defining Models
@@ -58,7 +60,7 @@ sequelize.authenticate()
     console.log('Database connection established.')
     User = sequelize.define('users', {           // Defining table 'users'
       username:     { type: Sequelize.STRING },
-      access_token: { type: Sequelize.STRING },
+      access_token: { type: Sequelize.STRING }
     })
     sequelize.sync()              // Creating table User if it does not exist
   })
@@ -67,22 +69,26 @@ sequelize.authenticate()
   })
 
 
+// Stuff in the pub directory is served statically
 app.use(express.static('pub'))
+// Serve BB files under the data directory through /data
 app.use('/data', express.static('data'))
+// Serve JS, CSS and other files under the list directory in /lib
+app.use('/lib', express.static('lib'))
 
 var listener = app.listen(process.env.PORT, () => {
   console.log(`Road Editor app is running on port ${listener.address().port}`)
 })
 
 app.get("/login", (req, resp) => {
-  console.log("!!!! GOT LOGIN !!!!")
-  console.log(req.session)
+  //console.log("!!!! GOT LOGIN !!!!")
+  //console.log(req.session)
   if(typeof req.session.access_token === 'undefined' || 
             req.session.access_token === null) {
     
     resp.render('login.ejs', {
       BEEMINDER_CLIENT_ID: process.env.BEEMINDER_CLIENT_ID, 
-      AUTH_REDIRECT_URI:   process.env.AUTH_REDIRECT_URI,
+      AUTH_REDIRECT_URI:   process.env.AUTH_REDIRECT_URI
     })
   } else {
     resp.redirect('/road')
@@ -95,7 +101,7 @@ app.get("/road", (req, resp) => {
   } else {
     var user = {
       username: req.session.username,
-      access_token: req.session.access_token,
+      access_token: req.session.access_token
     }
     resp.render('road.ejs', {user: user})
   }
@@ -107,7 +113,7 @@ app.get("/", (req, resp) => {
   } else {
     var user = {
       username: req.session.username,
-      access_token: req.session.access_token,
+      access_token: req.session.access_token
     }
     resp.render('road.ejs', {user: user})
   }
@@ -157,7 +163,7 @@ app.get("/getgoaljson/:goal", (req, resp) => {
   beemGetGraphParams({
     username: req.session.username, 
     goalslug: req.params.goal,
-    access_token: req.session.access_token,
+    access_token: req.session.access_token
     
   }, (goals)=> {
     resp.send(JSON.stringify( goals ))
@@ -173,7 +179,7 @@ app.post("/submitroad/:goal", (req, resp)=>{
     usr: req.session.username,
     gol: req.params.goal,
     access_token: req.session.access_token,
-    roadall: req.body.road,
+    roadall: req.body.road
   }, function(error, response, body) {
     if (error) {
       return console.error('submit failed:', error);
@@ -193,7 +199,7 @@ function beemSubmitRoad(params, callback) {
     json: true,
     body: {
       access_token: params.access_token,
-      roadall: params.roadall,
+      roadall: params.roadall
     }
   }
   console.log(options)
@@ -205,7 +211,7 @@ function beemGetUser(user, callback, error_callback = ()=>{}) {
     host: 'www.beeminder.com',
     port: 443,
     path: '/api/v1/users/' + user.username + '.json?access_token=' + user.access_token,
-    method: 'GET',
+    method: 'GET'
   }
   var req = https.request(options, (res) => {
     var data = ''
@@ -233,7 +239,7 @@ function beemGetGraphParams(usergoal, callback, error_callback = ()=>{}) {
     host: 'www.beeminder.com',
     port: 443,
     path: '/api/vx/users/' + usergoal.username + '/goals/' + usergoal.goalslug + '/graph.json?access_token=' + usergoal.access_token,
-    method: 'GET',
+    method: 'GET'
   }
   var req = https.request(options, (res) => {
     var data = ''
@@ -255,5 +261,3 @@ function beemGetGraphParams(usergoal, callback, error_callback = ()=>{}) {
   req.write('')
   req.end()
 }
-
-

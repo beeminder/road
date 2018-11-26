@@ -216,11 +216,11 @@
   PRAF  = .015,
 
   /** paths for various PNG images used within the SVG */
-  PNG = { beye: "../pub/bullseye.png", 
-          beyey: "../pub/bullseye.png",
-          skl: "../pub/jollyroger_sqr.png",
-          inf: "../pub/infinity.png",
-          sml: "../pub/smiley.png"
+  PNG = { beye: "../lib/images/bullseye.png", 
+          beyey: "../lib/images/bullseye.png",
+          skl: "../lib/images/jollyroger_sqr.png",
+          inf: "../lib/images/infinity.png",
+          sml: "../lib/images/smiley.png"
         },
   
   /** Enum object to identify error types. */
@@ -2262,7 +2262,8 @@
     function updateOldBullseye() {
       if (opts.divGraph == null || road.length == 0) return;
       //var png = (opts.roadEditor)?"https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye_old.png?1498051783901":"https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye.png?1496219226927";
-      var png = (opts.roadEditor)?"../pub/bullseye_old.png":"../pub/bullseye.png";
+      var png = (opts.roadEditor)?"../lib/images/bullseye_old.png"
+        :"../lib/images/bullseye.png";
       var bullseyeelt = gOldBullseye.select(".oldbullseye");
       var bx = nXSc(iroad[iroad.length-1]
                     .sta[0]*1000)-(opts.bullsEye.size/2);
@@ -2284,7 +2285,8 @@
     function updateContextOldBullseye() {
       if (opts.divGraph == null || road.length == 0) return;
       //var png = (opts.roadEditor)?"https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye_old.png?1498051783901":"https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye.png?1496219226927";
-      var png = (opts.roadEditor)?"../pub/bullseye_old.png":"../pub/bullseye.png";
+      var png = (opts.roadEditor)?"../lib/images/bullseye_old.png"
+        :"../lib/images/bullseye.png";
       var bullseyeelt = ctxplot.select(".ctxoldbullseye");
       var bx = xScB(iroad[iroad.length-1].sta[0]*1000)
         -(opts.bullsEye.ctxsize/2);

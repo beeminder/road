@@ -35,7 +35,6 @@
           ["20160512",2626.115431499038,null],
           ["20160519",null,-23.873776649991257]],
   "runits":"d",
-  "exprd":false,
   "kyoom":false,
   "odom":false,
   "edgy":false,

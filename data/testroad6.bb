@@ -4,7 +4,6 @@
   "gldt":"20270123","rate":7.0,
   "road":[["20160727",null,0.0]],
   "runits":"w",
-  "exprd":false,
   "kyoom":true,
   "odom":false,
   "edgy":false,

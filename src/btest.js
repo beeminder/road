@@ -226,7 +226,7 @@
         res = await self.compareWithPybrain(bburl+g[i]+".bb", pyurl+g[i]+".json");
         if (res == null) {
           txt = (i+1)+": GOAL <b>"+g[i]+"</b> "
-            +" Processing error, some files not found?  <a href=\"compare.html?base="
+            +" Processing error, some files not found?  <a href=\"compare_graph.html?base="
             +g[i]+"&path=testbb\" target=\"blank\"=>Click to compare graphs</a>"
           self.createDiv( div, txt, '#ffaaaa')
           err = err+1
@@ -248,7 +248,7 @@
           bg = '#ffaaaa'
         }
         txt = (i+1)+": GOAL <b>"+g[i]+"</b> "+" ("+res.typestr+") "+info
-          +"</br> &nbsp;&nbsp;>>> <a href=\"compare.html?base="+g[i]
+          +"</br> &nbsp;&nbsp;>>> <a href=\"compare_graph.html?base="+g[i]
           +"&path=testbb\" target=\"blank\"=>Click to compare graphs</a>"
         self.createDiv( div, txt, bg)
         self.createDiv( div, res.result)
