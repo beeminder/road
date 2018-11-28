@@ -39,12 +39,13 @@ the above test files from this browser instance. You may need to
 adjust some of the options such as `--user-data-dir` based on
 differences in your local system.
 
-### Node server for local server-side graph generation
+### Node server for client-side graph, road editor and sandbox demos
 
-This feature enables running a node.js instance on a server, listening
-to GET requests that initiate the generation of PNG,SVG and JSON files
-for particular beeminder goals. After you clone this repository, you
-will need to install necessary node modules with
+This repository contains a node server instance for serving
+various demo pages to browser clients. 
+
+After you clone the main repository, you will need to install
+necessary node modules in the root directory with
 
 `npm update`
 
@@ -59,37 +60,15 @@ all distribution files with
 
 `gulp compile`
 
-After this, you should be able to run the node server with 
-
-`npm run jsbrain`
-
-which should start a node server on port 3000. At this point, every
-GET request you issue to `localhost:3000` with appropriate parameters
-will initiate graph generation. valid parameters are:
-
-  * `inpath=/path/to/input` : Path to local directory for the BB file
-  * `outpath=/path/to/output`: Path to local directory for generated files
-  * `user=u`: beeminder username (`slug` param must be empty)
-  * `goal=g`: beeminder goalname (`slug` param must be empty)
-  * `slug=filebase`: base name for the BB files (`user` and `goal` params must be empty)
-  
-This reads the file `u+g.bb` (or `slug.bb`) from `/path/to/input`, and
-generates `u+g.png`, `u+g-thumb.png`, `u+g.svg` and `u+g.json` in
-`/path/to/output`. 
-
-### Node server for client-side graph, road editor and sandbox demos
-
-This repository also contains a node server instance for serving
-various demo pages to browser clients. After updating node modules and
-using gulp to compile js modules, you will need to provide a `.data`
-directory with a local sqlite database and a `.env` file with proper
-server settings to access central Beeminder servers for your login
-(contact us for details). Once this is done, you can start the demo
-server with
+After updating node modules and using gulp to compile js modules, you
+will need to provide a `.data` directory with a local sqlite database
+and a `.env` file with proper server settings to access central
+Beeminder servers for your login (contact us for details). Once this
+is done, you can start the demo server with
 
 `npm start`
 
-This starts a web server on `localhost:3001`, with different features
+This starts a web server on `localhost`, with different features
 available through different paths. This server should also be
 embeddable in glitch. The following paths are available:
 
@@ -106,6 +85,34 @@ the last three to work requires the node server being accessible from
 beeminder servers for the redirect_uri provided in `.env`, associated
 with the clientid also configured in `.env`.
 
+### Node server for local server-side graph generation
+
+This feature enables running a separate node.js instance on a server,
+listening to GET requests that initiate the generation of PNG,SVG and
+JSON files for particular beeminder goals. This server resides under
+the directory `jsbrain_server`. You should first update node modules with
+
+`cd jsbrain_server`
+`npm update`
+
+At this point, you can start the server in the same directory with 
+
+`npm start`
+
+which should start a node server on port 3000. At this point, every
+GET request you issue to `localhost:3000` with appropriate parameters
+will initiate graph generation. valid parameters are:
+
+  * `inpath=/path/to/input` : Path to local directory for the BB file
+  * `outpath=/path/to/output`: Path to local directory for generated files
+  * `user=u`: beeminder username (`slug` param must be empty)
+  * `goal=g`: beeminder goalname (`slug` param must be empty)
+  * `slug=filebase`: base name for the BB files (`user` and `goal` params must be empty)
+  
+This reads the file `u+g.bb` (or `slug.bb`) from `/path/to/input`, and
+generates `u+g.png`, `u+g-thumb.png`, `u+g.svg` and `u+g.json` in
+`/path/to/output`. 
+
 ## Appendices
 
 ### A. Directory structure 
@@ -117,6 +124,7 @@ The directory structure for this repository is organized as follows
   * `data`: Example BB files, accessible through `/data`
   * `views`: express.js view templates
   * `tests`: HTML files for various local tests, loading scripts from `src`
+  * `jsbrain_server`:Local server to handle graph generation requests
   * `jsbrain_manual`:Outdated manual shell script for PNG generation
   
 Emacs environment:
