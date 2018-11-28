@@ -5,7 +5,6 @@
   "main": "server.js",
   "scripts": {
     "start": "node app/server.js",
-    "jsbrain": "node app/jsbrain_server.js",
     "sanity": "node app/sanity.js"
   },
   "dependencies": {
@@ -17,14 +16,11 @@
     "ejs": "^2.6.1",
     "express": "^4.16.4",
     "express-session": "^1.15.3",
-    "gm": "^1.23.1",
     "moment": "^2.22.2",
     "octicons": "^6.0.1",
     "phantom": "^4.0.12",
-    "puppeteer": "^1.10.0",
     "request": "^2.88.0",
     "sequelize": "^4.41.2",
-    "sleep": "^5.2.3",
     "sqlite3": "^3.1.8",
     "uuid": "^3.3.2"
   },
