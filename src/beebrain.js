@@ -837,14 +837,14 @@
       if (goal.movingav) {
         // Filter data and produce moving average
         var dl = data.length;
-        if (dl <= 1 || data[dl-1][0]-data[0][0] <= 0) 
-          return "Insufficient data for moving average";
+        if (!(dl <= 1 || data[dl-1][0]-data[0][0] <= 0)) { 
         
-        // Create new vector for filtering datapoints
-        var newx = griddle(data[0][0], data[dl-1][0]);
-        JSON.stringify(newx)
-        goal.filtpts 
-          = newx.map(function(d) {return [d, ema(data, d)];});
+          // Create new vector for filtering datapoints
+          var newx = griddle(data[0][0], data[dl-1][0]);
+          JSON.stringify(newx)
+          goal.filtpts 
+            = newx.map(function(d) {return [d, ema(data, d)];});
+        } else goal.filtpts = [];
       } else goal.filtpts = [];
       
       goal.tcur = data[data.length-1][0];
