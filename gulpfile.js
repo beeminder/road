@@ -42,6 +42,12 @@ function combine_jsmin() {
     .pipe(gulp.dest(LIBJS))
 }
 
+function copy_vendor() {
+  return gulp.src(['node_modules/moment/min/moment.min.js'])
+    .pipe(gulp.dest(LIBJS))
+}
+
 exports.compile = gulp.series(compress_js,
-                              gulp.parallel(combine_js, combine_jsmin, clean_css)
+                              gulp.parallel(combine_js, combine_jsmin, clean_css),
+                              copy_vendor
                              ) 
