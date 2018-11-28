@@ -1,0 +1,38 @@
+{
+"params":{
+  "tfin":"20291226",
+  "rfin":1.0,
+  "tini":"20170628", 
+  "vini":0,
+  "road":[
+    ["20170703",null,0.0]
+  ],
+  "runits":"d",
+  "kyoom":true,
+  "odom":false,
+  "edgy":false,
+  "noisy":false,
+  "yaw":1,
+  "dir":1,
+  "steppy":true,
+  "rosy":false,
+  "movingav":false,
+  "aura":false,
+  "stathead":false,
+  "yaxis":"cumulative total tests",
+  "deadline":0,
+  "aggday":"sum",
+  "tagtime":false,
+  "plotall":true,
+  "integery":false,
+  "monotone":true,
+  "hidey":false,
+  "waterbux":"$0",
+  "yoog":"d/test",
+  "timezone":"America/Los_Angeles",
+  "imgsz":696,
+  "asof":"20170628"
+}, 
+"data":[
+  ["20170628",0,"initial datapoint of 0"]
+]} 
