@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Beeminder Sandbox</title>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="/lib/css/pikaday.css">
+  <link rel="stylesheet" href="/lib/css/jsbrain.css">
+  <script src = "https://d3js.org/d3.v4.js"></script>
+  <script src = "/lib/js/moment.min.js"></script>
+  <script src = "/lib/js/pikaday-min.js"></script>
+  <script src = "/lib/js/polyfit-min.js"></script>
+  <script src = "/lib/js/jsbrain-min.js"></script>
+  <script src = "/lib/js/bgraph-min.js"></script>
+  <script src = "/lib/js/bsandbox-min.js"></script>
+</head>
+
+<body>
+  <h1>Beeminder Sandbox: Create and experiment with goals</h1>
+  
+  <hr/>
+  <span>Select goal type:</span>
+  <select id="typeselect" class="typeselect">
+    <option value="hustler">Do More</option>
+    <option value="fatloser">Lose Weight</option>
+    <option value="biker">Use an Odometer</option>
+    <option value="drinker">Do Less</option>
+    <option value="gainer">Gain Weight</option>
+    <option value="inboxer">Whittle Down</option>
+  </select> 
+  at a rate of
+  <input type = "number" value="1" id="rate" style="width:4em;text-align:center;">
+  </input>
+  per 
+  <select id="rateunit" class="typeselect">
+    <option value="d">day</option>
+    <option value="w">week</option>
+    <option value="m">month</option>
+    <option value="y">year</option>
+  </select>
+  starting today at
+  <input type = "number" value="0" id="value" style="width:4em;text-align:center;">
+  </input>
+  <br/><br/>
+  <input type = "checkbox" id="buffer" checked></input>
+  Start one week from today
+  <button id="newgoal"
+          onclick="bs.newGoal(gtype.options[gtype.selectedIndex].value,
+                   runits.options[runits.selectedIndex].value,
+                   rfin.value, vini.value, buffer.checked);">
+    Create New Goal!</button>
+  <br/>
+
+  <hr/>
+  <div id="sandbox"></div><br/>
+  
+  <button style="margin:4px;" onclick="bs.nextDay()">Next Day</button><br/>
+
+  <span style="margin:4px;">New data:</span>
+  <input id="dataval" type="number"  style="width:5em;margin:4px;"></input>
+  <span style="margin:4px;">Comment:</span>
+  <input id="datacmt" type="text"  style="margin:4px;"></input>
+  <button onclick="bs.newData(dataval.value, datacmt.value)" style="margin:4px;">
+    Add</button><br/>
+
+  <span style="margin:4px;">Change rate to:</span>
+  <input id="rateval" type="number"  style="margin:4px;"></input>
+  <button onclick="bs.newRate(rateval.value)" style="margin:4px;">
+    Add</button><br/>
+
+  <button style="margin:4px;" onclick="bs.undo();updateConfigInput()">Undo</button><br/>
+
+  <hr/>
+  Visual graph configuration:<br/>
+  <input type="checkbox" id="plotall" onclick="setVisualConfig()" checked></input>
+  Show all points
+  <input type="checkbox" id="steppy" onclick="setVisualConfig()" checked></input>
+  Show steppy data lines
+  <input type="checkbox" id="rosy" onclick="setVisualConfig()" checked></input>
+  Show rosy points
+  <input type="checkbox" id="movingav" onclick="setVisualConfig()" checked></input>
+  Show moving average<br/>
+  <input type="checkbox" id="aura" onclick="setVisualConfig()" checked></input>
+  Show aura
+  <input type="checkbox" id="hidey" onclick="setVisualConfig()" checked></input>
+  Hide y-axis labels0
+  <input type="checkbox" id="stathead" onclick="setVisualConfig()" checked></input>
+  Show title with statistics
+  <input type="checkbox" id="hashtags" onclick="setVisualConfig()" checked></input>
+  Show hashtags
+  <hr/>
+  Goal configuration (change with CAUTION!):<br/>
+  <input type="checkbox" id="yaw"checked></input> yaw
+  <input type="checkbox" id="dir"checked></input> dir
+  <input type="checkbox" id="kyoom"checked></input> kyoom
+  <input type="checkbox" id="odom"checked></input> odom
+  <input type="checkbox" id="noisy"checked></input> noisy
+  <input type="checkbox" id="integery"checked></input> integery
+  <input type="checkbox" id="monotone"checked></input> monotone
+  <input type="checkbox" id="offred" checked></input> offred<br/>
+  aggday:
+  <select id="aggday" class="typeselect">
+    <option value="last">last</option>
+    <option value="first">first</option>
+    <option value="min">min</option>
+    <option value="max">max</option>
+    <option value="truemean">truemean</option>
+    <option value="uniqmean">uniqmean</option>
+    <option value="mean">mean</option>
+    <option value="median">median</option>
+    <option value="mode">mode</option>
+    <option value="trimmean">trimmean</option>
+    <option value="sum">sum</option>
+    <option value="jolly">jolly</option>
+    <option value="binary">binary</option>
+    <option value="nonzero">nonzero</option>
+    <option value="triangle">triangle</option>
+    <option value="square">square</option>
+    <option value="clocky">clocky</option>
+    <option value="count">count</option>
+    <option value="kyshoc">kyshoc</option>
+    <option value="skatesum">skatesum</option>
+  </select><br/>
+  <button onclick="setGoalConfig()" style="margin:4px;">SET!</button>
+  <hr/>
+  <a target="_blank" id="download" download="sandbox.bb">Right click to download BB file</a>
+
+  <script>
+    const visualProps
+      = ['plotall','steppy','rosy','movingav','aura','hidey','stathead','hashtags']
+    const goalProps
+      = ['offred','yaw','dir','kyoom','odom','noisy','integery','monotone','aggday']
+
+    function updateConfigInput() {
+      var curconfig = bs.getVisualConfig()
+      visualProps.map(e=>{document.getElementById(e).checked = curconfig[e]})
+
+      var curconfig = bs.getGoalConfig()
+      goalProps.map(e=>{
+        if (e=='yaw' || e=='dir')
+          document.getElementById(e).checked = (curconfig[e]==1)
+        else if (e=='aggday' || e=='dir')
+          document.getElementById(e).value = curconfig[e]
+        else
+          document.getElementById(e).checked = curconfig[e]
+      })
+    }
+    
+    gtype = document.getElementById("typeselect")
+    rfin = document.getElementById("rate")
+    vini = document.getElementById("value")
+    buffer = document.getElementById("buffer")
+    gdiv = document.getElementById("sandbox")
+    runits = document.getElementById("rateunit")
+    dataval = document.getElementById("dataval")
+    datacmt = document.getElementById("datacmt")
+    download = document.getElementById("download")
+
+    bs = new bsandbox(gdiv)
+    bs.newGoal(gtype.options[gtype.selectedIndex].value,
+              runits.options[runits.selectedIndex].value,
+              rfin.value, vini.value, buffer.checked);
+    bs.saveBB(download)
+    updateConfigInput()
+    
+    function setVisualConfig() {
+      var newconfig = {}
+      visualProps.map(e=>{newconfig[e] = document.getElementById(e).checked})
+      bs.setVisualConfig(newconfig)
+      bs.saveBB(download)
+    }
+    function setGoalConfig() {
+      var newconfig = {}
+      goalProps.map(e=>{
+        if (e=='yaw' || e=='dir')
+          newconfig[e] = document.getElementById(e).checked?1:-1
+        if (e=='aggday')
+          newconfig[e] = document.getElementById(e).value
+        else
+          newconfig[e] = document.getElementById(e).checked
+      })
+      bs.setGoalConfig(newconfig)
+      bs.saveBB(download)
+    }
+    
+  </script>
+
+</body>
+  
+</html>

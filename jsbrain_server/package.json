@@ -4,7 +4,7 @@
   "description": "Node server for generating Beeminder graph files",
   "main": "index.js",
   "scripts": {
-    "start": "node ../app/jsbrain_server.js"
+    "start": "node jsbrain_server.js"
   },
   "author": "Uluc Saranli",
   "license": "MIT",
