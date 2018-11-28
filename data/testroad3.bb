@@ -3,7 +3,6 @@
   "road":[[1322067600,null,0],
           [1369843200,null,0],
           [1369843200,3.0,null]], 
-  "tini":"
   "gldt":1358658000,"rate":0.0, 
   "runits":"w", 
   "kyoom":false, 
