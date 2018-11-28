@@ -17,9 +17,7 @@
   <script src = "/lib/js/polyfit-min.js"></script>
   <script src = "/lib/js/jsbrain-min.js"></script>
   <script src = "/lib/js/bgraph-min.js"></script>
-  <!-- Below is critical to determine whether we are connecting to
-  Beeminder or working locally -->
-  <script> const username = <%= (user != null)?"\""+user+"\"":"null" %></script>
+  <script> const username = <%- (user != null)?"\""+user.username+"\"":"null" %></script>
 </head>
 
 <body>
