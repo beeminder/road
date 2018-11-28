@@ -78,6 +78,7 @@ app.use('/lib', express.static('lib'))
 
 var listener = app.listen(process.env.PORT, () => {
   console.log(`Road Editor app is running on port ${listener.address().port}`)
+  console.log(`AUTH_REDIRECT_URI is ${process.env.AUTH_REDIRECT_URI}`)
 })
 
 app.get("/login", (req, resp) => {
@@ -106,6 +107,9 @@ app.get("/road", (req, resp) => {
     resp.render('road.ejs', {user: user})
   }
 })
+app.get("/editor", (req, resp) => {
+  resp.render('road.ejs', {user: null})
+})
 app.get("/", (req, resp) => {
   if (typeof req.session.access_token === 'undefined' ||
              req.session.access_token === null) {
@@ -123,6 +127,7 @@ app.get("/", (req, resp) => {
 // Callback endpoint to receive username and access_token from Beeminder upon 
 // successful authorization
 app.get("/connect", (req, resp) => {
+  console.log("/connect")
   if(typeof req.query.access_token === 'undefined' || 
      typeof req.query.username === 'undefined') {
     req.session.access_token = null

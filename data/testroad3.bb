@@ -3,6 +3,7 @@
   "road":[[1322067600,null,0],
           [1369843200,null,0],
           [1369843200,3.0,null]], 
+  "tini":"
   "gldt":1358658000,"rate":0.0, 
   "runits":"w", 
   "kyoom":false, 
@@ -26,5 +27,5 @@
   "imgsz":696, 
   "waterbux":"$0", 
   "asof":1369843200 },  
-"data":[[1369843200,3.0,"reset road at 3 on the 29th"]]
+  "data":[[1369843200,3.0,"reset road at 3 on the 29th"]]
 } 

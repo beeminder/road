@@ -1357,14 +1357,14 @@
                                             maxcnt)));
     }
 
-    const stats_timeid = "bgraph: Goal stats" 
-    const graph_timeid = "bgraph: Goal graph" 
+    const stats_timeid = `bgraph(${curid}): Goal stats`
+    const graph_timeid = `bgraph(${curid}): Goal graph`
     // Recreates the road array from the "rawknots" array, which includes
     // only timestamp,value pairs
     function loadGoal( json ) {
       //console.debug("id="+curid+", loadGoal()->"+json.params.yoog);
       clearUndoBuffer();
-
+      
       processing = true;
       
       // Create beebrain processor
@@ -1433,7 +1433,7 @@
     }
 
     async function loadGoalFromURL( url, callback = null ) {
-      //console.debug( "Loading: "+url );
+      console.debug( "loadGoalFromURL: Loading: "+url );
       if (url == "" || loading) return
       loading = true
       showOverlay( ["loading..."], sh/10 )
@@ -1447,10 +1447,8 @@
         }
         updateTableTitles();
       } else {
-        if (lastError != null)
-          showOverlay( [ErrMsgs[lastError]] );
-        else
-          showOverlay(["Could not load goal file."]);
+        if (lastError != null) showOverlay( [ErrMsgs[lastError]] );
+        else showOverlay(["Could not load goal file."]);
         if (!opts.headless) {
           setTimeout( function() {removeOverlay();}, 1500);
         }

@@ -1,57 +1,143 @@
-## Javascript implementation of Beebrain and an Interactive Road Editor
+# Javascript implementation of Beebrain
 
-This repository includes Javascript packages implementing Beebrain
-functionality and an interactive editor for Beeminder roads. The same
-functionality can be used both on the client and on a node server
-through a headless chrome instance.
+## Description
 
-pub : Includes implementations for javascript beebrain packages.
+This repository includes various Javascript packages implementing all
+Beebrain functionality, as well as an interactive editor for Beeminder
+roads. Below is a list of components and features supported by this
+repository:
 
-  butil.js : Various utility functions for beebrain
-  broad.js : Road related utility functions
-  beebrain.js : Beebrain core functionality
-  bgraph.js : Graph generation, road table and road editor functionality
-  btest.js : Facilities for testing and json comparison
+* Javascript modules for processing beeminder goal BB files (`butil.js`, `broad.js`, `beebrain.js`)
+* A Javascript module for goal graph generation and an interactive road editor (`bgraph.js`)
+* A Javascript module implementing a sandbox for experimenting with Beemidner goals (`bsandbox.js`)
+* A Javascript module to facilitate automated testing and comparison of beebrain outputs (`btest.js`)
+* A node server that uses the modules above to locally generate graph PNG and SVG, thumbnail PNG and goal JSON output files upon receiving a GET request
+* A node server that provides web interface for client-side graphs, road editor and sandbox functionality
+* A node server that duplicates the behaviors of sanity.py from pybrain
+* Various static HTML pages to test beebrain, graph, editor and sandbox functionality
+
+## Getting started
+
+### Local tests for basic functionality
+
+The directory `tests` includes a collection HTML files that illustrate
+various basic functionalities of the JS beebrain implementation. In
+particular
+
+* `basic_test.html`: Showcases client-side graphs
+* `roadeditor_test.html`: Showcases client-side graphs and the road editor
+* `sandbox.html`: Showcases beeminder sandbox to create and experiment with goals
+
+In order to be able to load these files, you will need to use chromium
+(or chrome) with the following arguments:
+
+`chromium-browser --allow-file-access-from-files --disable-web-security --user-data-dir=$PWD/user-data --remote-debugging-port=9222`
+
+This allows the browser to open local beeminder files for testing
+purposes from within Javascript functions. You should be able to open
+the above test files from this browser instance. You may need to
+adjust some of the options such as `--user-data-dir` based on
+differences in your local system.
+
+### Node server for local server-side graph generation
+
+This feature enables running a node.js instance on a server, listening
+to GET requests that initiate the generation of PNG,SVG and JSON files
+for particular beeminder goals. After you clone this repository, you
+will need to install necessary node modules with
+
+`npm update`
+
+Once all module dependencies are installed, you will need to generate
+minified and concatanated files based on sources in `src`. To do that,
+you may need to first install the command line interface for gulp with
+
+`sudo npm install --global gulp-cli`
+
+which now enables you to use the gulp command. Now, you can generate
+all distribution files with
+
+`gulp compile`
+
+After this, you should be able to run the node server with 
+
+`npm run jsbrain`
+
+which should start a node server on port 3000. At this point, every
+GET request you issue to `localhost:3000` with appropriate parameters
+will initiate graph generation. valid parameters are:
+
+  * `inpath=/path/to/input` : Path to local directory for the BB file
+  * `outpath=/path/to/output`: Path to local directory for generated files
+  * `user=u`: beeminder username (`slug` param must be empty)
+  * `goal=g`: beeminder goalname (`slug` param must be empty)
+  * `slug=filebase`: base name for the BB files (`user` and `goal` params must be empty)
   
-  beebrain_test.html : Automated testing and comparison with python
-  bgraph_test.html : Road editor demo
+This reads the file `u+g.bb` (or `slug.bb`) from `/path/to/input`, and
+generates `u+g.png`, `u+g-thumb.png`, `u+g.svg` and `u+g.json` in
+`/path/to/output`. 
+
+### Node server for client-side graph, road editor and sandbox demos
+
+This repository also contains a node server instance for serving
+various demo pages to browser clients. After updating node modules and
+using gulp to compile js modules, you will need to provide a `.data`
+directory with a local sqlite database and a `.env` file with proper
+server settings to access central Beeminder servers for your login
+(contact us for details). Once this is done, you can start the demo
+server with
+
+`npm start`
+
+This starts a web server on `localhost:3001`, with different features
+available through different paths. This server should also be
+embeddable in glitch. The following paths are available:
+
+  * `/editor`  : Client-side graph and interactive road editor for example goals
+  * `/sandbox` : Client-side sandbox to create and experiment with dummy goals
+  * `/login`   : Authorizes these pages to access your Beeminder goals
+  * `/logout`  : De-authorizes access to your Beeminder goals
+  * `/road`    : Client-side graph and interactive road editor for your Beeminder goals
+
+The last three require setting up oauth redirect uri configuration
+properly with beeminder servers, so it would require proper settings
+in `.env`. The first two should work locally though. Note that getting
+the last three to work requires the node server being accessible from
+beeminder servers for the redirect_uri provided in `.env`, associated
+with the clientid also configured in `.env`.
+
+## Appendices
+
+### A. Directory structure 
+
+The directory structure for this repository is organized as follows
+
+  * `src` : Javascript and CSS sources
+  * `lib` : Files generated and copied by gulp, served under `/lib`
+  * `data`: Example BB files, accessible through `/data`
+  * `views`: express.js view templates
+  * `tests`: HTML files for various local tests, loading scripts from `src`
+  * `jsbrain_manual`:Outdated manual shell script for PNG generation
   
-jsbrain_server : node server for graph png and svg generation
-
-  Running 'node index' starts up a server on localhost:3000, which
-  performs graph generation when supplied with arguments
-    '?base=filebase&inpath=/path/to/dir' OR
-    '?user=username&slug=goalslug&inpath=/path/to/dir'
-  You can also supply a different path for generated files with the
-  'outpath' parameter
-
-jsbrain_manual : script for generating graph and json using headless chrome
-
-  Run 'generate.sh base path' to generate base.png, base.svg and base.json
-
-Testing on chrome:
-
-chromium-browser --allow-file-access-from-files --disable-web-security --user-data-dir=$PWD/user-data --remote-debugging-port=9222 --single-process&
-
 Emacs environment:
-- indium works well
-- sr-speedbar is docked
-- imenu requires *rescan* from the top menu
-- M-x indium-connect connects to a running chrom instance configured in the .indium file
-- Had to rename menu names in js2 and indium el files to shorten their names
-- purpose-mode is useful to keep windows with what they are for
-- For development, the following fonts seem to be good options:
-  Hack: https://github.com/source-foundry/Hack
-  OfficeCodePro: https://github.com/nathco/Office-Code-Pro
-  Font rendering: https://wiki.manjaro.org/index.php?title=Improve_Font_Rendering
+  * indium works well
+  * sr-speedbar is docked
+  * imenu requires *rescan* from the top menu
+  * M-x indium-connect connects to a running chrom instance configured in the .indium file
+  * Had to rename menu names in js2 and indium el files to shorten their names
+  * purpose-mode is useful to keep windows with what they are for
+  * For development, the following fonts seem to be good options:
+    * Hack: https://github.com/source-foundry/Hack
+    * OfficeCodePro: https://github.com/nathco/Office-Code-Pro
+    * Font rendering: https://wiki.manjaro.org/index.php?title=Improve_Font_Rendering
 
-# Appendix A: deploying road-staging to glitch
+### B. Deployment to glitch, or local server
 
 When deploying a new version of the road editor to glitch (as in setting up a 
 new road-staging glitch)
 
 - create a new beeminder client at https://www.beeminder.com/apps/new
-- the redirect uri is https://[project].glitch.me/connect
+- the redirect uri is `https://[project].glitch.me/connect`
 - add the client id to your .env file
-- add the redirct uri in your .env file
+- add the redirect uri in your .env file
 - launch the glitch console and create .data/database.sqlite for the session store to connect to

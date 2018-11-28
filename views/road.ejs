@@ -1,41 +1,48 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Beeminder Road Editor</title>
-  <meta name="description" content="Playing with Road Editor interfaces in Glitch">
-  <link id="favicon" rel="icon" href="https://glitch.com/favicon.ico" type="image/x-icon">
+  <title>Beeminder Client-Side Graphs and Road Editor</title>
+  <meta name="description" content="Beeminder Client-Side Graphs and Road Editor">
+  <link id="favicon" rel="icon" href="https://beeminder.com/favicon.ico" type="image/x-icon">
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/octicons/3.5.0/octicons.min.css">
-  <link rel="stylesheet" href="/lib/css/editorpage.css">
-  <link rel="stylesheet" href="pikaday.css">
-  <link rel="stylesheet" href="roadeditor.css">
-  <script src="https://d3js.org/d3.v4.js"></script>
-  <script src = "moment.min.js"></script>
-  <script src = "pikaday.js"></script>
-  <script src = "polyfit.js"></script>
+  <link rel="stylesheet" href="../lib/css/pikaday.css">
+  <link rel="stylesheet" href="../lib/css/jsbrain.css">
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <script src = "/lib/js/moment.min.js"></script>
+  <script src = "/lib/js/pikaday-min.js"></script>
+  <script src = "/lib/js/polyfit-min.js"></script>
+  <script src = "/lib/js/jsbrain-min.js"></script>
+  <script src = "/lib/js/bgraph-min.js"></script>
+  <!-- Below is critical to determine whether we are connecting to
+  Beeminder or working locally -->
+  <script> const username = <%= (user != null)?"\""+user+"\"":"null" %></script>
 </head>
 
 <body>
 <div class="container">
   
-<h1>Beeminder Visual Road Editor and Client-Side Graphs</h1>
+<h1>Beeminder Client-Side Graphs and Road Editor</h1>
 
 <form name="graphType">
-<input type="radio" name="typeButton" value="graph" onclick="handleRadio(this);" checked >Graph&nbsp;&nbsp;
-<input type="radio" name="typeButton" value="editor" onclick="handleRadio(this);">Editor<br>
- <select id="roadselect" class="roadselect">
-  <option value="">Select a goal to edit:</option>
+  <input type="radio" name="typeButton" value="graph" onclick="handleRadio(this)" checked>
+  Graph &nbsp;&nbsp;
+  <input type="radio" name="typeButton" value="editor" onclick="handleRadio(this)">
+  Editor<br>
+  <select id="roadselect" class="roadselect">
+    <option value="">Select a goal to edit:</option>
 </select> 
  
 </form>
 
-  <div id="diveditor">
-<ul>
-<li>Drag dots, vertical lines or roads to edit, double-click to add new node, Ctrl-Z to undo, Ctrl-y to redo</li>
-</ul>
+<div id="diveditor">
+  <ul>
+    <li>Drag dots, vertical lines or roads to edit, double-click to
+    add new node, Ctrl-Z to undo, Ctrl-y to redo</li>
+  </ul>
 
 <table>
   <tr>
@@ -52,15 +59,15 @@
 
       Reduce safety buffer to: 
       <input type = "number" value="0" min="0" id="ratchetdays"> days
-      <button id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">Ratchet</button><br/><br/>
+      <button class="btn btn-secondary" id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">Ratchet</button><br/><br/>
 
       Take a break starting
       <input type = "text" id="breakstart" style="width:10em">
       for
       <input type = "number" value="1" min="1" id="breakdays" style="width:4em">
       days
-      <button id="insertbreak" onclick="scheduleBreak(true);">Insert</button>
-      <button id="overwritebreak" onclick="scheduleBreak(false);">Overwrite</button>
+      <button class="btn btn-secondary" id="insertbreak" onclick="scheduleBreak(true);">Insert</button>
+      <button class="btn btn-secondary" id="overwritebreak" onclick="scheduleBreak(false);">Overwrite</button>
       <br/><br/>
 
       Commit to:
@@ -71,7 +78,7 @@
         <option value="2629800">per month</option>
         <option value="31557600">per year</option>
       </select> 
-      <button id="commit" onclick="commitTo();">UPDATE</button>
+      <button class="btn btn-secondary" id="commit" onclick="commitTo();">UPDATE</button>
       <br/><br/>
 
       <button class="btn btn-primary" id="roadsubmit" onclick="handleRoadSubmit();">Submit</button>&nbsp;<span id="submitmsg"></span><br/><br/>
@@ -91,9 +98,9 @@
 <table>
   <tr>
     <td valign="top"><div id="roadgraph2"></div>
-      <input id="showalldata2" type="checkbox" onclick="if (this.checked) editor2.maxDataDays(-1); else editor2.maxDataDays(100);"  checked>Show All data<br/>
-      <button class="btn btn-secondary" id="resetzoom2" onclick="editor2.zoomDefault();">Reset Zoom</button>
-      <button class="btn btn-secondary" id="savesvg2" onclick="editor2.saveGraph(document.getElementById('download2'));">Generate SVG</button><a id="download2">Right click to download</a><br/><br/>
+      <input id="showalldata2" type="checkbox" onclick="if (this.checked) graph.maxDataDays(-1); else graph.maxDataDays(100);"  checked>Show All data<br/>
+      <button class="btn btn-secondary" id="resetzoom2" onclick="graph.zoomDefault();">Reset Zoom</button>
+      <button class="btn btn-secondary" id="savesvg2" onclick="graph.saveGraph(document.getElementById('download2'));">Generate SVG</button><a id="download2">Right click to download</a><br/><br/>
     </td>
     <td valign="top">
       <div id="roadtable2"></div>
@@ -103,8 +110,7 @@
 </table>
 </div>
   
-<script src="/roadeditor.js"></script>
-<script src="/lib/js/client-min.js"></script>
+<script src="/lib/js/client.js"></script>
 
 <h3>Credits</h3>
 
