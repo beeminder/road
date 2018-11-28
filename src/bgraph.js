@@ -1433,7 +1433,7 @@
     }
 
     async function loadGoalFromURL( url, callback = null ) {
-      console.debug( "loadGoalFromURL: Loading: "+url );
+      //console.debug( "loadGoalFromURL: Loading: "+url );
       if (url == "" || loading) return
       loading = true
       showOverlay( ["loading..."], sh/10 )
@@ -1504,7 +1504,7 @@
       
       if (found >= 0) {
         var segment = {};
-        var newx = bu.daysnap(x), newy = y;
+        var newx = bu.daysnap(x+bu.SID/2), newy = y;
         if (y == null) {
           newy = road[found].sta[1] 
             + road[found].slope*(newx - road[found].sta[0]);

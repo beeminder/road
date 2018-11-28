@@ -558,7 +558,13 @@
           if (xobj.readyState == 4 
               && (xobj.status == "200"
                   || (xobj.status == "0" && xobj.responseText !== ""))) {
-            resolve(JSON.parse(xobj.responseText))
+            try {
+              resolve(JSON.parse(xobj.responseText))
+            } catch(err) {
+              // Possible parse error in loading the bb file
+              console.log("butil.loadJSON: Could not parse JSON file in "+url)
+              resolve(null)
+            }
           } else if (xobj.readyState == 4) {
             resolve(null)
           }

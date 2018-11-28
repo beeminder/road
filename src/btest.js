@@ -83,7 +83,7 @@
       var resp = await bu.loadJSON(url);
       var bbr = await bu.loadJSON(pyouturl);
 
-      if (resp != null && bbr != null) {
+      if (resp != null  && bbr != null) {
 
         var jsb = new bb( resp ),
             stats = jsb.getStats()
