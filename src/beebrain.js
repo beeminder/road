@@ -811,7 +811,6 @@
       goal.tfin = goal.road[rl-1][0]
       goal.vfin = goal.road[rl-1][1]
       goal.rfin = goal.road[rl-1][2]
-      console.log(JSON.stringify(goal.road[rl-1]))
       // tfin, vfin, rfin are set in procRoad
       
       if (!bu.orderedq(goal.road.map(e=>e[0]))) {
