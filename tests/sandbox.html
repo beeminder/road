@@ -56,7 +56,22 @@
   <br/>
 
   <hr/>
-  <div id="sandbox"></div><br/>
+  <table>
+  <tr>
+  <td><div id="sandbox"></div><br/></td>
+  <td valign="top">
+    <h3>Glossary:</h3><br/>
+    <ul>
+      <li><b>Akrasia Horizon</b>: Some description
+        <input type="checkbox" id="horizonanim" onclick="bs.animateHorizon(horizonanim.checked)"/></li>
+      <li><b>Yellow Brick Road (YBR)</b>: Another description
+        <input type="checkbox" id="ybranim" onclick="bs.animateYBR(ybranim.checked)"/></li>
+    <li><b>Centerline</b>: More descriptions
+        <input type="checkbox" id="centeranim" onclick="bs.animateCenterline(centeranim.checked)"/></li>
+    </ul>
+  </td>
+  </tr>
+  </table>
   
   <button style="margin:4px;" onclick="bs.nextDay()">Next Day</button><br/>
 
@@ -130,6 +145,10 @@
   <a target="_blank" id="download" download="sandbox.bb">Right click to download BB file</a>
 
   <script>
+    function handleAnimation() {
+      bs.animateHorizon(document.getElementById("horizonanim").checked)
+    }
+    
     const visualProps
       = ['plotall','steppy','rosy','movingav','aura','hidey','stathead','hashtags']
     const goalProps
@@ -159,6 +178,9 @@
     dataval = document.getElementById("dataval")
     datacmt = document.getElementById("datacmt")
     download = document.getElementById("download")
+    horizonanim = document.getElementById("horizonanim")
+    ybranim = document.getElementById("ybranim")
+    centeranim = document.getElementById("centeranim")
 
 
     const defaults = {
