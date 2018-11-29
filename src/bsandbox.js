@@ -52,7 +52,7 @@
     
     function newDoMore() {
       return {yaw:1, dir:1, kyoom:true,
-              odom: false, movingav:false,
+              odom: false, movingav:false, 
               steppy:true, rosy: false, aura: false, aggday: "sum",
               integery:false, monotone:true}
     }
@@ -91,7 +91,8 @@
       fatloser: newLoseWeight, 
       biker: newUseOdometer, 
       drinker: newDoLess, 
-      gainer: newGainWeight, inboxer: newWhittleDown
+      gainer: newGainWeight,
+      inboxer: newWhittleDown
     }
 
     var undoBuffer = []
@@ -215,7 +216,6 @@
       goal.vini = vini
       goal.runits = runits
       goal.buffer = buffer
-      
       var now = bu.daysnap(moment.now()/1000)
       var nextweek = bu.daysnap(moment.now()/1000 + 7*bu.SID)
       var nextyear = bu.daysnap(moment.now()/1000 + bu.DIY*bu.SID)
@@ -228,7 +228,7 @@
       params.asof = bu.dayify(now)
 
       params.tfin = bu.dayify(nextyear)
-      params.rfin = Number(rfin) * params.yaw
+      params.rfin = Number(rfin)
       params.runits = runits
       
       params.tini = params.asof
