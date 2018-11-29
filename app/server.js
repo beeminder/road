@@ -111,7 +111,7 @@ app.get("/editor", (req, resp) => {
   resp.render('road.ejs', {user: null})
 })
 app.get("/sandbox", (req, resp) => {
-  resp.render('road.ejs', {user: null})
+  resp.render('sandbox.ejs')
 })
 app.get("/", (req, resp) => {
   if (typeof req.session.access_token === 'undefined' ||
