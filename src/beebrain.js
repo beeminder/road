@@ -253,7 +253,7 @@
       p['vini'] = goal.vini
       p['tfin'] = bu.dayify(goal.tfin)
       p['vfin'] = goal.vfin
-      p['rfin'] = goal.rfin*goal.siru
+      p['rfin'] = goal.rfin
     }
 
     /** Initialize various global variables before use */
@@ -417,7 +417,6 @@
         rosydata[i][4] = rosydata[i-1][0]
         rosydata[i][5] = rosydata[i-1][1]
       }
-      console.log(JSON.stringify(rosydata))
     }
 
     // Take string like "shark jumping #yolo :) #sharks", return {"#yolo", "#sharks"}
@@ -662,9 +661,6 @@
       }
       // Extract computed values for tfin, vfin and rfin
       var goalseg = roads[roads.length-1];
-      goal.tfin = goalseg.end[0];
-      goal.vfin = goalseg.end[1];
-      goal.rfin = goalseg.slope;
       
       // A final segment is added, ending 100 days after tfin
       var finalsegment = {
@@ -811,6 +807,11 @@
       goal.dtf = br.stepify(data)
 
       goal.road = br.fillroad(goal.road, goal)
+      let rl = goal.road.length
+      goal.tfin = goal.road[rl-1][0]
+      goal.vfin = goal.road[rl-1][1]
+      goal.rfin = goal.road[rl-1][2]
+      console.log(JSON.stringify(goal.road[rl-1]))
       // tfin, vfin, rfin are set in procRoad
       
       if (!bu.orderedq(goal.road.map(e=>e[0]))) {
