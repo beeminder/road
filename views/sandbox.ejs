@@ -52,7 +52,20 @@
   <br/>
 
   <hr/>
-  <div id="sandbox"></div><br/>
+  <tr>
+  <td><div id="sandbox"></div><br/></td>
+  <td valign="top">
+    <h3>Glossary:</h3><br/>
+    <input type="checkbox" id="horizonanim"
+           onclick="bs.animateHorizon(horizonanim.checked)"/>
+    <b>Akrasia Horizon</b>: A week from now, beyond which you can make changes to your road<br/>
+    <input type="checkbox" id="ybranim" onclick="bs.animateYBR(ybranim.checked)"/>
+    <b>Yellow Brick Road (YBR)</b>: This road illustrates your past, present and future goal<br/>
+    <input type="checkbox" id="centeranim" onclick="bs.animateCenterline(centeranim.checked)"/>
+    <b>Centerline</b>: This is the center of your road, your daily data needs to stay n the good side of this centerline.<br/>
+  </td>
+  </tr>
+  </table>
   
   <button style="margin:4px;" onclick="bs.nextDay()">Next Day</button><br/>
 
@@ -155,6 +168,9 @@
     dataval = document.getElementById("dataval")
     datacmt = document.getElementById("datacmt")
     download = document.getElementById("download")
+    horizonanim = document.getElementById("horizonanim")
+    ybranim = document.getElementById("ybranim")
+    centeranim = document.getElementById("centeranim")
 
     const defaults = {
       hustler: {r:1, v:0}, 
