@@ -3189,7 +3189,9 @@
       var rosydelt = gRosyPts.selectAll(".rosyd");
       if (opts.showData || !opts.roadEditor) {
         if (goal.rosy) {
-          var npts = bbr.rosydata.filter(df), i;
+          var pts = (bbr.flad != null)
+              ?bbr.rosydata.slice(0,bbr.rosydata.length-1):bbr.rosydata;
+          var npts = pts.filter(df), i;
           if (bbr.rosydata.length == 0) {
             // no points are in range, find enclosing two
             var ind = -1;
@@ -3217,7 +3219,7 @@
   		          .attr("stroke-width",4*scalf);
             }
           } else rosyelt.remove();
-          updateDotGroup(gRosyPts, bbr.rosydata, "rosyd", 
+          updateDotGroup(gRosyPts, npts, "rosyd", 
                          opts.dataPoint.size*scalf,
                          "none", null, bu.Cols.ROSE, true, null);
         } else {
