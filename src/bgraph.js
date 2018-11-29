@@ -2093,6 +2093,29 @@
 
     // ---------------- Functions to update SVG components ----------------
 
+    /** This function initiates a cyclic animation on a particular
+     * element, cycling through the attribute and style information
+     * supplied in two arrays. Each array is expected to include
+     * triples [name, v1, v0], cycling an attribute or style with
+     * 'name' up to the v1 value in 'dur' milliseconds and back to v0
+     * in 'dur' milliseconds again, repeating indefinitely */
+    function startAnimation(elt, dur, attrs, styles){
+      var tr = elt.transition().duration(dur), i
+      
+      for (i = 0; i < attrs.length; i++) tr = tr.attr(attrs[i][0], attrs[i][1])
+      for (i = 0; i < styles.length; i++) tr = tr.style(styles[i][0], styles[i][1])
+
+      tr = tr.transition().duration(dur)
+      for (i = 0; i < attrs.length; i++) tr = tr.attr(attrs[i][0], attrs[i][2])
+      for (i = 0; i < styles.length; i++) tr = tr.style(styles[i][0], styles[i][2])
+      tr.on("end", ()=>{startAnimation(elt, dur, attrs, styles)})
+    }
+    function stopAnimation(elt, dur, attrs, styles){
+      var tr = elt.transition().duration(dur)
+      for (let i = 0; i < attrs.length; i++) tr = tr.attr(attrs[i][0], attrs[i][2])
+      for (let i = 0; i < styles.length; i++) tr = tr.style(styles[i][0], styles[i][2])
+    }
+
     // Creates or updates the shaded box to indicate past dates
     function updatePastBox() {
       if (opts.divGraph == null || road.length == 0) return;
@@ -2447,10 +2470,35 @@
 
     }
 
+    function animateHorizon( enable ) {
+      if (opts.roadEditor) return
+
+      var horizonelt = gHorizon.select(".horizon");
+      var horizontextelt = gHorizonText.select(".horizontext");
+      const hattrs = [["stroke-width",
+                       opts.horizon.width*scalf*3, opts.horizon.width*scalf]],
+            hstyles =[["stroke-dasharray",
+                       (opts.horizon.dash*1.3)+","+(opts.horizon.dash*0.7),
+                       (opts.horizon.dash)+","+(opts.horizon.dash)]]
+      const tattrs = [],
+            tstyles = [["font-size",
+                        (opts.horizon.font*1.2)+"px",
+                        (opts.horizon.font)+"px"]]
+      if (enable) {
+        startAnimation(horizonelt, 500, hattrs, hstyles)
+        startAnimation(horizontextelt, 500, tattrs, tstyles )
+      } else {
+        stopAnimation(horizonelt, 300, hattrs, hstyles)
+        stopAnimation(horizontextelt, 300, tattrs, tstyles )
+      }
+    }
+    
     // Creates or updates the Akrasia Horizon line
     function updateHorizon() {
+        
       if (opts.divGraph == null || road.length == 0) return;
       var horizonelt = gHorizon.select(".horizon");
+        
       if (horizonelt.empty()) {
         gHorizon.append("svg:line")
 	        .attr("class","horizon")
@@ -2602,6 +2650,28 @@
       }
     }
 
+    function animateYBR( enable ) {
+      if (opts.roadEditor) return
+      var laneelt = gOldRoad.select(".oldlanes");
+      const attrs = [],
+            styles =[["fill-opacity", 1.0, 0.5]]
+      if (enable) startAnimation(laneelt, 500, attrs, styles)
+      else stopAnimation(laneelt, 300, attrs, styles)
+    }
+    
+    function animateCenterline( enable ) {
+      if (opts.roadEditor) return
+      var roadelt = gOldCenter.select(".oldroads");
+      const attrs = [],
+            styles =[["stroke-dasharray",
+                      (opts.oldRoadLine.dash*1.3)+","+(opts.oldRoadLine.dash*0.7),
+                      (opts.oldRoadLine.dash)+","+(opts.oldRoadLine.dash)],
+                     ["stroke-width",
+                      opts.oldRoadLine.width*scalf*2, opts.oldRoadLine.width*scalf]]
+      if (enable) startAnimation(roadelt, 500, attrs, styles)
+      else stopAnimation(roadelt, 300, attrs, styles)
+    }
+    
     // Creates or updates the unedited road
     function updateOldRoad() {
       if (opts.divGraph == null || road.length == 0) return;
@@ -4463,7 +4533,9 @@
       return out
     }
 
-
+    self.animateHorizon = animateHorizon
+    self.animateYBR = animateYBR
+    self.animateCenterline = animateCenterline
   }
   
   return bgraph;

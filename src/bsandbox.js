@@ -281,6 +281,9 @@
         //set url value to a element's href attribute.
         linkelt.href = url
     }
+    self.animateHorizon = function(enable) {goal.graph.animateHorizon(enable)}
+    self.animateYBR = function(enable) {goal.graph.animateYBR(enable)}
+    self.animateCenterline = function(enable) {goal.graph.animateCenterline(enable)}
   }
 
   return bsandbox
