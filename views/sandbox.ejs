@@ -19,7 +19,7 @@
   
   <hr/>
   <span>Select goal type:</span>
-  <select id="typeselect" class="typeselect">
+  <select id="typeselect" class="typeselect" onchange="setDefaults()">
     <option value="hustler">Do More</option>
     <option value="fatloser">Lose Weight</option>
     <option value="biker">Use an Odometer</option>
@@ -46,7 +46,8 @@
   <button id="newgoal"
           onclick="bs.newGoal(gtype.options[gtype.selectedIndex].value,
                    runits.options[runits.selectedIndex].value,
-                   rfin.value, vini.value, buffer.checked);">
+                   rfin.value, vini.value, buffer.checked);
+                   updateConfigInput()">
     Create New Goal!</button>
   <br/>
 
@@ -154,6 +155,23 @@
     dataval = document.getElementById("dataval")
     datacmt = document.getElementById("datacmt")
     download = document.getElementById("download")
+
+    const defaults = {
+      hustler: {r:1, v:0}, 
+      fatloser: {r:-1, v:70}, 
+      biker: {r:1, v:0}, 
+      drinker: {r:1, v:0}, 
+      gainer: {r:1, v:70},
+      inboxer: {r:-1, v:1000}
+    }
+    
+    function setDefaults() {
+      const sel = gtype.options[gtype.selectedIndex].value
+      const dflt = defaults[sel]
+      rfin.value = dflt.r
+      vini.value = dflt.v
+    }
+    setDefaults()
 
     bs = new bsandbox(gdiv)
     bs.newGoal(gtype.options[gtype.selectedIndex].value,
