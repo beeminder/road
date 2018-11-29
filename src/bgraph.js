@@ -2654,7 +2654,8 @@
       if (opts.roadEditor) return
       var laneelt = gOldRoad.select(".oldlanes");
       const attrs = [],
-            styles =[["fill-opacity", 1.0, 0.5]]
+            styles =[["fill-opacity", 1.0, 0.5],
+                     ["fill", "#ffff00", bu.Cols.DYEL]]
       if (enable) startAnimation(laneelt, 500, attrs, styles)
       else stopAnimation(laneelt, 300, attrs, styles)
     }
