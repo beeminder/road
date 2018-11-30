@@ -167,7 +167,6 @@ new node, Ctrl-z to undo, Ctrl-y to redo</li>
   function editorChanged() {
     eload = false
     if (eload || gload) return
-    console.log("Editor changed")
     if (graph.getRoadObj().length != 0) graph.setRoadObj(editor.getRoadObj())
 
     var bufStates = editor.undoBufferState();
