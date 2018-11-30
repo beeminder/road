@@ -5,6 +5,8 @@ const fs = require('fs')
 const gm = require('gm').subClass({imageMagick: true})
 const puppeteer = require('puppeteer')
 
+const pageTimeout = 30 // Seconds to wait until giving up on generate.html
+
 class Renderer {
   
   constructor(browser, id) {
@@ -19,7 +21,7 @@ class Renderer {
   // Creates a new page in a tab within the puppeteer chrome instance
   async createPage( url ) {
     let gotoOptions = {
-      timeout: 60 * 1000,
+      timeout: pageTimeout * 1000,
       waitUntil: 'load'
     }
 
@@ -114,7 +116,13 @@ class Renderer {
         time_id = this.prf+` Page render (${slug}, ${newid})`
         console.time(time_id)
         html = await page.content()
-        await page.waitForFunction('done')
+        try {
+          await page.waitForFunction('done', {timeout: pageTimeout*1000})
+        } catch(err) {
+          process.stdout.write(this.prf+" renderer.js ERROR: "+err.message+"\n")
+          console.timeEnd(time_id)
+          return { error:err.message }
+        }
         console.timeEnd(time_id)
       
         // Extract goal stats from the JSON field and extend with file locations
