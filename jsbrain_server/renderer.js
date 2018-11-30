@@ -28,7 +28,7 @@ class Renderer {
     const page = await this.browser.newPage()
     page.on('console', 
             msg => console.log(this.prf+" PAGE LOG:", msg.text()))
-    page.on('error', msg => console.log(this.prf+" PAGE ERROR: "+msg))
+    page.on('error', error => console.log(this.prf+" PAGE ERROR: "+error.msg))
 
     // Render the page and return result
     try {
@@ -63,14 +63,14 @@ class Renderer {
 
     if (!fs.existsSync(outpath)) {
       let err = `Could not find directory ${outpath}`
-      process.stdout.write("ERROR: "+err+"\n")
+      process.stdout.write(this.prf+" renderer.js ERROR: "+err+"\n")
       return { error:err }
     }
 
     const bbfile = `${inpath}/${slug}.bb`
     if (!fs.existsSync(bbfile)) {
         let err = `Could not find file ${bbfile}`
-        process.stdout.write("ERROR: "+err+"\n")
+        process.stdout.write(this.prf+" renderer.js ERROR: "+err+"\n")
         return { error: err}
     }
     
@@ -120,6 +120,14 @@ class Renderer {
         // Extract goal stats from the JSON field and extend with file locations
         const jsonHandle = await page.$('#goaljson');
         jsonstr = await page.evaluate(json => json.innerHTML, jsonHandle);
+        if (jsonstr == "" || jsonstr == null) {
+          let err = "Could not extract JSON from page!"
+          process.stdout.write(this.prf+" renderer.js ERROR: "+err+"\n")
+
+          // Clean up leftover timing
+          console.timeEnd(time_id)
+          return { error:err }
+        }
         json = JSON.parse(jsonstr)
         json.graphurl=this.BBURL()+imgf
         json.svgurl=this.BBURL()+svgf
@@ -208,7 +216,7 @@ class Renderer {
       } else {
 
         let err = "Could not create headless chrome page!"
-        process.stdout.write("ERROR: "+err+"\n")
+        process.stdout.write(this.prf+" renderer.js ERROR: "+err+"\n")
 
         // Clean up leftover timing
         console.timeEnd(time_id)
