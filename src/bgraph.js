@@ -1502,7 +1502,6 @@
     // value,
     function addNewDot(x, y = null) {
       var found = br.findRoadSegment(road, x);
-      console.log("addNewDot("+x+", "+y+")")
       if (found >= 0) {
         var segment = {};
         var newx = bu.daysnap(x+bu.SID/2), newy = y;
