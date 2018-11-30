@@ -51,6 +51,7 @@
           onclick="bs.newGoal(gtype.options[gtype.selectedIndex].value,
                    runits.options[runits.selectedIndex].value,
                    rfin.value, vini.value, buffer.checked);
+                   graph = bs.getGraphObj();
                    updateConfigInput()">
     Create New Goal!</button>
   <br/>
@@ -60,14 +61,47 @@
   <tr>
   <td><div id="sandbox"></div><br/></td>
   <td valign="top">
-    <h3>Glossary:</h3><br/>
-    <input type="checkbox" id="horizonanim"
-           onclick="bs.animateHorizon(horizonanim.checked)"/>
-    <b>Akrasia Horizon</b>: A week from now, beyond which you can make changes to your road<br/>
-    <input type="checkbox" id="ybranim" onclick="bs.animateYBR(ybranim.checked)"/>
-    <b>Yellow Brick Road (YBR)</b>: This road illustrates your past, present and future goal<br/>
-    <input type="checkbox" id="centeranim" onclick="bs.animateCenterline(centeranim.checked)"/>
-    <b>Centerline</b>: This is the center of your road, your daily data needs to stay n the good side of this centerline.<br/>
+    <h3>Graph Legend:</h3>
+    <input type="checkbox" id="dataanim"
+           onclick="graph.animData(dataanim.checked)"/>
+    <b>Datapoints</b>: Your actual reported data. The color shows
+    where you are with respect to your yellow brick road.<br/>
+
+    <input type="checkbox" id="ybranim" onclick="graph.animYBR(ybranim.checked)"/>
+    <b>Yellow Brick Road (YBR)</b>: Keep your dots on the
+    road!<br/>Green: good side of the road, <br/>Blue: right lane,
+    <br/>Orange: wrong lane, Red: off the road<br/>
+
+    <input type="checkbox" id="horanim"
+           onclick="graph.animHor(horanim.checked)"/>
+    <b>Akrasia Horizon</b>: This line is a week away from now. You can
+    only make changes in the steepness of your road beyond the akrasia
+    horizon.<br/>
+
+    <input type="checkbox" id="rosyanim"
+           onclick="graph.animRosy(rosyanim.checked)"/>
+    <b>Optimistic projection</b>: An optimistic view of progress,
+    i.e., a view of your data through rose-colored glasses.  It shows
+    your inexorable march towards your goal.  If you're bouncing
+    around it just shows you flat.  When you go down (or whichever
+    direction your goal is), it shows you that right away.<br/>
+
+    <input type="checkbox" id="mavanim"
+           onclick="graph.animMav(mavanim.checked)"/>
+    <b>Moving average</b>: This is an exponentially weighted moving
+    average with smoothing constant 0.25. It shows the overall trend
+    of your data, but lagged. If most of your daily numbers are below
+    this trend line then you are inexorably dragging it down.<br/>
+
+    <input type="checkbox" id="auraanim"
+           onclick="graph.animAura(auraanim.checked)"/>
+    <b>Polynomial fit trend</b>: Think of this as a very thick line
+    charting your progress or an aura around your actual
+    data. (Technically it's a polynomial fit of your data.) It gives
+    you a sense of your true trend..<br/>
+
+    <input type="checkbox" id="guideanim" onclick="graph.animGuides(guideanim.checked)"/>
+    <b>Yellow guidelines</b>: These thin yellow lines indicate the good side of the yellow brick road. The thicker line demarcates 7 days of safety buffer. (If you keep your safety buffer at 7 days or higher then you're immune to being stung.  If anything comes up, just flatten your yellow brick road.  It will take effect after the 7-day akrasia horizon but since you have that much safety buffer, you're golden!)<br/>
   </td>
   </tr>
   </table>
@@ -199,6 +233,7 @@
     bs.newGoal(gtype.options[gtype.selectedIndex].value,
               runits.options[runits.selectedIndex].value,
               rfin.value, vini.value, buffer.checked);
+    var graph = bs.getGraphObj()
     bs.saveBB(download)
     updateConfigInput()
     
