@@ -58,7 +58,78 @@
   <hr/>
   <table>
   <tr>
-  <td><div id="sandbox"></div><br/></td>
+  <td><div id="sandbox"></div><br/>
+  <button style="margin:4px;" onclick="bs.nextDay()">Next Day</button><br/>
+
+  <span style="margin:4px;">New data:</span>
+  <input id="dataval" type="number"  style="width:5em;margin:4px;"></input>
+  <span style="margin:4px;">Comment:</span>
+  <input id="datacmt" type="text"  style="margin:4px;"></input>
+  <button onclick="bs.newData(dataval.value, datacmt.value)" style="margin:4px;">
+    Add</button><br/>
+
+  <span style="margin:4px;">Change rate to:</span>
+  <input id="rateval" type="number"  style="margin:4px;"></input>
+  <button onclick="bs.newRate(rateval.value)" style="margin:4px;">
+    Commit!</button><br/>
+
+  <button style="margin:4px;" onclick="bs.undo();updateConfigInput()">Undo</button><br/>
+
+  <hr/>
+  Visual graph configuration:<br/>
+  <input type="checkbox" id="plotall" onclick="setVisualConfig()" checked></input>
+  Show all points
+  <input type="checkbox" id="steppy" onclick="setVisualConfig()" checked></input>
+  Show steppy data lines
+  <input type="checkbox" id="rosy" onclick="setVisualConfig()" checked></input>
+  Show rosy points
+  <input type="checkbox" id="movingav" onclick="setVisualConfig()" checked></input>
+  Show moving average<br/>
+  <input type="checkbox" id="aura" onclick="setVisualConfig()" checked></input>
+  Show aura
+  <input type="checkbox" id="hidey" onclick="setVisualConfig()" checked></input>
+  Hide y-axis labels0
+  <input type="checkbox" id="stathead" onclick="setVisualConfig()" checked></input>
+  Show title with statistics
+  <input type="checkbox" id="hashtags" onclick="setVisualConfig()" checked></input>
+  Show hashtags
+  <hr/>
+  Goal configuration (change with CAUTION!):<br/>
+  <input type="checkbox" id="yaw"checked></input> yaw
+  <input type="checkbox" id="dir"checked></input> dir
+  <input type="checkbox" id="kyoom"checked></input> kyoom
+  <input type="checkbox" id="odom"checked></input> odom
+  <input type="checkbox" id="noisy"checked></input> noisy
+  <input type="checkbox" id="integery"checked></input> integery
+  <input type="checkbox" id="monotone"checked></input> monotone
+  <input type="checkbox" id="offred" checked></input> offred<br/>
+  aggday:
+  <select id="aggday" class="typeselect">
+    <option value="last">last</option>
+    <option value="first">first</option>
+    <option value="min">min</option>
+    <option value="max">max</option>
+    <option value="truemean">truemean</option>
+    <option value="uniqmean">uniqmean</option>
+    <option value="mean">mean</option>
+    <option value="median">median</option>
+    <option value="mode">mode</option>
+    <option value="trimmean">trimmean</option>
+    <option value="sum">sum</option>
+    <option value="jolly">jolly</option>
+    <option value="binary">binary</option>
+    <option value="nonzero">nonzero</option>
+    <option value="triangle">triangle</option>
+    <option value="square">square</option>
+    <option value="clocky">clocky</option>
+    <option value="count">count</option>
+    <option value="kyshoc">kyshoc</option>
+    <option value="skatesum">skatesum</option>
+  </select><br/>
+  <button onclick="setGoalConfig()" style="margin:4px;">SET!</button>
+  <hr/>
+  <a target="_blank" id="download" download="sandbox.bb">Right click to download BB file</a>
+  </td>
   <td valign="top">
     <h3>Graph Legend:</h3>
 
@@ -131,77 +202,6 @@
   </tr>
   </table>
   
-  <button style="margin:4px;" onclick="bs.nextDay()">Next Day</button><br/>
-
-  <span style="margin:4px;">New data:</span>
-  <input id="dataval" type="number"  style="width:5em;margin:4px;"></input>
-  <span style="margin:4px;">Comment:</span>
-  <input id="datacmt" type="text"  style="margin:4px;"></input>
-  <button onclick="bs.newData(dataval.value, datacmt.value)" style="margin:4px;">
-    Add</button><br/>
-
-  <span style="margin:4px;">Change rate to:</span>
-  <input id="rateval" type="number"  style="margin:4px;"></input>
-  <button onclick="bs.newRate(rateval.value)" style="margin:4px;">
-    Commit!</button><br/>
-
-  <button style="margin:4px;" onclick="bs.undo();updateConfigInput()">Undo</button><br/>
-
-  <hr/>
-  Visual graph configuration:<br/>
-  <input type="checkbox" id="plotall" onclick="setVisualConfig()" checked></input>
-  Show all points
-  <input type="checkbox" id="steppy" onclick="setVisualConfig()" checked></input>
-  Show steppy data lines
-  <input type="checkbox" id="rosy" onclick="setVisualConfig()" checked></input>
-  Show rosy points
-  <input type="checkbox" id="movingav" onclick="setVisualConfig()" checked></input>
-  Show moving average<br/>
-  <input type="checkbox" id="aura" onclick="setVisualConfig()" checked></input>
-  Show aura
-  <input type="checkbox" id="hidey" onclick="setVisualConfig()" checked></input>
-  Hide y-axis labels0
-  <input type="checkbox" id="stathead" onclick="setVisualConfig()" checked></input>
-  Show title with statistics
-  <input type="checkbox" id="hashtags" onclick="setVisualConfig()" checked></input>
-  Show hashtags
-  <hr/>
-  Goal configuration (change with CAUTION!):<br/>
-  <input type="checkbox" id="yaw"checked></input> yaw
-  <input type="checkbox" id="dir"checked></input> dir
-  <input type="checkbox" id="kyoom"checked></input> kyoom
-  <input type="checkbox" id="odom"checked></input> odom
-  <input type="checkbox" id="noisy"checked></input> noisy
-  <input type="checkbox" id="integery"checked></input> integery
-  <input type="checkbox" id="monotone"checked></input> monotone
-  <input type="checkbox" id="offred" checked></input> offred<br/>
-  aggday:
-  <select id="aggday" class="typeselect">
-    <option value="last">last</option>
-    <option value="first">first</option>
-    <option value="min">min</option>
-    <option value="max">max</option>
-    <option value="truemean">truemean</option>
-    <option value="uniqmean">uniqmean</option>
-    <option value="mean">mean</option>
-    <option value="median">median</option>
-    <option value="mode">mode</option>
-    <option value="trimmean">trimmean</option>
-    <option value="sum">sum</option>
-    <option value="jolly">jolly</option>
-    <option value="binary">binary</option>
-    <option value="nonzero">nonzero</option>
-    <option value="triangle">triangle</option>
-    <option value="square">square</option>
-    <option value="clocky">clocky</option>
-    <option value="count">count</option>
-    <option value="kyshoc">kyshoc</option>
-    <option value="skatesum">skatesum</option>
-  </select><br/>
-  <button onclick="setGoalConfig()" style="margin:4px;">SET!</button>
-  <hr/>
-  <a target="_blank" id="download" download="sandbox.bb">Right click to download BB file</a>
-
   <script>
     const visualProps
       = ['plotall','steppy','rosy','movingav','aura','hidey','stathead','hashtags']
