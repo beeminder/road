@@ -2684,9 +2684,11 @@
       if (opts.roadEditor) return
       var e = gOldGuides.selectAll(".oldguides");
       var a =[["stroke-width", opts.guidelines.width*scf*2.5,
-               (d,i) => ((d<0)?opts.guidelines.weekwidth*scf
+               (d) => ((d<0)?opts.guidelines.weekwidth*scf
                           :opts.guidelines.width*scf)],
-              ["stroke", "#ffff00", (d,i) => ((d<0)?bu.Cols.BIGG:bu.Cols.LYEL)]]
+              ["stroke",
+               (d) => ((d<0)?bu.Cols.BIGG:"#ffff00"),
+               (d) => ((d<0)?bu.Cols.BIGG:bu.Cols.LYEL)]]
       if (enable) startAnim(e, 500, a, [])
       else stopAnim(e, 300, a, [])
     }
@@ -3423,10 +3425,13 @@
     function animData( enable ) {
       if (opts.roadEditor) return
       var e = gDpts.selectAll(".dpts");
-      var attrs = [],
-          styles =[["r", opts.dataPoint.size*scf*2, opts.dataPoint.size*scf]]
-      if (enable) startAnim(e, 500, attrs, styles)
-      else stopAnim(e, 300, attrs, styles)
+      var styles =[["r", opts.dataPoint.size*scf*2, opts.dataPoint.size*scf]]
+      if (enable) startAnim(e, 500, [], styles)
+      else stopAnim(e, 300, [], styles)
+      var e = gAllpts.selectAll(".allpts");
+      styles =[["r", 0.7*opts.dataPoint.size*scf*2, 0.7*opts.dataPoint.size*scf]]
+      if (enable) startAnim(e, 500, [], styles)
+      else stopAnim(e, 300, [], styles)
     }
     
     function updateDataPoints() {
