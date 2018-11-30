@@ -1497,11 +1497,12 @@
       roadChanged();
     }
 
-    // Adds a new dot to the supplied x value, with the y value computed
-    // from the corresponding y value
+    // Adds a new dot to the supplied x value, with the y value either
+    // explicitly specified or computed from the corresponding y
+    // value,
     function addNewDot(x, y = null) {
       var found = br.findRoadSegment(road, x);
-      
+      console.log("addNewDot("+x+", "+y+")")
       if (found >= 0) {
         var segment = {};
         var newx = bu.daysnap(x+bu.SID/2), newy = y;
@@ -1533,13 +1534,15 @@
           }
           road[found].end = [newx, newy];
           road[found].slope = br.roadSegmentSlope(road[found]);
+          // If the adjusted segment is vertical, switch its auto field to SLOPE
+          if (road[found].sta[0] == road[found].end[0])
+            road[found].auto = br.RP.SLOPE
         }
         segment.slope = br.roadSegmentSlope(segment);
         segment.auto = br.RP.VALUE;
         road.splice(found+1, 0, segment);
         br.fixRoadArray( road, opts.keepSlopes?br.RP.VALUE
                       :br.RP.SLOPE, false);
-        
         roadChanged();
       }
       return found;
