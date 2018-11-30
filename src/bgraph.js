@@ -3428,7 +3428,7 @@
       var styles =[["r", opts.dataPoint.size*scf*2, opts.dataPoint.size*scf]]
       if (enable) startAnim(e, 500, [], styles)
       else stopAnim(e, 300, [], styles)
-      var e = gAllpts.selectAll(".allpts");
+      e = gAllpts.selectAll(".allpts");
       styles =[["r", 0.7*opts.dataPoint.size*scf*2, 0.7*opts.dataPoint.size*scf]]
       if (enable) startAnim(e, 500, [], styles)
       else stopAnim(e, 300, [], styles)
