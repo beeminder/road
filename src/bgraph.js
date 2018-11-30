@@ -297,7 +297,7 @@
         gBullseye, gRoads, gDots,  gWatermark, gHashtags, gHorizon, gHorizonText, 
         zoomarea, axisZoom, zoomin, zoomout,  
         brushObj, brush, focusrect, topLeft,
-        scalf = 1
+        scf = 1
 
     // Internal state for the graph
     var lastError = null,
@@ -854,7 +854,7 @@
                    +(y+plotpad.top)+")");
     }
 
-    function removeTextBox( obj ) {
+    function rmTextBox( obj ) {
       if (!obj) {console.debug("updateTextBox: null input"); return }
       obj.grp.remove();
     }
@@ -1609,11 +1609,11 @@
       }
     }
     function removeDragInfo( ) {
-      if (knottext != null) removeTextBox(knottext);
+      if (knottext != null) rmTextBox(knottext);
       knottext = null;
-      if (dottext != null) removeTextBox(dottext);
+      if (dottext != null) rmTextBox(dottext);
       dottext = null;
-      if (slopetext != null) removeTextBox(slopetext);
+      if (slopetext != null) rmTextBox(slopetext);
       slopetext = null;
     }
 
@@ -2101,7 +2101,7 @@
      * triples [name, v1, v0], cycling an attribute or style with
      * 'name' up to the v1 value in 'dur' milliseconds and back to v0
      * in 'dur' milliseconds again, repeating indefinitely */
-    function startAnimation(elt, dur, attrs, styles){
+    function startAnim(elt, dur, attrs, styles){
       var tr = elt.transition().duration(dur), i
       
       for (i = 0; i < attrs.length; i++) tr = tr.attr(attrs[i][0], attrs[i][1])
@@ -2110,9 +2110,9 @@
       tr = tr.transition().duration(dur)
       for (i = 0; i < attrs.length; i++) tr = tr.attr(attrs[i][0], attrs[i][2])
       for (i = 0; i < styles.length; i++) tr = tr.style(styles[i][0], styles[i][2])
-      tr.on("end", ()=>{startAnimation(elt, dur, attrs, styles)})
+      tr.on("end", ()=>{startAnim(elt, dur, attrs, styles)})
     }
-    function stopAnimation(elt, dur, attrs, styles){
+    function stopAnim(elt, dur, attrs, styles){
       var tr = elt.transition().duration(dur)
       for (let i = 0; i < attrs.length; i++) tr = tr.attr(attrs[i][0], attrs[i][2])
       for (let i = 0; i < styles.length; i++) tr = tr.style(styles[i][0], styles[i][2])
@@ -2408,6 +2408,17 @@
       } else wbuxelt.remove();
     }
     
+    function animAura( enable ) {
+      if (opts.roadEditor) return
+      var e = gAura.selectAll(".aura");
+      var ep = gAura.selectAll(".aurapast");
+
+      var s =[["stroke", "#CACAEE", bu.Cols.BLUE],["fill", "#CACAEE", bu.Cols.BLUE]]
+      var sp =[["stroke", "#CACAEE", bu.Cols.BLUE],["fill", "#CACAEE", bu.Cols.BLUE]]
+      if (enable) {startAnim(e, 500, [], s);startAnim(ep, 500, [], sp)}
+      else {stopAnim(e, 300, [], s); stopAnim(ep, 300, [], sp)}
+    }
+
     function updateAura() {
       if (processing) return;
       var el = gAura.selectAll(".aura");
@@ -2472,26 +2483,23 @@
 
     }
 
-    function animateHorizon( enable ) {
+    function animHor( enable ) {
       if (opts.roadEditor) return
-
-      var horizonelt = gHorizon.select(".horizon");
-      var horizontextelt = gHorizonText.select(".horizontext");
-      const hattrs = [["stroke-width",
-                       opts.horizon.width*scalf*3, opts.horizon.width*scalf]],
-            hstyles =[["stroke-dasharray",
-                       (opts.horizon.dash*1.3)+","+(opts.horizon.dash*0.7),
-                       (opts.horizon.dash)+","+(opts.horizon.dash)]]
-      const tattrs = [],
-            tstyles = [["font-size",
-                        (opts.horizon.font*1.2)+"px",
-                        (opts.horizon.font)+"px"]]
+      const o = opts.horizon
+      
+      var he = gHorizon.select(".horizon");
+      var hte = gHorizonText.select(".horizontext");
+      const a = [["stroke-width", o.width*scf*3, o.width*scf]],
+            s =[["stroke-dasharray",(o.dash*1.3)+","+(o.dash*0.7),
+                 (o.dash)+","+(o.dash)]]
+      const ts = [["font-size",(o.font*1.2)+"px",
+                   (o.font)+"px"]]
       if (enable) {
-        startAnimation(horizonelt, 500, hattrs, hstyles)
-        startAnimation(horizontextelt, 500, tattrs, tstyles )
+        startAnim(he, 500, a, s)
+        startAnim(hte, 500, [], ts )
       } else {
-        stopAnimation(horizonelt, 300, hattrs, hstyles)
-        stopAnimation(horizontextelt, 300, tattrs, tstyles )
+        stopAnim(he, 300, a, s)
+        stopAnim(hte, 300, [], ts )
       }
     }
     
@@ -2499,8 +2507,9 @@
     function updateHorizon() {
         
       if (opts.divGraph == null || road.length == 0) return;
-      var horizonelt = gHorizon.select(".horizon");
-        
+      const horizonelt = gHorizon.select(".horizon");
+      const o = opts.horizon
+      
       if (horizonelt.empty()) {
         gHorizon.append("svg:line")
 	        .attr("class","horizon")
@@ -2510,15 +2519,15 @@
           .attr("y2",plotbox.height)
           .style("stroke", bu.Cols.AKRA) 
           .style("stroke-dasharray", 
-                 (opts.horizon.dash)+","+(opts.horizon.dash)) 
-		      .attr("stroke-width",opts.horizon.width*scalf);
+                 (o.dash)+","+(o.dash)) 
+		      .attr("stroke-width",o.width*scf);
       } else {
         horizonelt
 	  	    .attr("x1", nXSc(goal.horizon*1000))
           .attr("y1",0)
 		      .attr("x2", nXSc(goal.horizon*1000))
           .attr("y2",plotbox.height)
-		      .attr("stroke-width",opts.horizon.width*scalf);
+		      .attr("stroke-width",o.width*scf);
       }
       var textx = nXSc(goal.horizon*1000)+(18);
       var texty = plotbox.height/2;
@@ -2529,7 +2538,7 @@
 	  	    .attr("x",textx ).attr("y",texty)
           .attr("transform", "rotate(-90,"+textx+","+texty+")")
           .attr("fill", bu.Cols.AKRA) 
-          .style("font-size", (opts.horizon.font)+"px") 
+          .style("font-size", (o.font)+"px") 
           .text("Akrasia Horizon");
       } else {
         horizontextelt
@@ -2540,7 +2549,8 @@
 
     function updateContextHorizon() {
       if (opts.divGraph == null || road.length == 0) return;
-      var horizonelt = ctxplot.select(".ctxhorizon");
+      const horizonelt = ctxplot.select(".ctxhorizon");
+      const o = opts.horizon
       if (horizonelt.empty()) {
         ctxplot.append("svg:line")
 	        .attr("class","ctxhorizon")
@@ -2549,9 +2559,9 @@
 		      .attr("x2", xScB(goal.horizon*1000))
           .attr("y2",yScB(goal.yMax+5*(goal.yMax-goal.yMin)))
           .style("stroke", bu.Cols.AKRA) 
-          .style("stroke-dasharray", (opts.horizon.ctxdash)+","
-                 +(opts.horizon.ctxdash)) 
-		      .style("stroke-width",opts.horizon.ctxwidth);
+          .style("stroke-dasharray", (o.ctxdash)+","
+                 +(o.ctxdash)) 
+		      .style("stroke-width",o.ctxwidth);
       } else {
         horizonelt
 	  	    .attr("x1", xScB(goal.horizon*1000))
@@ -2570,7 +2580,7 @@
 	  	    .attr("x",textx ).attr("y",texty)
           .attr("transform", "rotate(-90,"+textx+","+texty+")")
           .attr("fill", bu.Cols.AKRA) 
-          .style("font-size", (opts.horizon.ctxfont)+"px") 
+          .style("font-size", (o.ctxfont)+"px") 
           .text("Horizon");
       } else {
         hortextelt
@@ -2652,29 +2662,35 @@
       }
     }
 
-    function animateYBR( enable ) {
+    function animYBR( enable ) {
       if (opts.roadEditor) return
-      var laneelt = gOldRoad.select(".oldlanes");
-      const attrs = [],
-            styles =[["fill-opacity", 1.0, 0.5],
+      var e = gOldRoad.select(".oldlanes");
+      var styles =[["fill-opacity", 1.0, 0.5],
                      ["fill", "#ffff00", bu.Cols.DYEL]]
-      if (enable) startAnimation(laneelt, 500, attrs, styles)
-      else stopAnimation(laneelt, 300, attrs, styles)
+      if (enable) startAnim(e, 500, [], styles)
+      else stopAnim(e, 300, [], styles)
+
+      e = gOldCenter.select(".oldroads");
+      styles =[["stroke-dasharray",
+                (opts.oldRoadLine.dash*1.3)+","+(opts.oldRoadLine.dash*0.7),
+                (opts.oldRoadLine.dash)+","+(opts.oldRoadLine.dash)],
+               ["stroke-width",
+                opts.oldRoadLine.width*scf*2, opts.oldRoadLine.width*scf]]
+      if (enable) startAnim(e, 500, [], styles)
+      else stopAnim(e, 300, [], styles)
     }
-    
-    function animateCenterline( enable ) {
+
+    function animGuides( enable ) {
       if (opts.roadEditor) return
-      var roadelt = gOldCenter.select(".oldroads");
-      const attrs = [],
-            styles =[["stroke-dasharray",
-                      (opts.oldRoadLine.dash*1.3)+","+(opts.oldRoadLine.dash*0.7),
-                      (opts.oldRoadLine.dash)+","+(opts.oldRoadLine.dash)],
-                     ["stroke-width",
-                      opts.oldRoadLine.width*scalf*2, opts.oldRoadLine.width*scalf]]
-      if (enable) startAnimation(roadelt, 500, attrs, styles)
-      else stopAnimation(roadelt, 300, attrs, styles)
+      var e = gOldGuides.selectAll(".oldguides");
+      var a =[["stroke-width", opts.guidelines.width*scf*2.5,
+               (d,i) => ((d<0)?opts.guidelines.weekwidth*scf
+                          :opts.guidelines.width*scf)],
+              ["stroke", "#ffff00", (d,i) => ((d<0)?bu.Cols.BIGG:bu.Cols.LYEL)]]
+      if (enable) startAnim(e, 500, a, [])
+      else stopAnim(e, 300, a, [])
     }
-    
+
     // Creates or updates the unedited road
     function updateOldRoad() {
       if (opts.divGraph == null || road.length == 0) return;
@@ -2720,11 +2736,11 @@
           .style("stroke-dasharray", (opts.oldRoadLine.dash)+","
                  +(opts.oldRoadLine.dash))
   		    .style("fill", "none")
-  		    .style("stroke-width",opts.oldRoadLine.width*scalf)
+  		    .style("stroke-width",opts.oldRoadLine.width*scf)
   		    .style("stroke", bu.Cols.ORNG);
       } else {
         roadelt.attr("d", rd)
-  		    .style("stroke-width",opts.oldRoadLine.width*scalf);
+  		    .style("stroke-width",opts.oldRoadLine.width*scf);
       }
 
       // **** Construct the guideline path element ****
@@ -2763,7 +2779,7 @@
       var guideelt = gOldGuides.selectAll(".oldguides");
       if (!opts.roadEditor && ir2 != null) {
 
-        var minpx = 3*scalf; // Minimum visual width for YBR
+        var minpx = 3*scf; // Minimum visual width for YBR
         var thin = Math.abs(nYSc.invert(minpx)-nYSc.invert(0));
         var lw = (goal.lnw == 0)?thin:goal.lnw;
         if (Math.abs(nYSc(lw)-nYSc(0)) < minpx) lw=thin;
@@ -2830,24 +2846,20 @@
         guideelt.enter().append("svg:path")
           .attr("class","oldguides")
 	  	    .attr("d", rd2)
-	  	    .attr("transform", function(d,i) {
-            return "translate(0,"+((d<0)?bc[0]:((i+1)*shift))+")";})
+	  	    .attr("transform", (d,i) => ("translate(0,"+((d<0)?bc[0]:((i+1)*shift))+")"))
   		    .attr("pointer-events", "none")
   		    .style("fill", "none")
-  		    .attr("stroke-width", function (d,i) { 
-            return (d<0)
-              ?opts.guidelines.weekwidth*scalf
-              :opts.guidelines.width*scalf;})
-  		    .attr("stroke", function (d,i) { 
-            return (d<0)
-              ?bu.Cols.BIGG:bu.Cols.LYEL;});
+  		    .attr("stroke-width",
+                (d,i) => ((d<0)?opts.guidelines.weekwidth*scf
+                          :opts.guidelines.width*scf))
+  		    .attr("stroke",(d,i) => ((d<0)?bu.Cols.BIGG:bu.Cols.LYEL));
         guideelt.attr("d", rd2)
           .attr("transform", function(d,i) { 
             return "translate(0,"+((d<0)?bc[0]:((i+1)*shift))+")";})
   		    .attr("stroke-width", function (d,i) { 
             return (d<0)
-              ?opts.guidelines.weekwidth*scalf
-              :opts.guidelines.width*scalf;})
+              ?opts.guidelines.weekwidth*scf
+              :opts.guidelines.width*scf;})
   		    .attr("stroke", function (d,i) { 
             return (d<0)
               ?bu.Cols.BIGG:bu.Cols.LYEL;});
@@ -3189,9 +3201,9 @@
     }
     function dpStrokeWidth( pt ) {
       if (opts.roadEditor) {
-        return (opts.dataPoint.border*scalf)+"px";
+        return (opts.dataPoint.border*scf)+"px";
       } else {
-        return (((pt[3] == bbr.DPTYPE.AGGPAST)?1:0.5)*scalf)+"px";
+        return (((pt[3] == bbr.DPTYPE.AGGPAST)?1:0.5)*scf)+"px";
       }
     }
 
@@ -3201,7 +3213,7 @@
 	    var pty = nYSc(d[1]);
       var txt = moment.unix(d[0]).utc().format("YYYY-MM-DD")
         +", "+((d[6] != null)?bu.shn(d[6]):bu.shn(d[1]));
-      if (dotText != null) removeTextBox(dotText);
+      if (dotText != null) rmTextBox(dotText);
       var info = [];
       if (d[2] !== "") info.push("\""+d[2]+"\"");
       if (d[6] !== null && d[1] !== d[6]) info.push("total:"+d[1]);
@@ -3209,7 +3221,7 @@
       dotText = createTextBox(ptx, pty-(15+18*info.length), txt, 
                               col, info );
     };
-    function removeDotText() { removeTextBox(dotText); }
+    function removeDotText() { rmTextBox(dotText); }
 
     function updateDotGroup(grp,d,cls,r,
                             s=null,sw=null,f=null,hov=true,fop=null) {
@@ -3246,6 +3258,17 @@
             dotText = null;
           }
           window.clearTimeout(dotTimer); dotTimer = null;});
+    }
+
+    function animRosy( enable ) {
+      if (opts.roadEditor) return
+      var e = gRosy.selectAll(".rosy");
+      var de = gRosyPts.selectAll(".rosyd");
+
+      var a =[["stroke-width", 6*scf, 4*scf]]
+      var ds =[["r", opts.dataPoint.size*scf*2, opts.dataPoint.size*scf]]
+      if (enable) {startAnim(e, 500, a, []); startAnim(de, 500, [], ds) }
+      else {stopAnim(e, 300, a, []); stopAnim(de, 300, [], ds)}
     }
 
     function updateRosy() {
@@ -3285,15 +3308,15 @@
                 .attr("class","rosy")
 	  	          .attr("d", d)
   		          .style("fill", "none")
-  		          .attr("stroke-width",4*scalf)
+  		          .attr("stroke-width",4*scf)
   		          .style("stroke", bu.Cols.ROSE);
             } else {
               rosyelt.attr("d", d)
-  		          .attr("stroke-width",4*scalf);
+  		          .attr("stroke-width",4*scf);
             }
           } else rosyelt.remove();
           updateDotGroup(gRosyPts, npts, "rosyd", 
-                         opts.dataPoint.size*scalf,
+                         opts.dataPoint.size*scf,
                          "none", null, bu.Cols.ROSE, true, null);
         } else {
           rosyelt.remove();
@@ -3341,15 +3364,15 @@
                 .attr("class","steppy")
 	  	          .attr("d", d)
   		          .style("fill", "none")
-  		          .attr("stroke-width",4*scalf)
+  		          .attr("stroke-width",4*scf)
   		          .style("stroke", bu.Cols.PURP);
             } else {
               stpelt.attr("d", d)
-  		          .attr("stroke-width",4*scalf);
+  		          .attr("stroke-width",4*scf);
             }
           } else stpelt.remove();
           updateDotGroup(gSteppyPts, bbr.flad?npts.slice(0,npts.length-1):npts,
-                         "steppyd",(opts.dataPoint.size+2)*scalf,
+                         "steppyd",(opts.dataPoint.size+2)*scf,
                          "none", null, bu.Cols.PURP);
         } else {
           stpelt.remove();
@@ -3381,20 +3404,29 @@
         drelt
 		      .attr("transform", function(d){ return "translate("+(nXSc((d[0])*1000))+","
                                           +nYSc(d[1])+"),scale("
-                                          +(opts.dataPoint.fsize*scalf/24)+")"})
+                                          +(opts.dataPoint.fsize*scf/24)+")"})
       
         drelt.enter().append("svg:use")
 		      .attr("class","derails")
           .attr("xlink:href", arrow)
 		      .attr("transform", function(d){ return "translate("+(nXSc((d[0])*1000))+","
                                           +nYSc(d[1])+"),scale("
-                                          +(opts.dataPoint.fsize*scalf/24)+")"})
+                                          +(opts.dataPoint.fsize*scf/24)+")"})
           .attr("fill", bu.Cols.REDDOT)
           .style("pointer-events", "none")
       } else {
         drelt = gDerails.selectAll(".derails");
         drelt.remove();
       }        
+    }
+    
+    function animData( enable ) {
+      if (opts.roadEditor) return
+      var e = gDpts.selectAll(".dpts");
+      var attrs = [],
+          styles =[["r", opts.dataPoint.size*scf*2, opts.dataPoint.size*scf]]
+      if (enable) startAnim(e, 500, attrs, styles)
+      else stopAnim(e, 300, attrs, styles)
     }
     
     function updateDataPoints() {
@@ -3421,7 +3453,7 @@
         pts = pts.filter(df);
         if (goal.plotall && !opts.roadEditor) {
           updateDotGroup(gAllpts, alldataf.filter(adf), "allpts", 
-                         0.7*(opts.dataPoint.size)*scalf,
+                         0.7*(opts.dataPoint.size)*scf,
                          "none", null, dpFill, true, dpFillOp);
           
         } else {
@@ -3429,13 +3461,13 @@
           el.remove();
         }
         updateDotGroup(gDpts, pts.concat(bbr.fuda), "dpts", 
-                       opts.dataPoint.size*scalf,
+                       opts.dataPoint.size*scf,
                        dpStroke, dpStrokeWidth, dpFill, true, dpFillOp);
 
         // Compute and plot hollow datapoints
         if (!opts.roadEditor) {
           updateDotGroup(gHollow, bbr.hollow.filter(df), "hpts", 
-                         opts.dataPoint.hsize*scalf, null,
+                         opts.dataPoint.hsize*scf, null,
                          null, bu.Cols.WITE, true, 1);
         }
         
@@ -3447,7 +3479,7 @@
 		          .attr("class","fladp").attr("xlink:href", "#rightarrow")
               .attr("fill", br.dotcolor(road,goal,bbr.flad[0],bbr.flad[1]))
               .attr("transform", "translate("+(nXSc((bbr.flad[0])*1000))+","
-                    +nYSc(bbr.flad[1])+"),scale("+(opts.dataPoint.fsize*scalf/24)+")")
+                    +nYSc(bbr.flad[1])+"),scale("+(opts.dataPoint.fsize*scf/24)+")")
               .style("pointer-events", function() {
                 return (opts.roadEditor)?"none":"all";})
 		          .on("mouseenter",function() {
@@ -3464,7 +3496,7 @@
               .attr("transform", 
                     "translate("+(nXSc((bbr.flad[0])*1000))+","
                     +nYSc(bbr.flad[1])+"),scale("
-                    +(opts.dataPoint.fsize*scalf/35)+")");
+                    +(opts.dataPoint.fsize*scf/35)+")");
           }
         } else {
           if (!fladelt.empty()) fladelt.remove();
@@ -3505,7 +3537,17 @@
       }
     }
     
-      // Other ideas for data smoothing...  Double Exponential
+
+    function animMav( enable ) {
+      if (opts.roadEditor) return
+      var e = gMovingAv.selectAll(".movingav");
+
+      var a =[["stroke-width", 6*scf, 3*scf]]
+      if (enable) startAnim(e, 500, a, [])
+      else stopAnim(e, 300, a, [])
+    }
+
+    // Other ideas for data smoothing...  Double Exponential
     // Moving Average: http://stackoverflow.com/q/5533544 Uluc
     // notes that we should use an acausal filter to prevent the
     // lag in the thin purple line.
@@ -3530,11 +3572,11 @@
               .attr("class","movingav")
 	  	        .attr("d", d)
   		        .style("fill", "none")
-  		        .attr("stroke-width",3*scalf)
+  		        .attr("stroke-width",3*scf)
   		        .style("stroke", bu.Cols.PURP);
           } else {
             el.attr("d", d)
-  		        .attr("stroke-width",3*scalf);
+  		        .attr("stroke-width",3*scf);
           }
         } else el.remove();
       } else {
@@ -4084,9 +4126,9 @@
       var limits = [nXSc.invert(0).getTime()/1000, 
                     nXSc.invert(plotbox.width).getTime()/1000];
       if (opts.roadEditor)
-        scalf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.7)
+        scf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.7)
       else 
-        scalf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.55)
+        scf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.55)
       updatePastBox()
       updateYBHP()
       updatePinkRegion()
@@ -4536,9 +4578,13 @@
       return out
     }
 
-    self.animateHorizon = animateHorizon
-    self.animateYBR = animateYBR
-    self.animateCenterline = animateCenterline
+    self.animHor = animHor
+    self.animYBR = animYBR
+    self.animData = animData
+    self.animGuides = animGuides
+    self.animRosy = animRosy
+    self.animMav = animMav
+    self.animAura = animAura
   }
   
   return bgraph;
