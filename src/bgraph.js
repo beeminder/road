@@ -84,7 +84,7 @@
     /** Visual parameters for vertical line for asof */ 
     today:        { width: 2, ctxwidth: 1, font: 12, ctxfont: 9 },
     /** Visual parameters for watermarks */ 
-    watermark:    { height:150, fntsize:130 },
+    watermark:    { height:170, fntsize:130 },
     guidelines:   { width:2, weekwidth:4 },
     /** Visual parameters for text boxes shown during dragging */ 
     textBox:      { margin: 3 },
@@ -2343,13 +2343,13 @@
 
 
       if (goal.dir>0 && goal.yaw<0) { 
-        offg = br; offb = tl;
+        offg = br; offb = tl
       } else if (goal.dir<0 && goal.yaw>0) { 
-        offg = tr; offb = bl;
+        offg = tr; offb = bl
       } else if (goal.dir<0 && goal.yaw<0) { 
-        offg = bl; offb = tr;
+        offg = bl; offb = tr
       } else {
-        offg = tl; offb = br;
+        offg = tl; offb = br
       }
 
       var wbufelt = gWatermark.select(".waterbuf");
