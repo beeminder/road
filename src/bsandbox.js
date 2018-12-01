@@ -154,7 +154,7 @@
     }
     
     function newData( v, c ) {
-      if (!bu.nummy(v) || !bu.stringy(v)) return;
+      if (!bu.nummy(v) || !bu.stringy(c)) return;
       saveState()
       goal.bb.data.push([goal.bb.params.asof, Number(v),
                          (c=="")?`Added in sandbox (#${goal.bb.data.length})`:c])
