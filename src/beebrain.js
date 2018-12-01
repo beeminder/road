@@ -814,9 +814,7 @@
       // rdf function is implemented in broad.js
       // rtf function is implemented in broad.js
 
-      goal.stdflux 
-        = br.noisyWidth(roads, data
-                     .filter(function(d){return d[0]>=goal.tini;}));
+      goal.stdflux = br.noisyWidth(roads, data.filter((d)=>(d[0]>=goal.tini)));
       goal.nw = (goal.noisy && goal.abslnw == null)
         ?br.autowiden(roads, goal, data, goal.stdflux):0;
       
@@ -830,8 +828,7 @@
           // Create new vector for filtering datapoints
           var newx = griddle(data[0][0], data[dl-1][0]);
           JSON.stringify(newx)
-          goal.filtpts 
-            = newx.map(function(d) {return [d, ema(data, d)];});
+          goal.filtpts = newx.map((d) => [d, ema(data, d)]);
         } else goal.filtpts = [];
       } else goal.filtpts = [];
       
@@ -870,10 +867,8 @@
     }
     function sumSet(rd, goal) {
       var y = goal.yaw, d = goal.dir, l = goal.lane, w = goal.lnw, dlt = goal.delta
-      var MOAR = (y>0 && d>0),
-          PHAT = (y<0 && d<0),
-          WEEN = (y<0 && d>0),
-          RASH = (y>0 && d<0)
+      var MOAR = (y>0 && d>0), PHAT = (y<0 && d<0),
+          WEEN = (y<0 && d>0), RASH = (y>0 && d<0)
 
       if (goal.error != "") {
         goal.statsum = " error:    "+goal.error+"\\n"; return
@@ -1040,15 +1035,9 @@
       goal.statsum += goal.limsum+"\\n"
     }
     
-    function getNumParam(p, n, dflt) {
-      return (p.hasOwnProperty(n))?Number(p[n]):dflt
-    }
-    function getBoolParam(p, n, dflt) {
-      return (p.hasOwnProperty(n))?p[n]:dflt
-    }
-    function getStrParam(p, n, dflt) {
-      return (p.hasOwnProperty(n))?p[n]:dflt
-    }
+    function getNumParam(p, n, dflt) { return (p.hasOwnProperty(n))?Number(p[n]):dflt }
+    function getBoolParam(p, n, dflt) { return (p.hasOwnProperty(n))?p[n]:dflt }
+    function getStrParam(p, n, dflt) { return (p.hasOwnProperty(n))?p[n]:dflt }
 
     function reloadRoad() {
       //console.debug("id="+curid+", reloadRoad()")
@@ -1077,11 +1066,10 @@
       // Generate the aura function now that the flatlined
       // datapoint is also computed.
       if (goal.aura) {
-        var adata = data.filter(function(e){return e[0]>=goal.tmin})
+        var adata = data.filter((e)=>(e[0]>=goal.tmin))
         var fdata = br.gapFill(adata)
         goal.auraf = br.smooth(fdata)
-      } else
-        goal.auraf = function(e){ return 0 }
+      } else goal.auraf = (e)=>0
 
       return ""
     }
@@ -1112,13 +1100,11 @@
 
         // Process and extract various parameters that are independent of road and data
         // maybe just default to aggday=last; no such thing as aggday=null
-        if ( !p.hasOwnProperty('aggday')) {
-          if (goal.kyoom) p.aggday = "sum"
-          else p.aggday = "last"
-        }
+        if ( !p.hasOwnProperty('aggday')) p.aggday = (goal.kyoom)?"sum":"last"
+        
         goal.siru = bu.SECS[p.runits]
         goal.horizon = goal.asof+bu.AKH
-        // Save initial waterbuf value for comparison
+        // Save initial waterbuf value for comparison in bgraph.js
         goal.waterbuf0 = goal.waterbuf
       
         // Append final segment to the road array. These values will be
