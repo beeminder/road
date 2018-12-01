@@ -17,7 +17,7 @@
  *
  * Copyright © 2017 Uluc Saranli
  */
-;((function (root, factory) {
+;(((root, factory) => {
   'use strict'
   if (typeof define === 'function' && define.amd) {
     // AMD. Register as an anonymous module.
@@ -34,7 +34,7 @@
     //console.log("beebrain: Using Browser globals")
     root.beebrain = factory(root.moment, root.butil, root.broad)
   }
-})(this, function (moment, bu, br) {
+})(this, (moment, bu, br) => {
   'use strict'
 
   // -------------------------------------------------------------
@@ -164,14 +164,6 @@
 
   // ----------------- Beeminder Goal utilities ----------------------
 
-  /** Version of fillroad that assumes tini/vini is the first row of road */
-  //fillroadall = function(road) {
-  //(tini, vini) = (road[0][0], road[0][1])
-  //road = road[1:]
-  //road = [(t, v, r if r is None else r/siru) for (t,v,r) in road]
-  //road = foldlist(nextrow, (tini, vini, 0, 0), road)[1:]
-  //return [(tini, vini, 0, 2)] + [(t, v, r*siru, n) for (t,v,r,n) in road]
-  //},
   // -------------------------------------------------------------
   // ------------------- BEEBRAIN CONSTRUCTOR ---------------------
   /** beebrain constructor. This is returned once the wrapper function
@@ -185,7 +177,7 @@
     gid++
     
     // Make a new copy of the input to prevent overwriting
-    bbin = bu.extend({}, bbin, {})
+    bbin = bu.extend({}, bbin)
       
     // Private variables holding goal, road and datapoint info
     var 
@@ -282,19 +274,13 @@
 
       // All the in and out params are also global variables!
       var prop;
-      for (prop in pout) {
-        if (pout.hasOwnProperty(prop))
-          goal[prop] = pout[prop]
-      }
-      for (prop in pin) {
-        if (pin.hasOwnProperty(prop))
-          goal[prop] = pin[prop]
-      }
+      for (prop in pout) if (pout.hasOwnProperty(prop))goal[prop] = pout[prop]
+      for (prop in pin) if (pin.hasOwnProperty(prop)) goal[prop] = pin[prop]
     }
 
     function parserow(row) {
-      if (!Array.isArray(row) || row.length != 3) return row
-      return [bu.dayparse(row[0]), row[1], row[2]]
+      return (!Array.isArray(row) || row.length != 3)
+        ?row:[bu.dayparse(row[0]), row[1], row[2]]
     }
 
     // Helper function for stampOut
@@ -307,21 +293,17 @@
 
     /** Processes fields with timestamps in the input */
     function stampIn( p,d ) {
-      if (p.hasOwnProperty('asof')) p.asof = bu.dayparse(p.asof)
-      if (p.hasOwnProperty('tini')) p.tini = bu.dayparse(p.tini)
-      if (p.hasOwnProperty('tfin')) p.tfin = bu.dayparse(p.tfin)
-      if (p.hasOwnProperty('tmin')) p.tmin = bu.dayparse(p.tmin)
-      if (p.hasOwnProperty('tmax')) p.tmax = bu.dayparse(p.tmax)
+      ['asof', 'tini', 'tfin', 'tmin', 'tmax']
+        .map((e)=>{if (p.hasOwnProperty(e)) p[e] = bu.dayparse(p[e])})
       if (p.hasOwnProperty('road'))
         if (bu.listy(p.road)) p.road = p.road.map(parserow)
 
       // Stable-sort by timestamp before dayparsing the timestamps
       // because if the timestamps were actually given as unixtime
       // then dayparse works like dayfloor and we lose fidelity.
-      var numpts = d.length
       return d
-        .map(function(r,i) {return [bu.dayparse(r[0]),r[1],r[2],i,r[1]];})   // Store indices
-        .sort(function(a,b){return (a[0]!== b[0])?(a[0]-b[0]):(a[3]-b[3]);}) 
+        .map((r,i)=>([bu.dayparse(r[0]),r[1],r[2],i,r[1]]))   // Store indices
+        .sort((a,b)=>((a[0]!== b[0])?(a[0]-b[0]):(a[3]-b[3]))) 
     }
 
     /** Convert unixtimes back to daystamps */
@@ -736,20 +718,58 @@
       return JSON.stringify(row)
     }
 
+    const pchk = [
+      ['deadline', (v)=>((6-24)*3600 <= v && v <= 6*3600),
+       "outside 6am earlybird to 6am nightowl"],
+      ['asof', (v)=>(v!=null), "can't be null! Tell support!"],
+      ['asof', bu.torn, "isn't a valid timestamp"],
+      ['tini', bu.timy, "isn't a valid timestamp"],
+      ['vini', bu.nummy, "isn't numeric"],
+      ['road', bu.listy, "(road matrix) isn't a list"],
+      ['tfin', bu.torn, "isn't a valid timestamp"],
+      ['vfin', bu.norn, "isn't numeric or null"],
+      ['rfin', bu.norn, "isn't numeric or null"],
+      ['runits', (v)=>bu.SECS.hasOwnProperty(v), "isn't a valid rate unit"],
+      ['yaw', (v)=>(v==0||v==1||v==-1), "isn't in [0,-1,1]"],
+      ['dir', (v)=>(v==1||v==-1), "isn't in -1,1]"],
+      ['tmin', bu.torn, "isn't a number/timestamp"],
+      ['tmax', bu.torn, "isn't a valid timestamp"],
+      ['vmin', bu.norn, "isn't numeric or null"],
+      ['vmax', bu.norn, "isn't numeric or null"],
+      ['kyoom', bu.torf, "isn't boolean"],
+      ['odom', bu.torf, "isn't boolean"],
+      ['abslnw', bu.norn, "isn't numeric or null"],
+      ['noisy', bu.torf, "isn't boolean"],
+      ['integery', bu.torf, "isn't boolean"],
+      ['monotone', bu.torf, "isn't boolean"],
+      ['aggday', (v)=>br.AGGR.hasOwnProperty(v),
+       "isn't one of max, sum, last, mean, etc"],
+      ['plotall', bu.torf, "isn't boolean"],
+      ['steppy', bu.torf, "isn't boolean"],
+      ['rosy', bu.torf, "isn't boolean"],
+      ['movingav', bu.torf, "isn't boolean"],
+      ['aura', bu.torf, "isn't boolean"],
+      ['yaxis', bu.stringy, "isn't a string"],
+      ['yaxis', (v)=>(v.length<80), "string is too long\\n"],
+      ['waterbuf', bu.sorn, "isn't a string or null"],
+      ['waterbux', bu.stringy, "isn't a string"],
+      ['hidey', bu.torf, "isn't boolean"],
+      ['stathead', bu.torf, "isn't boolean"],
+      ['imgsz', bu.nummy, "isn't numeric"],
+      ['yoog', bu.stringy, "isn't a string"],
+    ]
     // Sanity check the input parameters. Return non-empty string if it fails.
     function vetParams() {
-      // I'm a bit too obsessed with fitting things in 80 cha
       var s = (y => JSON.stringify(y)), i
 
-      if (!((6-24)*3600 <= goal.deadline <= 6*3600))
-        return "'deadline' outside 6am earlybird to 6am nightowl: "       +s(goal.deadline)
-      if (goal.asof == null)    return "'asof' can't be null! Tell support!"
-      if (!bu.torn(goal.asof))  return "'asof' isn't a valid timestamp: "  +s(goal.asof)
-      if (!bu.timy(goal.tini))  return "'tini' isn't a valid timestamp: "  +s(goal.tini)
-      if (!bu.nummy(goal.vini)) return "'vini' isn't numeric: "            +s(goal.vini)
-      if (!bu.listy(goal.road)) return "Road matrix ('road') isn't a list: "  +s(goal.road)
+      for (let i = 0; i < pchk.length; i++) {
+        var l = pchk[i]
+        if (!(l[1](goal[l[0]]))) return `'${l[0]}' ${l[2]}: ${s(goal[l[0]])}`
+      }
+
       for (i = 0; i < goal.road.length; i++)
-        if (!validrow(goal.road[i])) return "Invalid road matrix row: "+showrow(goal.road[i])
+        if (!validrow(goal.road[i]))
+          return "Invalid road matrix row: "+showrow(goal.road[i])
       // At this point road is guaranteed to be a list of length-3 lists
       // I guess we don't mind a redundant final road row
       var mostroad = goal.road.slice(1,goal.road.length-1)
@@ -762,42 +782,9 @@
         }
         return "Road matrix duplicate row error! Tell support!" //seems unreachable
       }
-      if (!bu.torn(goal.tfin))    return "'tfin' isn't a valid timestamp: " +s(goal.tfin)
-      if (!bu.norn(goal.vfin))    return "'vfin' isn't numeric or null: "   +s(goal.vfin)
-      if (!bu.norn(goal.rfin))    return "'rfin' isn't numeric or null: "   +s(goal.rfin)
-      if (!bu.SECS.hasOwnProperty(goal.runits))
-          return "Bad rate units ('runits'): "+s(goal.runits)
-      if (!(goal.yaw==0 || goal.yaw==1 || goal.yaw==-1))
-        return "'yaw' isn't in [0,-1,1]: "        +s(goal.yaw)
-      if (!(goal.dir==1 || goal.dir==-1))
-        return "'dir' isn't in [-1,1]: "          +s(goal.dir)
-      if (!bu.norn(goal.tmin))    return "'tmin' isn't a number/timestamp: "+s(goal.tmin)
-      if (!bu.torn(goal.tmax))    return "'tmax' isn't a valid timestamp: " +s(goal.tmax)
-      if (!bu.norn(goal.vmin))    return "'vmin' isn't numeric or null: "   +s(goal.vmin)
-      if (!bu.norn(goal.vmax))    return "'vmax' isn't numeric or null: "   +s(goal.vmax)
-      if (!bu.torf(goal.kyoom))   return "'kyoom' isn't boolean: "          +s(goal.kyoom)
-      if (!bu.torf(goal.odom))    return "'odom' isn't boolean: "           +s(goal.odom)
-      if (!bu.norn(goal.abslnw))  return "'abslnw' isn't numeric or null: " +s(goal.abslnw)
-      if (!bu.torf(goal.noisy))   return "'noisy' isn't boolean: "          +s(goal.noisy)
-      if (!bu.torf(goal.integery))return "'integery' isn't boolean: "       +s(goal.integery)
-      if (!bu.torf(goal.monotone))return "'monotone' isn't boolean: "       +s(goal.monotone)
-      if (!br.AGGR.hasOwnProperty(goal.aggday))
-        return "'aggday' = "+s(goal.aggday)+" isn't one of max, sum, last, mean, etc"
-      if (!bu.torf(goal.plotall)) return "'plotall' isn't boolean: "       +s(goal.plotall)
-      if (!bu.torf(goal.steppy))  return "'steppy' isn't boolean: "        +s(goal.steppy)
-      if (!bu.torf(goal.rosy))    return "'rosy' isn't boolean: "          +s(goal.rosy)
-      if (!bu.torf(goal.movingav))return "'movingav' isn't boolean: "      +s(goal.movingav)
-      if (!bu.torf(goal.aura))    return "'aura' isn't boolean: "          +s(goal.aura)
-      if (!bu.stringy(goal.yaxis))return "'yaxis' isn't a string: "        +s(goal.yaxis)
-      if (goal.yaxis.length > 80) return "Y-axis label is too long:\n"     +goal.yaxis
-      if (!bu.sorn(goal.waterbuf))return "'waterbuf' isn't string or null: "+s(goal.waterbuf)
-      if (!bu.stringy(goal.waterbux)) return "'waterbux' isn't a string: "  +s(goal.waterbux)
-      if (!bu.torf(goal.hidey))   return "'hidey' isn't boolean: "          +s(goal.hidey)
-      if (!bu.torf(goal.stathead))return "'stathead' isn't boolean: "       +s(goal.stathead)
-      if (!bu.nummy(goal.imgsz))  return "'imgsz' isn't numeric: "          +s(goal.imgsz)
-      if (!bu.stringy(goal.yoog)) return "'yoog' isn't a string: "          +s(goal.yoog)
       if (goal.kyoom && goal.odom)
         return "The odometer setting doesn't make sense for an auto-summing goal!"
+
       return "";
     }
     
@@ -1156,7 +1143,7 @@
       }
     }
 
-    function getStats() { return bu.extend({}, stats, {}) }
+    function getStats() { return bu.extend({}, stats) }
 
     function setRoadObj( newroad ) {
       if (newroad.length == 0) {
