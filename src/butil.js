@@ -74,7 +74,7 @@
     self.SID   = 86400      // Seconds in day
     self.AKH   = 7*self.SID // Akrasia Horizon, in seconds
     self.BDUSK = 2147317201 // ~2038, rails's ENDOFDAYS+1 (was 2^31-2weeks)
-    self.ZFUN = function(x) { return 0 } // Function that always returns zero
+    self.ZFUN = (x) => 0 // Function that always returns zero
     // TODO?: IMGMAG
     
     // Number of seconds in a year, month, etc
@@ -92,19 +92,12 @@
 
     // -----------------------------------------------------------------
     // ---------------- General Utility Functions ----------------------
-    self.arrMin = function(arr) {
-      return Math.min.apply(null, arr)
-    }
+    self.arrMin = (arr) =>( Math.min.apply(null, arr))
+    self.arrMax = (arr) =>( Math.max.apply(null, arr))
 
-    self.arrMax = function(arr) {
-      return Math.max.apply(null, arr)
-    }
+    self.isArray = (o) => ((/Array/).test(Object.prototype.toString.call(o)))
 
-    self.isArray = function(o) {
-      return (/Array/).test(Object.prototype.toString.call(o))
-    }
-
-    self.extend = function(to, fr, owr) {
+    self.extend = (to, fr, owr) => {
       var prop, hasProp
       for (prop in fr) {
         hasProp = to[prop] !== undefined
@@ -126,7 +119,7 @@
     
     /** Applies f on elements of dom, picks the maximum and returns
       the domain element that achieves that maximum. */
-    self.argmax = function(f, dom) {
+    self.argmax = (f, dom) => {
       if (dom == null) return null
       var newdom = dom.map(f)
       var maxelt = self.arrMax(newdom)
@@ -137,7 +130,7 @@
      separated by d, and whose lengths are n. If the end of the list is
      reached and there are fewer than n elements, those are not
      returned. */
-    self.partition = function(l, n, d) {
+    self.partition = (l, n, d) => {
       var il = l.length
       var ol = []
       for (let i=0; i < il; i+=d)
@@ -146,7 +139,7 @@
     }
     
     /** Returns a list containing the fraction and integer parts of a float */
-    self.modf = function(f) {
+    self.modf = (f) =>{
       var fp = (f<0)?-f:f, fl = Math.floor(fp)
       return (f<0)?[-(fp-fl),-fl]:[(fp-fl),fl]
     }
@@ -155,7 +148,7 @@
      http://reference.wolfram.com/mathematica/ref/Quantile.html Author:
      Ernesto P. Adorio, PhD; UP Extension Program in Pampanga, Clark
      Field. */
-    self.quantile = function(l, q, qt=1, issorted=false) {
+    self.quantile = (l, q, qt=1, issorted=false) => {
       var y
       if (issorted) y = l
       else y = l.slice().sort((a,b)=>(a-b))
@@ -186,12 +179,10 @@
     }
 
     /** Return a list with the sum of the elements in l */
-    self.sum = function(l) {
-      return l.reduce((a,b)=>(a+b), 0)
-    }
+    self.sum = (l) => (l.reduce((a,b)=>(a+b), 0))
     
     /**  foldlist(f,x, [e1, e2, ...]) -> [x, f(x,e1), f(f(x,e1), e2), ...] */
-    self.foldlist = function(f, x, l) {
+    self.foldlist = (f, x, l) => {
       var out = [x]
       for (let i = 0; i < l.length; i++)
         out.push(f(out[i], l[i]))
@@ -200,7 +191,7 @@
 
     /** Return a list with the cumulative sum of the elements in l,
       left to right */
-    self.accumulate = function(l) {
+    self.accumulate = (l) => {
       var ne = l.length
       if (ne == 0) return l
       var nl = [l[0]]
@@ -211,7 +202,7 @@
     /** Takes a list like [1,2,1] and make it like [1,2,2] (monotone
      increasing) Or if dir==-1 then min with the previous value to
      make it monotone decreasing */
-    self.monotonize = function(l, dir=1) {
+    self.monotonize = (l, dir=1) => {
       var lo = l.slice(), i
       if (dir == 1) {
         for (i = 1; i < lo.length; i++) lo[i] = Math.max(lo[i-1],lo[i])
@@ -222,17 +213,13 @@
     }
 
     /** zip([[1,2], [3,4]]) --> [[1,3], [2,4]] */
-    self.zip = function (av) {
-      return av[0].map(function(_,i){return av.map(a => a[i]) })
-    }
+    self.zip =  (av) => (av[0].map((_,i) =>(av.map(a => a[i]))))
 
     /** Return 0 when x is very close to 0 */
-    self.chop = function (x, delta=1e-7) { 
-      return (Math.abs(x) < delta)?0:x
-    }
+    self.chop = (x, delta=1e-7) => ((Math.abs(x) < delta)?0:x)
 
     /** Return an integer when x is very close to an integer */
-    self.ichop = function(x, delta=1e-7) {
+    self.ichop = (x, delta=1e-7) => {
       var fp = x % 1, ip = x - fp
       if (fp < 0) {fp += 1; ip -= 1;}
       if (fp > 0.5) fp = 1 - self.chop(1-fp)
@@ -240,7 +227,7 @@
     }
 
     /** clip(x, a,b) = min(b,max(a,x)) */
-    self.clip = function(x, a, b) {
+    self.clip = (x, a, b) => {
       if (a > b) { var tmp=a; a=b; b=tmp;}
       if (x < a) x = a
       if (x > b) x = b
@@ -251,7 +238,7 @@
      significant figures after the decimal point. Target t significant
      figures total (clipped to be at least i and at most i+d, where i
      is the number of digits in integer part of x). */
-    self.shn = function(x, t=10, d=5) {
+    self.shn = (x, t=10, d=5) => {
       if (isNaN(x)) return x.toString()
       var i = Math.floor(Math.abs(x)), k, fmt, ostr
       i = (i==0)?0:i.toString().length // # of digits left of the decimal
@@ -281,31 +268,23 @@
     }
 
     /** Show Number with Sign: include the sign explicitly */
-    self.shns = function(x, t=16, d=5) {
-      return ((x>=0)?"+":"")+self.shn(x, t, d)
-    }
+    self.shns = (x, t=16, d=5) => (((x>=0)?"+":"")+self.shn(x, t, d))
 
     /** Same as shns but with conservarounding */
-    self.shnsc = function(x, e, t=16, d=5) {
-      return ((x>=0)?"+":"")+self.shnc(x, e, t, d)
-    }
+    self.shnsc = (x, e, t=16, d=5) =>(((x>=0)?"+":"")+self.shnc(x, e, t, d))
 
     /** Show Date: take timestamp and return something like 2012.10.22 */
-    self.shd = function(t) {
-      return (t == null)?'null':self.formatDate(t)
-    }
+    self.shd = (t) =>( (t == null)?'null':self.formatDate(t))
 
     /** Show Date/Time: take timestamp and return something like
      2012.10.22 15:27:03 */
-    self.shdt = function(t) {
-      return (t == null)?'null':self.formatDateTime(t)
-    }
+    self.shdt = (t) =>((t == null)?'null':self.formatDateTime(t))
 
     // TODO: need to DRY this and shn() up but want to totally revamp shownum anyway.
     /** Show Number, rounded conservatively (variant of shn where you
        pass which direction, +1 or -1, is safe to err on). Aka
        conservaround!  Eg, shnc(.0000003, +1, 2) -> .01 */
-    self.shnc = function(x, errdir, t=10, d=5) {
+    self.shnc = (x, errdir, t=10, d=5) => {
       if (isNaN(x)) return x.toString()
       var i = Math.floor(Math.abs(x)), k, fmt, ostr
       i = (i==0)?0:i.toString().length // # of digits left of the decimal
@@ -342,13 +321,13 @@
     /** Singular or Plural: Pluralize the given noun properly, if n is
      not 1.  Provide the plural version if irregular.  Eg: splur(3,
      "boy") -> "3 boys", splur(3, "man", "men") -> "3 men" */
-    self.splur = function(n, noun, nounp='') {
+    self.splur = (n, noun, nounp='') => {
       if (nounp=='') nounp = noun+'s'
       return self.shn(n)+' '+((n == 1)?noun:nounp)
     }
     
     /** Rate as a string */
-    self.shr = function(r) {
+    self.shr = (r) => {
       if (r == null) r = 0
       // show as a percentage if exprd is true #SCHDEL
       //return shn((100.0 if exprd else 1.0)*r, 4,2) + ("%" if exprd else "")
@@ -363,7 +342,7 @@
 
     /** Returns an array with n elements uniformly spaced between a
      * and b */
-    self.linspace = function linspace( a, b, n) {
+    self.linspace = ( a, b, n) => {
       if (typeof n === "undefined") n = Math.max(Math.round(b-a)+1,1)
       if (n < 2) { return n===1?[a]:[] }
       var i,ret = Array(n)
@@ -378,7 +357,7 @@
      supported and work in the expected way except when clipQ = false,
      in which case [a,b] and [c,d] are sorted prior to computing the
      output. */
-    self.cvx = function(x, a,b, c,d, clipQ=true) {
+    self.cvx = (x, a,b, c,d, clipQ=true) => {
       var tmp
       if (self.chop(a-b) == 0) {
         if (x <= a) return Math.min(c,d)
@@ -396,7 +375,7 @@
 
     /** Delete Duplicates. The ID function maps elements to something
       that defines equivalence classes.*/
-    self.deldups = function(a, idfun = (x=>x)) {
+    self.deldups = (a, idfun = (x=>x)) => {
       var seen = {}
       return a.filter(it=>{var marker = JSON.stringify(idfun(it));
                            return seen.hasOwnProperty(marker)?false
@@ -404,14 +383,14 @@
     }
 
     /** Whether list l is sorted in increasing order */
-    self.orderedq = function(l) {
+    self.orderedq = (l) => {
       for (let i = 0; i < l.length-1; i++)
         if (l[i] > l[i+1]) return false;
       return true;
     }
 
     /** Whether all elements in a list are zero */
-    self.nonzero = function(a) {
+    self.nonzero = (a) => {
       var l = a.length, i
       for( i = 0; i < l; i++ ){ if (a[i] != 0) return true}
       return false
@@ -419,21 +398,14 @@
 
     /** Sum of differences of pairs, eg, [1,2,6,9] -> 2-1 + 9-6 = 1+3
      * = 4 */
-    self.clocky = function(a) {
+    self.clocky = (a) => {
       var s = 0, l = a.length, i
       for( i = 1; i < l; i+=2 ){ s += (a[i]-a[i-1])}
       return s
     }
 
-    /** Return a list with the sum of the elements in l */
-    // self.sum = function(a) {
-    //   var s = 0, l = a.length
-    //   for( let i = 0; i < l; i++ ){ s += a[i]}
-    //   return s
-    // }
-
     /** Arithmetic mean of values in list a */
-    self.mean = function (a) {
+    self.mean = (a) => {
       var s = 0,l = a.length,i
       if (l == 0) return 0
       for( i = 0; i < l; i++ ){ s += a[i]}
@@ -441,7 +413,7 @@
     }
 
     /** Median of values in list a */
-    self.median = function(a) {
+    self.median = (a) => {
       var m = 0, l = a.length
       a.sort((a,b)=>(a-b))
       if (l % 2 === 0) { m = (a[l / 2 - 1] + a[l / 2]) / 2 }
@@ -450,7 +422,7 @@
     }
 
     /** Mode of values in list a */
-    self.mode = function(a) {
+    self.mode = (a) => {
       var md = [], count = [], i, num, maxi = 0, al = a.length
       
       for (i = 0; i < al; i += 1) {
@@ -467,35 +439,31 @@
     }
 
     /** Whether min <= x <= max */
-    self.inrange = function(x, min, max) {
-      return x >= min && x <= max
-    }
+    self.inrange = (x, min, max) =>(x >= min && x <= max)
 
     /** Whether abs(a-b) < eps */
-    self.nearlyEqual = function(a, b, eps) {
-      return Math.abs(a - b) < eps
-    }
+    self.nearEq = (a, b, eps) => (Math.abs(a - b) < eps)
 
   // --------------------------------------------------------
   // ----------------- Date facilities ----------------------
 
     /** Returns a new date object ahead by the specified number of
      * days (moment)*/
-    self.addDays = function(m, days) {
+    self.addDays = (m, days) => {
       var result = moment(m)
       result.add(days, 'days')
       return result
     }
 
     /** Fixes the supplied unixtime to 00:00:00 on the same day (moment) */
-    self.daysnap = function(ut) {
+    self.daysnap = (ut) => {
       var d = moment.unix(ut).utc()
       d.hours(0); d.minutes(0); d.seconds(0); d.milliseconds(0)
       return d.unix()
     }
 
     /** Formats the supplied unix time as YYYY.MM.DD */
-    self.formatDate = function(ut) {
+    self.formatDate = (ut) => {
       var mm = moment.unix(ut).utc()
       var year = mm.year()
       var month = (mm.month()+1)
@@ -506,7 +474,7 @@
     }
 
     /** Formats the supplied unix time as YYYY.MM.DD HH.MM.SS */
-    self.formatDateTime = function(ut) {
+    self.formatDateTime = (ut) => {
       var mm = moment.unix(ut).utc()
       var hour = mm.hour()
       hour = (hour < 10)?"0"+hour.toString():hour.toString()
@@ -519,7 +487,7 @@
 
     /** Take a daystamp like "20170531" and return unixtime in seconds
      (dreev confirmed this seems to match Beebrain's function) */
-    self.dayparse = function(s, sep='') {
+    self.dayparse = (s, sep='') => {
       if (!RegExp('^\\d{4}'+sep+'\\d{2}'+sep+'\\d{2}$').test(s)) { 
         // Check if the supplied date is a timestamp or not.
         if (!isNaN(s)) return Number(s)
@@ -533,7 +501,7 @@
     /** Take an integer unixtime in seconds and return a daystamp like
      "20170531" (dreev superficially confirmed this works) Uluc: Added
      option to choose a separator */
-    self.dayify = function(t, sep = '') {
+    self.dayify = (t, sep = '') => {
       if (isNaN(t) || t < 0) { return "ERROR" }
       var mm = moment.unix(t).utc()
       var y = mm.year()
@@ -544,12 +512,12 @@
     }
 
     /** Converts a number to an integer string */
-    self.sint = function(x){ return Math.round(x).toString(); }
+    self.sint = (x) =>(Math.round(x).toString())
 
     /** Returns a promise that loads a JSON file from the supplied
      URL. Resolves to null on error, parsed JSON object on
      success. */
-    self.loadJSON = function( url ) {   
+    self.loadJSON = ( url ) => {   
       return new Promise(function(resolve, reject) {
         if (url === "") resolve(null)
         var xobj = new XMLHttpRequest()
@@ -575,7 +543,7 @@
     }
 
     /** Changes first letter of each word to uppercase */
-    self.toTitleCase = function(str) {
+    self.toTitleCase = (str) => {
       return str.replace( /\w\S*/g,
         function(txt) {
           return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
@@ -585,7 +553,7 @@
 
     /** Deep compares array a1 and a2 for equality. Does not work on
      * objects within the array */
-    self.arrayEquals = function(a1, a2) {
+    self.arrayEquals = (a1, a2) => {
       // if the other array is a falsy value, return
       if (!(a1 instanceof Array) || !(a2 instanceof Array)) return false
 
@@ -606,18 +574,17 @@
       return true;
     }
     // Convenience functions to check object types
-    self.nummy = function(n)  { return !isNaN(parseFloat(n)) && isFinite(n) }
-    self.stringy = function(x){ return  typeof x == "string" }
-    self.listy = function(x)  { return  Array.isArray(x) }
+    self.nummy = (n) =>(!isNaN(parseFloat(n)) && isFinite(n))
+    self.stringy = (x) =>(typeof x == "string")
+    self.listy = (x) =>(Array.isArray(x))
 
     // Type-checking convenience functions
-    self.torf = function(x){ return typeof x == "boolean"}            // True or False
-    self.born = function(x){ return self.torf(x) | (x == null) }      // Boolean or Null
-    self.norn = function(x){ return self.nummy(x) || (x == null) }    // Numeric or Null
-    self.timy = function(x){ return self.nummy(x) && 0<x && x<self.BDUSK } // Valid time
-    self.torn = function(x){ return self.timy(x) || (x == null) }     // ValidTime or Null
-    self.sorn = function(x){ return typeof x == "string" || (x == null) } //String or Null
-
+    self.torf = (x)=>(typeof x == "boolean")            // True or False
+    self.born = (x)=>(self.torf(x) | (x == null))      // Boolean or Null
+    self.norn = (x)=>(self.nummy(x) || (x == null))    // Numeric or Null
+    self.timy = (x)=>(self.nummy(x) && 0<x && x<self.BDUSK) // Valid time
+    self.torn = (x)=>(self.timy(x) || (x == null))     // ValidTime or Null
+    self.sorn = (x)=>(typeof x == "string" || (x == null)) //String or Null
   }
 
   return new butil()

@@ -783,7 +783,7 @@
     function roadChanged() {
       if (!settingRoad) bbr.reloadRoad()
       computePlotLimits( true );
-      horindex = br.findRoadSegment(road, goal.horizon);
+      horindex = br.findSeg(road, goal.horizon);
       reloadBrush();
       updateGraphData();
       updateContextData();
@@ -1156,15 +1156,15 @@
       if (goal.yaw*br.rdf(rd, hor) < goal.yaw*br.rdf(ir, hor) - EPS) 
         return false;
       // Iterate through and check current road points in the ping range
-      var rd_i1 = br.findRoadSegment(rd, now);
-      var rd_i2 = br.findRoadSegment(rd, hor);
+      var rd_i1 = br.findSeg(rd, now);
+      var rd_i2 = br.findSeg(rd, hor);
       for (let i = rd_i1; i < rd_i2; i++) {
         if (goal.yaw*br.rdf(rd, rd[i].end[0]) < 
             goal.yaw*br.rdf(ir, rd[i].end[0]) - EPS) return false;
       }
       // Iterate through and check old road points in the ping range
-      var ir_i1 = br.findRoadSegment(ir, now);
-      var ir_i2 = br.findRoadSegment(ir, hor);
+      var ir_i1 = br.findSeg(ir, now);
+      var ir_i2 = br.findSeg(ir, hor);
       for (let i = ir_i1; i < ir_i2; i++) {
         if (goal.yaw*br.rdf(rd, ir[i].end[0]) < 
             goal.yaw*br.rdf(ir, ir[i].end[0]) - EPS) return false;
@@ -1501,7 +1501,7 @@
     // explicitly specified or computed from the corresponding y
     // value,
     function addNewDot(x, y = null) {
-      var found = br.findRoadSegment(road, x);
+      var found = br.findSeg(road, x);
       if (found >= 0) {
         var segment = {};
         var newx = bu.daysnap(x+bu.SID/2), newy = y;
@@ -1532,12 +1532,12 @@
             }
           }
           road[found].end = [newx, newy];
-          road[found].slope = br.roadSegmentSlope(road[found]);
+          road[found].slope = br.segSlope(road[found]);
           // If the adjusted segment is vertical, switch its auto field to SLOPE
           if (road[found].sta[0] == road[found].end[0])
             road[found].auto = br.RP.SLOPE
         }
-        segment.slope = br.roadSegmentSlope(segment);
+        segment.slope = br.segSlope(segment);
         segment.auto = br.RP.VALUE;
         road.splice(found+1, 0, segment);
         br.fixRoadArray( road, opts.keepSlopes?br.RP.VALUE
@@ -1907,7 +1907,7 @@
       var rd = road;
       var seg = road[kind];
 	    seg.end[1] = y;
-      seg.slope = br.roadSegmentSlope(seg);
+      seg.slope = br.segSlope(seg);
       br.fixRoadArray( rd, opts.keepSlopes?br.RP.VALUE
                     :br.RP.SLOPE,
                     false,br.RP.VALUE );
@@ -1938,7 +1938,7 @@
       road[kind].end[1] = newValue;
       if (!fromtable) {
         if (!opts.keepSlopes) 
-          road[kind].slope = br.roadSegmentSlope(road[kind]);
+          road[kind].slope = br.segSlope(road[kind]);
         if (kind == 1) {
           road[kind-1].sta[1] = newValue;
         } else if (kind == road.length-1) {
@@ -2026,7 +2026,7 @@
                              - road[kind].sta[0]);
       road[kind+1].sta[1] = road[kind].end[1];
       if (!opts.keepSlopes)
-        road[kind+1].slope = br.roadSegmentSlope(road[kind+1]);
+        road[kind+1].slope = br.segSlope(road[kind+1]);
 
       br.fixRoadArray( rd, br.RP.VALUE,
                     false, br.RP.SLOPE );
@@ -2063,7 +2063,7 @@
             + road[kind].slope*(road[kind].end[0] 
                                  - road[kind].sta[0]);
           road[kind+1].sta[1] = road[kind].end[1];
-          road[kind+1].slope = br.roadSegmentSlope(road[kind+1]);
+          road[kind+1].slope = br.segSlope(road[kind+1]);
         }
       }
       br.fixRoadArray( road, null, fromtable, br.RP.SLOPE );
@@ -2606,8 +2606,8 @@
       if (goal.yaw < 0) yedge = goal.yMin - 5*(goal.yMax - goal.yMin);
       else yedge = goal.yMax + 5*(goal.yMax - goal.yMin);
       // Compute road indices for left and right boundaries
-      itoday = br.findRoadSegment(ir, now);
-      ihor = br.findRoadSegment(ir, hor);
+      itoday = br.findSeg(ir, now);
+      ihor = br.findSeg(ir, hor);
       var d = "M"+nXSc(now*1000)+" "
             +nYSc(br.rdf(ir, now));
       for (let i = itoday; i < ihor; i++) {
@@ -2639,8 +2639,8 @@
       if (goal.yaw > 0) yedge = goal.yMin - 5*(goal.yMax - goal.yMin);
       else yedge = goal.yMax + 5*(goal.yMax - goal.yMin);
       // Compute road indices for left and right boundaries
-      itoday = br.findRoadSegment(ir, now);
-      ihor = br.findRoadSegment(ir, hor);
+      itoday = br.findSeg(ir, now);
+      ihor = br.findSeg(ir, hor);
       var d = "M"+nXSc(now*1000)+" "
             +nYSc(br.rdf(ir, now));
       for (let i = itoday; i < ihor; i++) {
@@ -2705,7 +2705,7 @@
                 || (r.end[0] > l[0] && r.end[0] < l[1]));
       };
       var ir = iroad.filter(rdfilt);
-      if (ir.length == 0) ir = [iroad[br.findRoadSegment(iroad, l[0])]];
+      if (ir.length == 0) ir = [iroad[br.findSeg(iroad, l[0])]];
 
       // **** Construct the centerline path element ****
       // fx,fy: Start of the current line segment
@@ -2752,7 +2752,7 @@
       if (ir2.length == 0) {
         // If no segmens were found, check if we can find a segment
         // that traverses the current x-axis range
-        var seg = br.findRoadSegment(iroad2, l[0]);
+        var seg = br.findSeg(iroad2, l[0]);
         if (seg < 0) ir2 = null;
         else ir2 = [iroad2[seg]];
       }
@@ -3425,13 +3425,13 @@
     function animData( enable ) {
       if (opts.roadEditor) return
       var e = gDpts.selectAll(".dpts");
-      var styles =[["r", opts.dataPoint.size*scf*2, opts.dataPoint.size*scf]]
-      if (enable) startAnim(e, 500, [], styles)
-      else stopAnim(e, 300, [], styles)
+      var attrs =[["r", opts.dataPoint.size*scf*2, opts.dataPoint.size*scf]]
+      if (enable) startAnim(e, 500, attrs, [])
+      else stopAnim(e, 300, attrs, [])
       e = gAllpts.selectAll(".allpts");
-      styles =[["r", 0.7*opts.dataPoint.size*scf*2, 0.7*opts.dataPoint.size*scf]]
-      if (enable) startAnim(e, 500, [], styles)
-      else stopAnim(e, 300, [], styles)
+      attrs =[["r", 0.7*opts.dataPoint.size*scf*2, 0.7*opts.dataPoint.size*scf]]
+      if (enable) startAnim(e, 500, attrs, [])
+      else stopAnim(e, 300, attrs, [])
     }
     
     function updateDataPoints() {
@@ -4355,7 +4355,7 @@
           segment.sta = road[firstseg].sta.slice()
           segment.sta[0] = bu.daysnap(segment.sta[0]+days*bu.SID)
           segment.end = road[firstseg].end.slice()
-          segment.slope = br.roadSegmentSlope(segment)
+          segment.slope = br.segSlope(segment)
           segment.auto = br.RP.VALUE
           road.splice(firstseg+1, 0, segment)
           road[firstseg].end = segment.sta.slice()
@@ -4365,12 +4365,12 @@
       } else {
         // Find the right boundary for the segment for overwriting
         var endtime = bu.daysnap(road[firstseg].sta[0]+days*bu.SID)
-        var lastseg = br.findRoadSegment( road, endtime )
+        var lastseg = br.findSeg( road, endtime )
         if (road[lastseg].sta[0] != endtime) {
           // If there are no dots on the endpoint, add a new one
           addNewDot(endtime); 
           if (added) {undoBuffer.pop(); added = true}
-          lastseg = br.findRoadSegment( road, endtime )
+          lastseg = br.findSeg( road, endtime )
         }
         // Delete segments in between
         for (j = firstseg+1; j < lastseg; j++) {
@@ -4380,7 +4380,7 @@
         var valdiff = road[firstseg+1].sta[1] - road[firstseg].sta[1]
         for (j = firstseg; j < road.length; j++) {
           road[j].end[1] -= valdiff
-          road[j].slope = br.roadSegmentSlope(road[j])
+          road[j].slope = br.segSlope(road[j])
           if (j+1 < road.length) road[j+1].sta[1] = road[j].end[1]
         }
         br.fixRoadArray( road, br.RP.SLOPE, false)
@@ -4398,7 +4398,7 @@
       if (road[road.length-2].slope == newSlope) return
 
       // Find out if there are any segments beyond the horizon
-      var horseg = br.findRoadSegment( road, goal.horizon );
+      var horseg = br.findSeg( road, goal.horizon );
       if (road[horseg].sta[0] == goal.horizon || horseg < road.length-2) {
         // There are knots beyond the horizon. Only adjust the last segment
         pushUndoState()
