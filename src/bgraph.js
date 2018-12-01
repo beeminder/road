@@ -4551,7 +4551,7 @@
     self.msg = (msg)=>{
       if (!msg) removeOverlay("message")
       else
-        showOverlay([msg], 22, null, {x:sw/20, y:10, w:sw*18/20, h:50}, "message", false)
+        showOverlay([msg], 20, null, {x:sw/20, y:10, w:sw*18/20, h:50}, "message", false)
     }
     self.animHor = animHor
     self.animYBR = animYBR
