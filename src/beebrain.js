@@ -762,23 +762,24 @@
     function vetParams() {
       var s = (y => JSON.stringify(y)), i
 
-      for (let i = 0; i < pchk.length; i++) {
+      for (i = 0; i < pchk.length; i++) {
         var l = pchk[i]
         if (!(l[1](goal[l[0]]))) return `'${l[0]}' ${l[2]}: ${s(goal[l[0]])}`
       }
 
-      for (i = 0; i < goal.road.length; i++)
-        if (!validrow(goal.road[i]))
-          return "Invalid road matrix row: "+showrow(goal.road[i])
+      var rd = goal.road
+      for (i = 0; i < rd.length; i++)
+        if (!validrow(rd[i]))
+          return "Invalid road matrix row: "+showrow(rd[i])
       // At this point road is guaranteed to be a list of length-3 lists
       // I guess we don't mind a redundant final road row
-      var mostroad = goal.road.slice(1,goal.road.length-1)
-      if (mostroad.length != bu.deldups(mostroad).length) {
-        var prev = mostroad[0] // previous row
-        for (i = 1; i < mostroad.length; i++) {
-          if (bu.arrayEquals(mostroad[i], prev))
-            return "Road matrix has duplicate row: "+showrow(mostroad[i])
-          prev = mostroad[i]
+      var mrd = rd.slice(1,rd.length-1)
+      if (mrd.length != bu.deldups(mrd).length) {
+        var prev = mrd[0] // previous row
+        for (i = 1; i < mrd.length; i++) {
+          if (bu.arrayEquals(mrd[i], prev))
+            return "Road matrix has duplicate row: "+showrow(mrd[i])
+          prev = mrd[i]
         }
         return "Road matrix duplicate row error! Tell support!" //seems unreachable
       }
