@@ -370,19 +370,23 @@
 
     /** Utility function to show a shaded overlay with a message 
      consisting of multiple lines supplied in the array argument */
-    function showOverlay( msgs, fontSize = -1, fontWeight="bold") {
+    function showOverlay( msgs, fs = -1, fw="bold",
+                          box=null, cls="overlay", shd = true) {
       if (opts.divGraph == null) return
-      var pg = svg.select("g.overlay")
+      if (box == null) box ={x:sw/20, y:sh/5, w:sw-2*sw/20, h:sh-2*sh/5}
+      var pg = svg.select("g."+cls)
       if (pg.empty()) {
-        pg = svg.append('g').attr('class', 'overlay')
+        pg = svg.append('g').attr('class', cls)
+        if (shd) {
+          pg.append('svg:rect')
+            .attr('x', 0).attr('y',0)
+            .attr('width', sw).attr('height',sh)
+            .style('fill', bu.Cols.WITE)
+            .style('fill-opacity', 0.5)
+        }
         pg.append('svg:rect')
-          .attr('x', 0).attr('y',0)
-          .attr('width', sw).attr('height',sh)
-          .style('fill', bu.Cols.WITE)
-          .style('fill-opacity', 0.5)
-        pg.append('svg:rect')
-          .attr('x', sw/20).attr('y',sh/5)
-          .attr('width', sw-2*sw/20).attr('height',sh-2*sh/5)
+          .attr('x', box.x).attr('y',box.y)
+          .attr('width', box.w).attr('height',box.h)
           .attr('rx', 5)
           .attr('ry', 5)
           .style('stroke', bu.Cols.BLCK)
@@ -392,22 +396,22 @@
       }
       pg.selectAll(".loading").remove()
       var nummsgs = msgs.length
-      if (fontSize < 0) fontSize = sh/15
-      var lineHeight = fontSize * 1.1
+      if (fs < 0) fs = sh/15
+      var lh = fs * 1.1
       for (let i = 0; i < nummsgs; i++) {
         pg.append('svg:text').attr('class', 'loading')
           .attr('x', sw/2)
-          .attr('y',sh/2 - ((nummsgs-1)*lineHeight)/2+i*lineHeight+fontSize/2)
-          .attr('font-size', fontSize)
-          .style('font-size', fontSize)
-          .style('font-weight', fontWeight)
+          .attr('y',(box.y+box.h/2) - ((nummsgs-1)*lh)/2+i*lh+fs/2-3)
+          .attr('font-size', fs)
+          .style('font-size', fs)
+          .style('font-weight', fw)
           .text(msgs[i])
       }
     }
-    function removeOverlay() {
+    function removeOverlay(cls = "overlay") {
       //console.debug("removeOverlay("+self.id+")")
       if (opts.divGraph == null) return
-      svg.selectAll("g.overlay").remove()
+      svg.selectAll("g."+cls).remove()
     }
 
     function createGraph() {
@@ -503,7 +507,7 @@
             var newx = nXSc.invert(pressX)
             if (pressTimer == null && d3.event.touches.length == 1) 
               pressTimer = window.setTimeout(
-                function() { if (newx != null) addNewDot(newx/1000) },1000)
+                () => { if (newx != null) addNewDot(newx/1000) },1000)
             oldTouchStart.apply(this, arguments);} )
           .on("touchmove.zoom", function () { window.clearTimeout(pressTimer); pressTimer = null; oldTouchMove.apply(this, arguments)})
           .on("touchend.zoom", function () { clearTimeout(pressTimer); pressTimer = null; oldTouchEnd.apply(this, arguments)} );              
@@ -580,25 +584,19 @@
         .attr("xlink:href", "#zoominbtn")
 	  	  .attr("opacity",opts.zoomButton.opacity)
         .attr("transform", zoombtntr.botin)
-        .on("click", function() {
-          zoomarea.call(axisZoom.scaleBy, 
-                        opts.zoomButton.factor);})
-        .on("mouseover", function() {
-          if (!mobileOrTablet) d3.select(this).style("fill", "red");})
-	      .on("mouseout",function(d,i) {
-          d3.select(this).style("fill", "black");});
+        .on("click", () => {zoomarea.call(axisZoom.scaleBy, opts.zoomButton.factor)})
+        .on("mouseover", () =>{
+          if (!mobileOrTablet) d3.select(this).style("fill", "red")})
+	      .on("mouseout",(d,i) => {d3.select(this).style("fill", "black")});
       zoomout = plot.append("svg:use")
 	      .attr("class","zoomout")
 	      .attr("xlink:href","#zoomoutbtn")
 	  	  .attr("opacity",opts.zoomButton.opacity)
         .attr("transform", zoombtntr.botout)
-        .on("click", function() {
-          zoomarea.call(axisZoom.scaleBy, 
-                        1/opts.zoomButton.factor);})
-        .on("mouseover", function() {
-          if (!mobileOrTablet) d3.select(this).style("fill", "red");})
-	      .on("mouseout",function(d,i) {
-          d3.select(this).style("fill", "black");});
+        .on("click", () => {zoomarea.call(axisZoom.scaleBy, 1/opts.zoomButton.factor)})
+        .on("mouseover", () =>{
+          if (!mobileOrTablet) d3.select(this).style("fill", "red")})
+	      .on("mouseout",(d,i) =>{d3.select(this).style("fill", "black")});
 
       // Create and initialize the x and y axes
       xSc = d3.scaleUtc().range([0,plotbox.width]);
@@ -901,20 +899,18 @@
       } else {
         tickType = 6; majorSkip = 1;              
       }
-      var pt = ticks[tickType][0].filter(function(d){
-        return (d.getTime()<xr[0]);});
+      var pt = ticks[tickType][0].filter((d)=>((d.getTime()<xr[0])));
       var ind = majorSkip - (pt.length)%majorSkip - 1;
-      var tv = ticks[tickType][0].filter(function(d){
-        return (d.getTime()>=xr[0]&&d.getTime()<=xr[1]);});
+      var tv = ticks[tickType][0].filter(
+        (d)=>((d.getTime()>=xr[0]&&d.getTime()<=xr[1])));
       xAxis.tickValues(tv)
         .tickSize(7)
-        .tickFormat(function(d,i){ 
-          return d3.utcFormat((i%majorSkip==ind)
-                               ?ticks[tickType][1]:"")(d);});
+        .tickFormat(
+          (d,i)=>d3.utcFormat((i%majorSkip==ind)?ticks[tickType][1]:"")(d))
       xAxisObj.call(xAxis.scale(nXSc));
       xAxisObj.selectAll("g").classed("minor", false);
       xAxisObj.selectAll("g")
-        .filter(function (d, i) {return (i%majorSkip!=ind);})
+        .filter((d, i)=>(i%majorSkip!=ind))
         .classed("minor", true);
 
       if (!opts.roadEditor) {
@@ -922,7 +918,7 @@
         xGridObj.call(xGrid.scale(nXSc));
         xGridObj.selectAll("g").classed("minor", false);
         xGridObj.selectAll("g")
-          .filter(function (d, i) {return (i%majorSkip!=ind);})
+          .filter( (d, i)=>(i%majorSkip!=ind))
           .classed("minor", true);
       }
     }
@@ -950,8 +946,7 @@
     function adjustYScale() {
       var xrange = [nXSc.invert(0), 
                     nXSc.invert(plotbox.width)];
-      var xtimes = xrange.map(function(d) {
-        return Math.floor(d.getTime()/1000);});
+      var xtimes = xrange.map((d)=>Math.floor(d.getTime()/1000))
       var re 
             = roadExtentPartial(road,xtimes[0],xtimes[1],false);
       re.yMin -= goal.lnw;
@@ -990,8 +985,8 @@
       if (ae.yMin < goal.yMin) goal.yMin = ae.yMin;
       resizeContext();
 
-      var sx = xrange.map(function (x){return xScB(x);});
-      var sy = yrange.map(function (y){return yScB(y);});
+      var sx = xrange.map( (x)=>xScB(x));
+      var sy = yrange.map( (y)=>yScB(y));
       focusrect
         .attr("x", sx[0]+1).attr("width", Math.max(0, sx[1]-sx[0]-2))
         .attr("y", sy[0]+1).attr("height", Math.max(0, sy[1]-sy[0]-2));
@@ -1198,10 +1193,10 @@
     function roadExtent( rd, extend = true ) {
       var extent = {};
       // Compute new limits for the current data
-      extent.xMin = bu.arrMin(rd.map(function(d) { return d.end[0]; }));
-      extent.xMax = bu.arrMax(rd.map(function(d) { return d.sta[0]; }));
-      extent.yMin = bu.arrMin(rd.map(function(d) { return d.sta[1]; }));
-      extent.yMax = bu.arrMax(rd.map(function(d) { return d.sta[1]; }));
+      extent.xMin = bu.arrMin(rd.map((d)=>d.end[0]));
+      extent.xMax = bu.arrMax(rd.map((d)=>d.sta[0]));
+      extent.yMin = bu.arrMin(rd.map((d)=>d.sta[1]));
+      extent.yMax = bu.arrMax(rd.map((d)=>d.sta[1]));
       // Extend limits by 5% so everything is visible
       var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
       if (extend) enlargeExtent(extent, p);
@@ -1210,8 +1205,7 @@
 
     function dataExtentPartial( data, xmin, xmax, extend = false ) {
       var extent = {};
-      var nd = data.filter(function(d) {
-        return (d[0] > xmin && d[0] < xmax);});
+      var nd = data.filter((d) =>((d[0] > xmin && d[0] < xmax)));
       if (nd.length == 0) {
         // no points are in range, find enclosing two
         var ind = -1;
@@ -1226,10 +1220,10 @@
       if (nd.length == 0) return null;
 
       // Compute new limits for the current data
-      extent.xMin = bu.arrMin(nd.map(function(d) { return d[0]; }));
-      extent.xMax = bu.arrMax(nd.map(function(d) { return d[0]; }));
-      extent.yMin = bu.arrMin(nd.map(function(d) { return d[1]; }));
-      extent.yMax = bu.arrMax(nd.map(function(d) { return d[1]; }));
+      extent.xMin = bu.arrMin(nd.map((d)=>d[0]));
+      extent.xMax = bu.arrMax(nd.map((d)=>d[0]));
+      extent.yMin = bu.arrMin(nd.map((d)=>d[1]));
+      extent.yMax = bu.arrMax(nd.map((d)=>d[1]));
 
       // Extend limits by 5% so everything is visible
       var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
@@ -1440,18 +1434,14 @@
       var resp = await bu.loadJSON( url )
 
       if (resp != null) {
-        removeOverlay();
-        loadGoal( resp );
-        if (typeof opts.onRoadChange === 'function') {
-          opts.onRoadChange.call();
-        }
-        updateTableTitles();
+        removeOverlay()
+        loadGoal( resp )
+        if (typeof opts.onRoadChange === 'function') opts.onRoadChange.call()
+        updateTableTitles()
       } else {
         if (lastError != null) showOverlay( [ErrMsgs[lastError]] );
         else showOverlay(["Could not load goal file."]);
-        if (!opts.headless) {
-          setTimeout( function() {removeOverlay();}, 1500);
-        }
+        if (!opts.headless) setTimeout( removeOverlay, 1500);
         if (typeof opts.onError === 'function') {
           opts.onError.call();
         }
@@ -1465,36 +1455,36 @@
         return
       }
       //console.debug("setSafeDays()");
-      var curdtd = br.dtd(road, goal, goal.tcur, goal.vcur);
-      var now = goal.asof;
-      if (days < 0) days = 0;
+      var curdtd = br.dtd(road, goal, goal.tcur, goal.vcur)
+      var now = goal.asof
+      if (days < 0) days = 0
       // Look into the future to see the road value to ratchet to
-      var daydiff = curdtd - (days - 1) - 1;
-      if (daydiff <= 0) return;
-      var futureDate= goal.asof + daydiff*bu.SID;
-      var ratchetValue = br.rdf( road, futureDate);
+      var daydiff = curdtd - (days - 1) - 1
+      if (daydiff <= 0) return
+      var futureDate= goal.asof + daydiff*bu.SID
+      var ratchetValue = br.rdf( road, futureDate)
 
       // Find or add two new dots at asof
       // We only allow the first step to record undo info.
-      var first = -1, i;
+      var first = -1, i
       for (i = 1; i < road.length; i++) {
         if (road[i].sta[0] === now) {
-          first = i-1; break;
+          first = i-1; break
         }
       }
       var added = false;
-      if (first < 0) {addNewDot(now);added = true;}
-      var second;
+      if (first < 0) {addNewDot(now);added = true}
+      var second
       if (i+1 < road.length && road[i+1].sta[0] === now)
-        second = i;
+        second = i
       else {
-        second = addNewDot(now, ratchetValue); 
-        if (added) {undoBuffer.pop(); added = true;}
+        second = addNewDot(now, ratchetValue)
+        if (added) {undoBuffer.pop(); added = true}
       }
       //changeDotValue( second, ratchetValue, false );
       //if (added) {undoBuffer.pop(); added = true;}
 
-      roadChanged();
+      roadChanged()
     }
 
     // Adds a new dot to the supplied x value, with the y value either
@@ -1503,32 +1493,32 @@
     function addNewDot(x, y = null) {
       var found = br.findSeg(road, x);
       if (found >= 0) {
-        var segment = {};
+        var s = {};
         var newx = bu.daysnap(x+bu.SID/2), newy = y;
         if (y == null) {
           newy = road[found].sta[1] 
             + road[found].slope*(newx - road[found].sta[0]);
         }
         pushUndoState();
-        segment.sta = [newx, newy];
+        s.sta = [newx, newy];
         if (found == 0) {
           // First segment splitted
-          segment.end = road[found+1].sta.slice();
+          s.end = road[found+1].sta.slice();
           if (y != null) {
-            segment.end[1] = segment.sta[1]
-              +road[found].slope*(segment.end[0]-newx);
+            s.end[1] = s.sta[1]
+              +road[found].slope*(s.end[0]-newx);
           }
           road[found].end = [newx, newy];
         } else {
           if (found == road.length-1) {
             // Last segment splitted
-            segment.end = road[found].end.slice();
-            segment.end[1] = newy;
+            s.end = road[found].end.slice();
+            s.end[1] = newy;
           } else {
-            segment.end = road[found+1].sta.slice();
+            s.end = road[found+1].sta.slice();
             if (y != null && opts.keepSlopes) {
-              segment.end[1] = segment.sta[1]
-                +road[found].slope*(segment.end[0]-newx);
+              s.end[1] = s.sta[1]
+                +road[found].slope*(s.end[0]-newx);
             }
           }
           road[found].end = [newx, newy];
@@ -1537,9 +1527,9 @@
           if (road[found].sta[0] == road[found].end[0])
             road[found].auto = br.RP.SLOPE
         }
-        segment.slope = br.segSlope(segment);
-        segment.auto = br.RP.VALUE;
-        road.splice(found+1, 0, segment);
+        s.slope = br.segSlope(s);
+        s.auto = br.RP.VALUE;
+        road.splice(found+1, 0, s);
         br.fixRoadArray( road, opts.keepSlopes?br.RP.VALUE
                       :br.RP.SLOPE, false);
         roadChanged();
@@ -1643,19 +1633,12 @@
 		  	    .attr("x2", nXSc(rd[ii].end[0]*1000));
 		      el.select("[name=remove"+ii+"]")
             .attr("transform", 
-                  function(d){ 
-                    return "translate("+(nXSc(d.end[0]*1000)
-                                         +plotpad.left-8)
-                      +","+(plotpad.top-20)+") scale(0.6,0.6)";
-                  });
+                  (d) => ("translate("+(nXSc(d.end[0]*1000)+plotpad.left-8)
+                          +","+(plotpad.top-20)+") scale(0.6,0.6)"))
         }
-        var datestr = bu.dayify(rd[ii].end[0], '-');
-  		  el.select("[name=enddate"+ii+"]")
-          .text(datestr);
-  		  el.select("[name=endvalue"+ii+"]")
-          .text(bu.shn(rd[ii].end[1]));
-  		  el.select("[name=slope"+ii+"]")
-          .text(bu.shn(rd[ii].slope*goal.siru));
+  		  el.select("[name=enddate"+ii+"]").text(bu.dayify(rd[ii].end[0], '-'));
+  		  el.select("[name=endvalue"+ii+"]").text(bu.shn(rd[ii].end[1]));
+  		  el.select("[name=slope"+ii+"]").text(bu.shn(rd[ii].slope*goal.siru));
       }
 
       if (opts.tableUpdateOnDrag) updateTableValues();
@@ -2858,13 +2841,9 @@
         guideelt.attr("d", rd2)
           .attr("transform", function(d,i) { 
             return "translate(0,"+((d<0)?bc[0]:((i+1)*shift))+")";})
-  		    .attr("stroke-width", function (d,i) { 
-            return (d<0)
-              ?opts.guidelines.weekwidth*scf
-              :opts.guidelines.width*scf;})
-  		    .attr("stroke", function (d,i) { 
-            return (d<0)
-              ?bu.Cols.BIGG:bu.Cols.LYEL;});
+  		    .attr("stroke-width", (d,i)=>((d<0)?opts.guidelines.weekwidth*scf
+                                        :opts.guidelines.width*scf))
+  		    .attr("stroke",  (d,i) =>((d<0)?bu.Cols.BIGG:bu.Cols.LYEL));
       } else {
         laneelt.remove();
         guideelt.remove();
@@ -3617,7 +3596,7 @@
         .append("div").attr('class', 'roadhdrrow')
         .selectAll("span.roadhdrcell").data(startcolumns)
         .enter().append('span').attr('class', 'roadhdrcell')
-        .text(function (column) { return column; });
+        .text((c)=>c);
       stbody = sthead.append('div').attr('class', 'roadbody'); 
       if (opts.tableCheckboxes)
         tailcolumns = ['', '', 'End Date', '', 'Value', '', 'Daily Slope'];
@@ -3627,7 +3606,7 @@
       sttail.append("div").attr('class', 'roadhdrrow')
         .selectAll("span.roadhdrcell").data(tailcolumns)
         .enter().append('span').attr('class', 'roadhdrcell')
-        .text(function (column) { return column; });
+        .text((c)=>c);
    };
 
     // Create the table header and body to show the goal node
@@ -3643,7 +3622,7 @@
         .append("div").attr('class', 'roadhdrrow')
         .selectAll("span.roadhdrcell").data(goalcolumns)
         .enter().append('span').attr('class', 'roadhdrcell')
-        .text(function (column) { return column; });
+        .text((c)=>c)
       gbody = ghead.append('div').attr('class', 'roadbody');
     };
 
@@ -3666,12 +3645,9 @@
         roadcolumns = ['', '', 'End Date', 'Value', ratetext, ''];
         goalcolumns = ['', '', 'Goal Date', 'Value', ratetext, ''];
       }
-      sttail.selectAll("span.roadhdrcell").data(roadcolumns)
-        .text(function (column) { return column; });
-      thead.selectAll("span.roadhdrcell").data(roadcolumns)
-        .text(function (column) { return column; });
-      ghead.selectAll("span.roadhdrcell").data(goalcolumns)
-        .text(function (column) { return column; });
+      sttail.selectAll("span.roadhdrcell").data(roadcolumns).text((c)=>c);
+      thead.selectAll("span.roadhdrcell").data(roadcolumns).text((c)=>c);
+      ghead.selectAll("span.roadhdrcell").data(goalcolumns).text((c)=>c);
 
       updateTableWidths();
     }
@@ -3936,50 +3912,49 @@
               else kind = i
               if (opts.tableCheckboxes) 
                 return [
-                  {order: -1, row:kind, name: "btndel"+kind, evt: function() {removeKnot(kind, false);}, 
+                  {order: -1, row:kind, name: "btndel"+kind, evt: ()=>removeKnot(kind,false), 
                    type: 'button', txt: 'del', auto: false},
-                  {order: 3, row:kind, name: "btndate"+kind, evt: function() {disableDate(kind);}, 
+                  {order: 3, row:kind, name: "btndate"+kind, evt: ()=>disableDate(kind),
                    type: 'checkbox', txt: 'r', auto: (row.auto==br.RP.DATE)},
-                  {order: 5, row:kind, name: "btnvalue"+kind, evt: function() {disableValue(kind);}, 
+                  {order: 5, row:kind, name: "btnvalue"+kind, evt: ()=>disableValue(kind), 
                    type: 'checkbox', txt: 'r', auto: (row.auto==br.RP.VALUE)},
-                  {order: 7, row:kind, name: "btnslope"+kind, evt: function() {disableSlope(kind);}, 
+                  {order: 7, row:kind, name: "btnslope"+kind, evt: ()=>disableSlope(kind),
                    type: 'checkbox', txt: 'r', auto: (row.auto==br.RP.SLOPE)},
-                  {order: 8, row:kind, name: "btnadd"+kind, evt: function() {addNewKnot(kind+1);}, 
+                  {order: 8, row:kind, name: "btnadd"+kind, evt: ()=>addNewKnot(kind+1), 
                    type: 'button', txt: 'ins', auto: false},
                 ];
               else
                 return [
-                  {order: -1, row:kind, name: "btndel"+kind, evt: function() {removeKnot(kind, false);}, 
+                  {order: -1, row:kind, name: "btndel"+kind, evt: ()=>removeKnot(kind,false), 
                    type: 'button', txt: 'del', auto: false},
-                  {order: 8, row:kind, name: "btnadd"+kind, evt: function() {addNewKnot(kind+1);}, 
+                  {order: 8, row:kind, name: "btnadd"+kind, evt: ()=>addNewKnot(kind+1),
                    type: 'button', txt: 'ins', auto: false},
                 ];
             })
       
       var newbtncells = btncells.enter().append("input")
             .attr('class', 'roadbtn')
-            .attr('id', function(d) { return d.row})
-            .attr('name', function(d) { return d.name})
-            .attr('type',function(d) {return d.type})
-            .attr('value', function(d) { 
+            .attr('id',   (d)=>d.row)
+            .attr('name', (d)=>d.name)
+            .attr('type', (d)=>d.type)
+            .attr('value', (d)=> { 
               let cell = "<span class='octicon octicon-plus'></span>";
               return d.txt})
-            .on('click', function (d) {d.evt();})
+            .on('click', (d)=>d.evt())
       
       btncells.exit().remove()
       btncells = allrows.selectAll(".rtablestart .roadbtn, .rtable .roadbtn, .rtablegoal .roadbtn")
       btncells
-        .attr('id', function(d) { return d.row})
-        .attr('name', function(d) { return d.name})
-        .style('visibility', function(d,i) {
-          return ((Number(d.row)>0 && Number(d.row)<(road.length-2)) 
-                  || i==4 
-                  || (i>0 && Number(d.row)>0 ))?"visible":"hidden";
-        })
-        .property('checked', function(d) { return d.auto?true:false;})
+        .attr('id', (d)=>d.row)
+        .attr('name', (d)=>d.name)
+        .style('visibility', (d,i) =>
+               (((Number(d.row)>0 && Number(d.row)<(road.length-2)) 
+                 || i==4 
+                 || (i>0 && Number(d.row)>0 ))?"visible":"hidden")
+              )
+        .property('checked', (d)=>(d.auto?true:false))
 
-      allrows.selectAll(".roadcell, .roadbtn")
-        .sort(function(a,b) {return a.order > b.order;})
+      allrows.selectAll(".roadcell, .roadbtn").sort((a,b)=>(a.order > b.order))
 
       if (!opts.roadEditor) {
         allrows.selectAll(".roadbtn").style('visibility', "collapse").attr("value","")
@@ -3990,55 +3965,54 @@
       var data = road.slice(s, e)
       if (rev) data = data.reverse()
       var rows = elt.selectAll(".roadrow").data( data )
-      var ifn = function(i) { return rev?(road.length-2-i):i;}
+      var ifn = (i)=>(rev?(road.length-2-i):i)
       rows.enter().append("div").attr('class', 'roadrow')
-        .attr("name", function(d,i) { return 'roadrow'+ifn(s+i);})
-        .attr("id", function(d,i) { return ifn(s+i);})
+        .attr("name", (d,i)=>('roadrow'+ifn(s+i)))
+        .attr("id", (d,i)=>(ifn(s+i)))
         .append("div")
-        .attr("class", "rowid").text(function(d,i) {return ifn(s+i)+":";})
+        .attr("class", "rowid").text((d,i)=>(ifn(s+i)+":"))
       rows.exit().remove()
       rows.order()
       rows = elt.selectAll(".roadrow")
-      rows.attr("name", function(d,i) { return 'roadrow'+ifn(s+i);})
-        .attr("id", function(d,i) { return ifn(s+i);})
-      rows.select("div").text(function(d,i) {return ifn(s+i)+":";})
+      rows.attr("name", (d,i)=>('roadrow'+ifn(s+i)))
+        .attr("id", (d,i)=>(ifn(s+i)))
+      rows.select("div").text((d,i)=>(ifn(s+i)+":"))
       var cells = rows.selectAll(".roadcell")
-            .data(function(row, i) {
-              var datestr = bu.dayify(row.end[0], '-')
-              var ri = ifn(s+i)
-               return [
-                 {order: 2, value: datestr, name: "enddate"+(ri), 
-                  auto: (row.auto==br.RP.DATE), i:ri},
-                 {order: 4, value: bu.shn(row.end[1]), name: "endvalue"+(ri), 
-                  auto: (row.auto==br.RP.VALUE), i:ri},
-                 {order: 6, value: isNaN(row.slope)
-                  ?"duplicate":bu.shn(row.slope*goal.siru), name: "slope"+(ri), 
-                  auto: (row.auto==br.RP.SLOPE), i:ri}]
-             });
+          .data((row, i) => {
+            var datestr = bu.dayify(row.end[0], '-')
+            var ri = ifn(s+i)
+            return [
+              {order: 2, value: datestr, name: "enddate"+(ri), 
+               auto: (row.auto==br.RP.DATE), i:ri},
+              {order: 4, value: bu.shn(row.end[1]), name: "endvalue"+(ri), 
+               auto: (row.auto==br.RP.VALUE), i:ri},
+              {order: 6, value: isNaN(row.slope)
+               ?"duplicate":bu.shn(row.slope*goal.siru), name: "slope"+(ri), 
+               auto: (row.auto==br.RP.SLOPE), i:ri}]
+          });
        cells.enter().append("div").attr('class', 'roadcell')
-         .attr('name', function(d) { return d.name})
-         .attr("contenteditable", function(d,i) { 
-           return (d.auto || !opts.roadEditor)?'false':'true'})
-         .on('click', tableClick)
-         .on('focusin', tableFocusIn)
-         .on('focusout', tableFocusOut)
-         .on('keydown', tableKeyDown)
+        .attr('name', (d)=>d.name)
+        .attr("contenteditable", (d,i) =>((d.auto || !opts.roadEditor)?'false':'true'))
+        .on('click', tableClick)
+        .on('focusin', tableFocusIn)
+        .on('focusout', tableFocusOut)
+        .on('keydown', tableKeyDown)
 
        cells.exit().remove()
        cells = rows.selectAll(".roadcell")
-       cells.text(function(d,i) { return d.value})
-         .attr('name', function(d) { return d.name})
-         .style('color', function(d) {
-           if (road[d.i].sta[0] == road[d.i].end[0] 
-               && road[d.i].sta[1] == road[d.i].end[1])
-             return opts.roadLineCol.invalid
-           return d.auto?opts.roadTableCol.textDisabled
-             :opts.roadTableCol.text})
-         .style('background-color', function(d) {
-           return d.auto?opts.roadTableCol.bgDisabled
-             :opts.roadTableCol.bg})
-         .attr("contenteditable", function(d,i) { 
-           return (d.auto || !opts.roadEditor)?'false':'true'})
+       cells.text((d,i)=>d.value)
+         .attr('name', (d)=>d.name)
+        .style('color', (d) =>{
+          if (road[d.i].sta[0] == road[d.i].end[0] 
+              && road[d.i].sta[1] == road[d.i].end[1])
+            return opts.roadLineCol.invalid
+          return d.auto?opts.roadTableCol.textDisabled
+            :opts.roadTableCol.text})
+        .style('background-color', function(d) {
+          return d.auto?opts.roadTableCol.bgDisabled
+            :opts.roadTableCol.bg})
+        .attr("contenteditable", function(d,i) { 
+          return (d.auto || !opts.roadEditor)?'false':'true'})
     }
     
     function updateTableWidths() {
@@ -4167,7 +4141,7 @@
     self.id = 1
 
     /** Sets/gets the showData option */
-    self.showData = function( flag ) {
+    self.showData = (flag) => {
       if (arguments.length > 0) opts.showData = flag
       if (alldata.length != 0) {
         updateDataPoints()
@@ -4181,7 +4155,7 @@
     }
     
     /** Sets/gets the showContext option */
-    self.showContext = function( flag ) {
+    self.showContext = (flag) => {
       if (arguments.length > 0) opts.showContext = flag
       if (road.length != 0)
         updateContextData()
@@ -4189,30 +4163,28 @@
     }
     
     /** Sets/gets the keepSlopes option */
-    self.keepSlopes = function( flag ) {
+    self.keepSlopes = (flag) => {
       if (arguments.length > 0) opts.keepSlopes = flag
       return opts.keepSlopes
     }
     
     /** Sets/gets the keepIntervals option */
-    self.keepIntervals = function( flag ) {
+    self.keepIntervals = ( flag ) => {
       if (arguments.length > 0) opts.keepIntervals = flag
       return opts.keepIntervals
     }
     
     /** Sets/gets the maxDataDays option. Updates the datapoint
      display if the option is changed. */
-    self.maxDataDays = function( days ) {
+    self.maxDataDays = ( days ) => {
       if (arguments.length > 0) {
         opts.maxDataDays = days
         if (opts.maxDataDays < 0) {
           alldataf = alldata.slice()
           dataf = data.slice()
         } else {
-          alldataf = alldata.filter(function(e){
-            return e[0]>(goal.asof-opts.maxDataDays*SID);})
-          dataf = data.filter(function(e){
-            return e[0]>(goal.asof-opts.maxDataDays*SID);})
+          alldataf = alldata.filter((e)=>(e[0]>(goal.asof-opts.maxDataDays*SID)))
+          dataf = data.filter((e)=>(e[0]>(goal.asof-opts.maxDataDays*SID)))
         }
         if (alldata.length != 0) {
           updateDataPoints()
@@ -4226,7 +4198,7 @@
     
     /** Sets/gets the reverseTable option. Updates the table if
      the option is changed. */
-    self.reverseTable = function( flag ) {
+    self.reverseTable = ( flag ) => {
       if (arguments.length > 0) {
         opts.reverseTable = flag
         if (opts.reverseTable) {
@@ -4244,7 +4216,7 @@
     }
     
     /** Sets/gets the tableUpdateOnDrag option. */
-    self.tableUpdateOnDrag = function( flag ) {
+    self.tableUpdateOnDrag = ( flag ) => {
       if (arguments.length > 0) {
         opts.tableUpdateOnDrag = flag
         updateTable()
@@ -4253,26 +4225,26 @@
     }
     
     /** Sets/gets the tableAutoScroll option. */
-    self.tableAutoScroll = function( flag ) {
+    self.tableAutoScroll = ( flag ) => {
       if (arguments.length > 0) opts.tableAutoScroll = flag
       return opts.tableAutoScroll
     }
 
     /** Returns an object with the lengths of the undo and redo
      buffers */
-    self.undoBufferState = function() {
+    self.undoBufferState = () => {
       return({undo: undoBuffer.length, redo: redoBuffer.length})
     }
 
     /** Undoes the last edit */
-    self.undo = function() {
+    self.undo = () => {
       if (!opts.roadEditor) return
       document.activeElement.blur()
       undoLastEdit()
     }
 
     /** Redoes the last edit that was undone */
-    self.redo = function() {
+    self.redo = () => {
       if (!opts.roadEditor) return
       document.activeElement.blur()
       redoLastEdit()
@@ -4281,29 +4253,29 @@
     /** Clears the undo buffer. May be useful after the new
      road is submitted to Beeminder and past edits need to be
      forgotten. */
-    self.clearUndo = function() { clearUndoBuffer() }
+    self.clearUndo = clearUndoBuffer
 
     /** Zooms out the goal graph to make the entire range from
      tini to tfin visible, with additional slack before and after
      to facilitate adding new knots. */
-    self.zoomAll = function() { if (road.length == 0) return; else zoomAll() }
+    self.zoomAll = () => { if (road.length == 0) return; else zoomAll() }
 
     /** Brings the zoom level to include the range from tini to
      slightly beyond the akrasia horizon. This is expected to be
      consistent with beebrain generated graphs. */ 
-    self.zoomDefault = function() { if (road.length == 0) return; else zoomDefault() }
+    self.zoomDefault = () => { if (road.length == 0) return; else zoomDefault() }
 
     /** Initiates loading a new goal from the indicated url.
      Expected input format is the same as beebrain. Once the input
      file is fetched, the goal graph and road matrix table are
      updated accordingly. */
-    self.loadGoal = function( url ) { loadGoalFromURL( url ) }
+    self.loadGoal = ( url ) => { loadGoalFromURL( url ) }
 
     /** Initiates loading a new goal from the indicated url.
      Expected input format is the same as beebrain. Once the input
      file is fetched, the goal graph and road matrix table are
      updated accordingly. */
-    self.loadGoalJSON = function( json ) {
+    self.loadGoalJSON = ( json ) => {
       removeOverlay()
       loadGoal( json )
     }
@@ -4311,12 +4283,12 @@
     /** Performs retroratcheting function by adding new knots to
      leave "days" number of days to derailment based on today data
      point (which may be flatlined). */
-    self.retroRatchet = function( days ) {
+    self.retroRatchet = ( days ) => {
       if (!opts.roadEditor) return
       setSafeDays( days )
     }
 
-    self.scheduleBreak = function( start, days, insert ) {
+    self.scheduleBreak = ( start, days, insert ) => {
       if (!opts.roadEditor) return
       if (isNaN(days)) return
       if (road.length == 0) {
@@ -4388,7 +4360,7 @@
       roadChanged()
     }
 
-    self.commitTo = function( newSlope ) {
+    self.commitTo = ( newSlope ) => {
       if (!opts.roadEditor) return
       if (isNaN(newSlope)) return
       if (road.length == 0) {
@@ -4414,7 +4386,7 @@
      current roadmatix (latest edited version), as well as a
      boolean ('valid') indicating whether the edited road
      intersects the pink region or not. */
-    self.getRoad = function() {
+    self.getRoad = () => {
       function dt(d) { return moment.unix(d).utc().format("YYYYMMDD");};
       // Format the current road matrix to be submitted to Beeminder
       var r = {}, seg, rd, kd;
@@ -4454,7 +4426,7 @@
      contents with a cleaned up graph suitable to be used with
      headless chrome --dump-dom to retrieve the contents as a simple
      SVG. */
-    self.saveGraph = function( linkelt = null ) {
+    self.saveGraph = ( linkelt = null ) => {
 
       // retrieve svg source as a string.
       var svge = svg.node()
@@ -4507,16 +4479,13 @@
     /** Informs the module instance that the element containing the
      visuals will be hidden. Internally, this prevents calls to
      getBBox(), eliminating associated exceptions and errors. */
-    self.hide = function() {
-      //console.debug("curid="+curid+", hide()");
-      hidden = true
-    }
+    self.hide = () => {hidden = true}
 
     /** Informs the module instance that the element containing the
      visuals will be shown again. This forces an update of all visual
      elements, which might have previously been incorrectly rendered
      if hidden. */
-    self.show = function() {
+    self.show = () => {
       //console.debug("curid="+curid+", show()");
       hidden = false
       if (road.length == 0) {
@@ -4532,12 +4501,10 @@
       updateGraphData()
     }
 
-    self.getRoadObj = function() {
-      return br.copyRoad(road)
-    }
+    self.getRoadObj = () => br.copyRoad(road)
 
     var settingRoad = false;
-    self.setRoadObj = function( newroad, resetinitial = true ) {
+    self.setRoadObj = ( newroad, resetinitial = true ) => {
       if (settingRoad) return
       if (newroad.length == 0) {
         // TODO: More extensive sanity checking
@@ -4557,19 +4524,17 @@
       settingRoad = false
     }
 
-    self.isLoser = function() {
+    self.isLoser = () => {
       if (goal && road.length != 0)
         return br.isLoser(road,goal,data,goal.tcur,goal.vcur)
       else return false
     }
-    self.curState = function() {
-      if (goal) return [goal.tcur, goal.vcur, goal.rcur, br.rdf(road, goal.tcur)]
-      else return null
-    }
+    self.curState =
+      () => (goal?[goal.tcur, goal.vcur, goal.rcur, br.rdf(road, goal.tcur)]:null)
 
     const visualProps
           = ['plotall','steppy','rosy','movingav','aura','hidey','stathead','hashtags']
-    self.getVisualConfig = function( opts ) {
+    self.getVisualConfig = ( opts ) =>{
       var out = {}
       visualProps.map(e=>{ out[e] = goal[e] })
       return out
@@ -4577,12 +4542,17 @@
 
     const goalProps
           = ['offred','yaw','dir','kyoom','odom','noisy','integery','monotone','aggday']
-    self.getGoalConfig = function( opts ) {
+    self.getGoalConfig = ( opts ) => {
       var out = {}
       goalProps.map(e=>{ out[e] = goal[e] })
       return out
     }
 
+    self.msg = (msg)=>{
+      if (!msg) removeOverlay("message")
+      else
+        showOverlay([msg], 22, null, {x:sw/20, y:10, w:sw*18/20, h:50}, "message", false)
+    }
     self.animHor = animHor
     self.animYBR = animYBR
     self.animData = animData

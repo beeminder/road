@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Animated Goal</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="../src/pikaday.css">
+    <link rel="stylesheet" href="../src/jsbrain.css">
+    <script src = "https://d3js.org/d3.v4.js"></script>
+    <script src = "../node_modules/moment/min/moment.min.js"></script>
+    <script src = "../src/pikaday.js"></script>
+    <script src = "../src/polyfit.js"></script>
+    <script src = "../src/butil.js"></script>
+    <script src = "../src/broad.js"></script>
+    <script src = "../src/beebrain.js"></script>
+    <script src = "../src/bgraph.js"></script>
+    <script src = "../src/bsandbox.js"></script>
+</head>
+<body>
+  <div id="sandbox"></div>
+
+  <script>
+    const timeout = ms => new Promise(res => setTimeout(res, ms))
+
+    bs = new bsandbox(document.getElementById("sandbox"))
+    bs.newGoal("hustler", "d", 1, 0, true)
+    var gr = bs.getGraphObj()
+    
+    const anim = [
+      [2000, ()=>gr.msg("Welcome to Beeminder!")],
+      [100, ()=>gr.msg(null)],
+
+      [100, ()=>gr.msg("This is your Yellow Brick Road(YBR), stay on or above it!")],
+      [2900, ()=>gr.animYBR(true)],
+      [100, ()=>gr.animYBR(false)],
+      [100, ()=>gr.msg(null)],
+
+      [100, ()=>gr.msg("Every day, add new data for your activities")],
+      [300, ()=>bs.newData(1,"")],
+      [300, bs.nextDay],
+      [300, ()=>bs.newData(1,"")],
+      [300, bs.nextDay],
+      [300, bs.nextDay],
+      [300, bs.nextDay],
+      [300, bs.nextDay],
+      [300, ()=>bs.newData(1,"")],
+      [100, ()=>gr.msg(null)],
+
+      [100, ()=>gr.msg("These become your `data points`")],
+      [2900, ()=>gr.animData(true)],
+      [300, ()=>gr.animData(false)],
+      [100, ()=>gr.msg(null)],
+
+      [100, ()=>gr.msg("If you do not keep up, you may get off your YBR!")],
+      [300, bs.nextDay],
+      [300, bs.nextDay],
+      [300, bs.nextDay],
+      [300, bs.nextDay],
+      [300, bs.nextDay],
+      [300, bs.nextDay],
+      [300, bs.nextDay],
+      [300, bs.nextDay],
+      [1900, ()=>gr.msg("This is when you `derail`")],
+      [100, ()=>gr.msg(null)],
+
+      [900, ()=>gr.msg("So keep up, keep working!")],
+      [300, bs.nextDay],
+      [300, ()=>bs.newData(1,"")],
+      [300, bs.nextDay],
+      [300, ()=>bs.newData(1,"")],
+      [300, bs.nextDay],
+      [300, ()=>bs.newData(1,"")],
+      [300, bs.nextDay],
+      [300, ()=>bs.newData(1,"")],
+      [300, bs.nextDay],
+      [300, ()=>bs.newData(1,"")],
+      [300, ()=>bs.newData(1,"")],
+      [300, ()=>bs.newData(1,"")],
+      [300, bs.nextDay],
+      [300, ()=>bs.newData(1,"")],
+      [300, ()=>bs.newData(1,"")],
+      [300, bs.nextDay],
+      [100, ()=>gr.msg(null)],
+
+      [100, ()=>gr.msg("This is the Akrasia Horizon")],
+      [2900, ()=>gr.animHor(true)],
+      [100, ()=>gr.animHor(false)],
+      [100, ()=>gr.msg(null)],
+
+      [900, ()=>gr.msg("You can only make changes on your road beyond that horizon")],
+      [900, ()=>bs.newRate(0.5)],
+      [900, ()=>bs.newRate(0.0)],
+      [900, ()=>bs.newRate(0.5)],
+      [900, ()=>bs.newRate(1)],
+      [900, ()=>bs.newRate(2)],
+      [100, ()=>gr.msg(null)],
+
+      [100, ()=>gr.msg("So you can never give up today!")],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [100, ()=>gr.msg(null)],
+      [100, ()=>gr.msg("Keep going until you reach your goal!")],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [100, ()=>gr.msg(null)],
+      [100, ()=>gr.msg("Thank you using Beeminder. We are here to help.")],
+
+    ]
+    async function animate() {
+      for (let i = 0; i < anim.length; i++) {
+        anim[i][1]()
+        await timeout(anim[i][0])
+      }
+    }
+    
+    animate()
+  </script>
+
+</body>
+  
+</html>
