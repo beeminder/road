@@ -97,22 +97,20 @@
 
     self.isArray = (o) => ((/Array/).test(Object.prototype.toString.call(o)))
 
+    // TODO: This does not perform proper copying especially for array
+    // properties. FIX
     self.extend = (to, fr, owr) => {
       var prop, hasProp
       for (prop in fr) {
         hasProp = to[prop] !== undefined
         if (hasProp && typeof fr[prop] === 'object' 
             && fr[prop] !== null  && fr[prop].nodeName === undefined ) {
-              if (self.isArray(fr[prop])) {
-                if (owr) {
-                  to[prop] = fr[prop].slice(0)
-                }
-              } else {
-                to[prop] = self.extend({}, fr[prop], owr)
-              }
-            } else if (owr || !hasProp) {
-              to[prop] = fr[prop]
-            }
+          if (self.isArray(fr[prop])) {if (owr) to[prop] = fr[prop].slice(0)}
+          else to[prop] = self.extend({}, fr[prop], owr)
+        } else if (owr || !hasProp) {
+          if (self.isArray(fr[prop])) to[prop] = fr[prop].slice(0)
+          else to[prop] = fr[prop]
+        }
       }
       return to
     }
