@@ -2311,6 +2311,43 @@
       }
     }
 
+    function animBuf(enable) {
+      if (opts.roadEditor) return
+      var e = gWatermark.selectAll(".waterbuf");
+      var x = Number(e.attr("x"))
+      var y = Number(e.attr("y"))
+      if  (e.node().tagName == 'text') {
+      
+        let sz = e.style("font-size")
+        sz = Number(sz.substring(0,sz.length-2))
+        let s =[["font-size", (sz*1.3)+"px",(sz)+"px"],
+                ["fill", "#c0c0c0", bu.Cols.GRAY]]
+        let a =[["y", y+0.1*sz/3, y]]
+        if (enable) startAnim(e, 500, a, s)
+        else stopAnim(e, 300, a, s)
+      } else {
+        let h = opts.watermark.height
+        let a =[["width", h*1.3, h], ["height", h*1.3, h],
+                ["x", x-0.15*h, x], ["y", y-0.15*h, y]]
+        if (enable) startAnim(e, 500, a, [])
+        else stopAnim(e, 300, a, [])
+      }
+    }
+    
+    function animBux(enable) {
+      if (opts.roadEditor) return
+      var e = gWatermark.selectAll(".waterbux");
+
+      var sz = e.style("font-size")
+      sz = Number(sz.substring(0,sz.length-2))
+      var y = Number(e.attr("y"))
+      var s =[["font-size", (sz*1.3)+"px",(sz)+"px"],
+              ["fill", "#c0c0c0", bu.Cols.GRAY]]
+      var a =[["y", y+0.15*sz, y]]
+      if (enable) startAnim(e, 500, a, s)
+      else stopAnim(e, 300, a, s)
+    }
+    
     // Creates or updates the watermark with the number of safe days
     function updateWatermark() {
       if (opts.divGraph == null || road.length == 0 || hidden) return;
@@ -2323,7 +2360,6 @@
       if (goal.loser) g = PNG.skl;
       if (goal.waterbuf === 'inf') g = PNG.inf;
       else if (goal.waterbuf === ':)') g = PNG.sml;
-
 
       if (goal.dir>0 && goal.yaw<0) { 
         offg = br; offb = tl
@@ -4560,6 +4596,8 @@
     self.animRosy = animRosy
     self.animMav = animMav
     self.animAura = animAura
+    self.animBuf = animBuf
+    self.animBux = animBux
   }
   
   return bgraph;

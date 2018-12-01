@@ -53,9 +53,25 @@
       [100, ()=>gr.msg("If you do not keep up, you may get off your YBR!")],
       [300, bs.nextDay],[300, bs.nextDay],
       [300, bs.nextDay],[300, bs.nextDay],
+      [100, ()=>gr.msg(null)],
+
+      [100, ()=>gr.msg("This is how much time you have until you're off")],
+      [2900, ()=>gr.animBuf(true)],
+      [100, ()=>gr.animBuf(false)],
+      [100, ()=>gr.msg(null)],
+
+      [100, ()=>gr.msg("And this is the pledge amount you are risking")],
+      [2900, ()=>gr.animBux(true)],
+      [100, ()=>gr.animBux(false)],
+      [100, ()=>gr.msg(null)],
+
+      [1900, ()=>gr.msg("If you get off the YBR, you `derail`.")],
       [300, bs.nextDay],[300, bs.nextDay],
       [300, bs.nextDay],[300, bs.nextDay],
-      [1900, ()=>gr.msg("This is when you `derail`.")],
+      [100, ()=>gr.msg(null)],
+      [100, ()=>gr.msg("Oops! That's ok, you are now given a weeklong buffer.")],
+      [2900, ()=>gr.animYBR(true)],
+      [100, ()=>gr.animYBR(false)],
       [100, ()=>gr.msg(null)],
 
       [900, ()=>gr.msg("So keep up, keep working!")],
