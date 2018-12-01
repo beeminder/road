@@ -651,7 +651,7 @@
           segment.auto = br.RP.VALUE
         } else if (rdslope == null) {
           segment.end = [rddate, Number(rdvalue)]
-          segment.slope = br.roadSegmentSlope(segment)
+          segment.slope = br.segSlope(segment)
           segment.auto = br.RP.SLOPE
         } 
         // Skip adding segment if it is earlier than the first segment
