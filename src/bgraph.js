@@ -2478,6 +2478,7 @@
       }
 
       var wbufelt = gWatermark.select(".waterbuf");
+      var fs = opts.watermark.fntsize
       wbufelt.remove();
       if (g != null) {
 	  	  x = (plotbox.width/2-opts.watermark.height)/2;
@@ -2490,18 +2491,18 @@
           .attr('height', opts.watermark.height);
       } else {
 	  	  x = plotbox.width/4;
-        y = plotbox.height/4+opts.watermark.fntsize/3;
+        y = plotbox.height/4+fs/3;
         wbufelt = gWatermark.append("svg:text")
 	        .attr("class","waterbuf")
-          .style('font-size', opts.watermark.fntsize+"px")
+          .style('font-size', fs+"px")
           .style('font-weight', "bold")
           .style('fill', bu.Cols.GRAY)
           .text(goal.waterbuf);
         bbox = wbufelt.node().getBBox();
         if (bbox.width > plotbox.width/2.2) {
-          newsize = (opts.watermark.fntsize*(plotbox.width/2.2)
+          newsize = (fs*(plotbox.width/2.2)
                      /bbox.width);
-          newh = newsize/opts.watermark.fntsize*bbox.height;
+          newh = newsize/fs*bbox.height;
           y = plotbox.height/4+newh/3;
           wbufelt.style('font-size', newsize+"px");
         }        
@@ -2513,51 +2514,47 @@
       wbuxelt.remove();
       if (!opts.roadEditor) {
 	  	  x = plotbox.width/4;
-        y = plotbox.height/4+opts.watermark.fntsize/3;
+        y = plotbox.height/4+fs/3;
         wbuxelt = gWatermark.append("svg:text")
 	        .attr("class","waterbux")
-          .style('font-size', opts.watermark.fntsize+"px")
+          .style('font-size', fs+"px")
           .style('font-weight', "bold")
           .style('fill', bu.Cols.GRAY)
           .text(goal.waterbux);
         bbox = wbuxelt.node().getBBox();
         if (bbox.width > plotbox.width/2.2) {
-          newsize = (opts.watermark.fntsize*(plotbox.width/2.2)
-                     /bbox.width);
-          newh = newsize/opts.watermark.fntsize*bbox.height;
-          y = plotbox.height/4+newh/3;
-          wbuxelt.style('font-size', newsize+"px");
+          newsize = (fs*(plotbox.width/2.2)/bbox.width)
+          newh = newsize/fs*bbox.height
+          y = plotbox.height/4+newh/3
+          wbuxelt.style('font-size', newsize+"px")
         }
         wbuxelt.attr("x", x + offb[0])
-          .attr("y", y + offb[1]);
-      } else wbuxelt.remove();
+          .attr("y", y + offb[1])
+      } else wbuxelt.remove()
     }
     
     function updateAura() {
       if (processing) return;
-      var el = gAura.selectAll(".aura");
-      var el2 = gAura.selectAll(".aurapast");
+      var el = gAura.selectAll(".aura")
+      var el2 = gAura.selectAll(".aurapast")
       if (goal.aura && opts.showData) {
-        var aurdn = Math.min(-goal.lnw/2.0, -goal.stdflux);
-        var aurup = Math.max(goal.lnw/2.0,  goal.stdflux);
+        var aurdn = Math.min(-goal.lnw/2.0, -goal.stdflux)
+        var aurup = Math.max(goal.lnw/2.0,  goal.stdflux)
         var fudge = PRAF*(goal.tmax-goal.tmin);
         var xr = [nXSc.invert(0).getTime()/1000, 
-                  nXSc.invert(plotbox.width).getTime()/1000];
+                  nXSc.invert(plotbox.width).getTime()/1000]
         var xvec = griddle(goal.tmin, 
-                           Math.min(goal.asof+bu.AKH, goal.tmax+fudge)),i;
+                           Math.min(goal.asof+bu.AKH, goal.tmax+fudge)),i
         xvec = griddle(Math.max(xr[0], goal.tmin),
                        bu.arrMin([xr[1], goal.asof+bu.AKH, goal.tmax+fudge]),
-                       plotbox.width/2);
+                       plotbox.width/2)
         // Generate a path string for the aura
-        var d = "M"+nXSc(xvec[0]*1000)+" "
-              +nYSc(goal.auraf(xvec[0])+aurup);
+        var d = "M"+nXSc(xvec[0]*1000)+" "+nYSc(goal.auraf(xvec[0])+aurup)
         for (i = 1; i < xvec.length; i++)
-          d += " L"+nXSc(xvec[i]*1000)+" "
-          +nYSc(goal.auraf(xvec[i])+aurup);
+          d += " L"+nXSc(xvec[i]*1000)+" "+nYSc(goal.auraf(xvec[i])+aurup)
         for (i = xvec.length-1; i >= 0; i--)
-          d += " L"+nXSc(xvec[i]*1000)+" "
-          +nYSc(goal.auraf(xvec[i])+aurdn);
-        d += " Z";
+          d += " L"+nXSc(xvec[i]*1000)+" "+nYSc(goal.auraf(xvec[i])+aurdn)
+        d += " Z"
         if (el.empty()) {
           gAura.append("svg:path")
             .attr("class","aura").attr("d", d)
@@ -2571,11 +2568,9 @@
           d = "M"+nXSc(xvec[0]*1000)+" "
             +nYSc(goal.auraf(xvec[0])+aurup);
           for (i = 1; i < xvec.length; i++)
-            d += " L"+nXSc(xvec[i]*1000)+" "
-            +nYSc(goal.auraf(xvec[i])+aurup);
+            d += " L"+nXSc(xvec[i]*1000)+" "+nYSc(goal.auraf(xvec[i])+aurup)
           for (i = xvec.length-1; i >= 0; i--)
-            d += " L"+nXSc(xvec[i]*1000)+" "
-            +nYSc(goal.auraf(xvec[i])+aurdn);
+            d += " L"+nXSc(xvec[i]*1000)+" "+nYSc(goal.auraf(xvec[i])+aurdn)
           d += " Z";
           if (el2.empty()) {
             gAura.append("svg:path")
@@ -2584,15 +2579,15 @@
   		        .style("fill-opacity", 0.3)
   		        .style("stroke-width", 2)
   		        .style("stroke-dasharray", "4,4")
-              .style("stroke", bu.Cols.BLUE);
+              .style("stroke", bu.Cols.BLUE)
           } else {
-            el2.attr("d", d);
+            el2.attr("d", d)
           }
         } else 
-          el2.remove();
+          el2.remove()
       } else {
-        el.remove();
-        el2.remove();
+        el.remove()
+        el2.remove()
       }
 
     }
