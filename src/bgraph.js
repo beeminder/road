@@ -2076,15 +2076,21 @@
       }
     };
 
-    // ---------------- Functions to update SVG components ----------------
-
+    // ---------------- Functions to animate SVG components ----------------
+    
+    var anim = {
+      buf: false, bux: false, aura: false, aurap: false,
+      hor: false, hort: false, ybr: false, ybrc: false,
+      guides: false, rosy: false, rosyd: false, data: false,
+      dataa: false, mav:false
+    }
     /** This function initiates a cyclic animation on a particular
      * element, cycling through the attribute and style information
      * supplied in two arrays. Each array is expected to include
      * triples [name, v1, v0], cycling an attribute or style with
      * 'name' up to the v1 value in 'dur' milliseconds and back to v0
      * in 'dur' milliseconds again, repeating indefinitely */
-    function startAnim(elt, dur, attrs, styles){
+    function startAnim(elt, dur, attrs, styles, tag){
       var tr = elt.transition().duration(dur), i
       
       for (i = 0; i < attrs.length; i++) tr = tr.attr(attrs[i][0], attrs[i][1])
@@ -2093,13 +2099,150 @@
       tr = tr.transition().duration(dur)
       for (i = 0; i < attrs.length; i++) tr = tr.attr(attrs[i][0], attrs[i][2])
       for (i = 0; i < styles.length; i++) tr = tr.style(styles[i][0], styles[i][2])
-      tr.on("end", ()=>{startAnim(elt, dur, attrs, styles)})
+      tr.on("end", ()=>{if (anim[tag]) startAnim(elt, dur, attrs, styles, tag)})
+      anim[tag] = true
     }
-    function stopAnim(elt, dur, attrs, styles){
+    function stopAnim(elt, dur, attrs, styles, tag){
+      anim[tag] = false
       var tr = elt.transition().duration(dur)
       for (let i = 0; i < attrs.length; i++) tr = tr.attr(attrs[i][0], attrs[i][2])
       for (let i = 0; i < styles.length; i++) tr = tr.style(styles[i][0], styles[i][2])
+      tr.on("end", ()=>{anim[tag] = false})
     }
+      
+
+    function animBuf(enable) {
+      if (opts.roadEditor) return
+      var e = gWatermark.selectAll(".waterbuf");
+      var x = Number(e.attr("x"))
+      var y = Number(e.attr("y"))
+      if  (e.node().tagName == 'text') {
+      
+        let sz = e.style("font-size")
+        sz = Number(sz.substring(0,sz.length-2))
+        let s =[["font-size", (sz*1.3)+"px",(sz)+"px"],
+                ["fill", "#c0c0c0", bu.Cols.GRAY]]
+        let a =[["y", y+0.1*sz/3, y]]
+        if (enable) startAnim(e, 500, a, s, "buf")
+        else stopAnim(e, 300, a, s, "buf")
+      } else {
+        let h = opts.watermark.height
+        let a =[["width", h*1.3, h], ["height", h*1.3, h],
+                ["x", x-0.15*h, x], ["y", y-0.15*h, y]]
+        if (enable) startAnim(e, 500, a, [], "buf")
+        else stopAnim(e, 300, a, [], "buf")
+      }
+    }
+    
+    function animBux(enable) {
+      if (opts.roadEditor) return
+      var e = gWatermark.selectAll(".waterbux");
+
+      var sz = e.style("font-size")
+      sz = Number(sz.substring(0,sz.length-2))
+      var y = Number(e.attr("y"))
+      var s =[["font-size", (sz*1.3)+"px",(sz)+"px"],
+              ["fill", "#c0c0c0", bu.Cols.GRAY]]
+      var a =[["y", y+0.15*sz, y]]
+      if (enable) startAnim(e, 500, a, s, "bux")
+      else stopAnim(e, 300, a, s, "bux")
+    }
+    
+    function animAura( enable ) {
+      if (opts.roadEditor) return
+      var e = gAura.selectAll(".aura");
+      var ep = gAura.selectAll(".aurapast");
+      
+      var s =[["stroke", "#CACAEE", bu.Cols.BLUE],["fill", "#CACAEE", bu.Cols.BLUE]]
+      var sp =[["stroke", "#CACAEE", bu.Cols.BLUE],["fill", "#CACAEE", bu.Cols.BLUE]]
+      if (enable) {startAnim(e, 500, [], s, "aura");startAnim(ep, 500, [], sp, "aurap")}
+      else {stopAnim(e, 300, [], s, "aura"); stopAnim(ep, 300, [], sp, "aurap")}
+    }
+
+    function animHor( enable ) {
+      if (opts.roadEditor) return
+      const o = opts.horizon
+      
+      var he = gHorizon.select(".horizon");
+      var hte = gHorizonText.select(".horizontext");
+      const a = [["stroke-width", o.width*scf*3, o.width*scf]],
+            s =[["stroke-dasharray",(o.dash*1.3)+","+(o.dash*0.7),
+                 (o.dash)+","+(o.dash)]]
+      const ts = [["font-size",(o.font*1.2)+"px",
+                   (o.font)+"px"]]
+      if (enable) {
+        startAnim(he, 500, a, s, "hor")
+        startAnim(hte, 500, [], ts, "hort" )
+      } else {
+        stopAnim(he, 300, a, s, "hor")
+        stopAnim(hte, 300, [], ts, "hort" )
+      }
+    }
+    
+    function animYBR( enable ) {
+      if (opts.roadEditor) return
+      var e = gOldRoad.select(".oldlanes");
+      var styles =[["fill-opacity", 1.0, 0.5],
+                     ["fill", "#ffff00", bu.Cols.DYEL]]
+      if (enable) startAnim(e, 500, [], styles, "ybr")
+      else stopAnim(e, 300, [], styles, "ybr")
+
+      e = gOldCenter.select(".oldroads");
+      styles =[["stroke-dasharray",
+                (opts.oldRoadLine.dash*1.3)+","+(opts.oldRoadLine.dash*0.7),
+                (opts.oldRoadLine.dash)+","+(opts.oldRoadLine.dash)],
+               ["stroke-width",
+                opts.oldRoadLine.width*scf*2, opts.oldRoadLine.width*scf]]
+      if (enable) startAnim(e, 500, [], styles, "ybrc")
+      else stopAnim(e, 300, [], styles, "ybrc")
+    }
+
+    function animGuides( enable ) {
+      if (opts.roadEditor) return
+      var e = gOldGuides.selectAll(".oldguides");
+      var a =[["stroke-width", opts.guidelines.width*scf*2.5,
+               (d) => ((d<0)?opts.guidelines.weekwidth*scf
+                          :opts.guidelines.width*scf)],
+              ["stroke",
+               (d) => ((d<0)?bu.Cols.BIGG:"#ffff00"),
+               (d) => ((d<0)?bu.Cols.BIGG:bu.Cols.LYEL)]]
+      if (enable) startAnim(e, 500, a, [], "guides")
+      else stopAnim(e, 300, a, [], "guides")
+    }
+
+    function animRosy( enable ) {
+      if (opts.roadEditor) return
+      var e = gRosy.selectAll(".rosy");
+      var de = gRosyPts.selectAll(".rosyd");
+
+      var a =[["stroke-width", 6*scf, 4*scf]]
+      var ds =[["r", opts.dataPoint.size*scf*2, opts.dataPoint.size*scf]]
+      if (enable) {startAnim(e, 500,a,[],"rosy"); startAnim(de,500,[],ds, "rosyd") }
+      else {stopAnim(e, 300, a, [], "rosy"); stopAnim(de, 300, [], ds, "rosyd")}
+    }
+
+    function animData( enable ) {
+      if (opts.roadEditor) return
+      var e = gDpts.selectAll(".dpts");
+      var attrs =[["r", opts.dataPoint.size*scf*2, opts.dataPoint.size*scf]]
+      if (enable) startAnim(e, 500, attrs, [], "data")
+      else stopAnim(e, 300, attrs, [], "data")
+      e = gAllpts.selectAll(".allpts");
+      attrs =[["r", 0.7*opts.dataPoint.size*scf*2, 0.7*opts.dataPoint.size*scf]]
+      if (enable) startAnim(e, 500, attrs, [], "dataa")
+      else stopAnim(e, 300, attrs, [], "dataa")
+    }
+    
+    function animMav( enable ) {
+      if (opts.roadEditor) return
+      var e = gMovingAv.selectAll(".movingav");
+
+      var a =[["stroke-width", 6*scf, 3*scf]]
+      if (enable) startAnim(e, 500, a, [], "mav")
+      else stopAnim(e, 300, a, [], "mav")
+    }
+
+    // ---------------- Functions to update SVG components ----------------
 
     // Creates or updates the shaded box to indicate past dates
     function updatePastBox() {
@@ -2311,43 +2454,6 @@
       }
     }
 
-    function animBuf(enable) {
-      if (opts.roadEditor) return
-      var e = gWatermark.selectAll(".waterbuf");
-      var x = Number(e.attr("x"))
-      var y = Number(e.attr("y"))
-      if  (e.node().tagName == 'text') {
-      
-        let sz = e.style("font-size")
-        sz = Number(sz.substring(0,sz.length-2))
-        let s =[["font-size", (sz*1.3)+"px",(sz)+"px"],
-                ["fill", "#c0c0c0", bu.Cols.GRAY]]
-        let a =[["y", y+0.1*sz/3, y]]
-        if (enable) startAnim(e, 500, a, s)
-        else stopAnim(e, 300, a, s)
-      } else {
-        let h = opts.watermark.height
-        let a =[["width", h*1.3, h], ["height", h*1.3, h],
-                ["x", x-0.15*h, x], ["y", y-0.15*h, y]]
-        if (enable) startAnim(e, 500, a, [])
-        else stopAnim(e, 300, a, [])
-      }
-    }
-    
-    function animBux(enable) {
-      if (opts.roadEditor) return
-      var e = gWatermark.selectAll(".waterbux");
-
-      var sz = e.style("font-size")
-      sz = Number(sz.substring(0,sz.length-2))
-      var y = Number(e.attr("y"))
-      var s =[["font-size", (sz*1.3)+"px",(sz)+"px"],
-              ["fill", "#c0c0c0", bu.Cols.GRAY]]
-      var a =[["y", y+0.15*sz, y]]
-      if (enable) startAnim(e, 500, a, s)
-      else stopAnim(e, 300, a, s)
-    }
-    
     // Creates or updates the watermark with the number of safe days
     function updateWatermark() {
       if (opts.divGraph == null || road.length == 0 || hidden) return;
@@ -2427,17 +2533,6 @@
       } else wbuxelt.remove();
     }
     
-    function animAura( enable ) {
-      if (opts.roadEditor) return
-      var e = gAura.selectAll(".aura");
-      var ep = gAura.selectAll(".aurapast");
-
-      var s =[["stroke", "#CACAEE", bu.Cols.BLUE],["fill", "#CACAEE", bu.Cols.BLUE]]
-      var sp =[["stroke", "#CACAEE", bu.Cols.BLUE],["fill", "#CACAEE", bu.Cols.BLUE]]
-      if (enable) {startAnim(e, 500, [], s);startAnim(ep, 500, [], sp)}
-      else {stopAnim(e, 300, [], s); stopAnim(ep, 300, [], sp)}
-    }
-
     function updateAura() {
       if (processing) return;
       var el = gAura.selectAll(".aura");
@@ -2502,26 +2597,6 @@
 
     }
 
-    function animHor( enable ) {
-      if (opts.roadEditor) return
-      const o = opts.horizon
-      
-      var he = gHorizon.select(".horizon");
-      var hte = gHorizonText.select(".horizontext");
-      const a = [["stroke-width", o.width*scf*3, o.width*scf]],
-            s =[["stroke-dasharray",(o.dash*1.3)+","+(o.dash*0.7),
-                 (o.dash)+","+(o.dash)]]
-      const ts = [["font-size",(o.font*1.2)+"px",
-                   (o.font)+"px"]]
-      if (enable) {
-        startAnim(he, 500, a, s)
-        startAnim(hte, 500, [], ts )
-      } else {
-        stopAnim(he, 300, a, s)
-        stopAnim(hte, 300, [], ts )
-      }
-    }
-    
     // Creates or updates the Akrasia Horizon line
     function updateHorizon() {
         
@@ -2679,37 +2754,6 @@
       } else {
         pinkelt.attr("d", d);
       }
-    }
-
-    function animYBR( enable ) {
-      if (opts.roadEditor) return
-      var e = gOldRoad.select(".oldlanes");
-      var styles =[["fill-opacity", 1.0, 0.5],
-                     ["fill", "#ffff00", bu.Cols.DYEL]]
-      if (enable) startAnim(e, 500, [], styles)
-      else stopAnim(e, 300, [], styles)
-
-      e = gOldCenter.select(".oldroads");
-      styles =[["stroke-dasharray",
-                (opts.oldRoadLine.dash*1.3)+","+(opts.oldRoadLine.dash*0.7),
-                (opts.oldRoadLine.dash)+","+(opts.oldRoadLine.dash)],
-               ["stroke-width",
-                opts.oldRoadLine.width*scf*2, opts.oldRoadLine.width*scf]]
-      if (enable) startAnim(e, 500, [], styles)
-      else stopAnim(e, 300, [], styles)
-    }
-
-    function animGuides( enable ) {
-      if (opts.roadEditor) return
-      var e = gOldGuides.selectAll(".oldguides");
-      var a =[["stroke-width", opts.guidelines.width*scf*2.5,
-               (d) => ((d<0)?opts.guidelines.weekwidth*scf
-                          :opts.guidelines.width*scf)],
-              ["stroke",
-               (d) => ((d<0)?bu.Cols.BIGG:"#ffff00"),
-               (d) => ((d<0)?bu.Cols.BIGG:bu.Cols.LYEL)]]
-      if (enable) startAnim(e, 500, a, [])
-      else stopAnim(e, 300, a, [])
     }
 
     // Creates or updates the unedited road
@@ -3277,17 +3321,6 @@
           window.clearTimeout(dotTimer); dotTimer = null;});
     }
 
-    function animRosy( enable ) {
-      if (opts.roadEditor) return
-      var e = gRosy.selectAll(".rosy");
-      var de = gRosyPts.selectAll(".rosyd");
-
-      var a =[["stroke-width", 6*scf, 4*scf]]
-      var ds =[["r", opts.dataPoint.size*scf*2, opts.dataPoint.size*scf]]
-      if (enable) {startAnim(e, 500, a, []); startAnim(de, 500, [], ds) }
-      else {stopAnim(e, 300, a, []); stopAnim(de, 300, [], ds)}
-    }
-
     function updateRosy() {
       if (processing) return;
 
@@ -3437,18 +3470,6 @@
       }        
     }
     
-    function animData( enable ) {
-      if (opts.roadEditor) return
-      var e = gDpts.selectAll(".dpts");
-      var attrs =[["r", opts.dataPoint.size*scf*2, opts.dataPoint.size*scf]]
-      if (enable) startAnim(e, 500, attrs, [])
-      else stopAnim(e, 300, attrs, [])
-      e = gAllpts.selectAll(".allpts");
-      attrs =[["r", 0.7*opts.dataPoint.size*scf*2, 0.7*opts.dataPoint.size*scf]]
-      if (enable) startAnim(e, 500, attrs, [])
-      else stopAnim(e, 300, attrs, [])
-    }
-    
     function updateDataPoints() {
       if (processing) return;
       if (opts.divGraph == null || road.length == 0) return;
@@ -3557,15 +3578,6 @@
       }
     }
     
-
-    function animMav( enable ) {
-      if (opts.roadEditor) return
-      var e = gMovingAv.selectAll(".movingav");
-
-      var a =[["stroke-width", 6*scf, 3*scf]]
-      if (enable) startAnim(e, 500, a, [])
-      else stopAnim(e, 300, a, [])
-    }
 
     // Other ideas for data smoothing...  Double Exponential
     // Moving Average: http://stackoverflow.com/q/5533544 Uluc
