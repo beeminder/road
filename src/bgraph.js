@@ -3997,7 +3997,8 @@
               )
         .property('checked', (d)=>(d.auto?true:false))
 
-      allrows.selectAll(".roadcell, .roadbtn").sort((a,b)=>(a.order > b.order))
+      allrows.selectAll(".roadcell, .roadbtn")
+        .sort((a,b)=>d3.ascending(a.order,b.order))
 
       if (!opts.roadEditor) {
         allrows.selectAll(".roadbtn").style('visibility', "collapse").attr("value","")
