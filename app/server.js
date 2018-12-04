@@ -70,7 +70,9 @@ sequelize.authenticate()
 
 
 // Stuff in the pub directory is served statically
-app.use(express.static('pub'))
+app.use(express.static('tests'))
+// Serve js files under the src directory through /src
+app.use('/src', express.static('src'))
 // Serve BB files under the data directory through /data
 app.use('/data', express.static('data'))
 // Serve JS, CSS and other files under the list directory in /lib
