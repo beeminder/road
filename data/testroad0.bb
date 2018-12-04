@@ -31,8 +31,9 @@
   "yoog":"d/test",
   "timezone":"America/Los_Angeles",
   "imgsz":696,
-  "asof":"20170628"
+  "asof":"20170710"
 }, 
 "data":[
-  ["20170628",0,"initial datapoint of 0"]
+  ["20170628",0,"initial datapoint of 0"],
+  ["20170629",10,"initial datapoint of 0"]
 ]} 

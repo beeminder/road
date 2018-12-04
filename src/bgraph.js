@@ -1138,6 +1138,8 @@
 
     // Determines whether the given road is valid or not (i.e. whether it
     // is clear of the pink region or not)
+    // TODO: Must rethink this check, probably a general segment
+    // intersection algorithm will be best
     function isRoadValid( rd ) {
       var ir = iroad;
       
@@ -1145,21 +1147,23 @@
       
       var now = goal.asof;
       var hor = goal.horizon;
-      // Check left/right boundaries of the pink region
+      // Check left/right boundaries of the pink region. This should
+      // handle the case when there are no road inflections within the
+      // horizon
       if (goal.yaw*br.rdf(rd, now) < goal.yaw*br.rdf(ir, now) - EPS) 
         return false;
       if (goal.yaw*br.rdf(rd, hor) < goal.yaw*br.rdf(ir, hor) - EPS) 
         return false;
-      // Iterate through and check current road points in the ping range
-      var rd_i1 = br.findSeg(rd, now);
-      var rd_i2 = br.findSeg(rd, hor);
+      // Iterate through and check current road points in the pink range
+      var rd_i1 = br.findSeg(rd, now,-1);
+      var rd_i2 = br.findSeg(rd, hor,1);
       for (let i = rd_i1; i < rd_i2; i++) {
         if (goal.yaw*br.rdf(rd, rd[i].end[0]) < 
             goal.yaw*br.rdf(ir, rd[i].end[0]) - EPS) return false;
       }
-      // Iterate through and check old road points in the ping range
-      var ir_i1 = br.findSeg(ir, now);
-      var ir_i2 = br.findSeg(ir, hor);
+      // Iterate through and check old road points in the pink range
+      var ir_i1 = br.findSeg(ir, now,-1);
+      var ir_i2 = br.findSeg(ir, hor,1);
       for (let i = ir_i1; i < ir_i2; i++) {
         if (goal.yaw*br.rdf(rd, ir[i].end[0]) < 
             goal.yaw*br.rdf(ir, ir[i].end[0]) - EPS) return false;
