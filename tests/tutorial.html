@@ -29,12 +29,12 @@
       [2000, ()=>gr.msg("Welcome to Beeminder!")],
       [100, ()=>gr.msg(null)],
 
-      [100, ()=>gr.msg("This is your Yellow Brick Road(YBR), stay on or above it!")],
+      [100, ()=>gr.msg("This is your Yellow Brick Road (YBR). Stay on or above it!")],
       [3000, ()=>gr.animYBR(true)],
       [100, ()=>gr.animYBR(false)],
       [100, ()=>gr.msg(null)],
 
-      [100, ()=>gr.msg("You can add new data for your activities.")],
+      [100, ()=>gr.msg("You can add new data for your what you're beeminding")],
       [300, ()=>bs.newData(1,"")],
       [300, bs.nextDay],
       [300, ()=>bs.newData(1,"")],
@@ -45,36 +45,36 @@
       [300, ()=>bs.newData(1,"")],
       [100, ()=>gr.msg(null)],
 
-      [100, ()=>gr.msg("These become your `data points`.")],
+      [100, ()=>gr.msg("These become your datapoints...")],
       [3000, ()=>gr.animData(true)],
       [300, ()=>gr.animData(false)],
       [100, ()=>gr.msg(null)],
 
-      [100, ()=>gr.msg("If you do not keep up, you may get off your YBR!")],
+      [100, ()=>gr.msg("If you don't keep up, you'll go off your YBR!")],
       [300, bs.nextDay],[300, bs.nextDay],
       [300, bs.nextDay],[300, bs.nextDay],
       [100, ()=>gr.msg(null)],
 
-      [100, ()=>gr.msg("This is how much time you have until you're off")],
+      [100, ()=>gr.msg("This is how much time you have until that happens")],
       [3000, ()=>gr.animBuf(true)],
       [100, ()=>gr.animBuf(false)],
       [100, ()=>gr.msg(null)],
 
-      [100, ()=>gr.msg("And this is the pledge amount you are risking")],
+      [100, ()=>gr.msg("And this is the pledge amount you're risking")],
       [3000, ()=>gr.animBux(true)],
       [100, ()=>gr.animBux(false)],
       [100, ()=>gr.msg(null)],
 
-      [2000, ()=>gr.msg("If you get off the YBR, you `derail`.")],
+      [2000, ()=>gr.msg("If you go off the YBR, that's called derailing")],
       [300, bs.nextDay],[300, bs.nextDay],
       [300, bs.nextDay],[300, bs.nextDay],
       [100, ()=>gr.msg(null)],
-      [100, ()=>gr.msg("Oops! That's ok, you are now given a weeklong buffer.")],
+      [100, ()=>gr.msg("Oops! That's ok, you're now given a weeklong buffer")],
       [3000, ()=>gr.animYBR(true)],
       [100, ()=>gr.animYBR(false)],
       [100, ()=>gr.msg(null)],
 
-      [100, ()=>gr.msg("But your pledge amount has increased.")],
+      [100, ()=>gr.msg("But your pledge amount has increased")],
       [3000, ()=>gr.animBux(true)],
       [100, ()=>gr.animBux(false)],
       [100, ()=>gr.msg(null)],
@@ -97,7 +97,7 @@
       [100, ()=>gr.animHor(false)],
       [100, ()=>gr.msg(null)],
 
-      [900, ()=>gr.msg("You can only change your road beyond that horizon")],
+      [900, ()=>gr.msg("You can only change the YBR beyond that horizon")],
       [900, ()=>bs.newRate(0.5)],
       [900, ()=>bs.newRate(0.0)],
       [900, ()=>bs.newRate(0.5)],
@@ -113,7 +113,7 @@
       [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
       [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
       [100, ()=>gr.msg(null)],
-      [100, ()=>gr.msg("Keep going until you reach your goal!")],
+      [100, ()=>gr.msg("Keep going until you reach your goal...")],
       [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
       [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
       [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
@@ -127,7 +127,7 @@
       [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
       [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
       [100, ()=>gr.msg(null)],
-      [100, ()=>gr.msg("Thank you using Beeminder. We are here to help.")],
+      [100, ()=>gr.msg("Thank you for using Beeminder. We are here to help.")],
 
     ]
     async function animate() {
