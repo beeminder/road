@@ -97,15 +97,17 @@
     }
 
     /** Finds index for the road segment containing the supplied x value */
-    self.findSeg = (rd, x) => {
-      var nums = rd.length, s = 0, e = nums-1, m
-      if (x < rd[0].sta[0] || x > rd[nums-1].end[0]) return -1
-      while (e-s > 1) {
+    self.findSeg = (rd, x, dir=0) => {
+      var nums = rd.length-1, s = 0, e = nums, m
+      if (x < rd[0].sta[0] || x > rd[nums].end[0]) return -1
+      while (e-s > 1) { // Uses binary search
         m = Math.floor((s+e)/2)
         if (rd[m].sta[0] <= x) s = m
         else e = m
       }
       if ((x >= rd[e].sta[0]) && (x < rd[e].end[0])) s = e
+      if (dir < 0) while(s > 0 && rd[s-1].sta[0] == x) s--
+      if (dir > 0) while(s < nums-1 && rd[s+1].sta[0] == x) s++
       return s
     }
 
