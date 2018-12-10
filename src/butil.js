@@ -1,28 +1,5 @@
-/*!
- * butil
- *
- * Dependencies: moment
- * 
- * Javascript library of general purpose utilities for beebrain,
- * provided as a UMD module. Provides a "butil" object, which holds
- * various constants and utility functions to be used. Does not hold
- * any internal state.
- *
- * The following member variables and methods are provided:
- *
- *  BBURL : Base URL for images
- *  Cols  : Beeminder colors for datapoints
- *  DIY   : Days in year
- *  SID   : Seconds in day
- *  AKH   : Akrasia Horizon, in seconds
- *  PRAF  : Fraction of plot range that the axes extend beyond
- *  BDUSK : ~2038, rails's ENDOFDAYS+1 (was 2^31-2weeks)
- *  SECS  : Number of seconds in a year, month, etc
- *  UNAM  : Unit names
- *
- * Copyright © 2018 Uluc Saranli
- */
-;((function (root, factory) {
+;
+((function (root, factory) {
   'use strict'
   if (typeof define === 'function' && define.amd) {
     // AMD. Register as an anonymous module.
@@ -41,13 +18,25 @@
 })(this, function (moment) {
   'use strict'
 
+  /**
+   * Javascript library of general purpose utilities for beebrain,
+   * provided as a UMD module. Provides a "butil" object, which holds
+   * various constants and utility functions to be used. Does not hold
+   * any internal state.
+   *
+   * Copyright © 2018 Uluc Saranli
+   *
+   * @requires moment
+   * @exports butil
+   */
   var self = {}
-
   // -----------------------------------------------------------------
   // --------------------- Useful constants --------------------------
+  /** Base URL for images */
   self.BBURL = "http://brain.beeminder.com/"
-
-  /** Beeminder colors for datapoints */
+  
+  /** Beeminder colors for datapoints 
+      @enum {string}*/
   self.Cols = {
     DYEL:   "#ffff44",
     LYEL:   "#ffff88",
@@ -68,21 +57,27 @@
     ORNDOT: "#ffa500", // Orange for wrong lane
     REDDOT: "#ff0000"  // Red for off the road on the bad side
   }
-
-  self.DIY   = 365.25     // Days in year
-  self.SID   = 86400      // Seconds in day
-  self.AKH   = 7*self.SID // Akrasia Horizon, in seconds
-  self.BDUSK = 2147317201 // ~2038, rails's ENDOFDAYS+1 (was 2^31-2weeks)
-  self.ZFUN = (x) => 0 // Function that always returns zero
-  // TODO?: IMGMAG
   
-  // Number of seconds in a year, month, etc
+  /** Days in year */
+  self.DIY   = 365.25
+  /** Seconds in day */
+  self.SID   = 86400
+  /** Akrasia horizon, in seconds */
+  self.AKH   = 7*self.SID
+  /** ~2038, rails's ENDOFDAYS+1 (was 2^31-2weeks) */
+  self.BDUSK = 2147317201
+  /** Unary function that always returns zero */
+  self.ZFUN = (x) => 0
+  
+  /** Number of seconds in a year, month, etc 
+      @enum {number} */
   self.SECS = { 'y' : self.DIY*self.SID, 
-                'm' : self.DIY/12*self.SID,
+                'm' : self.DIY*self.SID/12,
                 'w' : 7*self.SID,
                 'd' : self.SID,
                 'h' : 3600        }
-  // Unit names
+  /** Unit names
+      @enum {string} */
   self.UNAM = { 'y' : 'year',
                 'm' : 'month',
                 'w' : 'week',
@@ -91,13 +86,26 @@
 
   // -----------------------------------------------------------------
   // ---------------- General Utility Functions ----------------------
+  /** Returns minimum from an array of numbers 
+      @param {number[]} arr Input array */
   self.arrMin = (arr) =>( Math.min.apply(null, arr))
+  /** Returns maximum from an array of numbers
+      @param {number[]} arr Input array */
   self.arrMax = (arr) =>( Math.max.apply(null, arr))
 
+  /** Returns true if input is an array 
+      @param {} o Input parameter*/
   self.isArray = (o) => ((/Array/).test(Object.prototype.toString.call(o)))
 
   // TODO: This does not perform proper copying especially for array
   // properties. FIX
+  /** Extends a destination object with propertiesfrom a source
+   * object, optionally overwriting existing elements
+
+      @param {object} fr Source object 
+      @param {object} to Destination object
+      @param {boolean} owr If true, overwrite existing properties of the destination
+  */
   self.extend = (to, fr, owr) => {
     var prop, hasProp
     for (prop in fr) {
@@ -115,7 +123,11 @@
   }
   
   /** Applies f on elements of dom, picks the maximum and returns
-      the domain element that achieves that maximum. */
+      the domain element that achieves that maximum. 
+
+      @param {function} f Filter function
+      @param {Array} dom Array with domain elements
+  */
   self.argmax = (f, dom) => {
     if (dom == null) return null
     var newdom = dom.map(f)
@@ -126,7 +138,12 @@
   /** Partitions list l into sublists whose beginning indices are
       separated by d, and whose lengths are n. If the end of the list is
       reached and there are fewer than n elements, those are not
-      returned. */
+      returned. 
+
+      @param {Array} l Input array
+      @param {number} n Length of each sublist
+      @param {number} d Sublist separation
+  */
   self.partition = (l, n, d) => {
     var il = l.length
     var ol = []
@@ -135,7 +152,8 @@
     return ol
   }
   
-  /** Returns a list containing the fraction and integer parts of a float */
+  /** Returns a list containing the fraction and integer parts of a float
+      @param {number} f Input number */
   self.modf = (f) =>{
     var fp = (f<0)?-f:f, fl = Math.floor(fp)
     return (f<0)?[-(fp-fl),-fl]:[(fp-fl),fl]
@@ -144,7 +162,12 @@
   /** The qth quantile of values in l. For median, set q=1/2.  See
       http://reference.wolfram.com/mathematica/ref/Quantile.html Author:
       Ernesto P. Adorio, PhD; UP Extension Program in Pampanga, Clark
-      Field. */
+      Field. 
+      @param {number[]} l Input array
+      @param {number} q Desired quantile, in range [0,1]
+      @param {number} [qt=1] Type of quantile computation, Hyndman and Fan algorithm, integer between 1 and 9
+      @param {boolean} [issorted=false] Flag to indicate whether the input array is sorted
+  */
   self.quantile = (l, q, qt=1, issorted=false) => {
     var y
     if (issorted) y = l
@@ -175,10 +198,16 @@
     return (g==0)?y[j]:(y[j] + (y[j+1] - y[j])* (c + d*g))
   }
 
-  /** Return a list with the sum of the elements in l */
+  /** Return a list with the sum of the elements in l 
+   @param {list} l Input array */
   self.sum = (l) => (l.reduce((a,b)=>(a+b), 0))
   
-  /**  foldlist(f,x, [e1, e2, ...]) -> [x, f(x,e1), f(f(x,e1), e2), ...] */
+  /**  foldlist(f,x, [e1, e2, ...]) -> [x, f(x,e1), f(f(x,e1), e2), ...] 
+
+   @param {function} f Filter function that takes two arguments
+   @param {} x First argument to the function
+   @param {Array} l Array of second arguments to the function
+  */
   self.foldlist = (f, x, l) => {
     var out = [x]
     for (let i = 0; i < l.length; i++)

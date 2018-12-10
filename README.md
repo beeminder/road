@@ -1,5 +1,3 @@
-[test change in glitch]
-
 # Javascript implementation of Beebrain
 
 ## Description
