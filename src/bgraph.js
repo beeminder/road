@@ -1,19 +1,17 @@
-/*!
- * bgraph
- *
- * Dependencies: d3, moment, butil, broad, beebrain
- * 
- * Javascript implementation of graph generation for beebrain,
- * provided as a UMD module. Provides a "bgraph" function, which can
- * be used to construct independent bgraph objects each with their
- * unique ID. The constructor expects graphing options as input.
- *
- * The following member variables and methods are exported within
- * constructed objects:
- *
- *  id         : bgraph instance ID 
- *
- * Copyright © 2017 Uluc Saranli
+/**
+ * Javascript implementation of graph generation and editing for
+ * beebrain, provided as a UMD module. Provides a {@link bgraph}
+ * class, which can be used to construct independent graph generating
+ * objects each with their own internal state, possibly linked to
+ * particular div elements on the DOM.<br/>
+
+ * <br/>Copyright © 2017 Uluc Saranli
+ @module bgraph
+ @requires d3
+ @requires moment
+ @requires butil
+ @requires broad
+ @requires beebrain
  */
 ;((function (root, factory) {
   'use strict'
@@ -263,10 +261,15 @@
   },
   // -------------------------------------------------------------
   // ------------------- BGRAPH CONSTRUCTOR ---------------------
-  /** bgraph constructor. This is returned once the wrapper function
-   is called. The constructor itself fills self with exported
-   functions and member variables. The argument is expected to include
-   plotting options.*/
+  /** bgraph object constructor. Creates an empty beeminder graph
+   * and/or road matrix table with the supplied options. Particular
+   * goal details may later be loaded with {@link bgraph~loadGoal} or {@link
+   * loadGoalFromURL} functions.
+
+   @memberof module:bgraph
+   @constructs bgraph
+   @param {Object} options JSON input with various graph options
+  */
   bgraph = function( options ) {
     //console.debug("beebrain constructor ("+gid+"): ")
     var self = this,
@@ -1359,6 +1362,13 @@
     const graph_timeid = `bgraph(${curid}): Goal graph`
     // Recreates the road array from the "rawknots" array, which includes
     // only timestamp,value pairs
+
+    /** Loads goal details from the supplied JSON input and populates
+     * the graph and road matrix table with necessary components based
+     * on initially supplied options
+
+        @param {Object} json JSON object with the contents of a BB
+        file, directly fed to a {@link beebrain} object instance. */
     function loadGoal( json ) {
       //console.debug("id="+curid+", loadGoal()->"+json.params.yoog);
       clearUndoBuffer();
@@ -4186,10 +4196,10 @@
     zoomAll()
 
     /** bgraph object ID for the current instance */
-    self.id = 1
+    this.id = 1
 
     /** Sets/gets the showData option */
-    self.showData = (flag) => {
+    this.showData = (flag) => {
       if (arguments.length > 0) opts.showData = flag
       if (alldata.length != 0) {
         updateDataPoints()
@@ -4203,7 +4213,7 @@
     }
     
     /** Sets/gets the showContext option */
-    self.showContext = (flag) => {
+    this.showContext = (flag) => {
       if (arguments.length > 0) opts.showContext = flag
       if (road.length != 0)
         updateContextData()
@@ -4211,20 +4221,20 @@
     }
     
     /** Sets/gets the keepSlopes option */
-    self.keepSlopes = (flag) => {
+    this.keepSlopes = (flag) => {
       if (arguments.length > 0) opts.keepSlopes = flag
       return opts.keepSlopes
     }
     
     /** Sets/gets the keepIntervals option */
-    self.keepIntervals = ( flag ) => {
+    this.keepIntervals = ( flag ) => {
       if (arguments.length > 0) opts.keepIntervals = flag
       return opts.keepIntervals
     }
     
     /** Sets/gets the maxDataDays option. Updates the datapoint
      display if the option is changed. */
-    self.maxDataDays = ( days ) => {
+    this.maxDataDays = ( days ) => {
       if (arguments.length > 0) {
         opts.maxDataDays = days
         if (opts.maxDataDays < 0) {
@@ -4246,7 +4256,7 @@
     
     /** Sets/gets the reverseTable option. Updates the table if
      the option is changed. */
-    self.reverseTable = ( flag ) => {
+    this.reverseTable = ( flag ) => {
       if (arguments.length > 0) {
         opts.reverseTable = flag
         if (opts.reverseTable) {
@@ -4264,7 +4274,7 @@
     }
     
     /** Sets/gets the tableUpdateOnDrag option. */
-    self.tableUpdateOnDrag = ( flag ) => {
+    this.tableUpdateOnDrag = ( flag ) => {
       if (arguments.length > 0) {
         opts.tableUpdateOnDrag = flag
         updateTable()
@@ -4273,26 +4283,26 @@
     }
     
     /** Sets/gets the tableAutoScroll option. */
-    self.tableAutoScroll = ( flag ) => {
+    this.tableAutoScroll = ( flag ) => {
       if (arguments.length > 0) opts.tableAutoScroll = flag
       return opts.tableAutoScroll
     }
 
     /** Returns an object with the lengths of the undo and redo
      buffers */
-    self.undoBufferState = () => {
+    this.undoBufferState = () => {
       return({undo: undoBuffer.length, redo: redoBuffer.length})
     }
 
     /** Undoes the last edit */
-    self.undo = () => {
+    this.undo = () => {
       if (!opts.roadEditor) return
       document.activeElement.blur()
       undoLastEdit()
     }
 
     /** Redoes the last edit that was undone */
-    self.redo = () => {
+    this.redo = () => {
       if (!opts.roadEditor) return
       document.activeElement.blur()
       redoLastEdit()
@@ -4300,30 +4310,31 @@
 
     /** Clears the undo buffer. May be useful after the new
      road is submitted to Beeminder and past edits need to be
-     forgotten. */
-    self.clearUndo = clearUndoBuffer
+     forgotten. 
+     @method*/
+    this.clearUndo = clearUndoBuffer
 
     /** Zooms out the goal graph to make the entire range from
      tini to tfin visible, with additional slack before and after
      to facilitate adding new knots. */
-    self.zoomAll = () => { if (road.length == 0) return; else zoomAll() }
+    this.zoomAll = () => { if (road.length == 0) return; else zoomAll() }
 
     /** Brings the zoom level to include the range from tini to
      slightly beyond the akrasia horizon. This is expected to be
      consistent with beebrain generated graphs. */ 
-    self.zoomDefault = () => { if (road.length == 0) return; else zoomDefault() }
+    this.zoomDefault = () => { if (road.length == 0) return; else zoomDefault() }
 
     /** Initiates loading a new goal from the indicated url.
      Expected input format is the same as beebrain. Once the input
      file is fetched, the goal graph and road matrix table are
      updated accordingly. */
-    self.loadGoal = ( url ) => { loadGoalFromURL( url ) }
+    this.loadGoal = ( url ) => { loadGoalFromURL( url ) }
 
     /** Initiates loading a new goal from the indicated url.
      Expected input format is the same as beebrain. Once the input
      file is fetched, the goal graph and road matrix table are
      updated accordingly. */
-    self.loadGoalJSON = ( json ) => {
+    this.loadGoalJSON = ( json ) => {
       removeOverlay()
       loadGoal( json )
     }
@@ -4331,12 +4342,12 @@
     /** Performs retroratcheting function by adding new knots to
      leave "days" number of days to derailment based on today data
      point (which may be flatlined). */
-    self.retroRatchet = ( days ) => {
+    this.retroRatchet = ( days ) => {
       if (!opts.roadEditor) return
       setSafeDays( days )
     }
 
-    self.scheduleBreak = ( start, days, insert ) => {
+    this.scheduleBreak = ( start, days, insert ) => {
       if (!opts.roadEditor) return
       if (isNaN(days)) return
       if (road.length == 0) {
@@ -4408,7 +4419,7 @@
       roadChanged()
     }
 
-    self.commitTo = ( newSlope ) => {
+    this.commitTo = ( newSlope ) => {
       if (!opts.roadEditor) return
       if (isNaN(newSlope)) return
       if (road.length == 0) {
@@ -4434,7 +4445,7 @@
      current roadmatix (latest edited version), as well as a
      boolean ('valid') indicating whether the edited road
      intersects the pink region or not. */
-    self.getRoad = () => {
+    this.getRoad = () => {
       function dt(d) { return moment.unix(d).utc().format("YYYYMMDD");};
       // Format the current road matrix to be submitted to Beeminder
       var r = {}, seg, rd, kd;
@@ -4474,7 +4485,7 @@
      contents with a cleaned up graph suitable to be used with
      headless chrome --dump-dom to retrieve the contents as a simple
      SVG. */
-    self.saveGraph = ( linkelt = null ) => {
+    this.saveGraph = ( linkelt = null ) => {
 
       // retrieve svg source as a string.
       var svge = svg.node()
@@ -4527,13 +4538,13 @@
     /** Informs the module instance that the element containing the
      visuals will be hidden. Internally, this prevents calls to
      getBBox(), eliminating associated exceptions and errors. */
-    self.hide = () => {hidden = true}
+    this.hide = () => {hidden = true}
 
     /** Informs the module instance that the element containing the
      visuals will be shown again. This forces an update of all visual
      elements, which might have previously been incorrectly rendered
      if hidden. */
-    self.show = () => {
+    this.show = () => {
       //console.debug("curid="+curid+", show()");
       hidden = false
       if (road.length == 0) {
@@ -4549,10 +4560,10 @@
       updateGraphData()
     }
 
-    self.getRoadObj = () => br.copyRoad(road)
+    this.getRoadObj = () => br.copyRoad(road)
 
     var settingRoad = false;
-    self.setRoadObj = ( newroad, resetinitial = true ) => {
+    this.setRoadObj = ( newroad, resetinitial = true ) => {
       if (settingRoad) return
       if (newroad.length == 0) {
         // TODO: More extensive sanity checking
@@ -4572,17 +4583,17 @@
       settingRoad = false
     }
 
-    self.isLoser = () => {
+    this.isLoser = () => {
       if (goal && road.length != 0)
         return br.isLoser(road,goal,data,goal.tcur,goal.vcur)
       else return false
     }
-    self.curState =
+    this.curState =
       () => (goal?[goal.tcur, goal.vcur, goal.rcur, br.rdf(road, goal.tcur)]:null)
 
     const visualProps
           = ['plotall','steppy','rosy','movingav','aura','hidey','stathead','hashtags']
-    self.getVisualConfig = ( opts ) =>{
+    this.getVisualConfig = ( opts ) =>{
       var out = {}
       visualProps.map(e=>{ out[e] = goal[e] })
       return out
@@ -4590,26 +4601,35 @@
 
     const goalProps
           = ['offred','yaw','dir','kyoom','odom','noisy','integery','monotone','aggday']
-    self.getGoalConfig = ( opts ) => {
+    this.getGoalConfig = ( opts ) => {
       var out = {}
       goalProps.map(e=>{ out[e] = goal[e] })
       return out
     }
 
-    self.msg = (msg)=>{
+    this.msg = (msg)=>{
       if (!msg) removeOverlay("message")
       else
         showOverlay([msg], 20, null, {x:sw/20, y:10, w:sw*18/20, h:50}, "message", false)
     }
-    self.animHor = animHor
-    self.animYBR = animYBR
-    self.animData = animData
-    self.animGuides = animGuides
-    self.animRosy = animRosy
-    self.animMav = animMav
-    self.animAura = animAura
-    self.animBuf = animBuf
-    self.animBux = animBux
+    /** @method */
+    this.animHor = animHor
+    /** @method */
+    this.animYBR = animYBR
+    /** @method */
+    this.animData = animData
+    /** @method */
+    this.animGuides = animGuides
+    /** @method */
+    this.animRosy = animRosy
+    /** @method */
+    this.animMav = animMav
+    /** @method */
+    this.animAura = animAura
+    /** @method */
+    this.animBuf = animBuf
+    /** @method */
+    this.animBux = animBux
   }
   
   return bgraph;

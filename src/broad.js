@@ -1,17 +1,3 @@
-/*!
- * broad
- *
- * Dependencies: moment, butil
- * 
- * Javascript library of road utilities for beebrain, provided as a
- * UMD module. Returns a "broad" object, whose public members provide
- * a number of road related constants and functions. Does not hold any
- * internal state.
- *
- * The following member variables and methods are provided:
- *
- * Copyright © 2018 Uluc Saranli
- */
 ;((function (root, factory) {
   'use strict'
   if (typeof define === 'function' && define.amd) {
@@ -33,9 +19,27 @@
   'use strict'
 
   const rnd = Math.round
+
+  /**
+   * Javascript library of road utilities for beebrain, provided as a
+   * UMD module. Returns a "broad" object, whose public members provide
+   * a number of road related constants and functions. Does not hold any
+   * internal state.
+   *
+   * The following member variables and methods are provided:
+   *
+   * Copyright © 2018 Uluc Saranli
+
+   @requires moment
+   @requires butil
+
+   @exports broad
+  */
   var self = {}
 
   self.rfin = 0 // Hack to implement skatesum
+  /** Collection of functiont to perform datapoint aggregation
+      @enum {function} */
   self.AGGR = {
     last     : (x) =>(x[x.length-1]),
     first    : (x) =>(x[0]),
@@ -59,10 +63,12 @@
     skatesum : (x) =>(Math.min(self.rfin, bu.sum(x)) ) /* only count the daily min. TODO: FIXHACK?: Introduced internal state for rfin*/
   }
 
-  /** Enum object to identify field types for road segments. */
+  /** Enum object to identify field types for road segments. 
+      @enum {number} */
   self.RP = { DATE:0, VALUE:1, SLOPE:2}
 
-  /** Pretty prints a given road structure */
+  /** Pretty prints a given array of road segments.
+      @param {Array} rd Array of road segment objects */
   self.printRoad = ( rd ) => {
     for (let i = 0; i < rd.length; i++) {
       var s = rd[i]
@@ -71,7 +77,10 @@
     }
   }
 
-  /** Checks whether two roads are identical with nearEq segments */
+  /** Checks whether two road arrays are identical with nearEq segments.
+      @param rda First array fo road segments
+      @param rdb Second array fo road segments
+ */
   self.sameRoads = ( rda, rdb ) => {
     if (rda.length != rdb.length) return false
     for (let i = 0; i < rda.length; i++) {

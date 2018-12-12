@@ -11,6 +11,7 @@ const LIBDIR = 'lib'
 const LIBJS = LIBDIR+"/js"
 const LIBCSS = LIBDIR+"/css"
 const LIBIMG = LIBDIR+"/images"
+const DOCDIR = './docs'
 
 function clean_css() {
   return gulp.src(['src/jsbrain.css','src/pikaday.css','src/editorpage.css'])
@@ -58,7 +59,7 @@ function tscompile() {
 
 function gendoc() {
   return gulp.src(['README.md', 'src/*.js'], {read: false})
-    .pipe(jsdoc());
+    .pipe(jsdoc({opts: {destination: DOCDIR}}));
 }
 
 exports.compile = gulp.series(compress_js,
