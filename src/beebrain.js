@@ -1,21 +1,14 @@
-/*!
- * beebrain
- *
- * Dependencies: moment, butil, broad
- * 
+/**
  * Javascript implementation of beebrain, provided as a UMD
- * module. Provides a "beebrain" function, which can be used to
- * construct independent beebrain objects each with their unique
- * ID. The constructor accepts a "bb" object as an initial beebrain
- * file input.
- *
- * The following member variables and methods are exported within
- * constructed objects:
- *
- *  id         : beebrain instance ID 
- *  getStats() : return stats object for beebrain output
- *
- * Copyright © 2017 Uluc Saranli
+ * module. Provides a {@link beebrain} class, which can be used to
+ * construct independent beebrain objects each with their own internal
+ * state.<br/>
+
+ * <br/>Copyright © 2017 Uluc Saranli
+ @module beebrain
+ @requires moment
+ @requires butil
+ @requires broad
  */
 ;(((root, factory) => {
   'use strict'
@@ -146,7 +139,9 @@
 
   CNAME = { },
 
-  /** Enum object to identify different types of datapoints. */
+  /** Enum object to identify different types of datapoints. 
+      @enum {number} 
+      @memberof beebrain*/
   DPTYPE = {
     AGGPAST:0, AGGFUTURE:1, RAWPAST:2, RAWFUTURE:3, FLATLINE:4, HOLLOW: 5
   },
@@ -166,10 +161,15 @@
 
   // -------------------------------------------------------------
   // ------------------- BEEBRAIN CONSTRUCTOR ---------------------
-  /** beebrain constructor. This is returned once the wrapper function
-   is called. The constructor itself fills self with exported
-   functions and member variables. The argument is expected to include
-   the contents of the BB file as a javascript object.*/
+  /** beebrain object constructor. Processes the supplied goal
+   * information JSON and computed derived goal parameters, summaries
+   * and other details. These results can be accessed through various
+   * public members and methods.
+
+   @memberof module:beebrain
+   @constructs beebrain
+   @param {Object} bbin JSON input "BB file" with goal details
+  */
   beebrain = function( bbin ) {
     //console.debug("beebrain constructor ("+gid+"): ");
     var self = this,
@@ -181,7 +181,7 @@
       
     // Private variables holding goal, road and datapoint info
     var 
-    roads = [],      // Holds the current road matrix
+    roads = [],
 
     goal = {},       // Holds loaded goal parameters
     alldata = [],    // Holds the entire set of data points
@@ -421,6 +421,7 @@
     // Each point also records coordinates for the preceding point to
     // enable connecting plots such as steppy and rosy even after
     // filtering based on visibility in graph
+    /** Process goal data */
     function procData() { 
 
       if (data == null || data.length == 0) return "No datapoints"
@@ -694,7 +695,7 @@
       }
     }
 
-    // Set any of {tmin, tmax, vmin, vmax} that don't have explicit values.
+    /** Set any of {tmin, tmax, vmin, vmax} that don't have explicit values. */
     function setDefaultRange() {
       if (goal.tmin == null) goal.tmin = Math.min(goal.tini, goal.asof);
       if (goal.tmin >= goal.asof - bu.SID) goal.tmin -= bu.SID;
@@ -705,7 +706,7 @@
       }
     }
 
-    // Sanity check a row of the road matrix; exactly one-out-of-three is null
+    /** Sanity check a row of the road matrix; exactly one-out-of-three is null */
     function validrow(r) {
       if (!bu.listy(r) || r.length != 3) return false
       return (r[0]==null && bu.nummy(r[1])  && bu.nummy(r[2]) ) ||
@@ -713,7 +714,7 @@
         (bu.nummy(r[0]) && bu.nummy(r[1]) && r[2]==null)
     }
 
-    // Stringified version of a road matrix row
+    /** Stringified version of a road matrix row */
     function showrow(row) {
       return JSON.stringify(row)
     }
@@ -758,7 +759,8 @@
       ['imgsz', bu.nummy, "isn't numeric"],
       ['yoog', bu.stringy, "isn't a string"],
     ]
-    // Sanity check the input parameters. Return non-empty string if it fails.
+
+    /** Sanity check the input parameters. Return non-empty string if it fails. */
     function vetParams() {
       var s = (y => JSON.stringify(y)), i
 
@@ -789,6 +791,7 @@
       return "";
     }
     
+    /** Process goal parameters. */
     function procParams() {
 
       // maps timestamps to most recent datapoint value
@@ -1039,7 +1042,9 @@
     function getBoolParam(p, n, dflt) { return (p.hasOwnProperty(n))?p[n]:dflt }
     function getStrParam(p, n, dflt) { return (p.hasOwnProperty(n))?p[n]:dflt }
 
-    function reloadRoad() {
+    /** Initiates reprocessing of a newly changed road, recomputing
+     * associated goal stats and internal details.*/
+    this.reloadRoad = function() {
       //console.debug("id="+curid+", reloadRoad()")
       var error = procParams()
       
@@ -1117,7 +1122,7 @@
         // Extract road infor into our internal format consisting of road segments:
         // [ [startt, startv], [endt, endv], slope, autofield]
         if (goal.error == "") goal.error = procRoad( p.road )
-        if (goal.error == "") goal.error = reloadRoad()
+        if (goal.error == "") goal.error = self.reloadRoad()
 
         computeRosy()
         
@@ -1130,16 +1135,22 @@
       }
     }
 
-    function getStats() { return bu.extend({}, stats) }
+    /** Returns an object with pre-computed goal statistics, summaries
+     * and other details.*/
+    this.getStats = function() { return bu.extend({}, stats) }
 
-    function setRoadObj( newroad ) {
+    /** Sets a new road object for beebrain. Should be followed by a
+     * call to {@link beebrain#reloadRoad reloadRoad()} to perform a
+     * recomputation of goal stats. Used by the road editor
+     * implemented by the {@link bgraph} module.*/
+    this.setRoadObj = function( newroad ) {
       if (newroad.length == 0) {
         console.log("id="+curid+", setRoadObj(), null road!")
         return
       }
       roads = newroad
       self.roads = roads
-      reloadRoad()
+      self.reloadRoad()
     }
     
     genStats( bbin.params, bbin.data )
@@ -1150,24 +1161,32 @@
     // ----------------- BEEBRAIN OBJECT EXPORTS ------------------
 
     /** beebrain object ID for the current instance */
-    self.id = curid
-    self.getStats = getStats
-    self.setRoadObj = setRoadObj
-    self.reloadRoad = reloadRoad
+    this.id = curid
+    
+    // Static members for outside access
+    this.DPTYPE = DPTYPE
 
-    self.roads = roads
-    self.goal = goal
-    self.data = data
-    self.rosydata = rosydata
-    self.alldata = alldata
-    self.allvals = allvals
-    self.fuda = fuda
-    self.flad = flad
-    self.oresets = oresets
-    self.derails = derails
-    self.hollow = hollow
-    self.hashtags = hashtags
-    self.DPTYPE = DPTYPE
+    /** Holds the current array of road segments */
+    this.roads = roads
+    /** Holds current goal's information */
+    this.goal = goal
+    /** Holds current goal's aggregated datapoints */
+    this.data = data
+    /** Holds current goal's preprocessed rosy datapoints */
+    this.rosydata = rosydata
+    /** Holds all of current goal's datapoints */
+    this.alldata = alldata
+    /** Holds datapoint values associated with each day */
+    this.allvals = allvals
+    /** Holds all datapoints into the future */
+    this.fuda = fuda
+    /** Holds the flattened datapoint */
+    this.flad = flad
+    /** Holds an array of odometer resets */
+    this.oresets = oresets
+    this.derails = derails
+    this.hollow = hollow
+    this.hashtags = hashtags
   }
 
   return beebrain;

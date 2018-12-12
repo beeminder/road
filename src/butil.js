@@ -605,12 +605,18 @@
   self.listy = (x) =>(Array.isArray(x))
 
   // Type-checking convenience functions
-  self.torf = (x)=>(typeof x == "boolean")            // True or False
-  self.born = (x)=>(self.torf(x) | (x == null))      // Boolean or Null
-  self.norn = (x)=>(self.nummy(x) || (x == null))    // Numeric or Null
-  self.timy = (x)=>(self.nummy(x) && 0<x && x<self.BDUSK) // Valid time
-  self.torn = (x)=>(self.timy(x) || (x == null))     // ValidTime or Null
-  self.sorn = (x)=>(typeof x == "string" || (x == null)) //String or Null
+  /** true if boolean */
+  self.torf = (x)=>(typeof x == "boolean")
+  /** true if boolean or null */
+  self.born = (x)=>(self.torf(x) | (x == null))
+  /** true if numeric or null */
+  self.norn = (x)=>(self.nummy(x) || (x == null))
+  /** true if valid time */
+  self.timy = (x)=>(self.nummy(x) && 0<x && x<self.BDUSK)
+  /** true if valid time or null */
+  self.torn = (x)=>(self.timy(x) || (x == null))
+  /** true if string or null */
+  self.sorn = (x)=>(typeof x == "string" || (x == null))
 
   return self
 }));
