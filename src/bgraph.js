@@ -4328,7 +4328,7 @@
      Expected input format is the same as beebrain. Once the input
      file is fetched, the goal graph and road matrix table are
      updated accordingly. */
-    this.loadGoal = ( url ) => { loadGoalFromURL( url ) }
+    this.loadGoal = async ( url ) => { await loadGoalFromURL( url ) }
 
     /** Initiates loading a new goal from the indicated url.
      Expected input format is the same as beebrain. Once the input
@@ -4630,6 +4630,7 @@
     this.animBuf = animBuf
     /** @method */
     this.animBux = animBux
+
   }
   
   return bgraph;

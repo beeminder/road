@@ -32,6 +32,12 @@
   var self = {}
   // -----------------------------------------------------------------
   // --------------------- Useful constants --------------------------
+  /** Maximum amount of time beebrain related processing should take
+     * (in ms). Users of bgraph and related tools should implement
+     * timeouts with this amount to avoid infinite waits in case
+     * something goes wrong */
+  self.MAXTIME = 60000,
+
   /** Base URL for images */
   self.BBURL = "http://brain.beeminder.com/"
   
