@@ -378,7 +378,7 @@
     }
 
     function computeRosy() {
-      if (!goal.rosy) return
+      if (!goal.rosy || data.length == 0) return
       // Pre-compute rosy datapoints
       var delta = Math.max(goal.lnw, goal.stdflux), lo, hi
       if (goal.dir > 0) {
