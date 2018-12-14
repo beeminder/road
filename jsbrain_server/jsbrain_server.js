@@ -59,6 +59,8 @@ if (cluster.isMaster) {
 
 } else {
 
+  var reqcnt = 0 // Keep track of request id for each worker thread
+  
   const port = process.env.PORT || 3000
 
   const fs = require('fs')
@@ -91,21 +93,22 @@ if (cluster.isMaster) {
     if (!inpath)                     return res.status(400).send(noinpath)
     if ((!slug && (!user || !goal))) return res.status(400).send(nofile)
     if ((slug && (user || goal)))    return res.status(400).send(paramconflict)
+    var rid = reqcnt++ // Increment and store unique request id
 
     if (!outpath) outpath = inpath
     if (!slug) slug = user+"+"+goal
     
-    var cid = renderer.getPrf()
-    console.log(cid+"============================================")
-    console.log(cid+`Request url=${req.url}`)
+    var tag = renderer.prf(rid)
+    console.log(tag+"============================================")
+    console.log(tag+`Request url=${req.url}`)
 
-    process.stdout.write(cid+"<BEEBRAIN> ")
+    process.stdout.write(tag+"<BEEBRAIN> ")
     process.umask(0)
 
     try {
-      var timeid = cid+proc_timeid
+      var timeid = tag+proc_timeid+` (${slug})`
       console.time(timeid)
-      const resp = await renderer.render(inpath, outpath, slug)
+      const resp = await renderer.render(inpath, outpath, slug, rid)
 
       var json = {};
       json.inpath = inpath
@@ -122,21 +125,21 @@ if (cluster.isMaster) {
 
         // Compare JSON to pybrain output if enabled
         if (pyjson) {
-          console.log(`${cid} Comparing output to ${pyjson}`)
+          console.log(`${tag} Comparing output to ${pyjson}`)
           if (!fs.existsSync(pyjson)) {
-            process.stdout.write(`${cid} Could not find file ${pyjson}\n`)
+            process.stdout.write(`${tag} Could not find file ${pyjson}\n`)
           } else {
             let pyout = fs.readFileSync(pyjson, "utf8");
             let res = compareJSON(resp.json, JSON.parse(pyout))
             if (res.valid && !res.numeric && !res.summary) {
-              process.stdout.write(`${cid} -- EXACT MATCH! --\n`)
+              process.stdout.write(`${tag} -- EXACT MATCH! --\n`)
             } else {
               if (res.valid) {
-                process.stdout.write(cid+"  -- * Soft errors * --\n")
+                process.stdout.write(tag+"  -- * Soft errors * --\n")
               } else {
-                process.stdout.write(cid+"  -- * CRITICAL! * --\n")
+                process.stdout.write(tag+"  -- * CRITICAL! * --\n")
               }
-              process.stdout.write(cid+`   ${res.result.replace(/\n/g, "\n"+cid+"   ")}`)
+              process.stdout.write(tag+`   ${res.result.replace(/\n/g, "\n"+tag+"   ")}`)
               process.stdout.write("------------------\n")
             }
           }
@@ -144,7 +147,7 @@ if (cluster.isMaster) {
       }
 
       console.timeEnd(timeid)
-      process.stdout.write(cid+"</BEEBRAIN>\n")
+      process.stdout.write(tag+"</BEEBRAIN>\n")
       return res.status(200).send(JSON.stringify(json))
     } catch (e) {
       next(e)
