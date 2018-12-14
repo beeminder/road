@@ -233,7 +233,7 @@ class Renderer {
     } finally {
       if (page) await page.close()
     }
-    return {html: html, png: png, svg: svg, error:null}
+    return {html: html, png: png, svg: svg, json: json, error:null}
   }
 }
 
