@@ -104,10 +104,11 @@ GET request you issue to `localhost:3000` with appropriate parameters
 will initiate graph generation. valid parameters are:
 
   * `inpath=/path/to/input` : Path to local directory for the BB file
-  * `outpath=/path/to/output`: Path to local directory for generated files
+  * `outpath=/path/to/output`: (optional) Path to local directory for generated files
   * `user=u`: beeminder username (`slug` param must be empty)
   * `goal=g`: beeminder goalname (`slug` param must be empty)
   * `slug=filebase`: base name for the BB files (`user` and `goal` params must be empty)
+  * `pyjson=/path/to/pyout/slug.json`: (optional) Local path to pybrain JSON output
   
 This reads the file `u+g.bb` (or `slug.bb`) from `/path/to/input`, and
 generates `u+g.png`, `u+g-thumb.png`, `u+g.svg` and `u+g.json` in
