@@ -126,7 +126,7 @@ if (cluster.isMaster) {
         // Compare JSON to pybrain output if enabled
         if (pyjson) {
           console.log(`${tag} Comparing output to ${pyjson}`)
-          if (!fs.existsSync(pyjson)) {
+          if (!fs.existsSync(pyjson) || !fs.lstatSync(pyjson).isFile()) {
             process.stdout.write(`${tag} Could not find file ${pyjson}\n`)
           } else {
             let pyout = fs.readFileSync(pyjson, "utf8");
