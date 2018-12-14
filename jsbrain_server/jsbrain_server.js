@@ -129,12 +129,12 @@ if (cluster.isMaster) {
             let pyout = fs.readFileSync(pyjson, "utf8");
             let res = compareJSON(resp.json, JSON.parse(pyout))
             if (res.valid && !res.numeric && !res.summary) {
-              process.stdout.write(`${cid} Outputs Match\n`)
+              process.stdout.write(`${cid} -- EXACT MATCH! --\n`)
             } else {
               if (res.valid) {
-                process.stdout.write(cid+"  -- Soft errors ---------------------------\n")
+                process.stdout.write(cid+"  -- * Soft errors * --\n")
               } else {
-                process.stdout.write(cid+"  -- CRITICAL ------------------------------\n")
+                process.stdout.write(cid+"  -- * CRITICAL! * --\n")
               }
               process.stdout.write(cid+`   ${res.result.replace(/\n/g, "\n"+cid+"   ")}`)
               process.stdout.write("------------------\n")
