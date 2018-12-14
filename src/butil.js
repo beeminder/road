@@ -662,12 +662,7 @@
   /** Changes first letter of each word to uppercase 
       @param {String} str Input string*/
   self.toTitleCase = (str) => {
-    return
-    str.replace( /\w\S*/g,
-                 function(txt) {
-                   return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
-                 }
-               )
+    return str.replace( /\w\S*/g, function(txt) { return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()});
   }    
 
   /** Deep compares array a1 and a2 for equality. Does not work on
