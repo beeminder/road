@@ -12,29 +12,28 @@ function compareJSON(stats, bbr) {
   for (var prop in bbr) {
     if (prop == "proctm" || prop == "thumburl" || prop == "graphurl") continue
     if (!stats.hasOwnProperty(prop)) {
-      str += "Prp <b>"+prop+"</b> is missing from the output<br/>\n"
+      str += "Prp "+prop+" is missing from the output\n"
       valid = false
     } else {
       if (Array.isArray(stats[prop])) {
         if (!(bu.arrayEquals(stats[prop],bbr[prop]))) {
-          str += "Arr <b>"+prop+"</b> differs:<br/>\n<tt>&nbsp;py:</tt>"
-            +bbr[prop]+ "<br/>\n<tt>&nbsp;js:</tt>"+stats[prop]+"<br/>\n"
+          str += "Arr "+prop+" differs:\n py:"
+            +bbr[prop]+ "\n js:"+stats[prop]+"\n"
           valid = false
         }
       } else if (!(stats[prop] === bbr[prop])) {
         if (bu.nummy(stats[prop]) && bu.nummy(bbr[prop])) {
-          str += "Numeric value <b>"+prop+"</b> differs:<br/>\n<tt>&nbsp;py:</tt>"
-            +bbr[prop]+ "<br/>\n<tt>&nbsp;js:</tt>"+stats[prop]+"<br/>\n"
+          str += "Numeric value "+prop+" differs:\n py:"
+            +bbr[prop]+ "\n js:"+stats[prop]+"\n"
           numeric = true
           if (Math.abs(bbr[prop]-stats[prop]) > 1e-8)
             valid = false
         } else if (prop.endsWith("sum")) {
-          str += "Summary string <b>"+prop+"</b> differs:<br/>\n<tt>&nbsp;py:</tt>"
-            +bbr[prop]+ "<br/>\n<tt>&nbsp;js:</tt>"+stats[prop]+"<br/>\n"
+          str += "Summary string "+prop+" differs:\n py:"
+            +bbr[prop]+ "\n js:"+stats[prop]+"\n"
           summary = true
         } else if ((typeof stats[prop] == 'string') || typeof (bbr[prop] == 'string')) {
-          str += "String <b>"+prop+"</b> differs:<br/>\n<tt>&nbsp;py:</tt>"
-            +bbr[prop]+ "<br/>\n<tt>&nbsp;js:</tt>"+stats[prop]+"<br/>\n"
+          str += "String "+prop+" differs:\n py:"+bbr[prop]+ "\n js:"+stats[prop]+"\n"
           valid = false
         } else
           valid = false
@@ -96,14 +95,15 @@ if (cluster.isMaster) {
     if (!outpath) outpath = inpath
     if (!slug) slug = user+"+"+goal
     
-    console.log(renderer.getPrf()+"============================================")
-    console.log(renderer.getPrf()+`Request url=${req.url}`)
+    var cid = renderer.getPrf()
+    console.log(cid+"============================================")
+    console.log(cid+`Request url=${req.url}`)
 
-    process.stdout.write(renderer.getPrf()+"<BEEBRAIN> ")
+    process.stdout.write(cid+"<BEEBRAIN> ")
     process.umask(0)
 
     try {
-      var timeid = renderer.getPrf()+proc_timeid
+      var timeid = cid+proc_timeid
       console.time(timeid)
       const resp = await renderer.render(inpath, outpath, slug)
 
@@ -122,19 +122,29 @@ if (cluster.isMaster) {
 
         // Compare JSON to pybrain output if enabled
         if (pyjson) {
-          console.log(`${renderer.getPrf()} Comparing output to ${pyjson}`)
+          console.log(`${cid} Comparing output to ${pyjson}`)
           if (!fs.existsSync(pyjson)) {
-            process.stdout.write(`${renderer.getPrf()} Could not find file ${pyjson}\n`)
+            process.stdout.write(`${cid} Could not find file ${pyjson}\n`)
           } else {
             let pyout = fs.readFileSync(pyjson, "utf8");
             let res = compareJSON(resp.json, JSON.parse(pyout))
-            process.stdout.write(`${renderer.getPrf()}   ${JSON.stringify(res)}\n`)
+            if (res.valid && !res.numeric && !res.summary) {
+              process.stdout.write(`${cid} Outputs Match\n`)
+            } else {
+              if (res.valid) {
+                process.stdout.write(cid+"  -- Soft errors ---------------------------\n")
+              } else {
+                process.stdout.write(cid+"  -- CRITICAL ------------------------------\n")
+              }
+              process.stdout.write(cid+`   ${res.result.replace(/\n/g, "\n"+cid+"   ")}`)
+              process.stdout.write("------------------\n")
+            }
           }
         }
       }
 
       console.timeEnd(timeid)
-      process.stdout.write(renderer.getPrf()+"</BEEBRAIN>\n")
+      process.stdout.write(cid+"</BEEBRAIN>\n")
       return res.status(200).send(JSON.stringify(json))
     } catch (e) {
       next(e)
