@@ -597,7 +597,6 @@
       var nk = rdData.length
       var firstsegment
       var tini = goal.tini, vini = goal.vini
-
       // Handle cases when the first oad matrix entry starts earlier
       // than (tini,vini).
       if (rdData[0][0] < tini) {
