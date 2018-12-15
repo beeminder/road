@@ -596,10 +596,18 @@
       var rdData = json
       var nk = rdData.length
       var firstsegment
+      var tini = goal.tini, vini = goal.vini
 
+      // Handle cases when the first oad matrix entry starts earlier
+      // than (tini,vini).
+      if (rdData[0][0] < tini) {
+        tini = rdData[0][0]
+        if (rdData[0][1] != null) tini = rdData[0][1]
+      }
+      
       // First segment starts from [tini-100days, vini], ends at [tini, vini]
       firstsegment = {
-        sta: [bu.dayparse(goal.tini), Number(goal.vini)],
+        sta: [bu.dayparse(tini), Number(vini)],
         slope: 0, auto: br.RP.SLOPE };
       firstsegment.end = firstsegment.sta.slice()
       firstsegment.sta[0] = bu.daysnap(firstsegment.sta[0]-100*bu.DIY*bu.SID)
@@ -1054,7 +1062,7 @@
         
       goal.fullroad = goal.road.slice()
       goal.fullroad.unshift( [goal.tini, goal.vini, 0, 0] )
-      
+
       if (goal.error == "") {
         goal.pinkzone = [[goal.asof,br.rdf(roads, goal.asof),0]]
         goal.road.forEach(
