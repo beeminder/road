@@ -817,16 +817,20 @@
             ", and rate are inconsistent!\\n"+
             "Is your rate positive when you meant negative?\\n"+
             "Or is your goal "+(goal.kyoom?"total":"value")+
-            " such that the implied goal date is in the past?)";
+            " such that the implied goal date is in the past?)"
         return "Road dial error\\n" + parenerr
       }
 
       // rdf function is implemented in broad.js
       // rtf function is implemented in broad.js
 
-      goal.stdflux = br.noisyWidth(roads, data.filter((d)=>(d[0]>=goal.tini)));
+      goal.stdflux = br.noisyWidth(roads, data.filter((d)=>(d[0]>=goal.tini)))
       goal.nw = (goal.noisy && goal.abslnw == null)
-        ?br.autowiden(roads, goal, data, goal.stdflux):0;
+        ?br.autowiden(roads, goal, data, goal.stdflux):0
+      
+      goal.lnf =
+        (goal.abslnw != null)?(x=>goal.abslnw)
+        :br.genLaneFunc(roads, goal)
       
       flatline();
 
@@ -836,16 +840,16 @@
         if (!(dl <= 1 || data[dl-1][0]-data[0][0] <= 0)) { 
         
           // Create new vector for filtering datapoints
-          var newx = griddle(data[0][0], data[dl-1][0]);
+          var newx = griddle(data[0][0], data[dl-1][0])
           JSON.stringify(newx)
-          goal.filtpts = newx.map((d) => [d, ema(data, d)]);
+          goal.filtpts = newx.map((d) => [d, ema(data, d)])
         } else goal.filtpts = [];
       } else goal.filtpts = [];
       
       goal.tcur = data[data.length-1][0];
       goal.vcur = data[data.length-1][1];
 
-      goal.lnw = Math.max(goal.nw,br.lnf( roads, goal, goal.tcur ));
+      goal.lnw = Math.max(goal.nw,goal.lnf( goal.tcur ));
       goal.safebuf = br.dtd(roads, goal, goal.tcur, goal.vcur);
       goal.tluz = goal.tcur+goal.safebuf*bu.SID;
       goal.delta = bu.chop(goal.vcur - br.rdf(roads, goal.tcur))
@@ -1061,7 +1065,6 @@
         
       goal.fullroad = goal.road.slice()
       goal.fullroad.unshift( [goal.tini, goal.vini, 0, 0] )
-
       if (goal.error == "") {
         goal.pinkzone = [[goal.asof,br.rdf(roads, goal.asof),0]]
         goal.road.forEach(
