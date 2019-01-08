@@ -2472,6 +2472,8 @@
 
     // Creates or updates the watermark with the number of safe days
     function updateWatermark() {
+      if (processing) return;
+      
       if (opts.divGraph == null || road.length == 0 || hidden) return;
 
       var tl = [0,0], bl = [0, plotbox.height/2];
@@ -3594,6 +3596,8 @@
     // notes that we should use an acausal filter to prevent the
     // lag in the thin purple line.
     function updateMovingAv() {
+      if (processing) return;
+      
       var el = gMovingAv.selectAll(".movingav");
       if (!opts.roadEditor && goal.movingav && opts.showData) {
         var l = [nXSc.invert(0).getTime()/1000, 
@@ -4167,6 +4171,7 @@
         scf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.7)
       else 
         scf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.55)
+      updateWatermark()
       updatePastBox()
       updateYBHP()
       updatePinkRegion()
@@ -4186,7 +4191,6 @@
       updateOdomResets()
       updatePastText()
       updateAura()
-      updateWatermark()
       // Record current dot color so it can be retrieved from the SVG
       // for the thumbnail border
       zoomarea.attr('color', br.dotcolor(road, goal, goal.tcur, goal.vcur))
@@ -4194,7 +4198,7 @@
 
     createGraph()
     createTable()
-    zoomAll()
+    //zoomAll()
 
     /** bgraph object ID for the current instance */
     this.id = 1
