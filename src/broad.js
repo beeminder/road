@@ -353,31 +353,9 @@
     r.splice(0,1)
     var rtf0 = self.stepify(bu.zip([t,r]))
     return(x => Math.max(Math.abs(self.vertseg(rd,x)?0:(self.rdf( rd, x ) - self.rdf( rd, x-bu.SID ))), rtf0(x)))
+    //return x=>self.lnfraw(rd, goal, x)
   }
   
-  self.lnfraw = ( rd, goal, x ) => {
-    var r0 = bu.deldups(rd, e=>e.end[0])
-    var t = r0.map(elt => elt.end[0])
-    var r = r0.map(elt => Math.abs(elt.slope)*bu.SID )
-    // pretend flat spots have the previous or next non-flat rate
-    var rb = r.slice(), i
-    for (i = 1; i < rb.length; i++) 
-      if (Math.abs(rb[i]) < 1e-7 || !isFinite(rb[i])) rb[i] = rb[i-1]
-    var rr = r.reverse()
-    var rf = rr.slice()
-    for (i = 1; i < rf.length; i++) 
-      if (Math.abs(rf[i]) < 1e-7 || !isFinite(rf[i])) rf[i] = rf[i-1]
-    rf = rf.reverse()
-    r = bu.zip([rb,rf]).map(e => bu.argmax(Math.abs, [e[0],e[1]]) )
-    t.pop()
-    r.splice(0,1)
-    var rtf0 = self.stepify(bu.zip([t,r]))
-    var valdiff = self.vertseg(rd,x)?0:(self.rdf( rd, x ) - self.rdf( rd, x-bu.SID ))
-    return Math.max(Math.abs(valdiff), rtf0(x))
-  }
-
-  self.lnf = ( rd, g, x ) => ((g.abslnw != null)?g.abslnw:self.lnfraw( rd, g, x ))
-
   // Transform datapoints as follows: every time there's a decrease
   // in value from one element to the next where the second value is
   // zero, say V followed by 0, add V to every element afterwards.
