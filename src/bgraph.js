@@ -2383,8 +2383,10 @@
         bullseyeelt.remove();
         return;
       }
-      var bx = nXSc(road[road.length-1].sta[0]*1000)-(opts.bullsEye.size/2);
-      var by = nYSc(road[road.length-1].sta[1])-(opts.bullsEye.size/2);
+      //var bx = nXSc(road[road.length-1].sta[0]*1000)-(opts.bullsEye.size/2);
+      //var by = nYSc(road[road.length-1].sta[1])-(opts.bullsEye.size/2);
+      var bx = nXSc(goal.tfin*1000)-(opts.bullsEye.size/2);
+      var by = nYSc(br.rdf(road, goal.tfin))-(opts.bullsEye.size/2);
       if (bullseyeelt.empty()) {
         gBullseye.append("svg:image")
 	        .attr("class","bullseye")
@@ -2405,10 +2407,10 @@
         bullseyeelt.remove();
         return;
       }
-      var bx = xScB(road[road.length-1].sta[0]*1000)
-        -(opts.bullsEye.ctxsize/2);
-      var by = yScB(road[road.length-1].sta[1])
-        -(opts.bullsEye.ctxsize/2);
+      //var bx = xScB(road[road.length-1].sta[0]*1000)-(opts.bullsEye.ctxsize/2);
+      //var by = yScB(road[road.length-1].sta[1])-(opts.bullsEye.ctxsize/2);
+      var bx = xScB(goal.tfin*1000)-(opts.bullsEye.ctxsize/2);
+      var by = yScB(br.rdf(road, goal.tfin))-(opts.bullsEye.ctxsize/2);
       if (bullseyeelt.empty()) {
         ctxplot.append("svg:image")
 	        .attr("class","ctxbullseye")
@@ -2428,10 +2430,10 @@
       var png = (opts.roadEditor)?"../lib/images/bullseye_old.png"
         :"../lib/images/bullseye.png";
       var bullseyeelt = gOldBullseye.select(".oldbullseye");
-      var bx = nXSc(iroad[iroad.length-1]
-                    .sta[0]*1000)-(opts.bullsEye.size/2);
-      var by = nYSc(iroad[iroad.length-1]
-                    .sta[1])-(opts.bullsEye.size/2);
+      //var bx = nXSc(iroad[iroad.length-1].sta[0]*1000)-(opts.bullsEye.size/2);
+      //var by = nYSc(iroad[iroad.length-1].sta[1])-(opts.bullsEye.size/2);
+      var bx = nXSc(goal.tfin*1000)-(opts.bullsEye.size/2);
+      var by = nYSc(br.rdf(iroad, goal.tfin))-(opts.bullsEye.size/2);
       if (bullseyeelt.empty()) {
         gOldBullseye.append("svg:image")
 	        .attr("class","oldbullseye")
@@ -2768,7 +2770,6 @@
     // Creates or updates the unedited road
     function updateOldRoad() {
       if (opts.divGraph == null || road.length == 0) return;
-
       // Find road segments intersecting current x-axis range
       var l = [nXSc.invert(0).getTime()/1000, 
                nXSc.invert(plotbox.width).getTime()/1000];
