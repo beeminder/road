@@ -4546,7 +4546,7 @@
           newroot.selectAll(".brush").remove()
           newroot.selectAll(".zoomin").remove()
           newroot.selectAll(".zoomout").remove()
-          newroot.selectAll(".minor").remove()
+          //newroot.selectAll(".minor").remove()
         }
       } else {
 
