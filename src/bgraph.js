@@ -39,6 +39,7 @@
   var
   gid = 1,
 
+  /** Default settings */
   defaults = {
     /** Generates an empty graph and JSON */
     noGraph:      false,
@@ -259,8 +260,72 @@
 
     return opts
   },
+  
   // -------------------------------------------------------------
   // ------------------- BGRAPH CONSTRUCTOR ---------------------
+  /** @typedef BGraphOptions
+      @global
+      @type {object}
+      @property {boolean} noGraph Generates an empty graph and JSON if true
+      @property {Boolean} headless Strips the graph of all details except what is needed for svg output.
+      @property {Boolean} roadEditor Enables the road editor. When disabled, the generated graph mirrors beebrain output as closely as possible.
+      
+      @property {object}  divJSON  Binds the goal JSON output to a div element
+
+      @property {object}  divGraph Binds the graph to a div element
+      @property {object}  svgSize  Size of the SVG element to hold the graph e.g. { width: 700, height: 450 }
+      @property {object}  focusRect Boundaries of the SVG group to hold the focus graph e.g. { x:0, y:0, width:700, height: 370 }
+      @property {object} focusPad Initial padding within the focus graph e.g. { left:25, right:5, top:25, bottom:30 }
+      @property {object} ctxRect Boundaries of the SVG group to hold the context graph e.g. { x:0, y:370, width:700, height: 80 }
+      @property {object} ctxPad Initial padding within the context graph e.g. { left:25, right:5, top:0, bottom:30 }
+      @property {Boolean} scrollZoom Enables zooming by scrollwheel. When disabled, only the context graph and the zoom buttons will allow zooming.
+      @property {Boolean} showContext Enables the display of the context graph within the SVG
+      @property {Boolean} showFocusRect Enables showing a dashed rectange in the context graph visualizing the current graph limits on the y-axis
+    
+      @property {Boolean} keepSlopes Indicates whether slopes for segments beyond the currently dragged element should be kept constant during editing.
+      @property {Boolean} keepIntervals Indicates whether intervals between the knots for segments beyond the currently dragged element should be kept constant during editing.
+      @property {Boolean} showData Enables displaying datapoints on the graph 
+      @property {Integer} maxDataDays When datapoint display is enabled, indicates the number of days before asof to show data for. This can be used to speed up display refresh for large goals. Choose -1 to display all datapoints. Choose -1 to show all points.
+      @property {Integer} maxFutureDays Indicates how many days beyond asof should be included in the fully zoomed out graph. This is useful for when the goal date is too far beyond asof, making the context graph somewhat useless in terms of its interface utility.
+
+      @property {object}  divTable Binds the road table to a div element
+      @property {Number} tableHeight Height of the road matrix table. Choose 0 for unspecified
+      @property {Boolean} tableCheckboxes Chooses whether the road matrix table should include checkboxes for choosing the field to be automatically computed.
+      @property {Boolean} reverseTable Indicates whether the road matrix table should be shown with the earliest rows first (normal) or most recent rows first(reversed).
+      @property {Boolean} tableAutoScroll Indicates whether the auto-scrolling feature for the road matrix table should be enabled such that when the mouse moves over knots, dots or road elements, the corresponding table row is scrolled to be visible in the table. This is particularly useful when tableHeight is explicitly specified and is nonzero.
+      @property {Boolean} tableUpdateOnDrag Chooses whether the road matrix table should be dynamically updated during the dragging of road knots, dots and segments. Enabling this may induce some lagginess, particularly on Firefox due to more components being updated during dragging
+    
+    
+      @property {function} onRoadChange Callback function that gets invoked when the road is edited by the user. Various interface functions can then be used to retrieve the new road state. This is also useful to update the state of undo/redo and submit buttons based on how many edits have been done on the original road.
+      @property {function} onError Callback function that gets invoked when an error is encountered  in loading, processing, drawing or editing the road. 
+
+      @property {object} zoomButton Visual parameters for the zoom in/out buttons. "factor" indicates how much to zoom in/out per click. e.g. { size: 40, opacity: 0.6, factor: 1.5 }
+      @property {object} bullsEye Size of the bullseye image in the focus and context graphs e.g. { size: 40, ctxsize: 20 }
+      @property {object} roadDot Visual parameters for draggable road dots e.g. { size: 5, ctxsize: 3, border: 1.5, ctxborder: 1 }
+      @property {object} roadKnot Visual parameters for draggable road knots and removal buttons e.g. { width: 3, rmbtnscale: 0.6 }
+      @property {object} roadLine Visual parameters for draggable road lines e.g. { width: 3, ctxwidth: 2 }
+      @property {object} oldRoadLine Visual parameters for fixed lines for the original road e.g. { width: 3, ctxwidth: 2, dash: 32, ctxdash: 16 }
+      @property {object} dataPoint Visual parameters for data points (past, flatlined and hollow) e.g. { size: 5, fsize: 5, hsize: 2.5 }
+      @property {object} horizon Visual parameters for the akrasia horizon e.g. { width: 2, ctxwidth: 1, dash: 8, ctxdash: 6, font: 12, ctxfont: 9 }
+      @property {object} today Visual parameters for vertical line for asof  e.g. { width: 2, ctxwidth: 1, font: 12, ctxfont: 9 }
+      @property {object} watermark Visual parameters for watermarks e.g. { height:170, fntsize:130 }
+      @property {object} guidelines Visual parameters for guidelines e.g. { width:2, weekwidth:4 }
+      @property {object} textBox Visual parameters for text boxes shown during dragging e.g. { margin: 3 }
+      @property {object} odomReset Visual parameters for odometer resets e.g. { width: 0.5, dash: 8 }
+      
+
+    @property {object} roadLineCol Colors for road segments for the editor, e.g. { valid: "black", invalid:"#ca1212", selected:"yellow"}
+    @property {object} roadDotCol Colors for the road dots for the editor, e.g. { fixed: "darkgray", editable:"#c2c2c2", selected: "yellow"}
+    @property {object} roadKnotCol Colors for the road knots (vertical) for the editor, e.g. { dflt: "#c2c2c2", selected: "yellow", rmbtn: "black", rmbtnsel: "red"}
+    @property {object} textBoxCol Colors for text boxes e.g. { bg: "#ffffff", stroke:"#d0d0d0"}
+    @property {object} roadTableCol Colors for the road table e.g. { bg:"#ffffff", bgHighlight: "#fffb55", text:"#000000", textDisabled: "#aaaaaa", bgDisabled:"#f2f2f2"}
+    @property {object} dataPointCol Colors for datapoints, e.g. { future: "#909090", stroke: "lightgray"}
+    @property {object} halfPlaneCol Colors for the yellow brick half plane. e.g. { fill: "#ffffe8" }
+    @property {object} pastBoxCol Colors for the past, e.g. { fill: "#f8f8f8", opacity:0.5 }
+    @property {object} odomResetCol Colors for odometer reset indicators, e.g. { dflt: "#c2c2c2" }
+    
+*/
+
   /** bgraph object constructor. Creates an empty beeminder graph
    * and/or road matrix table with the supplied options. Particular
    * goal details may later be loaded with {@link bgraph~loadGoal} or {@link
@@ -268,7 +333,7 @@
 
    @memberof module:bgraph
    @constructs bgraph
-   @param {Object} options JSON input with various graph options
+   @param {BGraphOptions} options JSON input with various graph options
   */
   bgraph = function( options ) {
     //console.debug("beebrain constructor ("+gid+"): ")
@@ -1350,7 +1415,7 @@
 
       var d = dataExtentPartial((goal.plotall&&!opts.roadEditor)?alldata:data,road[0].end[0],data[data.length-1][0],false);
 
-      if (d != null) ne = mergeExtents(ne, d);
+      if (d != null) ne = mergeExtents(ne, d)
       if (bbr.fuda.length != 0) {
         var df = dataExtentPartial(bbr.fuda,road[0].end[0],maxx,false);
         if (df != null) ne = mergeExtents(ne, df);
@@ -4236,7 +4301,8 @@
     /** bgraph object ID for the current instance */
     this.id = 1
 
-    /** Sets/gets the showData option */
+    /** Sets/gets the showData option 
+     @param {Boolean} flag Set/reset the option*/
     this.showData = (flag) => {
       if (arguments.length > 0) opts.showData = flag
       if (alldata.length != 0) {
@@ -4250,7 +4316,8 @@
       return opts.showData
     }
     
-    /** Sets/gets the showContext option */
+    /** Sets/gets the showContext option 
+     @param {Boolean} flag Set/reset the option */
     this.showContext = (flag) => {
       if (arguments.length > 0) opts.showContext = flag
       if (road.length != 0)
@@ -4258,13 +4325,15 @@
       return opts.showContext
     }
     
-    /** Sets/gets the keepSlopes option */
+    /** Sets/gets the keepSlopes option 
+     @param {Boolean} flag Set/reset the option */
     this.keepSlopes = (flag) => {
       if (arguments.length > 0) opts.keepSlopes = flag
       return opts.keepSlopes
     }
     
-    /** Sets/gets the keepIntervals option */
+    /** Sets/gets the keepIntervals option 
+     @param {Boolean} flag Set/reset the option */
     this.keepIntervals = ( flag ) => {
       if (arguments.length > 0) opts.keepIntervals = flag
       return opts.keepIntervals
@@ -4293,7 +4362,8 @@
     }
     
     /** Sets/gets the reverseTable option. Updates the table if
-     the option is changed. */
+     the option is changed.  
+     @param {Boolean} flag Set/reset the option*/
     this.reverseTable = ( flag ) => {
       if (arguments.length > 0) {
         opts.reverseTable = flag
@@ -4311,7 +4381,8 @@
       return opts.reverseTable
     }
     
-    /** Sets/gets the tableUpdateOnDrag option. */
+    /** Sets/gets the tableUpdateOnDrag option. 
+     @param {Boolean} flag Set/reset the option */
     this.tableUpdateOnDrag = ( flag ) => {
       if (arguments.length > 0) {
         opts.tableUpdateOnDrag = flag
@@ -4320,7 +4391,8 @@
       return opts.tableUpdateOnDrag
     }
     
-    /** Sets/gets the tableAutoScroll option. */
+    /** Sets/gets the tableAutoScroll option.  
+     @param {Boolean} flag Set/reset the option*/
     this.tableAutoScroll = ( flag ) => {
       if (arguments.length > 0) opts.tableAutoScroll = flag
       return opts.tableAutoScroll
@@ -4348,8 +4420,7 @@
 
     /** Clears the undo buffer. May be useful after the new
      road is submitted to Beeminder and past edits need to be
-     forgotten. 
-     @method*/
+     forgotten.*/
     this.clearUndo = clearUndoBuffer
 
     /** Zooms out the goal graph to make the entire range from
@@ -4365,26 +4436,34 @@
     /** Initiates loading a new goal from the indicated url.
      Expected input format is the same as beebrain. Once the input
      file is fetched, the goal graph and road matrix table are
-     updated accordingly. */
+     updated accordingly. 
+    @param {String} url URL to load the goal BB file from*/
     this.loadGoal = async ( url ) => { await loadGoalFromURL( url ) }
 
-    /** Initiates loading a new goal from the indicated url.
-     Expected input format is the same as beebrain. Once the input
-     file is fetched, the goal graph and road matrix table are
-     updated accordingly. */
+    /** Initiates loading a new goal from the supplied object.
+     Expected input format is the same as beebrain. The goal graph and
+     road matrix table are updated accordingly.
+    @param {object} json Javascript object containing the goal BB file contents*/
     this.loadGoalJSON = ( json ) => {
       removeOverlay()
       loadGoal( json )
     }
 
-    /** Performs retroratcheting function by adding new knots to
-     leave "days" number of days to derailment based on today data
-     point (which may be flatlined). */
+    /** Performs retroratcheting function by adding new knots to leave
+     "days" number of days to derailment based on today data point
+     (which may be flatlined).
+     @param {Number} days Number of buffer days to preserve*/
     this.retroRatchet = ( days ) => {
       if (!opts.roadEditor) return
       setSafeDays( days )
     }
 
+    /** Schedules a break starting from a desired point beyond the
+     * akrasia horizon and extending for a desired number of days.
+     @param {String} start Day to start the break, formatted as YYYY-MM-DD
+     @param {Number} days Number of days fof the break
+     @param {Boolean} insert Whether to insert into or overwrite onto the current road
+    */
     this.scheduleBreak = ( start, days, insert ) => {
       if (!opts.roadEditor) return
       if (isNaN(days)) return
@@ -4457,6 +4536,9 @@
       roadChanged()
     }
 
+    /** Dials the road to the supplied slope starting from the akrasia horizon
+     @param {Number} newSlope New road slope to start in a week
+    */
     this.commitTo = ( newSlope ) => {
       if (!opts.roadEditor) return
       if (isNaN(newSlope)) return
@@ -4480,9 +4562,16 @@
     }
 
     /** Returns an object with an array ('road') containing the
-     current roadmatix (latest edited version), as well as a
-     boolean ('valid') indicating whether the edited road
-     intersects the pink region or not. */
+     current roadmatix (latest edited version), as well as the following members:<br/>
+     <ul>
+     <li><b>valid</b>: whether the edited road intersects the pink region or not</li>
+     <li><b>loser</b>: whether the edited road results in a derailed goal or not</li>
+     <li><b>asof</b>: unix timestamp for "now"</li>
+     <li><b>horizon</b>: unix timestamp for the current akrasia horizon</li>
+     <li><b>siru</b>: seconds in rate units</li>
+     </ul>
+
+    */
     this.getRoad = () => {
       function dt(d) { return moment.unix(d).utc().format("YYYYMMDD");};
       // Format the current road matrix to be submitted to Beeminder
@@ -4519,10 +4608,11 @@
     }
 
     /** Generates a data URI downloadable from the link element
-     supplied as an argument. If the argument is empty, replaces page
-     contents with a cleaned up graph suitable to be used with
-     headless chrome --dump-dom to retrieve the contents as a simple
-     SVG. */
+     supplied as an argument. If the argument is empty or null,
+     replaces page contents with a cleaned up graph suitable to be
+     used with headless chrome --dump-dom to retrieve the contents as
+     a simple SVG.
+    @param {object} [linkelt=null] Element to provide a link for the SVG object to download. If null, current page contents are replaced. */
     this.saveGraph = ( linkelt = null ) => {
 
       // retrieve svg source as a string.
@@ -4575,13 +4665,15 @@
 
     /** Informs the module instance that the element containing the
      visuals will be hidden. Internally, this prevents calls to
-     getBBox(), eliminating associated exceptions and errors. */
+     getBBox(), eliminating associated exceptions and errors. 
+     @see {@link bgraph#show}*/
     this.hide = () => {hidden = true}
 
     /** Informs the module instance that the element containing the
      visuals will be shown again. This forces an update of all visual
      elements, which might have previously been incorrectly rendered
-     if hidden. */
+     if hidden. 
+     @see {@link bgraph#hide}*/
     this.show = () => {
       //console.debug("curid="+curid+", show()");
       hidden = false
@@ -4598,9 +4690,23 @@
       updateGraphData()
     }
 
+    /** Returns the road matrix object (in the internal format) for the
+        goal. Primarily used to synchronize two separate graph
+        instances on the same HTML page. 
+        @return {object} Internal road object
+        @see bgraph#setRoadObj
+    */
     this.getRoadObj = () => br.copyRoad(road)
 
     var settingRoad = false;
+    /** Sets the road matrix (in the internal format) for the
+        goal. Primarily used to synchronize two separate graph
+        instances on the same HTML page. Should only be called with
+        the return value of {@link bgraph#getRoadObj}.
+        @param {object} newroad Road object returned by {@link bgraph#getRoadObj}
+        @param {Boolean} [resetinitial=true] Whether to set the internal "initial road" as well
+        @see bgraph#getRoadObj
+    */
     this.setRoadObj = ( newroad, resetinitial = true ) => {
       if (settingRoad) return
       if (newroad.length == 0) {
@@ -4621,52 +4727,113 @@
       settingRoad = false
     }
 
+    /** Checks whether the goal is currently a loser
+        @returns {Boolean} 
+    */
     this.isLoser = () => {
       if (goal && road.length != 0)
         return br.isLoser(road,goal,data,goal.tcur,goal.vcur)
       else return false
     }
+    /** Returns current goal state
+        @returns {object} Current goal state as [t, v, r, rdf(t)] or null if no goal
+    */
     this.curState =
       () => (goal?[goal.tcur, goal.vcur, goal.rcur, br.rdf(road, goal.tcur)]:null)
 
+    /** @typedef GoalVisuals
+        @global
+        @type {object}
+        @property {Boolean} plotall Plot all points instead of just the aggregated point
+        @property {Boolean} steppy Join dots with purple steppy-style line
+        @property {Boolean} rosy Show the rose-colored dots and connecting line
+        @property {Boolean} movingav Show moving average line superimposed on the data
+        @property {Boolean} aura Show blue-green/turquoise aura/swath
+        @property {Boolean} hidey Whether to hide the y-axis numbers
+        @property {Boolean} stathead Whether to include label with stats at top of graph
+        @property {Boolean} hashtags Show annotations on graph for hashtags in comments 
+    */
     const visualProps
           = ['plotall','steppy','rosy','movingav','aura','hidey','stathead','hashtags']
+    /** Returns visual properties for the currently loaded goal
+        @returns {GoalVisuals} 
+        @see {@link bgraph#getGoalConfig}
+    */
     this.getVisualConfig = ( opts ) =>{
       var out = {}
       visualProps.map(e=>{ out[e] = goal[e] })
       return out
     }
 
+    /** @typedef GoalProperties
+        @global
+        @type {object}
+        @property {Boolean} offred Whether to use yesterday-is-red criteria for derails
+        @property {Boolean} yaw Which side of the YBR you want to be on, +1 or -1
+        @property {Boolean} dir Which direction you'll go (usually same as yaw)
+        @property {Boolean} kyoom Cumulative; plot vals as the sum of those entered so far
+        @property {Boolean} odom Treat zeros as accidental odom resets
+        @property {Boolean} noisy Compute road width based on data, not just road rate
+        @property {Boolean} integery Whether vals are necessarily integers
+        @property {Boolean} monotone Whether data is necessarily monotone
+        @property {String} aggday sum/last/first/min/max/mean/median/mode/trimmean/jolly
+    */
     const goalProps
           = ['offred','yaw','dir','kyoom','odom','noisy','integery','monotone','aggday']
-    this.getGoalConfig = ( opts ) => {
+    /** Returns properties for the currently loaded goal
+        @returns {GoalProperties} 
+        @see {@link bgraph#getVisualConfig}
+     */
+    this.getGoalConfig = ( ) => {
       var out = {}
       goalProps.map(e=>{ out[e] = goal[e] })
       return out
     }
 
+    /** Displays the supplied message overlaid towards the top of the graph
+        @param {String} msg Message to be displayed. Pass null to remove existing message. */
     this.msg = (msg)=>{
       if (!msg) removeOverlay("message")
       else
-        showOverlay([msg], 20, null, {x:sw/20, y:10, w:sw*18/20, h:50}, "message", false)
+        showOverlay([msg], 20, null, {x:sw/20, y:10, w:sw*18/20, h:50},
+                    "message", false)
     }
-    /** @method */
+
+    /** Animates the Akrasia horizon element in the graph
+        @method
+        @param {Boolean} enable Enables/disables animation */
     this.animHor = animHor
-    /** @method */
+    /** Animates the Yellow Brick Road elements in the graph
+        @method
+        @param {Boolean} enable Enables/disables animation */
     this.animYBR = animYBR
-    /** @method */
+    /** Animates datapoints in the graph
+        @method
+        @param {Boolean} enable Enables/disables animation */
     this.animData = animData
-    /** @method */
+    /** Animates guideline elements in the graph
+        @method
+        @param {Boolean} enable Enables/disables animation */
     this.animGuides = animGuides
-    /** @method */
+    /** Animates the rosy line in the graph
+        @method
+        @param {Boolean} enable Enables/disables animation */
     this.animRosy = animRosy
-    /** @method */
+    /** Animates the moving average in the graph
+        @method
+        @param {Boolean} enable Enables/disables animation */
     this.animMav = animMav
-    /** @method */
+    /** Animates the aura element in the graph
+        @method
+        @param {Boolean} enable Enables/disables animation */
     this.animAura = animAura
-    /** @method */
+    /** Animates the waterbuf element in the graph
+        @method
+        @param {Boolean} enable Enables/disables animation */
     this.animBuf = animBuf
-    /** @method */
+    /** Animates the waterbux element in the graph
+        @method
+        @param {Boolean} enable Enables/disables animation */
     this.animBux = animBux
 
   }

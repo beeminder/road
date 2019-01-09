@@ -7,10 +7,10 @@ Beebrain functionality, as well as an interactive editor for Beeminder
 roads. Below is a list of components and features supported by this
 repository:
 
-* Javascript modules for processing beeminder goal BB files (`butil.js`, `broad.js`, `beebrain.js`)
-* A Javascript module for goal graph generation and an interactive road editor (`bgraph.js`)
-* A Javascript module implementing a sandbox for experimenting with Beemidner goals (`bsandbox.js`)
-* A Javascript module to facilitate automated testing and comparison of beebrain outputs (`btest.js`)
+* Javascript modules for processing beeminder goal BB files ({@link module:butil `butil`}, {@link module:broad `broad`}, {@link module:beebrain `beebrain`})
+* A Javascript module for goal graph generation and an interactive road editor ({@link module:bgraph `bgraph`})
+* A Javascript module implementing a sandbox for experimenting with Beemidner goals ({@link module:bsandbox `bsandbox`})
+* A Javascript module to facilitate automated testing and comparison of beebrain outputs ({@link module:btest `btest`})
 * A node server that uses the modules above to locally generate graph PNG and SVG, thumbnail PNG and goal JSON output files upon receiving a GET request
 * A node server that provides web interface for client-side graphs, road editor and sandbox functionality
 * A node server that duplicates the behaviors of sanity.py from pybrain
