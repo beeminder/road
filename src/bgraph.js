@@ -290,7 +290,7 @@
     // Graph components
     var svg, defs, graphs, buttonarea, stathead, focus, focusclip, plot,
         context, ctxclip, ctxplot, 
-        xSc, nXSc, xAxis, xGrid, xAxisObj, xGridObj,
+        xSc, nXSc, xAxis, xAxisT, xGrid, xAxisObj, xAxisObjT, xGridObj,
         ySc, nYSc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel,
         xScB, xAxisB, xAxisObjB, yScB, 
         gPB, gYBHP, gPink, gGrid, gOResets, gPastText, 
@@ -615,11 +615,17 @@
           .attr("class", "grid")
           .attr("transform", "translate(0,"+(plotbox.height)+")")
           .call(xGrid);
+        xAxisT = d3.axisTop(xSc).ticks(6);
+        xAxisObjT = focus.append('g')        
+          .attr("class", "axis")
+          .attr("transform", "translate("+plotbox.x+"," 
+                + (plotpad.top) + ")")
+          .call(xAxisT);
       }
 
       ySc = d3.scaleLinear().range([plotbox.height, 0]);
-      yAxis = d3.axisLeft(ySc).ticks(8);
-      yAxisR = d3.axisRight(ySc).ticks(8);
+      yAxis = d3.axisLeft(ySc).ticks(8).tickSize(7).tickSizeOuter(0)
+      yAxisR = d3.axisRight(ySc).ticks(8).tickSize(7).tickSizeOuter(0)
       yAxisObj = focus.append('g')        
         .attr("class", "axis")
         .attr("transform", "translate(" 
@@ -708,15 +714,20 @@
       if (!opts.roadEditor) {
         xGridObj.attr("transform", "translate(0,"+(plotbox.height)+")")
           .call(xGrid);
+        xAxisObjT.attr("transform", "translate("+plotbox.x+"," 
+                       + (plotpad.top) + ")")
+          .call(xAxisT.scale(nXSc));
       }
       ySc.range([0, plotbox.height]);
       nYSc.range([0, plotbox.height]);
       yAxisObj.attr("transform", "translate(" 
                     + plotpad.left + ","+plotpad.top+")")
         .call(yAxis.scale(nYSc));
+
       yAxisObjR.attr("transform", "translate(" 
                      + (plotpad.left+plotbox.width) + ","+plotpad.top+")")
         .call(yAxisR.scale(nYSc));
+
       yAxisLabel.attr("transform", 
                       "translate(15,"+(plotbox.height/2+plotpad.top)
                       +") rotate(-90)");
@@ -908,13 +919,17 @@
         (d)=>((d.getTime()>=xr[0]&&d.getTime()<=xr[1])));
       xAxis.tickValues(tv)
         .tickSize(7)
+        .tickSizeOuter(0)
         .tickFormat(
           (d,i)=>d3.utcFormat((i%majorSkip==ind)?ticks[tickType][1]:"")(d))
       xAxisObj.call(xAxis.scale(nXSc));
-      xAxisObj.selectAll("g").classed("minor", false);
+      xAxisObj.selectAll("g").classed("minor", false)
       xAxisObj.selectAll("g")
         .filter((d, i)=>(i%majorSkip!=ind))
         .classed("minor", true);
+
+      xAxisObj.selectAll("g").selectAll(".tick line")
+        .attr("transform", "translate(0,-4)");
 
       if (!opts.roadEditor) {
         xGrid.tickValues(tv).tickSize(plotbox.width);
@@ -923,6 +938,20 @@
         xGridObj.selectAll("g")
           .filter( (d, i)=>(i%majorSkip!=ind))
           .classed("minor", true);
+        xAxisT.tickValues(tv)
+          .tickSize(7)
+          .tickSizeOuter(0)
+          .tickFormat(
+            (d,i)=>d3.utcFormat((i%majorSkip==ind)?ticks[tickType][1]:"")(d))
+        xAxisObjT.call(xAxisT.scale(nXSc));
+        xAxisObjT.selectAll("g").classed("minor", false)
+        xAxisObjT.selectAll("g")
+          .filter((d, i)=>(i%majorSkip!=ind))
+          .classed("minor", true);
+
+        xAxisObjT.selectAll("g").selectAll(".tick line")
+          .attr("transform", "translate(0,5)");
+
       }
     }
     function handleYAxisWidth() {
@@ -1037,6 +1066,10 @@
 
       resizeBrush();
       updateGraphData();
+      yAxisObj.selectAll("g").selectAll(".tick line")
+        .attr("transform", "translate(7,0)");
+      yAxisObjR.selectAll("g").selectAll(".tick line")
+        .attr("transform", "translate(-6,0)");
       return;
     }
 
