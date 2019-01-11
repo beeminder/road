@@ -365,7 +365,7 @@
         gBullseye, gRoads, gDots,  gWatermark, gHashtags, gHorizon, gHorizonText, 
         zoomarea, axisZoom, zoomin, zoomout,  
         brushObj, brush, focusrect, topLeft,
-        scf = 1
+        scf = 1, oldscf = 0
 
     // Internal state for the graph
     var lastError = null,
@@ -862,7 +862,7 @@
       computePlotLimits( true );
       horindex = br.findSeg(road, goal.horizon);
       reloadBrush();
-      updateGraphData();
+      updateGraphData(true);
       updateContextData();
       updateTable();
       if (typeof opts.onRoadChange === 'function') {
@@ -1127,14 +1127,14 @@
       nXSc = tr.rescaleX(xSc);
       redrawXTicks();
       adjustYScale();
-      handleYAxisWidth();
-
-      resizeBrush();
-      updateGraphData();
       yAxisObj.selectAll("g").selectAll(".tick line")
         .attr("transform", "translate(6,0)");
       yAxisObjR.selectAll("g").selectAll(".tick line")
         .attr("transform", "translate(-5,0)");
+      handleYAxisWidth();
+
+      resizeBrush();
+      updateGraphData();
       return;
     }
 
@@ -3363,19 +3363,8 @@
     function dpFillOp( pt ) {
       return (pt[3] == bbr.DPTYPE.AGGPAST)?1:0.3;
     }
-    function dpStroke( pt ) {
-      if (opts.roadEditor) {
-        return opts.dataPointCol.stroke;
-      } else {
-        return "#000000";
-      }
-    }
     function dpStrokeWidth( pt ) {
-      if (opts.roadEditor) {
-        return (opts.dataPoint.border*scf)+"px";
-      } else {
-        return (((pt[3] == bbr.DPTYPE.AGGPAST)?1:0.5)*scf)+"px";
-      }
+      return (((pt[3] == bbr.DPTYPE.AGGPAST)?1:0.5)*scf)+"px";
     }
 
     var dotTimer = null, dotText = null;
@@ -3402,10 +3391,12 @@
       dpelt
 		    .attr("cx", function(d){ return nXSc((d[0])*1000);})
         .attr("cy",function(d){ return nYSc(d[1]);});
-      if (r != null) dpelt.attr("r", r);
+      if (r != null && scf != oldscf) dpelt.attr("r", r);
       if (sw != null) dpelt.attr("stroke-width", sw);
-      if (f != null) dpelt.attr("fill", f);
-      if (fop != null) dpelt.style("fill-opacity", fop);
+      if (cls != "rosyd" && cls != "steppyd" && cls != "hpts") {
+        if (f != null) dpelt.attr("fill", f)
+        if (fop != null) dpelt.style("fill-opacity", fop)
+      }
 
       dpelt.enter().append("svg:circle")
 		    .attr("class",cls)
@@ -3611,10 +3602,15 @@
           var el = gAllpts.selectAll(".allpts");
           el.remove();
         }
-        updateDotGroup(gDpts, pts.concat(bbr.fuda), "dpts", 
-                       opts.dataPoint.size*scf,
-                       dpStroke, dpStrokeWidth, dpFill, true, dpFillOp);
-
+        if (opts.roadEditor)
+          updateDotGroup(gDpts, pts.concat(bbr.fuda), "dpts", 
+                         opts.dataPoint.size*scf, opts.dataPointCol.stroke,
+                         (opts.dataPoint.border*scf)+"px", dpFill, true, dpFillOp);
+        else
+          updateDotGroup(gDpts, pts.concat(bbr.fuda), "dpts", 
+                         opts.dataPoint.size*scf,
+                         "#000000", dpStrokeWidth, dpFill, true, dpFillOp);
+        
         // Compute and plot hollow datapoints
         if (!opts.roadEditor) {
           updateDotGroup(gHollow, bbr.hollow.filter(df), "hpts", 
@@ -4260,11 +4256,12 @@
       }
     }
 
-    function updateGraphData() {
+    function updateGraphData(force = false) {
       if (opts.divGraph == null) return
       clearSelection()
       var limits = [nXSc.invert(0).getTime()/1000, 
                     nXSc.invert(plotbox.width).getTime()/1000];
+      if (force) oldscf = 0
       if (opts.roadEditor)
         scf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.7)
       else 
@@ -4292,6 +4289,11 @@
       // Record current dot color so it can be retrieved from the SVG
       // for the thumbnail border
       zoomarea.attr('color', br.dotcolor(road, goal, goal.tcur, goal.vcur))
+
+      // Store the latest scale factor for comparison. Used to
+      // eliminate unnecessary attribute setting for updateDotGroup
+      // and other update functions
+      oldscf = scf
     }
 
     createGraph()
@@ -4687,7 +4689,7 @@
       resizeBrush()
       updateTable()
       updateContextData()
-      updateGraphData()
+      updateGraphData( true )
     }
 
     /** Returns the road matrix object (in the internal format) for the
