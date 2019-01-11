@@ -627,9 +627,13 @@
         if (rddate == null) {
           segment.end = [0, Number(rdvalue)]
           segment.slope = Number(rdslope)/(goal.siru)
-          segment.end[0] 
-            = segment.sta[0] 
-            + (segment.end[1] - segment.sta[1])/segment.slope
+          if (segment.slope != 0) {
+            segment.end[0] 
+              = segment.sta[0] 
+              + (segment.end[1] - segment.sta[1])/segment.slope
+          } else {
+            segment.end[0] = bu.BDUSK
+          }
           segment.end[0] = Math.min(bu.BDUSK, segment.end[0])
           segment.auto = br.RP.DATE
         } else if (rdvalue == null) {
@@ -1125,7 +1129,6 @@
         // Append final segment to the road array. These values will be
         // reextracted after filling in road in procParams
         if (bu.listy(goal.road)) goal.road.push([goal.tfin, goal.vfin, goal.rfin])
-      
         if (goal.error == "") goal.error = vetParams()
         if (goal.error == "") goal.error = procData()
       
