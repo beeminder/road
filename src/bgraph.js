@@ -209,7 +209,7 @@
   },
   
   /** This style text gets embedded into the SVG object to enable proper saving of the SVG */
-  SVGStyle = ".svg {shape-rendering: crispEdges;} .axis path, .axis line { fill: none; stroke: black; shape-rendering: crispEdges;} .axis .minor line { stroke: #777; stroke-dasharray:5,4; } .grid line { fill: none; stroke: #dddddd; stroke-width: 1px; shape-rendering: crispEdges; } .grid .minor line { stroke: none; } .axis text { font-family: sans-serif; font-size: 11px; } .axislabel { font-family: sans-serif; font-size: 11px; text-anchor: middle; } circle.dots { stroke: black; } line.roads { stroke: black; } .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .waterbuf, .waterbux { text-anchor: middle; font-family: sans-serif; } .loading { text-anchor: middle; font-family: sans-serif; } .zoomarea { fill: none; } .hashtag { text-anchor: middle; font-family: sans-serif; }",
+  SVGStyle = ".svg {shape-rendering: crispEdges;} .axis path, .axis line { fill: none; stroke: black; shape-rendering: crispEdges;} .axis .minor line { stroke: #777; stroke-dasharray:0,2,4,3; } .grid line { fill: none; stroke: #dddddd; stroke-width: 1px; shape-rendering: crispEdges; } .grid .minor line { stroke: none; } .axis text { font-family: sans-serif; font-size: 11px; } .axislabel { font-family: sans-serif; font-size: 11px; text-anchor: middle; } circle.dots { stroke: black; } line.roads { stroke: black; } .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .waterbuf, .waterbux { text-anchor: middle; font-family: sans-serif; } .loading { text-anchor: middle; font-family: sans-serif; } .zoomarea { fill: none; } .hashtag { text-anchor: middle; font-family: sans-serif; }",
 
   /** Fraction of plot range that the axes extend beyond */
   PRAF  = .015,
@@ -689,8 +689,8 @@
       }
 
       ySc = d3.scaleLinear().range([plotbox.height, 0]);
-      yAxis = d3.axisLeft(ySc).ticks(8).tickSize(7).tickSizeOuter(0)
-      yAxisR = d3.axisRight(ySc).ticks(8).tickSize(7).tickSizeOuter(0)
+      yAxis = d3.axisLeft(ySc).ticks(8).tickSize(6).tickSizeOuter(0)
+      yAxisR = d3.axisRight(ySc).ticks(8).tickSize(6).tickSizeOuter(0)
       yAxisObj = focus.append('g')        
         .attr("class", "axis")
         .attr("transform", "translate(" 
@@ -983,7 +983,7 @@
       var tv = ticks[tickType][0].filter(
         (d)=>((d.getTime()>=xr[0]&&d.getTime()<=xr[1])));
       xAxis.tickValues(tv)
-        .tickSize(7)
+        .tickSize(6)
         .tickSizeOuter(0)
         .tickFormat(
           (d,i)=>d3.utcFormat((i%majorSkip==ind)?ticks[tickType][1]:"")(d))
@@ -991,11 +991,11 @@
       xAxisObj.selectAll("g").classed("minor", false)
       xAxisObj.selectAll("g")
         .filter((d, i)=>(i%majorSkip!=ind))
-        .classed("minor", true);
+        .classed("minor", true)
 
       xAxisObj.selectAll("g").selectAll(".tick line")
-        .attr("transform", "translate(0,-4)");
-
+        .attr("transform", "translate(0,-5)")
+      
       if (!opts.roadEditor) {
         xGrid.tickValues(tv).tickSize(plotbox.width);
         xGridObj.call(xGrid.scale(nXSc));
@@ -1004,7 +1004,7 @@
           .filter( (d, i)=>(i%majorSkip!=ind))
           .classed("minor", true);
         xAxisT.tickValues(tv)
-          .tickSize(7)
+          .tickSize(6)
           .tickSizeOuter(0)
           .tickFormat(
             (d,i)=>d3.utcFormat((i%majorSkip==ind)?ticks[tickType][1]:"")(d))
@@ -1015,7 +1015,7 @@
           .classed("minor", true);
 
         xAxisObjT.selectAll("g").selectAll(".tick line")
-          .attr("transform", "translate(0,5)");
+          .attr("transform", "translate(0,6)");
 
       }
     }
@@ -1027,15 +1027,15 @@
           yAxisObj.selectAll("text").remove()
           yAxisObjR.selectAll("text").remove()
         }
-        var bbox = yAxisObj.node().getBBox();
+        var bbox = yAxisObj.node().getBBox()
         // Adjust the graph size and axes if the y axis tick
         // width has changed by a nontrivial amount. This
         // causes a bit jumpy behavior when dragging the brush
         // across the boundary of width change, but that seems
         // to not be too bad a problem.
         if (Math.abs(bbox.width-yaxisw) > 5) {
-          yaxisw = bbox.width;
-          resizeGraph();
+          yaxisw = Math.floor(bbox.width)
+          resizeGraph()
         }
       }
     }
@@ -1132,9 +1132,9 @@
       resizeBrush();
       updateGraphData();
       yAxisObj.selectAll("g").selectAll(".tick line")
-        .attr("transform", "translate(7,0)");
+        .attr("transform", "translate(6,0)");
       yAxisObjR.selectAll("g").selectAll(".tick line")
-        .attr("transform", "translate(-6,0)");
+        .attr("transform", "translate(-5,0)");
       return;
     }
 
