@@ -1441,6 +1441,84 @@ implemented by the <a href="bgraph.html">bgraph</a> module.
             
 <hr>
 <dt>
+    <h4 class="name" id="~computeRosy"><span class="type-signature">&lt;inner> </span>computeRosy()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Pre-compute rosy datapoints
+    </div>
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
     <h4 class="name" id="~genStats"><span class="type-signature">&lt;inner> </span>genStats()</h4>
     
     
@@ -1597,7 +1675,7 @@ implemented by the <a href="bgraph.html">bgraph</a> module.
             
 <hr>
 <dt>
-    <h4 class="name" id="~legacyIn"><span class="type-signature">&lt;inner> </span>legacyIn()</h4>
+    <h4 class="name" id="~legacyIn"><span class="type-signature">&lt;inner> </span>legacyIn(p)</h4>
     
     
 </dt>
@@ -1614,6 +1692,56 @@ implemented by the <a href="bgraph.html">bgraph</a> module.
     
 
     
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>p</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Goal parameters from the bb file</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
     
 
     
@@ -1675,7 +1803,7 @@ implemented by the <a href="bgraph.html">bgraph</a> module.
             
 <hr>
 <dt>
-    <h4 class="name" id="~legacyOut"><span class="type-signature">&lt;inner> </span>legacyOut()</h4>
+    <h4 class="name" id="~legacyOut"><span class="type-signature">&lt;inner> </span>legacyOut(p)</h4>
     
     
 </dt>
@@ -1692,6 +1820,56 @@ implemented by the <a href="bgraph.html">bgraph</a> module.
     
 
     
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>p</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Computed goal statistics</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
     
 
     
@@ -1761,7 +1939,18 @@ implemented by the <a href="bgraph.html">bgraph</a> module.
 
     
     <div class="description">
-        Process goal data
+        Process goal data<br/>
+
+        Coming here, we assume that data has entries with the
+        following format:[t, v, comment, original index,
+        v(original)]<br/>
+
+        Coming out, datapoints have the following format: [t, v,
+        comment, type, prevt, prevv, v(original) or null]<br/>
+
+        Each point also records coordinates for the preceding point to
+        enable connecting plots such as steppy and rosy even after
+        filtering based on visibility in graph
     </div>
     
 
@@ -1909,7 +2098,7 @@ implemented by the <a href="bgraph.html">bgraph</a> module.
             
 <hr>
 <dt>
-    <h4 class="name" id="~procRoad"><span class="type-signature">&lt;inner> </span>procRoad()</h4>
+    <h4 class="name" id="~procRoad"><span class="type-signature">&lt;inner> </span>procRoad(json)</h4>
     
     
 </dt>
@@ -1920,9 +2109,9 @@ implemented by the <a href="bgraph.html">bgraph</a> module.
         Extracts road segments from the supplied road matrix in the *
      input parameters as well as tini and vini. Upon compeltion, the *
      'roads' variable contains an array of road segments as javascript
-     objects in the following format:
+     objects in the following format:<br/>
 
-     {sta: [startt, startv], end: [endt, endv], slope, auto}
+     {sta: [startt, startv], end: [endt, endv], slope, auto}<br/>
 
      Initial and final flat segments are added from starting days
      before tini and ending after 100 days after tfin.
@@ -1935,83 +2124,55 @@ implemented by the <a href="bgraph.html">bgraph</a> module.
 
     
     
+        <h5>Parameters:</h5>
+        
 
-    
-<dl class="details">
-    
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
 
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
+        <th>Type</th>
 
         
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
             
-<hr>
-<dt>
-    <h4 class="name" id="~rowfix"><span class="type-signature">&lt;inner> </span>rowfix()</h4>
-    
-    
-</dt>
-<dd>
+                <td class="name"><code>json</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Unprocessed road matrix from the BB file</td>
+        </tr>
 
     
-    <div class="description">
-        Helper function for legacyOut
-    </div>
-    
+    </tbody>
+</table>
 
-    
-
-    
-
-    
     
 
     
@@ -2081,7 +2242,8 @@ implemented by the <a href="bgraph.html">bgraph</a> module.
 
     
     <div class="description">
-        Set any of {tmin, tmax, vmin, vmax} that don't have explicit values.
+        Set any of {tmin, tmax, vmin, vmax} that don't have explicit
+values. Duplicates pybrain setRange() behavior
     </div>
     
 
@@ -2151,85 +2313,7 @@ implemented by the <a href="bgraph.html">bgraph</a> module.
             
 <hr>
 <dt>
-    <h4 class="name" id="~showrow"><span class="type-signature">&lt;inner> </span>showrow()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Stringified version of a road matrix row
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="~stampIn"><span class="type-signature">&lt;inner> </span>stampIn()</h4>
+    <h4 class="name" id="~stampIn"><span class="type-signature">&lt;inner> </span>stampIn(p, d)</h4>
     
     
 </dt>
@@ -2247,6 +2331,80 @@ implemented by the <a href="bgraph.html">bgraph</a> module.
 
     
     
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>p</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Goal parameters from the BB file</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>d</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Data points from the BB file</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
 
     
 <dl class="details">
@@ -2307,7 +2465,7 @@ implemented by the <a href="bgraph.html">bgraph</a> module.
             
 <hr>
 <dt>
-    <h4 class="name" id="~stampOut"><span class="type-signature">&lt;inner> </span>stampOut()</h4>
+    <h4 class="name" id="~stampOut"><span class="type-signature">&lt;inner> </span>stampOut(p)</h4>
     
     
 </dt>
@@ -2325,83 +2483,55 @@ implemented by the <a href="bgraph.html">bgraph</a> module.
 
     
     
+        <h5>Parameters:</h5>
+        
 
-    
-<dl class="details">
-    
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
 
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
+        <th>Type</th>
 
         
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
             
-<hr>
-<dt>
-    <h4 class="name" id="~validrow"><span class="type-signature">&lt;inner> </span>validrow()</h4>
-    
-    
-</dt>
-<dd>
+                <td class="name"><code>p</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Computed goal statistics</td>
+        </tr>
 
     
-    <div class="description">
-        Sanity check a row of the road matrix; exactly one-out-of-three is null
-    </div>
-    
+    </tbody>
+</table>
 
-    
-
-    
-
-    
     
 
     
@@ -2587,7 +2717,7 @@ implemented by the <a href="bgraph.html">bgraph</a> module.
 <span class="jsdoc-message">
 	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a>
 	
-		on 2019-01-12T23:27:01+03:00
+		on 2019-01-12T23:43:53+03:00
 	
 	using the <a href="https://github.com/docstrap/docstrap">DocStrap template</a>.
 </span>

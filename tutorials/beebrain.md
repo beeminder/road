@@ -135,14 +135,14 @@ calls the `genStats()` function. This function performs all goal
 processing to generate goal stats. Important functions (in calling
 order) are
 
-  * `legacyIn(p)`  : Processes legacy parameters
-  * `stampIn(p,d)` : Performs timestamp conversion for inputs
-  * `vetParams()` : Verifies parameter sanity
-  * `procData()` : Processes datapoints
-  * `procRoad()` : Processes the road matrix and constructs the internal `roads` object
-  * `computeRosy()` : Pre-computes rosy datapoints
-  * `stampOut(p)` : Prepares timestamp values for output
-  * `legacyOut(p)` : Outputs legacy parameters
+  * {@link beebrain~legacyIn `legacyIn(p)`}  : Processes legacy parameters
+  * {@link beebrain~stampIn `stampIn(p,d)`} : Performs timestamp conversion for inputs
+  * {@link beebrain~vetParams `vetParams()`} : Verifies parameter sanity
+  * {@link beebrain~procData `procData()`} : Processes datapoints
+  * {@link beebrain~procRoad `procRoad()`} : Processes the road matrix and constructs the internal `roads` object
+  * {@link beebrain~computeRosy `computeRosy()`} : Pre-computes rosy datapoints
+  * {@link beebrain~stampOut `stampOut(p)`} : Prepares timestamp values for output
+  * {@link beebrain~legacyOut `legacyOut(p)`} : Outputs legacy parameters
 
 There are of course numerous details on how and when various things
 are computed. Please refer to the code for details.

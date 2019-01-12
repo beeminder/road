@@ -209,7 +209,8 @@
     goal.xMin = goal.asof;  goal.xMax = goal.horizon
     goal.yMin = -1;    goal.yMax = 1
 
-    /** Convery legacy parameters to up-to-date entries */
+    /** Convery legacy parameters to up-to-date entries 
+        @param {Object} p Goal parameters from the bb file */
     function legacyIn( p ) {
       if (p.hasOwnProperty('gldt') && !p.hasOwnProperty('tfin'))  p.tfin = p.gldt
       if (p.hasOwnProperty('goal') && !p.hasOwnProperty('vfin'))  p.vfin = p.goal
@@ -218,14 +219,15 @@
         p.yoog = p.usr + "/" + p.graph
     }
     
-    /** Helper function for legacyOut */
+    // Helper function for legacyOut
     function rowfix(row) {
       if (!Array.isArray(row)) return row
       if (row.length <= 3) return row
       return row.slice(0,3)
     }
 
-    /** Last in genStats, filter params for backward compatibility */
+    /** Last in genStats, filter params for backward compatibility
+        @param {Object} p Computed goal statistics */
     function legacyOut(p) {
       p.fullroad = p.fullroad.map( r=>rowfix(r) )
       p['road']     = p['fullroad']
@@ -291,7 +293,9 @@
       return newrow
     }
 
-    /** Processes fields with timestamps in the input */
+    /** Processes fields with timestamps in the input
+     @param {Object} p Goal parameters from the BB file
+     @param {Array} d Data points from the BB file*/
     function stampIn( p,d ) {
       ['asof', 'tini', 'tfin', 'tmin', 'tmax']
         .map((e)=>{if (p.hasOwnProperty(e)) p[e] = bu.dayparse(p[e])})
@@ -306,7 +310,8 @@
         .sort((a,b)=>((a[0]!== b[0])?(a[0]-b[0]):(a[3]-b[3]))) 
     }
 
-    /** Convert unixtimes back to daystamps */
+    /** Convert unixtimes back to daystamps
+        @param {Object} p Computed goal statistics */
     function stampOut( p ) {
       p['fullroad'] = p['fullroad'].map(dayifyrow)
       p['pinkzone'] = p['pinkzone'].map(dayifyrow)
@@ -377,6 +382,7 @@
       return inertia(dat.slice().reverse(), dlt, sgn).reverse()
     }
 
+    /** Pre-compute rosy datapoints */
     function computeRosy() {
       if (!goal.rosy || data.length == 0) return
       // Pre-compute rosy datapoints
@@ -411,17 +417,19 @@
       return set
     }
 
-    // Coming here, we assume that data has entries with
-    // the following format:
-    // [t, v, comment, original index, v(original)]
-    //
-    // Coming out, datapoints have the following format:
-    // [t, v, comment, type, prevt, prevv, v(original) or null]
-    //
-    // Each point also records coordinates for the preceding point to
-    // enable connecting plots such as steppy and rosy even after
-    // filtering based on visibility in graph
-    /** Process goal data */
+    /** Process goal data<br/>
+
+        Coming here, we assume that data has entries with the
+        following format:[t, v, comment, original index,
+        v(original)]<br/>
+
+        Coming out, datapoints have the following format: [t, v,
+        comment, type, prevt, prevv, v(original) or null]<br/>
+
+        Each point also records coordinates for the preceding point to
+        enable connecting plots such as steppy and rosy even after
+        filtering based on visibility in graph
+    */
     function procData() { 
 
       if (data == null || data.length == 0) return "No datapoints"
@@ -585,12 +593,13 @@
     /** Extracts road segments from the supplied road matrix in the *
      input parameters as well as tini and vini. Upon compeltion, the *
      'roads' variable contains an array of road segments as javascript
-     objects in the following format:
+     objects in the following format:<br/>
 
-     {sta: [startt, startv], end: [endt, endv], slope, auto}
+     {sta: [startt, startv], end: [endt, endv], slope, auto}<br/>
 
      Initial and final flat segments are added from starting days
      before tini and ending after 100 days after tfin.
+     @param {Array} json Unprocessed road matrix from the BB file
     */
     function procRoad( json ) {
       roads = []
@@ -707,7 +716,8 @@
       }
     }
 
-    /** Set any of {tmin, tmax, vmin, vmax} that don't have explicit values. */
+    /** Set any of {tmin, tmax, vmin, vmax} that don't have explicit
+     * values. Duplicates pybrain setRange() behavior*/
     function setDefaultRange() {
       if (goal.tmin == null) goal.tmin = Math.min(goal.tini, goal.asof);
       if (goal.tmax == null) {
@@ -763,7 +773,7 @@
       else if (goal.vmax == null) goal.vmax = (maxmax > goal.vmin)?maxmax:goal.vmin+1
     }
 
-    /** Sanity check a row of the road matrix; exactly one-out-of-three is null */
+    // Sanity check a row of the road matrix; exactly one-out-of-three is null
     function validrow(r) {
       if (!bu.listy(r) || r.length != 3) return false
       return (r[0]==null && bu.nummy(r[1])  && bu.nummy(r[2]) ) ||
@@ -771,7 +781,7 @@
         (bu.nummy(r[0]) && bu.nummy(r[1]) && r[2]==null)
     }
 
-    /** Stringified version of a road matrix row */
+    // Stringified version of a road matrix row
     function showrow(row) {
       return JSON.stringify(row)
     }
