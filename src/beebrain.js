@@ -394,7 +394,7 @@
       var xvec = data.map(e=>e[0])
       rosydata = bu.zip([xvec, yvec])
       rosydata = rosydata.map(e=>[e[0],e[1],"rosy data",
-                                  DPTYPE.RAWPAST, e[0],e[1],e[1]])
+                                  DPTYPE.RAWPAST, null, null, e[1]])
       for (let i = 1; i < rosydata.length-1; i++) {
         rosydata[i][4] = rosydata[i-1][0]
         rosydata[i][5] = rosydata[i-1][1]
@@ -481,8 +481,8 @@
 
       // Helper fn: Extract values from vl
       var dval = (d=>d[0])
-      // Helper fn: Compute [informative comment,originalv] for aggregated points
-      var aggpt = function(vl, v) { 
+      // Helper fn: Compute [informative comment,originalv(or null)] for aggregated points
+      var aggpt = function(vl, v) { // v is the aggregated value
         if (vl.length == 1) return [vl[0][1], vl[0][2]]
         else {
           var ind
@@ -520,6 +520,7 @@
                        ptinf[1]])            // v(original)
 
           // Update allvals and aggvals associative arrays
+          // allvals[timestamp] has entries [vtotal, comment, vorig]
           if (goal.kyoom) {
             if (goal.aggday === "sum") {
               allvals[ct] = bu.accumulate(vlv).map((e,j)=>([e+pre, vl[j][1], vl[j][2]]))
@@ -547,10 +548,10 @@
         allpts = allpts.concat(allvals[t].map(
           d=>([Number(t), d[0], d[1], 
                (Number(t) <= goal.asof)?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE,
-               d[0], d[1], d[2]])))
+               null, null, d[2]])))
       }
       alldata = allpts
-      
+
       fuda = newpts.filter(e=>(e[0]>goal.asof))
       data = newpts.filter(e=>(e[0]<=goal.asof))
       if (!goal.plotall) goal.numpts = data.length
@@ -1242,7 +1243,9 @@
     this.flad = flad
     /** Holds an array of odometer resets */
     this.oresets = oresets
+    /** Holds an array of derailments */
     this.derails = derails
+
     this.hollow = hollow
     this.hashtags = hashtags
   }

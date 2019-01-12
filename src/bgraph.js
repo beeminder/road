@@ -3602,18 +3602,16 @@
           updateDotGroup(gDpts, pts.concat(bbr.fuda), "dpts", 
                          opts.dataPoint.size*scf, opts.dataPointCol.stroke,
                          (opts.dataPoint.border*scf)+"px", dpFill, true, dpFillOp);
-        else
+        else {
           updateDotGroup(gDpts, pts.concat(bbr.fuda), "dpts", 
                          opts.dataPoint.size*scf,
                          "#000000", dpStrokeWidth, dpFill, true, dpFillOp);
-        
-        // Compute and plot hollow datapoints
-        if (!opts.roadEditor) {
+          // Compute and plot hollow datapoints
           updateDotGroup(gHollow, bbr.hollow.filter(df), "hpts", 
                          opts.dataPoint.hsize*scf, null,
                          null, bu.Cols.WITE, true, 1);
         }
-        
+          
         // *** Plot flatlined datapoint ***
         var fladelt = gFlat.selectAll(".fladp");
         if (bbr.flad != null) {
