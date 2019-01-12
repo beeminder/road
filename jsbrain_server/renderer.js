@@ -5,7 +5,7 @@ const fs = require('fs')
 const gm = require('gm').subClass({imageMagick: true})
 const puppeteer = require('puppeteer')
 
-const pageTimeout = 30 // Seconds to wait until giving up on generate.html
+const pageTimeout = 10 // Seconds to wait until giving up on generate.html
 
 class Renderer {
   

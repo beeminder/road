@@ -31,7 +31,7 @@ particular
 In order to be able to load these files, you will need to use chromium
 (or chrome) with the following arguments:
 
-`chromium-browser --allow-file-access-from-files --disable-web-security --user-data-dir=$HOME/jsgraph-data --remote-debugging-port=9222`
+`chromium-browser --allow-file-access-from-files --disable-web-security --user-data-dir=$HOME/jsgraph-data --remote-debugging-port=9222 --use-gl=osmesa`
 
 This allows the browser to open local beeminder files for testing
 purposes from within Javascript functions. You should be able to open

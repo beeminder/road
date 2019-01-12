@@ -709,12 +709,57 @@
     /** Set any of {tmin, tmax, vmin, vmax} that don't have explicit values. */
     function setDefaultRange() {
       if (goal.tmin == null) goal.tmin = Math.min(goal.tini, goal.asof);
-      if (goal.tmin >= goal.asof - bu.SID) goal.tmin -= bu.SID;
       if (goal.tmax == null) {
         // Make more room beyond the askrasia horizon if lots of data
-        var years = (goal.tcur - goal.tmin) / (bu.DIY*bu.SID);
+        var years = Math.floor((goal.tcur - goal.tmin) / (bu.DIY*bu.SID))
         goal.tmax = bu.daysnap((1+years/2)*2*bu.AKH + goal.tcur);
       }
+      if (goal.vmin != null && goal.vmax != null) {
+        // both provided explicitly
+        if  (goal.vmin == goal.vmax) {
+          goal.vmin -= 1; goal.vmax += 1    // scooch away from each other
+        } else if (goal.vmin >  goal.vmax) {
+          let tmp = goal.vmin;
+          goal.vmin = goal.vmax; goal.vmax = tmp //swap them
+        }
+        return
+      }
+      
+      var PRAF = 0.015,
+          a = br.rdf(roads, goal.tmin),
+          b = br.rdf(roads, goal.tmax),
+          d0 = data.filter(e=>(e[0] < goal.tmax && e[0] > goal.tmin)).map(e=>e[1]),
+          mind = bu.arrMin(d0),
+          maxd = bu.arrMax(d0),
+          padding = Math.max(goal.lnw/3, (maxd-mind)*PRAF*2),
+          minmin = mind - padding,
+          maxmax = maxd + padding
+      if (goal.monotone && goal.dir>0) {        // Monotone up so no extra padding
+        minmin = bu.arrMin([minmin, a, b])         // below (the low) vini.
+        maxmax = bu.arrMax([maxmax, a+goal.lnw, b+goal.lnw])
+      } else if (goal.monotone && goal.dir<0) { // Monotone down so no extra padding
+        minmin = bu.arrMin([minmin, a-goal.lnw, b-goal.lnw]) //   above (the high) vini.
+        maxmax = bu.arrMax([maxmax, a, b])
+      } else {
+        minmin = bu.arrMin([minmin, a-goal.lnw, b-goal.lnw])
+        maxmax = bu.arrMax([maxmax, a+goal.lnw, b+goal.lnw])
+      }
+      if (goal.plotall && goal.tmin<=goal.tini && goal.tini<=goal.tmax
+          && allvals.hasOwnProperty(goal.tini)) {      // At tini, leave room
+        minmin = Math.min(minmin, bu.arrMin(allvals[goal.tini].map(e=>e[0])))// for all non-agg'd
+        maxmax = Math.max(maxmax, bu.arrMax(allvals[goal.tini].map(e=>e[0])))// datapoints.
+      }
+      if (goal.vmin == null && goal.vmax == null) {
+        goal.vmin = minmin
+        goal.vmax = maxmax
+        if (goal.vmin == goal.vmax){
+          goal.vmin -= 1; goal.vmax += 1
+        } else if (goal.vmin > goal.vmax) {
+          let tmp = goal.vmin
+          goal.vmin = goal.vmax; goal.vmax = goal.vmin
+        }
+      } else if (goal.vmin == null) goal.vmin = (minmin < goal.vmax)?minmin:goal.vmax-1
+      else if (goal.vmax == null) goal.vmax = (maxmax > goal.vmin)?maxmax:goal.vmin+1
     }
 
     /** Sanity check a row of the road matrix; exactly one-out-of-three is null */
