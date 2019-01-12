@@ -1043,32 +1043,39 @@
     function adjustYScale() {
       var xrange = [nXSc.invert(0), 
                     nXSc.invert(plotbox.width)];
-      var xtimes = xrange.map((d)=>Math.floor(d.getTime()/1000))
-      var re 
+      var yrange
+      if (opts.headless) {
+        let va = goal.vmin  - PRAF*(goal.vmax-goal.vmin)
+        let vb = goal.vmax  + PRAF*(goal.vmax-goal.vmin)
+        yrange = [vb, va]
+      } else {
+        var xtimes = xrange.map((d)=>Math.floor(d.getTime()/1000))
+        var re 
             = roadExtentPartial(road,xtimes[0],xtimes[1],false);
-      re.yMin -= goal.lnw;
-      re.yMax += goal.lnw;
-      var ore = roadExtentPartial(iroad,xtimes[0],xtimes[1],false);
-      ore.yMin -= goal.lnw;
-      ore.yMax += goal.lnw;
-      var ae = mergeExtents(re, ore);
-
-      var de  = dataExtentPartial((goal.plotall&&!opts.roadEditor)
-                                  ?alldata:data,
-                                  xtimes[0],xtimes[1],false);
-      if (de != null) ae = mergeExtents(ae, de);
-      var p;
-      if (opts.roadEditor)
-        p = {xmin:0.0, xmax:0.0, ymin:0.05, ymax:0.05};
-      else
-        p = {xmin:0.0, xmax:0.0, ymin:0.02, ymax:0.02};
-      enlargeExtent(ae, p);
-      if ((ae.yMax - ae.yMin) < 3*goal.lnw) {
-        ae.yMax += 1.5*goal.lnw;
-        ae.yMin -= 1.5*goal.lnw;
+        re.yMin -= goal.lnw;
+        re.yMax += goal.lnw;
+        var ore = roadExtentPartial(iroad,xtimes[0],xtimes[1],false);
+        ore.yMin -= goal.lnw;
+        ore.yMax += goal.lnw;
+        var ae = mergeExtents(re, ore);
+        
+        var de  = dataExtentPartial((goal.plotall&&!opts.roadEditor)
+                                    ?alldata:data,
+                                    xtimes[0],xtimes[1],false);
+        if (de != null) ae = mergeExtents(ae, de);
+        var p;
+        if (opts.roadEditor)
+          p = {xmin:0.0, xmax:0.0, ymin:0.05, ymax:0.05};
+        else
+          p = {xmin:0.0, xmax:0.0, ymin:0.02, ymax:0.02};
+        enlargeExtent(ae, p);
+        if ((ae.yMax - ae.yMin) < 3*goal.lnw) {
+          ae.yMax += 1.5*goal.lnw;
+          ae.yMin -= 1.5*goal.lnw;
+        }
+        yrange = [ae.yMax, ae.yMin];
       }
-
-      var yrange = [ae.yMax, ae.yMin];
+      
       var newtr = d3.zoomIdentity
             .scale(plotbox.height/(ySc(yrange[1])
                                    -ySc(yrange[0])))
@@ -1078,8 +1085,8 @@
       yAxisObjR.call(yAxisR.scale(nYSc));
 
       // Resize brush if dynamic y limits are beyond graph limits
-      if (ae.yMax > goal.yMax) goal.yMax = ae.yMax;
-      if (ae.yMin < goal.yMin) goal.yMin = ae.yMin;
+      if (yrange[0] > goal.yMax) goal.yMax = yrange[0];
+      if (yrange[1] < goal.yMin) goal.yMin = yrange[1];
       resizeContext();
 
       var sx = xrange.map( (x)=>xScB(x));
@@ -1351,17 +1358,6 @@
       var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
       if (extend) enlargeExtent(extent, p);
       return extent;
-    }
-
-    // Set any of {tmin, tmax, vmin, vmax} that don't have explicit values.
-    function setDefaultRange() {
-      if (goal.tmin == null) goal.tmin = Math.min(goal.tini, goal.asof);
-      if (goal.tmin >= goal.asof - bu.SID) goal.tmin -= bu.SID;
-      if (goal.tmax == null) {
-        // Make more room beyond the askrasia horizon if lots of data
-        var years = (goal.tcur - goal.tmin) / (bu.DIY*bu.SID);
-        goal.tmax = bu.daysnap((1+years/2)*2*bu.AKH + goal.tcur);
-      }
     }
 
     // Convert deadline value (seconds from midnight) to
