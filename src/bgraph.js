@@ -3483,7 +3483,6 @@
       var df = function(d) {
         return ((d[0] >= l[0] && d[0] <= l[1]) || (d[4] >= l[0] && d[4] <= l[1]));
       }
-
       // *** Plot steppy lines ***
       var stpelt = gSteppy.selectAll(".steppy");
       var stpdelt = gSteppyPts.selectAll(".steppyd");
@@ -3501,7 +3500,17 @@
             if (ind > 0) npts = dataf.slice(ind, ind+2);
           }
           if (npts.length != 0) {
-            var d = "M"+nXSc(npts[0][4]*1000)+" "+nYSc(npts[0][5]);
+            var d;
+            if (dataf[0][0] > l[0] && dataf[0][0] < l[1]
+                && bbr.allvals.hasOwnProperty(dataf[0][0])) {
+              // Handle the initial point
+              var vals = bbr.allvals[dataf[0][0]].map(e=>e[0])
+              var vpre = (goal.dir<0)?bu.arrMax(vals):bu.arrMin(vals)
+              d = "M"+nXSc(dataf[0][0]*1000)+" "+nYSc(vpre)
+              d += "L"+nXSc(npts[0][4]*1000)+" "+nYSc(npts[0][5])
+            } else {
+              d = "M"+nXSc(npts[0][4]*1000)+" "+nYSc(npts[0][5])
+            }
             for (i = 0; i < npts.length; i++) {
               d += " L"+nXSc(npts[i][0]*1000)+" "+ nYSc(npts[i][5]);
               d += " L"+nXSc(npts[i][0]*1000)+" "+ nYSc(npts[i][1]);
