@@ -945,15 +945,27 @@
     // ------- Zoom and brush  related private functions ---------
     var ticks, tickType = 1, majorSkip = 7;
     function computeXTicks() {
-      var xr = xSc.domain();
+      let xr = xSc.domain();
+
+      // The following make sure that the initial element of the tick
+      // values array is at the proper boundary (day, month, year)
+      // depending on the tick types.
+      let xt = xr.map(e=>e.getTime()/1000)
+      let xtm = xt.slice(); xtm[0] = bu.monthsnap(xtm[0])
+      let xty = xt.slice(); xty[0] = bu.yearsnap(xty[0])
+      let xrm = xtm.map(e=>(new Date(e*1000)))
+      let xry = xty.map(e=>(new Date(e*1000)))
+
+      // [0]: tick dates, [1]: tick text,
       ticks = [];
       ticks.push([d3.utcDay.range(xr[0], xr[1], 1),"%b %d"]);
       ticks.push([d3.utcDay.range(xr[0], xr[1], 2),"%b %d"]);
-      ticks.push([d3.utcWeek.range(xr[0], xr[1], 1),"%b %d"]);
-      ticks.push([d3.utcWeek.range(xr[0], xr[1], 2),"%b %d"]);
-      ticks.push([d3.utcMonth.every(1).range(xr[0], xr[1]),"%b %Y"]);
-      ticks.push([d3.utcMonth.every(2).range(xr[0], xr[1]),"%b %Y"]);
-      ticks.push([d3.utcYear.every(1).range(xr[0], xr[1]),"%Y"]);
+      ticks.push([d3.utcWeek.range(xrm[0], xrm[1], 1),"%b %d"]);
+      ticks.push([d3.utcWeek.range(xrm[0], xrm[1], 2),"%b %d"]);
+      ticks.push([d3.utcMonth.every(1).range(xry[0], xry[1]),"%b %Y"]);
+      ticks.push([d3.utcMonth.every(2).range(xry[0], xry[1]),"%b %Y"]);
+      ticks.push([d3.utcMonth.every(3).range(xry[0], xry[1]),"%Y"]);
+      ticks.push([d3.utcYear.every(1).range(xry[0], xry[1]),"%Y"]);
     }
     function redrawXTicks() {
       //console.debug("redrawXTicks()");
@@ -961,6 +973,10 @@
                 nXSc.invert(plotbox.width).getTime()];
 
       var diff = ((xr[1] - xr[0])/(1000*bu.SID));
+      // * tickType identifies the separation and text of ticks
+      // * majorSkip is the number of ticks to skip for the annotated
+      // "major" ticks. Remaining ticks are drawn as unlabeled small
+      // indicators
       if (diff < 10) {
         tickType = 0; majorSkip = 1;
       } else if (diff < 20) {
@@ -969,17 +985,26 @@
         tickType = 0; majorSkip = 7;
       } else if (diff < 120) {
         tickType = 1; majorSkip = 7;
-      } else if (diff < 365){
-        tickType = 2; majorSkip = 7;
+      } else if (diff < 240){
+        tickType = 2; majorSkip = 4;
+      } else if (diff < 320){
+        tickType = 4; majorSkip = 1;
+      } else if (diff < 1.5*365){
+        tickType = 4; majorSkip = 2;
       } else if (diff < 2*365){
         tickType = 4; majorSkip = 3;
       } else if (diff < 4*365){
         tickType = 5; majorSkip = 3;
+      } else if (diff < 10*365) {
+        tickType = 6; majorSkip = 4;              
       } else {
-        tickType = 6; majorSkip = 1;              
+        tickType = 7; majorSkip = 1;              
       }
+      // Invisible ticks to the left of the graph
       var pt = ticks[tickType][0].filter((d)=>((d.getTime()<xr[0])));
-      var ind = majorSkip - (pt.length)%majorSkip - 1;
+      // Number of minor ticks in the partially visible first major tick interval
+      var ind = (majorSkip - pt.length%majorSkip)%majorSkip;
+      // Filter tick values based on x axis range
       var tv = ticks[tickType][0].filter(
         (d)=>((d.getTime()>=xr[0]&&d.getTime()<=xr[1])));
       xAxis.tickValues(tv)
