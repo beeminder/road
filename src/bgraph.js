@@ -83,7 +83,7 @@
     /** Visual parameters for vertical line for asof */ 
     today:        { width: 2, ctxwidth: 1, font: 12, ctxfont: 9 },
     /** Visual parameters for watermarks */ 
-    watermark:    { height:170, fntsize:150, color:"#efefef" },
+    watermark:    { height:170, fntsize:150, color:"#f0f0f0" },
     guidelines:   { width:2, weekwidth:4 },
     /** Visual parameters for text boxes shown during dragging */ 
     textBox:      { margin: 3 },
@@ -203,7 +203,7 @@
     horizon:      { width: 2, ctxwidth: 1, dash: 8, ctxdash: 8, 
                     font: 16, ctxfont: 10 },
     today:        { width: 2, ctxwidth: 1, font: 16, ctxfont: 10 },
-    watermark:    { height:150, fntsize:100, color:"#efefef" },
+    watermark:    { height:150, fntsize:100, color:"#f0f0f0" },
     guidelines:   { width:2, weekwidth:4 },
     textBox:      { margin: 3 }
   },
