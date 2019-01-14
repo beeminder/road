@@ -991,7 +991,7 @@
         tickType = 4; majorSkip = 1;
       } else if (diff < 1.5*365){
         tickType = 4; majorSkip = 2;
-      } else if (diff < 2*365){
+      } else if (diff < 2.6*365){
         tickType = 4; majorSkip = 3;
       } else if (diff < 5*365){
         tickType = 5; majorSkip = 3;
