@@ -2755,7 +2755,7 @@
           .attr("y2",plotbox.height)
 		      .attr("stroke-width",o.width*scf);
       }
-      var textx = nXSc(goal.horizon*1000)+(16);
+      var textx = nXSc(goal.horizon*1000)+(14);
       var texty = plotbox.height/2;
       var horizontextelt = gHorizonText.select(".horizontext");
       if (horizontextelt.empty()) {
