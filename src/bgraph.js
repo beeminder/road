@@ -209,7 +209,7 @@
   },
   
   /** This style text gets embedded into the SVG object to enable proper saving of the SVG */
-  SVGStyle = ".svg {shape-rendering: crispEdges;} .axis path, .axis line { fill: none; stroke: black; shape-rendering: crispEdges;} .axis .minor line { stroke: #777; stroke-dasharray:0,2,4,3; } .grid line { fill: none; stroke: #dddddd; stroke-width: 1px; shape-rendering: crispEdges; } .grid .minor line { stroke: none; } .axis text { font-family: sans-serif; font-size: 11px; } .axislabel { font-family: sans-serif; font-size: 11px; text-anchor: middle; } circle.dots { stroke: black; } line.roads { stroke: black; } .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .waterbuf, .waterbux { text-anchor: middle; font-family: sans-serif; } .loading { text-anchor: middle; font-family: sans-serif; } .zoomarea { fill: none; } .hashtag { text-anchor: middle; font-family: sans-serif; }",
+  SVGStyle = ".svg {shape-rendering: crispEdges;} .axis path, .axis line { fill: none; stroke: black; shape-rendering: crispEdges;} .axis .minor line { stroke: #777; stroke-dasharray:0,2,4,3; } .grid line { fill: none; stroke: #dddddd; stroke-width: 1px; shape-rendering: crispEdges; } .grid .minor line { stroke: none; } .axis text { font-family: Dejavu Sans; font-size: 11px; } .axislabel { font-family: Dejavu Sans,sans-serif; font-size: 11px; text-anchor: middle; } circle.dots { stroke: black; } line.roads { stroke: black; } .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .waterbuf, .waterbux { text-anchor: middle; font-family: Dejavu Sans,sans-serif; } .loading { text-anchor: middle; font-family: Dejavu Sans,sans-serif; } .zoomarea { fill: none; } .hashtag { text-anchor: middle; font-family: Dejavu Sans,sans-serif; }",
 
   /** Fraction of plot range that the axes extend beyond */
   PRAF  = .015,
@@ -2632,7 +2632,7 @@
         wbufelt = gWatermark.append("svg:text")
 	        .attr("class","waterbuf")
           .style('font-size', fs+"px")
-          .style('font-weight', "bold")
+          .style('font-weight', "bolder")
           .style('fill', opts.watermark.color)
           .text(goal.waterbuf);
         bbox = wbufelt.node().getBBox();
@@ -2655,7 +2655,7 @@
         wbuxelt = gWatermark.append("svg:text")
 	        .attr("class","waterbux")
           .style('font-size', fs+"px")
-          .style('font-weight', "bold")
+          .style('font-weight', "bolder")
           .style('fill', opts.watermark.color)
           .text(goal.waterbux);
         bbox = wbuxelt.node().getBBox();
