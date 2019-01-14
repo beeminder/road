@@ -83,7 +83,7 @@
     /** Visual parameters for vertical line for asof */ 
     today:        { width: 2, ctxwidth: 1, font: 12, ctxfont: 9 },
     /** Visual parameters for watermarks */ 
-    watermark:    { height:170, fntsize:130 },
+    watermark:    { height:170, fntsize:150, color:"#efefef" },
     guidelines:   { width:2, weekwidth:4 },
     /** Visual parameters for text boxes shown during dragging */ 
     textBox:      { margin: 3 },
@@ -203,7 +203,7 @@
     horizon:      { width: 2, ctxwidth: 1, dash: 8, ctxdash: 8, 
                     font: 16, ctxfont: 10 },
     today:        { width: 2, ctxwidth: 1, font: 16, ctxfont: 10 },
-    watermark:    { height:150, fntsize:100 },
+    watermark:    { height:150, fntsize:100, color:"#efefef" },
     guidelines:   { width:2, weekwidth:4 },
     textBox:      { margin: 3 }
   },
@@ -404,7 +404,7 @@
       plotpad = bu.extend({}, opts.focusPad)
       contextpad = bu.extend({}, opts.ctxPad)
       plotpad.left += yaxisw
-      plotpad.right += yaxisw
+      plotpad.right += yaxisw+(goal.hidey?8:0) // Extra padding if y axis text is hidden
       contextpad.left += yaxisw
       contextpad.right += yaxisw
       plotbox = {
@@ -2615,17 +2615,17 @@
       }
 
       var wbufelt = gWatermark.select(".waterbuf");
-      var fs = opts.watermark.fntsize
+      var fs = opts.watermark.fntsize, wmh = opts.watermark.height
       wbufelt.remove();
       if (g != null) {
-	  	  x = (plotbox.width/2-opts.watermark.height)/2;
-        y = (plotbox.height/2-opts.watermark.height)/2;
+  	    x = (plotbox.width/2-wmh)/2;
+        y = (plotbox.height/2-wmh)/2;
 
         wbufelt = gWatermark.append("svg:image")
 	        .attr("class","waterbuf")
 	        .attr("xlink:href",g)
-          .attr('width', opts.watermark.height)
-          .attr('height', opts.watermark.height);
+          .attr('width', wmh)
+          .attr('height', wmh);
       } else {
 	  	  x = plotbox.width/4;
         y = plotbox.height/4+fs/3;
@@ -2633,7 +2633,7 @@
 	        .attr("class","waterbuf")
           .style('font-size', fs+"px")
           .style('font-weight', "bold")
-          .style('fill', bu.Cols.GRAY)
+          .style('fill', opts.watermark.color)
           .text(goal.waterbuf);
         bbox = wbufelt.node().getBBox();
         if (bbox.width > plotbox.width/2.2) {
@@ -2656,7 +2656,7 @@
 	        .attr("class","waterbux")
           .style('font-size', fs+"px")
           .style('font-weight', "bold")
-          .style('fill', bu.Cols.GRAY)
+          .style('fill', opts.watermark.color)
           .text(goal.waterbux);
         bbox = wbuxelt.node().getBBox();
         if (bbox.width > plotbox.width/2.2) {

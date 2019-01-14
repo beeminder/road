@@ -642,7 +642,9 @@
               = segment.sta[0] 
               + (segment.end[1] - segment.sta[1])/segment.slope
           } else {
+            // Hack to handle tfin=null and inconsistent values.
             segment.end[0] = bu.BDUSK
+            segment.end[1] = segment.sta[1]
           }
           segment.end[0] = Math.min(bu.BDUSK, segment.end[0])
           segment.auto = br.RP.DATE
