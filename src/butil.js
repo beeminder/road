@@ -571,6 +571,24 @@
     return d.unix()
   }
 
+  /** Fixes the supplied unixtime to the first day 00:00:00 on the
+      same month (uses moment)
+      @param {Number} ut Unix time  */
+  self.monthsnap = (ut) => {
+    var d = moment.unix(ut).utc()
+    d.date(1).hours(0).minutes(0).seconds(0).milliseconds(0)
+    return d.unix()
+  }
+
+  /** Fixes the supplied unixtime to the first day 00:00:00 on the
+      same year (uses moment)
+      @param {Number} ut Unix time  */
+  self.yearsnap = (ut) => {
+    var d = moment.unix(ut).utc()
+    d.month(0).date(1).hours(0).minutes(0).seconds(0).milliseconds(0)
+    return d.unix()
+  }
+
   /** Formats the supplied unix time as YYYY.MM.DD
       @param {Number} ut Unix time  */
   self.formatDate = (ut) => {
