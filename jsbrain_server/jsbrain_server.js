@@ -117,9 +117,8 @@ if (cluster.isMaster) {
       json.outpath = inpath
       json.slug = slug
       json.host = hostname
-      let info = renderer.prfinfo(rid)
-      json.process = info[0]
-      json.request = info[1]
+      json.process = cluster.worker.id
+      json.request = rid
       if (resp.html == null) {
         json.error = 'Processing error: '+resp.error
       } else {
