@@ -614,32 +614,31 @@
     return self.formatDate(ut)+" "+hour+":"+minute+":"+second
   }
 
-  let dpre1_empty = RegExp('^\\d{4}\\d{2}\\d{2}$'),
-      dpre2_empty = RegExp('^(\\d\\d\\d\\d)(\\d\\d)(\\d\\d)$')
+  let dpre_empty = RegExp('^(\\d{4})(\\d{2})(\\d{2})$')
+  let pat_empty = "YYYYMMDD"
   /** Take a daystamp like "20170531" and return unixtime in seconds
       (dreev confirmed this seems to match Beebrain's function)
       @param {String} s Daystamp as a string "YYYY[s]MM[s]DD"
       @param {String} [sep=''] Separator character */
   self.dayparse = (s, sep='') => {
-    var re1, re2
+    var re, pat
     if (sep=='') {
       // Optimize for the common case
-      re1 = dpre1_empty
-      re2 = dpre2_empty
+      re = dpre_empty
+      pat = pat_empty
     } else {
       // General case with configurable separator
-      re1 = RegExp('^\\d{4}'+sep+'\\d{2}'+sep+'\\d{2}$')
-      re2 = RegExp('^(\\d\\d\\d\\d)'+sep+'(\\d\\d)'+sep+'(\\d\\d)$')
-      s = s.replace(re2,"$1$2$3")
+      re = RegExp('^(\\d{4})'+sep+'(\\d{2})'+sep+'(\\d{2})$')
+      pat = "YYYY"+sep+"MM"+sep+"DD"
     }
-    if (!re1.test(s)) { 
+    if (!re.test(s)) { 
         // Check if the supplied date is a timestamp or not.
         if (!isNaN(s)) return Number(s)
         else return NaN
     }
-    let m = moment.utc(s, "YYYYMMDD")
+    let m = moment.utc(s, pat)
     // Perform daysnap manually for efficiency
-    m.hours(0); m.minutes(0); m.seconds(0); m.milliseconds(0)
+    m.hours(0).minutes(0).seconds(0).milliseconds(0)
     return m.unix()
   }
 
