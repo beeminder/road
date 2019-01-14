@@ -676,6 +676,7 @@
       finalsegment.end[0] = bu.daysnap(finalsegment.end[0]+100*bu.DIY*bu.SID);
       roads.push(finalsegment);
 
+      //br.printRoad(roads)
       // Uluc: Does not seem necessary if the above extraction is correct
       //br.fixRoadArray( roads, br.RP.VALUE, true );
       return "";
