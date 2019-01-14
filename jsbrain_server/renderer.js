@@ -14,6 +14,7 @@ class Renderer {
     this.id = id
   }
 
+  prfinfo(r) { return [this.id,r] }
   prf(r) { return "("+this.id+":"+r+") " }
   
   // Creates a new page in a tab within the puppeteer chrome instance
