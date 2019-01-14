@@ -116,6 +116,10 @@ if (cluster.isMaster) {
       json.inpath = inpath
       json.outpath = inpath
       json.slug = slug
+      json.host = hostname
+      let info = renderer.prfinfo(rid)
+      json.process = info[0]
+      json.request = info[1]
       if (resp.html == null) {
         json.error = 'Processing error: '+resp.error
       } else {
@@ -123,10 +127,6 @@ if (cluster.isMaster) {
         json.svg = (resp.svg)?`${outpath}/${slug}.svg`:null
         json.png = (resp.png)?`${outpath}/${slug}.png`:null
         json.json = (resp.json)?`${outpath}/${slug}.json`:null
-        let info = renderer.prfinfo(rid)
-        json.host = hostname
-        json.process = info[0]
-        json.request = info[1]
         json.error = null
 
         // Compare JSON to pybrain output if enabled
