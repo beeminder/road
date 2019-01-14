@@ -993,7 +993,7 @@
         tickType = 4; majorSkip = 2;
       } else if (diff < 2*365){
         tickType = 4; majorSkip = 3;
-      } else if (diff < 4*365){
+      } else if (diff < 5*365){
         tickType = 5; majorSkip = 3;
       } else if (diff < 10*365) {
         tickType = 6; majorSkip = 4;              
@@ -2986,7 +2986,8 @@
         // Go forward to draw the top side of YBR
         d = "M"+fx+" "+fy;
         for (i = 0; i < ir2.length; i++) {
-          ex = nXSc(ir2[i].end[0]*1000); ey = nYSc(ir2[i].end[1]+lw);
+          ex = nXSc(ir2[i].end[0]*1000);
+          ey = nYSc(ir2[i].end[1]+lw);
           if (ex > plotbox.width) {
             fx = nXSc(ir2[i].sta[0]*1000); fy = nYSc(ir2[i].sta[1]+lw);
             ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx)); ex = plotbox.width;
