@@ -1,6 +1,7 @@
 'use strict'
 
 const cluster = require('cluster')
+const os = require('os')
 const bu = require('../src/butil.js')
 
 function compareJSON(stats, bbr) {
@@ -89,6 +90,7 @@ if (cluster.isMaster) {
   // Render url.
   const proc_timeid = " Total processing"
   app.use(async (req, res, next) => {
+    let hostname = os.hostname()
     let { inpath, outpath, slug, user, goal, pyjson } = req.query
     if (!inpath)                     return res.status(400).send(noinpath)
     if ((!slug && (!user || !goal))) return res.status(400).send(nofile)
@@ -121,6 +123,10 @@ if (cluster.isMaster) {
         json.svg = (resp.svg)?`${outpath}/${slug}.svg`:null
         json.png = (resp.png)?`${outpath}/${slug}.png`:null
         json.json = (resp.json)?`${outpath}/${slug}.json`:null
+        let info = renderer.prfinfo(rid)
+        json.host = hostname
+        json.process = info[0]
+        json.request = info[1]
         json.error = null
 
         // Compare JSON to pybrain output if enabled
