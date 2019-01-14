@@ -79,7 +79,7 @@
     dataPoint:    { size: 5, fsize: 5, hsize: 2.5 }, 
     /** Visual parameters for the akrasia horizon */ 
     horizon:      { width: 2, ctxwidth: 1, dash: 8, ctxdash: 6, 
-                    font: 12, ctxfont: 9 },
+                    font: 10, ctxfont: 9 },
     /** Visual parameters for vertical line for asof */ 
     today:        { width: 2, ctxwidth: 1, font: 12, ctxfont: 9 },
     /** Visual parameters for watermarks */ 
@@ -201,7 +201,7 @@
     oldRoadLine:  { width: 3, ctxwidth: 1, dash: 32, ctxdash: 16  },
     dataPoint:    { size: 4, fsize: 6 }, 
     horizon:      { width: 2, ctxwidth: 1, dash: 8, ctxdash: 8, 
-                    font: 16, ctxfont: 10 },
+                    font: 14, ctxfont: 10 },
     today:        { width: 2, ctxwidth: 1, font: 16, ctxfont: 10 },
     watermark:    { height:150, fntsize:100, color:"#f0f0f0" },
     guidelines:   { width:2, weekwidth:4 },
@@ -2755,7 +2755,7 @@
           .attr("y2",plotbox.height)
 		      .attr("stroke-width",o.width*scf);
       }
-      var textx = nXSc(goal.horizon*1000)+(18);
+      var textx = nXSc(goal.horizon*1000)+(16);
       var texty = plotbox.height/2;
       var horizontextelt = gHorizonText.select(".horizontext");
       if (horizontextelt.empty()) {
