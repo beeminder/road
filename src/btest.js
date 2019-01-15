@@ -41,10 +41,10 @@
     var self = this
 
     self.compareOutputs = function(stats, bbr) {
-      var valid = true, numeric = false, str = ""
+      var valid = true, numeric = false, summary = false, str = ""
       if (stats['error'] != "") {
         str += "Processing error: "+stats['error']+"<br/>\n"
-        return {valid: false, numeric: false, result: str}
+        return {valid: false, numeric: false, summary: false, result: str}
       }
       for (var prop in bbr) {
         if (prop == "proctm" || prop == "thumburl" || prop == "graphurl") continue
@@ -65,6 +65,10 @@
               numeric = true
               if (Math.abs(bbr[prop]-stats[prop]) > 1e-8)
                 valid = false
+            } else if (prop.endsWith("sum")) {
+              str += "Summary string <b>"+prop+"</b> differs:<br/>\n<tt>&nbsp;py:</tt>"
+                +bbr[prop]+ "<br/>\n<tt>&nbsp;js:</tt>"+stats[prop]+"<br/>\n"
+              summary = true
             } else if ((typeof stats[prop] == 'string') || typeof (bbr[prop] == 'string')) {
               str += "String <b>"+prop+"</b> differs:<br/>\n<tt>&nbsp;py:</tt>"
                 +bbr[prop]+ "<br/>\n<tt>&nbsp;js:</tt>"+stats[prop]+"<br/>\n"
@@ -75,7 +79,7 @@
           }
         }
       }
-      return {valid: valid, numeric: numeric, result: str}
+      return {valid: valid, numeric: numeric, summary: summary, result: str}
     }
 
     self.compareWithPybrain = async function( url, pyouturl ) {
@@ -153,8 +157,8 @@
 
       if (res != null) {
         if (res.valid) {
-          if (res.numeric) {
-            info = "[NUMERIC ERRORS]"; bg = '#aaaaff'
+          if (res.numeric || res.summary) {
+            info = "[NUMERIC OR SUMMARY ERRORS]"; bg = '#aaaaff'
           } else {
             info = "[EXACT MATCH]";    bg = '#aaffaa'
           }
@@ -233,8 +237,8 @@
           continue
         }
         if (res.valid) {
-          if (res.numeric) {
-            info = "[NUMERIC ERRORS]"
+          if (res.numeric || res.summary) {
+            info = "[NUMERIC OR SUMMARY ERRORS]"
             num = num+1
             bg = '#aaaaff'
           } else {
@@ -253,8 +257,8 @@
         self.createDiv( div, txt, bg)
         self.createDiv( div, res.result)
       }
-      txt = "RESULTS ("+g.length+" goals): Exact matches: "+ex+", Numeric errors: "
-        +num+", string or critical: "+err
+      txt = "RESULTS ("+g.length+" goals): Exact matches: "+ex+", Numeric or Summary errors: "
+        +num+", critical?: "+err
       var sum = self.createDiv( div, txt, null, true)
       sum.style.border = '2px solid black'
       sum.style.padding = '5px'

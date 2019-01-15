@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title>Documentation Index</title>
+
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	<link type="text/css" rel="stylesheet" href="styles/sunlight.default.css">
+
+	<link type="text/css" rel="stylesheet" href="styles/site.simplex.css">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top ">
+<div class="container">
+	<div class="navbar-header">
+		<a class="navbar-brand" href="index.html">Documentation</a>
+		<button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#topNavigation">
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+        </button>
+	</div>
+	<div class="navbar-collapse collapse" id="topNavigation">
+		<ul class="nav navbar-nav">
+			
+			<li class="dropdown">
+				<a href="modules.list.html" class="dropdown-toggle" data-toggle="dropdown">Modules<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="module-beebrain.html">beebrain</a></li><li><a href="module-bgraph.html">bgraph</a></li><li><a href="module-broad.html">broad</a></li><li><a href="module-bsandbox.html">bsandbox</a></li><li><a href="module-butil.html">butil</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="beebrain.html">beebrain</a></li><li><a href="bgraph.html">bgraph</a></li><li><a href="bsandbox.html">bsandbox</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="tutorials.list.html" class="dropdown-toggle" data-toggle="dropdown">Tutorials<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="tutorial-beebrain_.html">Using the beebrain class</a></li><li><a href="tutorial-bgraph_.html">Using the bgraph class</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="global.html" class="dropdown-toggle" data-toggle="dropdown">Global<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="global.html">Global</a></li>
+				</ul>
+			</li>
+			
+		</ul>
+        
+            <div class="col-sm-3 col-md-3">
+                <form class="navbar-form" role="search">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Search" name="q" id="search-input">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" id="search-submit"><i class="glyphicon glyphicon-search"></i></button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        
+	</div>
+
+</div>
+</div>
+
+
+<div class="container" id="toc-content">
+<div class="row">
+
+	
+	<div class="col-md-8">
+	
+		<div id="main">
+			
+
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+	
+	
+
+
+
+
+
+    <section class="readme-section">
+        <article><h1>Javascript implementation of Beebrain</h1><h2>Description</h2><p>This repository includes various Javascript packages implementing all
+Beebrain functionality, as well as an interactive editor for Beeminder
+roads. Below is a list of components and features supported by this
+repository:</p>
+<ul>
+<li>Javascript modules for processing beeminder goal BB files (<a href="module-butil.html"><code>butil</code></a>, <a href="module-broad.html"><code>broad</code></a>, <a href="module-beebrain.html"><code>beebrain</code></a>)</li>
+<li>A Javascript module for goal graph generation and an interactive road editor (<a href="module-bgraph.html"><code>bgraph</code></a>)</li>
+<li>A Javascript module implementing a sandbox for experimenting with Beemidner goals (<a href="module-bsandbox.html"><code>bsandbox</code></a>)</li>
+<li>A Javascript module to facilitate automated testing and comparison of beebrain outputs (<code>btest</code>)</li>
+<li>A node server that uses the modules above to locally generate graph PNG and SVG, thumbnail PNG and goal JSON output files upon receiving a GET request</li>
+<li>A node server that provides web interface for client-side graphs, road editor and sandbox functionality</li>
+<li>A node server that duplicates the behaviors of sanity.py from pybrain</li>
+<li>Various static HTML pages to test beebrain, graph, editor and sandbox functionality</li>
+</ul>
+<h2>Getting started</h2><h3>Local tests for basic functionality</h3><p>The directory <code>tests</code> includes a collection HTML files that illustrate
+various basic functionalities of the JS beebrain implementation. In
+particular</p>
+<ul>
+<li><code>basic_test.html</code>: Showcases client-side graphs</li>
+<li><code>roadeditor_test.html</code>: Showcases client-side graphs and the road editor</li>
+<li><code>sandbox.html</code>: Showcases beeminder sandbox to create and experiment with goals</li>
+</ul>
+<p>In order to be able to load these files, you will need to use chromium
+(or chrome) with the following arguments:</p>
+<p><code>chromium-browser --allow-file-access-from-files --disable-web-security --user-data-dir=$HOME/jsgraph-data --remote-debugging-port=9222 --use-gl=osmesa</code></p>
+<p>This allows the browser to open local beeminder files for testing
+purposes from within Javascript functions. You should be able to open
+the above test files from this browser instance. You may need to
+adjust some of the options such as <code>--user-data-dir</code> based on
+differences in your local system.</p>
+<h3>Node server for client-side graph, road editor and sandbox demos</h3><p>This repository contains a node server instance for serving
+various demo pages to browser clients. </p>
+<p>After you clone the main repository, you will need to install
+necessary node modules in the root directory with</p>
+<p><code>npm update</code></p>
+<p>Once all module dependencies are installed, you will need to generate
+minified and concatanated files based on sources in <code>src</code>. To do that,
+you may need to first install the command line interface for gulp with</p>
+<p><code>sudo npm install --global gulp-cli</code></p>
+<p>which now enables you to use the gulp command. Now, you can generate
+all distribution files with</p>
+<p><code>gulp compile</code></p>
+<p>After updating node modules and using gulp to compile js modules, you
+will need to provide a <code>.data</code> directory with a local sqlite database
+and a <code>.env</code> file with proper server settings to access central
+Beeminder servers for your login (contact us for details). Once this
+is done, you can start the demo server with</p>
+<p><code>npm start</code></p>
+<p>This starts a web server on <code>localhost</code>, with different features
+available through different paths. This server should also be
+embeddable in glitch. The following paths are available:</p>
+<ul>
+<li><code>/editor</code>  : Client-side graph and interactive road editor for example goals</li>
+<li><code>/sandbox</code> : Client-side sandbox to create and experiment with dummy goals</li>
+<li><code>/login</code>   : Authorizes these pages to access your Beeminder goals</li>
+<li><code>/logout</code>  : De-authorizes access to your Beeminder goals</li>
+<li><code>/road</code>    : Client-side graph and interactive road editor for your Beeminder goals</li>
+</ul>
+<p>The last three require setting up oauth redirect uri configuration
+properly with beeminder servers, so it would require proper settings
+in <code>.env</code>. The first two should work locally though. Note that getting
+the last three to work requires the node server being accessible from
+beeminder servers for the redirect_uri provided in <code>.env</code>, associated
+with the clientid also configured in <code>.env</code>.</p>
+<h3>Node server for local server-side graph generation</h3><p>This feature enables running a separate node.js instance on a server,
+listening to GET requests that initiate the generation of PNG,SVG and
+JSON files for particular beeminder goals. This server resides under
+the directory <code>jsbrain_server</code>. You should first update node modules with</p>
+<p><code>cd jsbrain_server</code>
+<code>npm update</code></p>
+<p>At this point, you can start the server in the same directory with </p>
+<p><code>npm start</code></p>
+<p>which should start a node server on port 3000. At this point, every
+GET request you issue to <code>localhost:3000</code> with appropriate parameters
+will initiate graph generation. valid parameters are:</p>
+<ul>
+<li><code>inpath=/path/to/input</code> : Path to local directory for the BB file</li>
+<li><code>outpath=/path/to/output</code>: (optional) Path to local directory for generated files</li>
+<li><code>user=u</code>: beeminder username (<code>slug</code> param must be empty)</li>
+<li><code>goal=g</code>: beeminder goalname (<code>slug</code> param must be empty)</li>
+<li><code>slug=filebase</code>: base name for the BB files (<code>user</code> and <code>goal</code> params must be empty)</li>
+<li><code>pyjson=/path/to/pyout/slug.json</code>: (optional) Local path to pybrain JSON output</li>
+</ul>
+<p>This reads the file <code>u+g.bb</code> (or <code>slug.bb</code>) from <code>/path/to/input</code>, and
+generates <code>u+g.png</code>, <code>u+g-thumb.png</code>, <code>u+g.svg</code> and <code>u+g.json</code> in
+<code>/path/to/output</code>. </p>
+<h2>Appendices</h2><h3>A. Directory structure</h3><p>The directory structure for this repository is organized as follows</p>
+<ul>
+<li><code>src</code> : Javascript and CSS sources</li>
+<li><code>lib</code> : Files generated and copied by gulp, served under <code>/lib</code></li>
+<li><code>data</code>: Example BB files, accessible through <code>/data</code></li>
+<li><code>views</code>: express.js view templates</li>
+<li><code>tests</code>: HTML files for various local tests, loading scripts from <code>src</code></li>
+<li><code>jsbrain_server</code>:Local server to handle graph generation requests</li>
+<li><code>jsbrain_manual</code>:Outdated manual shell script for PNG generation</li>
+</ul>
+<p>Emacs environment:</p>
+<ul>
+<li>indium works well</li>
+<li>sr-speedbar is docked</li>
+<li>imenu requires <em>rescan</em> from the top menu</li>
+<li>M-x indium-connect connects to a running chrom instance configured in the .indium file</li>
+<li>Had to rename menu names in js2 and indium el files to shorten their names</li>
+<li>purpose-mode is useful to keep windows with what they are for</li>
+<li>For development, the following fonts seem to be good options:<ul>
+<li>Hack: https://github.com/source-foundry/Hack</li>
+<li>OfficeCodePro: https://github.com/nathco/Office-Code-Pro</li>
+<li>Font rendering: https://wiki.manjaro.org/index.php?title=Improve_Font_Rendering</li>
+</ul>
+</li>
+</ul>
+<h3>B. Deployment to glitch, or local server</h3><p>When deploying a new version of the road editor to glitch (as in setting up a 
+new road-staging glitch)</p>
+<ul>
+<li>create a new beeminder client at https://<a href="http://www.beeminder.com/apps/new">www.beeminder.com/apps/new</a></li>
+<li>the redirect uri is <code>https://[project].glitch.me/connect</code></li>
+<li>add the client id to your .env file</li>
+<li>add the redirect uri in your .env file</li>
+<li>launch the glitch console and create .data/database.sqlite for the session store to connect to</li>
+</ul></article>
+    </section>
+
+
+
+
+
+
+
+		</div>
+	</div>
+
+	<div class="clearfix"></div>
+
+	
+		<div class="col-md-3">
+			<div id="toc" class="col-md-3 hidden-xs hidden-sm hidden-md"></div>
+		</div>
+	
+
+</div>
+</div>
+
+
+    <div class="modal fade" id="searchResults">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Search results</h4>
+          </div>
+          <div class="modal-body"></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div>
+
+
+<footer>
+
+
+<span class="jsdoc-message">
+	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a>
+	
+		on 2019-01-12T23:43:53+03:00
+	
+	using the <a href="https://github.com/docstrap/docstrap">DocStrap template</a>.
+</span>
+</footer>
+
+<script src="scripts/docstrap.lib.js"></script>
+<script src="scripts/toc.js"></script>
+
+    <script type="text/javascript" src="scripts/fulltext-search-ui.js"></script>
+
+
+<script>
+$( function () {
+	$( "[id*='$']" ).each( function () {
+		var $this = $( this );
+
+		$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+	} );
+
+	$( ".tutorial-section pre, .readme-section pre, pre.prettyprint.source" ).each( function () {
+		var $this = $( this );
+
+		var example = $this.find( "code" );
+		exampleText = example.html();
+		var lang = /{@lang (.*?)}/.exec( exampleText );
+		if ( lang && lang[1] ) {
+			exampleText = exampleText.replace( lang[0], "" );
+			example.html( exampleText );
+			lang = lang[1];
+		} else {
+			var langClassMatch = example.parent()[0].className.match(/lang\-(\S+)/);
+			lang = langClassMatch ? langClassMatch[1] : "javascript";
+		}
+
+		if ( lang ) {
+
+			$this
+			.addClass( "sunlight-highlight-" + lang )
+			.addClass( "linenums" )
+			.html( example.html() );
+
+		}
+	} );
+
+	Sunlight.highlightAll( {
+		lineNumbers : false,
+		showMenu : true,
+		enableDoclinks : true
+	} );
+
+	$.catchAnchorLinks( {
+        navbarOffset: 10
+	} );
+	$( "#toc" ).toc( {
+		anchorName  : function ( i, heading, prefix ) {
+			return $( heading ).attr( "id" ) || ( prefix + i );
+		},
+		selectors   : "#toc-content h1,#toc-content h2,#toc-content h3,#toc-content h4",
+		showAndHide : false,
+		smoothScrolling: true
+	} );
+
+	$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+	$( '.dropdown-toggle' ).dropdown();
+
+    $( "table" ).each( function () {
+      var $this = $( this );
+      $this.addClass('table');
+    } );
+
+} );
+</script>
+
+
+
+<!--Navigation and Symbol Display-->
+
+
+<!--Google Analytics-->
+
+
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            SearcherDisplay.init();
+        });
+    </script>
+
+
+</body>
+</html>

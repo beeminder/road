@@ -3,11 +3,15 @@ const minify = require('gulp-minify')
 const concat = require('gulp-concat')
 const changed = require('gulp-changed')
 const cleancss = require('gulp-clean-css')
+const ts = require("gulp-typescript")
+const tsProject = ts.createProject("tsconfig.json")
+const jsdoc = require("gulp-jsdoc3")
 
 const LIBDIR = 'lib'
 const LIBJS = LIBDIR+"/js"
 const LIBCSS = LIBDIR+"/css"
 const LIBIMG = LIBDIR+"/images"
+const DOCDIR = './docs'
 
 function clean_css() {
   return gulp.src(['src/jsbrain.css','src/pikaday.css','src/editorpage.css'])
@@ -47,7 +51,21 @@ function copy_vendor() {
     .pipe(gulp.dest(LIBJS))
 }
 
+function tscompile() {
+  return tsProject.src()
+    .pipe(tsProject())
+    .js.pipe(gulp.dest("temp"));
+}
+
+function gendoc() {
+  return gulp.src(['README.md', 'src/*.js'], {read: false})
+    .pipe(jsdoc({opts: {destination: DOCDIR, tutorials:"./tutorials"}}));
+}
+
 exports.compile = gulp.series(compress_js,
                               gulp.parallel(combine_js, combine_jsmin, clean_css),
                               copy_vendor
                              ) 
+exports.tscompile = tscompile
+
+exports.gendoc = gendoc

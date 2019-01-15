@@ -2,12 +2,14 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="../lib/css/jsbrain.css">
+    <link rel="stylesheet" href="../src/jsbrain.css">
     <script src = "https://d3js.org/d3.v4.js"></script>
     <script src = "../node_modules/moment/min/moment.min.js"></script>
-    <script src = "../lib/js/polyfit.js"></script>
-    <script src = "../lib/js/jsbrain.js"></script>
-    <script src = "../lib/js/bgraph.js"></script>
+    <script src = "../src/polyfit.js"></script>
+    <script src = "../src/butil.js"></script>
+    <script src = "../src/broad.js"></script>
+    <script src = "../src/beebrain.js"></script>
+    <script src = "../src/bgraph.js"></script>
 </head>
 <body>
 
@@ -17,50 +19,65 @@
 <script>
   var done = false; // IMPORTANT: This is monitored by rendered.js
 
-  function getParameterByName(name, url) {
-    if (!url) url = window.location.href
-    name = name.replace(/[\[\]]/g, "\\$&")
-    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-        results = regex.exec(url)
-    if (!results) return null
-    if (!results[2]) return ''
-    return decodeURIComponent(results[2].replace(/\+/g, " "))
-  }
+  // Make sure to abort processing if an unreasonable amount of time has elapsed
+  setTimeout( function(){
+                 console.log("Aborting processing due to timeout!");done=true;},
+                 butil.MAXTIME)
 
-  var saveSVG = function() {
-    //console.debug('Done loading road')
-    var newroot = d3.select(document.body)
-    //newroot.selectAll(".zoomarea").remove()
-    newroot.selectAll(".buttonarea").remove()
-    newroot.selectAll(".brush").remove()
-    newroot.selectAll("#brushclip1").remove()
-    newroot.selectAll(".zoomin").remove()
-    newroot.selectAll(".zoomout").remove()
-    newroot.selectAll(".minor").remove()
-    done = true  // IMPORTANT: This is monitored by rendered.js
-  };
+  try {
+  
+    function getParameterByName(name, url) {
+      if (!url) url = window.location.href
+      name = name.replace(/[\[\]]/g, "\\$&")
+      var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+          results = regex.exec(url)
+      if (!results) return null
+      if (!results[2]) return ''
+      return decodeURIComponent(results[2].replace(/\+/g, " "))
+    }
 
-  var graph = new bgraph({divGraph: document.getElementById('goalgraph'),
-                         divJSON: document.getElementById('goaljson'),
-                         svgSize: { width: 696, height: 453 },
-                         focusRect: { x:0, y:0, width:696, height: 453 },
-                         ctxRect: { x:0, y:453, width:696, height: 32 },
-                         noGraph:(getParameterByName('NOGRAPH') == "true")?true:false,
-                         roadEditor:false,
-                         headless:true,
-                         maxFutureDays: 365,
-                         showFocusRect: false,
-                         showContext: false,
-                         onRoadChange: saveSVG,
-                         onError: saveSVG
-  })
+    var saveSVG = function() {
+      //console.debug('Done loading road')
+      var newroot = d3.select(document.body)
+      //newroot.selectAll(".zoomarea").remove() // Needed for extracting BBox
+      newroot.selectAll(".buttonarea").remove()
+      newroot.selectAll(".brush").remove()
+      newroot.selectAll("#brushclip1").remove()
+      newroot.selectAll(".zoomin").remove()
+      newroot.selectAll(".zoomout").remove()
+      //newroot.selectAll(".minor").remove()
+      done = true  // IMPORTANT: This is monitored by rendered.js
+    }
+  
+    async function process() {
+      var graph = new bgraph({divGraph: document.getElementById('goalgraph'),
+                           divJSON: document.getElementById('goaljson'),
+                           svgSize: { width: 696, height: 453 },
+                           focusRect: { x:0, y:0, width:696, height: 453 },
+                           ctxRect: { x:0, y:453, width:696, height: 32 },
+                           noGraph:(getParameterByName('NOGRAPH') == "true")?true:false,
+                           roadEditor:false,
+                           headless:true,
+                           maxFutureDays: 365,
+                           showFocusRect: false,
+                           showContext: false,
+                           onRoadChange: saveSVG,
+                           onError: saveSVG
+      })
 
-  var bb = getParameterByName('bb');
-  if (bb) {
-    graph.loadGoal(getParameterByName('bb'))
-  } else
-    d3.select("#roadgraph").text("Usage: generate.html?bb=file:///path/to/file.bb")
-
+      var bb = getParameterByName('bb');
+      if (bb) {
+        await graph.loadGoal(getParameterByName('bb'))
+      } else {
+        d3.select("#roadgraph").text("Usage: generate.html?bb=file:///path/to/file.bb")
+      }
+      done = true
+    }
+    process()
+  } catch(err) {
+    console.log("Uncaught exception: "+err.message)
+    done = true // Make sure errors on this page do not cause timeouts in renderer.js
+  } 
 </script>
 
 </body>

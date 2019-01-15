@@ -1,16 +1,18 @@
-/*!
- * bsandbox
- *
- * Dependencies: moment, butil, broad, beebrain, bgraph
- * 
- * Javascript implementation of a sandbox for beeminder.
- *
- * The following member variables and methods are exported within
- * constructed objects:
- *
- *  id         : bsandbox instance ID 
- *
- * Copyright © 2017 Uluc Saranli
+/**
+ * Javascript implementation of a sandbox for Beeminder goals,
+ * provided as a UMD module. Provides a {@link bsandbox} class, which
+ * can be used to construct independent sandbox objects each with
+ * their own graph object, linked to particular div element on the
+ * DOM.<br/>
+
+ * <br/>Copyright © 2017 Uluc Saranli
+ @module bsandbox
+ @requires d3
+ @requires moment
+ @requires butil
+ @requires broad
+ @requires beebrain
+ @requires bgraph
  */
 ;((function (root, factory) {
   'use strict'
@@ -40,6 +42,13 @@
    * instances. */
   var gid = 1,
 
+  /** bsandbox object constructor. Creates a beeminder sandbox object,
+   * creating a graph on the supplied DIV object in the DOM.
+
+   @memberof module:bsandbox
+   @constructs bsandbox
+   @param {object} div object on the DOM to create a {@link module:bgraph} instance on
+  */
   bsandbox = function( div ) {
     //console.debug("beebrain constructor ("+gid+"): ");
     var self = this,
@@ -52,7 +61,7 @@
     
     function newDoMore() {
       return {yaw:1, dir:1, kyoom:true,
-              odom: false, movingav:false,
+              odom: false, movingav:false, 
               steppy:true, rosy: false, aura: false, aggday: "sum",
               integery:false, monotone:true}
     }
@@ -91,7 +100,8 @@
       fatloser: newLoseWeight, 
       biker: newUseOdometer, 
       drinker: newDoLess, 
-      gainer: newGainWeight, inboxer: newWhittleDown
+      gainer: newGainWeight,
+      inboxer: newWhittleDown
     }
 
     var undoBuffer = []
@@ -153,7 +163,7 @@
     }
     
     function newData( v, c ) {
-      if (!bu.nummy(v) || !bu.stringy(v)) return;
+      if (!bu.nummy(v) || !bu.stringy(c)) return;
       saveState()
       goal.bb.data.push([goal.bb.params.asof, Number(v),
                          (c=="")?`Added in sandbox (#${goal.bb.data.length})`:c])
@@ -215,7 +225,6 @@
       goal.vini = vini
       goal.runits = runits
       goal.buffer = buffer
-      
       var now = bu.daysnap(moment.now()/1000)
       var nextweek = bu.daysnap(moment.now()/1000 + 7*bu.SID)
       var nextyear = bu.daysnap(moment.now()/1000 + bu.DIY*bu.SID)
@@ -228,7 +237,7 @@
       params.asof = bu.dayify(now)
 
       params.tfin = bu.dayify(nextyear)
-      params.rfin = Number(rfin) * params.yaw
+      params.rfin = Number(rfin)
       params.runits = runits
       
       params.tini = params.asof
@@ -263,24 +272,45 @@
       clearUndoBuffer()
       reloadGoal()
     }
+
     /** bsandbox object ID for the current instance */
-    self.id = curid
-    self.newGoal = newGoal
-    self.nextDay = nextDay
-    self.newData = newData
-    self.newRate = newRate
-    self.setVisualConfig = setVisualConfig
-    self.getVisualConfig = function() {return goal.graph.getVisualConfig()}
-    self.setGoalConfig = setGoalConfig
-    self.getGoalConfig = function() {return goal.graph.getGoalConfig()}
-    self.undo = undo
-    self.saveBB = function(linkelt) {
+    this.id = curid
+    
+    /** Creates a fresh new goal, replacing the DIV contents with a
+        new graph.
+        @method
+        @param {String} gtype Goal type. One of the following: "hustler", "fatloser", "biker", "drinker", "gainer", "inboxer".
+        @param {String} runits Rate units. One of "d", "w", "m", "y"
+        @param {Number} rate Initial road slope in runits
+        @param {Number} vini Initial value of the road
+        @param {Boolean} buffer Whether to have an initial week-long buffer or not
+    */
+    this.newGoal = newGoal
+    /** Advances the sandbox goal to the next day. Increments asof by 1 day. 
+        @method */
+    this.nextDay = nextDay
+    /** Enters a new datapoint to the sandbox goal on the current day
+        @method 
+        @param {Number} v Datapoint value
+        @param {String} c Datapoint comment. Auto-generated if empty string */
+    this.newData = newData
+    /** Dials the road slope for the sandbox goal beyond the akrasia horizon
+        @method 
+        @param {Number} r New rate in runits */
+    this.newRate = newRate
+    this.setVisualConfig = setVisualConfig
+    this.getVisualConfig = function() {return goal.graph.getVisualConfig()}
+    this.setGoalConfig = setGoalConfig
+    this.getGoalConfig = function() {return goal.graph.getGoalConfig()}
+    this.undo = undo
+    this.saveBB = function(linkelt) {
       var source = JSON.stringify(goal.bb)
         //convert svg source to URI data scheme.
         var url = "data:application/json;charset=utf-8,"+encodeURIComponent(source)
         //set url value to a element's href attribute.
         linkelt.href = url
     }
+    self.getGraphObj = function() {return goal.graph}
   }
 
   return bsandbox
