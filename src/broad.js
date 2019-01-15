@@ -17,7 +17,7 @@
   }
 })(this, function (moment, Polyfit, bu) {
   'use strict'
-
+  
   const rnd = Math.round
 
   /**
@@ -36,7 +36,7 @@
    @exports broad
   */
   var self = {}
-
+  
   self.rfin = 0 // Hack to implement skatesum
   /** Collection of functiont to perform datapoint aggregation
       @enum {function} */
@@ -66,13 +66,13 @@
   /** Enum object to identify field types for road segments. 
       @enum {number} */
   self.RP = { DATE:0, VALUE:1, SLOPE:2}
-
+  
   /** Pretty prints a given array of road segments.
       @param {Array} rd Array of road segment objects */
   self.printRoad = ( rd ) => {
     for (let i = 0; i < rd.length; i++) {
       var s = rd[i]
-      console.debug("[("+s.sta[0]+","+s.sta[1]+"),("+s.end[0]+","+s.end[1]+"),"
+      console.debug("[("+s.sta[0]+"("+bu.formatDate(s.sta[0])+"),"+s.sta[1]+"),("+s.end[0]+"("+bu.formatDate(s.end[0])+"),"+s.end[1]+"),"
                     +s.slope+", auto="+s.auto+"]")
     }
   }
@@ -210,7 +210,7 @@
   //  lanage*yaw == -1: wrong lane (orange dot)
   //  lanage*yaw <= -2: emergency day or derailed (red dot)
   self.lanage = ( rd, goal, t, v, l = null ) => {
-    var ln = self.lnf( rd, goal, t )
+    var ln = goal.lnf( t )
     if (l == null) l = (goal.noisy)?Math.max(ln, goal.nw):ln
     var d = v - self.rdf(rd, t)
     if (bu.chop(l) == 0) 
@@ -238,7 +238,7 @@
   self.dtd = ( rd, goal, t, v ) => {
     var tnow = goal.tcur
     var fnw = (self.gdelt(rd, goal, t,v) >= 0)?0.0:goal.nw // future noisy width
-    var elnf = (x) => (Math.max(self.lnf(rd,goal,x),fnw)) //eff. lane width
+    var elnf = (x) => (Math.max(goal.lnf(x),fnw)) //eff. lane width
 
     var x = 0 // the number of steps  
     var vpess = v // the value as we walk forward w/ pessimistic presumptive reports
@@ -334,7 +334,8 @@
   /** Computes the slope of the supplied road array at the given timestamp */
   self.rtf = (rd, t) => (rd[self.findSeg( rd, t )].slope)
 
-  self.lnfraw = ( rd, goal, x ) => {
+  
+  self.genLaneFunc = function(rd, goal ) {
     var r0 = bu.deldups(rd, e=>e.end[0])
     var t = r0.map(elt => elt.end[0])
     var r = r0.map(elt => Math.abs(elt.slope)*bu.SID )
@@ -351,12 +352,10 @@
     t.pop()
     r.splice(0,1)
     var rtf0 = self.stepify(bu.zip([t,r]))
-    var valdiff = self.vertseg(rd,x)?0:(self.rdf( rd, x ) - self.rdf( rd, x-bu.SID ))
-    return Math.max(Math.abs(valdiff), rtf0(x))
+    return(x => Math.max(Math.abs(self.vertseg(rd,x)?0:(self.rdf( rd, x ) - self.rdf( rd, x-bu.SID ))), rtf0(x)))
+    //return x=>self.lnfraw(rd, goal, x)
   }
-
-  self.lnf = ( rd, g, x ) => ((g.abslnw != null)?g.abslnw:self.lnfraw( rd, g, x ))
-
+  
   // Transform datapoints as follows: every time there's a decrease
   // in value from one element to the next where the second value is
   // zero, say V followed by 0, add V to every element afterwards.
@@ -517,7 +516,7 @@
     var t = g.tcur+n*bu.SID
     return self.rdf(rd, t)
       - Math.sign(g.yaw)
-      *(g.noisy?(Math.max(g.nw, self.lnf(rd, g, t))):self.lnf(rd, g, t))
+      *(g.noisy?(Math.max(g.nw, g.lnf(t))):g.lnf(t))
   }
 
   /** The bare minimum needed from vcur to the critical edge of the YBR in n days */

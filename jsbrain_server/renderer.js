@@ -5,21 +5,20 @@ const fs = require('fs')
 const gm = require('gm').subClass({imageMagick: true})
 const puppeteer = require('puppeteer')
 
-const pageTimeout = 30 // Seconds to wait until giving up on generate.html
+const pageTimeout = 10 // Seconds to wait until giving up on generate.html
 
 class Renderer {
   
   constructor(browser, id) {
     this.browser = browser
     this.id = id
-    this.prf = "("+this.id+") "
   }
 
-  getId() { return this.id }
-  getPrf() { return this.prf }
+  prfinfo(r) { return [this.id,r] }
+  prf(r) { return "("+this.id+":"+r+") " }
   
   // Creates a new page in a tab within the puppeteer chrome instance
-  async createPage( url ) {
+  async createPage( url, tag ) {
     let gotoOptions = {
       timeout: pageTimeout * 1000,
       waitUntil: 'load'
@@ -29,8 +28,8 @@ class Renderer {
     // other
     const page = await this.browser.newPage()
     page.on('console', 
-            msg => console.log(this.prf+" PAGE LOG:", msg.text()))
-    page.on('error', error => console.log(this.prf+" PAGE ERROR: "+error.msg))
+            msg => console.log(tag+" PAGE LOG:", msg.text()))
+    page.on('error', error => console.log(tag+" PAGE ERROR: "+error.msg))
 
     // Render the page and return result
     try {
@@ -60,19 +59,20 @@ class Renderer {
       instance. Creates a new tab, renders the graph and json, outputs
       the graph in PNG and SVG forms as well as the JSON output and
       closes the tab afterwards */
-  async render(inpath, outpath, slug) {
+  async render(inpath, outpath, slug, rid) {
     let page = null
-
+    let tag = this.prf(rid)
+    
     if (!fs.existsSync(outpath)) {
       let err = `Could not find directory ${outpath}`
-      process.stdout.write(this.prf+" renderer.js ERROR: "+err+"\n")
+      process.stdout.write(tag+" renderer.js ERROR: "+err+"\n")
       return { error:err }
     }
 
     const bbfile = `${inpath}/${slug}.bb`
     if (!fs.existsSync(bbfile)) {
         let err = `Could not find file ${bbfile}`
-        process.stdout.write(this.prf+" renderer.js ERROR: "+err+"\n")
+      process.stdout.write(tag+" renderer.js ERROR: "+err+"\n")
         return { error: err}
     }
     
@@ -107,19 +107,19 @@ class Renderer {
     try {
 
       // Load and render the page, extract html
-      var time_id = this.prf+` Page creation (${slug}, ${newid})`
+      var time_id = tag+` Page creation (${slug})`
       console.time(time_id)
-      page = await this.createPage(url)
+      page = await this.createPage(url,tag)
       console.timeEnd(time_id)
 
       if (page) {
-        time_id = this.prf+` Page render (${slug}, ${newid})`
+        time_id = tag+` Page render (${slug})`
         console.time(time_id)
         html = await page.content()
         try {
           await page.waitForFunction('done', {timeout: pageTimeout*1000})
         } catch(err) {
-          process.stdout.write(this.prf+" renderer.js ERROR: "+err.message+"\n")
+          process.stdout.write(tag+" renderer.js ERROR: "+err.message+"\n")
           console.timeEnd(time_id)
           return { error:err.message }
         }
@@ -130,7 +130,7 @@ class Renderer {
         jsonstr = await page.evaluate(json => json.innerHTML, jsonHandle);
         if (jsonstr == "" || jsonstr == null) {
           let err = "Could not extract JSON from page!"
-          process.stdout.write(this.prf+" renderer.js ERROR: "+err+"\n")
+          process.stdout.write(tag+" renderer.js ERROR: "+err+"\n")
 
           // Clean up leftover timing
           console.timeEnd(time_id)
@@ -148,7 +148,8 @@ class Renderer {
         fs.writeFileSync(jtmp, JSON.stringify(json));  
         if (fs.existsSync(jtmp)) fs.renameSync(jtmp, jf )
         // Display statsum on node console
-        process.stdout.write(this.prf+json.statsum.replace(/\\n/g, '\n'+this.prf))
+        process.stdout.write(tag+json.statsum.replace(/\\n/g, '\n'+tag))
+        process.stdout.write("\n")
         
         if (graphit) {
           // Extract and write the SVG file
@@ -170,7 +171,7 @@ class Renderer {
           //console.info("Zoom area bounding box is "+JSON.stringify(zi))
         
           // Take a screenshot to generate PNG files
-          time_id = ` Screenshot (${slug}, ${newid})`
+          time_id = tag+` Screenshot (${slug})`
           console.time(time_id)
 
           // Extract SVG boundaries on page
@@ -224,7 +225,7 @@ class Renderer {
       } else {
 
         let err = "Could not create headless chrome page!"
-        process.stdout.write(this.prf+" renderer.js ERROR: "+err+"\n")
+        process.stdout.write(tag+" renderer.js ERROR: "+err+"\n")
 
         // Clean up leftover timing
         console.timeEnd(time_id)
@@ -233,7 +234,7 @@ class Renderer {
     } finally {
       if (page) await page.close()
     }
-    return {html: html, png: png, svg: svg, error:null}
+    return {html: html, png: png, svg: svg, json: json, error:null}
   }
 }
 

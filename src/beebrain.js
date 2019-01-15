@@ -209,7 +209,8 @@
     goal.xMin = goal.asof;  goal.xMax = goal.horizon
     goal.yMin = -1;    goal.yMax = 1
 
-    /** Convery legacy parameters to up-to-date entries */
+    /** Convery legacy parameters to up-to-date entries 
+        @param {Object} p Goal parameters from the bb file */
     function legacyIn( p ) {
       if (p.hasOwnProperty('gldt') && !p.hasOwnProperty('tfin'))  p.tfin = p.gldt
       if (p.hasOwnProperty('goal') && !p.hasOwnProperty('vfin'))  p.vfin = p.goal
@@ -218,14 +219,15 @@
         p.yoog = p.usr + "/" + p.graph
     }
     
-    /** Helper function for legacyOut */
+    // Helper function for legacyOut
     function rowfix(row) {
       if (!Array.isArray(row)) return row
       if (row.length <= 3) return row
       return row.slice(0,3)
     }
 
-    /** Last in genStats, filter params for backward compatibility */
+    /** Last in genStats, filter params for backward compatibility
+        @param {Object} p Computed goal statistics */
     function legacyOut(p) {
       p.fullroad = p.fullroad.map( r=>rowfix(r) )
       p['road']     = p['fullroad']
@@ -291,7 +293,9 @@
       return newrow
     }
 
-    /** Processes fields with timestamps in the input */
+    /** Processes fields with timestamps in the input
+     @param {Object} p Goal parameters from the BB file
+     @param {Array} d Data points from the BB file*/
     function stampIn( p,d ) {
       ['asof', 'tini', 'tfin', 'tmin', 'tmax']
         .map((e)=>{if (p.hasOwnProperty(e)) p[e] = bu.dayparse(p[e])})
@@ -306,7 +310,8 @@
         .sort((a,b)=>((a[0]!== b[0])?(a[0]-b[0]):(a[3]-b[3]))) 
     }
 
-    /** Convert unixtimes back to daystamps */
+    /** Convert unixtimes back to daystamps
+        @param {Object} p Computed goal statistics */
     function stampOut( p ) {
       p['fullroad'] = p['fullroad'].map(dayifyrow)
       p['pinkzone'] = p['pinkzone'].map(dayifyrow)
@@ -377,8 +382,9 @@
       return inertia(dat.slice().reverse(), dlt, sgn).reverse()
     }
 
+    /** Pre-compute rosy datapoints */
     function computeRosy() {
-      if (!goal.rosy) return
+      if (!goal.rosy || data.length == 0) return
       // Pre-compute rosy datapoints
       var delta = Math.max(goal.lnw, goal.stdflux), lo, hi
       if (goal.dir > 0) {
@@ -394,7 +400,7 @@
       var xvec = data.map(e=>e[0])
       rosydata = bu.zip([xvec, yvec])
       rosydata = rosydata.map(e=>[e[0],e[1],"rosy data",
-                                  DPTYPE.RAWPAST, e[0],e[1],e[1]])
+                                  DPTYPE.RAWPAST, null, null, e[1]])
       for (let i = 1; i < rosydata.length-1; i++) {
         rosydata[i][4] = rosydata[i-1][0]
         rosydata[i][5] = rosydata[i-1][1]
@@ -411,17 +417,19 @@
       return set
     }
 
-    // Coming here, we assume that data has entries with
-    // the following format:
-    // [t, v, comment, original index, v(original)]
-    //
-    // Coming out, datapoints have the following format:
-    // [t, v, comment, type, prevt, prevv, v(original) or null]
-    //
-    // Each point also records coordinates for the preceding point to
-    // enable connecting plots such as steppy and rosy even after
-    // filtering based on visibility in graph
-    /** Process goal data */
+    /** Process goal data<br/>
+
+        Coming here, we assume that data has entries with the
+        following format:[t, v, comment, original index,
+        v(original)]<br/>
+
+        Coming out, datapoints have the following format: [t, v,
+        comment, type, prevt, prevv, v(original) or null]<br/>
+
+        Each point also records coordinates for the preceding point to
+        enable connecting plots such as steppy and rosy even after
+        filtering based on visibility in graph
+    */
     function procData() { 
 
       if (data == null || data.length == 0) return "No datapoints"
@@ -481,8 +489,8 @@
 
       // Helper fn: Extract values from vl
       var dval = (d=>d[0])
-      // Helper fn: Compute [informative comment,originalv] for aggregated points
-      var aggpt = function(vl, v) { 
+      // Helper fn: Compute [informative comment,originalv(or null)] for aggregated points
+      var aggpt = function(vl, v) { // v is the aggregated value
         if (vl.length == 1) return [vl[0][1], vl[0][2]]
         else {
           var ind
@@ -520,6 +528,7 @@
                        ptinf[1]])            // v(original)
 
           // Update allvals and aggvals associative arrays
+          // allvals[timestamp] has entries [vtotal, comment, vorig]
           if (goal.kyoom) {
             if (goal.aggday === "sum") {
               allvals[ct] = bu.accumulate(vlv).map((e,j)=>([e+pre, vl[j][1], vl[j][2]]))
@@ -547,10 +556,10 @@
         allpts = allpts.concat(allvals[t].map(
           d=>([Number(t), d[0], d[1], 
                (Number(t) <= goal.asof)?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE,
-               d[0], d[1], d[2]])))
+               null, null, d[2]])))
       }
       alldata = allpts
-      
+
       fuda = newpts.filter(e=>(e[0]>goal.asof))
       data = newpts.filter(e=>(e[0]<=goal.asof))
       if (!goal.plotall) goal.numpts = data.length
@@ -584,22 +593,30 @@
     /** Extracts road segments from the supplied road matrix in the *
      input parameters as well as tini and vini. Upon compeltion, the *
      'roads' variable contains an array of road segments as javascript
-     objects in the following format:
+     objects in the following format:<br/>
 
-     {sta: [startt, startv], end: [endt, endv], slope, auto}
+     {sta: [startt, startv], end: [endt, endv], slope, auto}<br/>
 
      Initial and final flat segments are added from starting days
      before tini and ending after 100 days after tfin.
+     @param {Array} json Unprocessed road matrix from the BB file
     */
     function procRoad( json ) {
       roads = []
       var rdData = json
       var nk = rdData.length
       var firstsegment
-
+      var tini = goal.tini, vini = goal.vini
+      // Handle cases when the first oad matrix entry starts earlier
+      // than (tini,vini).
+      if (rdData[0][0] < tini) {
+        tini = rdData[0][0]
+        if (rdData[0][1] != null) tini = rdData[0][1]
+      }
+      
       // First segment starts from [tini-100days, vini], ends at [tini, vini]
       firstsegment = {
-        sta: [bu.dayparse(goal.tini), Number(goal.vini)],
+        sta: [bu.dayparse(tini), Number(vini)],
         slope: 0, auto: br.RP.SLOPE };
       firstsegment.end = firstsegment.sta.slice()
       firstsegment.sta[0] = bu.daysnap(firstsegment.sta[0]-100*bu.DIY*bu.SID)
@@ -620,9 +637,15 @@
         if (rddate == null) {
           segment.end = [0, Number(rdvalue)]
           segment.slope = Number(rdslope)/(goal.siru)
-          segment.end[0] 
-            = segment.sta[0] 
-            + (segment.end[1] - segment.sta[1])/segment.slope
+          if (segment.slope != 0) {
+            segment.end[0] 
+              = segment.sta[0] 
+              + (segment.end[1] - segment.sta[1])/segment.slope
+          } else {
+            // Hack to handle tfin=null and inconsistent values.
+            segment.end[0] = bu.BDUSK
+            segment.end[1] = segment.sta[1]
+          }
           segment.end[0] = Math.min(bu.BDUSK, segment.end[0])
           segment.auto = br.RP.DATE
         } else if (rdvalue == null) {
@@ -653,6 +676,7 @@
       finalsegment.end[0] = bu.daysnap(finalsegment.end[0]+100*bu.DIY*bu.SID);
       roads.push(finalsegment);
 
+      //br.printRoad(roads)
       // Uluc: Does not seem necessary if the above extraction is correct
       //br.fixRoadArray( roads, br.RP.VALUE, true );
       return "";
@@ -695,18 +719,64 @@
       }
     }
 
-    /** Set any of {tmin, tmax, vmin, vmax} that don't have explicit values. */
+    /** Set any of {tmin, tmax, vmin, vmax} that don't have explicit
+     * values. Duplicates pybrain setRange() behavior*/
     function setDefaultRange() {
       if (goal.tmin == null) goal.tmin = Math.min(goal.tini, goal.asof);
-      if (goal.tmin >= goal.asof - bu.SID) goal.tmin -= bu.SID;
       if (goal.tmax == null) {
         // Make more room beyond the askrasia horizon if lots of data
-        var years = (goal.tcur - goal.tmin) / (bu.DIY*bu.SID);
+        var years = Math.floor((goal.tcur - goal.tmin) / (bu.DIY*bu.SID))
         goal.tmax = bu.daysnap((1+years/2)*2*bu.AKH + goal.tcur);
       }
+      if (goal.vmin != null && goal.vmax != null) {
+        // both provided explicitly
+        if  (goal.vmin == goal.vmax) {
+          goal.vmin -= 1; goal.vmax += 1    // scooch away from each other
+        } else if (goal.vmin >  goal.vmax) {
+          let tmp = goal.vmin;
+          goal.vmin = goal.vmax; goal.vmax = tmp //swap them
+        }
+        return
+      }
+      
+      var PRAF = 0.015,
+          a = br.rdf(roads, goal.tmin),
+          b = br.rdf(roads, goal.tmax),
+          d0 = data.filter(e=>(e[0] < goal.tmax && e[0] > goal.tmin)).map(e=>e[1]),
+          mind = bu.arrMin(d0),
+          maxd = bu.arrMax(d0),
+          padding = Math.max(goal.lnw/3, (maxd-mind)*PRAF*2),
+          minmin = mind - padding,
+          maxmax = maxd + padding
+      if (goal.monotone && goal.dir>0) {        // Monotone up so no extra padding
+        minmin = bu.arrMin([minmin, a, b])         // below (the low) vini.
+        maxmax = bu.arrMax([maxmax, a+goal.lnw, b+goal.lnw])
+      } else if (goal.monotone && goal.dir<0) { // Monotone down so no extra padding
+        minmin = bu.arrMin([minmin, a-goal.lnw, b-goal.lnw]) //   above (the high) vini.
+        maxmax = bu.arrMax([maxmax, a, b])
+      } else {
+        minmin = bu.arrMin([minmin, a-goal.lnw, b-goal.lnw])
+        maxmax = bu.arrMax([maxmax, a+goal.lnw, b+goal.lnw])
+      }
+      if (goal.plotall && goal.tmin<=goal.tini && goal.tini<=goal.tmax
+          && allvals.hasOwnProperty(goal.tini)) {      // At tini, leave room
+        minmin = Math.min(minmin, bu.arrMin(allvals[goal.tini].map(e=>e[0])))// for all non-agg'd
+        maxmax = Math.max(maxmax, bu.arrMax(allvals[goal.tini].map(e=>e[0])))// datapoints.
+      }
+      if (goal.vmin == null && goal.vmax == null) {
+        goal.vmin = minmin
+        goal.vmax = maxmax
+        if (goal.vmin == goal.vmax){
+          goal.vmin -= 1; goal.vmax += 1
+        } else if (goal.vmin > goal.vmax) {
+          let tmp = goal.vmin
+          goal.vmin = goal.vmax; goal.vmax = goal.vmin
+        }
+      } else if (goal.vmin == null) goal.vmin = (minmin < goal.vmax)?minmin:goal.vmax-1
+      else if (goal.vmax == null) goal.vmax = (maxmax > goal.vmin)?maxmax:goal.vmin+1
     }
 
-    /** Sanity check a row of the road matrix; exactly one-out-of-three is null */
+    // Sanity check a row of the road matrix; exactly one-out-of-three is null
     function validrow(r) {
       if (!bu.listy(r) || r.length != 3) return false
       return (r[0]==null && bu.nummy(r[1])  && bu.nummy(r[2]) ) ||
@@ -714,7 +784,7 @@
         (bu.nummy(r[0]) && bu.nummy(r[1]) && r[2]==null)
     }
 
-    /** Stringified version of a road matrix row */
+    // Stringified version of a road matrix row
     function showrow(row) {
       return JSON.stringify(row)
     }
@@ -810,16 +880,20 @@
             ", and rate are inconsistent!\\n"+
             "Is your rate positive when you meant negative?\\n"+
             "Or is your goal "+(goal.kyoom?"total":"value")+
-            " such that the implied goal date is in the past?)";
+            " such that the implied goal date is in the past?)"
         return "Road dial error\\n" + parenerr
       }
 
       // rdf function is implemented in broad.js
       // rtf function is implemented in broad.js
 
-      goal.stdflux = br.noisyWidth(roads, data.filter((d)=>(d[0]>=goal.tini)));
+      goal.stdflux = br.noisyWidth(roads, data.filter((d)=>(d[0]>=goal.tini)))
       goal.nw = (goal.noisy && goal.abslnw == null)
-        ?br.autowiden(roads, goal, data, goal.stdflux):0;
+        ?br.autowiden(roads, goal, data, goal.stdflux):0
+      
+      goal.lnf =
+        (goal.abslnw != null)?(x=>goal.abslnw)
+        :br.genLaneFunc(roads, goal)
       
       flatline();
 
@@ -829,16 +903,16 @@
         if (!(dl <= 1 || data[dl-1][0]-data[0][0] <= 0)) { 
         
           // Create new vector for filtering datapoints
-          var newx = griddle(data[0][0], data[dl-1][0]);
+          var newx = griddle(data[0][0], data[dl-1][0])
           JSON.stringify(newx)
-          goal.filtpts = newx.map((d) => [d, ema(data, d)]);
+          goal.filtpts = newx.map((d) => [d, ema(data, d)])
         } else goal.filtpts = [];
       } else goal.filtpts = [];
       
       goal.tcur = data[data.length-1][0];
       goal.vcur = data[data.length-1][1];
 
-      goal.lnw = Math.max(goal.nw,br.lnf( roads, goal, goal.tcur ));
+      goal.lnw = Math.max(goal.nw,goal.lnf( goal.tcur ));
       goal.safebuf = br.dtd(roads, goal, goal.tcur, goal.vcur);
       goal.tluz = goal.tcur+goal.safebuf*bu.SID;
       goal.delta = bu.chop(goal.vcur - br.rdf(roads, goal.tcur))
@@ -1054,7 +1128,6 @@
         
       goal.fullroad = goal.road.slice()
       goal.fullroad.unshift( [goal.tini, goal.vini, 0, 0] )
-      
       if (goal.error == "") {
         goal.pinkzone = [[goal.asof,br.rdf(roads, goal.asof),0]]
         goal.road.forEach(
@@ -1115,7 +1188,6 @@
         // Append final segment to the road array. These values will be
         // reextracted after filling in road in procParams
         if (bu.listy(goal.road)) goal.road.push([goal.tfin, goal.vfin, goal.rfin])
-      
         if (goal.error == "") goal.error = vetParams()
         if (goal.error == "") goal.error = procData()
       
@@ -1184,7 +1256,9 @@
     this.flad = flad
     /** Holds an array of odometer resets */
     this.oresets = oresets
+    /** Holds an array of derailments */
     this.derails = derails
+
     this.hollow = hollow
     this.hashtags = hashtags
   }

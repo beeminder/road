@@ -22,7 +22,7 @@
    * Javascript library of general purpose utilities for beebrain,
    * provided as a UMD module. Provides a "butil" object, which holds
    * various constants and utility functions to be used. Does not hold
-   * any internal state.
+   * any internal state.<br/>
    *
    * Copyright © 2018 Uluc Saranli
    *
@@ -32,7 +32,15 @@
   var self = {}
   // -----------------------------------------------------------------
   // --------------------- Useful constants --------------------------
-  /** Base URL for images */
+  /** Maximum amount of time beebrain related processing should take
+     * (in ms). Users of bgraph and related tools should implement
+     * timeouts with this amount to avoid infinite waits in case
+     * something goes wrong
+     @type {Number}*/
+  self.MAXTIME = 60000,
+
+  /** Base URL for images.
+      @type {String}*/
   self.BBURL = "http://brain.beeminder.com/"
   
   /** Beeminder colors for datapoints 
@@ -58,19 +66,24 @@
     REDDOT: "#ff0000"  // Red for off the road on the bad side
   }
   
-  /** Days in year */
+  /** Days in year
+      @type {Number}*/
   self.DIY   = 365.25
-  /** Seconds in day */
+  /** Seconds in day 
+      @type {Number}*/
   self.SID   = 86400
-  /** Akrasia horizon, in seconds */
+  /** Akrasia horizon, in seconds 
+      @type {Number}*/
   self.AKH   = 7*self.SID
-  /** ~2038, rails's ENDOFDAYS+1 (was 2^31-2weeks) */
+  /** ~2038, rails's ENDOFDAYS+1 (was 2^31-2weeks) 
+      @type {Number}*/
   self.BDUSK = 2147317201
-  /** Unary function that always returns zero */
+  /** Unary function that always returns zero 
+      @param {} x*/
   self.ZFUN = (x) => 0
   
   /** Number of seconds in a year, month, etc 
-      @enum {number} */
+      @enum {Number} */
   self.SECS = { 'y' : self.DIY*self.SID, 
                 'm' : self.DIY*self.SID/12,
                 'w' : 7*self.SID,
@@ -87,10 +100,10 @@
   // -----------------------------------------------------------------
   // ---------------- General Utility Functions ----------------------
   /** Returns minimum from an array of numbers 
-      @param {number[]} arr Input array */
+      @param {Number[]} arr Input array */
   self.arrMin = (arr) =>( Math.min.apply(null, arr))
   /** Returns maximum from an array of numbers
-      @param {number[]} arr Input array */
+      @param {Number[]} arr Input array */
   self.arrMax = (arr) =>( Math.max.apply(null, arr))
 
   /** Returns true if input is an array 
@@ -141,8 +154,8 @@
       returned. 
 
       @param {Array} l Input array
-      @param {number} n Length of each sublist
-      @param {number} d Sublist separation
+      @param {Number} n Length of each sublist
+      @param {Number} d Sublist separation
   */
   self.partition = (l, n, d) => {
     var il = l.length
@@ -153,7 +166,7 @@
   }
   
   /** Returns a list containing the fraction and integer parts of a float
-      @param {number} f Input number */
+      @param {Number} f Input number */
   self.modf = (f) =>{
     var fp = (f<0)?-f:f, fl = Math.floor(fp)
     return (f<0)?[-(fp-fl),-fl]:[(fp-fl),fl]
@@ -163,9 +176,9 @@
       http://reference.wolfram.com/mathematica/ref/Quantile.html Author:
       Ernesto P. Adorio, PhD; UP Extension Program in Pampanga, Clark
       Field. 
-      @param {number[]} l Input array
-      @param {number} q Desired quantile, in range [0,1]
-      @param {number} [qt=1] Type of quantile computation, Hyndman and Fan algorithm, integer between 1 and 9
+      @param {Number[]} l Input array
+      @param {Number} q Desired quantile, in range [0,1]
+      @param {Number} [qt=1] Type of quantile computation, Hyndman and Fan algorithm, integer between 1 and 9
       @param {boolean} [issorted=false] Flag to indicate whether the input array is sorted
   */
   self.quantile = (l, q, qt=1, issorted=false) => {
@@ -216,7 +229,8 @@
   }
 
   /** Return a list with the cumulative sum of the elements in l,
-      left to right */
+      left to right 
+      @param {Number[]} l*/
   self.accumulate = (l) => {
     var ne = l.length
     if (ne == 0) return l
@@ -227,7 +241,10 @@
 
   /** Takes a list like [1,2,1] and make it like [1,2,2] (monotone
       increasing) Or if dir==-1 then min with the previous value to
-      make it monotone decreasing */
+      make it monotone decreasing 
+      @param {Number[]} l 
+      @param {Number} [dir=1] Direction to monotonize: 1 or -1
+  */
   self.monotonize = (l, dir=1) => {
     var lo = l.slice(), i
     if (dir == 1) {
@@ -238,13 +255,18 @@
     return lo
   }
 
-  /** zip([[1,2], [3,4]]) --> [[1,3], [2,4]] */
+  /** zip([[1,2], [3,4]]) --> [[1,3], [2,4]].
+      @param {Array[]} av Array of Arrays to zip */
   self.zip =  (av) => (av[0].map((_,i) =>(av.map(a => a[i]))))
 
-  /** Return 0 when x is very close to 0 */
+  /** Return 0 when x is very close to 0.
+      @param {Number} x Input number
+      @param {Number} [delta=1e-7] Tolerance */
   self.chop = (x, delta=1e-7) => ((Math.abs(x) < delta)?0:x)
 
-  /** Return an integer when x is very close to an integer */
+  /** Return an integer when x is very close to an integer
+      @param {Number} x Input number
+      @param {Number} [delta=1e-7] Tolerance */
   self.ichop = (x, delta=1e-7) => {
     var fp = x % 1, ip = x - fp
     if (fp < 0) {fp += 1; ip -= 1;}
@@ -252,7 +274,10 @@
     return Math.floor(ip) + self.chop(fp, delta)
   }
 
-  /** clip(x, a,b) = min(b,max(a,x)) */
+  /** clip(x, a,b) = min(b,max(a,x)). Swaps a and b if a > b.
+      @param {Number} x Input number
+      @param {Number} a left boundary
+      @param {Number} b right boundary */
   self.clip = (x, a, b) => {
     if (a > b) { var tmp=a; a=b; b=tmp;}
     if (x < a) x = a
@@ -263,7 +288,10 @@
   /** Show Number: convert number to string. Use at most d
       significant figures after the decimal point. Target t significant
       figures total (clipped to be at least i and at most i+d, where i
-      is the number of digits in integer part of x). */
+      is the number of digits in integer part of x). 
+      @param {Number} x Input number
+      @param {Number} [t=10] Total number of significant figures 
+      @param {Number} [d=5] Number of significant figures after the decimal */
   self.shn = (x, t=10, d=5) => {
     if (isNaN(x)) return x.toString()
     var i = Math.floor(Math.abs(x)), k, fmt, ostr
@@ -293,23 +321,15 @@
     return ostr
   }
 
-  /** Show Number with Sign: include the sign explicitly */
-  self.shns = (x, t=16, d=5) => (((x>=0)?"+":"")+self.shn(x, t, d))
-
-  /** Same as shns but with conservarounding */
-  self.shnsc = (x, e, t=16, d=5) =>(((x>=0)?"+":"")+self.shnc(x, e, t, d))
-
-  /** Show Date: take timestamp and return something like 2012.10.22 */
-  self.shd = (t) =>( (t == null)?'null':self.formatDate(t))
-
-  /** Show Date/Time: take timestamp and return something like
-      2012.10.22 15:27:03 */
-  self.shdt = (t) =>((t == null)?'null':self.formatDateTime(t))
-
   // TODO: need to DRY this and shn() up but want to totally revamp shownum anyway.
-  /** Show Number, rounded conservatively (variant of shn where you
-      pass which direction, +1 or -1, is safe to err on). Aka
-      conservaround!  Eg, shnc(.0000003, +1, 2) -> .01 */
+  /** Show Number, rounded conservatively (variant of {@link
+      module:butil.shn shn} where you pass which direction, +1 or -1,
+      is safe to err on). Aka conservaround! Eg, shnc(.0000003, +1,
+      2) -> .01
+      @param {Number} x Input number
+      @param {Number} errdir Safe direction: +1 or -1
+      @param {Number} [t=10] Total number of significant figures 
+      @param {Number} [d=5] Number of significant figures after the decimal */
   self.shnc = (x, errdir, t=10, d=5) => {
     if (isNaN(x)) return x.toString()
     var i = Math.floor(Math.abs(x)), k, fmt, ostr
@@ -344,15 +364,44 @@
     return ostr
   }
 
+  /** Show Number with Sign: include the sign explicitly. See {@link
+      module:butil.shn shn}.
+      @param {Number} x Input number
+      @param {Number} [t=16] Total number of significant figures 
+      @param {Number} [d=5] Number of significant figures after the decimal */
+  self.shns = (x, t=16, d=5) => (((x>=0)?"+":"")+self.shn(x, t, d))
+
+  /** Same as {@link module:butil.shns shns} but with
+      conservarounding.
+      @param {Number} x Input number
+      @param {Number} e Safe direction: +1 or -1
+      @param {Number} [t=16] Total number of significant figures 
+      @param {Number} [d=5] Number of significant figures after the decimal */
+  self.shnsc = (x, e, t=16, d=5) =>(((x>=0)?"+":"")+self.shnc(x, e, t, d))
+
+  /** Show Date: take timestamp and return something like 2012.10.22
+      @param {Number} t Unix timestamp */
+  self.shd = (t) =>( (t == null)?'null':self.formatDate(t))
+
+  /** Show Date/Time: take timestamp and return something like
+      2012.10.22 15:27:03 
+      @param {Number} t Unix timestamp */
+  self.shdt = (t) =>((t == null)?'null':self.formatDateTime(t))
+
   /** Singular or Plural: Pluralize the given noun properly, if n is
       not 1.  Provide the plural version if irregular.  Eg: splur(3,
-      "boy") -> "3 boys", splur(3, "man", "men") -> "3 men" */
+      "boy") -> "3 boys", splur(3, "man", "men") -> "3 men" 
+      @param {Number} n Count
+      @param {String} noun Noun to pluralize
+      @param {String} [nounp=''] Irregular pluralization if present
+  */
   self.splur = (n, noun, nounp='') => {
     if (nounp=='') nounp = noun+'s'
     return self.shn(n)+' '+((n == 1)?noun:nounp)
   }
   
-  /** Rate as a string */
+  /** Rate as a string.
+   @param {Number} r Rate */
   self.shr = (r) => {
     if (r == null) r = 0
     // show as a percentage if exprd is true #SCHDEL
@@ -361,13 +410,24 @@
   }
   
   // Shortcuts for common ways to show numbers
+  /** shn(chop(x), 4, 2). See {@link module:butil.shn shn}.
+      @param {Number} x Input */
   self.sh1 = function(x)      { return self.shn(  self.chop(x),    4,2) }
+  /** shnc(chop(x), 4, 2). See {@link module:butil.shnc shnc}.
+      @param {Number} x Input */
   self.sh1c = function(x, e)  { return self.shnc( self.chop(x), e, 4,2) }
+  /** shns(chop(x), 4, 2). See {@link module:butil.shns shns}.
+      @param {Number} x Input */
   self.sh1s = function(x)     { return self.shns( self.chop(x),    4,2) }
+  /** shnsc(chop(x), 4, 2). See {@link module:butil.shnsc shnsc}.
+      @param {Number} x Input */
   self.sh1sc = function(x, e) { return self.shnsc(self.chop(x), e, 4,2) }
 
   /** Returns an array with n elements uniformly spaced between a
-   * and b */
+   * and b 
+   @param {Number} a Left boundary
+   @param {Number} b Right boundary
+   @param {Number} n Number of samples */
   self.linspace = ( a, b, n) => {
     if (typeof n === "undefined") n = Math.max(Math.round(b-a)+1,1)
     if (n < 2) { return n===1?[a]:[] }
@@ -382,7 +442,13 @@
       clipped to [c,d].  Unsorted inputs [a,b] and [c,d] are also
       supported and work in the expected way except when clipQ = false,
       in which case [a,b] and [c,d] are sorted prior to computing the
-      output. */
+      output. 
+      @param {Number} x Input in [a,b]
+      @param {Number} a Left boundary of input
+      @param {Number} b Right boundary of input
+      @param {Number} c Left boundary of output
+      @param {Number} d Right boundary of output
+      @param {Boolean} [clipQ=true] When false, sort a,b and c,d first */
   self.cvx = (x, a,b, c,d, clipQ=true) => {
     var tmp
     if (self.chop(a-b) == 0) {
@@ -400,7 +466,9 @@
   }
 
   /** Delete Duplicates. The ID function maps elements to something
-      that defines equivalence classes.*/
+      that defines equivalence classes.
+      @param {Array} a Input array
+      @param {function} [idfun=(x=>x)] Function to map elements to an equivalence class*/
   self.deldups = (a, idfun = (x=>x)) => {
     var seen = {}
     return a.filter(it=>{var marker = JSON.stringify(idfun(it));
@@ -408,14 +476,16 @@
                          :(seen[marker] = true)})
   }
 
-  /** Whether list l is sorted in increasing order */
+  /** Whether list l is sorted in increasing order.
+      @param {Number[]} l Input list*/
   self.orderedq = (l) => {
     for (let i = 0; i < l.length-1; i++)
       if (l[i] > l[i+1]) return false;
     return true;
   }
 
-  /** Whether all elements in a list are zero */
+  /** Whether all elements in a list are zero
+      @param {Number[]} a Input list*/
   self.nonzero = (a) => {
     var l = a.length, i
     for( i = 0; i < l; i++ ){ if (a[i] != 0) return true}
@@ -423,14 +493,16 @@
   }
 
   /** Sum of differences of pairs, eg, [1,2,6,9] -> 2-1 + 9-6 = 1+3
-   * = 4 */
+   * = 4
+   @param {Number[]} a Input list*/
   self.clocky = (a) => {
     var s = 0, l = a.length, i
     for( i = 1; i < l; i+=2 ){ s += (a[i]-a[i-1])}
     return s
   }
 
-  /** Arithmetic mean of values in list a */
+  /** Arithmetic mean of values in list a
+      @param {Number[]} a Input list*/
   self.mean = (a) => {
     var s = 0,l = a.length,i
     if (l == 0) return 0
@@ -438,7 +510,8 @@
     return s/a.length
   }
 
-  /** Median of values in list a */
+  /** Median of values in list a
+      @param {Number[]} a Input list*/
   self.median = (a) => {
     var m = 0, l = a.length
     a.sort((a,b)=>(a-b))
@@ -447,7 +520,8 @@
     return m
   }
 
-  /** Mode of values in list a */
+  /** Mode of values in list a
+      @param {Number[]} a Input list*/
   self.mode = (a) => {
     var md = [], count = [], i, num, maxi = 0, al = a.length
     
@@ -464,31 +538,59 @@
     return md
   }
 
-  /** Whether min <= x <= max */
+  /** Whether min <= x <= max.
+      @param {Number} x
+      @param {Number} min
+      @param {Number} max */
   self.inrange = (x, min, max) =>(x >= min && x <= max)
 
-  /** Whether abs(a-b) < eps */
+  /** Whether abs(a-b) < eps 
+      @param {Number} a
+      @param {Number} b
+      @param {Number} eps */
   self.nearEq = (a, b, eps) => (Math.abs(a - b) < eps)
 
   // --------------------------------------------------------
   // ----------------- Date facilities ----------------------
 
   /** Returns a new date object ahead by the specified number of
-   * days (moment)*/
+   * days (uses moment)
+   @param {moment} m Moment object
+   @param {Number} days Number of days to add */
   self.addDays = (m, days) => {
     var result = moment(m)
     result.add(days, 'days')
     return result
   }
 
-  /** Fixes the supplied unixtime to 00:00:00 on the same day (moment) */
+  /** Fixes the supplied unixtime to 00:00:00 on the same day (uses moment)
+      @param {Number} ut Unix time  */
   self.daysnap = (ut) => {
     var d = moment.unix(ut).utc()
     d.hours(0); d.minutes(0); d.seconds(0); d.milliseconds(0)
     return d.unix()
   }
 
-  /** Formats the supplied unix time as YYYY.MM.DD */
+  /** Fixes the supplied unixtime to the first day 00:00:00 on the
+      same month (uses moment)
+      @param {Number} ut Unix time  */
+  self.monthsnap = (ut) => {
+    var d = moment.unix(ut).utc()
+    d.date(1).hours(0).minutes(0).seconds(0).milliseconds(0)
+    return d.unix()
+  }
+
+  /** Fixes the supplied unixtime to the first day 00:00:00 on the
+      same year (uses moment)
+      @param {Number} ut Unix time  */
+  self.yearsnap = (ut) => {
+    var d = moment.unix(ut).utc()
+    d.month(0).date(1).hours(0).minutes(0).seconds(0).milliseconds(0)
+    return d.unix()
+  }
+
+  /** Formats the supplied unix time as YYYY.MM.DD
+      @param {Number} ut Unix time  */
   self.formatDate = (ut) => {
     var mm = moment.unix(ut).utc()
     var year = mm.year()
@@ -499,7 +601,8 @@
     return year+"."+month+"."+day
   }
 
-  /** Formats the supplied unix time as YYYY.MM.DD HH.MM.SS */
+  /** Formats the supplied unix time as YYYY.MM.DD HH.MM.SS
+      @param {Number} ut Unix time  */
   self.formatDateTime = (ut) => {
     var mm = moment.unix(ut).utc()
     var hour = mm.hour()
@@ -511,22 +614,39 @@
     return self.formatDate(ut)+" "+hour+":"+minute+":"+second
   }
 
+  let dpre_empty = RegExp('^(\\d{4})(\\d{2})(\\d{2})$')
+  let pat_empty = "YYYYMMDD"
   /** Take a daystamp like "20170531" and return unixtime in seconds
-      (dreev confirmed this seems to match Beebrain's function) */
+      (dreev confirmed this seems to match Beebrain's function)
+      @param {String} s Daystamp as a string "YYYY[s]MM[s]DD"
+      @param {String} [sep=''] Separator character */
   self.dayparse = (s, sep='') => {
-    if (!RegExp('^\\d{4}'+sep+'\\d{2}'+sep+'\\d{2}$').test(s)) { 
-      // Check if the supplied date is a timestamp or not.
-      if (!isNaN(s)) return Number(s)
-      else return NaN
+    var re, pat
+    if (sep=='') {
+      // Optimize for the common case
+      re = dpre_empty
+      pat = pat_empty
+    } else {
+      // General case with configurable separator
+      re = RegExp('^(\\d{4})'+sep+'(\\d{2})'+sep+'(\\d{2})$')
+      pat = "YYYY"+sep+"MM"+sep+"DD"
     }
-    s = s.replace(RegExp('^(\\d\\d\\d\\d)'+sep+'(\\d\\d)'+sep+'(\\d\\d)$'), 
-                  "$1-$2-$3")
-    return self.daysnap(moment.utc(s).unix())
+    if (!re.test(s)) { 
+        // Check if the supplied date is a timestamp or not.
+        if (!isNaN(s)) return Number(s)
+        else return NaN
+    }
+    let m = moment.utc(s, pat)
+    // Perform daysnap manually for efficiency
+    m.hours(0).minutes(0).seconds(0).milliseconds(0)
+    return m.unix()
   }
 
   /** Take an integer unixtime in seconds and return a daystamp like
       "20170531" (dreev superficially confirmed this works) Uluc: Added
-      option to choose a separator */
+      option to choose a separator
+      @param {Number} t Integer unix timestamp
+      @param {String} [sep=''] Separator character to use */
   self.dayify = (t, sep = '') => {
     if (isNaN(t) || t < 0) { return "ERROR" }
     var mm = moment.unix(t).utc()
@@ -537,12 +657,14 @@
       + sep + (d < 10 ? '0' : '') + d
   }
 
-  /** Converts a number to an integer string */
+  /** Converts a number to an integer string.
+      @param {Number} x Input number */
   self.sint = (x) =>(Math.round(x).toString())
 
   /** Returns a promise that loads a JSON file from the supplied
       URL. Resolves to null on error, parsed JSON object on
-      success. */
+      success. 
+      @param {String} url URL to load JSON from*/
   self.loadJSON = ( url ) => {   
     return new Promise(function(resolve, reject) {
       if (url === "") resolve(null)
@@ -568,17 +690,16 @@
     })
   }
 
-  /** Changes first letter of each word to uppercase */
+  /** Changes first letter of each word to uppercase 
+      @param {String} str Input string*/
   self.toTitleCase = (str) => {
-    return str.replace( /\w\S*/g,
-                        function(txt) {
-                          return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
-                        }
-                      );
+    return str.replace( /\w\S*/g, function(txt) { return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()});
   }    
 
   /** Deep compares array a1 and a2 for equality. Does not work on
-   * objects within the array */
+   * objects within the array 
+   @param {Array} a1 First array 
+   @param {Array} a2 Second array */
   self.arrayEquals = (a1, a2) => {
     // if the other array is a falsy value, return
     if (!(a1 instanceof Array) || !(a2 instanceof Array)) return false
@@ -599,23 +720,36 @@
     }       
     return true;
   }
+  
   // Convenience functions to check object types
+  /** true if valid float and finite
+      @param {} n */
   self.nummy = (n) =>(!isNaN(parseFloat(n)) && isFinite(n))
+  /** true if string?
+      @param {} x */
   self.stringy = (x) =>(typeof x == "string")
+  /** true if Array
+      @param {} x */
   self.listy = (x) =>(Array.isArray(x))
 
   // Type-checking convenience functions
-  /** true if boolean */
+  /** true if boolean 
+      @param {} x */
   self.torf = (x)=>(typeof x == "boolean")
-  /** true if boolean or null */
+  /** true if boolean or null
+      @param {} x */
   self.born = (x)=>(self.torf(x) | (x == null))
-  /** true if numeric or null */
+  /** true if numeric or null
+      @param {} x */
   self.norn = (x)=>(self.nummy(x) || (x == null))
-  /** true if valid time */
+  /** true if valid time
+      @param {} x */
   self.timy = (x)=>(self.nummy(x) && 0<x && x<self.BDUSK)
-  /** true if valid time or null */
+  /** true if valid time or null
+      @param {} x */
   self.torn = (x)=>(self.timy(x) || (x == null))
-  /** true if string or null */
+  /** true if string or null
+      @param {} x */
   self.sorn = (x)=>(typeof x == "string" || (x == null))
 
   return self

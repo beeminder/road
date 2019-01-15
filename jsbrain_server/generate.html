@@ -19,6 +19,11 @@
 <script>
   var done = false; // IMPORTANT: This is monitored by rendered.js
 
+  // Make sure to abort processing if an unreasonable amount of time has elapsed
+  setTimeout( function(){
+                 console.log("Aborting processing due to timeout!");done=true;},
+                 butil.MAXTIME)
+
   try {
   
     function getParameterByName(name, url) {
@@ -40,11 +45,12 @@
       newroot.selectAll("#brushclip1").remove()
       newroot.selectAll(".zoomin").remove()
       newroot.selectAll(".zoomout").remove()
-      newroot.selectAll(".minor").remove()
+      //newroot.selectAll(".minor").remove()
       done = true  // IMPORTANT: This is monitored by rendered.js
     }
-
-    var graph = new bgraph({divGraph: document.getElementById('goalgraph'),
+  
+    async function process() {
+      var graph = new bgraph({divGraph: document.getElementById('goalgraph'),
                            divJSON: document.getElementById('goaljson'),
                            svgSize: { width: 696, height: 453 },
                            focusRect: { x:0, y:0, width:696, height: 453 },
@@ -57,18 +63,21 @@
                            showContext: false,
                            onRoadChange: saveSVG,
                            onError: saveSVG
-    })
-bleah
-    var bb = getParameterByName('bb');
-    if (bb) {
-      graph.loadGoal(getParameterByName('bb'))
-    } else
-      d3.select("#roadgraph").text("Usage: generate.html?bb=file:///path/to/file.bb")
+      })
+
+      var bb = getParameterByName('bb');
+      if (bb) {
+        await graph.loadGoal(getParameterByName('bb'))
+      } else {
+        d3.select("#roadgraph").text("Usage: generate.html?bb=file:///path/to/file.bb")
+      }
+      done = true
+    }
+    process()
   } catch(err) {
     console.log("Uncaught exception: "+err.message)
-  } finally {
     done = true // Make sure errors on this page do not cause timeouts in renderer.js
-  }
+  } 
 </script>
 
 </body>

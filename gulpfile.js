@@ -59,7 +59,7 @@ function tscompile() {
 
 function gendoc() {
   return gulp.src(['README.md', 'src/*.js'], {read: false})
-    .pipe(jsdoc({opts: {destination: DOCDIR}}));
+    .pipe(jsdoc({opts: {destination: DOCDIR, tutorials:"./tutorials"}}));
 }
 
 exports.compile = gulp.series(compress_js,

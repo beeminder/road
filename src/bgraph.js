@@ -39,6 +39,7 @@
   var
   gid = 1,
 
+  /** Default settings */
   defaults = {
     /** Generates an empty graph and JSON */
     noGraph:      false,
@@ -78,11 +79,11 @@
     dataPoint:    { size: 5, fsize: 5, hsize: 2.5 }, 
     /** Visual parameters for the akrasia horizon */ 
     horizon:      { width: 2, ctxwidth: 1, dash: 8, ctxdash: 6, 
-                    font: 12, ctxfont: 9 },
+                    font: 10, ctxfont: 9 },
     /** Visual parameters for vertical line for asof */ 
     today:        { width: 2, ctxwidth: 1, font: 12, ctxfont: 9 },
     /** Visual parameters for watermarks */ 
-    watermark:    { height:170, fntsize:130 },
+    watermark:    { height:170, fntsize:150, color:"#f0f0f0" },
     guidelines:   { width:2, weekwidth:4 },
     /** Visual parameters for text boxes shown during dragging */ 
     textBox:      { margin: 3 },
@@ -200,15 +201,15 @@
     oldRoadLine:  { width: 3, ctxwidth: 1, dash: 32, ctxdash: 16  },
     dataPoint:    { size: 4, fsize: 6 }, 
     horizon:      { width: 2, ctxwidth: 1, dash: 8, ctxdash: 8, 
-                    font: 16, ctxfont: 10 },
+                    font: 14, ctxfont: 10 },
     today:        { width: 2, ctxwidth: 1, font: 16, ctxfont: 10 },
-    watermark:    { height:150, fntsize:100 },
+    watermark:    { height:150, fntsize:100, color:"#f0f0f0" },
     guidelines:   { width:2, weekwidth:4 },
     textBox:      { margin: 3 }
   },
   
   /** This style text gets embedded into the SVG object to enable proper saving of the SVG */
-  SVGStyle = ".axis path, .axis line { fill: none; stroke: black; shape-rendering: crispEdges;} .axis .minor line { stroke: #777; stroke-dasharray:5,4; } .grid line { fill: none; stroke: #dddddd; stroke-width: 1px; shape-rendering: crispEdges; } .grid .minor line { stroke: none; } .axis text { font-family: sans-serif; font-size: 11px; } .axislabel { font-family: sans-serif; font-size: 11px; text-anchor: middle; } circle.dots { stroke: black; } line.roads { stroke: black; } .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .waterbuf, .waterbux { text-anchor: middle; font-family: sans-serif; } .loading { text-anchor: middle; font-family: sans-serif; } .zoomarea { fill: none; } .hashtag { text-anchor: middle; font-family: sans-serif; }",
+  SVGStyle = ".svg {shape-rendering: crispEdges;} .axis path, .axis line { fill: none; stroke: black; shape-rendering: crispEdges;} .axis .minor line { stroke: #777; stroke-dasharray:0,2,4,3; } .grid line { fill: none; stroke: #dddddd; stroke-width: 1px; shape-rendering: crispEdges; } .grid .minor line { stroke: none; } .axis text { font-family: sans-serif; font-size: 11px; } .axislabel { font-family: sans-serif; font-size: 11px; text-anchor: middle; } circle.dots { stroke: black; } line.roads { stroke: black; } .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .hashtag { text-anchor: middle; font-family: sans-serif; } .waterbuf, .waterbux { text-anchor: middle; font-family: Dejavu Sans,sans-serif; }.loading { text-anchor: middle; font-family: Dejavu Sans,sans-serif; } .zoomarea { fill: none; }",
 
   /** Fraction of plot range that the axes extend beyond */
   PRAF  = .015,
@@ -259,8 +260,72 @@
 
     return opts
   },
+  
   // -------------------------------------------------------------
   // ------------------- BGRAPH CONSTRUCTOR ---------------------
+  /** @typedef BGraphOptions
+      @global
+      @type {object}
+      @property {boolean} noGraph Generates an empty graph and JSON if true
+      @property {Boolean} headless Strips the graph of all details except what is needed for svg output.
+      @property {Boolean} roadEditor Enables the road editor. When disabled, the generated graph mirrors beebrain output as closely as possible.
+      
+      @property {object}  divJSON  Binds the goal JSON output to a div element
+
+      @property {object}  divGraph Binds the graph to a div element
+      @property {object}  svgSize  Size of the SVG element to hold the graph e.g. { width: 700, height: 450 }
+      @property {object}  focusRect Boundaries of the SVG group to hold the focus graph e.g. { x:0, y:0, width:700, height: 370 }
+      @property {object} focusPad Initial padding within the focus graph e.g. { left:25, right:5, top:25, bottom:30 }
+      @property {object} ctxRect Boundaries of the SVG group to hold the context graph e.g. { x:0, y:370, width:700, height: 80 }
+      @property {object} ctxPad Initial padding within the context graph e.g. { left:25, right:5, top:0, bottom:30 }
+      @property {Boolean} scrollZoom Enables zooming by scrollwheel. When disabled, only the context graph and the zoom buttons will allow zooming.
+      @property {Boolean} showContext Enables the display of the context graph within the SVG
+      @property {Boolean} showFocusRect Enables showing a dashed rectange in the context graph visualizing the current graph limits on the y-axis
+    
+      @property {Boolean} keepSlopes Indicates whether slopes for segments beyond the currently dragged element should be kept constant during editing.
+      @property {Boolean} keepIntervals Indicates whether intervals between the knots for segments beyond the currently dragged element should be kept constant during editing.
+      @property {Boolean} showData Enables displaying datapoints on the graph 
+      @property {Integer} maxDataDays When datapoint display is enabled, indicates the number of days before asof to show data for. This can be used to speed up display refresh for large goals. Choose -1 to display all datapoints. Choose -1 to show all points.
+      @property {Integer} maxFutureDays Indicates how many days beyond asof should be included in the fully zoomed out graph. This is useful for when the goal date is too far beyond asof, making the context graph somewhat useless in terms of its interface utility.
+
+      @property {object}  divTable Binds the road table to a div element
+      @property {Number} tableHeight Height of the road matrix table. Choose 0 for unspecified
+      @property {Boolean} tableCheckboxes Chooses whether the road matrix table should include checkboxes for choosing the field to be automatically computed.
+      @property {Boolean} reverseTable Indicates whether the road matrix table should be shown with the earliest rows first (normal) or most recent rows first(reversed).
+      @property {Boolean} tableAutoScroll Indicates whether the auto-scrolling feature for the road matrix table should be enabled such that when the mouse moves over knots, dots or road elements, the corresponding table row is scrolled to be visible in the table. This is particularly useful when tableHeight is explicitly specified and is nonzero.
+      @property {Boolean} tableUpdateOnDrag Chooses whether the road matrix table should be dynamically updated during the dragging of road knots, dots and segments. Enabling this may induce some lagginess, particularly on Firefox due to more components being updated during dragging
+    
+    
+      @property {function} onRoadChange Callback function that gets invoked when the road is edited by the user. Various interface functions can then be used to retrieve the new road state. This is also useful to update the state of undo/redo and submit buttons based on how many edits have been done on the original road.
+      @property {function} onError Callback function that gets invoked when an error is encountered  in loading, processing, drawing or editing the road. 
+
+      @property {object} zoomButton Visual parameters for the zoom in/out buttons. "factor" indicates how much to zoom in/out per click. e.g. { size: 40, opacity: 0.6, factor: 1.5 }
+      @property {object} bullsEye Size of the bullseye image in the focus and context graphs e.g. { size: 40, ctxsize: 20 }
+      @property {object} roadDot Visual parameters for draggable road dots e.g. { size: 5, ctxsize: 3, border: 1.5, ctxborder: 1 }
+      @property {object} roadKnot Visual parameters for draggable road knots and removal buttons e.g. { width: 3, rmbtnscale: 0.6 }
+      @property {object} roadLine Visual parameters for draggable road lines e.g. { width: 3, ctxwidth: 2 }
+      @property {object} oldRoadLine Visual parameters for fixed lines for the original road e.g. { width: 3, ctxwidth: 2, dash: 32, ctxdash: 16 }
+      @property {object} dataPoint Visual parameters for data points (past, flatlined and hollow) e.g. { size: 5, fsize: 5, hsize: 2.5 }
+      @property {object} horizon Visual parameters for the akrasia horizon e.g. { width: 2, ctxwidth: 1, dash: 8, ctxdash: 6, font: 12, ctxfont: 9 }
+      @property {object} today Visual parameters for vertical line for asof  e.g. { width: 2, ctxwidth: 1, font: 12, ctxfont: 9 }
+      @property {object} watermark Visual parameters for watermarks e.g. { height:170, fntsize:130 }
+      @property {object} guidelines Visual parameters for guidelines e.g. { width:2, weekwidth:4 }
+      @property {object} textBox Visual parameters for text boxes shown during dragging e.g. { margin: 3 }
+      @property {object} odomReset Visual parameters for odometer resets e.g. { width: 0.5, dash: 8 }
+      
+
+    @property {object} roadLineCol Colors for road segments for the editor, e.g. { valid: "black", invalid:"#ca1212", selected:"yellow"}
+    @property {object} roadDotCol Colors for the road dots for the editor, e.g. { fixed: "darkgray", editable:"#c2c2c2", selected: "yellow"}
+    @property {object} roadKnotCol Colors for the road knots (vertical) for the editor, e.g. { dflt: "#c2c2c2", selected: "yellow", rmbtn: "black", rmbtnsel: "red"}
+    @property {object} textBoxCol Colors for text boxes e.g. { bg: "#ffffff", stroke:"#d0d0d0"}
+    @property {object} roadTableCol Colors for the road table e.g. { bg:"#ffffff", bgHighlight: "#fffb55", text:"#000000", textDisabled: "#aaaaaa", bgDisabled:"#f2f2f2"}
+    @property {object} dataPointCol Colors for datapoints, e.g. { future: "#909090", stroke: "lightgray"}
+    @property {object} halfPlaneCol Colors for the yellow brick half plane. e.g. { fill: "#ffffe8" }
+    @property {object} pastBoxCol Colors for the past, e.g. { fill: "#f8f8f8", opacity:0.5 }
+    @property {object} odomResetCol Colors for odometer reset indicators, e.g. { dflt: "#c2c2c2" }
+    
+*/
+
   /** bgraph object constructor. Creates an empty beeminder graph
    * and/or road matrix table with the supplied options. Particular
    * goal details may later be loaded with {@link bgraph~loadGoal} or {@link
@@ -268,7 +333,7 @@
 
    @memberof module:bgraph
    @constructs bgraph
-   @param {Object} options JSON input with various graph options
+   @param {BGraphOptions} options JSON input with various graph options
   */
   bgraph = function( options ) {
     //console.debug("beebrain constructor ("+gid+"): ")
@@ -290,7 +355,7 @@
     // Graph components
     var svg, defs, graphs, buttonarea, stathead, focus, focusclip, plot,
         context, ctxclip, ctxplot, 
-        xSc, nXSc, xAxis, xGrid, xAxisObj, xGridObj,
+        xSc, nXSc, xAxis, xAxisT, xGrid, xAxisObj, xAxisObjT, xGridObj,
         ySc, nYSc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel,
         xScB, xAxisB, xAxisObjB, yScB, 
         gPB, gYBHP, gPink, gGrid, gOResets, gPastText, 
@@ -300,7 +365,7 @@
         gBullseye, gRoads, gDots,  gWatermark, gHashtags, gHorizon, gHorizonText, 
         zoomarea, axisZoom, zoomin, zoomout,  
         brushObj, brush, focusrect, topLeft,
-        scf = 1
+        scf = 1, oldscf = 0
 
     // Internal state for the graph
     var lastError = null,
@@ -339,7 +404,7 @@
       plotpad = bu.extend({}, opts.focusPad)
       contextpad = bu.extend({}, opts.ctxPad)
       plotpad.left += yaxisw
-      plotpad.right += yaxisw
+      plotpad.right += yaxisw+(goal.hidey?8:0) // Extra padding if y axis text is hidden
       contextpad.left += yaxisw
       contextpad.right += yaxisw
       plotbox = {
@@ -615,11 +680,17 @@
           .attr("class", "grid")
           .attr("transform", "translate(0,"+(plotbox.height)+")")
           .call(xGrid);
+        xAxisT = d3.axisTop(xSc).ticks(6);
+        xAxisObjT = focus.append('g')        
+          .attr("class", "axis")
+          .attr("transform", "translate("+plotbox.x+"," 
+                + (plotpad.top) + ")")
+          .call(xAxisT);
       }
 
       ySc = d3.scaleLinear().range([plotbox.height, 0]);
-      yAxis = d3.axisLeft(ySc).ticks(8);
-      yAxisR = d3.axisRight(ySc).ticks(8);
+      yAxis = d3.axisLeft(ySc).ticks(8).tickSize(6).tickSizeOuter(0)
+      yAxisR = d3.axisRight(ySc).ticks(8).tickSize(6).tickSizeOuter(0)
       yAxisObj = focus.append('g')        
         .attr("class", "axis")
         .attr("transform", "translate(" 
@@ -708,15 +779,20 @@
       if (!opts.roadEditor) {
         xGridObj.attr("transform", "translate(0,"+(plotbox.height)+")")
           .call(xGrid);
+        xAxisObjT.attr("transform", "translate("+plotbox.x+"," 
+                       + (plotpad.top) + ")")
+          .call(xAxisT.scale(nXSc));
       }
       ySc.range([0, plotbox.height]);
       nYSc.range([0, plotbox.height]);
       yAxisObj.attr("transform", "translate(" 
                     + plotpad.left + ","+plotpad.top+")")
         .call(yAxis.scale(nYSc));
+
       yAxisObjR.attr("transform", "translate(" 
                      + (plotpad.left+plotbox.width) + ","+plotpad.top+")")
         .call(yAxisR.scale(nYSc));
+
       yAxisLabel.attr("transform", 
                       "translate(15,"+(plotbox.height/2+plotpad.top)
                       +") rotate(-90)");
@@ -786,7 +862,7 @@
       computePlotLimits( true );
       horindex = br.findSeg(road, goal.horizon);
       reloadBrush();
-      updateGraphData();
+      updateGraphData(true);
       updateContextData();
       updateTable();
       if (typeof opts.onRoadChange === 'function') {
@@ -869,15 +945,27 @@
     // ------- Zoom and brush  related private functions ---------
     var ticks, tickType = 1, majorSkip = 7;
     function computeXTicks() {
-      var xr = xSc.domain();
+      let xr = xSc.domain();
+
+      // The following make sure that the initial element of the tick
+      // values array is at the proper boundary (day, month, year)
+      // depending on the tick types.
+      let xt = xr.map(e=>e.getTime()/1000)
+      let xtm = xt.slice(); xtm[0] = bu.monthsnap(xtm[0])
+      let xty = xt.slice(); xty[0] = bu.yearsnap(xty[0])
+      let xrm = xtm.map(e=>(new Date(e*1000)))
+      let xry = xty.map(e=>(new Date(e*1000)))
+
+      // [0]: tick dates, [1]: tick text,
       ticks = [];
       ticks.push([d3.utcDay.range(xr[0], xr[1], 1),"%b %d"]);
       ticks.push([d3.utcDay.range(xr[0], xr[1], 2),"%b %d"]);
-      ticks.push([d3.utcWeek.range(xr[0], xr[1], 1),"%b %d"]);
-      ticks.push([d3.utcWeek.range(xr[0], xr[1], 2),"%b %d"]);
-      ticks.push([d3.utcMonth.every(1).range(xr[0], xr[1]),"%b %Y"]);
-      ticks.push([d3.utcMonth.every(2).range(xr[0], xr[1]),"%b %Y"]);
-      ticks.push([d3.utcYear.every(1).range(xr[0], xr[1]),"%Y"]);
+      ticks.push([d3.utcWeek.range(xrm[0], xrm[1], 1),"%b %d"]);
+      ticks.push([d3.utcWeek.range(xrm[0], xrm[1], 2),"%b %d"]);
+      ticks.push([d3.utcMonth.every(1).range(xry[0], xry[1]),"%b %Y"]);
+      ticks.push([d3.utcMonth.every(2).range(xry[0], xry[1]),"%b %Y"]);
+      ticks.push([d3.utcMonth.every(3).range(xry[0], xry[1]),"%Y"]);
+      ticks.push([d3.utcYear.every(1).range(xry[0], xry[1]),"%Y"]);
     }
     function redrawXTicks() {
       //console.debug("redrawXTicks()");
@@ -885,6 +973,10 @@
                 nXSc.invert(plotbox.width).getTime()];
 
       var diff = ((xr[1] - xr[0])/(1000*bu.SID));
+      // * tickType identifies the separation and text of ticks
+      // * majorSkip is the number of ticks to skip for the annotated
+      // "major" ticks. Remaining ticks are drawn as unlabeled small
+      // indicators
       if (diff < 10) {
         tickType = 0; majorSkip = 1;
       } else if (diff < 20) {
@@ -893,29 +985,42 @@
         tickType = 0; majorSkip = 7;
       } else if (diff < 120) {
         tickType = 1; majorSkip = 7;
-      } else if (diff < 365){
-        tickType = 2; majorSkip = 7;
-      } else if (diff < 2*365){
+      } else if (diff < 240){
+        tickType = 2; majorSkip = 4;
+      } else if (diff < 320){
+        tickType = 4; majorSkip = 1;
+      } else if (diff < 1.5*365){
+        tickType = 4; majorSkip = 2;
+      } else if (diff < 2.6*365){
         tickType = 4; majorSkip = 3;
-      } else if (diff < 4*365){
+      } else if (diff < 5*365){
         tickType = 5; majorSkip = 3;
+      } else if (diff < 10*365) {
+        tickType = 6; majorSkip = 4;              
       } else {
-        tickType = 6; majorSkip = 1;              
+        tickType = 7; majorSkip = 1;              
       }
+      // Invisible ticks to the left of the graph
       var pt = ticks[tickType][0].filter((d)=>((d.getTime()<xr[0])));
-      var ind = majorSkip - (pt.length)%majorSkip - 1;
+      // Number of minor ticks in the partially visible first major tick interval
+      var ind = (majorSkip - pt.length%majorSkip)%majorSkip;
+      // Filter tick values based on x axis range
       var tv = ticks[tickType][0].filter(
         (d)=>((d.getTime()>=xr[0]&&d.getTime()<=xr[1])));
       xAxis.tickValues(tv)
-        .tickSize(7)
+        .tickSize(6)
+        .tickSizeOuter(0)
         .tickFormat(
           (d,i)=>d3.utcFormat((i%majorSkip==ind)?ticks[tickType][1]:"")(d))
       xAxisObj.call(xAxis.scale(nXSc));
-      xAxisObj.selectAll("g").classed("minor", false);
+      xAxisObj.selectAll("g").classed("minor", false)
       xAxisObj.selectAll("g")
         .filter((d, i)=>(i%majorSkip!=ind))
-        .classed("minor", true);
+        .classed("minor", true)
 
+      xAxisObj.selectAll("g").selectAll(".tick line")
+        .attr("transform", "translate(0,-5)")
+      
       if (!opts.roadEditor) {
         xGrid.tickValues(tv).tickSize(plotbox.width);
         xGridObj.call(xGrid.scale(nXSc));
@@ -923,6 +1028,20 @@
         xGridObj.selectAll("g")
           .filter( (d, i)=>(i%majorSkip!=ind))
           .classed("minor", true);
+        xAxisT.tickValues(tv)
+          .tickSize(6)
+          .tickSizeOuter(0)
+          .tickFormat(
+            (d,i)=>d3.utcFormat((i%majorSkip==ind)?ticks[tickType][1]:"")(d))
+        xAxisObjT.call(xAxisT.scale(nXSc));
+        xAxisObjT.selectAll("g").classed("minor", false)
+        xAxisObjT.selectAll("g")
+          .filter((d, i)=>(i%majorSkip!=ind))
+          .classed("minor", true);
+
+        xAxisObjT.selectAll("g").selectAll(".tick line")
+          .attr("transform", "translate(0,6)");
+
       }
     }
     function handleYAxisWidth() {
@@ -933,15 +1052,15 @@
           yAxisObj.selectAll("text").remove()
           yAxisObjR.selectAll("text").remove()
         }
-        var bbox = yAxisObj.node().getBBox();
+        var bbox = yAxisObj.node().getBBox()
         // Adjust the graph size and axes if the y axis tick
         // width has changed by a nontrivial amount. This
         // causes a bit jumpy behavior when dragging the brush
         // across the boundary of width change, but that seems
         // to not be too bad a problem.
         if (Math.abs(bbox.width-yaxisw) > 5) {
-          yaxisw = bbox.width;
-          resizeGraph();
+          yaxisw = Math.floor(bbox.width)
+          resizeGraph()
         }
       }
     }
@@ -949,32 +1068,39 @@
     function adjustYScale() {
       var xrange = [nXSc.invert(0), 
                     nXSc.invert(plotbox.width)];
-      var xtimes = xrange.map((d)=>Math.floor(d.getTime()/1000))
-      var re 
+      var yrange
+      if (opts.headless) {
+        let va = goal.vmin  - PRAF*(goal.vmax-goal.vmin)
+        let vb = goal.vmax  + PRAF*(goal.vmax-goal.vmin)
+        yrange = [vb, va]
+      } else {
+        var xtimes = xrange.map((d)=>Math.floor(d.getTime()/1000))
+        var re 
             = roadExtentPartial(road,xtimes[0],xtimes[1],false);
-      re.yMin -= goal.lnw;
-      re.yMax += goal.lnw;
-      var ore = roadExtentPartial(iroad,xtimes[0],xtimes[1],false);
-      ore.yMin -= goal.lnw;
-      ore.yMax += goal.lnw;
-      var ae = mergeExtents(re, ore);
-
-      var de  = dataExtentPartial((goal.plotall&&!opts.roadEditor)
-                                  ?alldata:data,
-                                  xtimes[0],xtimes[1],false);
-      if (de != null) ae = mergeExtents(ae, de);
-      var p;
-      if (opts.roadEditor)
-        p = {xmin:0.0, xmax:0.0, ymin:0.05, ymax:0.05};
-      else
-        p = {xmin:0.0, xmax:0.0, ymin:0.02, ymax:0.02};
-      enlargeExtent(ae, p);
-      if ((ae.yMax - ae.yMin) < 3*goal.lnw) {
-        ae.yMax += 1.5*goal.lnw;
-        ae.yMin -= 1.5*goal.lnw;
+        re.yMin -= goal.lnw;
+        re.yMax += goal.lnw;
+        var ore = roadExtentPartial(iroad,xtimes[0],xtimes[1],false);
+        ore.yMin -= goal.lnw;
+        ore.yMax += goal.lnw;
+        var ae = mergeExtents(re, ore);
+        
+        var de  = dataExtentPartial((goal.plotall&&!opts.roadEditor)
+                                    ?alldata:data,
+                                    xtimes[0],xtimes[1],false);
+        if (de != null) ae = mergeExtents(ae, de);
+        var p;
+        if (opts.roadEditor)
+          p = {xmin:0.0, xmax:0.0, ymin:0.05, ymax:0.05};
+        else
+          p = {xmin:0.0, xmax:0.0, ymin:0.02, ymax:0.02};
+        enlargeExtent(ae, p);
+        if ((ae.yMax - ae.yMin) < 3*goal.lnw) {
+          ae.yMax += 1.5*goal.lnw;
+          ae.yMin -= 1.5*goal.lnw;
+        }
+        yrange = [ae.yMax, ae.yMin];
       }
-
-      var yrange = [ae.yMax, ae.yMin];
+      
       var newtr = d3.zoomIdentity
             .scale(plotbox.height/(ySc(yrange[1])
                                    -ySc(yrange[0])))
@@ -984,8 +1110,8 @@
       yAxisObjR.call(yAxisR.scale(nYSc));
 
       // Resize brush if dynamic y limits are beyond graph limits
-      if (ae.yMax > goal.yMax) goal.yMax = ae.yMax;
-      if (ae.yMin < goal.yMin) goal.yMin = ae.yMin;
+      if (yrange[0] > goal.yMax) goal.yMax = yrange[0];
+      if (yrange[1] < goal.yMin) goal.yMin = yrange[1];
       resizeContext();
 
       var sx = xrange.map( (x)=>xScB(x));
@@ -1033,6 +1159,10 @@
       nXSc = tr.rescaleX(xSc);
       redrawXTicks();
       adjustYScale();
+      yAxisObj.selectAll("g").selectAll(".tick line")
+        .attr("transform", "translate(6,0)");
+      yAxisObjR.selectAll("g").selectAll(".tick line")
+        .attr("transform", "translate(-5,0)");
       handleYAxisWidth();
 
       resizeBrush();
@@ -1255,17 +1385,6 @@
       return extent;
     }
 
-    // Set any of {tmin, tmax, vmin, vmax} that don't have explicit values.
-    function setDefaultRange() {
-      if (goal.tmin == null) goal.tmin = Math.min(goal.tini, goal.asof);
-      if (goal.tmin >= goal.asof - bu.SID) goal.tmin -= bu.SID;
-      if (goal.tmax == null) {
-        // Make more room beyond the askrasia horizon if lots of data
-        var years = (goal.tcur - goal.tmin) / (bu.DIY*bu.SID);
-        goal.tmax = bu.daysnap((1+years/2)*2*bu.AKH + goal.tcur);
-      }
-    }
-
     // Convert deadline value (seconds from midnight) to
     // time-of-day like "3am"
     function deadtod(ds) {
@@ -1317,7 +1436,7 @@
 
       var d = dataExtentPartial((goal.plotall&&!opts.roadEditor)?alldata:data,road[0].end[0],data[data.length-1][0],false);
 
-      if (d != null) ne = mergeExtents(ne, d);
+      if (d != null) ne = mergeExtents(ne, d)
       if (bbr.fuda.length != 0) {
         var df = dataExtentPartial(bbr.fuda,road[0].end[0],maxx,false);
         if (df != null) ne = mergeExtents(ne, df);
@@ -2383,8 +2502,10 @@
         bullseyeelt.remove();
         return;
       }
-      var bx = nXSc(road[road.length-1].sta[0]*1000)-(opts.bullsEye.size/2);
-      var by = nYSc(road[road.length-1].sta[1])-(opts.bullsEye.size/2);
+      //var bx = nXSc(road[road.length-1].sta[0]*1000)-(opts.bullsEye.size/2);
+      //var by = nYSc(road[road.length-1].sta[1])-(opts.bullsEye.size/2);
+      var bx = nXSc(goal.tfin*1000)-(opts.bullsEye.size/2);
+      var by = nYSc(br.rdf(road, goal.tfin))-(opts.bullsEye.size/2);
       if (bullseyeelt.empty()) {
         gBullseye.append("svg:image")
 	        .attr("class","bullseye")
@@ -2405,10 +2526,10 @@
         bullseyeelt.remove();
         return;
       }
-      var bx = xScB(road[road.length-1].sta[0]*1000)
-        -(opts.bullsEye.ctxsize/2);
-      var by = yScB(road[road.length-1].sta[1])
-        -(opts.bullsEye.ctxsize/2);
+      //var bx = xScB(road[road.length-1].sta[0]*1000)-(opts.bullsEye.ctxsize/2);
+      //var by = yScB(road[road.length-1].sta[1])-(opts.bullsEye.ctxsize/2);
+      var bx = xScB(goal.tfin*1000)-(opts.bullsEye.ctxsize/2);
+      var by = yScB(br.rdf(road, goal.tfin))-(opts.bullsEye.ctxsize/2);
       if (bullseyeelt.empty()) {
         ctxplot.append("svg:image")
 	        .attr("class","ctxbullseye")
@@ -2428,10 +2549,10 @@
       var png = (opts.roadEditor)?"../lib/images/bullseye_old.png"
         :"../lib/images/bullseye.png";
       var bullseyeelt = gOldBullseye.select(".oldbullseye");
-      var bx = nXSc(iroad[iroad.length-1]
-                    .sta[0]*1000)-(opts.bullsEye.size/2);
-      var by = nYSc(iroad[iroad.length-1]
-                    .sta[1])-(opts.bullsEye.size/2);
+      //var bx = nXSc(iroad[iroad.length-1].sta[0]*1000)-(opts.bullsEye.size/2);
+      //var by = nYSc(iroad[iroad.length-1].sta[1])-(opts.bullsEye.size/2);
+      var bx = nXSc(goal.tfin*1000)-(opts.bullsEye.size/2);
+      var by = nYSc(br.rdf(iroad, goal.tfin))-(opts.bullsEye.size/2);
       if (bullseyeelt.empty()) {
         gOldBullseye.append("svg:image")
 	        .attr("class","oldbullseye")
@@ -2470,6 +2591,8 @@
 
     // Creates or updates the watermark with the number of safe days
     function updateWatermark() {
+      if (processing) return;
+      
       if (opts.divGraph == null || road.length == 0 || hidden) return;
 
       var tl = [0,0], bl = [0, plotbox.height/2];
@@ -2492,25 +2615,25 @@
       }
 
       var wbufelt = gWatermark.select(".waterbuf");
-      var fs = opts.watermark.fntsize
+      var fs = opts.watermark.fntsize, wmh = opts.watermark.height
       wbufelt.remove();
       if (g != null) {
-	  	  x = (plotbox.width/2-opts.watermark.height)/2;
-        y = (plotbox.height/2-opts.watermark.height)/2;
+  	    x = (plotbox.width/2-wmh)/2;
+        y = (plotbox.height/2-wmh)/2;
 
         wbufelt = gWatermark.append("svg:image")
 	        .attr("class","waterbuf")
 	        .attr("xlink:href",g)
-          .attr('width', opts.watermark.height)
-          .attr('height', opts.watermark.height);
+          .attr('width', wmh)
+          .attr('height', wmh);
       } else {
 	  	  x = plotbox.width/4;
         y = plotbox.height/4+fs/3;
         wbufelt = gWatermark.append("svg:text")
 	        .attr("class","waterbuf")
           .style('font-size', fs+"px")
-          .style('font-weight', "bold")
-          .style('fill', bu.Cols.GRAY)
+          .style('font-weight', "bolder")
+          .style('fill', opts.watermark.color)
           .text(goal.waterbuf);
         bbox = wbufelt.node().getBBox();
         if (bbox.width > plotbox.width/2.2) {
@@ -2532,8 +2655,8 @@
         wbuxelt = gWatermark.append("svg:text")
 	        .attr("class","waterbux")
           .style('font-size', fs+"px")
-          .style('font-weight', "bold")
-          .style('fill', bu.Cols.GRAY)
+          .style('font-weight', "bolder")
+          .style('fill', opts.watermark.color)
           .text(goal.waterbux);
         bbox = wbuxelt.node().getBBox();
         if (bbox.width > plotbox.width/2.2) {
@@ -2632,7 +2755,7 @@
           .attr("y2",plotbox.height)
 		      .attr("stroke-width",o.width*scf);
       }
-      var textx = nXSc(goal.horizon*1000)+(18);
+      var textx = nXSc(goal.horizon*1000)+(14);
       var texty = plotbox.height/2;
       var horizontextelt = gHorizonText.select(".horizontext");
       if (horizontextelt.empty()) {
@@ -2768,7 +2891,6 @@
     // Creates or updates the unedited road
     function updateOldRoad() {
       if (opts.divGraph == null || road.length == 0) return;
-
       // Find road segments intersecting current x-axis range
       var l = [nXSc.invert(0).getTime()/1000, 
                nXSc.invert(plotbox.width).getTime()/1000];
@@ -2864,7 +2986,8 @@
         // Go forward to draw the top side of YBR
         d = "M"+fx+" "+fy;
         for (i = 0; i < ir2.length; i++) {
-          ex = nXSc(ir2[i].end[0]*1000); ey = nYSc(ir2[i].end[1]+lw);
+          ex = nXSc(ir2[i].end[0]*1000);
+          ey = nYSc(ir2[i].end[1]+lw);
           if (ex > plotbox.width) {
             fx = nXSc(ir2[i].sta[0]*1000); fy = nYSc(ir2[i].sta[1]+lw);
             ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx)); ex = plotbox.width;
@@ -3262,19 +3385,8 @@
     function dpFillOp( pt ) {
       return (pt[3] == bbr.DPTYPE.AGGPAST)?1:0.3;
     }
-    function dpStroke( pt ) {
-      if (opts.roadEditor) {
-        return opts.dataPointCol.stroke;
-      } else {
-        return "#000000";
-      }
-    }
     function dpStrokeWidth( pt ) {
-      if (opts.roadEditor) {
-        return (opts.dataPoint.border*scf)+"px";
-      } else {
-        return (((pt[3] == bbr.DPTYPE.AGGPAST)?1:0.5)*scf)+"px";
-      }
+      return (((pt[3] == bbr.DPTYPE.AGGPAST)?1:0.5)*scf)+"px";
     }
 
     var dotTimer = null, dotText = null;
@@ -3301,10 +3413,12 @@
       dpelt
 		    .attr("cx", function(d){ return nXSc((d[0])*1000);})
         .attr("cy",function(d){ return nYSc(d[1]);});
-      if (r != null) dpelt.attr("r", r);
+      if (r != null && scf != oldscf) dpelt.attr("r", r);
       if (sw != null) dpelt.attr("stroke-width", sw);
-      if (f != null) dpelt.attr("fill", f);
-      if (fop != null) dpelt.style("fill-opacity", fop);
+      if (cls != "rosyd" && cls != "steppyd" && cls != "hpts") {
+        if (f != null) dpelt.attr("fill", f)
+        if (fop != null) dpelt.style("fill-opacity", fop)
+      }
 
       dpelt.enter().append("svg:circle")
 		    .attr("class",cls)
@@ -3395,7 +3509,6 @@
       var df = function(d) {
         return ((d[0] >= l[0] && d[0] <= l[1]) || (d[4] >= l[0] && d[4] <= l[1]));
       }
-
       // *** Plot steppy lines ***
       var stpelt = gSteppy.selectAll(".steppy");
       var stpdelt = gSteppyPts.selectAll(".steppyd");
@@ -3413,7 +3526,17 @@
             if (ind > 0) npts = dataf.slice(ind, ind+2);
           }
           if (npts.length != 0) {
-            var d = "M"+nXSc(npts[0][4]*1000)+" "+nYSc(npts[0][5]);
+            var d;
+            if (dataf[0][0] > l[0] && dataf[0][0] < l[1]
+                && bbr.allvals.hasOwnProperty(dataf[0][0])) {
+              // Handle the initial point
+              var vals = bbr.allvals[dataf[0][0]].map(e=>e[0])
+              var vpre = (goal.dir<0)?bu.arrMax(vals):bu.arrMin(vals)
+              d = "M"+nXSc(dataf[0][0]*1000)+" "+nYSc(vpre)
+              d += "L"+nXSc(npts[0][4]*1000)+" "+nYSc(npts[0][5])
+            } else {
+              d = "M"+nXSc(npts[0][4]*1000)+" "+nYSc(npts[0][5])
+            }
             for (i = 0; i < npts.length; i++) {
               d += " L"+nXSc(npts[i][0]*1000)+" "+ nYSc(npts[i][5]);
               d += " L"+nXSc(npts[i][0]*1000)+" "+ nYSc(npts[i][1]);
@@ -3510,17 +3633,20 @@
           var el = gAllpts.selectAll(".allpts");
           el.remove();
         }
-        updateDotGroup(gDpts, pts.concat(bbr.fuda), "dpts", 
-                       opts.dataPoint.size*scf,
-                       dpStroke, dpStrokeWidth, dpFill, true, dpFillOp);
-
-        // Compute and plot hollow datapoints
-        if (!opts.roadEditor) {
+        if (opts.roadEditor)
+          updateDotGroup(gDpts, pts.concat(bbr.fuda), "dpts", 
+                         opts.dataPoint.size*scf, opts.dataPointCol.stroke,
+                         (opts.dataPoint.border*scf)+"px", dpFill, true, dpFillOp);
+        else {
+          updateDotGroup(gDpts, pts.concat(bbr.fuda), "dpts", 
+                         opts.dataPoint.size*scf,
+                         "#000000", dpStrokeWidth, dpFill, true, dpFillOp);
+          // Compute and plot hollow datapoints
           updateDotGroup(gHollow, bbr.hollow.filter(df), "hpts", 
                          opts.dataPoint.hsize*scf, null,
                          null, bu.Cols.WITE, true, 1);
         }
-        
+          
         // *** Plot flatlined datapoint ***
         var fladelt = gFlat.selectAll(".fladp");
         if (bbr.flad != null) {
@@ -3593,6 +3719,8 @@
     // notes that we should use an acausal filter to prevent the
     // lag in the thin purple line.
     function updateMovingAv() {
+      if (processing) return;
+      
       var el = gMovingAv.selectAll(".movingav");
       if (!opts.roadEditor && goal.movingav && opts.showData) {
         var l = [nXSc.invert(0).getTime()/1000, 
@@ -4157,15 +4285,17 @@
       }
     }
 
-    function updateGraphData() {
+    function updateGraphData(force = false) {
       if (opts.divGraph == null) return
       clearSelection()
       var limits = [nXSc.invert(0).getTime()/1000, 
                     nXSc.invert(plotbox.width).getTime()/1000];
+      if (force) oldscf = 0
       if (opts.roadEditor)
         scf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.7)
       else 
         scf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.55)
+      updateWatermark()
       updatePastBox()
       updateYBHP()
       updatePinkRegion()
@@ -4185,20 +4315,25 @@
       updateOdomResets()
       updatePastText()
       updateAura()
-      updateWatermark()
       // Record current dot color so it can be retrieved from the SVG
       // for the thumbnail border
       zoomarea.attr('color', br.dotcolor(road, goal, goal.tcur, goal.vcur))
+
+      // Store the latest scale factor for comparison. Used to
+      // eliminate unnecessary attribute setting for updateDotGroup
+      // and other update functions
+      oldscf = scf
     }
 
     createGraph()
     createTable()
-    zoomAll()
+    //zoomAll()
 
     /** bgraph object ID for the current instance */
     this.id = 1
 
-    /** Sets/gets the showData option */
+    /** Sets/gets the showData option 
+     @param {Boolean} flag Set/reset the option*/
     this.showData = (flag) => {
       if (arguments.length > 0) opts.showData = flag
       if (alldata.length != 0) {
@@ -4212,7 +4347,8 @@
       return opts.showData
     }
     
-    /** Sets/gets the showContext option */
+    /** Sets/gets the showContext option 
+     @param {Boolean} flag Set/reset the option */
     this.showContext = (flag) => {
       if (arguments.length > 0) opts.showContext = flag
       if (road.length != 0)
@@ -4220,13 +4356,15 @@
       return opts.showContext
     }
     
-    /** Sets/gets the keepSlopes option */
+    /** Sets/gets the keepSlopes option 
+     @param {Boolean} flag Set/reset the option */
     this.keepSlopes = (flag) => {
       if (arguments.length > 0) opts.keepSlopes = flag
       return opts.keepSlopes
     }
     
-    /** Sets/gets the keepIntervals option */
+    /** Sets/gets the keepIntervals option 
+     @param {Boolean} flag Set/reset the option */
     this.keepIntervals = ( flag ) => {
       if (arguments.length > 0) opts.keepIntervals = flag
       return opts.keepIntervals
@@ -4255,7 +4393,8 @@
     }
     
     /** Sets/gets the reverseTable option. Updates the table if
-     the option is changed. */
+     the option is changed.  
+     @param {Boolean} flag Set/reset the option*/
     this.reverseTable = ( flag ) => {
       if (arguments.length > 0) {
         opts.reverseTable = flag
@@ -4273,7 +4412,8 @@
       return opts.reverseTable
     }
     
-    /** Sets/gets the tableUpdateOnDrag option. */
+    /** Sets/gets the tableUpdateOnDrag option. 
+     @param {Boolean} flag Set/reset the option */
     this.tableUpdateOnDrag = ( flag ) => {
       if (arguments.length > 0) {
         opts.tableUpdateOnDrag = flag
@@ -4282,7 +4422,8 @@
       return opts.tableUpdateOnDrag
     }
     
-    /** Sets/gets the tableAutoScroll option. */
+    /** Sets/gets the tableAutoScroll option.  
+     @param {Boolean} flag Set/reset the option*/
     this.tableAutoScroll = ( flag ) => {
       if (arguments.length > 0) opts.tableAutoScroll = flag
       return opts.tableAutoScroll
@@ -4310,8 +4451,7 @@
 
     /** Clears the undo buffer. May be useful after the new
      road is submitted to Beeminder and past edits need to be
-     forgotten. 
-     @method*/
+     forgotten.*/
     this.clearUndo = clearUndoBuffer
 
     /** Zooms out the goal graph to make the entire range from
@@ -4327,26 +4467,34 @@
     /** Initiates loading a new goal from the indicated url.
      Expected input format is the same as beebrain. Once the input
      file is fetched, the goal graph and road matrix table are
-     updated accordingly. */
-    this.loadGoal = ( url ) => { loadGoalFromURL( url ) }
+     updated accordingly. 
+    @param {String} url URL to load the goal BB file from*/
+    this.loadGoal = async ( url ) => { await loadGoalFromURL( url ) }
 
-    /** Initiates loading a new goal from the indicated url.
-     Expected input format is the same as beebrain. Once the input
-     file is fetched, the goal graph and road matrix table are
-     updated accordingly. */
+    /** Initiates loading a new goal from the supplied object.
+     Expected input format is the same as beebrain. The goal graph and
+     road matrix table are updated accordingly.
+    @param {object} json Javascript object containing the goal BB file contents*/
     this.loadGoalJSON = ( json ) => {
       removeOverlay()
       loadGoal( json )
     }
 
-    /** Performs retroratcheting function by adding new knots to
-     leave "days" number of days to derailment based on today data
-     point (which may be flatlined). */
+    /** Performs retroratcheting function by adding new knots to leave
+     "days" number of days to derailment based on today data point
+     (which may be flatlined).
+     @param {Number} days Number of buffer days to preserve*/
     this.retroRatchet = ( days ) => {
       if (!opts.roadEditor) return
       setSafeDays( days )
     }
 
+    /** Schedules a break starting from a desired point beyond the
+     * akrasia horizon and extending for a desired number of days.
+     @param {String} start Day to start the break, formatted as YYYY-MM-DD
+     @param {Number} days Number of days fof the break
+     @param {Boolean} insert Whether to insert into or overwrite onto the current road
+    */
     this.scheduleBreak = ( start, days, insert ) => {
       if (!opts.roadEditor) return
       if (isNaN(days)) return
@@ -4419,6 +4567,9 @@
       roadChanged()
     }
 
+    /** Dials the road to the supplied slope starting from the akrasia horizon
+     @param {Number} newSlope New road slope to start in a week
+    */
     this.commitTo = ( newSlope ) => {
       if (!opts.roadEditor) return
       if (isNaN(newSlope)) return
@@ -4442,9 +4593,16 @@
     }
 
     /** Returns an object with an array ('road') containing the
-     current roadmatix (latest edited version), as well as a
-     boolean ('valid') indicating whether the edited road
-     intersects the pink region or not. */
+     current roadmatix (latest edited version), as well as the following members:<br/>
+     <ul>
+     <li><b>valid</b>: whether the edited road intersects the pink region or not</li>
+     <li><b>loser</b>: whether the edited road results in a derailed goal or not</li>
+     <li><b>asof</b>: unix timestamp for "now"</li>
+     <li><b>horizon</b>: unix timestamp for the current akrasia horizon</li>
+     <li><b>siru</b>: seconds in rate units</li>
+     </ul>
+
+    */
     this.getRoad = () => {
       function dt(d) { return moment.unix(d).utc().format("YYYYMMDD");};
       // Format the current road matrix to be submitted to Beeminder
@@ -4481,10 +4639,11 @@
     }
 
     /** Generates a data URI downloadable from the link element
-     supplied as an argument. If the argument is empty, replaces page
-     contents with a cleaned up graph suitable to be used with
-     headless chrome --dump-dom to retrieve the contents as a simple
-     SVG. */
+     supplied as an argument. If the argument is empty or null,
+     replaces page contents with a cleaned up graph suitable to be
+     used with headless chrome --dump-dom to retrieve the contents as
+     a simple SVG.
+    @param {object} [linkelt=null] Element to provide a link for the SVG object to download. If null, current page contents are replaced. */
     this.saveGraph = ( linkelt = null ) => {
 
       // retrieve svg source as a string.
@@ -4508,7 +4667,7 @@
           newroot.selectAll(".brush").remove()
           newroot.selectAll(".zoomin").remove()
           newroot.selectAll(".zoomout").remove()
-          newroot.selectAll(".minor").remove()
+          //newroot.selectAll(".minor").remove()
         }
       } else {
 
@@ -4537,13 +4696,15 @@
 
     /** Informs the module instance that the element containing the
      visuals will be hidden. Internally, this prevents calls to
-     getBBox(), eliminating associated exceptions and errors. */
+     getBBox(), eliminating associated exceptions and errors. 
+     @see {@link bgraph#show}*/
     this.hide = () => {hidden = true}
 
     /** Informs the module instance that the element containing the
      visuals will be shown again. This forces an update of all visual
      elements, which might have previously been incorrectly rendered
-     if hidden. */
+     if hidden. 
+     @see {@link bgraph#hide}*/
     this.show = () => {
       //console.debug("curid="+curid+", show()");
       hidden = false
@@ -4557,12 +4718,26 @@
       resizeBrush()
       updateTable()
       updateContextData()
-      updateGraphData()
+      updateGraphData( true )
     }
 
+    /** Returns the road matrix object (in the internal format) for the
+        goal. Primarily used to synchronize two separate graph
+        instances on the same HTML page. 
+        @return {object} Internal road object
+        @see bgraph#setRoadObj
+    */
     this.getRoadObj = () => br.copyRoad(road)
 
     var settingRoad = false;
+    /** Sets the road matrix (in the internal format) for the
+        goal. Primarily used to synchronize two separate graph
+        instances on the same HTML page. Should only be called with
+        the return value of {@link bgraph#getRoadObj}.
+        @param {object} newroad Road object returned by {@link bgraph#getRoadObj}
+        @param {Boolean} [resetinitial=true] Whether to set the internal "initial road" as well
+        @see bgraph#getRoadObj
+    */
     this.setRoadObj = ( newroad, resetinitial = true ) => {
       if (settingRoad) return
       if (newroad.length == 0) {
@@ -4583,53 +4758,115 @@
       settingRoad = false
     }
 
+    /** Checks whether the goal is currently a loser
+        @returns {Boolean} 
+    */
     this.isLoser = () => {
       if (goal && road.length != 0)
         return br.isLoser(road,goal,data,goal.tcur,goal.vcur)
       else return false
     }
+    /** Returns current goal state
+        @returns {object} Current goal state as [t, v, r, rdf(t)] or null if no goal
+    */
     this.curState =
       () => (goal?[goal.tcur, goal.vcur, goal.rcur, br.rdf(road, goal.tcur)]:null)
 
+    /** @typedef GoalVisuals
+        @global
+        @type {object}
+        @property {Boolean} plotall Plot all points instead of just the aggregated point
+        @property {Boolean} steppy Join dots with purple steppy-style line
+        @property {Boolean} rosy Show the rose-colored dots and connecting line
+        @property {Boolean} movingav Show moving average line superimposed on the data
+        @property {Boolean} aura Show blue-green/turquoise aura/swath
+        @property {Boolean} hidey Whether to hide the y-axis numbers
+        @property {Boolean} stathead Whether to include label with stats at top of graph
+        @property {Boolean} hashtags Show annotations on graph for hashtags in comments 
+    */
     const visualProps
           = ['plotall','steppy','rosy','movingav','aura','hidey','stathead','hashtags']
+    /** Returns visual properties for the currently loaded goal
+        @returns {GoalVisuals} 
+        @see {@link bgraph#getGoalConfig}
+    */
     this.getVisualConfig = ( opts ) =>{
       var out = {}
       visualProps.map(e=>{ out[e] = goal[e] })
       return out
     }
 
+    /** @typedef GoalProperties
+        @global
+        @type {object}
+        @property {Boolean} offred Whether to use yesterday-is-red criteria for derails
+        @property {Boolean} yaw Which side of the YBR you want to be on, +1 or -1
+        @property {Boolean} dir Which direction you'll go (usually same as yaw)
+        @property {Boolean} kyoom Cumulative; plot vals as the sum of those entered so far
+        @property {Boolean} odom Treat zeros as accidental odom resets
+        @property {Boolean} noisy Compute road width based on data, not just road rate
+        @property {Boolean} integery Whether vals are necessarily integers
+        @property {Boolean} monotone Whether data is necessarily monotone
+        @property {String} aggday sum/last/first/min/max/mean/median/mode/trimmean/jolly
+    */
     const goalProps
           = ['offred','yaw','dir','kyoom','odom','noisy','integery','monotone','aggday']
-    this.getGoalConfig = ( opts ) => {
+    /** Returns properties for the currently loaded goal
+        @returns {GoalProperties} 
+        @see {@link bgraph#getVisualConfig}
+     */
+    this.getGoalConfig = ( ) => {
       var out = {}
       goalProps.map(e=>{ out[e] = goal[e] })
       return out
     }
 
+    /** Displays the supplied message overlaid towards the top of the graph
+        @param {String} msg Message to be displayed. Pass null to remove existing message. */
     this.msg = (msg)=>{
       if (!msg) removeOverlay("message")
       else
-        showOverlay([msg], 20, null, {x:sw/20, y:10, w:sw*18/20, h:50}, "message", false)
+        showOverlay([msg], 20, null, {x:sw/20, y:10, w:sw*18/20, h:50},
+                    "message", false)
     }
-    /** @method */
+
+    /** Animates the Akrasia horizon element in the graph
+        @method
+        @param {Boolean} enable Enables/disables animation */
     this.animHor = animHor
-    /** @method */
+    /** Animates the Yellow Brick Road elements in the graph
+        @method
+        @param {Boolean} enable Enables/disables animation */
     this.animYBR = animYBR
-    /** @method */
+    /** Animates datapoints in the graph
+        @method
+        @param {Boolean} enable Enables/disables animation */
     this.animData = animData
-    /** @method */
+    /** Animates guideline elements in the graph
+        @method
+        @param {Boolean} enable Enables/disables animation */
     this.animGuides = animGuides
-    /** @method */
+    /** Animates the rosy line in the graph
+        @method
+        @param {Boolean} enable Enables/disables animation */
     this.animRosy = animRosy
-    /** @method */
+    /** Animates the moving average in the graph
+        @method
+        @param {Boolean} enable Enables/disables animation */
     this.animMav = animMav
-    /** @method */
+    /** Animates the aura element in the graph
+        @method
+        @param {Boolean} enable Enables/disables animation */
     this.animAura = animAura
-    /** @method */
+    /** Animates the waterbuf element in the graph
+        @method
+        @param {Boolean} enable Enables/disables animation */
     this.animBuf = animBuf
-    /** @method */
+    /** Animates the waterbux element in the graph
+        @method
+        @param {Boolean} enable Enables/disables animation */
     this.animBux = animBux
+
   }
   
   return bgraph;

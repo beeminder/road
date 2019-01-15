@@ -1,9 +1,14 @@
 
 ## CHANGELOG
 
+* 2019.01.12 beebrain.js tutorials
+* 2019.01.12 Static graph axis limits consistent with pybrain
+* 2019.01.11 Solved problems with goals for which tfin=null
+* 2019.01.10 Fixed minor ticks, solved subpixel line location problems
+* 2019.01.08 Big speedup in lnf(), smoother graph interaction
 * 2018.11.29 Fixed final row issues
-* 2018.11.29 Better defaults for sandbox and other fixes 
-* 2018.11.28 Restructured and unified directory structure for node servers 
+* 2018.11.29 Better defaults for sandbox and other fixes
+* 2018.11.28 Restructured and unified directory structure for node servers
 * 2018.11.20 Fixed issues with various graph components
 * 2018.11.19 Improved testing facilities
 * 2018.11.18 jsbrain_server thumbnail generation
