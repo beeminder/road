@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <title>Beeminder Sandbox</title>
     <meta charset="utf-8">
     <link rel="stylesheet" href="../src/pikaday.css">
     <link rel="stylesheet" href="../src/jsbrain.css">
@@ -20,7 +21,7 @@
   
   <hr/>
   <span>Select goal type:</span>
-  <select id="typeselect" class="typeselect">
+  <select id="typeselect" class="typeselect" onchange="setDefaults()">
     <option value="hustler">Do More</option>
     <option value="fatloser">Lose Weight</option>
     <option value="biker">Use an Odometer</option>
@@ -50,13 +51,16 @@
   <button id="newgoal"
           onclick="bs.newGoal(gtype.options[gtype.selectedIndex].value,
                    runits.options[runits.selectedIndex].value,
-                   rfin.value, vini.value, buffer.checked);">
+                   rfin.value, vini.value, buffer.checked);
+                   graph = bs.getGraphObj();
+                   updateConfigInput()">
     Create New Goal!</button>
   <br/>
 
   <hr/>
-  <div id="sandbox"></div><br/>
-  
+  <table>
+  <tr>
+  <td><div id="sandbox"></div><br/>
   <button style="margin:4px;" onclick="bs.nextDay()">Next Day</button><br/>
 
   <span style="margin:4px;">New data:</span>
@@ -69,7 +73,7 @@
   <span style="margin:4px;">Change rate to:</span>
   <input id="rateval" type="number"  style="margin:4px;"></input>
   <button onclick="bs.newRate(rateval.value)" style="margin:4px;">
-    Add</button><br/>
+    Commit!</button><br/>
 
   <button style="margin:4px;" onclick="bs.undo();updateConfigInput()">Undo</button><br/>
 
@@ -128,27 +132,85 @@
   <hr/>
   <a target="_blank" id="download" download="sandbox.bb">Right click to download BB file</a>
 
+  </td>
+  <td valign="top">
+    <h3>Graph Legend:</h3>
+
+    <div id="datadiv"
+         onmouseover="this.style.background='#cccccc';"
+         onmouseout="this.style.background='white';">
+    <b>Datapoints</b>: Your actual reported data. The color shows
+    where you are with respect to your yellow brick road.
+    </div>
+
+    <div id="ybrdiv"
+         onmouseover="this.style.background='#cccccc';"
+         onmouseout="this.style.background='white';">
+    <b>Yellow Brick Road (YBR)</b>: Keep your dots on the
+    road!<br/>
+    <b style="margin-left:2em;color:#00aa00";>Green</b>: good side of the road, <br/>
+    <b style="margin-left:2em;color:#3f3fff">Blue</b>: right lane,<br/>
+    <b style="margin-left:2em;color:#ffa500">Orange</b>: wrong lane,<br/>
+    <b style="margin-left:2em;color:#ff0000">Red</b>: off the road
+    </div>
+
+    <div id="hordiv"
+         onmouseover="this.style.background='#cccccc';"
+         onmouseout="this.style.background='white';">         
+    <b>Akrasia Horizon</b>: This line is a week away from now. You can
+    only make changes in the steepness of your road beyond the akrasia
+    horizon.
+    </div>
+
+    <div id="rosydiv"
+         onmouseover="this.style.background='#cccccc';"
+         onmouseout="this.style.background='white';">
+    <b>Optimistic projection</b>: An optimistic view of progress,
+    i.e., a view of your data through rose-colored glasses.  It shows
+    your inexorable march towards your goal.  If you're bouncing
+    around it just shows you flat.  When you go down (or whichever
+    direction your goal is), it shows you that right away.
+    </div>
+
+    <div id="mavdiv"
+         onmouseover="this.style.background='#cccccc';"
+         onmouseout="this.style.background='white';">
+    <b>Moving average</b>: This is an exponentially weighted moving
+    average with smoothing constant 0.25. It shows the overall trend
+    of your data, but lagged. If most of your daily numbers are below
+    this trend line then you are inexorably dragging it down.
+    </div>
+
+    <div id="auradiv"
+         onmouseover="this.style.background='#cccccc';"
+         onmouseout="this.style.background='white';">
+    <b>Polynomial fit trend</b>: Think of this as a very thick line
+    charting your progress or an aura around your actual
+    data. (Technically it's a polynomial fit of your data.) It gives
+    you a sense of your true trend.
+    </div>
+
+    <div id="guidediv"
+         onmouseover="this.style.background='#cccccc';"
+         onmouseout="this.style.background='white';">
+    <b>Yellow guidelines</b>: These thin yellow lines indicate the
+    good side of the yellow brick road. The thicker line demarcates 7
+    days of safety buffer. (If you keep your safety buffer at 7 days
+    or higher then you're immune to being stung.  If anything comes
+    up, just flatten your yellow brick road.  It will take effect
+    after the 7-day akrasia horizon but since you have that much
+    safety buffer, you're golden!)
+    </div>
+  </td>
+  </tr>
+  </table>
+  
   <script>
     const visualProps
       = ['plotall','steppy','rosy','movingav','aura','hidey','stathead','hashtags']
     const goalProps
       = ['offred','yaw','dir','kyoom','odom','noisy','integery','monotone','aggday']
 
-    function updateConfigInput() {
-      var curconfig = bs.getVisualConfig()
-      visualProps.map(e=>{document.getElementById(e).checked = curconfig[e]})
-
-      var curconfig = bs.getGoalConfig()
-      goalProps.map(e=>{
-        if (e=='yaw' || e=='dir')
-          document.getElementById(e).checked = (curconfig[e]==1)
-        else if (e=='aggday' || e=='dir')
-          document.getElementById(e).value = curconfig[e]
-        else
-          document.getElementById(e).checked = curconfig[e]
-      })
-    }
-    
     gtype = document.getElementById("typeselect")
     rfin = document.getElementById("rate")
     vini = document.getElementById("value")
@@ -159,10 +221,73 @@
     datacmt = document.getElementById("datacmt")
     download = document.getElementById("download")
 
+    animdiv = {}
+    const li = [
+      ["datadiv",  (e)=>(()=>graph.animData(e)), null],
+      ["ybrdiv",   (e)=>(()=>graph.animYBR(e)), null],
+      ["hordiv",   (e)=>(()=>graph.animHor(e)), null],
+      ["rosydiv",  (e)=>(()=>graph.animRosy(e)), "rosy"],
+      ["mavdiv",   (e)=>(()=>graph.animMav(e)), "movingav"],
+      ["auradiv",  (e)=>(()=>graph.animAura(e)), "aura"],
+      ["guidediv", (e)=>(()=>graph.animGuides(e)), null]
+    ]
+    for (let i = 0; i<li.length; i++) {
+      e = document.getElementById(li[i][0])  
+      animdiv[li[i][0]] = e
+      e.addEventListener("mouseover", li[i][1](true))
+      e.addEventListener("mouseout", li[i][1](false))
+    }
+    
+    function updateLegend( curconfig ) {    
+      for (let i = 0; i<li.length; i++) {
+        if (li[i][2] != null) {
+          if (curconfig[li[i][2]]) {
+            animdiv[li[i][0]].style.opacity = 1.0
+          } else {
+            animdiv[li[i][0]].style.opacity = 0.3
+          }
+        }
+      }
+    }
+    
+    function updateConfigInput() {
+      var curconfig = bs.getVisualConfig()
+      visualProps.map(e=>{document.getElementById(e).checked = curconfig[e]})
+      updateLegend( curconfig )
+    
+      var curconfig = bs.getGoalConfig()
+      goalProps.map(e=>{
+        if (e=='yaw' || e=='dir')
+          document.getElementById(e).checked = (curconfig[e]==1)
+        else if (e=='aggday' || e=='dir')
+          document.getElementById(e).value = curconfig[e]
+        else
+          document.getElementById(e).checked = curconfig[e]
+      })
+    }
+
+    const defaults = {
+      hustler: {r:1, v:0}, 
+      fatloser: {r:-1, v:70}, 
+      biker: {r:1, v:0}, 
+      drinker: {r:1, v:0}, 
+      gainer: {r:1, v:70},
+      inboxer: {r:-1, v:1000}
+    }
+    
+    function setDefaults() {
+      const sel = gtype.options[gtype.selectedIndex].value
+      const dflt = defaults[sel]
+      rfin.value = dflt.r
+      vini.value = dflt.v
+    }
+    setDefaults()
+    
     bs = new bsandbox(gdiv)
     bs.newGoal(gtype.options[gtype.selectedIndex].value,
               runits.options[runits.selectedIndex].value,
               rfin.value, vini.value, buffer.checked);
+    var graph = bs.getGraphObj()
     bs.saveBB(download)
     updateConfigInput()
     
@@ -171,6 +296,7 @@
       visualProps.map(e=>{newconfig[e] = document.getElementById(e).checked})
       bs.setVisualConfig(newconfig)
       bs.saveBB(download)
+      updateLegend(newconfig)    
     }
     function setGoalConfig() {
       var newconfig = {}

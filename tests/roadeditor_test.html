@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <link rel="stylesheet" href="../src/pikaday.css">
     <link rel="stylesheet" href="../src/jsbrain.css">
-    <script src = "https://d3js.org/d3.v4.js"></script>
+    <script src = "https://d3js.org/d3.v5.js"></script>
     <script src = "../node_modules/moment/min/moment.min.js"></script>
     <script src = "../src/pikaday.js"></script>
     <script src = "../src/polyfit.js"></script>
@@ -167,7 +167,6 @@ new node, Ctrl-z to undo, Ctrl-y to redo</li>
   function editorChanged() {
     eload = false
     if (eload || gload) return
-    console.log("Editor changed")
     if (graph.getRoadObj().length != 0) graph.setRoadObj(editor.getRoadObj())
 
     var bufStates = editor.undoBufferState();

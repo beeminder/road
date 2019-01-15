@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Animated Goal</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="../src/pikaday.css">
+    <link rel="stylesheet" href="../src/jsbrain.css">
+    <script src = "https://d3js.org/d3.v4.js"></script>
+    <script src = "../src/moment.min.js"></script>
+    <script src = "../src/pikaday.js"></script>
+    <script src = "../src/polyfit.js"></script>
+    <script src = "../src/butil.js"></script>
+    <script src = "../src/broad.js"></script>
+    <script src = "../src/beebrain.js"></script>
+    <script src = "../src/bgraph.js"></script>
+    <script src = "../src/bsandbox.js"></script>
+</head>
+<body>
+  <div id="sandbox"></div>
+  <button id="pause" onclick="if (paused) resume(); else pause()">Pause</button>
+  <button id="next" onclick="next()" disabled>Next</button>
+  
+  <script>
+    bs = new bsandbox(document.getElementById("sandbox"))
+    bs.newGoal("hustler", "d", 1, 0, true)
+    var gr = bs.getGraphObj()
+
+    const anim = [
+      [2000, ()=>gr.msg("Welcome to Beeminder!")],
+      [0, ()=>gr.msg(null)],
+
+      [0, ()=>gr.msg("This is your Yellow Brick Road (YBR). Stay on or above it!")],
+      [3000, ()=>gr.animYBR(true)],
+      [0, ()=>gr.animYBR(false)],
+      [0, ()=>gr.msg(null)],
+
+      [0, ()=>gr.msg("You can add new data for what you're beeminding")],
+      [300, ()=>bs.newData(1,"")],
+      [300, bs.nextDay],
+      [300, ()=>bs.newData(1,"")],
+      [300, bs.nextDay],
+      [300, bs.nextDay],
+      [300, bs.nextDay],
+      [300, bs.nextDay],
+      [300, ()=>bs.newData(1,"")],
+      [0, ()=>gr.msg(null)],
+
+      [0, ()=>gr.msg("These become your datapoints...")],
+      [3000, ()=>gr.animData(true)],
+      [0, ()=>gr.animData(false)],
+      [0, ()=>gr.msg(null)],
+
+      [0, ()=>gr.msg("If you don't keep up, you'll go off your YBR!")],
+      [300, bs.nextDay],[300, bs.nextDay],
+      [300, bs.nextDay],[300, bs.nextDay],
+      [0, ()=>gr.msg(null)],
+
+      [0, ()=>gr.msg("This is how much time you have until that happens")],
+      [3000, ()=>gr.animBuf(true)],
+      [0, ()=>gr.animBuf(false)],
+      [0, ()=>gr.msg(null)],
+
+      [0, ()=>gr.msg("And this is the pledge amount you're risking")],
+      [3000, ()=>gr.animBux(true)],
+      [0, ()=>gr.animBux(false)],
+      [0, ()=>gr.msg(null)],
+
+      [2000, ()=>gr.msg("If you go off the YBR, that's called derailing")],
+      [300, bs.nextDay],
+      [300, bs.nextDay],
+      [300, bs.nextDay],[300, bs.nextDay],
+      [0, ()=>gr.msg(null)],
+      [0, ()=>gr.msg("Oops! That's ok, you're now given a weeklong buffer")],
+      [3000, ()=>gr.animYBR(true)],
+      [0, ()=>gr.animYBR(false)],
+      [0, ()=>gr.msg(null)],
+
+      [0, ()=>gr.msg("But your pledge amount has increased")],
+      [3000, ()=>gr.animBux(true)],
+      [0, ()=>gr.animBux(false)],
+      [0, ()=>gr.msg(null)],
+
+      [1000, ()=>gr.msg("So keep moving up and to the right!")],
+      [300, bs.nextDay],[300, ()=>bs.newData(1,"")],
+      [300, bs.nextDay],[300, ()=>bs.newData(1,"")],
+      [300, bs.nextDay],[300, ()=>bs.newData(1,"")],
+      [300, bs.nextDay],[300, ()=>bs.newData(1,"")],
+      [300, bs.nextDay],[300, ()=>bs.newData(1,"")],
+      [300, ()=>bs.newData(1,"")],
+      [300, ()=>bs.newData(1,"")],
+      [300, bs.nextDay],
+      [300, ()=>bs.newData(1,"")],
+      [300, ()=>bs.newData(1,"")],
+      [300, bs.nextDay],
+      [0, ()=>gr.msg(null)],
+
+      [0, ()=>gr.msg("This is the Akrasia Horizon")],
+      [3000, ()=>gr.animHor(true)],
+      [0, ()=>gr.animHor(false)],
+      [0, ()=>gr.msg(null)],
+
+      [1000, ()=>gr.msg("You can only change the YBR beyond that horizon")],
+      [1000, ()=>bs.newRate(0.5)],
+      [1000, ()=>bs.newRate(0.0)],
+      [1000, ()=>bs.newRate(0.5)],
+      [1000, ()=>bs.newRate(1)],
+      [1000, ()=>bs.newRate(2)],
+      [0, ()=>gr.msg(null)],
+
+      [0, ()=>gr.msg("So you can never give up today!")],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [0, ()=>gr.msg(null)],
+      [0, ()=>gr.msg("Keep going until you're a svelte, productive ninja warrior...")],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [300, ()=>bs.newData(2,"")],[300, bs.nextDay],
+      [200, ()=>bs.newData(2,"")],[200, bs.nextDay],
+      [200, ()=>bs.newData(2,"")],[200, bs.nextDay],
+      [100, ()=>bs.newData(2,"")],[100, bs.nextDay],
+      [100, ()=>bs.newData(2,"")],[100, bs.nextDay],
+      [100, ()=>bs.newData(2,"")],[100, bs.nextDay],
+      [100, ()=>bs.newData(2,"")],[100, bs.nextDay],
+      [50, ()=>bs.newData(2,"")],[50, bs.nextDay],
+      [50, ()=>bs.newData(2,"")],[50, bs.nextDay],
+      [50, ()=>bs.newData(2,"")],[50, bs.nextDay],
+      [50, ()=>bs.newData(2,"")],[50, bs.nextDay],
+      [50, ()=>bs.newData(2,"")],[50, bs.nextDay],
+      [50, ()=>bs.newData(2,"")],[50, bs.nextDay],
+      [50, ()=>bs.newData(2,"")],[50, bs.nextDay],
+      [50, ()=>bs.newData(2,"")],[50, bs.nextDay],
+      [50, ()=>bs.newData(2,"")],[50, bs.nextDay],
+      [50, ()=>bs.newData(2,"")],[50, bs.nextDay],
+      [50, ()=>bs.newData(2,"")],[50, bs.nextDay],
+      [0, ()=>gr.msg(null)],
+      [0, ()=>gr.msg("Thank you for using Beeminder. We are here to help.")],
+    ]
+
+
+    var curto, curres, paused = false
+    const timeout = (ms) => new Promise((res) => {curres = res; curto = setTimeout(res, ms); return curto})
+
+    var bpause = document.getElementById("pause"),
+        bnext = document.getElementById("next")
+
+    function pause() { 
+      paused = true
+      clearTimeout(curto)
+      curres("skipped")
+      bpause.innerHTML = "Resume"
+      if (curanim < anim.length-1) {
+        bnext.disabled = false
+      }
+    }
+    function resume() { 
+      paused = false
+      bpause.innerHTML = "Pause"
+      bnext.disabled = true
+    }
+    function waitForResume() {
+      return new Promise(function (resolve, reject) {
+        (function _waitForResume(){
+              if (!paused) return resolve();
+              setTimeout(_waitForResume, 30);
+          })();
+      });
+    }  
+    function next() {
+      var nxt = false                    
+      do {
+        nxt = false
+        anim[curanim][1]()
+        if (anim[curanim][0] == 0) nxt = true
+        curanim++
+      } while (nxt)
+    }
+                    
+    var curanim = 0
+
+    async function animate() {
+      for (; curanim < anim.length;) {
+        anim[curanim][1]()
+        if (anim[curanim][0] > 0) await timeout(anim[curanim][0])
+        curanim++
+        if (paused) await waitForResume()
+      }
+    }
+    
+    animate()
+  </script>
+
+</body>
+  
+</html>

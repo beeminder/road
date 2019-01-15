@@ -1,6 +1,49 @@
 'use strict'
 
 const cluster = require('cluster')
+const os = require('os')
+const bu = require('../src/butil.js')
+
+function compareJSON(stats, bbr) {
+  var valid = true, numeric = false, summary = false, str = ""
+  if (stats['error'] != "") {
+    str += "Processing error: "+stats['error']+"<br/>\n"
+    return {valid: false, numeric: false, summary: false, result: str}
+  }
+  for (var prop in bbr) {
+    if (prop == "proctm" || prop == "thumburl" || prop == "graphurl") continue
+    if (!stats.hasOwnProperty(prop)) {
+      str += "Prp "+prop+" is missing from the output\n"
+      valid = false
+    } else {
+      if (Array.isArray(stats[prop])) {
+        if (!(bu.arrayEquals(stats[prop],bbr[prop]))) {
+          str += "Arr "+prop+" differs:\n py:"
+            +bbr[prop]+ "\n js:"+stats[prop]+"\n"
+          valid = false
+        }
+      } else if (!(stats[prop] === bbr[prop])) {
+        if (bu.nummy(stats[prop]) && bu.nummy(bbr[prop])) {
+          str += "Numeric value "+prop+" differs:\n py:"
+            +bbr[prop]+ "\n js:"+stats[prop]+"\n"
+          numeric = true
+          if (Math.abs(bbr[prop]-stats[prop]) > 1e-8)
+            valid = false
+        } else if (prop.endsWith("sum")) {
+          str += "Summary string "+prop+" differs:\n py:"
+            +bbr[prop]+ "\n js:"+stats[prop]+"\n"
+          summary = true
+        } else if ((typeof stats[prop] == 'string') || typeof (bbr[prop] == 'string')) {
+          str += "String "+prop+" differs:\n py:"+bbr[prop]+ "\n js:"+stats[prop]+"\n"
+          valid = false
+        } else
+          valid = false
+        
+      }
+    }
+  }
+  return {valid: valid, numeric: numeric, summary: summary, result: str}
+}
 
 if (cluster.isMaster) {
 
@@ -17,6 +60,8 @@ if (cluster.isMaster) {
 
 } else {
 
+  var reqcnt = 0 // Keep track of request id for each worker thread
+  
   const port = process.env.PORT || 3000
 
   const fs = require('fs')
@@ -36,6 +81,7 @@ if (cluster.isMaster) {
     +"URL?slug=filebase&inpath=/path/to/dir OR<br/>"
     +"URL?user=username&goal=goalname&inpath=/path/to/dir<br/>"
     +"<br/>You can also supply a path for output files with the \"outpath\" parameter<br/>"
+    +"An optional check against the pybrain output can be initiated with the \"pyjson\" parameter<br/>"
   var noinpath = "Bad URL parameters: Missing \"inpath\"<br/><br/>"+usage
   var nofile = `Bad URL parameters: One of "slug" or ("user","goal") must be supplied!<br/><br/>`+usage
   var paramconflict = 'Bad URL parameters: "slug\" and ("user\","goal") cannot be used together!<br/><br/>'+usage
@@ -44,41 +90,69 @@ if (cluster.isMaster) {
   // Render url.
   const proc_timeid = " Total processing"
   app.use(async (req, res, next) => {
-    let { inpath, outpath, slug, user, goal } = req.query
+    let hostname = os.hostname()
+    let { inpath, outpath, slug, user, goal, pyjson } = req.query
     if (!inpath)                     return res.status(400).send(noinpath)
     if ((!slug && (!user || !goal))) return res.status(400).send(nofile)
     if ((slug && (user || goal)))    return res.status(400).send(paramconflict)
+    var rid = reqcnt++ // Increment and store unique request id
 
     if (!outpath) outpath = inpath
     if (!slug) slug = user+"+"+goal
     
-    console.log(renderer.getPrf()+"============================================")
-    console.log(renderer.getPrf()+`Request url=${req.url}`)
+    var tag = renderer.prf(rid)
+    console.log(tag+"============================================")
+    console.log(tag+`Request url=${req.url}`)
 
-    process.stdout.write(renderer.getPrf()+"<BEEBRAIN> ")
+    process.stdout.write(tag+"<BEEBRAIN> ")
     process.umask(0)
 
     try {
-      var timeid = renderer.getPrf()+proc_timeid
+      var timeid = tag+proc_timeid+` (${slug})`
       console.time(timeid)
-      const resp = await renderer.render(inpath, outpath, slug)
+      const resp = await renderer.render(inpath, outpath, slug, rid)
 
       var json = {};
       json.inpath = inpath
       json.outpath = inpath
       json.slug = slug
+      json.host = hostname
+      json.process = cluster.worker.id
+      json.request = rid
       if (resp.html == null) {
         json.error = 'Processing error: '+resp.error
       } else {
         json.bb = (resp.html)?`${inpath}/${slug}.bb`:null
         json.svg = (resp.svg)?`${outpath}/${slug}.svg`:null
         json.png = (resp.png)?`${outpath}/${slug}.png`:null
-        json.json = (resp.png)?`${outpath}/${slug}.json`:null
+        json.json = (resp.json)?`${outpath}/${slug}.json`:null
         json.error = null
+
+        // Compare JSON to pybrain output if enabled
+        if (pyjson) {
+          console.log(`${tag} Comparing output to ${pyjson}`)
+          if (!fs.existsSync(pyjson) || !fs.lstatSync(pyjson).isFile()) {
+            process.stdout.write(`${tag} Could not find file ${pyjson}\n`)
+          } else {
+            let pyout = fs.readFileSync(pyjson, "utf8");
+            let res = compareJSON(resp.json, JSON.parse(pyout))
+            if (res.valid && !res.numeric && !res.summary) {
+              process.stdout.write(`${tag} -- EXACT MATCH! --\n`)
+            } else {
+              if (res.valid) {
+                process.stdout.write(tag+"  -- * Soft errors * --\n")
+              } else {
+                process.stdout.write(tag+"  -- * CRITICAL! * --\n")
+              }
+              process.stdout.write(tag+`   ${res.result.replace(/\n/g, "\n"+tag+"   ")}`)
+              process.stdout.write("------------------\n")
+            }
+          }
+        }
       }
 
       console.timeEnd(timeid)
-      process.stdout.write(renderer.getPrf()+"</BEEBRAIN>\n")
+      process.stdout.write(tag+"</BEEBRAIN>\n")
       return res.status(200).send(JSON.stringify(json))
     } catch (e) {
       next(e)

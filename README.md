@@ -7,10 +7,10 @@ Beebrain functionality, as well as an interactive editor for Beeminder
 roads. Below is a list of components and features supported by this
 repository:
 
-* Javascript modules for processing beeminder goal BB files (`butil.js`, `broad.js`, `beebrain.js`)
-* A Javascript module for goal graph generation and an interactive road editor (`bgraph.js`)
-* A Javascript module implementing a sandbox for experimenting with Beemidner goals (`bsandbox.js`)
-* A Javascript module to facilitate automated testing and comparison of beebrain outputs (`btest.js`)
+* Javascript modules for processing beeminder goal BB files ({@link module:butil `butil`}, {@link module:broad `broad`}, {@link module:beebrain `beebrain`})
+* A Javascript module for goal graph generation and an interactive road editor ({@link module:bgraph `bgraph`})
+* A Javascript module implementing a sandbox for experimenting with Beemidner goals ({@link module:bsandbox `bsandbox`})
+* A Javascript module to facilitate automated testing and comparison of beebrain outputs ({@link module:btest `btest`})
 * A node server that uses the modules above to locally generate graph PNG and SVG, thumbnail PNG and goal JSON output files upon receiving a GET request
 * A node server that provides web interface for client-side graphs, road editor and sandbox functionality
 * A node server that duplicates the behaviors of sanity.py from pybrain
@@ -31,7 +31,7 @@ particular
 In order to be able to load these files, you will need to use chromium
 (or chrome) with the following arguments:
 
-`chromium-browser --allow-file-access-from-files --disable-web-security --user-data-dir=$PWD/user-data --remote-debugging-port=9222`
+`chromium-browser --allow-file-access-from-files --disable-web-security --user-data-dir=$HOME/jsgraph-data --remote-debugging-port=9222 --use-gl=osmesa`
 
 This allows the browser to open local beeminder files for testing
 purposes from within Javascript functions. You should be able to open
@@ -104,10 +104,11 @@ GET request you issue to `localhost:3000` with appropriate parameters
 will initiate graph generation. valid parameters are:
 
   * `inpath=/path/to/input` : Path to local directory for the BB file
-  * `outpath=/path/to/output`: Path to local directory for generated files
+  * `outpath=/path/to/output`: (optional) Path to local directory for generated files
   * `user=u`: beeminder username (`slug` param must be empty)
   * `goal=g`: beeminder goalname (`slug` param must be empty)
   * `slug=filebase`: base name for the BB files (`user` and `goal` params must be empty)
+  * `pyjson=/path/to/pyout/slug.json`: (optional) Local path to pybrain JSON output
   
 This reads the file `u+g.bb` (or `slug.bb`) from `/path/to/input`, and
 generates `u+g.png`, `u+g-thumb.png`, `u+g.svg` and `u+g.json` in
