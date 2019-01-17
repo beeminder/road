@@ -114,7 +114,7 @@ if (cluster.isMaster) {
 
       var json = {};
       json.inpath = inpath
-      json.outpath = inpath
+      json.outpath = outpath
       json.slug = slug
       json.host = hostname
       json.process = cluster.worker.id
