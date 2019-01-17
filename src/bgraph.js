@@ -215,11 +215,11 @@
   PRAF  = .015,
 
   /** paths for various PNG images used within the SVG */
-  PNG = { beye: "../lib/images/bullseye.png", 
-          beyey: "../lib/images/bullseye.png",
-          skl: "../lib/images/jollyroger_sqr.png",
-          inf: "../lib/images/infinity.png",
-          sml: "../lib/images/smiley.png"
+  PNG = { beye: "https://s3.amazonaws.com/bmndr/road/bullseye.png", 
+          beyey: "https://s3.amazonaws.com/bmndr/road/bullseye_prev.png",
+          skl: "https://s3.amazonaws.com/bmndr/road/jollyroger.png",
+          inf: "https://s3.amazonaws.com/bmndr/road/infinity.png",
+          sml: "https://s3.amazonaws.com/bmndr/road/smiley.png"
         },
   
   /** Enum object to identify error types. */
@@ -491,6 +491,8 @@
       // Initialize the div and the SVG
       svg = d3.select(div).attr("class", "bmndrgraph")
 	      .append('svg:svg')
+        .attr("xmlns", "http://www.w3.org/2000/svg")
+        .attr("xmlns:xlink", "http://www.w3.org/1999/xlink")
         .attr('width', sw).attr('height', sh)
 	      .attr('class', 'bmndrsvg')
 
@@ -2545,9 +2547,7 @@
     // Creates or updates the Bullseye at the goal date
     function updateOldBullseye() {
       if (opts.divGraph == null || road.length == 0) return;
-      //var png = (opts.roadEditor)?"https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye_old.png?1498051783901":"https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye.png?1496219226927";
-      var png = (opts.roadEditor)?"../lib/images/bullseye_old.png"
-        :"../lib/images/bullseye.png";
+      var png = (opts.roadEditor)?PNG.beyey:PNG.beye
       var bullseyeelt = gOldBullseye.select(".oldbullseye");
       //var bx = nXSc(iroad[iroad.length-1].sta[0]*1000)-(opts.bullsEye.size/2);
       //var by = nYSc(iroad[iroad.length-1].sta[1])-(opts.bullsEye.size/2);
@@ -2568,9 +2568,7 @@
 
     function updateContextOldBullseye() {
       if (opts.divGraph == null || road.length == 0) return;
-      //var png = (opts.roadEditor)?"https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye_old.png?1498051783901":"https://cdn.glitch.com/0ef165d2-f728-4dfd-b99a-9206038656b2%2Fbullseye.png?1496219226927";
-      var png = (opts.roadEditor)?"../lib/images/bullseye_old.png"
-        :"../lib/images/bullseye.png";
+      var png = (opts.roadEditor)?PNG.beyey:PNG.beye
       var bullseyeelt = ctxplot.select(".ctxoldbullseye");
       var bx = xScB(iroad[iroad.length-1].sta[0]*1000)
         -(opts.bullsEye.ctxsize/2);
