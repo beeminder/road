@@ -72,7 +72,7 @@
   self.printRoad = ( rd ) => {
     for (let i = 0; i < rd.length; i++) {
       var s = rd[i]
-      console.debug("[("+s.sta[0]+","+s.sta[1]+"),("+s.end[0]+","+s.end[1]+"),"
+      console.debug("[("+s.sta[0]+"("+bu.formatDate(s.sta[0])+"),"+s.sta[1]+"),("+s.end[0]+"("+bu.formatDate(s.end[0])+"),"+s.end[1]+"),"
                     +s.slope+", auto="+s.auto+"]")
     }
   }

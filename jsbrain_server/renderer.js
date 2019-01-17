@@ -5,7 +5,7 @@ const fs = require('fs')
 const gm = require('gm').subClass({imageMagick: true})
 const puppeteer = require('puppeteer')
 
-const pageTimeout = 30 // Seconds to wait until giving up on generate.html
+const pageTimeout = 10 // Seconds to wait until giving up on generate.html
 
 class Renderer {
   
@@ -14,6 +14,7 @@ class Renderer {
     this.id = id
   }
 
+  prfinfo(r) { return [this.id,r] }
   prf(r) { return "("+this.id+":"+r+") " }
   
   // Creates a new page in a tab within the puppeteer chrome instance

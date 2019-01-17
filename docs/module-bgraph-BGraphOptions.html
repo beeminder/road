@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width">
-	<title>Documentation Module: beebrain</title>
+	<title>Documentation Class: BGraphOptions</title>
 
 	<!--[if lt IE 9]>
 	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -33,28 +33,14 @@
 			<li class="dropdown">
 				<a href="modules.list.html" class="dropdown-toggle" data-toggle="dropdown">Modules<b class="caret"></b></a>
 				<ul class="dropdown-menu ">
-					<li><a href="module-beebrain.html">beebrain</a></li><li><a href="module-bgraph.html">bgraph</a></li><li><a href="module-broad.html">broad</a></li><li><a href="module-bsandbox.html">bsandbox</a></li><li><a href="module-butil.html">butil</a></li>
+					<li><a href="module-beebrain.html">beebrain</a></li><li><a href="module-bgraph.html">bgraph</a></li><li><a href="module-broad.html">broad</a></li><li><a href="module-butil.html">butil</a></li>
 				</ul>
 			</li>
 			
 			<li class="dropdown">
 				<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b class="caret"></b></a>
 				<ul class="dropdown-menu ">
-					<li><a href="beebrain.html">beebrain</a></li><li><a href="bgraph.html">bgraph</a></li><li><a href="bsandbox.html">bsandbox</a></li>
-				</ul>
-			</li>
-			
-			<li class="dropdown">
-				<a href="tutorials.list.html" class="dropdown-toggle" data-toggle="dropdown">Tutorials<b class="caret"></b></a>
-				<ul class="dropdown-menu ">
-					<li><a href="tutorial-beebrain_.html">Using the beebrain class</a></li><li><a href="tutorial-bgraph_.html">Using the bgraph class</a></li>
-				</ul>
-			</li>
-			
-			<li class="dropdown">
-				<a href="global.html" class="dropdown-toggle" data-toggle="dropdown">Global<b class="caret"></b></a>
-				<ul class="dropdown-menu ">
-					<li><a href="global.html">Global</a></li>
+					<li><a href="beebrain.html">beebrain</a></li><li><a href="module-bgraph-BGraphOptions.html">bgraph~BGraphOptions</a></li>
 				</ul>
 			</li>
 			
@@ -86,10 +72,17 @@
 		<div id="main">
 			
 
-	<h1 class="page-title">Module: beebrain</h1>
+	<h1 class="page-title">Class: BGraphOptions</h1>
 <section>
 
 <header>
+    
+        <h2>
+            <span class="ancestors"><a href="module-bgraph.html">bgraph</a>~</span>
+        
+        BGraphOptions
+        </h2>
+        
     
 </header>
 
@@ -98,15 +91,158 @@
     <div class="container-overview">
     
         
-            <div class="description">Javascript implementation of beebrain, provided as a UMD
-module. Provides a <a href="beebrain.html">beebrain</a> class, which can be used to
-construct independent beebrain objects each with their own internal
-state.<br/>
-<br/>Copyright © 2017 Uluc Saranli</div>
+<hr>
+<dt>
+    <h4 class="name" id="BGraphOptions"><span class="type-signature"></span>new BGraphOptions(options)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        bgraph object constructor. Creates an empty beeminder graph
+and/or road matrix table with the supplied options. Particular
+goal details may later be loaded with bgraph~loadGoal or loadGoalFromURL functions.
+    </div>
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
         
 
         
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">BGraphOptions</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">JSON input with various graph options</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
 <dl class="details">
+    
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    <dl>
+
+<table class="props table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options.noGraph</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Generates an empty graph and JSON if true</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options.divGraph</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Binds the graph to a div element</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+</dl>
+
     
 
 	
@@ -145,31 +281,28 @@ state.<br/>
 </dl>
 
 
-        
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
     
     </div>
 
     
 
     
-        <h3 class="subsection-title">Requires</h3>
 
-        <ul>
-            <li>module:moment</li>
-        
-            <li><a href="module-butil.html">module:butil</a></li>
-        
-            <li><a href="module-broad.html">module:broad</a></li>
-        </ul>
-    
-
-    
-        <h3 class="subsection-title">Classes</h3>
-
-        <dl>
-            <dt><a href="beebrain.html">beebrain</a></dt>
-            <dd></dd>
-        </dl>
     
 
     
@@ -227,7 +360,7 @@ state.<br/>
 <span class="jsdoc-message">
 	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a>
 	
-		on 2019-01-12T23:43:53+03:00
+		on 2019-01-09T15:30:52+03:00
 	
 	using the <a href="https://github.com/docstrap/docstrap">DocStrap template</a>.
 </span>

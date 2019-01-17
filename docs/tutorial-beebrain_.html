@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title>Documentation Tutorial: Using the beebrain class</title>
+
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	<link type="text/css" rel="stylesheet" href="styles/sunlight.default.css">
+
+	<link type="text/css" rel="stylesheet" href="styles/site.simplex.css">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top ">
+<div class="container">
+	<div class="navbar-header">
+		<a class="navbar-brand" href="index.html">Documentation</a>
+		<button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#topNavigation">
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+        </button>
+	</div>
+	<div class="navbar-collapse collapse" id="topNavigation">
+		<ul class="nav navbar-nav">
+			
+			<li class="dropdown">
+				<a href="modules.list.html" class="dropdown-toggle" data-toggle="dropdown">Modules<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="module-beebrain.html">beebrain</a></li><li><a href="module-bgraph.html">bgraph</a></li><li><a href="module-broad.html">broad</a></li><li><a href="module-bsandbox.html">bsandbox</a></li><li><a href="module-butil.html">butil</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="beebrain.html">beebrain</a></li><li><a href="bgraph.html">bgraph</a></li><li><a href="bsandbox.html">bsandbox</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="tutorials.list.html" class="dropdown-toggle" data-toggle="dropdown">Tutorials<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="tutorial-beebrain_.html">Using the beebrain class</a></li><li><a href="tutorial-bgraph_.html">Using the bgraph class</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="global.html" class="dropdown-toggle" data-toggle="dropdown">Global<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="global.html">Global</a></li>
+				</ul>
+			</li>
+			
+		</ul>
+        
+            <div class="col-sm-3 col-md-3">
+                <form class="navbar-form" role="search">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Search" name="q" id="search-input">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" id="search-submit"><i class="glyphicon glyphicon-search"></i></button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        
+	</div>
+
+</div>
+</div>
+
+
+<div class="container" id="toc-content">
+<div class="row">
+
+	
+	<div class="col-md-12">
+	
+		<div id="main">
+			<section class="tutorial-section">
+
+<header>
+    
+
+    <h2>Using the beebrain class</h2>
+</header>
+
+<article>
+    <p>This tutorial describes the details and usage of the <a href="beebrain.html">beebrain</a>
+class provided as part of the Beeminder Javascript implementation. </p>
+<p>The <a href="module-beebrain.html">beebrain module</a> and the associated <a href="beebrain.html">beebrain class</a> allows anyone to load and process a beeminder
+goal file (aka BB file), which includes goal configuration
+information, as well as the associated road matrix and
+datapoints. Assuming that the required modules (moment, polyfit,
+butil, broad and beebrain) are preloaded, the following code
+illustrates the most basic usage</p>
+<pre class="prettyprint source lang-javascript"><code>&lt;!DOCTYPE html>
+async function loadGoal() {
+  let url=&quot;file:///path/file.bb&quot;
+  var resp = await butil.loadJSON( url )
+  document.getElementById('bbjson').innerHTML=JSON.stringify(resp)
+  let goalbb = new beebrain( resp )
+  let goalout = goalbb.getStats()
+  document.getElementById('outjson').innerHTML=JSON.stringify(goalout)
+}
+
+loadGoal()</code></pre><p>Assuming that there are two <code>div</code> elements with ids <code>bbjson</code> and
+<code>outjson</code>, this script fills in their contents with the loaded BB
+file, as well as the beebrain output. Note that the beebrain
+constructor needs to be called with a javascript object with the
+contents of the BB file acquired through <a href="beebrain.html#getStats">beebrain#getStats</a>.</p>
+<p>Note that the same module can be used within a node server as
+well. The following code (assuming paths are adjusted to work with
+your setup and required dependencies are installed) should work with a
+node server:</p>
+<pre class="prettyprint source lang-javascript"><code>const fs = require('fs')
+
+const bu = require('butil.js')
+const br = require('broad.js')
+const bb = require('beebrain.js')
+
+var bbjson = JSON.parse(fs.readFileSync(testroad.bb', 'utf8'))
+
+var bbr = new bb(bbjson)
+console.log(bbr.getStats())</code></pre><p>Once the beebrain object is created, various internal variables are
+directly exposed as public members for efficiency. In particular, the
+following members may be useful:</p>
+<ul>
+<li><p><a href="beebrain.html#roads">roads</a> : Piecewise linear road representation. The
+format for this object is an array of linear segments, each of
+which is an object with the following format: <code>{sta: [t, v], end:
+[t, v], slope: r, auto: autoparam}</code>, where <code>r</code> is expressed in
+Hertz (1/s), and <code>autoparam</code> is one of the enumerated values in
+<a href="module-broad.html#.RP">broad.RP</a>, indicating which entry will be
+auto-computed. Note that the end point for one segment is required
+to be identical to the starting point for the next
+segment. Finally, initial and final flat segments are added during
+processing, 100 days before and after the initial and final road
+matrix components, respectively.</p>
+</li>
+<li><p><a href="beebrain.html#goal">goal</a> : Goal parameters and computed details. This
+is a javascript object with all goal parameters and computed
+statistics as well as a number of internal computations.</p>
+</li>
+<li><p><a href="beebrain.html#data">data</a> : Aggregated (non-future) data points
+for each day with at least one entry, where each array element has
+the form <code>[unixtime,aggvalue,comment,type,prevt,prevv,voriginal]</code>,
+where <code>type</code> is one of the values in <a href="beebrain.html#.DPTYPE">beebrain.DPTYPE</a>,
+<code>prevt</code> and <code>prevv</code> are the time and value of the previous data
+point (used to draw the steppy lines) and <code>voriginal</code> records the
+unmodified (e.g. non-cumulative) value of the datapoint (set to
+null when the aggregated value does not coincide with any of the
+manually entered data points). The last element is used by <a href="module-bgraph.html">module:bgraph</a> to display tooltips for datapoints with the
+originally entered data value. Note that this format is also used
+in <a href="beebrain.html#alldata">beebrain#alldata</a> and <a href="beebrain.html#rosydata">beebrain#rosydata</a> with
+slight differences.</p>
+</li>
+<li><p><a href="beebrain.html#fuda">fuda</a> : &quot;Future&quot; data points, beyond &quot;today&quot;
+(i.e. <code>asof</code>). Has the same format as beebrain.data.</p>
+</li>
+<li><p><a href="beebrain.html#alldata">alldata</a> : An array of all data points entered by
+the user, where each entry is an array
+<code>[unixtime,vtotal,comment,type,null,null,voriginal]</code>. Fields have
+the same semantics as <a href="beebrain.html#data">beebrain#data</a>, except that the
+&quot;previous&quot; point is not defined and hence not recorded. Includes
+future data as well.</p>
+</li>
+<li><p><a href="beebrain.html#rosydata">rosydata</a> : &quot;Rosy&quot; datapoints generated from
+aggregated data points. Each array entry has the form
+<code>[unixtime,aggval_comment,type,prevt,prevv,voriginal]</code>. Fields
+have the same semantics as <a href="beebrain.html#data">beebrain#data</a>, including the
+time and value of the previous point used to generate lines
+connecting the rosy dots.</p>
+</li>
+<li><p><a href="beebrain.html#flad">flad</a> : Flatlined (predicted) data point for
+today. Has the format <code>[unixtime, vppr, &quot;PPR&quot;, DPTYPE.FLATLINE,
+prevt, prevv, null]</code>.</p>
+</li>
+<li><p><a href="beebrain.html#allvals">allvals</a> : Set of values for each
+non-empty timestamp.  For a given unixtime t, allvals[t] contains
+an array with entries of the form <code>[vtotal, comment, voriginal]</code>.</p>
+</li>
+<li><p><a href="beebrain.html#oresets">oresets</a> : Array of unix timestamps where
+odometer reset was performed</p>
+</li>
+<li><p><a href="beebrain.html#derails">derails</a> : Array of unix timestamps where
+the goal derailed</p>
+</li>
+</ul>
+<p>These variables should be only used in a read-only manner since their
+internal consistency is critical for other components of the
+Beeminder's Javascript library. An exception to this is the <code>roads</code>
+object, which can be edited externally, followed by a call to beebrain#reloadRoad(). This forces the beebrain object to reprocess
+the goal with the new road and update its output and internal state.</p>
+<p>Finally, if one wants to directly change the current road matrix for
+this particular beebrain instance, this can be done by using the
+<a href="beebrain.html#setRoadObj">beebrain#setRoadObj</a> method. This is often useful to keep two
+<a href="bgraph.html">bgraph</a> instances on the same web page consistent and
+synchronized. However, this is normally done through associated <a href="bgraph.html">bgraph</a> instances and not through <a href="beebrain.html">beebrain</a> instances.</p>
+<h2>Internals</h2><p>The inner workings of the beebrain class closely mirror those of the
+python implementation of beebrain. The constructor first defines all
+private variables and methods, exported public functions and then
+calls the <code>genStats()</code> function. This function performs all goal
+processing to generate goal stats. Important functions (in calling
+order) are</p>
+<ul>
+<li><a href="beebrain.html#~legacyIn"><code>legacyIn(p)</code></a>  : Processes legacy parameters</li>
+<li><a href="beebrain.html#~stampIn"><code>stampIn(p,d)</code></a> : Performs timestamp conversion for inputs</li>
+<li><a href="beebrain.html#~vetParams"><code>vetParams()</code></a> : Verifies parameter sanity</li>
+<li><a href="beebrain.html#~procData"><code>procData()</code></a> : Processes datapoints</li>
+<li><a href="beebrain.html#~procRoad"><code>procRoad()</code></a> : Processes the road matrix and constructs the internal <code>roads</code> object</li>
+<li><a href="beebrain.html#~computeRosy"><code>computeRosy()</code></a> : Pre-computes rosy datapoints</li>
+<li><a href="beebrain.html#~stampOut"><code>stampOut(p)</code></a> : Prepares timestamp values for output</li>
+<li><a href="beebrain.html#~legacyOut"><code>legacyOut(p)</code></a> : Outputs legacy parameters</li>
+</ul>
+<p>There are of course numerous details on how and when various things
+are computed. Please refer to the code for details.</p>
+</article>
+
+</section>
+
+		</div>
+	</div>
+
+	<div class="clearfix"></div>
+
+	
+
+</div>
+</div>
+
+
+    <div class="modal fade" id="searchResults">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Search results</h4>
+          </div>
+          <div class="modal-body"></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div>
+
+
+<footer>
+
+
+<span class="jsdoc-message">
+	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a>
+	
+		on 2019-01-12T23:43:53+03:00
+	
+	using the <a href="https://github.com/docstrap/docstrap">DocStrap template</a>.
+</span>
+</footer>
+
+<script src="scripts/docstrap.lib.js"></script>
+<script src="scripts/toc.js"></script>
+
+    <script type="text/javascript" src="scripts/fulltext-search-ui.js"></script>
+
+
+<script>
+$( function () {
+	$( "[id*='$']" ).each( function () {
+		var $this = $( this );
+
+		$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+	} );
+
+	$( ".tutorial-section pre, .readme-section pre, pre.prettyprint.source" ).each( function () {
+		var $this = $( this );
+
+		var example = $this.find( "code" );
+		exampleText = example.html();
+		var lang = /{@lang (.*?)}/.exec( exampleText );
+		if ( lang && lang[1] ) {
+			exampleText = exampleText.replace( lang[0], "" );
+			example.html( exampleText );
+			lang = lang[1];
+		} else {
+			var langClassMatch = example.parent()[0].className.match(/lang\-(\S+)/);
+			lang = langClassMatch ? langClassMatch[1] : "javascript";
+		}
+
+		if ( lang ) {
+
+			$this
+			.addClass( "sunlight-highlight-" + lang )
+			.addClass( "linenums" )
+			.html( example.html() );
+
+		}
+	} );
+
+	Sunlight.highlightAll( {
+		lineNumbers : false,
+		showMenu : true,
+		enableDoclinks : true
+	} );
+
+	$.catchAnchorLinks( {
+        navbarOffset: 10
+	} );
+	$( "#toc" ).toc( {
+		anchorName  : function ( i, heading, prefix ) {
+			return $( heading ).attr( "id" ) || ( prefix + i );
+		},
+		selectors   : "#toc-content h1,#toc-content h2,#toc-content h3,#toc-content h4",
+		showAndHide : false,
+		smoothScrolling: true
+	} );
+
+	$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+	$( '.dropdown-toggle' ).dropdown();
+
+    $( "table" ).each( function () {
+      var $this = $( this );
+      $this.addClass('table');
+    } );
+
+} );
+</script>
+
+
+
+<!--Navigation and Symbol Display-->
+
+
+<!--Google Analytics-->
+
+
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            SearcherDisplay.init();
+        });
+    </script>
+
+
+</body>
+</html>
