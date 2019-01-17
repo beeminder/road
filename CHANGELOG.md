@@ -1,6 +1,10 @@
 
 ## CHANGELOG
 
+* 2019.01.12 beebrain.js tutorials
+* 2019.01.12 Static graph axis limits consistent with pybrain
+* 2019.01.11 Solved problems with goals for which tfin=null
+* 2019.01.10 Fixed minor ticks, solved subpixel line location problems
 * 2019.01.08 Big speedup in lnf(), smoother graph interaction
 * 2018.11.29 Fixed final row issues
 * 2018.11.29 Better defaults for sandbox and other fixes

@@ -1,6 +1,7 @@
 'use strict'
 
 const cluster = require('cluster')
+const os = require('os')
 const bu = require('../src/butil.js')
 
 function compareJSON(stats, bbr) {
@@ -89,6 +90,7 @@ if (cluster.isMaster) {
   // Render url.
   const proc_timeid = " Total processing"
   app.use(async (req, res, next) => {
+    let hostname = os.hostname()
     let { inpath, outpath, slug, user, goal, pyjson } = req.query
     if (!inpath)                     return res.status(400).send(noinpath)
     if ((!slug && (!user || !goal))) return res.status(400).send(nofile)
@@ -114,6 +116,9 @@ if (cluster.isMaster) {
       json.inpath = inpath
       json.outpath = inpath
       json.slug = slug
+      json.host = hostname
+      json.process = cluster.worker.id
+      json.request = rid
       if (resp.html == null) {
         json.error = 'Processing error: '+resp.error
       } else {
