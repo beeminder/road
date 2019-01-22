@@ -647,6 +647,9 @@
             segment.end[1] = segment.sta[1]
           }
           segment.end[0] = Math.min(bu.BDUSK, segment.end[0])
+          // Readjust the end value in case we clipped the date to BDUSK
+          segment.end[1]
+            = segment.sta[1]+segment.slope*(segment.end[0]-segment.sta[0])
           segment.auto = br.RP.DATE
         } else if (rdvalue == null) {
           segment.end = [rddate, 0]
