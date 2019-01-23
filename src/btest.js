@@ -175,7 +175,7 @@
 
       self.createDiv( div, "Javascript beebrain graph:", "yellow" )
       var resp =
-          await butil.loadJSON( "http://localhost:3000?slug="+encodeURIComponent(g)+
+          await butil.loadJSON( "http://localhost:8777?slug="+encodeURIComponent(g)+
                                 "&inpath="+inpath+"&outpath="+outpath )
       var pythm = null, jsthm = null
       if (resp) {
