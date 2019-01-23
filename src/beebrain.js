@@ -745,7 +745,7 @@
       var PRAF = 0.015,
           a = br.rdf(roads, goal.tmin),
           b = br.rdf(roads, goal.tmax),
-          d0 = data.filter(e=>(e[0] < goal.tmax && e[0] > goal.tmin)).map(e=>e[1]),
+          d0 = data.filter(e=>(e[0] <= goal.tmax && e[0] >= goal.tmin)).map(e=>e[1]),
           mind = bu.arrMin(d0),
           maxd = bu.arrMax(d0),
           padding = Math.max(goal.lnw/3, (maxd-mind)*PRAF*2),
