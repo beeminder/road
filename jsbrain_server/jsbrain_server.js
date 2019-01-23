@@ -127,7 +127,6 @@ if (cluster.isMaster) {
         json.png = (resp.png)?`${outpath}/${slug}.png`:null
         json.json = (resp.json)?`${outpath}/${slug}.json`:null
         json.error = null
-
         // Compare JSON to pybrain output if enabled
         if (pyjson) {
           console.log(`${tag} Comparing output to ${pyjson}`)
