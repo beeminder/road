@@ -148,8 +148,8 @@ class Renderer {
         fs.writeFileSync(jtmp, JSON.stringify(json));  
         if (fs.existsSync(jtmp)) fs.renameSync(jtmp, jf )
         // Display statsum on node console
-        process.stdout.write(tag+json.statsum.replace(/\\n/g, '\n'+tag))
-        process.stdout.write("\n")
+        //process.stdout.write(tag+json.statsum.replace(/\\n/g, '\n'+tag))
+        //process.stdout.write("\n")
         
         if (graphit) {
           // Extract and write the SVG file
