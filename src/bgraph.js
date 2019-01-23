@@ -1497,12 +1497,13 @@
       processing = true;
       
       // Create beebrain processor
-      console.time(stats_timeid)
+      let suffix =  (json.params.yoog)?" ("+json.params.yoog+")":""
+      console.time(stats_timeid+suffix)
       bbr = new bb(json)
       goal = bbr.goal
       if (opts.divJSON)
         opts.divJSON.innerHTML = JSON.stringify(bbr.getStats(), null, 4)
-      console.timeEnd(stats_timeid)
+      console.timeEnd(stats_timeid+suffix)
 
       if (goal.error != "") {
         console.log("Beebrain error: "+ bbr.goal.error)
@@ -1549,7 +1550,7 @@
         else
           stathead.text("")
       }
-      console.time(graph_timeid)
+      console.time(graph_timeid+suffix)
       // Finally, wrap up with graph related initialization
       zoomAll();
       processing = false;
@@ -1558,7 +1559,7 @@
       updateTable();
       updateContextData();
 
-      console.timeEnd(graph_timeid)
+      console.timeEnd(graph_timeid+suffix)
     }
 
     async function loadGoalFromURL( url, callback = null ) {
