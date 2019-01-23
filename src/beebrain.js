@@ -789,7 +789,8 @@
 
     // Stringified version of a road matrix row
     function showrow(row) {
-      return JSON.stringify(row)
+      return JSON.stringify((row[0] == null)
+                            ?row:[bu.formatDate(row[0]), row[1], row[2]])
     }
 
     const pchk = [
