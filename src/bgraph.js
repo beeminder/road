@@ -3020,7 +3020,7 @@
         // **** Update guidelines ****
         var yrange = [nYSc.invert(plotbox.height), nYSc.invert(0)];
         var delta = 1, oneshift, yr = Math.abs(yrange[1] - yrange[0]);
-        var bc = br.bufcap(road, goal)
+        var bc = goal.maxflux?[goal.yaw*goal.maxflux,0]:br.bufcap(road, goal)
         bc[0] = nYSc(bc[0])-nYSc(0)
         if (goal.lnw > 0 && yr / goal.lnw <= 32) delta = goal.lnw
         else if (goal.lnw > 0 && yr / (6*goal.lnw) <= 32) {
