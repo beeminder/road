@@ -4467,7 +4467,10 @@
      file is fetched, the goal graph and road matrix table are
      updated accordingly. 
     @param {String} url URL to load the goal BB file from*/
-    this.loadGoal = async ( url ) => { await loadGoalFromURL( url ) }
+    this.loadGoal = async ( url ) => {
+      await loadGoalFromURL( url )
+        .catch(function(err){console.log("ERROR (loadGoal): "+err.message)})
+    }
 
     /** Initiates loading a new goal from the supplied object.
      Expected input format is the same as beebrain. The goal graph and
