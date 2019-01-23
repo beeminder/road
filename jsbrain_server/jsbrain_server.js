@@ -129,19 +129,19 @@ if (cluster.isMaster) {
         json.error = null
         // Compare JSON to pybrain output if enabled
         if (pyjson) {
-          console.log(`${tag} Comparing output to ${pyjson}`)
+          process.stdout.write(`${tag} Comparing to pybrain: `)
           if (!fs.existsSync(pyjson) || !fs.lstatSync(pyjson).isFile()) {
             process.stdout.write(`${tag} Could not find file ${pyjson}\n`)
           } else {
             let pyout = fs.readFileSync(pyjson, "utf8");
             let res = compareJSON(resp.json, JSON.parse(pyout))
             if (res.valid && !res.numeric && !res.summary) {
-              process.stdout.write(`${tag} -- EXACT MATCH! --\n`)
+              process.stdout.write(`--** Success: Exact match!\n`)
             } else {
               if (res.valid) {
-                process.stdout.write(tag+"  -- * Soft errors * --\n")
+                process.stdout.write("--** Error: Minor issues\n")
               } else {
-                process.stdout.write(tag+"  -- * CRITICAL! * --\n")
+                process.stdout.write("--** Error: CRITICAL!\n")
               }
               process.stdout.write(tag+`   ${res.result.replace(/\n/g, "\n"+tag+"   ")}`)
               process.stdout.write("------------------\n")
