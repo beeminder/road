@@ -48,7 +48,6 @@
       //newroot.selectAll(".minor").remove()
       done = true  // IMPORTANT: This is monitored by rendered.js
     }
-  
     async function process() {
       var graph = new bgraph({divGraph: document.getElementById('goalgraph'),
                            divJSON: document.getElementById('goaljson'),
@@ -73,9 +72,9 @@
       }
       done = true
     }
-    process()
+    process().catch(function(err) {console.log("ERROR (generate.html): "+err.message); done = true})
   } catch(err) {
-    console.log("Uncaught exception: "+err.message)
+    console.log("ERROR (generate.html): "+err.message)
     done = true // Make sure errors on this page do not cause timeouts in renderer.js
   } 
 </script>
