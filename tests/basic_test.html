@@ -22,14 +22,14 @@
 <script>
   var graph = new bgraph({divGraph: document.getElementById('graph'),
                           divJSON: document.getElementById('json'),
-                          svgSize: { width: 696, height: 453 },
+                          svgSize: { width: 696, height: 553 },
                           focusRect: { x:0, y:0, width:690, height: 453 },
-                          ctxRect: { x:0, y:453, width:690, height: 40 },
+                          ctxRect: { x:0, y:453, width:690, height: 100 },
                           roadEditor:false,
                           maxFutureDays: 365,
-                          showFocusRect: false,
-                          showContext: false})
-  graph.loadGoal( "/home/saranli/work/privatesuite/nightmare.bb" )
+                          showFocusRect: true,
+                          showContext: true})
+  graph.loadGoal( "/home/saranli/work/privatesuite/xmin.bb" )
 
 </script>
 

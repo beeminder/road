@@ -723,7 +723,7 @@
     /** Set any of {tmin, tmax, vmin, vmax} that don't have explicit
      * values. Duplicates pybrain setRange() behavior*/
     function setDefaultRange() {
-      if (goal.tmin == null) goal.tmin = Math.min(goal.tini, goal.asof);
+      if (goal.tmin == null) goal.tmin = Math.min(goal.tini, goal.asof)
       if (goal.tmax == null) {
         // Make more room beyond the askrasia horizon if lots of data
         var years = Math.floor((goal.tcur - goal.tmin) / (bu.DIY*bu.SID))
