@@ -60,7 +60,9 @@ if (cluster.isMaster) {
 
 } else {
 
-  var reqcnt = 0 // Keep track of request id for each worker thread
+  var reqcnt = 0  // Keep track of request id for each worker thread
+  var pending = 0 // Number of goals currently being processed
+  var msgbuf = {} // Local buffer for message outputs 
   
   const port = process.env.PORT || 3000
 
@@ -101,17 +103,20 @@ if (cluster.isMaster) {
     if (!slug) slug = user+"+"+goal
     
     var tag = renderer.prf(rid)
+    pending++
+    msgbuf[rid] = ""
     console.log(tag+"============================================")
     console.log(tag+`Request url=${req.url}`)
 
-    process.stdout.write(tag+"<BEEBRAIN> ")
+    msgbuf[rid] += (tag+"<BEEBRAIN> ")
     process.umask(0)
 
     try {
       var timeid = tag+proc_timeid+` (${slug})`
       console.time(timeid)
       const resp = await renderer.render(inpath, outpath, slug, rid)
-
+      msgbuf[rid] += resp.msgbuf
+      
       var json = {};
       json.inpath = inpath
       json.outpath = outpath
@@ -127,32 +132,37 @@ if (cluster.isMaster) {
         json.png = (resp.png)?`${outpath}/${slug}.png`:null
         json.json = (resp.json)?`${outpath}/${slug}.json`:null
         json.error = null
-
         // Compare JSON to pybrain output if enabled
         if (pyjson) {
-          console.log(`${tag} Comparing output to ${pyjson}`)
+          msgbuf[rid] += (`${tag} Comparing to pybrain: `)
           if (!fs.existsSync(pyjson) || !fs.lstatSync(pyjson).isFile()) {
-            process.stdout.write(`${tag} Could not find file ${pyjson}\n`)
+            msgbuf[rid] += (`${tag} Could not find file ${pyjson}\n`)
           } else {
             let pyout = fs.readFileSync(pyjson, "utf8");
             let res = compareJSON(resp.json, JSON.parse(pyout))
             if (res.valid && !res.numeric && !res.summary) {
-              process.stdout.write(`${tag} -- EXACT MATCH! --\n`)
+              msgbuf[rid] += (`--** Success: Exact match!\n`)
             } else {
               if (res.valid) {
-                process.stdout.write(tag+"  -- * Soft errors * --\n")
+                msgbuf[rid] += ("--** Error: Minor issues\n")
               } else {
-                process.stdout.write(tag+"  -- * CRITICAL! * --\n")
+                msgbuf[rid] += ("--** Error: CRITICAL!\n")
               }
-              process.stdout.write(tag+`   ${res.result.replace(/\n/g, "\n"+tag+"   ")}`)
-              process.stdout.write("------------------\n")
+              msgbuf[rid] += (tag+`   ${res.result.replace(/\n/g, "\n"+tag+"   ")}`)
+              msgbuf[rid] += ("------------------\n")
             }
           }
         }
       }
 
-      console.timeEnd(timeid)
-      process.stdout.write(tag+"</BEEBRAIN>\n")
+      msgbuf[rid] += renderer.timeEndMsg(timeid)
+      pending--;
+      
+      msgbuf[rid] += (tag+"</BEEBRAIN> (pending: "+pending+")\n")
+
+      process.stdout.write(msgbuf[rid])
+      delete msgbuf[rid]
+
       return res.status(200).send(JSON.stringify(json))
     } catch (e) {
       next(e)

@@ -609,19 +609,17 @@
       var tini = goal.tini, vini = goal.vini
       // Handle cases when the first oad matrix entry starts earlier
       // than (tini,vini).
-      if (rdData[0][0] < tini) {
+      if (rdData[0][0] != null && rdData[0][0] < tini) {
         tini = rdData[0][0]
-        if (rdData[0][1] != null) tini = rdData[0][1]
+        if (rdData[0][1] != null) vini = rdData[0][1]
       }
-      
       // First segment starts from [tini-100days, vini], ends at [tini, vini]
       firstsegment = {
-        sta: [bu.dayparse(tini), Number(vini)],
+        sta: [tini, Number(vini)],
         slope: 0, auto: br.RP.SLOPE };
       firstsegment.end = firstsegment.sta.slice()
       firstsegment.sta[0] = bu.daysnap(firstsegment.sta[0]-100*bu.DIY*bu.SID)
       roads.push(firstsegment)
-
       for (let i = 0; i < nk; i++) {
         // Each segment i starts from the end of the previous segment
         // and continues until road[i], filling in empty fields in the
@@ -789,7 +787,8 @@
 
     // Stringified version of a road matrix row
     function showrow(row) {
-      return JSON.stringify(row)
+      return JSON.stringify((row[0] == null)
+                            ?row:[bu.formatDate(row[0]), row[1], row[2]])
     }
 
     const pchk = [

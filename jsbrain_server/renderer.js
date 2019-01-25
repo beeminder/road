@@ -14,6 +14,20 @@ class Renderer {
     this.id = id
   }
 
+  // This method overrides stdout and captures the output of
+  // console.timeEnd in a string for later printing. Quite hacky but
+  // works
+  timeEndMsg( tagtxt ) {
+    const real_stdout    = process.stdout.write
+    let captured = ""
+    function process_output(output) { captured += output }
+    
+    process.stdout.write = process_output
+    console.timeEnd( tagtxt )
+    process.stdout.write = real_stdout
+    return captured
+  }
+  
   prfinfo(r) { return [this.id,r] }
   prf(r) { return "("+this.id+":"+r+") " }
   
@@ -27,9 +41,10 @@ class Renderer {
     // Create a new tab so parallel requests do not mess with each
     // other
     const page = await this.browser.newPage()
+    let pagelog = ""
     page.on('console', 
-            msg => console.log(tag+" PAGE LOG:", msg.text()))
-    page.on('error', error => console.log(tag+" PAGE ERROR: "+error.msg))
+            msg => (pagelog+=(tag+" PAGE LOG: "+msg.text()+"\n")))
+    page.on('error', error => (pagelog+=(tag+" PAGE ERROR: "+error.msg+"\n")))
 
     // Render the page and return result
     try {
@@ -39,7 +54,7 @@ class Renderer {
       await page.close()
       return null
     } 
-    return page
+    return {page: page, pagelog: pagelog}
   }
 
   /** Returns the base URL for graph and thumbnail links */
@@ -62,18 +77,19 @@ class Renderer {
   async render(inpath, outpath, slug, rid) {
     let page = null
     let tag = this.prf(rid)
+    let msgbuf = ""
     
     if (!fs.existsSync(outpath)) {
       let err = `Could not find directory ${outpath}`
-      process.stdout.write(tag+" renderer.js ERROR: "+err+"\n")
-      return { error:err }
+      msgbuf += (tag+" renderer.js ERROR: "+err+"\n")
+      return { error:err, msgbuf: msgbuf }
     }
 
     const bbfile = `${inpath}/${slug}.bb`
     if (!fs.existsSync(bbfile)) {
-        let err = `Could not find file ${bbfile}`
-      process.stdout.write(tag+" renderer.js ERROR: "+err+"\n")
-        return { error: err}
+      let err = `Could not find file ${bbfile}`
+      msgbuf += (tag+" renderer.js ERROR: "+err+"\n")
+      return { error: err, msgbuf: msgbuf}
     }
     
     const bburl = encodeURIComponent(inpath)+"/"+encodeURIComponent(slug)+".bb"
@@ -82,9 +98,9 @@ class Renderer {
     const base = inpath // Pybrain compatibility
     const sluga = slug.replace(/^([^\+]*\+[^\+]*).*/, (a,b)=>b)
     
-    process.stdout.write(sluga+" @ ")
+    msgbuf += (sluga+" @ ")
     let starttm = new Date()
-    process.stdout.write(starttm.toISOString().replace(/T/,' ').replace(/\..+/,'')+"\n")
+    msgbuf += (starttm.toISOString().replace(/T/,' ').replace(/\..+/,'')+"\n")
 
     const imgf = `${outpath}/${this.nograph(slug)?"NOGRAPH":slug}.png`
     const svgf = `${outpath}/${this.nograph(slug)?"NOGRAPH":slug}.svg`
@@ -109,8 +125,10 @@ class Renderer {
       // Load and render the page, extract html
       var time_id = tag+` Page creation (${slug})`
       console.time(time_id)
-      page = await this.createPage(url,tag)
-      console.timeEnd(time_id)
+      var retval = await this.createPage(url,tag)
+      if (retval) page = retval.page
+      msgbuf += retval.pagelog
+      msgbuf += this.timeEndMsg(time_id)
 
       if (page) {
         time_id = tag+` Page render (${slug})`
@@ -119,22 +137,22 @@ class Renderer {
         try {
           await page.waitForFunction('done', {timeout: pageTimeout*1000})
         } catch(err) {
-          process.stdout.write(tag+" renderer.js ERROR: "+err.message+"\n")
-          console.timeEnd(time_id)
-          return { error:err.message }
+          msgbuf += (tag+" renderer.js ERROR: "+err.message+"\n")
+          msgbuf += this.timeEndMsg(time_id)
+          return { error:err.message, msgbuf: msgbuf }
         }
-        console.timeEnd(time_id)
+        msgbuf += this.timeEndMsg(time_id)
       
         // Extract goal stats from the JSON field and extend with file locations
         const jsonHandle = await page.$('#goaljson');
         jsonstr = await page.evaluate(json => json.innerHTML, jsonHandle);
         if (jsonstr == "" || jsonstr == null) {
           let err = "Could not extract JSON from page!"
-          process.stdout.write(tag+" renderer.js ERROR: "+err+"\n")
+          msgbuf += (tag+" renderer.js ERROR: "+err+"\n")
 
           // Clean up leftover timing
-          console.timeEnd(time_id)
-          return { error:err }
+          msgbuf += this.timeEndMsg(time_id)
+          return { error:err, msgbuf: msgbuf }
         }
         json = JSON.parse(jsonstr)
         json.graphurl=this.BBURL()+imgf
@@ -148,8 +166,8 @@ class Renderer {
         fs.writeFileSync(jtmp, JSON.stringify(json));  
         if (fs.existsSync(jtmp)) fs.renameSync(jtmp, jf )
         // Display statsum on node console
-        process.stdout.write(tag+json.statsum.replace(/\\n/g, '\n'+tag))
-        process.stdout.write("\n")
+        //process.stdout.write(tag+json.statsum.replace(/\\n/g, '\n'+tag))
+        //process.stdout.write("\n")
         
         if (graphit) {
           // Extract and write the SVG file
@@ -220,21 +238,21 @@ class Renderer {
           })
         }
         if (fs.existsSync(imgftmp)) fs.renameSync(imgftmp, imgf )
-        console.timeEnd(time_id)
+        msgbuf += this.timeEndMsg(time_id)
 
       } else {
 
         let err = "Could not create headless chrome page!"
-        process.stdout.write(tag+" renderer.js ERROR: "+err+"\n")
+        msgbuf += (tag+" renderer.js ERROR: "+err+"\n")
 
         // Clean up leftover timing
-        console.timeEnd(time_id)
-        return { error:err }
+        msgbuf += this.timeEndMsg(time_id)
+        return { error:err, msgbuf: msgbuf }
       }
     } finally {
       if (page) await page.close()
     }
-    return {html: html, png: png, svg: svg, json: json, error:null}
+    return {html: html, png: png, svg: svg, json: json, error:null, msgbuf: msgbuf}
   }
 }
 
