@@ -21,7 +21,7 @@
     // only CommonJS-like environments that support module.exports,
     // like Node.    
     //console.log("beebrain: Using CommonJS module.exports")
-    module.exports = factory(require('moment'), require('./butil'), 
+    module.exports = factory(require('./moment'), require('./butil'), 
                              require('./broad'))
   } else {
     //console.log("beebrain: Using Browser globals")
