@@ -17,6 +17,21 @@
   
 <script>
 
+  function transformToAssocArray( prmstr ) {
+    var params = {};
+    var prmarr = prmstr.split("&");
+    for ( var i = 0; i < prmarr.length; i++) {
+        var tmparr = prmarr[i].split("=");
+        params[tmparr[0]] = tmparr[1];
+    }
+    return params;
+  }
+
+  function getParams() {
+    var prmstr = window.location.search.substr(1);
+    return prmstr != null && prmstr != "" ? transformToAssocArray(prmstr) : {};
+  }
+
   var files = [
   "afcuttin+gmailzero",
   "aimeeg+weight",
@@ -81,13 +96,19 @@
   "yebyenw+20-minutes",
   "zachzaslow+sleep",
   "zarbockc+eating",
-  "shanaqui+fitbitsteps" // first road entry earlier than (tini,vini)
+  "shanaqui+fitbitsteps", // first road entry earlier than (tini,vini)
+  "nightmare" // road is empty, tfin=null
   ];
   
   const rDiv = document.getElementById('results');
-  var opts = {div: rDiv, goals:files, baseurl:"testbb" }
-  btest.batchCompare( opts )
-
+  const params = getParams()
+  if (!params.hasOwnProperty("bbpath")) {
+    rDiv.innerHTML
+      = "Please provide an absolute path for BB files with the 'bbpath' parameter."
+  } else {
+    var opts = {div: rDiv, goals:files, bbpath: (params["bbpath"]) }
+    btest.batchCompare( opts )
+  }
 </script>
 
 </body>

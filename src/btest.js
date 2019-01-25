@@ -130,19 +130,19 @@
     
     self.graphCompare = async function( opts ) {
       if (!opts.hasOwnProperty("div") || !opts.hasOwnProperty("goal")
-          || !opts.hasOwnProperty("baseurl") || !opts.hasOwnProperty("abspath")) {
-        console.log("btest.graphCompare(): Missing div, goal, baseurl or abspath options")
+          || !opts.hasOwnProperty("bbpath")) {
+        console.log("btest.graphCompare(): Missing div, goal or bbpath options")
 
         return
       }
 
       var div = opts.div
       var g = opts.goal
-      var bburl = opts.baseurl+"/"
-      var jsurl = opts.baseurl+"/jsout/"
-      var pyurl = opts.baseurl+"/pyout/"
-      var inpath= opts.abspath
-      var outpath= opts.abspath+"/jsout"
+      var bburl = opts.bbpath+"/"
+      var jsurl = opts.bbpath+"/jsout/"
+      var pyurl = opts.bbpath+"/pyout/"
+      var inpath= opts.bbpath
+      var outpath= opts.bbpath+"/jsout"
       
       // Prepare div for results
       while (div.firstChild) div.removeChild(div.firstChild);
@@ -212,14 +212,14 @@
     }
     self.batchCompare = async function( opts ) {
       if (!opts.hasOwnProperty("div") || !opts.hasOwnProperty("goals")
-          || !opts.hasOwnProperty("baseurl")) {
-        console.log("btest.batchCompare(): Missing div, goals or baseurl options")
+          || !opts.hasOwnProperty("bbpath")) {
+        console.log("btest.batchCompare(): Missing div, goals or bbpath options")
         return
       }
       var div = opts.div
       var g = opts.goals
-      var bburl = opts.baseurl+"/"
-      var pyurl = opts.baseurl+"/pyout/"
+      var bburl = opts.bbpath+"/"
+      var pyurl = opts.bbpath+"/pyout/"
 
       // Prepare div for results
       while (div.firstChild) div.removeChild(div.firstChild);
@@ -231,7 +231,7 @@
         if (res == null) {
           txt = (i+1)+": GOAL <b>"+g[i]+"</b> "
             +" Processing error, some files not found?  <a href=\"compare_graph.html?base="
-            +g[i]+"&path=testbb\" target=\"blank\"=>Click to compare graphs</a>"
+            +g[i]+"&bbpath="+opts.bbpath+"\" target=\"blank\"=>Click to compare graphs</a>"
           self.createDiv( div, txt, '#ffaaaa')
           err = err+1
           continue
@@ -253,7 +253,7 @@
         }
         txt = (i+1)+": GOAL <b>"+g[i]+"</b> "+" ("+res.typestr+") "+info
           +"</br> &nbsp;&nbsp;>>> <a href=\"compare_graph.html?base="+g[i]
-          +"&path=testbb\" target=\"blank\"=>Click to compare graphs</a>"
+          +"&bbpath="+opts.bbpath+"\" target=\"blank\"=>Click to compare graphs</a>"
         self.createDiv( div, txt, bg)
         self.createDiv( div, res.result)
       }
