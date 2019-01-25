@@ -406,7 +406,7 @@
       plotpad.left += yaxisw
       plotpad.right += yaxisw+(goal.hidey?8:0) // Extra padding if y axis text is hidden
       contextpad.left += yaxisw
-      contextpad.right += yaxisw
+      contextpad.right += yaxisw+(goal.hidey?8:0)
       plotbox = {
         x:     opts.focusRect.x + plotpad.left,
         y:     opts.focusRect.y + plotpad.top,
@@ -1197,7 +1197,6 @@
       var ta = goal.tmin - PRAF*(goal.tmax-goal.tmin);
       var tb = goal.tmax + PRAF*(goal.tmax-goal.tmin);
       var newdom = [new Date(ta*1000),new Date(tb*1000)];
-      //console.debug(newdom);
       nXSc.domain(newdom);
       var s = newdom.map(xScB);
       //console.debug(s);
@@ -1219,7 +1218,6 @@
       nXSc = xSc; nYSc = ySc;
       resizeContext();
       zoomarea.call(axisZoom.transform, d3.zoomIdentity);
-
       // Relocate zoom buttons based on road yaw
       if (goal.dir > 0) {
         zoomin.attr("transform", zoombtntr.botin);
@@ -1462,7 +1460,7 @@
         var newtr = d3.zoomIdentity.scale(plotbox.width
                                           /(xSc(xrange[1]) 
                                             - xSc(xrange[0])))
-              .translate(-xSc(xrange[0]), 0);
+            .translate(-xSc(xrange[0]), 0);
         zoomarea.call( axisZoom.transform, newtr );
       }
     }
