@@ -1,3 +1,4 @@
-pub/testbb/jsout
-pub/testbb/pyout
+.data
+.vscode
 tests/testbb/
+jsbrain_server/node_modules
