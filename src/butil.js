@@ -10,7 +10,7 @@
     // only CommonJS-like environments that support module.exports,
     // like Node.    
     //console.log("butil: Using CommonJS module.exports")
-    module.exports = factory(require('moment'))
+    module.exports = factory(require('./moment'))
   } else {
     //console.log("butil: Using Browser globals")
     root.butil = factory(root.moment)
