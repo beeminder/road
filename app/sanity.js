@@ -1,9 +1,9 @@
 
 const fs = require('fs')
 
-const bu = require('../lib/js/butil.js')
-const br = require('../lib/js/broad.js')
-const bb = require('../lib/js/beebrain.js')
+const bu = require('../src/js/butil.js')
+const br = require('../src/js/broad.js')
+const bb = require('../src/js/beebrain.js')
 
 var bbin = fs.readFileSync('data/testroad0.bb', 'utf8');
 var bbjson = JSON.parse(bbin)

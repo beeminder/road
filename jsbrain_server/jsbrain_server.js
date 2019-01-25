@@ -48,7 +48,7 @@ function compareJSON(stats, bbr) {
 if (cluster.isMaster) {
 
   // Count the machine's CPUs
-  var cpuCount = require('os').cpus().length;
+  var cpuCount = os.cpus().length;
 
   // Number of "parallel" renderer instances. Actual parallelism is
   // because chromium instances run as processes.
