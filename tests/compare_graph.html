@@ -20,7 +20,7 @@
   
 <script>
 
-  function getSearchParameters() {
+  function getParams() {
     var prmstr = window.location.search.substr(1);
     return prmstr != null && prmstr != "" ? transformToAssocArray(prmstr) : {};
   }
@@ -36,12 +36,16 @@
   }
 
   async function compare() {
-    var path = window.location.pathname
-    path = path.substring(0, path.lastIndexOf("/"))
-    const params = getSearchParameters()
+    const params = getParams()
     const rDiv = document.getElementById('results');
-    var opts = {div:rDiv, goal:params["base"], baseurl:"testbb", abspath:path+"/testbb"}
-    btest.graphCompare( opts )
+    if (!params.hasOwnProperty("bbpath")) {
+      rDiv.innerHTML
+        = "Please provide an absolute path for BB files with the 'bbpath' parameter."
+    } else {    
+      var path = params["bbpath"]
+      var opts = {div:rDiv, goal:params["base"], bbpath:path}
+      btest.graphCompare( opts )
+    }
   }
 
   compare()

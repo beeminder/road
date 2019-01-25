@@ -1,0 +1,5 @@
+The testbb directory that used to be here is now in 
+github.com/beeminder/privatesuite
+
+If you've checked out that repo you can create a symlink like so:
+ln -s ../../privatesuite/testbb testbb
