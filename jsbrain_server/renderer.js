@@ -41,10 +41,11 @@ class Renderer {
     // Create a new tab so parallel requests do not mess with each
     // other
     const page = await this.browser.newPage()
-    let pagelog = ""
+    var pagelog = {msg:""}
     page.on('console', 
-            msg => (pagelog+=(tag+" PAGE LOG: "+msg.text()+"\n")))
-    page.on('error', error => (pagelog+=(tag+" PAGE ERROR: "+error.msg+"\n")))
+            function(msg) {pagelog.msg+=(tag+" PAGE LOG: "+msg.text()+"\n")})
+    page.on('error',
+            function(error) {pagelog.msg+=(tag+" PAGE ERROR: "+error.msg+"\n")})
 
     // Render the page and return result
     try {
@@ -127,7 +128,6 @@ class Renderer {
       console.time(time_id)
       var retval = await this.createPage(url,tag)
       if (retval) page = retval.page
-      msgbuf += retval.pagelog
       msgbuf += this.timeEndMsg(time_id)
 
       if (page) {
@@ -136,7 +136,11 @@ class Renderer {
         html = await page.content()
         try {
           await page.waitForFunction('done', {timeout: pageTimeout*1000})
+          // Now that the page rendering is done, messages should have
+          // finished logging. We can record them
+          msgbuf += retval.pagelog.msg
         } catch(err) {
+          msgbuf += retval.pagelog.msg
           msgbuf += (tag+" renderer.js ERROR: "+err.message+"\n")
           msgbuf += this.timeEndMsg(time_id)
           return { error:err.message, msgbuf: msgbuf }
