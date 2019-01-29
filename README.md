@@ -33,6 +33,9 @@ In order to be able to load these files, you will need to use chromium
 
 `chromium-browser --allow-file-access-from-files --disable-web-security --user-data-dir=$HOME/jsgraph-data --remote-debugging-port=9222 --use-gl=osmesa`
 
+_Protip for mac users_: add an alias for chromium to your bash profile or whatever
+`alias chromium="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome/"`
+
 This allows the browser to open local beeminder files for testing
 purposes from within Javascript functions. You should be able to open
 the above test files from this browser instance. You may need to
