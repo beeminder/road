@@ -61,9 +61,6 @@ class Renderer {
   /** Returns the base URL for graph and thumbnail links */
   BBURL() { return "http://brain.beeminder.com/" }
   
-  /** Checks whether a slug has disabled graphing or not */
-  nograph(slug) { return slug.match(/NOGRAPH_/) }
-
   /** Takes a filename and return a parallel temp filename, ie, with
       the directory and file extension the same but with the base file
       name amended with a unique string based on a session ID. Eg,
@@ -75,7 +72,7 @@ class Renderer {
       instance. Creates a new tab, renders the graph and json, outputs
       the graph in PNG and SVG forms as well as the JSON output and
       closes the tab afterwards */
-  async render(inpath, outpath, slug, rid) {
+  async render(inpath, outpath, slug, rid, nograph) {
     let page = null
     let tag = this.prf(rid)
     let msgbuf = ""
@@ -103,11 +100,12 @@ class Renderer {
     let starttm = new Date()
     msgbuf += (starttm.toISOString().replace(/T/,' ').replace(/\..+/,'')+"\n")
 
-    const imgf = `${outpath}/${this.nograph(slug)?"NOGRAPH":slug}.png`
-    const svgf = `${outpath}/${this.nograph(slug)?"NOGRAPH":slug}.svg`
-    const thmf = `${outpath}/${this.nograph(slug)?"NOGRAPH":slug}-thumb.png`
+    const imgf = `${outpath}/${slug}.png`
+    const svgf = `${outpath}/${slug}.svg`
+    const thmf = `${outpath}/${slug}-thumb.png`
     // generate the graph unless both nograph(slug) and nograph.png already exists
-    const graphit = !(this.nograph(slug) && fs.existsSync(imgf) && fs.existsSync(thmf))
+    //const graphit = !(this.nograph(slug) && fs.existsSync(imgf) && fs.existsSync(thmf))
+    const graphit = !nograph
     if (graphit) {
       var imgftmp = this.tempify(imgf, newid)
       var svgftmp = this.tempify(svgf, newid)
