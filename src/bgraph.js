@@ -493,6 +493,8 @@
 	      .append('svg:svg')
         .attr("xmlns", "http://www.w3.org/2000/svg")
         .attr("xmlns:xlink", "http://www.w3.org/1999/xlink")
+        .attr("preserveAspectRatio","xMinYMin meet")
+        .attr("viewBox","0 0 "+sw+" "+sh)
         .attr('width', sw).attr('height', sh)
 	      .attr('class', 'bmndrsvg')
 
