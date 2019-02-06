@@ -2513,6 +2513,7 @@
         gBullseye.append("svg:image")
 	        .attr("class","bullseye")
 	        .attr("xlink:href",PNG.beye)
+	        .attr("externalResourcesRequired",true)
 	  	    .attr("x",bx ).attr("y",by)
           .attr('width', opts.bullsEye.size)
           .attr('height', opts.bullsEye.size);
@@ -2537,6 +2538,7 @@
         ctxplot.append("svg:image")
 	        .attr("class","ctxbullseye")
 	        .attr("xlink:href",PNG.beyey)
+	        .attr("externalResourcesRequired",true)
 	  	    .attr("x",bx ).attr("y",by)
           .attr('width', (opts.bullsEye.ctxsize))
           .attr('height', (opts.bullsEye.ctxsize));
@@ -2558,6 +2560,7 @@
         gOldBullseye.append("svg:image")
 	        .attr("class","oldbullseye")
 	        .attr("xlink:href",png)
+	        .attr("externalResourcesRequired",true)
 	  	    .attr("x",bx ).attr("y",by)
           .attr('width', (opts.bullsEye.size))
           .attr('height', (opts.bullsEye.size));
@@ -2579,6 +2582,7 @@
         ctxplot.append("svg:image")
 	        .attr("class","ctxoldbullseye")
 	        .attr("xlink:href",png)
+	        .attr("externalResourcesRequired",true)
 	  	    .attr("x",bx ).attr("y",by)
           .attr('width', (opts.bullsEye.ctxsize))
           .attr('height', (opts.bullsEye.ctxsize));
@@ -2623,6 +2627,7 @@
         wbufelt = gWatermark.append("svg:image")
 	        .attr("class","waterbuf")
 	        .attr("xlink:href",g)
+	        .attr("externalResourcesRequired",true)
           .attr('width', wmh)
           .attr('height', wmh);
       } else {

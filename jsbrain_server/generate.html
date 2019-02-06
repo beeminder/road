@@ -23,7 +23,6 @@
   setTimeout( function(){
                  console.log("Aborting processing due to timeout!");done=true;},
                  butil.MAXTIME)
-
   try {
   
     function getParameterByName(name, url) {
@@ -46,7 +45,7 @@
       newroot.selectAll(".zoomin").remove()
       newroot.selectAll(".zoomout").remove()
       //newroot.selectAll(".minor").remove()
-      done = true  // IMPORTANT: This is monitored by rendered.js
+      //done = true  // Uluc: Not sure why this was here, was causing premature exit before xlink images were loaded. 2019.02.06
     }
     async function process() {
       var graph = new bgraph({divGraph: document.getElementById('goalgraph'),
