@@ -495,7 +495,7 @@
         .attr("xmlns:xlink", "http://www.w3.org/1999/xlink")
         .attr("preserveAspectRatio","xMinYMin meet")
         .attr("viewBox","0 0 "+sw+" "+sh)
-        .attr('width', sw).attr('height', sh)
+        .attr('width', "100%").attr('height', "100%")
 	      .attr('class', 'bmndrsvg')
 
       // Common SVG definitions, including clip paths

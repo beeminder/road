@@ -193,6 +193,8 @@
       
       self.createDiv( div, "Javascript client-side graph:", "yellow" )
       var gdiv = self.createDiv( div, null )
+      gdiv.style.width = "696px"
+      gdiv.style.height = "453px"
       var graph = new bgraph({divGraph: gdiv,
                               roadEditor:false,
                               svgSize: { width: 696, height: 453 },
