@@ -60,7 +60,8 @@
     clocky   : bu.clocky, /*sum of pair diff.*/
     count    : (x) =>(x.length /* number of datapoints*/ ),
     kyshoc   : (x) =>(Math.min(2600, bu.sum(x)) ), /* ad hoc, guineapigging*/
-    skatesum : (x) =>(Math.min(self.rfin, bu.sum(x)) ) /* only count the daily min. TODO: FIXHACK?: Introduced internal state for rfin*/
+    skatesum : (x) =>(Math.min(self.rfin, bu.sum(x)) ), /* only count the daily min. TODO: FIXHACK?: Introduced internal state for rfin*/
+    cap1     : (x) =>(Math.min(1, bu.sum(x))), /* for zedmango */
   }
 
   /** Enum object to identify field types for road segments. 
