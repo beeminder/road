@@ -9,7 +9,20 @@ output with goal parameters.
 
 ## Getting started
 
-You can run the server instance with
+### Setup
+
+First time you run the server you need to install the dependencies first in the root directory
+
+`cd ../`
+`npm update`
+
+Then in the jsbrain_server directory
+
+`npm update`
+
+### Running the server
+
+Now that your dependencies are installed, you can run the server instance with
 
 `npm start`
 
@@ -38,3 +51,33 @@ the form described above:
 - The image is then scaled down, extended with a broder and palette optimized, saved to`u+g-thumb.png` through ImageMagick
 - generate.html also informs bgraph.js to populate a div element with the goal json, which is then extracted and saved into u+g.json
 - The newly created page is closed
+
+## Deploying jsbrain server to production
+
+In addition to running jsbrain server locally for development purposes, we've of course got it running on the servers to generate static graph images for ufolks.
+
+When there's a change in jsbrain code that you'd like to deploy:
+
+There are currently 2 servers you need to deploy to:
+- dubnium.beeminder.com (this one has all the latest rails code, but only runs background workers)
+- elion.beeminder.com (this is the live production server)
+
+The process for deploy is the same for either one.
+
+```
+ssh beeminder@dub 
+cd /var/www/jsbrain
+git pull
+pm2 reload jsbrain
+```
+
+And that's it. You can also check the logs to see if everything looks ok after doing this:
+
+`pm2 logs jsbrain`
+
+
+WARNING: this is just hot swapping the code that's getitng used for generating real user graphs.
+
+### deploy script
+
+This totally wants a deploy script, and I'm working on using capistrano (the same deploy tool we're already familiar with for deploying beeminder code to production environment) to set this up. That'll run code on the remote server over ssh as the beeminder user, but will also add in some nice conventions for keeping previous releases easily accessible should a quick rollback be necessary, that kind of thing, and will enable us to deploy jsbrain to all active servers with one button push.

@@ -493,7 +493,9 @@
 	      .append('svg:svg')
         .attr("xmlns", "http://www.w3.org/2000/svg")
         .attr("xmlns:xlink", "http://www.w3.org/1999/xlink")
-        .attr('width', sw).attr('height', sh)
+        .attr("preserveAspectRatio","xMinYMin meet")
+        .attr("viewBox","0 0 "+sw+" "+sh)
+        .attr('width', "100%").attr('height', "100%")
 	      .attr('class', 'bmndrsvg')
 
       // Common SVG definitions, including clip paths
@@ -2511,6 +2513,7 @@
         gBullseye.append("svg:image")
 	        .attr("class","bullseye")
 	        .attr("xlink:href",PNG.beye)
+	        .attr("externalResourcesRequired",true)
 	  	    .attr("x",bx ).attr("y",by)
           .attr('width', opts.bullsEye.size)
           .attr('height', opts.bullsEye.size);
@@ -2535,6 +2538,7 @@
         ctxplot.append("svg:image")
 	        .attr("class","ctxbullseye")
 	        .attr("xlink:href",PNG.beyey)
+	        .attr("externalResourcesRequired",true)
 	  	    .attr("x",bx ).attr("y",by)
           .attr('width', (opts.bullsEye.ctxsize))
           .attr('height', (opts.bullsEye.ctxsize));
@@ -2556,6 +2560,7 @@
         gOldBullseye.append("svg:image")
 	        .attr("class","oldbullseye")
 	        .attr("xlink:href",png)
+	        .attr("externalResourcesRequired",true)
 	  	    .attr("x",bx ).attr("y",by)
           .attr('width', (opts.bullsEye.size))
           .attr('height', (opts.bullsEye.size));
@@ -2577,6 +2582,7 @@
         ctxplot.append("svg:image")
 	        .attr("class","ctxoldbullseye")
 	        .attr("xlink:href",png)
+	        .attr("externalResourcesRequired",true)
 	  	    .attr("x",bx ).attr("y",by)
           .attr('width', (opts.bullsEye.ctxsize))
           .attr('height', (opts.bullsEye.ctxsize));
@@ -2621,6 +2627,7 @@
         wbufelt = gWatermark.append("svg:image")
 	        .attr("class","waterbuf")
 	        .attr("xlink:href",g)
+	        .attr("externalResourcesRequired",true)
           .attr('width', wmh)
           .attr('height', wmh);
       } else {

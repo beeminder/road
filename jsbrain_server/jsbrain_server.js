@@ -84,6 +84,7 @@ if (cluster.isMaster) {
     +"URL?user=username&goal=goalname&inpath=/path/to/dir<br/>"
     +"<br/>You can also supply a path for output files with the \"outpath\" parameter<br/>"
     +"An optional check against the pybrain output can be initiated with the \"pyjson\" parameter<br/>"
+    +"Graph generation may be disabled with the \"nograph=1\" parameter<br/>"
   var noinpath = "Bad URL parameters: Missing \"inpath\"<br/><br/>"+usage
   var nofile = `Bad URL parameters: One of "slug" or ("user","goal") must be supplied!<br/><br/>`+usage
   var paramconflict = 'Bad URL parameters: "slug\" and ("user\","goal") cannot be used together!<br/><br/>'+usage
@@ -93,11 +94,14 @@ if (cluster.isMaster) {
   const proc_timeid = " Total processing"
   app.use(async (req, res, next) => {
     let hostname = os.hostname()
-    let { inpath, outpath, slug, user, goal, pyjson } = req.query
+    let { inpath, outpath, slug, user, goal, pyjson, nograph } = req.query
     if (!inpath)                     return res.status(400).send(noinpath)
     if ((!slug && (!user || !goal))) return res.status(400).send(nofile)
     if ((slug && (user || goal)))    return res.status(400).send(paramconflict)
     var rid = reqcnt++ // Increment and store unique request id
+    if (nograph == undefined || nograph == "false" || nograph == "0")
+      nograph = false
+    else nograph = true
 
     if (!outpath) outpath = inpath
     if (!slug) slug = user+"+"+goal
@@ -114,7 +118,8 @@ if (cluster.isMaster) {
     try {
       var timeid = tag+proc_timeid+` (${slug})`
       console.time(timeid)
-      const resp = await renderer.render(inpath, outpath, slug, rid)
+      const resp
+            = await renderer.render(inpath, outpath, slug, rid, nograph)
       msgbuf[rid] += resp.msgbuf
       
       var json = {};
