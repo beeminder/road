@@ -1,4 +1,4 @@
 .data
 .vscode
 tests/testbb/
-jsbrain_server/node_modules
+node_modules
