@@ -215,11 +215,11 @@
   PRAF  = .015,
 
   /** paths for various PNG images used within the SVG */
-  PNG = { beye: "https://www.beeminder.com/legacy_images/road/bullseye.png", 
-          beyey: "https://www.beeminder.com/legacy_images/road/bullseye_prev.png",
-          skl: "https://www.beeminder.com/legacy_images/road/jollyroger.png",
-          inf: "https://www.beeminder.com/legacy_images/road/infinity.png",
-          sml: "https://www.beeminder.com/legacy_images/road/smiley.png"
+  PNG = { beye: "https://s3.amazonaws.com/bmndr/road/bullseye.png", 
+          beyey: "https://s3.amazonaws.com/bmndr/road/bullseye_prev.png",
+          skl: "https://s3.amazonaws.com/bmndr/road/jollyroger.png",
+          inf: "https://s3.amazonaws.com/bmndr/road/infinity.png",
+          sml: "https://s3.amazonaws.com/bmndr/road/smiley.png"
         },
   
   /** Enum object to identify error types. */
