@@ -65,9 +65,16 @@ There are currently 2 servers you need to deploy to:
 The process for deploy is the same for either one.
 
 ```
-ssh beeminder@dub 
+ssh beeminder@<server> 
 cd /var/www/jsbrain
+# before pulling in new changes, create a branch of current HEAD so we can 
+# roll back easily if need be
+git branch YYYYMMDD_HHMM
 git pull
+# maybe only need to npm update when packages change?
+cd jsbrain_server
+npm update
+# finally
 pm2 reload jsbrain
 ```
 
