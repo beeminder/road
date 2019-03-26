@@ -1,79 +1,80 @@
-# Javascript implementation of Beebrain
+# Beebrain and the Beeminder Road Editor
 
-## Description
+This repository includes Javascript packages implementing all Beebrain functionality, as well as an interactive editor for Beeminder's Yellow Brick Roads.
 
-This repository includes various Javascript packages implementing all
-Beebrain functionality, as well as an interactive editor for Beeminder
-roads. Below is a list of components and features supported by this
-repository:
+Description of original Beebrain: <http://doc.beeminder.com/beebrain>
 
-* Javascript modules for processing beeminder goal BB files ({@link module:butil `butil`}, {@link module:broad `broad`}, {@link module:beebrain `beebrain`})
-* A Javascript module for goal graph generation and an interactive road editor ({@link module:bgraph `bgraph`})
-* A Javascript module implementing a sandbox for experimenting with Beemidner goals ({@link module:bsandbox `bsandbox`})
-* A Javascript module to facilitate automated testing and comparison of beebrain outputs ({@link module:btest `btest`})
-* A node server that uses the modules above to locally generate graph PNG and SVG, thumbnail PNG and goal JSON output files upon receiving a GET request
-* A node server that provides web interface for client-side graphs, road editor and sandbox functionality
-* A node server that duplicates the behaviors of sanity.py from pybrain
+## Components and Features
+
+* Javascript modules for processing Beeminder goal BB files 
+({@link module:butil `butil`},
+{@link module:broad `broad`},
+{@link module:beebrain `beebrain`})
+* A Javascript module for goal graph generation and an interactive road editor 
+({@link module:bgraph `bgraph`})
+* A Javascript module implementing a sandbox for experimenting with Beemidner goals 
+({@link module:bsandbox `bsandbox`})
+* A Javascript module to facilitate automated testing and comparison of beebrain outputs 
+({@link module:btest `btest`})
+* A Node server that uses the modules above to locally generate graph PNG and SVG, thumbnail PNG, and goal JSON output files upon receiving a GET request
+* A Node server that provides a web interface for client-side graphs, road editor, and sandbox functionality
+* A Node server that duplicates the behaviors of sanity.py from pybrain
 * Various static HTML pages to test beebrain, graph, editor and sandbox functionality
 
 ## Getting started
 
+First make an environment variable with the path to this repository, for example:
+
+`export BBPATH=/Users/alice/projects/road`
+
+(Or wherever you git-cloned this to.)
+You can put that in your .bashrc if you want.
+Or just edit in your path wherever it says `$BBPATH` below.
+
 ### Local tests for basic functionality
 
-The directory `tests` includes a collection HTML files that illustrate
-various basic functionalities of the JS beebrain implementation. In
-particular
+The directory `tests` has HTML files illustrating various Beebrain functionality:
 
-* `basic_test.html`: Showcases client-side graphs
-* `roadeditor_test.html`: Showcases client-side graphs and the road editor
-* `sandbox.html`: Showcases beeminder sandbox to create and experiment with goals
+* `basic_test.html`      : Showcases client-side graphs
+* `roadeditor_test.html` : Showcases client-side graphs and the road editor
+* `sandbox.html`         : Showcases a Beeminder sandbox to create and experiment with goals
 
-In order to be able to load these files, you will need to use chromium
-(or chrome) with the following arguments:
+You can load them in Chromium or Chrome with the following command:
 
-`chromium-browser --allow-file-access-from-files --disable-web-security --user-data-dir=$HOME/jsgraph-data --remote-debugging-port=9222 --use-gl=osmesa`
+(Chromium on Linux)  
+`chromium-browser --allow-file-access-from-files --disable-web-security --user-data-dir=$BBPATH/chromium-data --remote-debugging-port=9222 --use-gl=osmesa file://$BBPATH/tests/basic_test.html file://$BBPATH/tests/roadeditor_test.html file://$BBPATH/tests/sandbox.html`
 
-_Protip for mac users_: add an alias for chromium to your bash profile or whatever
-`alias chromium="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome/"`
+(Chrome on MacOS)  
+`open -na /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args --allow-file-access-from-files --disable-web-security --user-data-dir=$BBPATH/chromium-data --remote-debugging-port=9222 --use-gl=osmesa file://$BBPATH/tests/basic_test.html file://$BBPATH/tests/roadeditor_test.html file://$BBPATH/tests/sandbox.html`
 
-This allows the browser to open local beeminder files for testing
-purposes from within Javascript functions. You should be able to open
-the above test files from this browser instance. You may need to
-adjust some of the options such as `--user-data-dir` based on
-differences in your local system.
+The scary-looking arguments allow the browser to open local Beeminder files from within Javascript functions. 
 
-### Node server for client-side graph, road editor and sandbox demos
+### Node server for client-side graphs, road editor, and sandbox demos
 
-This repository contains a node server instance for serving
-various demo pages to browser clients. 
+This repository contains a Node server instance for serving various demo pages to browser clients. 
 
-After you clone the main repository, you will need to install
-necessary node modules in the root directory with
+After you clone this repository, install necessary Node modules in the root directory:
 
 `npm update`
 
-Once all module dependencies are installed, you will need to generate
-minified and concatanated files based on sources in `src`. To do that,
-you may need to first install the command line interface for gulp with
+Once all module dependencies are installed, generate minified and concatanated files based on sources in `src`. 
+To do that, you may need to first install the command line interface for Gulp:
 
 `sudo npm install --global gulp-cli`
 
-which now enables you to use the gulp command. Now, you can generate
-all distribution files with
+which now enables you to use the gulp command. 
+Now, you can generate all distribution files with
 
 `gulp compile`
 
-After updating node modules and using gulp to compile js modules, you
-will need to provide a `.data` directory with a local sqlite database
-and a `.env` file with proper server settings to access central
-Beeminder servers for your login (contact us for details). Once this
-is done, you can start the demo server with
+After updating Node modules and using Gulp to compile js modules, you will need to provide a `.data` directory with a local sqlite database and a `.env` file with proper server settings to access central Beeminder servers for your login (contact us for details). 
+Once this is done, you can start the demo server with
 
 `npm start`
 
-This starts a web server on `localhost`, with different features
-available through different paths. This server should also be
-embeddable in glitch. The following paths are available:
+This starts a web server on `localhost`, with different features available through different paths. 
+This server should also be embeddable in Glitch. 
+The following paths are available:
 
   * `/editor`  : Client-side graph and interactive road editor for example goals
   * `/sandbox` : Client-side sandbox to create and experiment with dummy goals
@@ -84,16 +85,16 @@ embeddable in glitch. The following paths are available:
 The last three require setting up oauth redirect uri configuration
 properly with beeminder servers, so it would require proper settings
 in `.env`. The first two should work locally though. Note that getting
-the last three to work requires the node server being accessible from
+the last three to work requires the Node server being accessible from
 beeminder servers for the redirect_uri provided in `.env`, associated
 with the clientid also configured in `.env`.
 
 ### Node server for local server-side graph generation
 
-This feature enables running a separate node.js instance on a server,
+This feature enables running a separate Node.js instance on a server,
 listening to GET requests that initiate the generation of PNG,SVG and
 JSON files for particular beeminder goals. This server resides under
-the directory `jsbrain_server`. You should first update node modules with
+the directory `jsbrain_server`. You should first update Node modules with
 
 `cd jsbrain_server`
 `npm update`
@@ -102,7 +103,7 @@ At this point, you can start the server in the same directory with
 
 `npm start`
 
-which should start a node server on port 3000. At this point, every
+which should start a Node server on port 3000. At this point, every
 GET request you issue to `localhost:3000` with appropriate parameters
 will initiate graph generation. valid parameters are:
 

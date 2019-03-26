@@ -2,3 +2,4 @@
 .vscode
 tests/testbb/
 node_modules
+chromium-data/*
