@@ -129,6 +129,7 @@ if (cluster.isMaster) {
       json.host = hostname
       json.process = cluster.worker.id
       json.request = rid
+      json.log = resp.msgbuf
       if (resp.html == null) {
         json.error = 'Processing error: '+resp.error
       } else {

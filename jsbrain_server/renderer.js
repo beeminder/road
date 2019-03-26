@@ -126,7 +126,8 @@ class Renderer {
       console.time(time_id)
       var retval = await this.createPage(url,tag)
       if (retval) page = retval.page
-      msgbuf += this.timeEndMsg(time_id)
+      if (time_id != null) msgbuf += this.timeEndMsg(time_id)
+      time_id = null
 
       if (page) {
         time_id = tag+` Page render (${slug})`
@@ -140,10 +141,12 @@ class Renderer {
         } catch(err) {
           msgbuf += retval.pagelog.msg
           msgbuf += (tag+" renderer.js ERROR: "+err.message+"\n")
-          msgbuf += this.timeEndMsg(time_id)
+          if (time_id != null) msgbuf += this.timeEndMsg(time_id)
+          time_id = null
           return { error:err.message, msgbuf: msgbuf }
         }
-        msgbuf += this.timeEndMsg(time_id)
+        if (time_id != null) msgbuf += this.timeEndMsg(time_id)
+        time_id = null
       
         // Extract goal stats from the JSON field and extend with file locations
         const jsonHandle = await page.$('#goaljson');
@@ -152,8 +155,6 @@ class Renderer {
           let err = "Could not extract JSON from page!"
           msgbuf += (tag+" renderer.js ERROR: "+err+"\n")
 
-          // Clean up leftover timing
-          msgbuf += this.timeEndMsg(time_id)
           return { error:err, msgbuf: msgbuf }
         }
         json = JSON.parse(jsonstr)
@@ -240,7 +241,8 @@ class Renderer {
           })
         }
         if (fs.existsSync(imgftmp)) fs.renameSync(imgftmp, imgf )
-        msgbuf += this.timeEndMsg(time_id)
+        if (time_id != null) msgbuf += this.timeEndMsg(time_id)
+        time_id = null
 
       } else {
 
@@ -248,7 +250,9 @@ class Renderer {
         msgbuf += (tag+" renderer.js ERROR: "+err+"\n")
 
         // Clean up leftover timing
-        msgbuf += this.timeEndMsg(time_id)
+        if (time_id != null) msgbuf += this.timeEndMsg(time_id)
+        time_id = null
+        
         return { error:err, msgbuf: msgbuf }
       }
     } finally {
