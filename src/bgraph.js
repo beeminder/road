@@ -365,7 +365,8 @@
         gBullseye, gRoads, gDots,  gWatermark, gHashtags, gHorizon, gHorizonText, 
         zoomarea, axisZoom, zoomin, zoomout,  
         brushObj, brush, focusrect, topLeft,
-        scf = 1, oldscf = 0
+        scf = 1, oldscf = 0,
+        xlinkloaded = true
 
     // Internal state for the graph
     var lastError = null,
@@ -2623,6 +2624,7 @@
         offg = tl; offb = br
       }
 
+      xlinkloaded = false
       var wbufelt = gWatermark.select(".waterbuf");
       var fs = opts.watermark.fntsize, wmh = opts.watermark.height
       wbufelt.remove();
@@ -2635,7 +2637,8 @@
 	        .attr("xlink:href",g)
 	        .attr("externalResourcesRequired",true)
           .attr('width', wmh)
-          .attr('height', wmh);
+          .attr('height', wmh)
+          .on('load', ()=>{xlinkloaded = true});
       } else {
 	  	  x = plotbox.width/4;
         y = plotbox.height/4+fs/3;
@@ -2653,6 +2656,7 @@
           y = plotbox.height/4+newh/3;
           wbufelt.style('font-size', newsize+"px");
         }        
+        xlinkloaded = true
       }
       wbufelt.attr("x", x + offg[0])
         .attr("y", y + offg[1]);
@@ -4810,6 +4814,10 @@
       return out
     }
 
+    /** Returns a flag indicating whether external image references on
+     * the svg have finished loading or not */
+    this.xlinkLoaded = () => xlinkloaded
+    
     /** @typedef GoalProperties
         @global
         @type {object}
