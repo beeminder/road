@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <link rel="stylesheet" href="../src/jsbrain.css">
-    <script src = "https://d3js.org/d3.v4.js"></script>
+    <script src = "https://d3js.org/d3.v4.js" onload="d3loaded=true;"></script>
     <script src = "../src/moment.js"></script>
     <script src = "../src/polyfit.js"></script>
     <script src = "../src/butil.js"></script>
@@ -18,7 +18,7 @@
 
 <script>
   var done = false; // IMPORTANT: This is monitored by rendered.js
-
+  
   // Make sure to abort processing if an unreasonable amount of time has elapsed
   setTimeout( function(){
                  console.log("Aborting processing due to timeout!");done=true;},
@@ -34,7 +34,7 @@
       if (!results[2]) return ''
       return decodeURIComponent(results[2].replace(/\+/g, " "))
     }
-
+ 
     var saveSVG = function() {
       //console.debug('Done loading road')
       var newroot = d3.select(document.body)
@@ -46,8 +46,15 @@
       newroot.selectAll(".zoomout").remove()
       //newroot.selectAll(".minor").remove()
       //done = true  // Uluc: Not sure why this was here, was causing premature exit before xlink images were loaded. 2019.02.06
+     
     }
     async function process() {
+      if (typeof d3loaded == 'undefined') await new Promise((r,j)=>setTimeout(r,1000))
+      if (typeof d3loaded == 'undefined') {
+        console.log("ERROR (generate.html): Could not load d3! No internet?")
+        done = true
+        return
+      }
       var graph = new bgraph({divGraph: document.getElementById('goalgraph'),
                            divJSON: document.getElementById('goaljson'),
                            svgSize: { width: 696, height: 453 },
@@ -68,6 +75,12 @@
         await graph.loadGoal(getParameterByName('bb'))
       } else {
         d3.select("#roadgraph").text("Usage: generate.html?bb=file:///path/to/file.bb")
+      }
+     
+      if (graph.hasOwnProperty('xlinkLoaded')) {
+        while (!graph.xlinkLoaded()) {     
+          await (new Promise(resolve => (setTimeout(resolve, 10))))
+        }     
       }
       done = true
     }
