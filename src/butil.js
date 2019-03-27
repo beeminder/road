@@ -60,7 +60,7 @@
     PNKE:   "#ffcccc",
     GRAY:   "#f0f0f0",
     BLCK:   "#000000",
-    GRNDOT: "#00aa00", //Dark green for good side of the road
+    GRNDOT: "#00aa00", // Dark green for good side of the road
     BLUDOT: "#3f3fff", // Blue for correct lane
     ORNDOT: "#ffa500", // Orange for wrong lane
     REDDOT: "#ff0000"  // Red for off the road on the bad side
