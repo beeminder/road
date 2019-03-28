@@ -116,7 +116,7 @@ These variables should be only used in a read-only manner since their
 internal consistency is critical for other components of the
 Beeminder's Javascript library. An exception to this is the `roads`
 object, which can be edited externally, followed by a call to {@link
-beebrain#reloadRoad()}. This forces the beebrain object to reprocess
+beebrain#reloadRoad}. This forces the beebrain object to reprocess
 the goal with the new road and update its output and internal state.
 
 Finally, if one wants to directly change the current road matrix for
