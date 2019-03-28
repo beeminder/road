@@ -252,7 +252,8 @@
 
     /** Initialize various global variables before use */
     function initGlobals() {
-      // This is here because object member initialization with dynamic names is not possible
+      // This is here because object member initialization with
+      // dynamic names is not possible
       CNAME[bu.Cols.GRNDOT] = "green",
       CNAME[bu.Cols.BLUDOT] = "blue",
       CNAME[bu.Cols.ORNDOT] = "orange",
@@ -275,7 +276,7 @@
       hashhash = {}
 
       // All the in and out params are also global variables!
-      var prop;
+      var prop
       for (prop in pout) if (pout.hasOwnProperty(prop))goal[prop] = pout[prop]
       for (prop in pin) if (pin.hasOwnProperty(prop)) goal[prop] = pin[prop]
     }
@@ -370,7 +371,7 @@
     // point be equal to the previous point, clipped by the next point plus or minus 
     // delta. Used for the rose-colored dots.
     function inertia0(x, d, sgn) {
-      return bu.foldlist( ((a, b)=>bu.clip(a, b-d, b+d)), x[0]+sgn*d, x.slice(1,x.length))
+      return bu.foldlist(((a, b)=>bu.clip(a, b-d, b+d)), x[0]+sgn*d, x.slice(1,x.length))
     }
     function inertia(dat, delt, sgn) {  // data, delta, sign (-1 or +1)
       var tdata = bu.zip(dat) // transpose of data
@@ -455,7 +456,7 @@
       // Precompute list of [t, hashtext] pairs for efficient display
       if (goal.hashtags) {
         hashtags = []
-        var keys = Object.keys(hashhash);
+        var keys = Object.keys(hashhash)
         for (let key in hashhash)
           hashtags.push([key, Array.from(hashhash[key]).join(" ")])
       }
@@ -468,7 +469,7 @@
       
       // Identify, record and process odometer reset for odom goals
       if (goal.odom) {
-        oresets = data.filter(function(e){ return (e[1]==0);}).map(e=>(e[0]))
+        oresets = data.filter(function(e){ return (e[1]==0)}).map(e=>(e[0]))
         br.odomify(data)
       }
 
@@ -551,7 +552,7 @@
       
       // Recompute an array of all datapoints based on allvals,
       // having incorporated aggregation and other processing steps.
-      var allpts = [];
+      var allpts = []
       for (let t in allvals) {
         allpts = allpts.concat(allvals[t].map(
           d=>([Number(t), d[0], d[1], 
@@ -616,7 +617,7 @@
       // First segment starts from [tini-100days, vini], ends at [tini, vini]
       firstsegment = {
         sta: [tini, Number(vini)],
-        slope: 0, auto: br.RP.SLOPE };
+        slope: 0, auto: br.RP.SLOPE }
       firstsegment.end = firstsegment.sta.slice()
       firstsegment.sta[0] = bu.daysnap(firstsegment.sta[0]-100*bu.DIY*bu.SID)
       roads.push(firstsegment)
@@ -663,60 +664,58 @@
         } 
         // Skip adding segment if it is earlier than the first segment
         if (segment.end[0] >= segment.sta[0]) {
-          roads.push(segment);
+          roads.push(segment)
         }
       }
       // Extract computed values for tfin, vfin and rfin
-      var goalseg = roads[roads.length-1];
+      var goalseg = roads[roads.length-1]
       
       // A final segment is added, ending 100 days after tfin
       var finalsegment = {
         sta: goalseg.end.slice(),
         end: goalseg.end.slice(),
-        slope: 0, auto: br.RP.VALUE };
-      finalsegment.end[0] = bu.daysnap(finalsegment.end[0]+100*bu.DIY*bu.SID);
-      roads.push(finalsegment);
+        slope: 0, auto: br.RP.VALUE }
+      finalsegment.end[0] = bu.daysnap(finalsegment.end[0]+100*bu.DIY*bu.SID)
+      roads.push(finalsegment)
 
       //br.printRoad(roads)
       // Uluc: Does not seem necessary if the above extraction is correct
-      //br.fixRoadArray( roads, br.RP.VALUE, true );
-      return "";
+      //br.fixRoadArray( roads, br.RP.VALUE, true )
+      return ""
     }
 
 
-    var flad = null;     // Holds the flatlined datapoint if it exists
+    var flad = null     // Holds the flatlined datapoint if it exists
     function flatline() {
-      flad = null;
-      var now = goal.asof;
-      var numpts = data.length;
-      var tlast = data[numpts-1][0];
-      var vlast = data[numpts-1][1];
+      flad = null
+      var now = goal.asof
+      var numpts = data.length
+      var tlast = data[numpts-1][0]
+      var vlast = data[numpts-1][1]
 
-      if (tlast > goal.tfin) return;
-      var x = tlast; // x = the time we're flatlining to
+      if (tlast > goal.tfin) return
+      var x = tlast // x = the time we're flatlining to
       if (goal.yaw * goal.dir < 0) 
-        x = Math.min(now, goal.tfin); // WEEN/RASH: flatline all the way
+        x = Math.min(now, goal.tfin) // WEEN/RASH: flatline all the way
       else { // for MOAR/PHAT, stop flatlining if 2 red days in a row
-        var prevcolor = null;
-        var newcolor;
+        var prevcolor = null
+        var newcolor
         while (x <= Math.min(now, goal.tfin)) { // walk forward from tlast
-          newcolor = br.dotcolor( roads, goal, x, vlast );
+          newcolor = br.dotcolor( roads, goal, x, vlast )
           // done iff 2 reds in a row
-          if (prevcolor===newcolor && prevcolor===bu.Cols.REDDOT) 
-            break;
-          prevcolor = newcolor;
-          x += bu.SID; // or see padm.us/ppr
-        };
-        x = bu.arrMin([x, now, goal.tfin]);
+          if (prevcolor===newcolor && prevcolor===bu.Cols.REDDOT) break
+          prevcolor = newcolor
+          x += bu.SID // or see padm.us/ppr
+        }
+        x = bu.arrMin([x, now, goal.tfin])
         for (let i = 0; i < numpts; i++) {
-          if (x == data[i][0])
-            return;
+          if (x == data[i][0]) return
         }
       }
       if (!aggvals.hasOwnProperty(x)) {
-        var prevpt = data[numpts-1];
-        flad = [x, vlast, "PPR", DPTYPE.FLATLINE, prevpt[0], prevpt[1], null];
-        data.push(flad);
+        var prevpt = data[numpts-1]
+        flad = [x, vlast, "PPR", DPTYPE.FLATLINE, prevpt[0], prevpt[1], null]
+        data.push(flad)
       }
     }
 
@@ -727,14 +726,14 @@
       if (goal.tmax == null) {
         // Make more room beyond the askrasia horizon if lots of data
         var years = Math.floor((goal.tcur - goal.tmin) / (bu.DIY*bu.SID))
-        goal.tmax = bu.daysnap((1+years/2)*2*bu.AKH + goal.tcur);
+        goal.tmax = bu.daysnap((1+years/2)*2*bu.AKH + goal.tcur)
       }
       if (goal.vmin != null && goal.vmax != null) {
         // both provided explicitly
         if  (goal.vmin == goal.vmax) {
           goal.vmin -= 1; goal.vmax += 1    // scooch away from each other
         } else if (goal.vmin >  goal.vmax) {
-          let tmp = goal.vmin;
+          let tmp = goal.vmin
           goal.vmin = goal.vmax; goal.vmax = tmp //swap them
         }
         return
@@ -860,7 +859,7 @@
       if (goal.kyoom && goal.odom)
         return "The odometer setting doesn't make sense for an auto-summing goal!"
 
-      return "";
+      return ""
     }
     
     /** Process goal parameters. */
@@ -897,26 +896,26 @@
         (goal.abslnw != null)?(x=>goal.abslnw)
         :br.genLaneFunc(roads, goal)
       
-      flatline();
+      flatline()
 
       if (goal.movingav) {
         // Filter data and produce moving average
-        var dl = data.length;
+        var dl = data.length
         if (!(dl <= 1 || data[dl-1][0]-data[0][0] <= 0)) { 
         
           // Create new vector for filtering datapoints
           var newx = griddle(data[0][0], data[dl-1][0])
           JSON.stringify(newx)
           goal.filtpts = newx.map((d) => [d, ema(data, d)])
-        } else goal.filtpts = [];
-      } else goal.filtpts = [];
+        } else goal.filtpts = []
+      } else goal.filtpts = []
       
-      goal.tcur = data[data.length-1][0];
-      goal.vcur = data[data.length-1][1];
+      goal.tcur = data[data.length-1][0]
+      goal.vcur = data[data.length-1][1]
 
-      goal.lnw = Math.max(goal.nw,goal.lnf( goal.tcur ));
-      goal.safebuf = br.dtd(roads, goal, goal.tcur, goal.vcur);
-      goal.tluz = goal.tcur+goal.safebuf*bu.SID;
+      goal.lnw = Math.max(goal.nw,goal.lnf( goal.tcur ))
+      goal.safebuf = br.dtd(roads, goal, goal.tcur, goal.vcur)
+      goal.tluz = goal.tcur+goal.safebuf*bu.SID
       goal.delta = bu.chop(goal.vcur - br.rdf(roads, goal.tcur))
       goal.rah = br.rdf(roads, goal.tcur+bu.AKH)
       
@@ -941,8 +940,8 @@
       if (goal.safebuf <= 0) goal.tluz = goal.tcur
       if (goal.tfin < goal.tluz)  goal.tluz = bu.BDUSK
         
-      setDefaultRange();
-      return "";
+      setDefaultRange()
+      return ""
     }
     function sumSet(rd, goal) {
       var y = goal.yaw, d = goal.dir, l = goal.lane, w = goal.lnw, dlt = goal.delta
@@ -977,7 +976,7 @@
       if (pt==pv) goal.progsum = pt+"% done"
       else goal.progsum = pt+"% done by time -- "+pv+"% by value"
 
-      var x, ybrStr;
+      var x, ybrStr
       if (goal.cntdn < 7) {
         x = Math.sign(goal.rfin) * (goal.vfin - goal.vcur)
         ybrStr = "To go to goal: "+bu.shn(x,2,1)+"."
@@ -1135,7 +1134,7 @@
         goal.road.forEach(
           function(r) {
             if (r[0] > goal.asof && r[0] < goal.asof+bu.AKH) {
-              goal.pinkzone.push([r[0], r[1], null]);
+              goal.pinkzone.push([r[0], r[1], null])
             }
           }
         )
@@ -1154,7 +1153,7 @@
       return ""
     }
 
-    var stats = {};
+    var stats = {}
 
     /** Process goal details */
     function genStats( p, d, tm=null ) {
@@ -1240,7 +1239,15 @@
     // Static members for outside access
     this.DPTYPE = DPTYPE
 
-    /** Holds the current array of road segments */
+    /** Holds the current array of road segments. The
+    format for this object is an array of linear segments, each of
+    which is an object with the following format: `{sta: [t, v], end:
+    [t, v], slope: r, auto: autoparam}`, where `r` is expressed in
+    Hertz (1/s), and `autoparam` is one of the enumerated values in
+    {@link module:broad.RP broad.RP}, indicating which entry will be
+    auto-computed. Note that the end point for one segment is required
+    to be identical to the starting point for the next
+    segment.  */
     this.roads = roads
     /** Holds current goal's information */
     this.goal = goal
@@ -1265,5 +1272,5 @@
     this.hashtags = hashtags
   }
 
-  return beebrain;
+  return beebrain
 }));
