@@ -229,7 +229,7 @@
   ErrMsgs = [ "Could not find goal file.", "Bad goal file.", "Beeminder error" ],
 
   /** This function attempts to determine whether the page was loaded
-   * from a mobikle device or not. */
+   * from a mobile device or not. */
   onMobileOrTablet = () => {
     if (typeof navigator == 'undefined' && typeof window == 'undefined') return false
     var check = false;
