@@ -55,7 +55,7 @@ svg: top element
     g (id=removebutton): Removal button shape
     g (id=zoominbtn): Zoom-in button shape
     g (id=zoomoutbtn): Zoom-out button shape
-  rect (class=zoomarea):
+  rect (class=zoomarea): Rectangle to monitor zoom events (for d3.zoom)
   g (class=focus): Top container for the main graph
     text: Shows 'stathead' form the goal when enabled
     g (clippath=buttonareaclip): Clipping container for knot removal buttons (roadeditor)
@@ -68,35 +68,76 @@ svg: top element
         g (class=ybhpgrp)
           path (class=halfplane): Yellow brick half plane (roadeditor)
         g (class=auragrp):
+          path (class=aura): Aura around datapoints beyond tini
+          path (class=aurapast): Aura around datapoints prior to tini
         g (class=wmarkgrp):
+          text [or image] (class=waterbuf): Safety buffer watermark
+          text (class=waterbux): Pledge amount watermark
         g (class=oldguidegrp):
+          path (class=oldguides): Guidelines for the unedited "old" road (!roadeditor)
+          ...
         g (class=oldroadgrp):
+          path (class=oldlanes): YBR for the unedited "old" road (!roadeditor)
         g (class=pinkgrp):
+          path (class=pinkregion): Pink "forbidden" region between asof and horizon
         g (class=oldbullseyegrp:
+          image (class=oldbullseye): Bullseye for the unedited "old" road
         g (class=oldcentergrp):
+          path (class=oldroads): YBR centerline
         g (class=grid):
-          g (class=grid): vertical grid lines
+          g (class=grid): vertical grid lines (!roadeditor)
+          line (class=pastline): Vertical line showing asof (roadeditor only)
         g (class=oresetgrp):
+          line (class=oresets): Vertical lines to indicate odometer resets
+          ...
         g (class=knotgrp):
+          line (class=knots): Vertical knots for editing time (roadeditor)
+          ...
         g (class=steppygrp):
+          path (class=steppy): Purple steppy line (!roadeditor)
         g (class=rosygrp):
+          path (class=rosy): Piecewise linear rosy line (!roadeditor)
         g (class=rosyptsgrp):
+          circle (class=rd): Points on the rosy line (!roadeditor)
+          ...
         g (class=derailsgrp):
+          use (class=derails): Arrows showing derailment points (!roadeditor)
+          ...
         g (class=allptsgrp):
+          circle (class=ap): All non-aggregated datapoints (!roadeditor)
+          ...
         g (class=movingavgrp):
+          path (class=movingav): Moving average of datapoints (!roadeditor)
         g (class=steppyptsgrp):
+          circle (class=std): Purple points on the steppy line (!roadeditor)
+          ...
         g (class=datapointgrp):
+          circle (class=dp): Aggregated datapoints
+          ...
         g (class=hollowgrp):
+          circle (class=hpts): "Hollow" datapoints (!roadeditor)
+          ...
         g (class=flatlinegrp):
+          use (class=fladp): Flatlined datapoint
         g (class=hashtaggrp):
+          text (class=hashtag): Hashtag text (!roadeditor)
+          ...
         g (class=bullseyegrp):
+          image (class=bullseye): Bullseye for edited road (roadeditor)
         g (class=roadgrp):
+          line (class=roads): Centerline for the edited road (roadeditor)
+          ...
         g (class=dotgrp):
+          circle (class=dots): Inflection points for the edited road (roadeditor)
+          ...
         g (class=horgrp):
+          line (class=horizon): Vertical line for the akrasia horizon
         g (class=hortxtgrp):
+          text (class=horizontext): "Akrasia Horizon" string
         g (class=pasttxtgrp):
-      use (class=zoomin):
-      use (class=zoomout):
+          text (class=pasttext): "Today (dayname)" string indicating asof (roadeditor)
+      use (class=zoomin): Button to zoom in
+      use (class=zoomout): Button to zoom out
     g (class=axis): bottom X axis
     g (class=axis): top X axis (only when editor is disabled)
     text (class=axislabel): bottom X axis label
@@ -106,7 +147,19 @@ svg: top element
   g (class=brush): Top container for the "context" graph showing the entire range
     g (clip-path=brushclip): Clipping container for the context graph
       g (class=context):
-        g (class=axis): bottom X axis
-      g (class=brush):
-      rect (class=focusrect):
+        g (class=brush): "brush" to select and move focus area on the entire range
+          ...
+        path (class=ctxoldroad): Unedited road centerline in the context graph
+        image (class=ctxoldbullseye): Unedited road's bullseye in the context graph
+        image (class=ctxbullseye): New road's bullseye in the context graph (roadeditor)
+        line (class=ctxroads): New road segments in the context graph (roadeditor)
+          ...
+        circle (class=ctxdots): New road corners in the context graph (roadeditor)
+          ...
+        line (class=ctxhorizon): Vertical line for the akrasia horizon in the context gr.
+        text (class=ctxhortext): "Akrasia Horizon" string in the context gr.
+        line (class=ctxtoday): Vertical line for asof in the context gr.
+        text (class=ctxtodaytext): "Today" string in the context gr.
+      rect (class=focusrect): Rectange to show the range currently in focus
+    g (class=axis): bottom X axis
 </pre>
