@@ -296,7 +296,7 @@
       @property {Boolean} tableUpdateOnDrag Chooses whether the road matrix table should be dynamically updated during the dragging of road knots, dots and segments. Enabling this may induce some lagginess, particularly on Firefox due to more components being updated during dragging
     
     
-      @property {function} onRoadChange Callback function that gets invoked when the road is edited by the user. Various interface functions can then be used to retrieve the new road state. This is also useful to update the state of undo/redo and submit buttons based on how many edits have been done on the original road.
+      @property {function} onRoadChange Callback function that gets invoked when the road is finished loading or has been edited by the user. Various interface functions can then be used to retrieve the new road state. This is also useful to update the state of undo/redo and submit buttons based on how many edits have been done on the original road.
       @property {function} onError Callback function that gets invoked when an error is encountered  in loading, processing, drawing or editing the road. 
 
       @property {object} zoomButton Visual parameters for the zoom in/out buttons. "factor" indicates how much to zoom in/out per click. e.g. { size: 40, opacity: 0.6, factor: 1.5 }
@@ -1217,7 +1217,7 @@
     }
 
     function zoomAll( ) {
-      //console.debug("id="+curid+", zoomAll()");
+      console.debug("id="+curid+", zoomAll()");
       if (opts.divGraph == null) return;
       computePlotLimits( false );
       xSc.domain([new Date(Math.min(goal.tmin, goal.xMin)*1000), 
@@ -4808,7 +4808,7 @@
         @returns {GoalVisuals} 
         @see {@link bgraph#getGoalConfig}
     */
-    this.getVisualConfig = ( opts ) =>{
+    this.getVisualConfig = ( ) =>{
       var out = {}
       visualProps.map(e=>{ out[e] = goal[e] })
       return out

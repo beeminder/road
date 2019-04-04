@@ -4,7 +4,10 @@
     "tutorials":"./tutorials"
   },
   "templates":{
+    "includeDate": false,
+    "dateFormat": " ",
     "default":{
+      "includeDate": false,
       "staticFiles":{
         "include":["./tutorials/static"]
       }
