@@ -4,5 +4,8 @@
      },
      "bgraph": {
        "title": "Using the bgraph class"
+     },
+     "bgraph_internals": {
+       "title": "Internal details for the bgraph class"
      }
  }

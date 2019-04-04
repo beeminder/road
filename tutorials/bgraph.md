@@ -1,6 +1,8 @@
 This tutorial describes the details and usage of the {@link bgraph}
 class provided as part of the Beeminder Javascript implementation.
 
+### Basic Usage for Interactive Graphs
+
 The {@link module:bgraph bgraph module} and the associated {@link
 bgraph bgraph class} allows programmers to create beeminder graph and
 road table objects rendered within particular div objects within a web
@@ -13,7 +15,6 @@ illustrates the most basic usage
                           svgSize: { width: 800, height: 600 },
                           focusRect: { x:0, y:0, width:800, height: 453 },
                           ctxRect: { x:0, y:453, width:800, height: 100 },
-                          showFocusRect: true,
                           showContext: true})
   graph.loadGoal( "/path/slug.bb" )
 ```
@@ -37,129 +38,93 @@ all three features enabled would look like the following image:
 
 <center><img src="graph_example.png"></center>
 
+### Basic Usage for Road Editing
 
-## Internals
+Similar to its usage to generate interactive graphs, the {@link bgraph
+bgraph class} also allows programmers to create an interactive road
+editor that allows both manipulation of the road on the graph, as well
+as edits on the road matrix through the table. To this end, the
+following Javascript code creates the editor on an existing div
+element on the page:
 
-### Structure of the SVG element hosting the graph
+```javascript
+  var graph = new bgraph({divGraph: document.getElementById('editor'),
+                          svgSize: { width: 800, height: 600 },
+                          focusRect: { x:0, y:0, width:800, height: 453 },
+                          ctxRect: { x:0, y:453, width:800, height: 100 },
+                          roadEditor: true,
+                          showContext: true})
+  graph.loadGoal( "/path/slug.bb" )
+```
 
-<pre>
-svg: top element
-  defs: Definitions references from the graph
-    style: Overall style components for the SVG to support standalone loading
-    clipPath (id=plotclip): Path for clipping the plot area
-    clipPath (id=brushclip): Path for clipping the context plot
-    clipPath (id=buttonAreaclip): Path for clipping knot removal buttons
-    path (id=rightarrow): Right arrow shape (flatlined datapoint)
-    path (id=downtarrow): Down arrow shape (derailment for yaw>0)
-    path (id=uparrow): Up arrow shape (derailment for yaw<0)
-    g (id=removebutton): Removal button shape
-    g (id=zoominbtn): Zoom-in button shape
-    g (id=zoomoutbtn): Zoom-out button shape
-  rect (class=zoomarea): Rectangle to monitor zoom events (for d3.zoom)
-  g (class=focus): Top container for the main graph
-    text: Shows 'stathead' form the goal when enabled
-    g (clippath=buttonareaclip): Clipping container for knot removal buttons (roadeditor)
-      use (class=remove): Removal button instance for each know
-      ...
-    g (clippath=plotclip): Clipping container for the main plot
-      g (class=plot): Container for all plot components
-        g (class=pastboxgrp)
-          rect (class=past): Shaded box ending at asof to show past dates (roadeditor)
-        g (class=ybhpgrp)
-          path (class=halfplane): Yellow brick half plane (roadeditor)
-        g (class=auragrp):
-          path (class=aura): Aura around datapoints beyond tini
-          path (class=aurapast): Aura around datapoints prior to tini
-        g (class=wmarkgrp):
-          text [or image] (class=waterbuf): Safety buffer watermark
-          text (class=waterbux): Pledge amount watermark
-        g (class=oldguidegrp):
-          path (class=oldguides): Guidelines for the unedited "old" road (!roadeditor)
-          ...
-        g (class=oldroadgrp):
-          path (class=oldlanes): YBR for the unedited "old" road (!roadeditor)
-        g (class=pinkgrp):
-          path (class=pinkregion): Pink "forbidden" region between asof and horizon
-        g (class=oldbullseyegrp:
-          image (class=oldbullseye): Bullseye for the unedited "old" road
-        g (class=oldcentergrp):
-          path (class=oldroads): YBR centerline
-        g (class=grid):
-          g (class=grid): vertical grid lines (!roadeditor)
-          line (class=pastline): Vertical line showing asof (roadeditor only)
-        g (class=oresetgrp):
-          line (class=oresets): Vertical lines to indicate odometer resets
-          ...
-        g (class=knotgrp):
-          line (class=knots): Vertical knots for editing time (roadeditor)
-          ...
-        g (class=steppygrp):
-          path (class=steppy): Purple steppy line (!roadeditor)
-        g (class=rosygrp):
-          path (class=rosy): Piecewise linear rosy line (!roadeditor)
-        g (class=rosyptsgrp):
-          circle (class=rd): Points on the rosy line (!roadeditor)
-          ...
-        g (class=derailsgrp):
-          use (class=derails): Arrows showing derailment points (!roadeditor)
-          ...
-        g (class=allptsgrp):
-          circle (class=ap): All non-aggregated datapoints (!roadeditor)
-          ...
-        g (class=movingavgrp):
-          path (class=movingav): Moving average of datapoints (!roadeditor)
-        g (class=steppyptsgrp):
-          circle (class=std): Purple points on the steppy line (!roadeditor)
-          ...
-        g (class=datapointgrp):
-          circle (class=dp): Aggregated datapoints
-          ...
-        g (class=hollowgrp):
-          circle (class=hpts): "Hollow" datapoints (!roadeditor)
-          ...
-        g (class=flatlinegrp):
-          use (class=fladp): Flatlined datapoint
-        g (class=hashtaggrp):
-          text (class=hashtag): Hashtag text (!roadeditor)
-          ...
-        g (class=bullseyegrp):
-          image (class=bullseye): Bullseye for edited road (roadeditor)
-        g (class=roadgrp):
-          line (class=roads): Centerline for the edited road (roadeditor)
-          ...
-        g (class=dotgrp):
-          circle (class=dots): Inflection points for the edited road (roadeditor)
-          ...
-        g (class=horgrp):
-          line (class=horizon): Vertical line for the akrasia horizon
-        g (class=hortxtgrp):
-          text (class=horizontext): "Akrasia Horizon" string
-        g (class=pasttxtgrp):
-          text (class=pasttext): "Today (dayname)" string indicating asof (roadeditor)
-      use (class=zoomin): Button to zoom in
-      use (class=zoomout): Button to zoom out
-    g (class=axis): bottom X axis
-    g (class=axis): top X axis (only when editor is disabled)
-    text (class=axislabel): bottom X axis label
-    g (class=axis): left Y axis
-    g (class=axis): right Y axis
-    text (class=axislabel): left Y axis label
-  g (class=brush): Top container for the "context" graph showing the entire range
-    g (clip-path=brushclip): Clipping container for the context graph
-      g (class=context):
-        g (class=brush): "brush" to select and move focus area on the entire range
-          ...
-        path (class=ctxoldroad): Unedited road centerline in the context graph
-        image (class=ctxoldbullseye): Unedited road's bullseye in the context graph
-        image (class=ctxbullseye): New road's bullseye in the context graph (roadeditor)
-        line (class=ctxroads): New road segments in the context graph (roadeditor)
-          ...
-        circle (class=ctxdots): New road corners in the context graph (roadeditor)
-          ...
-        line (class=ctxhorizon): Vertical line for the akrasia horizon in the context gr.
-        text (class=ctxhortext): "Akrasia Horizon" string in the context gr.
-        line (class=ctxtoday): Vertical line for asof in the context gr.
-        text (class=ctxtodaytext): "Today" string in the context gr.
-      rect (class=focusrect): Rectange to show the range currently in focus
-    g (class=axis): bottom X axis
-</pre>
+This populates the supplied div element with the following content,
+including the interactive editor and the editable road matrix. The
+JSON output was excluded since editing the graph will change its
+contents.
+
+<center><img src="editor_example.png"></center>
+
+Below is an explanation of various components and features of this editor:
+
+Manipulating the road:
+  * The gray vertical lines ("knots") on the graph allow moving left/right the inflection points in the road, changing their time,
+  * The "dots" on the road allow moving up/down the inflection points on the road, changing their time,
+  * The lines connecting the black dots ("road segments") can also be grabbed and moved, allowing the user to change the slope of road segments,
+  * The 'x' buttons on top of each knot allow deletion of the corresponding knot, removing the associated inflection point on the road,
+  * You can left double click to create a new inflection point (knot/dot pair) on the road
+  * The road line appears to be black when it is "valid" (i.e. does not intersect the pink region), and appears to be red when it is "invalid" (i.e. intersects the pink region),
+
+Visual indicators:
+  * Datapoints for the goal are shown as small circles,
+  * The pink area below the graph shows the "forbidden area" up until a week from now, which the edited road is not allowed to intersect to remain valid,
+  * When you "select" any knot, dot or segment with a single left mouse click, the corresponding entry in the road matrix table will be highlighted and corresponding date,value,slope values displayed on tooltips,
+
+Moving around and zooming:
+  * You can zoom in/out with the scroll wheel on the mouse, and drag the graph left/right to focus on different time periods on the graph,
+  * The y-axis range for the graph is automatically computed to make all relevant components on the graph visible,
+  * The "context" graph at the bottom shows the entire range of the graph, together with the current area spanned by the top "focus" graph. You can move around and scale the blue region to change the focus area.
+  
+Road matrix table:
+  * Each row in this table shows three fields, end date, end value and slope, associated with the preceding segment. Only two of the three fields are "active", with the third one inferred to be consistent with the rest of the road,
+  * Selecting any of the active fields highlights the corresponding knot, dot or segment on the graph,
+  * Selecting an inactive field activates it, but deactivates one of the previously active fields. You can hence determine which field from among the three should be inferred automatically,
+  * You can delete a road matrix row by using the "del" button,
+  * A new segment can be added using the "add" button, created in between the row with the button and the next
+  
+These components allow the user to change any and all aspects of the
+road associated with a beeminder goal.
+
+### Common Functions for both Graphs and the Editor
+
+  * {@link bgraph#loadGoal}(url): Async function that loads the BB file from the indicated URL and starts rendering the graph. Completion of rendering might take some time, at the end of which the callback function specified in the *onRoadChange* property of {@link BGraphOptions} will be called.
+  * {@link bgraph#loadGoalJSON}(json): Function to load goal contents from a BB json start rendering the graph. Completion of rendering might take some time, at the end of which the callback function specified in the *onRoadChange* property of {@link BGraphOptions} will be called. **TODO: CHECK if onRoadChange is indeed called here**
+  * {@link bgraph#zoomAll}(): Zooms out to show the entire graph range
+  * {@link bgraph#zoomDefault}(): Zooms into the default range for the graph
+  * {@link bgraph#hide}() and {@link bgraph#show}(): Should be called when the div containing the graph/editor is hidden and reshown on the page.
+  * {@link bgraph#showContext}(flag): Show/hide the context graph
+  * {@link bgraph#maxDataDays}(days): Set the maximum number of days before today to show datapoints for. Defaults to 365 unless specified in the initial options. Helps optimize interactivity performance.
+  * {@link bgraph#reverseTable}(flag): Sets whether the road matrix table should be sorted in decreasing (true), or increasing (false) order of dates. Final road row is placed at the top if set to true.
+  * {@link bgraph#getRoad}(): 
+  * {@link bgraph#getRoadObj}(): 
+  * {@link bgraph#setRoadObj}(): 
+  * {@link bgraph#isLoser}(): 
+  * {@link bgraph#curState}(): 
+  * {@link bgraph#saveGraph}(linkelt): 
+  * {@link bgraph#getVisualConfig}(): 
+  * {@link bgraph#getGoalConfig}(): 
+
+
+### Functions Specific to the Editor
+
+  * {@link bgraph#showData}(flag): Show/hide datapoints on the editor graph. Datapoins are always shown on the interactive non-editor graph.
+  * {@link bgraph#keepSlopes}(flag): 
+  * {@link bgraph#keepIntervals}(flag): 
+  * {@link bgraph#tableAutoScroll}(flag): 
+  * {@link bgraph#undo}(): 
+  * {@link bgraph#redo}(): 
+  * {@link bgraph#undoBufferState}(): 
+  * {@link bgraph#clearUndoBuffer}(): 
+  * {@link bgraph#retroRatchet}(days): 
+  * {@link bgraph#scheduleBreak}(start, days, insert): 
+  * {@link bgraph#commitTo}(newSlope): 
+
