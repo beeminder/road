@@ -216,6 +216,42 @@ svg: top element
       rect (class=focusrect): Rectange to show the range currently in focus
     g (class=axis): bottom X axis
 </pre>
+
+<h3>Axes, graph boundaries, zooming and panning</h3><h3>Principles of Operation for the Interactive Graph Editor</h3><p>The interactive graph editor implemented by the <a href="bgraph.html">bgraph</a> class
+relies heaving on <a href="https://d3js.org">d3.js</a> to manipulate DOM
+elements and the SVG graph. To this end, callbacks are registered to
+various mouse events for relevant objects created within the SVG when
+the roadEditor option is enabled on creation. In particular, the
+following components and events are used:</p>
+<ul>
+<li>KNOTS:<ul>
+<li><em>drag</em>: Allows moving the knot left or right. Relevant functions are knotDragStarted(d,i), knotDragged(d,i), knotDragStopped(d,i), where d and i are the data element and index of the knot being dragged. </li>
+<li><em>leftclick</em>: If the mouse button is released without any dragging, this selects the knot, shows the associated date and value and highlights the corresponding date field in the table if present.</li>
+<li><em>Ctrl-leftclick</em>: This selects the knot, activates the date field in the corresponding table row if inactive (i.e. auto-computed), shifts focus to the table element and selects the entire text so the user can manually enter a date.</li>
+<li><em>mouseover</em>/<em>mouseout</em>: Highlights the date entry in the road matrix table corresponding to this knot. Relevant function is highlightDate(i,state)</li>
+</ul>
+</li>
+<li>DOTS:<ul>
+<li><em>drag</em>: Allows moving the dot up or down. Relevant functions are dotDragStarted(d,i), dotDragged(d,i), dotDragStopped(d,i), where d and i are the data element and index of the dot being dragged. </li>
+<li><em>leftclick</em>: If the mouse button is released without any dragging, this selects the dot, shows the associated date, value and slope for the preceding segment and highlights the corresponding value field in the table if present.</li>
+<li><em>Ctrl-leftclick</em>: This selects the dot, activates the value field in the corresponding table row if inactive (i.e. auto-computed), shifts focus to the table element and selects the entire text so the user can manually enter a value.</li>
+<li><em>mouseover</em>/<em>mouseout</em>: Highlights the value entry in the road matrix table corresponding to this dot. Relevant function is highlightValue(i,state)</li>
+</ul>
+</li>
+<li>SEGMENTS:<ul>
+<li><em>drag</em>: Allows moving the segment up or down, changing its slope accordingly. Relevant functions are roadDragStarted(d,i), roadDragged(d,i), roadDragStopped(d,i), where d and i are the data element and index of the road segment being dragged. </li>
+<li><em>leftclick</em>: If the mouse button is released without any dragging, this selects the segment, shows the associated slope, value and date for the next segment and highlights the corresponding slope field in the table if present.</li>
+<li><em>Ctrl-leftclick</em>: This selects the segment, activates the slope field in the corresponding table row if inactive (i.e. auto-computed), shifts focus to the table element and selects the entire text so the user can manually enter a slope.</li>
+<li><em>mouseover</em>/<em>mouseout</em>: Highlights the slope entry in the road matrix table corresponding to this segment. Relevant function is highlightSlope(i,state)</li>
+</ul>
+</li>
+<li><em>&quot;x&quot; BUTTONS</em><ul>
+<li><em>leftclick</em>: Deletes the corresponding knot by calling knotDeleted(d) where d is the data element corresponding to the knot</li>
+<li><em>mouseover</em>/<em>mouseout</em>: Highlights the date entry in the road matrix table corresponding to this knot. Relevant function is highlightDate(i,state)</li>
+</ul>
+</li>
+</ul>
+<p>For each of these components, the associated d3 data is set to the roads array, containing the piecewise linear representation of the current road. For a given road segment &quot;seg&quot;, dots use the starting point of the segment (&quot;seg.sta&quot;), knots use the ending point of the segment (&quot;seg.end&quot;), and road segments use both endpoints (&quot;seg.sta&quot; and &quot;seg.end&quot;) to construct the corresponding SVG element. In addition to these interactions, double left-click anywhere on the graph adds a new knot at the nearest date to the mouse x coordinate and a new dot concident with the current road value for that day.</p>
 </article>
 
 </section>
