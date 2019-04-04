@@ -1160,6 +1160,7 @@
       //console.debug("id="+curid+", zoomed()");
       //console.trace();
       if ( road.length == 0 ) return;
+      // Prevent recursive calls if this was initiated by a brush motion
       if (d3.event && d3.event.sourceEvent 
           && d3.event.sourceEvent.type === "brush") return;
 
@@ -1170,6 +1171,7 @@
       nXSc = tr.rescaleX(xSc);
       redrawXTicks();
       adjustYScale();
+      // Shift Y axis tick marks to make them point inwards
       yAxisObj.selectAll("g").selectAll(".tick line")
         .attr("transform", "translate(6,0)");
       yAxisObjR.selectAll("g").selectAll(".tick line")
@@ -1185,6 +1187,7 @@
       //console.debug("id="+curid+", brushed()");
       //console.trace();
       if ( road.length == 0 ) return;
+      // Prevent recursive calls in case this was triggered by a zoom event
       if (d3.event.sourceEvent && d3.event.sourceEvent.type === "zoom") 
         return;
       var s = d3.event.selection || xScB.range();
