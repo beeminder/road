@@ -96,35 +96,47 @@ road associated with a beeminder goal.
 
 ### Common Functions for both Graphs and the Editor
 
-  * {@link bgraph#loadGoal}(url): Async function that loads the BB file from the indicated URL and starts rendering the graph. Completion of rendering might take some time, at the end of which the callback function specified in the *onRoadChange* property of {@link BGraphOptions} will be called.
-  * {@link bgraph#loadGoalJSON}(json): Function to load goal contents from a BB json start rendering the graph. Completion of rendering might take some time, at the end of which the callback function specified in the *onRoadChange* property of {@link BGraphOptions} will be called. **TODO: CHECK if onRoadChange is indeed called here**
-  * {@link bgraph#zoomAll}(): Zooms out to show the entire graph range
-  * {@link bgraph#zoomDefault}(): Zooms into the default range for the graph
-  * {@link bgraph#hide}() and {@link bgraph#show}(): Should be called when the div containing the graph/editor is hidden and reshown on the page.
-  * {@link bgraph#showContext}(flag): Show/hide the context graph
-  * {@link bgraph#maxDataDays}(days): Set the maximum number of days before today to show datapoints for. Defaults to 365 unless specified in the initial options. Helps optimize interactivity performance.
-  * {@link bgraph#reverseTable}(flag): Sets whether the road matrix table should be sorted in decreasing (true), or increasing (false) order of dates. Final road row is placed at the top if set to true.
-  * {@link bgraph#getRoad}(): 
-  * {@link bgraph#getRoadObj}(): 
-  * {@link bgraph#setRoadObj}(): 
-  * {@link bgraph#isLoser}(): 
-  * {@link bgraph#curState}(): 
-  * {@link bgraph#saveGraph}(linkelt): 
-  * {@link bgraph#getVisualConfig}(): 
-  * {@link bgraph#getGoalConfig}(): 
+  * {@link bgraph#loadGoal loadGoal(url)}: Async function that loads the BB file from the indicated URL and starts rendering the graph. Completion of rendering might take some time, at the end of which the callback function specified in the *onRoadChange* property of {@link BGraphOptions} will be called.
+  * {@link bgraph#loadGoalJSON loadGoalJSON(json)}: Function to load goal contents from a BB json start rendering the graph. Completion of rendering might take some time, at the end of which the callback function specified in the *onRoadChange* property of {@link BGraphOptions} will be called. **TODO: CHECK if onRoadChange is indeed called here**
+  * {@link bgraph#zoomAll zoomAll()}: Zooms out to show the entire graph range
+  * {@link bgraph#zoomDefault zoomDefault()}: Zooms into the default range for the graph
+  * {@link bgraph#hide hide()} and {@link bgraph#show}(): Should be called when the div containing the graph/editor is hidden and reshown on the page.
+  * {@link bgraph#showContext showContext(flag)}: Show/hide the context graph
+  * {@link bgraph#maxDataDays maxDataDays(days)}: Set the maximum number of days before today to show datapoints for. Defaults to -1 (show all) unless specified in the initial options. Helps optimize interactivity performance.
+  * {@link bgraph#reverseTable reverseTable(flag)}: Sets whether the road matrix table should be sorted in decreasing (true), or increasing (false) order of dates. Final road row is placed at the top if set to true.
+  * {@link bgraph#getRoad getRoad()}: Returns the road matrix array for the current (possibly edited) road as expected by Beeminder API road submission 
+  * {@link bgraph#getRoadObj getRoadObj()}: Returns a copy of the internal {@link beebrain#roads roads} object from the {@link beebrain} instance for the current (possibly edited)  road 
+  * {@link bgraph#setRoadObj setRoadObj()}: Sets the road matrix for the internal {@link beebrain} instance. Can be used to consistently coordinate two graph instances on a single page.
+  * {@link bgraph#isLoser isLoser()}: Returns whether the current (possibly edited) road is a loser or not 
+  * {@link bgraph#curState curState()}: Returns the state [t,v,r,rdf(t)] of the goal for today (asof).
+  * {@link bgraph#saveGraph saveGraph(linkelt)}: Generates a downloadable URI from the current SVG and links the supplied linkelt to it. If linkelt is null (default), replaces the current page with the SVG content alone.
+  * {@link bgraph#getVisualConfig getVisualConfig()}: Returns current settings for visual properties, as captured by the {@link GoalVisuals} datatype.
+  * {@link bgraph#getGoalConfig getGoalConfig()}: Returns current non-visual goal properties as captured by the {@link GoalProperties} datatype.
 
 
 ### Functions Specific to the Editor
 
-  * {@link bgraph#showData}(flag): Show/hide datapoints on the editor graph. Datapoins are always shown on the interactive non-editor graph.
-  * {@link bgraph#keepSlopes}(flag): 
-  * {@link bgraph#keepIntervals}(flag): 
-  * {@link bgraph#tableAutoScroll}(flag): 
-  * {@link bgraph#undo}(): 
-  * {@link bgraph#redo}(): 
-  * {@link bgraph#undoBufferState}(): 
-  * {@link bgraph#clearUndoBuffer}(): 
-  * {@link bgraph#retroRatchet}(days): 
-  * {@link bgraph#scheduleBreak}(start, days, insert): 
-  * {@link bgraph#commitTo}(newSlope): 
+  * {@link bgraph#showData showData(flag)}: Show/hide datapoints on the editor graph. Datapoins are always shown on the interactive non-editor graph.
+  * {@link bgraph#keepSlopes keepSlopes(flag)}:  When enabled, this forces road segment slopes to be preserved when moving knots and points around the editable graph.
+  * {@link bgraph#keepIntervals keepIntervals(flag)}: When enabled, this forces all intervals between successive knots to be preserved when moving a knot left/right. This allows keeping the entire road beyond the knot being dragged fixed during editing. 
+  * {@link bgraph#tableAutoScroll tableAutoScroll(flag)}: When enabled, hovering over any knots, dots or segments forces the road matrix table to be scrolled such that the  corresponding position is in the center
+  * {@link bgraph#undo undo()}: Undoes the last edit
+  * {@link bgraph#redo redo()}: Redoes the last undone edit
+  * {@link bgraph#undoBufferState undoBufferState()}: Returns the lengths of the undo/redo buffers as {undo: undoBuffer.length, redo: redoBuffer.length}
+  * {@link bgraph#clearUndo clearUndo()}: Clears the undo and redo buffers. 
+  * {@link bgraph#retroRatchet retroRatchet(days)}: Introduces a vertical road segment on today (asof) such that the goal only has "days" safety buffer left.
+  * {@link bgraph#scheduleBreak scheduleBreak(start, days, insert)}: Schedules a break starting on "start" (formatted as YYYY-MM-DD) and lasting for "days" days. If insert=true, road components overlapping with the break are shifted forward. Existing road is overwritten otherwise.
+  * {@link bgraph#commitTo commitTo(newSlope)}: Changes the slope of the road to be "newSlope" beyond the akrasia horizon (a week from today)
+
+### Functions Specific to Interactive Graphs
+
+  * {@link bgraph#animHor animHor(enable)}: Enables/disables animation for the Akrasia Horizon
+  * {@link bgraph#animYBR animYBR(enable)}: Enables/disables animation for the Yellow Brick Road
+  * {@link bgraph#animData animData(enable)}: Enables/disables animation for datapoints
+  * {@link bgraph#animGuides animGuides(enable)}: Enables/disables animation for guidelines
+  * {@link bgraph#animRosy animRosy(enable)}: Enables/disables animation for the rosy line
+  * {@link bgraph#animMav animMav(enable)}: Enables/disables animation for the moving average
+  * {@link bgraph#animAura animAura(enable)}: Enables/disables animation for the aura
+  * {@link bgraph#animBuf animBuf(enable)}: Enables/disables animation for the safety buffer watermark
+  * {@link bgraph#animBux animBux(enable)}: Enables/disables animation for the pledge amount
 
