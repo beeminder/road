@@ -217,7 +217,54 @@ svg: top element
     g (class=axis): bottom X axis
 </pre>
 
-<h3>Axes, graph boundaries, zooming and panning</h3><h3>Principles of Operation for the Interactive Graph Editor</h3><p>The interactive graph editor implemented by the <a href="bgraph.html">bgraph</a> class
+<h3>Axes, graph boundaries, zooming and panning</h3><p>Axes for the Beeminder graph are created through <a href="https://github.com/d3/d3-axis">d3.axis</a> facilities. In particular</p>
+<ul>
+<li>The bottom X-axis for the focus graph is stored in <em>xAxis</em></li>
+<li>The top X-axis for the focus graph is stored in <em>xAxisT</em></li>
+<li>The left Y-axis for the focus graph is stored in <em>yAxis</em></li>
+<li>The right Y-axis for the focus graph is stored in <em>yAxisR</em></li>
+<li>The bottom X-axis for the context graph is stored in <em>xAxisB</em></li>
+</ul>
+<p>Mappings from data to svg coordinates for each of these axes are
+determined using the <a href="https://github.com/d3/d3-scale">d3.scale</a>
+facilities. In particular,</p>
+<ul>
+<li>X axes use d3.scaleUTC() to map Date objects in UTC to the svg x axis range. </li>
+<li>Y axes use d3.scaleLinear() to map graph values to the svg y axis range.</li>
+</ul>
+<p>The scale objects <em>xSc</em> and <em>xScB</em> store the entire goal date range
+for the focus and context graphs, respectively regardless of the
+current zoom level. Similarly, <em>ySc</em> and <em>yScB</em> store the entire goal
+value range for the focus and context graphs respectively. Zooming and
+panning on the focus graph is accomplished through two additional
+scale objects, <em>nXSc</em> (new X scale) and <em>nYSc</em> (new Y scale), which
+are dynamically redefined based on the current zoom and pan levels for
+the focus graph. During all graph updates, these scale objects are
+used to map dates and values for goal components to svg coordinates
+based on the current zoom range. Zooming and panning is accomplished
+by proper redefinition of these scale objects.</p>
+<p>Panning and zooming events for graphs are handled through <a href="https://github.com/d3/d3-zoom">d3.zoom</a> facilities. A d3 zoom object is
+created during initialization and store in the <em>axisZoom</em> variable,
+subsequently associated with the &quot;zoomarea&quot; svg element that covers
+the inner portion of the plot. This d3 zoom object's &quot;zoomed&quot; event is
+then associated with the <strong>zoomed()</strong> function, which is called
+whenever the user zooms and/or pans the graph. This function is one of
+the places wherein the nXSc and nYSc scale objects are redefined,
+ensuring that the next update of graph components renders the
+shifted/zoomed graph.</p>
+<p>An alterntive way to change the zoom and pan states of the graph is
+through the context graph below (if enabled). This functionality
+relies on the <a href="https://github.com/d3/d3-brush">d3.brush</a>
+facilities, which is shown on top of a smaller and simplified context
+graph at the bottom of the main &quot;focus&quot; graph. A d3 brush object is
+created and store in <em>brushObj</em> during initialization, whose &quot;brushed&quot;
+event is associated with the <strong>brushed()</strong> function. This function
+also redefines the nXSc and nYSc scale objects based on the newly
+selected range for the focus graph in a way similar to zoomed().</p>
+<p>Any zoom or pan action initiates a call to the internal
+updateGraphData() function in bgraph, forcing an update to all graph
+components with the newly defined x and y axis scales.</p>
+<h3>Principles of Operation for the Interactive Graph Editor</h3><p>The interactive graph editor implemented by the <a href="bgraph.html">bgraph</a> class
 relies heaving on <a href="https://d3js.org">d3.js</a> to manipulate DOM
 elements and the SVG graph. To this end, callbacks are registered to
 various mouse events for relevant objects created within the SVG when
