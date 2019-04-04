@@ -1919,12 +1919,14 @@
 	    var x = bu.daysnap(nXSc.invert(d3.event.x)/1000);
       var kind = Number(this.id);
       var rd = road;
+      // Clip drag x between the beginning of the current segment and
+      // the end of the next segment
       if (x < rd[kind].sta[0]) x = rd[kind].sta[0];
       if (x > rd[kind+1].end[0]) x = rd[kind+1].end[0];
 
+      // If keepIntervals is enabled, shift all future segments as well
       var maxind = kind+1;
       if (opts.keepIntervals) maxind = rd.length;
-
       for (let ii = kind; ii < maxind; ii++) {
 	      rd[ii].end[0] 
           = x + roadsave[ii].end[0] - roadsave[kind].end[0];
@@ -3216,7 +3218,7 @@
           highlightDate(i, true);})
 		    .on("mouseout",function(d,i) {
 			    d3.select(this).attr("fill",opts.roadKnotCol.rmbtns);
-        highlightDate(i, false);})
+          highlightDate(i, false);})
 		    .on("click",knotDeleted);
     }
 
@@ -3997,6 +3999,7 @@
         }
       }
     }
+    /** Highlights the date for the ith knot if state=true. Normal color otherwise*/
     function highlightDate(i, state) {
       if (opts.divTable == null) return;
       var color = (state)
