@@ -4935,6 +4935,565 @@ the svg have finished loading or not
             
 <hr>
 <dt>
+    <h4 class="name" id="~adjustYScale"><span class="type-signature">&lt;inner> </span>adjustYScale()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Adjust the scale and range for the Y axis based on the current
+range of the Y axis. The Y axis range depends on the graph
+configuration, including whether it's a headless graph for a
+screenshot, an interactive graph or the editor.
+    </div>
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="~brushed"><span class="type-signature">&lt;inner> </span>brushed()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Gets called by d3.brush whenever the brush on the context
+graph is modified by the user
+    </div>
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="~computeBoxes"><span class="type-signature">&lt;inner> </span>computeBoxes()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Recomputes padding value and bounding boxes for various
+components in the graph. In particular, plotpad,
+contextpad, plotbox and contextbox are computed.
+    </div>
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="~computeXTicks"><span class="type-signature">&lt;inner> </span>computeXTicks()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Compute locations and labels for X axis ticks corresponding to
+the entire graph range for different zoom levels. These are
+stored in the "ticks" member of the bgraph instance. utilized
+later by the <a href="bgraph.html#~redrawXTicks">redrawXTicks()</a>
+function for rendering.
+    </div>
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="~createGraph"><span class="type-signature">&lt;inner> </span>createGraph()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Creates all SVG graph components if a graph DIV is
+provided. Called once when the bgraph object is created.
+    </div>
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="~createTable"><span class="type-signature">&lt;inner> </span>createTable()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Creates all road matrix table components if a table DIV is
+provided. Called once when the bgraph object is created.
+    </div>
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="~handleYAxisWidth"><span class="type-signature">&lt;inner> </span>handleYAxisWidth()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Check the widths of Y axis labels and tick marks, resizing the
+graph components if necessary
+    </div>
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
     <h4 class="name" id="~highlightDate"><span class="type-signature">&lt;inner> </span>highlightDate()</h4>
     
     
@@ -5144,7 +5703,7 @@ on initially supplied options
             
 <hr>
 <dt>
-    <h4 class="name" id="~showOverlay"><span class="type-signature">&lt;inner> </span>showOverlay()</h4>
+    <h4 class="name" id="~redrawXTicks"><span class="type-signature">&lt;inner> </span>redrawXTicks()</h4>
     
     
 </dt>
@@ -5152,8 +5711,10 @@ on initially supplied options
 
     
     <div class="description">
-        Utility function to show a shaded overlay with a message 
-     consisting of multiple lines supplied in the array argument
+        Redraws X Axis tick marks based on the current X axis range
+for the focus graph, making "smart" decisions on what type of
+ticks to use. Tick mark types are precomputed and stored in the
+"ticks" member by the <a href="bgraph.html#~computeXTicks">computeXTicks()</a> function
     </div>
     
 
@@ -5162,6 +5723,890 @@ on initially supplied options
     
 
     
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="~reloadBrush"><span class="type-signature">&lt;inner> </span>reloadBrush()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Updates the context graph by recomputing its limits and
+resizing the brush in it
+    </div>
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="~removeOverlay"><span class="type-signature">&lt;inner> </span>removeOverlay( [cls])</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Removes the message overlay created by <a href="bgraph.html#~showOverlay">showOverlay()</a>
+    </div>
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Argument</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>cls</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    "overlay"
+                
+                </td>
+            
+
+            <td class="description last">CSS class for the overlay to remove</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="~resetGoal"><span class="type-signature">&lt;inner> </span>resetGoal()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Resets the internal goal object, clearing out previous data.
+    </div>
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="~resizeBrush"><span class="type-signature">&lt;inner> </span>resizeBrush()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Updates the brush rectangle and the brush box in the context
+graph to cover the updated X range
+    </div>
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="~resizeContext"><span class="type-signature">&lt;inner> </span>resizeContext()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Updates the context grapoh X and Y axis scales to consider the
+newest graph ranges
+    </div>
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="~resizeGraph"><span class="type-signature">&lt;inner> </span>resizeGraph()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Resizes various SVG graph components when any of the bounding
+boxes change. This is primarily due to the text width for y
+axis labels and tick marks changing, as handled by the <a href="bgraph.html#~handleYAxisWidth">handleYAxisWidth()</a> function
+    </div>
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="~showOverlay"><span class="type-signature">&lt;inner> </span>showOverlay(msgs [, fs], fw [, box], cls [, shd])</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Utility function to show a shaded overlay with a message
+     consisting of multiple lines supplied in the array argument.
+    </div>
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Argument</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>msgs</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;String></span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last">Array of messages, one for each line</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fs</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    -1
+                
+                </td>
+            
+
+            <td class="description last">Font size. height/15 if -1</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>fw</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    "bold"}
+                
+                </td>
+            
+
+            <td class="description last">Font weight</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>box</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    null
+                
+                </td>
+            
+
+            <td class="description last">Bounding box {x,y,w,h} for the overlay. Default if null</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>cls</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    "overlay}
+                
+                </td>
+            
+
+            <td class="description last">CSS class of the created overlay</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>shd</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    true
+                
+                </td>
+            
+
+            <td class="description last">Shade out graph if true</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
     
 
     
@@ -5237,6 +6682,505 @@ supplied in two arrays. Each array is expected to include
 triples [name, v1, v0], cycling an attribute or style with
 'name' up to the v1 value in 'dur' milliseconds and back to v0
 in 'dur' milliseconds again, repeating indefinitely
+    </div>
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="~svgshn"><span class="type-signature">&lt;inner> </span>svgshn(x [, d])</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Limits an svg coordinate to d digits after the decimal
+    </div>
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Argument</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>x</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last">Input number</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>d</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    1
+                
+                </td>
+            
+
+            <td class="description last">Number of digits after the decimal</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="~updateTable"><span class="type-signature">&lt;inner> </span>updateTable()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Updates table
+    </div>
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="~zoomAll"><span class="type-signature">&lt;inner> </span>zoomAll()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Updates both the context and focus graphs to zoom out,
+        including the entire graph range
+    </div>
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="~zoomDefault"><span class="type-signature">&lt;inner> </span>zoomDefault()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Updates both the context and focus graphs to include the
+default zoom range
+    </div>
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="~zoomed"><span class="type-signature">&lt;inner> </span>zoomed()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        Gets called by d3.zoom when there has been a zoom event
+associated with the focus graph
     </div>
     
 
