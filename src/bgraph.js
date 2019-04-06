@@ -384,12 +384,16 @@
     var bbr, goal = {}, road = [],
         data = [], alldata = []
     
-    // Limits an svg coordinate to d digits after the decimal 
+    /** Limits an svg coordinate to d digits after the decimal 
+     @param {Number} x Input number 
+     @param {Number} [d=1] Number of digits after the decimal
+    */
     function svgshn( x, d=1 ) {
       let p = Math.pow(10, d)
       return Math.round(x * p)/p
     }
     
+    /** Resets the internal goal object, clearing out previous data. */
     function resetGoal() {
       // Initialize goal with sane values
       goal = {}
@@ -407,6 +411,9 @@
     }
     resetGoal()
     
+    /** Recomputes padding value and bounding boxes for various
+     * components in the graph. In particular, plotpad,
+     * contextpad, plotbox and contextbox are computed. */
     function computeBoxes() {
       plotpad = bu.extend({}, opts.focusPad)
       contextpad = bu.extend({}, opts.ctxPad)
@@ -443,8 +450,15 @@
     }
     computeBoxes()
 
-    /** Utility function to show a shaded overlay with a message 
-     consisting of multiple lines supplied in the array argument */
+    /** Utility function to show a shaded overlay with a message
+     consisting of multiple lines supplied in the array argument.
+     @param {String[]} msgs Array of messages, one for each line
+     @param {Number} [fs=-1] Font size. height/15 if -1
+     @param {String} [fw="bold"} Font weight
+     @param {Object} [box=null] Bounding box {x,y,w,h} for the overlay. Default if null
+     @param {String} [cls="overlay} CSS class of the created overlay
+     @param {Boolean} [shd=true] Shade out graph if true
+    */
     function showOverlay( msgs, fs = -1, fw="bold",
                           box=null, cls="overlay", shd = true) {
       if (opts.divGraph == null) return
@@ -483,12 +497,18 @@
           .text(msgs[i])
       }
     }
+    /** Removes the message overlay created by {@link
+        bgraph~showOverlay showOverlay()}
+        @param {String} [cls="overlay"] CSS class for the overlay to remove 
+    */
     function removeOverlay(cls = "overlay") {
       //console.debug("removeOverlay("+self.id+")")
       if (opts.divGraph == null) return
       svg.selectAll("g."+cls).remove()
     }
 
+    /** Creates all SVG graph components if a graph DIV is
+     * provided. Called once when the bgraph object is created. */
     function createGraph() {
       var div = opts.divGraph
       if (div === null) return
@@ -756,6 +776,10 @@
       nXSc = xSc, nYSc = ySc;
     }
 
+    /** Resizes various SVG graph components when any of the bounding
+     * boxes change. This is primarily due to the text width for y
+     * axis labels and tick marks changing, as handled by the {@link
+     * bgraph~handleYAxisWidth handleYAxisWidth()} function */
     function resizeGraph() {
       //console.debug("id="+curid+", resizeGraph()");
 
@@ -828,6 +852,8 @@
       adjustYScale();
     }
 
+    /** Creates all road matrix table components if a table DIV is
+     * provided. Called once when the bgraph object is created. */
     function createTable() {
       var div = opts.divTable;
       if (div === null) return;
@@ -955,6 +981,11 @@
 
     // ------- Zoom and brush  related private functions ---------
     var ticks, tickType = 1, majorSkip = 7;
+    /** Compute locations and labels for X axis ticks corresponding to
+     * the entire graph range for different zoom levels. These are
+     * stored in the "ticks" member of the bgraph instance. utilized
+     * later by the {@link bgraph~redrawXTicks redrawXTicks()}
+     * function for rendering. */
     function computeXTicks() {
       let xr = xSc.domain();
 
@@ -978,6 +1009,12 @@
       ticks.push([d3.utcMonth.every(3).range(xry[0], xry[1]),"%Y"]);
       ticks.push([d3.utcYear.every(1).range(xry[0], xry[1]),"%Y"]);
     }
+
+    /** Redraws X Axis tick marks based on the current X axis range
+     * for the focus graph, making "smart" decisions on what type of
+     * ticks to use. Tick mark types are precomputed and stored in the
+     * "ticks" member by the {@link bgraph~computeXTicks
+     * computeXTicks()} function */
     function redrawXTicks() {
       //console.debug("redrawXTicks()");
       var xr = [nXSc.invert(0).getTime(), 
@@ -1029,10 +1066,12 @@
         .filter((d, i)=>(i%majorSkip!=ind))
         .classed("minor", true)
 
+      // Shift bottom tick marks upwards to ensure they point inwards
       xAxisObj.selectAll("g").selectAll(".tick line")
         .attr("transform", "translate(0,-5)")
       
       if (!opts.roadEditor) {
+        // Repeat the above process for the top X axis
         xGrid.tickValues(tv).tickSize(plotbox.width);
         xGridObj.call(xGrid.scale(nXSc));
         xGridObj.selectAll("g").classed("minor", false);
@@ -1050,13 +1089,20 @@
           .filter((d, i)=>(i%majorSkip!=ind))
           .classed("minor", true);
 
+        // Shift top tick marks downwards to ensure they point inwards
         xAxisObjT.selectAll("g").selectAll(".tick line")
           .attr("transform", "translate(0,6)");
 
       }
     }
+
+    /** Check the widths of Y axis labels and tick marks, resizing the
+     * graph components if necessary */
     function handleYAxisWidth() {
       //console.debug("curid="+curid+", hidden="+hidden);
+
+      // Checking for the "hidden" state ensures that getBBox() is not
+      // called for invisible components in the DOM.
       if (opts.divGraph != null && !hidden) {
         yAxisLabel.text(goal.yaxis);
         if (goal.hidey && !opts.roadEditor) {
@@ -1076,25 +1122,34 @@
       }
     }
 
+    /** Adjust the scale and range for the Y axis based on the current
+     * range of the Y axis. The Y axis range depends on the graph
+     * configuration, including whether it's a headless graph for a
+     * screenshot, an interactive graph or the editor. */
     function adjustYScale() {
       var xrange = [nXSc.invert(0), 
                     nXSc.invert(plotbox.width)];
       var yrange
       if (opts.headless) {
+        // Headless graphs should match previous pybrain range
         let va = goal.vmin  - PRAF*(goal.vmax-goal.vmin)
         let vb = goal.vmax  + PRAF*(goal.vmax-goal.vmin)
         yrange = [vb, va]
       } else {
+        // Compute range in unixtime
         var xtimes = xrange.map((d)=>Math.floor(d.getTime()/1000))
+        // Compute Y axis extent of the edited road in range
         var re 
             = roadExtentPartial(road,xtimes[0],xtimes[1],false);
         re.yMin -= goal.lnw;
         re.yMax += goal.lnw;
+        // Compute Y axis extent of the initial road in range
         var ore = roadExtentPartial(iroad,xtimes[0],xtimes[1],false);
         ore.yMin -= goal.lnw;
         ore.yMax += goal.lnw;
         var ae = mergeExtents(re, ore);
         
+        // Compute Y axis extent of datapoints in range
         var de  = dataExtentPartial((goal.plotall&&!opts.roadEditor)
                                     ?alldata:data,
                                     xtimes[0],xtimes[1],false);
@@ -1112,9 +1167,10 @@
         yrange = [ae.yMax, ae.yMin];
       }
       
+      // Modify the scale object for the entire Y range to focus on
+      // the desired range
       var newtr = d3.zoomIdentity
-            .scale(plotbox.height/(ySc(yrange[1])
-                                   -ySc(yrange[0])))
+            .scale(plotbox.height/(ySc(yrange[1])-ySc(yrange[0])))
             .translate(0, -ySc(yrange[0]));
       nYSc = newtr.rescaleY(ySc);
       yAxisObj.call(yAxis.scale(nYSc));
@@ -1125,6 +1181,7 @@
       if (yrange[1] < goal.yMin) goal.yMin = yrange[1];
       resizeContext();
 
+      // Rescale the focus rectange to show area being focused.
       var sx = xrange.map( (x)=>xScB(x));
       var sy = yrange.map( (y)=>yScB(y));
       focusrect
@@ -1133,6 +1190,8 @@
 
     }
 
+    /** Updates the context grapoh X and Y axis scales to consider the
+     * newest graph ranges */
     function resizeContext(){
       if (opts.divGraph == null) return;
       xScB.domain([new Date(Math.min(goal.tmin, goal.xMin)*1000), 
@@ -1141,6 +1200,8 @@
       yScB.domain([goal.yMin, goal.yMax]);
     }
 
+    /** Updates the brush rectangle and the brush box in the context
+     * graph to cover the updated X range */
     function resizeBrush() {
       if (opts.divGraph == null) return;
       var limits = [xScB(nXSc.invert(0)), 
@@ -1151,58 +1212,68 @@
       brush.call(brushObj.move, limits );
     }
 
+    /** Updates the context graph by recomputing its limits and
+     * resizing the brush in it */
     function reloadBrush() {
       resizeContext();
       resizeBrush();
     }
 
+    /** Gets called by d3.zoom when there has been a zoom event
+     * associated with the focus graph */
     function zoomed() {
       //console.debug("id="+curid+", zoomed()");
       //console.trace();
-      if ( road.length == 0 ) return;
-      // Prevent recursive calls if this was initiated by a brush motion
+      if ( road.length == 0 ) return
+      // Prevent recursive calls if this was initiated by a brush
+      // motion, resulting in an updated zoom in the focus graph
       if (d3.event && d3.event.sourceEvent 
-          && d3.event.sourceEvent.type === "brush") return;
+          && d3.event.sourceEvent.type === "brush") return
 
       // Inject the current transform into the plot element
-      var tr = d3.zoomTransform(zoomarea.node());
-      if (tr == null) return;
+      var tr = d3.zoomTransform(zoomarea.node())
+      if (tr == null) return
       
-      nXSc = tr.rescaleX(xSc);
-      redrawXTicks();
-      adjustYScale();
+      nXSc = tr.rescaleX(xSc)
+      redrawXTicks()
+      adjustYScale()
       // Shift Y axis tick marks to make them point inwards
       yAxisObj.selectAll("g").selectAll(".tick line")
-        .attr("transform", "translate(6,0)");
+        .attr("transform", "translate(6,0)")
       yAxisObjR.selectAll("g").selectAll(".tick line")
-        .attr("transform", "translate(-5,0)");
-      handleYAxisWidth();
+        .attr("transform", "translate(-5,0)")
+      handleYAxisWidth()
 
-      resizeBrush();
-      updateGraphData();
-      return;
+      resizeBrush()
+      updateGraphData()
+      return
     }
 
+    /** Gets called by d3.brush whenever the brush on the context
+     * graph is modified by the user */
     function brushed() {
       //console.debug("id="+curid+", brushed()");
       //console.trace();
-      if ( road.length == 0 ) return;
-      // Prevent recursive calls in case this was triggered by a zoom event
+      if ( road.length == 0 ) return
+      // Prevent recursive calls in case the change in the brush was
+      // triggered by a zoom event
       if (d3.event.sourceEvent && d3.event.sourceEvent.type === "zoom") 
         return;
-      var s = d3.event.selection || xScB.range();
+      var s = d3.event.selection || xScB.range()
       
-      nXSc.domain(s.map(xScB.invert, xScB));
-      redrawXTicks();
-      adjustYScale();
-      handleYAxisWidth();
-
+      nXSc.domain(s.map(xScB.invert, xScB))
+      redrawXTicks()
+      adjustYScale()
+      handleYAxisWidth()
+      
       zoomarea.call(axisZoom.transform, d3.zoomIdentity
                     .scale(brushbox.width / (s[1] - s[0]))
-                    .translate(-s[0], 0));
-      updateGraphData();
+                    .translate(-s[0], 0))
+      updateGraphData()
     }
 
+    /** Updates both the context and focus graphs to include the
+     * default zoom range */
     function zoomDefault() {
       if (opts.divGraph == null) return;
       //console.debug("id="+curid+", zoomDefault()");
@@ -1219,10 +1290,13 @@
                     .translate(-s[0], 0));
     }
 
+    /** Updates both the context and focus graphs to zoom out,
+        including the entire graph range */
     function zoomAll( ) {
-      console.debug("id="+curid+", zoomAll()");
+      //console.debug("id="+curid+", zoomAll()");
       if (opts.divGraph == null) return;
       computePlotLimits( false );
+      // Redefine the unzoomed X and Y scales in case graph range was redefined
       xSc.domain([new Date(Math.min(goal.tmin, goal.xMin)*1000), 
                   new Date(Math.max(goal.tmax, goal.xMax)*1000)]);
       computeXTicks();
@@ -4280,6 +4354,7 @@
       updateTableWidths()
     }
 
+    /** Updates table */
     function updateTable() {
       updateTableValues()
       updateTableButtons()

@@ -3,6 +3,9 @@ class provided as part of the Beeminder Javascript implementation.
 
 ### Structure of the SVG element hosting the graph
 
+The bgraph class, once instatiated, populates the supplied DIV element
+with an SVG graph with the following structure:
+
 <pre>
 svg: top element
   defs: Definitions references from the graph
@@ -125,9 +128,100 @@ svg: top element
     g (class=axis): bottom X axis
 </pre>
 
+Sizes of various SVG components are determined by various options
+specified during bgraph object creation as detailed in {@link
+BGraphOptions}. Based on these sizes, a number of padding objects and
+bounding boxes are computed as private members of the bgraph
+instance. Padding objects have fields {left, right, top, bottom},
+whereas bounding box objects has fields {x, y, width, height}.
+
+  * **plotpad** : Padding of the focus plot, taking into account y axis labels
+  * **contextpad** : Padding of the context plot, taking into account y axis labels
+  * **plotbox** : Bounding box for the focus plot in the SVG
+  * **contextbox** : Bounding box for the context plot in the SVG
+  
+These values are computed in {@link bgraph~computeBoxes computeBoxes()}
+
+### Structure of the DIV element holding the road matrix table
+
+The following html hierarchy holds the road matrix table when
+reverseTable=false.
+
+<pre>
+div: top element
+  div (class=rtablestart): Container for the initial road row and headers
+    div (class=roadhdr)
+      div (class=roadhdrrow)
+        span (class=roadhdrcell): Blank
+        span (class=roadhdrcell): Blank
+        span (class=roadhdrcell): "Start Date"
+        span (class=roadhdrcell): "Value"
+        span (class=roadhdrcell): Blank
+    div (class=roadbody)
+      div (class=roadrow)
+        div (class=rowid): "0:"
+        input (class=roadbtn): Button for deleting row (when roadeditor=true)
+        div (class=roadcell): Date for the row
+        div (class=roadcell): Value for the row
+        div (class=roadcell): Blank
+        input (class=roadbtn): Button for adding new row (when roadeditor=true)
+    div (class=roadhdr)
+        span (class=roadhdrcell): Blank
+        span (class=roadhdrcell): Blank
+        span (class=roadhdrcell): "End Date"
+        span (class=roadhdrcell): "Value"
+        span (class=roadhdrcell): "Daily Slope" (may change depending on runits)
+  div (class=rtablebody): Container for intermediate road rows
+    div (class=rtable)
+      div (id=dpfloat,class=floating): Container for the Pikaday date picker
+      div (id=topleft): Element to help figure out layout coordinates for when the 
+                        table container has been scrolled, computing correct 
+                        coordinate to locate the floating element for the date picker.
+      div (class=roadbody)
+        div (class=roadrow)
+          div (class=rowid): "i:" where i is the road row number
+          input (class=roadbtn): Button for deleting row (when roadeditor=true)
+          div (class=roadcell): Date for the row
+          div (class=roadcell): Value for the row
+          div (class=roadcell): Slope for the row
+          input (class=roadbtn): Button for adding new row (when roadeditor=true)
+        ...
+  div (class=rtablegoal): Container for the final road row
+    div (class=roadhdr)
+      div (class=roadhdrrow)
+        span (class=roadhdrcell): Blank
+        span (class=roadhdrcell): Blank
+        span (class=roadhdrcell): "Goal Date"
+        span (class=roadhdrcell): "Value"
+        span (class=roadhdrcell): "Daily Slope" (may change depending on runits)
+    div (class=roadbody)
+      div (class=roadrow)
+        div (class=rowid): "n:" where n is the total number of rows
+        input (class=roadbtn): Button for deleting row (when roadeditor=true)
+        div (class=roadcell): Date for the row
+        div (class=roadcell): Value for the row
+        div (class=roadcell): Blank
+        input (class=roadbtn): Button for adding new row (when roadeditor=true)
+</pre>
+
+### Graph and table creation, sizing, overlays, tooltips
+
+Before graph creation, the {@link bgraph~computeBoxes computeBoxes()}
+function is called to compute adjust padding and bounding boxes for
+the graph. Graph creation takes place in the {@link bgraph~createGraph
+createGraph()} function, which is called once from within the
+constructor. This deletes all children of the supplied DIV element and
+populates it with all the container elements summarized above
+corresponding to an empty graph.
+
+Similarly, the {@link bgraph~createTable createTable()} function first
+empties the table DIV if provided and populates it with the road
+matrix table components summarized in the preceding section,
+corresponding to an empty goal.
+
 ### Axes, graph boundaries, zooming and panning
 
-Axes for the Beeminder graph are created through {@link https://github.com/d3/d3-axis d3.axis} facilities. In particular
+ Axes for the Beeminder graph are created through {@link https://github.com/d3/d3-axis d3.axis} facilities. In particular
 
   * The bottom X-axis for the focus graph is stored in *xAxis*
   * The top X-axis for the focus graph is stored in *xAxisT*
