@@ -1,5 +1,5 @@
 .data
 .vscode
-tests/testbb/
+tests/testbb
 node_modules
 chromium-data/*
