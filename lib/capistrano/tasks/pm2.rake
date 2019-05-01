@@ -1,8 +1,9 @@
 require 'json'
 namespace :pm2 do
-def app_status
+  def app_status
     within current_path do
-      ps = JSON.parse(capture :pm2, :jlist, fetch(:app_command))
+      jlist = JSON.parse(capture :pm2, :jlist) 
+      ps = jlist.select{|p| p["name"] == fetch(:application)}
       if ps.empty?
         return nil
       else
@@ -14,13 +15,14 @@ def app_status
 
   def reload_app
     within current_path do
-      execute :pm2, :reload, fetch(:app_command)
+      execute :pm2, :reload, fetch(:application)
     end
   end
   
   def start_app
+    info "current_path in start_app is #{current_path}"
     within current_path do
-      execute :pm2, :stop, fetch(:app_command)
+      execute :pm2, :startOrReload, "config/ecosystem.config.js" 
     end
   end
   

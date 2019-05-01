@@ -8,3 +8,11 @@ task :check_write_permissions do
     end
   end
 end
+
+desc "test pm2 out"
+task :test_pm2_outputs do
+  on roles(:all) do |host|
+    res = capture(:pm2, :jlist, :jsbrain)
+      
+  end
+end

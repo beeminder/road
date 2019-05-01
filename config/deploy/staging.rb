@@ -8,4 +8,5 @@ server '45.33.72.137:1912', user: 'beeminder', roles: %w{app},
 
 # Configuration
 # =============
-set :branch, "cap-test-depl"
+set :branch, "curie-test-deploy"
+set :npm_target_path, -> { release_path.join('jsbrain_server') }
