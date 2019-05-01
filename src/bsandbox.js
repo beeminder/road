@@ -50,7 +50,7 @@
    @param {object} div object on the DOM to create a {@link module:bgraph} instance on
    @param {bool} debug flag turns logging on or off. Default is false.
   */
-  bsandbox = function( div, debug = false ) {
+  bsandbox = function( div, debug = true ) {
     // set log level for this instance of bsandbox. 
     var logger = (debug && typeof console != 'undefined') ? console : {
           info: function(){},
