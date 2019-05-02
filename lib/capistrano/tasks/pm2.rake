@@ -1,11 +1,6 @@
 require 'json'
 namespace :pm2 do
 
-  def run_task(*args)
-    within fetch(:pm2_target_path, release_path) do
-      execute *args
-    end
-  end
 
   def app_name
     fetch(:pm2_app_name) || fetch(:application)
@@ -30,47 +25,6 @@ namespace :pm2 do
     end
   end
   
-  desc 'List all pm2 applications'
-  task :status do
-    run_task :pm2, :list
-  end
-
-  desc 'Start pm2 application'
-  task :start do
-    run_task :pm2, :start, fetch(:pm2_app_command)
-  end
-
-  desc 'Stop pm2 application'
-  task :stop do
-    run_task :pm2, :stop, app_name
-  end
-
-  desc 'Delete pm2 application'
-  task :delete do
-    run_task :pm2, :delete, app_name
-  end
-
-  desc 'Show pm2 application info'
-  task :list do
-    run_task :pm2, :show, app_name
-  end
-
-  desc 'Watch pm2 logs'
-  task :logs do
-    run_task :pm2, :logs
-  end
-
-  desc 'Save pm2 state so it can be loaded after restart'
-  task :save do
-    run_task :pm2, :save
-  end
-
-  desc 'Install pm2 via npm on the remote host'
-  task :setup do
-    run_task :npm, :install,  'pm2 -g'
-  end
-
-
   
   desc 'Restart/reload app gracefully'
   task :restart do
