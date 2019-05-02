@@ -10,3 +10,8 @@ server '45.33.72.137:1912', user: 'beeminder', roles: %w{app},
 # =============
 set :branch, "curie-test-deploy"
 set :npm_target_path, -> { release_path.join('jsbrain_server') }
+
+# PM2 Config
+# ==========
+set :pm2_app_command, "startOrReload config/ecosystem.config.js"
+set :pm2_app_name, "jsbrain"

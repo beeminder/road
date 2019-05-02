@@ -26,10 +26,10 @@ set :linked_dirs, fetch(:linked_dirs, []).push('jsbrain_server/node_modules')
 
 
 namespace :deploy do
-  desc 'Start / reload application'
-  task :restart do
-    invoke 'pm2:reload'
-  end
+  #desc 'Start / reload application'
+  #task :restart do
+  #  invoke 'pm2:reload'
+  #end
   after :publishing, :restart
   after :restart, :clear_cache do
     on roles(:web), in: :groups, limit: 3, wait: 10 do

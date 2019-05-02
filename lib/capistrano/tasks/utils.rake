@@ -16,3 +16,16 @@ task :test_pm2_outputs do
       
   end
 end
+
+desc "what is current_path var"
+task :current_path do
+  on roles(:all) do |host|
+    info "#{host}: #{current_path}"
+  end
+end
+desc "what is release_path var"
+task :release_path do
+  on roles(:all) do |host|
+    info "#{host}: #{release_path}"
+  end
+end
