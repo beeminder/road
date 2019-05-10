@@ -4,8 +4,7 @@
   "description": "Experimental Road Editor interface",
   "main": "server.js",
   "scripts": {
-    "start": "node app/server.js",
-    "sanity": "node app/sanity.js"
+    "start": "node app/server.js"
   },
   "dependencies": {
     "beeminder": "^1.5.2",
