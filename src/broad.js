@@ -484,10 +484,10 @@
   self.smooth = (d) => {
     var SMOOTH = (d[0][0] + d[d.length-1][0])/2
     var dz = bu.zip(d)
-    var xnew = dz[0].map((e)=>(e-SMOOTH))
+    var xnew = dz[0].map((e)=>(e-SMOOTH)/bu.SID)
     var poly = new Polyfit(xnew, dz[1])
     var solver = poly.getPolynomial(3)
-    return (x) =>(solver(x-SMOOTH))
+    return (x) =>(solver((x-SMOOTH)/bu.SID))
   }
 
   /** Assumes both datapoints and the x values are sorted */
