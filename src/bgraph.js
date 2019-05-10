@@ -1559,7 +1559,7 @@
     // Function to generate samples for the Butterworth filter
     function griddle(a, b, maxcnt = 6000) {
       return bu.linspace(a, b, Math.floor(bu.clip((b-a)/(bu.SID+1), 
-                                            Math.min(600, plotbox.width),
+                                            Math.min(300, plotbox.width/8),
                                             maxcnt)));
     }
 
@@ -2773,11 +2773,10 @@
         var fudge = PRAF*(goal.tmax-goal.tmin);
         var xr = [nXSc.invert(0).getTime()/1000, 
                   nXSc.invert(plotbox.width).getTime()/1000]
-        var xvec = griddle(goal.tmin, 
-                           Math.min(goal.asof+bu.AKH, goal.tmax+fudge)),i
+        var xvec,i
         xvec = griddle(Math.max(xr[0], goal.tmin),
                        bu.arrMin([xr[1], goal.asof+bu.AKH, goal.tmax+fudge]),
-                       plotbox.width/2)
+                       plotbox.width/8)
         // Generate a path string for the aura
         var d = "M"+svgshn(nXSc(xvec[0]*1000))+" "+svgshn(nYSc(goal.auraf(xvec[0])+aurup))
         for (i = 1; i < xvec.length; i++)
@@ -2794,7 +2793,7 @@
           el.attr("d", d);
         }
         if (xr[0] < goal.tmin) {
-          xvec = griddle(xr[0], goal.tmin, plotbox.width/2);
+          xvec = griddle(xr[0], goal.tmin, plotbox.width/8);
           d = "M"+svgshn(nXSc(xvec[0]*1000))+" "
             +svgshn(nYSc(goal.auraf(xvec[0])+aurup));
           for (i = 1; i < xvec.length; i++)
