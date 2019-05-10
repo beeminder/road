@@ -53,7 +53,7 @@
                    runits.options[runits.selectedIndex].value,
                    rfin.value, vini.value, buffer.checked);
                    graph = bs.getGraphObj();
-                   updateConfigInput()">
+                   updateConfigInput();bs.saveBB(download)">
     Create New Goal!</button>
   <br/>
 
@@ -61,21 +61,21 @@
   <table>
   <tr>
   <td><div id="sandbox"></div><br/>
-  <button style="margin:4px;" onclick="bs.nextDay()">Next Day</button><br/>
+  <button style="margin:4px;" onclick="bs.nextDay();bs.saveBB(download)">Next Day</button><br/>
 
   <span style="margin:4px;">New data:</span>
   <input id="dataval" type="number"  style="width:5em;margin:4px;"></input>
   <span style="margin:4px;">Comment:</span>
   <input id="datacmt" type="text"  style="margin:4px;"></input>
-  <button onclick="bs.newData(dataval.value, datacmt.value)" style="margin:4px;">
+  <button onclick="bs.newData(dataval.value, datacmt.value);bs.saveBB(download)" style="margin:4px;">
     Add</button><br/>
 
   <span style="margin:4px;">Change rate to:</span>
   <input id="rateval" type="number"  style="margin:4px;"></input>
-  <button onclick="bs.newRate(rateval.value)" style="margin:4px;">
+  <button onclick="bs.newRate(rateval.value);bs.saveBB(download)" style="margin:4px;">
     Commit!</button><br/>
 
-  <button style="margin:4px;" onclick="bs.undo();updateConfigInput()">Undo</button><br/>
+  <button style="margin:4px;" onclick="bs.undo();updateConfigInput();bs.saveBB(download)">Undo</button><br/>
 
   <hr/>
   Visual graph configuration:<br/>
