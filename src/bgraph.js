@@ -1576,6 +1576,10 @@
         file, directly fed to a {@link beebrain} object instance. */
     function loadGoal( json, timing = true ) {
       //console.debug("id="+curid+", loadGoal()->"+json.params.yoog);
+      if (!json.hasOwnProperty("params") || !json.hasOwnProperty("data")) {
+        throw new Error("loadGoal: JSON input lacks params or data")
+      }
+      
       clearUndoBuffer();
       
       processing = true;
@@ -1652,7 +1656,11 @@
       loading = true
       showOverlay( ["loading..."], sh/10 )
       var resp = await bu.loadJSON( url )
-
+      if (resp.hasOwnProperty("errstring")) {
+        removeOverlay()
+        throw new Error("loadGoalFromURL: BB file has errors: "+resp.errstring)
+      }
+      
       if (resp != null) {
         removeOverlay()
         loadGoal( resp )
@@ -4567,7 +4575,6 @@
     this.loadGoal = async ( url ) => {
       await loadGoalFromURL( url )
         .catch(function(err){
-          console.log("ERROR (loadGoal): "+err.message);
           console.log(err.stack)
         })
     }
