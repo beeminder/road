@@ -491,10 +491,6 @@
     var error = poly.standardError(poly.computeCoefficients(3));
     if (error > 10000*range) {
       // Very large error. Potentially due to ill-conditioned matrices
-      console.log(Math.max(...dz[1]))
-      console.log(Math.min(...dz[1]))
-      console.log(range)
-      console.log(error)
       console.log("butil.smooth: Possible ill-conditioned polyfit. Reducing dimension.");
       solver = poly.getPolynomial(2)
     }
