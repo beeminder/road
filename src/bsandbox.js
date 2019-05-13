@@ -131,7 +131,7 @@
     function reGraph() {
       let bb = JSON.parse(JSON.stringify(goal.bb))
       bb.params.waterbux = "$"+pledges[Math.min(pledges.length-1, goal.derails.length)]
-      goal.graph.loadGoalJSON( bb )
+      goal.graph.loadGoalJSON( bb, false )
     }
     function reloadGoal(undofirst = true) {
       logger.log("bsandbox.reloadGoal(): Regenerating graph ********")
@@ -269,8 +269,7 @@
       
       // Delete div contents
       while (goal.div.firstChild) goal.div.removeChild(goal.div.firstChild);
-      goal.gdiv = d3.select(goal.div).append('div')
-        .style("width","696px").style("height","453px")
+      goal.gdiv = d3.select(goal.div)
       goal.graph = new bgraph({divGraph: goal.gdiv.node(),
                                roadEditor:false,
                                svgSize: { width: 696, height: 453 },

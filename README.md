@@ -130,7 +130,6 @@ The directory structure for this repository is organized as follows
   * `views`: express.js view templates
   * `tests`: HTML files for various local tests, loading scripts from `src`
   * `jsbrain_server`:Local server to handle graph generation requests
-  * `jsbrain_manual`:Outdated manual shell script for PNG generation
   
 Emacs environment:
   * indium works well
