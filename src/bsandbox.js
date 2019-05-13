@@ -48,9 +48,18 @@
    @memberof module:bsandbox
    @constructs bsandbox
    @param {object} div object on the DOM to create a {@link module:bgraph} instance on
+   @param {bool} debug flag turns logging on or off. Default is false.
   */
-  bsandbox = function( div ) {
-    //console.debug("beebrain constructor ("+gid+"): ");
+  bsandbox = function( div, debug = true ) {
+    // set log level for this instance of bsandbox. 
+    var logger = (debug && typeof console != 'undefined') ? console : {
+          info: function(){},
+          warn: function(){},
+          debug:function(){},
+          error:function(){},
+          log:  function(){}
+        }
+    logger.debug("beebrain constructor ("+gid+"): ");
     var self = this,
         curid = gid
     gid++
@@ -125,16 +134,16 @@
       goal.graph.loadGoalJSON( bb, false )
     }
     function reloadGoal(undofirst = true) {
-      //console.log("bsandbox.reloadGoal(): Regenerating graph ********")
+      logger.log("bsandbox.reloadGoal(): Regenerating graph ********")
       reGraph()
       // If the goal has derailed, perform rerailments automatically
       if (goal.graph.isLoser()) {
         if (undofirst) {
-          //console.log("bsandbox.reloadGoal(): Derailed! Rolling back...")
+          logger.log("bsandbox.reloadGoal(): Derailed! Rolling back...")
           undo(false)
           reGraph()
         }
-        //console.log("bsandbox.reloadGoal(): Derailed! Rerailing...")
+        logger.log("bsandbox.reloadGoal(): Derailed! Rerailing...")
         let cur = goal.graph.curState()
         // Clean up road ahead
         goal.bb.params.road = goal.bb.params.road.filter(e=>(bu.dayparse(e[0])<cur[0]))
@@ -152,7 +161,7 @@
 
         reGraph()
       }
-      //console.log("bsandbox.reloadGoal(): Done **********************")
+      logger.log("bsandbox.reloadGoal(): Done **********************")
     }
     
     function nextDay() {
@@ -206,17 +215,17 @@
     }
 
     function newGoal( gtype, runits, rfin, vini, buffer ) {
-      //console.log(`newGoal(${gtype}, ${runits}, ${rfin}, ${vini}, ${buffer})`)
+      logger.log(`newGoal(${gtype}, ${runits}, ${rfin}, ${vini}, ${buffer})`)
       if (!typefn.hasOwnProperty(gtype)) {
-        console.error("bsandbox.newGoal: Invalid goal type!")
+        logger.error("bsandbox.newGoal: Invalid goal type!")
         return
       }
       if (["d", "w", "m", "y"].indexOf(runits) < 0) {
-        console.error("bsandbox.newGoal: Invalid rate units!")
+        logger.error("bsandbox.newGoal: Invalid rate units!")
         return
       }
       if (!bu.nummy(rfin) || !bu.nummy(vini) || !bu.torf(buffer)) {
-        console.error("bsandbox.newGoal: Invalid goal parameters!")
+        logger.error("bsandbox.newGoal: Invalid goal parameters!")
         return
       }
 
