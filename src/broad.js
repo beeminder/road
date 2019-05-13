@@ -487,6 +487,18 @@
     var xnew = dz[0].map((e)=>(e-SMOOTH)/bu.SID)
     var poly = new Polyfit(xnew, dz[1])
     var solver = poly.getPolynomial(3)
+    var range = Math.abs(Math.max(...dz[1])-Math.min(...dz[1]))
+    var error = poly.standardError(poly.computeCoefficients(3));
+    if (error > 10000*range) {
+      // Very large error. Potentially due to ill-conditioned matrices
+      console.log(Math.max(...dz[1]))
+      console.log(Math.min(...dz[1]))
+      console.log(range)
+      console.log(error)
+      console.log("butil.smooth: Possible ill-conditioned polyfit. Reducing dimension.");
+      solver = poly.getPolynomial(2)
+    }
+      
     return (x) =>(solver((x-SMOOTH)/bu.SID))
   }
 
