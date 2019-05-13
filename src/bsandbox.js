@@ -122,19 +122,19 @@
     function reGraph() {
       let bb = JSON.parse(JSON.stringify(goal.bb))
       bb.params.waterbux = "$"+pledges[Math.min(pledges.length-1, goal.derails.length)]
-      goal.graph.loadGoalJSON( bb )
+      goal.graph.loadGoalJSON( bb, false )
     }
     function reloadGoal(undofirst = true) {
-      console.log("bsandbox.reloadGoal(): Regenerating graph ********")
+      //console.log("bsandbox.reloadGoal(): Regenerating graph ********")
       reGraph()
       // If the goal has derailed, perform rerailments automatically
       if (goal.graph.isLoser()) {
         if (undofirst) {
-          console.log("bsandbox.reloadGoal(): Derailed! Rolling back...")
+          //console.log("bsandbox.reloadGoal(): Derailed! Rolling back...")
           undo(false)
           reGraph()
         }
-        console.log("bsandbox.reloadGoal(): Derailed! Rerailing...")
+        //console.log("bsandbox.reloadGoal(): Derailed! Rerailing...")
         let cur = goal.graph.curState()
         // Clean up road ahead
         goal.bb.params.road = goal.bb.params.road.filter(e=>(bu.dayparse(e[0])<cur[0]))
@@ -152,7 +152,7 @@
 
         reGraph()
       }
-      console.log("bsandbox.reloadGoal(): Done **********************")
+      //console.log("bsandbox.reloadGoal(): Done **********************")
     }
     
     function nextDay() {
