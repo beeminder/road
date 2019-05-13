@@ -904,7 +904,8 @@
         if (!(dl <= 1 || data[dl-1][0]-data[0][0] <= 0)) { 
         
           // Create new vector for filtering datapoints
-          var newx = griddle(data[0][0], data[dl-1][0])
+          var newx = griddle(data[0][0], data[dl-1][0],
+                             (data[dl-1][0]-data[0][0])*4/bu.SID)
           JSON.stringify(newx)
           goal.filtpts = newx.map((d) => [d, ema(data, d)])
         } else goal.filtpts = []

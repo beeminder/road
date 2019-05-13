@@ -1559,7 +1559,7 @@
     // Function to generate samples for the Butterworth filter
     function griddle(a, b, maxcnt = 6000) {
       return bu.linspace(a, b, Math.floor(bu.clip((b-a)/(bu.SID+1), 
-                                            Math.min(600, plotbox.width),
+                                            Math.min(300, plotbox.width/8),
                                             maxcnt)));
     }
 
@@ -1574,7 +1574,7 @@
 
         @param {Object} json JSON object with the contents of a BB
         file, directly fed to a {@link beebrain} object instance. */
-    function loadGoal( json ) {
+    function loadGoal( json, timing = true ) {
       //console.debug("id="+curid+", loadGoal()->"+json.params.yoog);
       clearUndoBuffer();
       
@@ -1582,12 +1582,12 @@
       
       // Create beebrain processor
       let suffix =  (json.params.yoog)?" ("+json.params.yoog+")":""
-      console.time(stats_timeid+suffix)
+      if (timing) { console.time(stats_timeid+suffix) }
       bbr = new bb(json)
       goal = bbr.goal
       if (opts.divJSON)
         opts.divJSON.innerHTML = JSON.stringify(bbr.getStats(), null, 4)
-      console.timeEnd(stats_timeid+suffix)
+      if (timing) { console.timeEnd(stats_timeid+suffix) }
 
       if (goal.error != "") {
         console.log("Beebrain error: "+ bbr.goal.error)
@@ -1634,7 +1634,7 @@
         else
           stathead.text("")
       }
-      console.time(graph_timeid+suffix)
+      if (timing) { console.time(graph_timeid+suffix) }
       // Finally, wrap up with graph related initialization
       zoomAll();
       processing = false;
@@ -1643,7 +1643,7 @@
       updateTable();
       updateContextData();
 
-      console.timeEnd(graph_timeid+suffix)
+      if (timing) { console.timeEnd(graph_timeid+suffix) }
     }
 
     async function loadGoalFromURL( url, callback = null ) {
@@ -2773,11 +2773,10 @@
         var fudge = PRAF*(goal.tmax-goal.tmin);
         var xr = [nXSc.invert(0).getTime()/1000, 
                   nXSc.invert(plotbox.width).getTime()/1000]
-        var xvec = griddle(goal.tmin, 
-                           Math.min(goal.asof+bu.AKH, goal.tmax+fudge)),i
+        var xvec,i
         xvec = griddle(Math.max(xr[0], goal.tmin),
                        bu.arrMin([xr[1], goal.asof+bu.AKH, goal.tmax+fudge]),
-                       plotbox.width/2)
+                       plotbox.width/8)
         // Generate a path string for the aura
         var d = "M"+svgshn(nXSc(xvec[0]*1000))+" "+svgshn(nYSc(goal.auraf(xvec[0])+aurup))
         for (i = 1; i < xvec.length; i++)
@@ -2794,7 +2793,7 @@
           el.attr("d", d);
         }
         if (xr[0] < goal.tmin) {
-          xvec = griddle(xr[0], goal.tmin, plotbox.width/2);
+          xvec = griddle(xr[0], goal.tmin, plotbox.width/8);
           d = "M"+svgshn(nXSc(xvec[0]*1000))+" "
             +svgshn(nYSc(goal.auraf(xvec[0])+aurup));
           for (i = 1; i < xvec.length; i++)
@@ -4574,9 +4573,9 @@
      Expected input format is the same as beebrain. The goal graph and
      road matrix table are updated accordingly.
     @param {object} json Javascript object containing the goal BB file contents*/
-    this.loadGoalJSON = ( json ) => {
+    this.loadGoalJSON = ( json, timing = true ) => {
       removeOverlay()
-      loadGoal( json )
+      loadGoal( json, timing )
     }
 
     /** Performs retroratcheting function by adding new knots to leave

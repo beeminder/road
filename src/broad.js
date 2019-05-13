@@ -484,10 +484,18 @@
   self.smooth = (d) => {
     var SMOOTH = (d[0][0] + d[d.length-1][0])/2
     var dz = bu.zip(d)
-    var xnew = dz[0].map((e)=>(e-SMOOTH))
+    var xnew = dz[0].map((e)=>(e-SMOOTH)/bu.SID)
     var poly = new Polyfit(xnew, dz[1])
     var solver = poly.getPolynomial(3)
-    return (x) =>(solver(x-SMOOTH))
+    var range = Math.abs(Math.max(...dz[1])-Math.min(...dz[1]))
+    var error = poly.standardError(poly.computeCoefficients(3));
+    if (error > 10000*range) {
+      // Very large error. Potentially due to ill-conditioned matrices
+      console.log("butil.smooth: Possible ill-conditioned polyfit. Reducing dimension.");
+      solver = poly.getPolynomial(2)
+    }
+      
+    return (x) =>(solver((x-SMOOTH)/bu.SID))
   }
 
   /** Assumes both datapoints and the x values are sorted */
