@@ -260,7 +260,7 @@
       
       // Delete div contents
       while (goal.div.firstChild) goal.div.removeChild(goal.div.firstChild);
-      goal.gdiv = d3.select(goal.div).append('div')
+      goal.gdiv = d3.select(goal.div)
       goal.graph = new bgraph({divGraph: goal.gdiv.node(),
                                roadEditor:false,
                                svgSize: { width: 696, height: 453 },
