@@ -43,9 +43,9 @@ class Renderer {
     const page = await this.browser.newPage()
     var pagelog = {msg:""}
     page.on('console', 
-            function(msg) {pagelog.msg+=(tag+" PAGE LOG: "+msg.text()+"\n")})
+            function(msg) {pagelog.msg+=(tag+" PAGE LOG: "+msg.text().replace(/\n/g, '\n'+tag)+"\n")})
     page.on('error',
-            function(error) {pagelog.msg+=(tag+" PAGE ERROR: "+error.msg+"\n")})
+            function(error) {pagelog.msg+=(tag+" PAGE ERROR: "+error.msg.replace(/\n/g, '\n'+tag)+"\n")})
 
     // Render the page and return result
     try {
