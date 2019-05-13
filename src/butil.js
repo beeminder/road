@@ -679,6 +679,7 @@
           } catch(err) {
             // Possible parse error in loading the bb file
             console.log("butil.loadJSON: Could not parse JSON file in "+url)
+            console.log(err.message)
             resolve(null)
           }
         } else if (xobj.readyState == 4) {
