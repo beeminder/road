@@ -1574,7 +1574,7 @@
 
         @param {Object} json JSON object with the contents of a BB
         file, directly fed to a {@link beebrain} object instance. */
-    function loadGoal( json ) {
+    function loadGoal( json, timing = true ) {
       //console.debug("id="+curid+", loadGoal()->"+json.params.yoog);
       clearUndoBuffer();
       
@@ -1582,12 +1582,12 @@
       
       // Create beebrain processor
       let suffix =  (json.params.yoog)?" ("+json.params.yoog+")":""
-      console.time(stats_timeid+suffix)
+      if (timing) { console.time(stats_timeid+suffix) }
       bbr = new bb(json)
       goal = bbr.goal
       if (opts.divJSON)
         opts.divJSON.innerHTML = JSON.stringify(bbr.getStats(), null, 4)
-      console.timeEnd(stats_timeid+suffix)
+      if (timing) { console.timeEnd(stats_timeid+suffix) }
 
       if (goal.error != "") {
         console.log("Beebrain error: "+ bbr.goal.error)
@@ -1634,7 +1634,7 @@
         else
           stathead.text("")
       }
-      console.time(graph_timeid+suffix)
+      if (timing) { console.time(graph_timeid+suffix) }
       // Finally, wrap up with graph related initialization
       zoomAll();
       processing = false;
@@ -1643,7 +1643,7 @@
       updateTable();
       updateContextData();
 
-      console.timeEnd(graph_timeid+suffix)
+      if (timing) { console.timeEnd(graph_timeid+suffix) }
     }
 
     async function loadGoalFromURL( url, callback = null ) {
@@ -4573,9 +4573,9 @@
      Expected input format is the same as beebrain. The goal graph and
      road matrix table are updated accordingly.
     @param {object} json Javascript object containing the goal BB file contents*/
-    this.loadGoalJSON = ( json ) => {
+    this.loadGoalJSON = ( json, timing = true ) => {
       removeOverlay()
-      loadGoal( json )
+      loadGoal( json, timing )
     }
 
     /** Performs retroratcheting function by adding new knots to leave
