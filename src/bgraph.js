@@ -2040,7 +2040,7 @@
     function changeKnotDate( kind, newDate, fromtable = true ) {
       pushUndoState();
 
-	    var knotmin = (kind == 0) ? goal.xMin : (road[kind].sta[0]) + 0.01;
+	    var knotmin = (kind == 0) ? goal.xMin-10*bu.SID*bu.DIY : (road[kind].sta[0]) + 0.01;
 	    var knotmax = 
             (kind == road.length-1) 
             ? road[kind].end[0]+0.01
@@ -3955,7 +3955,7 @@
           datePicker.destroy();
           datePicker = null;
         }
-	      var knotmin = (kind == 0) ? goal.xMin : (road[kind].sta[0]);
+	      var knotmin = (kind == 0) ? goal.xMin-10*bu.SID*bu.DIY : (road[kind].sta[0]);
 	      var knotmax = 
               (kind == road.length-1) 
               ? road[kind].end[0]
