@@ -4566,7 +4566,10 @@
     @param {String} url URL to load the goal BB file from*/
     this.loadGoal = async ( url ) => {
       await loadGoalFromURL( url )
-        .catch(function(err){console.log("ERROR (loadGoal): "+err.message)})
+        .catch(function(err){
+          console.log("ERROR (loadGoal): "+err.message);
+          console.log(err.stack)
+        })
     }
 
     /** Initiates loading a new goal from the supplied object.
