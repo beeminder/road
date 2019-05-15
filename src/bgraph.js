@@ -460,12 +460,14 @@
      @param {Boolean} [shd=true] Shade out graph if true
     */
     function showOverlay( msgs, fs = -1, fw="bold",
-                          box=null, cls="overlay", shd = true) {
+                          box=null, cls="overlay", shd = true, animate=false,
+                          parent=null) {
       if (opts.divGraph == null) return
       if (box == null) box ={x:sw/20, y:sh/5, w:sw-2*sw/20, h:sh-2*sh/5}
-      var pg = svg.select("g."+cls)
+      if (parent == null) parent = svg
+      var pg = parent.select("g."+cls)
       if (pg.empty()) {
-        pg = svg.append('g').attr('class', cls)
+        pg = parent.append('g').attr('class', cls)
         if (shd) {
           pg.append('svg:rect')
             .attr('x', 0).attr('y',0)
@@ -474,14 +476,9 @@
             .style('fill-opacity', 0.5)
         }
         pg.append('svg:rect')
+          .attr("class", "textbox")
           .attr('x', box.x).attr('y',box.y)
           .attr('width', box.w).attr('height',box.h)
-          .attr('rx', 5)
-          .attr('ry', 5)
-          .style('stroke', bu.Cols.BLCK)
-          .style('stroke-width', 1)
-          .style('fill', "#ffffcc")
-          .style('fill-opacity', 0.9)
       }
       pg.selectAll(".loading").remove()
       var nummsgs = msgs.length
@@ -489,22 +486,27 @@
       var lh = fs * 1.1
       for (let i = 0; i < nummsgs; i++) {
         pg.append('svg:text').attr('class', 'loading')
-          .attr('x', sw/2)
+          .attr('x', box.x+box.w/2)
           .attr('y',(box.y+box.h/2) - ((nummsgs-1)*lh)/2+i*lh+fs/2-3)
           .attr('font-size', fs)
           .style('font-size', fs)
           .style('font-weight', fw)
           .text(msgs[i])
       }
+      if (animate) pg.style("opacity", 0).transition().duration(200).style("opacity", 1)
     }
     /** Removes the message overlay created by {@link
         bgraph~showOverlay showOverlay()}
         @param {String} [cls="overlay"] CSS class for the overlay to remove 
     */
-    function removeOverlay(cls = "overlay") {
+    function removeOverlay(cls = "overlay", animate = false, parent = null) {
       //console.debug("removeOverlay("+self.id+")")
       if (opts.divGraph == null) return
-      svg.selectAll("g."+cls).remove()
+      if (parent == null) parent = svg
+      var pg = parent.selectAll("g."+cls)
+      if (animate)
+        pg.style("opacity", 1).transition().duration(200).style("opacity", 0).remove()
+      else pg.remove()
     }
 
     /** Creates all SVG graph components if a graph DIV is
@@ -587,10 +589,38 @@
         .attr("x", plotbox.x).attr("y", plotbox.y)
         .attr("color", bu.Cols.REDDOT)
         .attr("width", plotbox.width).attr("height", plotbox.height)
+      var oldscroll = zoomarea.on("wheel.scroll")
+      var scrollinfo = {shown: false, timeout: null}
+
+      var onscroll = function() {
+        if (scrollinfo.timeout != null) {
+          clearTimeout(scrollinfo.timeout); scrollinfo.timeout = null
+        }
+        if (d3.event.ctrlKey) {
+          removeOverlay("zoominfo",true, plot); scrollinfo.shown = false; return
+        }
+        if (!scrollinfo.shown) {
+          showOverlay(["Use ctrl+scroll to zoom"], -1,"normal",
+                      {x:0,y:0,w:plotbox.width,h:plotbox.height},"zoominfo", false, true, plot)
+          scrollinfo.shown = true
+        }
+        scrollinfo.timeout= setTimeout(() => {removeOverlay("zoominfo", true);
+                                              scrollinfo.shown = false},1000)
+      }
+      var onmove = function() {
+        if (scrollinfo.timeout != null) {
+          clearTimeout(scrollinfo.timeout); scrollinfo.timeout = null
+        }
+        removeOverlay("zoominfo",true); scrollinfo.shown = false
+      }
+      zoomarea.on("wheel.scroll", onscroll )
+      zoomarea.on("mousedown.move", onmove )
+      
       axisZoom = d3.zoom()
         .extent([[0, 0], [plotbox.width, plotbox.height]])
         .scaleExtent([1, Infinity])
         .translateExtent([[0, 0], [plotbox.width, plotbox.height]])
+        .filter(function () { return (d3.event.type != "wheel" || d3.event.ctrlKey); })
         .on("zoom", zoomed)
       zoomarea.call(axisZoom)
       if (onMobileOrTablet()) {
@@ -678,7 +708,7 @@
       gHorizonText = plot.append('g').attr('id', 'hortxtgrp');
       gPastText = plot.append('g').attr('id', 'pasttxtgrp');
 
-      zoomin = plot.append("svg:use")
+      zoomin = focusclip.append("svg:use")
 	      .attr("class","zoomin")
         .attr("xlink:href", "#zoominbtn")
 	  	  .attr("opacity",opts.zoomButton.opacity)
@@ -687,7 +717,7 @@
         .on("mouseover", () =>{
           if (!mobileOrTablet) d3.select(this).style("fill", "red")})
 	      .on("mouseout",(d,i) => {d3.select(this).style("fill", "black")});
-      zoomout = plot.append("svg:use")
+      zoomout = focusclip.append("svg:use")
 	      .attr("class","zoomout")
 	      .attr("xlink:href","#zoomoutbtn")
 	  	  .attr("opacity",opts.zoomButton.opacity)

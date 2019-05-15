@@ -17,6 +17,27 @@ svg text::selection {
   pointer-events: all;
 }
 
+.overlay .textbox {
+    fill: #ffffcc;
+    fill-opacity: 0.5;
+    stroke: black;
+    stroke-width: 1;
+    pointer-events: none;
+    rx:5;
+    ry:5;
+}
+
+.zoominfo .textbox {
+    fill: #000000;
+    fill-opacity: 0.4;
+    stroke: none;
+    stroke-width: 0;
+    pointer-events: none;
+}
+.zoominfo .loading {
+    fill: #ffffff;
+}
+
 .axis path, .axis line, .grid line, .axis text,
 .pasttext, .ctxtodaytext, .ctxhortext, 
 .horizontext, .waterbuf, .waterbux, .loading,
