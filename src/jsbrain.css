@@ -27,6 +27,16 @@ svg text::selection {
     ry:5;
 }
 
+.message .textbox {
+    fill: #ffffcc;
+    fill-opacity: 0.9;
+    stroke: black;
+    stroke-width: 1;
+    pointer-events: none;
+    rx:5;
+    ry:5;
+}
+
 .zoominfo .textbox {
     fill: #000000;
     fill-opacity: 0.4;
