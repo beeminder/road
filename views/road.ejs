@@ -46,7 +46,7 @@
 
 <table>
   <tr>
-    <td valign="top"><div id="roadgraph"></div>
+    <td valign="top"><div id="roadgraph" style="width:696px; height:453px"></div>
       <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>Show datapoints&nbsp;
       <input id="showalldata" type="checkbox" onclick="if (this.checked) editor.maxDataDays(-1); else editor.maxDataDays(100);" checked>Show All data&nbsp;
       <input id="showcontext" type="checkbox" onclick="editor.showContext(this.checked);" checked>Show context graph<br>
@@ -97,7 +97,7 @@
 
 <table>
   <tr>
-    <td valign="top"><div id="roadgraph2"></div>
+    <td valign="top"><div id="roadgraph2" style="width:696px; height:453px"></div>
       <input id="showalldata2" type="checkbox" onclick="if (this.checked) graph.maxDataDays(-1); else graph.maxDataDays(100);"  checked>Show All data<br/>
       <button class="btn btn-secondary" id="resetzoom2" onclick="graph.zoomDefault();">Reset Zoom</button>
       <button class="btn btn-secondary" id="savesvg2" onclick="graph.saveGraph(document.getElementById('download2'));">Generate SVG</button><a id="download2">Right click to download</a><br/><br/>
