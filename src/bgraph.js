@@ -209,7 +209,7 @@
   },
   
   /** This style text gets embedded into the SVG object to enable proper saving of the SVG */
-  SVGStyle = ".svg {shape-rendering: crispEdges;} .axis path, .axis line { fill: none; stroke: black; shape-rendering: crispEdges;} .axis .minor line { stroke: #777; stroke-dasharray:0,2,4,3; } .grid line { fill: none; stroke: #dddddd; stroke-width: 1px; shape-rendering: crispEdges; } .grid .minor line { stroke: none; } .axis text { font-family: sans-serif; font-size: 11px; } .axislabel { font-family: sans-serif; font-size: 11px; text-anchor: middle; } circle.dots { stroke: black; } line.roads { stroke: black; } .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .hashtag { text-anchor: middle; font-family: sans-serif; } .waterbuf, .waterbux { text-anchor: middle; font-family: Dejavu Sans,sans-serif; }.loading { text-anchor: middle; font-family: Dejavu Sans,sans-serif; } .zoomarea { fill: none; } circle.ap {stroke:none;} circle.rd {stroke:none;}  circle.std {stroke:none;}   circle.dp {stroke:rgb(0,0,0);}",
+  SVGStyle = ".svg {shape-rendering: crispEdges;} .axis path, .axis line { fill: none; stroke: black; shape-rendering: crispEdges;} .axis .minor line { stroke: #777; stroke-dasharray:0,2,4,3; } .grid line { fill: none; stroke: #dddddd; stroke-width: 1px; shape-rendering: crispEdges; } .grid .minor line { stroke: none; } .axis text { font-family: sans-serif; font-size: 11px; } .axislabel { font-family: sans-serif; font-size: 11px; text-anchor: middle; } circle.dots { stroke: black; } line.roads { stroke: black; } .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .hashtag { text-anchor: middle; font-family: sans-serif; } .waterbuf, .waterbux { text-anchor: middle; font-family: Dejavu Sans,sans-serif; }.loading { text-anchor: middle; font-family: Dejavu Sans,sans-serif; } .zoomarea { fill: none; } circle.ap {stroke:none;} circle.rd {stroke:none;}  circle.std {stroke:none;}   circle.dp {stroke:rgb(0,0,0);} .overlay .textbox {fill: #ffffcc;fill-opacity: 0.5;stroke: black;stroke-width: 1;pointer-events: none;rx:5;ry:5;}",
 
   /** Fraction of plot range that the axes extend beyond */
   PRAF  = .015,
@@ -615,7 +615,10 @@
       }
       zoomarea.on("wheel.scroll", onscroll )
       zoomarea.on("mousedown.move", onmove )
-      
+      //zoomarea.on("touchstart", ()=>{console.log("touchstart")} )
+      //zoomarea.on("touchmove", ()=>{console.log("touchmove")} )
+      //zoomarea.on("touchend", ()=>{console.log("touchend")} )
+
       axisZoom = d3.zoom()
         .extent([[0, 0], [plotbox.width, plotbox.height]])
         .scaleExtent([1, Infinity])
