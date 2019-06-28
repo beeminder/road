@@ -541,3 +541,15 @@
   return self
 }));
 
+/* Working out transition to conservaround:
+     y d x current  new         example
+     ----- -------- ----------- ----------
+MOAR + + + ceil(x)  crnd(x, +1)  1.5 ->  2
+     + + - x        crnd(x, +1) -1.5 -> -1
+RASH + - + x        crnd(x, +1)  1.5 ->  2
+     + - - ceil(x)  crnd(x, +1) -1.5 -> -1
+WEEN - + + floor(x) crnd(x, -1)  1.5 ->  1
+     - + - x        crnd(x, -1) -1.5 -> -2
+PHAT - - + x        crnd(x, -1)  1.5 ->  1
+     - - - floor(x) crnd(x, -1) -1.5 -> -2
+*/
