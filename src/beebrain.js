@@ -589,7 +589,16 @@
 
       // Adjust derailment markers to indicate worst value for that day
       for (i = 0; i < derails.length; i++) {
-        ct = derails[i][0]+bu.SID
+        var CHANGEDATE = 1562299200; //2019-07-05 // TODO: DRY
+        if (!goal.offparis) {
+          ct = derails[i][0]+bu.SID
+        } else {
+          if (derails[i][0] < CHANGEDATE ) {
+            ct = derails[i][0]+bu.SID;
+          } else {
+            ct = derails[i][0];
+          }
+        }
         if (worstval.hasOwnProperty(ct)) derails[i][1] = worstval[ct]
       }
       
