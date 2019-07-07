@@ -71,9 +71,9 @@ cd /var/www/jsbrain
 # roll back easily if need be
 git branch YYYYMMDD_HHMM
 git pull
-# maybe only need to npm update when packages change?
+# maybe only need to npm install when packages change?
 cd jsbrain_server
-npm update
+npm install 
 # finally
 pm2 reload jsbrain
 ```

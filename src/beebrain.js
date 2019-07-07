@@ -91,6 +91,7 @@
     tluz     : null,   // Timestamp of derailment ("lose") if no more data added
     tcur     : null,   // (tcur,vcur) gives the most recent datapoint, including
     vcur     : null,   //   flatlining; see asof 
+    vprev    : null,   // Agged value yesterday 
     rcur     : null,   // Rate at time tcur; if kink, take limit from the left
     ravg     : null,   // Overall road rate from (tini,vini) to (tfin,vfin)
     tdat     : null,   // Timestamp of last actually entered datapoint
@@ -201,7 +202,7 @@
      
     // Initialize goal with sane values
     goal.yaw = +1; goal.dir = +1
-    goal.tcur = 0; goal.vcur = 0
+    goal.tcur = 0; goal.vcur = 0; goal.vprev = 0;
     var now = moment.utc()
     now.hour(0); now.minute(0); now.second(0); now.millisecond(0)
     goal.asof = now.unix()
@@ -464,8 +465,11 @@
       // Identify derailments and construct a copied array
       derails = data.filter(e=>(e[2].startsWith("RECOMMITTED")))
       derails = derails.map(e=>e.slice())
-      if (!goal.offred)
-        for (i = 0; i < derails.length; i++) derails[i][0] = derails[i][0]-bu.SID
+      for (i = 0; i < derails.length; i++) {
+        var OFFRED = 1562299200; // change to "recommit yesterday"
+        if (derails[i][0] < OFFRED )
+          derails[i][0] = derails[i][0]-bu.SID;
+      }
       
       // Identify, record and process odometer reset for odom goals
       if (goal.odom) {
@@ -913,6 +917,7 @@
       
       goal.tcur = data[data.length-1][0]
       goal.vcur = data[data.length-1][1]
+      goal.vprev= data[Math.max(data.length-2,0)][1] // default to vcur if < 2 datapts
 
       goal.lnw = Math.max(goal.nw,goal.lnf( goal.tcur ))
       goal.safebuf = br.dtd(roads, goal, goal.tcur, goal.vcur)
