@@ -37,6 +37,7 @@
 
   pin = { // In Params: Graph settings and their defaults
     offred   : false,// Whether to use new yesterday-is-red criteria for derails
+    offparis : false,// In case we revert the rails code while flying to Paris: when this is false, which it will be if rails doesn't send it, then Beebrain will behave as it used to
     deadline : 0,    // Time of deadline given as seconds bfr or after midnight
     sadlhole : true, // Allow the do-less l.hole where you can eke back onto YBR
     asof     : null, // Compute everything as if it were this date
@@ -91,6 +92,7 @@
     tluz     : null,   // Timestamp of derailment ("lose") if no more data added
     tcur     : null,   // (tcur,vcur) gives the most recent datapoint, including
     vcur     : null,   //   flatlining; see asof 
+    vprev    : null,   // Agged value yesterday 
     rcur     : null,   // Rate at time tcur; if kink, take limit from the left
     ravg     : null,   // Overall road rate from (tini,vini) to (tfin,vfin)
     tdat     : null,   // Timestamp of last actually entered datapoint
@@ -201,7 +203,7 @@
      
     // Initialize goal with sane values
     goal.yaw = +1; goal.dir = +1
-    goal.tcur = 0; goal.vcur = 0
+    goal.tcur = 0; goal.vcur = 0; goal.vprev = 0;
     var now = moment.utc()
     now.hour(0); now.minute(0); now.second(0); now.millisecond(0)
     goal.asof = now.unix()
@@ -464,8 +466,18 @@
       // Identify derailments and construct a copied array
       derails = data.filter(e=>(e[2].startsWith("RECOMMITTED")))
       derails = derails.map(e=>e.slice())
-      if (!goal.offred)
+      if (goal.offparis) {
+        // wrapping in offparis param for ease of reverting back to old behavior while danny and i are flying to paris.
+        // CHANGEDATE is the day that we switched to recommitting goals 
+        // yesterday instead of the day after the derail.
+        for (i = 0; i < derails.length; i++) {
+          var CHANGEDATE = 1562299200; //2019-07-05
+          if (derails[i][0] < CHANGEDATE )
+            derails[i][0] = derails[i][0]-bu.SID;
+        }
+      } else { // was if !goal.offred.. but offred's just always been false 
         for (i = 0; i < derails.length; i++) derails[i][0] = derails[i][0]-bu.SID
+      }
       
       // Identify, record and process odometer reset for odom goals
       if (goal.odom) {
@@ -913,6 +925,7 @@
       
       goal.tcur = data[data.length-1][0]
       goal.vcur = data[data.length-1][1]
+      goal.vprev= data[Math.max(data.length-2,0)][1] // default to vcur if < 2 datapts
 
       goal.lnw = Math.max(goal.nw,goal.lnf( goal.tcur ))
       goal.safebuf = br.dtd(roads, goal, goal.tcur, goal.vcur)
