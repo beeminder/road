@@ -37,7 +37,7 @@
 
   pin = { // In Params: Graph settings and their defaults
     offred   : false,// Whether to use new yesterday-is-red criteria for derails
-    offparis : false,// In case we revert the rails code while flying to Paris: when this is false, which it will be if rails doesn't send it, then Beebrain will behave as it used to
+    offparis : false,// Paris boolean; schedel
     deadline : 0,    // Time of deadline given as seconds bfr or after midnight
     sadlhole : true, // Allow the do-less l.hole where you can eke back onto YBR
     asof     : null, // Compute everything as if it were this date
@@ -466,17 +466,13 @@
       // Identify derailments and construct a copied array
       derails = data.filter(e=>(e[2].startsWith("RECOMMITTED")))
       derails = derails.map(e=>e.slice())
-      if (goal.offparis) {
-        // wrapping in offparis param for ease of reverting back to old behavior while danny and i are flying to paris.
-        // CHANGEDATE is the day that we switched to recommitting goals 
-        // yesterday instead of the day after the derail.
-        for (i = 0; i < derails.length; i++) {
-          var CHANGEDATE = 1562299200; //2019-07-05
-          if (derails[i][0] < CHANGEDATE )
-            derails[i][0] = derails[i][0]-bu.SID;
+      // CHANGEDATE is the day that we switched to recommitting goals 
+      // yesterday instead of the day after the derail.
+      for (i = 0; i < derails.length; i++) {
+        var CHANGEDATE = 1562299200; //2019-07-05
+        if (derails[i][0] < CHANGEDATE ) {
+          derails[i][0] = derails[i][0]-bu.SID;
         }
-      } else { // was if !goal.offred.. but offred's just always been false 
-        for (i = 0; i < derails.length; i++) derails[i][0] = derails[i][0]-bu.SID
       }
       
       // Identify, record and process odometer reset for odom goals
@@ -590,14 +586,10 @@
       // Adjust derailment markers to indicate worst value for that day
       for (i = 0; i < derails.length; i++) {
         var CHANGEDATE = 1562299200; //2019-07-05 // TODO: DRY
-        if (!goal.offparis) {
-          ct = derails[i][0]+bu.SID
+        if (derails[i][0] < CHANGEDATE ) {
+          ct = derails[i][0]+bu.SID;
         } else {
-          if (derails[i][0] < CHANGEDATE ) {
-            ct = derails[i][0]+bu.SID;
-          } else {
-            ct = derails[i][0];
-          }
+          ct = derails[i][0];
         }
         if (worstval.hasOwnProperty(ct)) derails[i][1] = worstval[ct]
       }
