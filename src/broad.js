@@ -241,6 +241,11 @@
     var fnw = (self.gdelt(rd, goal, t,v) >= 0)?0.0:goal.nw // future noisy width
     var elnf = (x) => (Math.max(goal.lnf(x),fnw)) //eff. lane width
 
+    if (goal.offred) {
+      // override and return 0 if offred & red yesterday (cuz do less loophole)
+        
+    }
+
     var x = 0 // the number of steps  
     var vpess = v // the value as we walk forward w/ pessimistic presumptive reports
     while (self.aok( rd, goal, t+x*bu.SID, vpess, elnf( t+x*bu.SID ) ) 
