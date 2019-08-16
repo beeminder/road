@@ -563,6 +563,8 @@
 
       fuda = newpts.filter(e=>(e[0]>goal.asof))
       data = newpts.filter(e=>(e[0]<=goal.asof))
+      if (data.length == 0) return "All datapoints are in the future!"
+
       if (!goal.plotall) goal.numpts = data.length
 
       // Compute data mean after filling in gaps
