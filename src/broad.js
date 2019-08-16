@@ -237,6 +237,10 @@
   /** Returns the number of days to derail for the current road
       TODO: There are some issues with computing tcur, vcur */
   self.dtd = ( rd, goal, t, v ) => {
+    if (goal.offred && self.isLoser(rd, goal, null, t, v)) {
+      return 0 // override if offred & red yesterday (cuz do-less loophole)
+    }
+
     var tnow = goal.tcur
     var fnw = (self.gdelt(rd, goal, t,v) >= 0)?0.0:goal.nw // future noisy width
     var elnf = (x) => (Math.max(goal.lnf(x),fnw)) //eff. lane width
@@ -541,3 +545,15 @@
   return self
 }));
 
+/* Working out transition to conservaround:
+     y d x current  new         example
+     ----- -------- ----------- ----------
+MOAR + + + ceil(x)  crnd(x, +1)  1.5 ->  2
+     + + - x        crnd(x, +1) -1.5 -> -1
+RASH + - + x        crnd(x, +1)  1.5 ->  2
+     + - - ceil(x)  crnd(x, +1) -1.5 -> -1
+WEEN - + + floor(x) crnd(x, -1)  1.5 ->  1
+     - + - x        crnd(x, -1) -1.5 -> -2
+PHAT - - + x        crnd(x, -1)  1.5 ->  1
+     - - - floor(x) crnd(x, -1) -1.5 -> -2
+*/
