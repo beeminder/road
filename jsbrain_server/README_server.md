@@ -11,12 +11,7 @@ output with goal parameters.
 
 ### Setup
 
-First time you run the server you need to install the dependencies first in the root directory
-
-`cd ../`
-`npm update`
-
-Then in the jsbrain_server directory
+To run jsbrain_server, for instance, for a Beeminder development environment, install node, and, here in the jsbrain_server directory, run
 
 `npm update`
 
@@ -26,7 +21,7 @@ Now that your dependencies are installed, you can run the server instance with
 
 `npm start`
 
-which will fire up a node.js server on localhost:3000. You can then request processing for a BB file with a GET request issued to this server with the following parameters
+which will fire up a node.js server on localhost:8777. You can then request processing for a BB file with a GET request issued to this server with the following parameters
 
   * `inpath=/path/to/input` : Path to local directory for the BB file
   * `outpath=/path/to/output`: Path to local directory for generated files
@@ -37,6 +32,16 @@ which will fire up a node.js server on localhost:3000. You can then request proc
 This reads the file `u+g.bb` (or `slug.bb`) from `/path/to/input`, and
 generates `u+g.png`, `u+g-thumb.png`, `u+g.svg` and `u+g.json` in
 `/path/to/output`. 
+
+### Testing the server
+
+To make sure everything is running, start the server, and then make a request using one of the test files.  From this `jsbrain_server` directory:
+
+`curl "localhost:8777?slug=testroad1&inpath=`pwd`/../data"`
+
+This tell the server you have running to process testroad1.bb in the `data/` directory next to the `jsbrain_server` directory.  You shouldn't see an error, but instead should get a response of something like:
+
+{"inpath":"/Volumes/UNTITLED/road/jsbrain_server/../data","outpath":"/Volumes/UNTITLED/road/jsbrain_server/../data","slug":"testroad1","host":"Amandas-MBP","process":1,"request":2,"log":"testroad1 @ 2019-07-15 15:20:19\n(1:2)  Page creation (testroad1): 1965.953ms\n(1:2)  PAGE LOG: bgraph(1): Goal stats (test/test1): 20.510986328125ms\n(1:2)  PAGE LOG: bgraph(1): Goal graph (test/test1): 153.082275390625ms\n(1:2)  Page render (testroad1): 316.587ms\n(1:2)  Screenshot (testroad1): 867.273ms\n","bb":"/Volumes/UNTITLED/road/jsbrain_server/../data/testroad1.bb","svg":"/Volumes/UNTITLED/road/jsbrain_server/../data/testroad1.svg","png":"/Volumes/UNTITLED/road/jsbrain_server/../data/testroad1.png","json":"/Volumes/UNTITLED/road/jsbrain_server/../data/testroad1.json","error":null}
 
 ## Principles of operation
 
