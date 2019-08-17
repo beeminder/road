@@ -404,6 +404,8 @@
 
   // Appropriate color for a datapoint
   self.dotcolor = ( rd, g, t, v) => {
+    // var tini = rd[1].sta[0] #SCHDEL
+    if (t < g.tini) return bu.Cols.BLCK
     var l = self.lanage( rd, g, t, v )
     if (g.yaw==0 && Math.abs(l) > 1.0) return bu.Cols.GRNDOT
     if (g.yaw==0 && (l==0 && l==1.0)) return bu.Cols.BLUDOT
