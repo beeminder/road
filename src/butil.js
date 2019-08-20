@@ -440,7 +440,66 @@ self.sh1sc = function(x, e) { return self.shnsc(self.chop(x), e, 4,2) }
  *                               CONSERVAROUND                                *
  ******************************************************************************/
 
-// TODO: put conservaround code here
+// Normalize number: Return the canonical string representation. Is idempotent.
+// If we were true nerds we'd do it like wikipedia.org/wiki/Normalized_number
+// but instead we're canonicalizing via un-scientific-notation-ifying. The other
+// point of this is to not lose trailing zeros after the decimal point.
+// Possible issue: Some equivalent number representations don't normalize to the
+// same thing. Eg, "0.5" -> "0.5", ".5" -> ".5", "2" -> "2", "+2" -> "+2", 
+// "3" -> "3", "3." -> "3.".
+self.normberlize = function (x) {
+  x = typeof x == 'string' ? x.trim() : (+x).toString() // stringify the input
+  x = x.replace(/^([+-]?)0+([^eE\.])/, '$1$2')        // ditch the leading zeros
+  const rnum = /^[+-]?(?:\d+\.?\d*|\.\d+)$/           // regex from d.glitch.me
+  if (rnum.test(x)) return x                          // already normal! done!
+  const rsci = /^([+-]?(?:\d+\.?\d*|\.\d+))e([+-]?\d+$)/i // sci. notation
+  const marr = x.match(rsci)                          // match array
+  if (!marr || marr.length !== 3) return 'NaN'        // hammer can't parse this
+  let [, m, e] = marr                                 // mantissa & exponent
+  let dp = m.indexOf('.')                             // decimal pt position
+  if (dp===-1) dp = m.length                          // (implied decimal pt)
+  dp += +e                                            // scooch scooch
+  m = m.replace(/\./, '')                             // mantissa w/o decimal pt
+  if (dp < 0) return '.' + '0'.repeat(-dp) + m        // eg 1e-3 -> .001
+  if (dp > m.length) m += '0'.repeat(dp - m.length)   // eg 1e3 -> 1000
+  else m = m.substring(0, dp) + '.' + m.substring(dp) // eg 12.34e1 -> 123.4
+  return m.replace(/\.$/, '').replace(/^0+(.)/, '$1') // eg 0023. -> 23
+}
+
+// Infer precision, eg, .123 -> .001 or "12.0" -> .1
+// It's sort of silly to do this with regexes on strings instead of with floors
+// and logs and powers and such but (a) the string the user typed is the ground
+// truth and (b) this is just more robust and portable.
+self.quantize = function (x) {
+  let s = self.normberlize(x)          // put the input in canonical string form
+  if (/^-?\d+\.?$/.test(s)) return 1   // no decimal pt (or only a trailing one)
+  s = s.replace(/^-?\d*\./, '.')       // eg, -123.456 -> .456
+  s = s.replace(/\d/g, '0')            // eg,             .456 -> .000
+  s = s.replace(/0$/, '1')             // eg,                     .000 -> .001
+  return +s                            // return the thing as an actual number
+}
+
+// Round x to nearest r, avoiding floating point crap like 9999*.1=999.900000001
+// at least when r is an integer or negative power of 10
+self.round = function (x, r=1) {
+  if (r < 0) return NaN
+  if (r===0) return +x
+  const y = Math.round(x/r)
+  const rpow = /^0?\.(0*)1$/   // eg .1 or .01 or .001 -- a negative power of 10
+  const marr = r.toString().match(rpow)   // match array; marr[0] is whole match
+  if (!marr) return y*r
+  const p = -marr[1].length-1 // p is the power of 10
+  return +self.normberlize(`${y}e${p}`)
+}
+
+// Round x to the nearest r ... that's >= x if e is +1
+//                          ... that's <= x if e is -1
+self.conservaround = function (x, r=1, e=0) {
+  let y = self.round(x, r)
+  if (e < 0 && y > x) y -= r
+  if (e > 0 && y < x) y += r
+  return self.round(y, r) // y's already rounded but adding r can f.p. it all up
+}
 
 /******************************************************************************
  *                        STATS AND AGGDAY FUNCTIONS                          *

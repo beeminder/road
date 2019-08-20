@@ -534,28 +534,10 @@
       *(g.noisy?(Math.max(g.nw, g.lnf(t))):g.lnf(t))
   }
 
-  /** The bare minimum needed from vcur to the critical edge of the YBR in n days */
+  /** The bare min needed from vcur to the critical edge of the YBR in n days */
   self.limd = (rd, g, n) => {
-    var x = self.lim(rd, g, n)-g.vcur
-    if (!g.integery) return x
-    if (g.yaw>0 && g.dir>0 && x>0) return Math.ceil(x)  // MOAR
-    if (g.yaw<0 && g.dir<0 && x<0) return Math.floor(x) // PHAT
-    if (g.yaw<0 && g.dir>0 && x>0) return Math.floor(x) // WEEN
-    if (g.yaw>0 && g.dir<0 && x<0) return Math.ceil(x)  // RASH
-    return x
+    return bu.conservaround(self.lim(rd, g, n) - g.vcur, g.integery?1:0, g.yaw)
   }
   return self
 }));
 
-/* Working out transition to conservaround:
-     y d x current  new         example
-     ----- -------- ----------- ----------
-MOAR + + + ceil(x)  crnd(x, +1)  1.5 ->  2
-     + + - x        crnd(x, +1) -1.5 -> -1
-RASH + - + x        crnd(x, +1)  1.5 ->  2
-     + - - ceil(x)  crnd(x, +1) -1.5 -> -1
-WEEN - + + floor(x) crnd(x, -1)  1.5 ->  1
-     - + - x        crnd(x, -1) -1.5 -> -2
-PHAT - - + x        crnd(x, -1)  1.5 ->  1
-     - - - floor(x) crnd(x, -1) -1.5 -> -2
-*/
