@@ -417,7 +417,7 @@ self.dotcolor = ( rd, g, t, v) => {
   if (t < g.tini) return bu.Cols.BLCK
   var l = self.lanage(rd, g, t, v)
   if (g.yaw===0 && Math.abs(l) > 1.0)  return bu.Cols.GRNDOT
-  if (g.yaw===0 && (l===0 && l===1.0)) return bu.Cols.BLUDOT // TODO ||
+  if (g.yaw===0 && (l===0 || l===1.0)) return bu.Cols.BLUDOT
   if (g.yaw===0 && l===-1.0)           return bu.Cols.ORNDOT
   if (l*g.yaw >=   2.0)                return bu.Cols.GRNDOT
   if (l*g.yaw ===  1.0)                return bu.Cols.BLUDOT
