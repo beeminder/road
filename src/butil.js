@@ -1,4 +1,4 @@
-;((function (root, factory) { // BEGIN PREAMBLE
+;((function (root, factory) { // BEGIN PREAMBLE --------------------------------
 
 'use strict'
 if (typeof define === 'function' && define.amd) {
@@ -16,7 +16,7 @@ if (typeof define === 'function' && define.amd) {
   root.butil = factory(root.moment)
 }
 
-})(this, function (moment) {   // END PREAMBLE -- BEGIN MAIN
+})(this, function (moment) { // END PREAMBLE -- BEGIN MAIN ---------------------
 
 'use strict'
 
@@ -838,4 +838,4 @@ self.sorn = (x) => (typeof x == "string" || (x == null))
 
 return self
 
-})); // END MAIN
+})); // END MAIN ---------------------------------------------------------------
