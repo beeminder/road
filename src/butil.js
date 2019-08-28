@@ -85,7 +85,7 @@ self.AKH   = 7*self.SID
 self.BDUSK = 2147317201
 /** Unary function that always returns zero 
     @param {} x*/
-self.ZFUN = (x) => 0
+// self.ZFUN = (_) => 0 // not used
 
 /** Number of seconds in a year, month, etc 
     @enum {Number} */
@@ -106,20 +106,19 @@ self.UNAM = { 'y' : 'year',
  *                                 FUNCTIONS                                  *
  ******************************************************************************/
 
-
 /** Returns minimum from an array of numbers 
     @param {Number[]} arr Input array */
-self.arrMin = (arr) =>( Math.min.apply(null, arr))
+self.arrMin = (arr) =>( Math.min.apply(null, arr)) // could use spread operator
 /** Returns maximum from an array of numbers
     @param {Number[]} arr Input array */
-self.arrMax = (arr) =>( Math.max.apply(null, arr))
+self.arrMax = (arr) =>( Math.max.apply(null, arr)) // could use spread operator
 
 /** Returns true if input is an array 
     @param {} o Input parameter*/
-self.isArray = (o) => ((/Array/).test(Object.prototype.toString.call(o)))
+//self.isArray = (o) => ((/Array/).test(Object.prototype.toString.call(o)))
+self.isArray = Array.isArray
 
-// TODO: This does not perform proper copying especially for array
-// properties. FIX
+// TODO: Does not properly copy, especially for array properties. FIX
 /** Extends a destination object with properties from a source
  * object, optionally overwriting existing elements
 
@@ -150,16 +149,15 @@ self.extend = (to, fr, owr) => {
     @param {Array} dom Array with domain elements
 */
 self.argmax = (f, dom) => {
-  if (dom == null) return null
+  if (dom === null) return null
   var newdom = dom.map(f)
   var maxelt = self.arrMax(newdom)
-  return dom[newdom.findIndex( e => (e == maxelt))]
+  return dom[newdom.findIndex(e => e === maxelt)]
 }
 
-/** Partitions list l into sublists whose beginning indices are
-    separated by d, and whose lengths are n. If the end of the list is
-    reached and there are fewer than n elements, those are not
-    returned. 
+/** Partitions list l into sublists whose beginning indices are separated by d,
+    and whose lengths are n. If the end of the list is reached and there are
+    fewer than n elements, those are not returned. 
 
     @param {Array} l Input array
     @param {Number} n Length of each sublist
@@ -168,8 +166,7 @@ self.argmax = (f, dom) => {
 self.partition = (l, n, d) => {
   var il = l.length
   var ol = []
-  for (let i=0; i < il; i+=d)
-    if (i+n <= il) ol.push(l.slice(i,i+n))
+  for (let i=0; i < il; i+=d) if (i+n <= il) ol.push(l.slice(i,i+n))
   return ol
 }
 
@@ -307,24 +304,24 @@ self.clip = (x, a, b) => {
 self.shn = (x, t=10, d=5) => {
   if (isNaN(x)) return x.toString()
   var i = Math.floor(Math.abs(x)), k, fmt, ostr
-  i = (i==0)?0:i.toString().length // # of digits left of the decimal
+  i = i===0 ? 0 : i.toString().length // # of digits left of the decimal
   if (Math.abs(x) > Math.pow(10,i)-.5) i += 1
-  if (i == 0 && x != 0)
-    k = (Math.floor(d - Math.log10(Math.abs(x)))) // get desired 
-  else k = d                                          // dec. digits
+  if (i === 0 && x !== 0) // get desired number of decimal digits
+    k = Math.floor(d - Math.log10(Math.abs(x)))
+  else k = d
   // Round input to have the desired number of decimal digits
-  var v = x * Math.pow(10,k), vm = v % 10
+  var v = x * Math.pow(10, k), vm = v % 10
   if (vm < 0) vm += 10
   // Hack to prevent incorrect rounding with the decimal digits:
   if (vm >= 4.5 && vm < 4.9999999) v = Math.floor(v)
-  var xn = Math.round(v) / Math.pow(10,k) + 1e-10
+  var xn = Math.round(v) / Math.pow(10, k) + 1e-10
   // If total significant digits < i, do something about it
-  if (t < i && Math.abs(Math.pow(10,(i-1)) - xn) < .5) 
-    xn = Math.pow(10,(i-1))
+  if (t < i && Math.abs(Math.pow(10, i-1) - xn) < .5) 
+    xn = Math.pow(10, i-1)
   t = self.clip(t, i, i+d)
   // If the magnitude <= 1e-4, prevent scientific notation
-  if (Math.abs(xn) < 1e-4 || Math.floor(xn) == 9 
-      || Math.floor(xn) == 99 || Math.floor(xn) == 999) {
+  if (Math.abs(xn) < 1e-4 || Math.floor(xn) === 9 
+      || Math.floor(xn) === 99 || Math.floor(xn) === 999) {
     ostr = parseFloat(x.toPrecision(k)).toString()
   } else {
     ostr = xn.toPrecision(t)
@@ -381,7 +378,7 @@ self.shnc = (x, errdir, t=10, d=5) => {
     @param {Number} x Input number
     @param {Number} [t=16] Total number of significant figures 
     @param {Number} [d=5] Number of significant figures after the decimal */
-self.shns = (x, t=16, d=5) => (((x>=0)?"+":"")+self.shn(x, t, d))
+self.shns = (x, t=16, d=5) => (x>=0 ? "+" : "")+self.shn(x, t, d)
 
 /** Same as {@link module:butil.shns shns} but with
     conservarounding.
@@ -389,33 +386,33 @@ self.shns = (x, t=16, d=5) => (((x>=0)?"+":"")+self.shn(x, t, d))
     @param {Number} e Safe direction: +1 or -1
     @param {Number} [t=16] Total number of significant figures 
     @param {Number} [d=5] Number of significant figures after the decimal */
-self.shnsc = (x, e, t=16, d=5) =>(((x>=0)?"+":"")+self.shnc(x, e, t, d))
+self.shnsc = (x, e, t=16, d=5) => (x>=0 ? "+" : "")+self.shnc(x, e, t, d)
 
 /** Show Date: take timestamp and return something like 2012.10.22
     @param {Number} t Unix timestamp */
-self.shd = (t) =>( (t == null)?'null':self.formatDate(t))
+self.shd = (t) => t === null ? 'null' : self.formatDate(t)
 
 /** Show Date/Time: take timestamp and return something like
     2012.10.22 15:27:03 
     @param {Number} t Unix timestamp */
-self.shdt = (t) =>((t == null)?'null':self.formatDateTime(t))
+self.shdt = (t) => t === null ? 'null' : self.formatDateTime(t)
 
-/** Singular or Plural: Pluralize the given noun properly, if n is
-    not 1.  Provide the plural version if irregular.  Eg: splur(3,
-    "boy") -> "3 boys", splur(3, "man", "men") -> "3 men" 
+/** Singular or Plural: Pluralize the given noun properly, if n is not 1.
+    Provide the plural version if irregular. 
+    Eg: splur(3, "boy") -> "3 boys", splur(3, "man", "men") -> "3 men" 
     @param {Number} n Count
     @param {String} noun Noun to pluralize
     @param {String} [nounp=''] Irregular pluralization if present
 */
 self.splur = (n, noun, nounp='') => {
-  if (nounp=='') nounp = noun+'s'
-  return self.shn(n)+' '+((n == 1)?noun:nounp)
+  if (nounp === '') nounp = noun+'s'
+  return self.shn(n)+' '+(n === 1 ? noun : nounp)
 }
 
 /** Rate as a string.
  @param {Number} r Rate */
 self.shr = (r) => {
-  if (r == null) r = 0
+  if (r === null) r = 0
   // show as a percentage if exprd is true #SCHDEL
   //return shn((100.0 if exprd else 1.0)*r, 4,2) + ("%" if exprd else "")
   return self.shn(r, 4,2)
@@ -447,7 +444,7 @@ self.sh1sc = function(x, e) { return self.shnsc(self.chop(x), e, 4,2) }
 // Possible issue: Some equivalent number representations don't normalize to the
 // same thing. Eg, "0.5" -> "0.5", ".5" -> ".5", "2" -> "2", "+2" -> "+2", 
 // "3" -> "3", "3." -> "3.".
-self.normberlize = function (x) {
+self.normberlize = function(x) {
   x = typeof x == 'string' ? x.trim() : (+x).toString() // stringify the input
   x = x.replace(/^([+-]?)0+([^eE\.])/, '$1$2')        // ditch the leading zeros
   const rnum = /^[+-]?(?:\d+\.?\d*|\.\d+)$/           // regex from d.glitch.me
@@ -470,7 +467,7 @@ self.normberlize = function (x) {
 // It's sort of silly to do this with regexes on strings instead of with floors
 // and logs and powers and such but (a) the string the user typed is the ground
 // truth and (b) this is just more robust and portable.
-self.quantize = function (x) {
+self.quantize = function(x) {
   let s = self.normberlize(x)          // put the input in canonical string form
   if (/^-?\d+\.?$/.test(s)) return 1   // no decimal pt (or only a trailing one)
   s = s.replace(/^-?\d*\./, '.')       // eg, -123.456 -> .456
@@ -481,7 +478,7 @@ self.quantize = function (x) {
 
 // Round x to nearest r, avoiding floating point crap like 9999*.1=999.900000001
 // at least when r is an integer or negative power of 10
-self.round = function (x, r=1) {
+self.round = function(x, r=1) {
   if (r < 0) return NaN
   if (r===0) return +x
   const y = Math.round(x/r)
@@ -494,7 +491,7 @@ self.round = function (x, r=1) {
 
 // Round x to the nearest r ... that's >= x if e is +1
 //                          ... that's <= x if e is -1
-self.conservaround = function (x, r=1, e=0) {
+self.conservaround = function(x, r=1, e=0) {
   let y = self.round(x, r)
   if (e < 0 && y > x) y -= r
   if (e > 0 && y < x) y += r
@@ -509,12 +506,12 @@ self.conservaround = function (x, r=1, e=0) {
  @param {Number} a Left boundary
  @param {Number} b Right boundary
  @param {Number} n Number of samples */
-self.linspace = ( a, b, n) => {
-  if (typeof n === "undefined") n = Math.max(Math.round(b-a)+1,1)
-  if (n < 2) { return n===1?[a]:[] }
+self.linspace = (a, b, n) => {
+  if (typeof n === "undefined") n = Math.max(Math.round(b-a)+1, 1)
+  if (n < 2) { return n===1 ? [a] : [] }
   var i,ret = Array(n)
   n--
-  for(i=n;i>=0;i--) { ret[i] = (i*b+(n-i)*a)/n }
+  for(i=n; i>=0; i--) { ret[i] = (i*b+(n-i)*a)/n }
   return ret
 }
 
@@ -532,13 +529,13 @@ self.linspace = ( a, b, n) => {
     @param {Boolean} [clipQ=true] When false, sort a,b and c,d first */
 self.cvx = (x, a,b, c,d, clipQ=true) => {
   var tmp
-  if (self.chop(a-b) == 0) {
+  if (self.chop(a-b) === 0) {
     if (x <= a) return Math.min(c,d)
     else        return Math.max(c,d)
   }
-  if (self.chop(c-d) == 0) return c
+  if (self.chop(c-d) === 0) return c
   if (clipQ)
-    return self.clip(c + (x-a)/(b-a)*(d-c), (c>d)?d:c,(c>d)?c:d)
+    return self.clip(c + (x-a)/(b-a)*(d-c), c>d ? d : c, c>d ? c : d)
   else {
     if (a > b) { tmp=a; a=b; b=tmp;}
     if (c > d) { tmp=c; c=d; d=tmp;}
