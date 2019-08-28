@@ -183,7 +183,7 @@ beebrain = function( bbin ) {
   // Make a new copy of the input to prevent overwriting
   bbin = bu.extend({}, bbin)
     
-  // Private variables holding goal, road and datapoint info
+  // Private variables holding goal, road, and datapoint info
   var 
   roads = [],
 
@@ -199,7 +199,7 @@ beebrain = function( bbin ) {
   hollow = [],     // Hollow points
   allvals = {},    // Dictionary holding values for each timestamp
   aggvals = {},    // Dictionary holding aggregated value for each timestamp
-  worstval = {},   // Maps timestamp to min/max (depending on yaw) value that day
+  worstval = {},   // Map timestamp to min/max (depending on yaw) value that day
   hashhash = {},   // Maps timestamp to sets of hashtags to display on the graph
   hashtags = []    // Array of timestamp string pairs for hashtag lists
    
