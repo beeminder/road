@@ -238,7 +238,7 @@ self.foldlist = (f, x, l) => {
     @param {Number[]} l*/
 self.accumulate = (l) => {
   var ne = l.length
-  if (ne == 0) return l
+  if (ne === 0) return l
   var nl = [l[0]]
   for (let i = 1; i < ne; i++) nl.push(nl[nl.length-1]+l[i])
   return nl
@@ -252,7 +252,7 @@ self.accumulate = (l) => {
 */
 self.monotonize = (l, dir=1) => {
   var lo = l.slice(), i
-  if (dir == 1) {
+  if (dir === 1) {
     for (i = 1; i < lo.length; i++) lo[i] = Math.max(lo[i-1],lo[i])
   } else {
     for (i = 1; i < lo.length; i++) lo[i] = Math.min(lo[i-1],lo[i])
@@ -262,7 +262,7 @@ self.monotonize = (l, dir=1) => {
 
 /** zip([[1,2], [3,4]]) --> [[1,3], [2,4]].
     @param {Array[]} av Array of Arrays to zip */
-self.zip =  (av) => (av[0].map((_,i) =>(av.map(a => a[i]))))
+self.zip =  (av) => av[0].map((_,i) => av.map(a => a[i]))
 
 /** Return 0 when x is very close to 0.
     @param {Number} x Input number
@@ -284,7 +284,7 @@ self.ichop = (x, delta=1e-7) => {
     @param {Number} a left boundary
     @param {Number} b right boundary */
 self.clip = (x, a, b) => {
-  if (a > b) { var tmp=a; a=b; b=tmp;}
+  if (a > b) { var tmp=a; a=b; b=tmp }
   if (x < a) x = a
   if (x > b) x = b
   return x
@@ -508,10 +508,10 @@ self.conservaround = function(x, r=1, e=0) {
  @param {Number} n Number of samples */
 self.linspace = (a, b, n) => {
   if (typeof n === "undefined") n = Math.max(Math.round(b-a)+1, 1)
-  if (n < 2) { return n===1 ? [a] : [] }
+  if (n < 2) return n===1 ? [a] : []
   var i,ret = Array(n)
   n--
-  for(i=n; i>=0; i--) { ret[i] = (i*b+(n-i)*a)/n }
+  for (i=n; i>=0; i--) ret[i] = (i*b+(n-i)*a)/n
   return ret
 }
 
@@ -537,8 +537,8 @@ self.cvx = (x, a,b, c,d, clipQ=true) => {
   if (clipQ)
     return self.clip(c + (x-a)/(b-a)*(d-c), c>d ? d : c, c>d ? c : d)
   else {
-    if (a > b) { tmp=a; a=b; b=tmp;}
-    if (c > d) { tmp=c; c=d; d=tmp;}
+    if (a > b) { tmp=a; a=b; b=tmp }
+    if (c > d) { tmp=c; c=d; d=tmp }
     return c + (x-a)/(b-a)*(d-c)
   }
 }
@@ -566,7 +566,7 @@ self.orderedq = (l) => {
     @param {Number[]} a Input list*/
 self.nonzero = (a) => {
   var l = a.length, i
-  for( i = 0; i < l; i++ ){ if (a[i] != 0) return true}
+  for (i = 0; i < l; i++) if (a[i] !== 0) return true
   return false
 }
 
@@ -575,7 +575,7 @@ self.nonzero = (a) => {
  @param {Number[]} a Input list*/
 self.clocky = (a) => {
   var s = 0, l = a.length, i
-  for( i = 1; i < l; i+=2 ){ s += (a[i]-a[i-1])}
+  for (i = 1; i < l; i+=2) s += a[i]-a[i-1]
   return s
 }
 
@@ -592,9 +592,9 @@ self.mean = (a) => {
     @param {Number[]} a Input list*/
 self.median = (a) => {
   var m = 0, l = a.length
-  a.sort((a,b)=>(a-b))
-  if (l % 2 === 0) { m = (a[l / 2 - 1] + a[l / 2]) / 2 }
-  else { m = a[(l - 1) / 2]}
+  a.sort((a,b)=>a-b)
+  if (l % 2 === 0) m = (a[l/2-1] + a[l/2]) / 2
+  else m = a[(l-1) / 2]
   return m
 }
 
@@ -606,13 +606,12 @@ self.mode = (a) => {
   for (i = 0; i < al; i += 1) {
     num = a[i]
     count[num] = (count[num] || 0) + 1
-    if (count[num] > maxi) { maxi = count[num] }
+    if (count[num] > maxi) maxi = count[num]
   }
   
   for (i in count)
-    if (count.hasOwnProperty(i)) {
-      if (count[i] === maxi) { md.push(Number(i))}
-    }
+    if (count.hasOwnProperty(i)) 
+      if (count[i] === maxi) md.push(Number(i))
   return md
 }
 
@@ -620,13 +619,13 @@ self.mode = (a) => {
     @param {Number} x
     @param {Number} min
     @param {Number} max */
-self.inrange = (x, min, max) =>(x >= min && x <= max)
+self.inrange = (x, min, max) => x >= min && x <= max
 
 /** Whether abs(a-b) < eps 
     @param {Number} a
     @param {Number} b
     @param {Number} eps */
-self.nearEq = (a, b, eps) => (Math.abs(a - b) < eps)
+self.nearEq = (a, b, eps) => Math.abs(a-b) < eps
 
 /******************************************************************************
  *                              DATE FACILITIES                               *
@@ -674,9 +673,9 @@ self.formatDate = (ut) => {
   var mm = moment.unix(ut).utc()
   var year = mm.year()
   var month = (mm.month()+1)
-  month = (month < 10)?"0"+month.toString():month.toString()
+  month = month < 10 ? "0"+month.toString() : month.toString()
   var day = mm.date()
-  day= (day < 10)?"0"+day.toString():day.toString()
+  day= day < 10 ? "0"+day.toString() : day.toString()
   return year+"."+month+"."+day
 }
 
@@ -685,11 +684,11 @@ self.formatDate = (ut) => {
 self.formatDateTime = (ut) => {
   var mm = moment.unix(ut).utc()
   var hour = mm.hour()
-  hour = (hour < 10)?"0"+hour.toString():hour.toString()
+  hour = hour < 10 ? "0"+hour.toString() : hour.toString()
   var minute = mm.minute()
-  minute = (minute < 10)?"0"+minute.toString():minute.toString()
+  minute = minute < 10 ? "0"+minute.toString() : minute.toString()
   var second = mm.second()
-  second = (second < 10)?"0"+second.toString():second.toString()
+  second = second < 10  ? "0"+second.toString() : second.toString()
   return self.formatDate(ut)+" "+hour+":"+minute+":"+second
 }
 
@@ -738,13 +737,13 @@ self.dayify = (t, sep = '') => {
 
 /** Converts a number to an integer string.
     @param {Number} x Input number */
-self.sint = (x) =>(Math.round(x).toString())
+self.sint = (x) => Math.round(x).toString()
 
 /** Returns a promise that loads a JSON file from the supplied
     URL. Resolves to null on error, parsed JSON object on
     success. 
     @param {String} url URL to load JSON from*/
-self.loadJSON = ( url ) => {   
+self.loadJSON = (url) => {   
   return new Promise(function(resolve, reject) {
     if (url === "") resolve(null)
     var xobj = new XMLHttpRequest()
@@ -752,7 +751,7 @@ self.loadJSON = ( url ) => {
     xobj.onreadystatechange = function () {
       if (xobj.readyState == 4 
           && (xobj.status == "200"
-              || (xobj.status == "0" && xobj.responseText !== ""))) {
+              || (xobj.status == "0" && xobj.responseText != ""))) {
         try {
           resolve(JSON.parse(xobj.responseText))
         } catch(err) {
@@ -788,12 +787,12 @@ self.arrayEquals = (a1, a2) => {
   // compare lengths - can save a lot of time 
   if (a1.length != a2.length) return false
 
-  for (let i = 0, l=a1.length; i < l; i++) {
+  for (let i = 0, l = a1.length; i < l; i++) {
     // Check if we have nested arrays
     if (a1[i] instanceof Array && a2[i] instanceof Array) {
       // recurse into the nested arrays
       if (!self.arrayEquals(a1[i], a2[i])) return false
-    } else if (a1[i] != a2[i]) { 
+    } else if (a1[i] !== a2[i]) { 
       // Warning - two separate object instances will never
       // be equal: {x:20} != {x:20}
       return false
@@ -805,33 +804,33 @@ self.arrayEquals = (a1, a2) => {
 // Convenience functions to check object types
 /** true if valid float and finite
     @param {} n */
-self.nummy = (n) => (!isNaN(parseFloat(n)) && isFinite(n))
+self.nummy = (n) => !isNaN(parseFloat(n)) && isFinite(n)
 /** true if string?
     @param {} x */
-self.stringy = (x) => (typeof x == "string")
+self.stringy = (x) => (typeof x === "string")
 /** true if Array
     @param {} x */
-self.listy = (x) => (Array.isArray(x))
+self.listy = (x) => Array.isArray(x)
 
 // Type-checking convenience functions
 /** true if boolean 
     @param {} x */
-self.torf = (x) => (typeof x == "boolean")
+self.torf = (x) => typeof x === "boolean"
 /** true if boolean or null
     @param {} x */
-self.born = (x) => (self.torf(x) | (x == null))
+self.born = (x) => self.torf(x) || x === null
 /** true if numeric or null
     @param {} x */
-self.norn = (x) => (self.nummy(x) || (x == null))
+self.norn = (x) => self.nummy(x) || x === null
 /** true if valid time
     @param {} x */
-self.timy = (x) => (self.nummy(x) && 0<x && x<self.BDUSK)
+self.timy = (x) => self.nummy(x) && 0<x && x<self.BDUSK
 /** true if valid time or null
     @param {} x */
-self.torn = (x) => (self.timy(x) || (x == null))
+self.torn = (x) => self.timy(x) || x === null
 /** true if string or null
     @param {} x */
-self.sorn = (x) => (typeof x == "string" || (x == null))
+self.sorn = (x) => typeof x === "string" || x === null
 
 return self
 
