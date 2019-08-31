@@ -72,31 +72,7 @@ Features related to the road table:
 
 ### Kenn and Danny discussing extensions to the road data structure
 
-Kenn aka @kenoubi suggests that we think of the road matrix as a piecewise linear function -- a list of road segments stored as (timestamp, endvalue) pairs -- where each segment stores additional fields about the user's intent.
-Right now we have the equivalent of that where the intents we can store are the following (`t`, `v`, and `r` are the end date, end value, and rate for a road segment):
-
-1. User cares about `t` and `v` and wants `r` inferred (e.g., "hit 70kg by xmas")
-2. User cares about `t` and `r` and wants `v` inferred (e.g., "lose 1kg/week till xmas")
-3. User cares about `v` and `r` and wants `t` inferred (e.g., "lose 1kg/week till 70kg")
-
-Questions:
-
-* a) Might it be better to store which specific field -- `t`, `v`, or `r` -- the user *does* care about instead of which of the 3 they don't?
-* b) If so, can we add the possibility that what the user cares about is not the absolute end value of a segment, `v`, but the delta from the previous `v`?
-* c) Can/should we store a user-specified comment for each segment like "All-you-can-eat-buffet-hopping vacation" for an upward-sloping section of a weight loss goal?
-
-#### ROAD MATRIX REFACTOR PROPOSAL
-
-0. columns are `t`, `v`, `infer` (`infer` indicates which of t/v/r would be null in existing data structure)
-1. no separate tini/vini fields — that’s just the first row of the road matrix
-2. same for tfin/vfin/rfin — that’s the last row
-(any code that wants *ini/*fin can cache them for convenience)
-3. no rates stored. that’s confusing with runits, for one thing. and if you want a row’s rate that’s just `(v-v_prev)/(t-t_prev)`
-
-For later:
-
-* A column for `comment` if it’s worth having an interface for annotations like “all-you-can-eat-buffet-hopping vacation” for an upward-sloping section of a weight loss goal
-* Way to indicate gaps in the road, which will be a much better way to handle breaks.
+[moved to https://github.com/beeminder/beeminder/issues/750]
 
 ### DONE ITEMS
 
