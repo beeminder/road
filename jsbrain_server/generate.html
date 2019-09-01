@@ -17,7 +17,7 @@
 <pre id="goaljson"></pre>
 
 <script>
-  var done = false; // IMPORTANT: This is monitored by rendered.js
+  var done = false; // IMPORTANT: This is monitored by renderer.js
   
   // Make sure to abort processing if an unreasonable amount of time has elapsed
   setTimeout( function(){
@@ -48,19 +48,20 @@
       //done = true  // Uluc: Not sure why this was here, was causing premature exit before xlink images were loaded. 2019.02.06
      
     }
+    var nograph = (getParameterByName('NOGRAPH') == "true")?true:false
     async function process() {
-      if (typeof d3loaded == 'undefined') await new Promise((r,j)=>setTimeout(r,1000))
-      if (typeof d3loaded == 'undefined') {
+      if (!nograph && typeof d3loaded == 'undefined') await new Promise((r,j)=>setTimeout(r,1000))
+      if (!nograph && typeof d3loaded == 'undefined') {
         console.log("ERROR (generate.html): Could not load d3! No internet?")
         done = true
         return
       }
-      var graph = new bgraph({divGraph: document.getElementById('goalgraph'),
+      var graph = new bgraph({divGraph: (nograph?null:document.getElementById('goalgraph')),
                            divJSON: document.getElementById('goaljson'),
                            svgSize: { width: 696, height: 453 },
                            focusRect: { x:0, y:0, width:696, height: 453 },
                            ctxRect: { x:0, y:453, width:696, height: 32 },
-                           noGraph:(getParameterByName('NOGRAPH') == "true")?true:false,
+                           noGraph:nograph,
                            roadEditor:false,
                            headless:true,
                            maxFutureDays: 365,
@@ -77,11 +78,11 @@
         d3.select("#roadgraph").text("Usage: generate.html?bb=file:///path/to/file.bb")
       }
      
-      if (graph.hasOwnProperty('xlinkLoaded')) {
+      if (!nograph && graph.hasOwnProperty('xlinkLoaded')) {
         while (!graph.xlinkLoaded()) {     
           await (new Promise(resolve => (setTimeout(resolve, 10))))
         }     
-      }
+      } 
       done = true
     }
     process().catch(function(err) {console.log("ERROR (generate.html): "+err.message); done = true})
