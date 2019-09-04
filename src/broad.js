@@ -133,7 +133,7 @@ self.segValue = (rdseg, x) => rdseg.sta[1] + rdseg.slope*(x - rdseg.sta[0])
 self.rdf = (rd, x) => self.segValue( rd[self.findSeg(rd, x)], x )
 
 /** Recomputes the road array starting from the first node and
-    assuming that the one of slope, enddate or endvalue parameters is
+    assuming that the one of slope, enddate, or endvalue parameters is
     chosen to be automatically computed. If usematrix is true,
     autocompute parameter selections from the road matrix are used */
 self.fixRoadArray = (rd, autop=self.RP.VALUE, usematrix=false, 
