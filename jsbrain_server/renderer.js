@@ -12,6 +12,7 @@ class Renderer {
   constructor(browser, id) {
     this.browser = browser
     this.id = id
+    this.pages = []
   }
 
   // This method overrides stdout and captures the output of
@@ -31,31 +32,53 @@ class Renderer {
   prfinfo(r) { return [this.id,r] }
   prf(r) { return "("+this.id+":"+r+") " }
   
-  // Creates a new page in a tab within the puppeteer chrome instance
-  async createPage( url, tag ) {
-    let gotoOptions = {
-      timeout: pageTimeout * 1000,
-      waitUntil: 'load'
+  // Renders and returns an available page (tab) within the puppeteer
+  // chrome instance. Creates one if all existing ones are found to be
+  // busy
+  async renderPage( url, tag, msglog, errlog ) {
+    let gotoOptions = { timeout: pageTimeout * 1000, waitUntil: 'load' }
+
+    var pageinfo = null, page = null
+    // Grab one of the unused tabs, create a new one if necessary
+    var numpages = this.pages.length
+    for (var i = 0; i < numpages; i++) {
+      if (!this.pages[i].busy) {
+        pageinfo = this.pages[i]
+        pageinfo.busy = true
+        // Check if page was closed by timeout, recreate if necessary
+        if (!pageinfo.page) {
+          console.log(tag+"renderer.js: Reinstantiating page in slot "+i)
+          pageinfo.page = await this.browser.newPage()
+        }
+        page = pageinfo.page
+        if (pageinfo.timeout) {
+          clearTimeout(pageinfo.timeout)
+          pageinfo.timeout = null
+        }
+        break
+      }
+    }
+    if (!pageinfo) {
+      // If all existing pages are found to be busy, create a new one
+      console.log(tag+"renderer.js: Creating new page in slot "+numpages)
+      page = await this.browser.newPage()
+      pageinfo = {page: page, busy: true, slot: numpages}
+      this.pages.push( pageinfo )
     }
 
-    // Create a new tab so parallel requests do not mess with each
-    // other
-    const page = await this.browser.newPage()
-    var pagelog = {msg:""}
-    page.on('console', 
-            function(msg) {pagelog.msg+=(tag+" PAGE LOG: "+msg.text().replace(/\n/g, '\n'+tag)+"\n")})
-    page.on('error',
-            function(error) {pagelog.msg+=(tag+" PAGE ERROR: "+error.msg.replace(/\n/g, '\n'+tag)+"\n")})
-
+    page.on('console', msglog )
+    page.on('error', errlog )
+    page.on('pageerror', errlog )
+      
     // Render the page and return result
     try {
       await page.goto(url, gotoOptions)
     } catch (error) {
       console.log(error)
-      await page.close()
+      pageinfo.busy = false
       return null
     } 
-    return {page: page, pagelog: pagelog}
+    return pageinfo
   }
 
   /** Returns the base URL for graph and thumbnail links */
@@ -74,6 +97,13 @@ class Renderer {
       closes the tab afterwards */
   async render(inpath, outpath, slug, rid, nograph) {
     let page = null
+    let pagelog = {msg:""}
+    let pageinfo = null
+    function msglog(msg) {
+      pagelog.msg +=(tag+" PAGE LOG: " + msg.text().replace(/\n/g, '\n'+tag)+"\n")}
+    function errlog(error) {
+      pagelog.msg += (tag+" PAGE ERROR: " + error.message.replace(/\n/g, '\n'+tag)+"\n")}
+    
     let tag = this.prf(rid)
     let msgbuf = ""
     
@@ -124,12 +154,15 @@ class Renderer {
       // Load and render the page, extract html
       var time_id = tag+` Page creation (${slug})`
       console.time(time_id)
-      var retval = await this.createPage(url,tag)
-      if (retval) page = retval.page
+      pageinfo = await this.renderPage(url,tag, msglog, errlog)
+      if (pageinfo) page = pageinfo.page
       if (time_id != null) msgbuf += this.timeEndMsg(time_id)
       time_id = null
 
       if (page) {
+        // Install new loggers onto the page for this render
+        // instance. Will be removed at the end of processing
+
         time_id = tag+` Page render (${slug})`
         console.time(time_id)
         html = await page.content()
@@ -137,13 +170,13 @@ class Renderer {
           await page.waitForFunction('done', {timeout: pageTimeout*1000})
           // Now that the page rendering is done, messages should have
           // finished logging. We can record them
-          msgbuf += retval.pagelog.msg
-        } catch(err) {
-          msgbuf += retval.pagelog.msg
+          msgbuf += pagelog.msg
+        } catch( err ) {
+          msgbuf += pagelog.msg
           msgbuf += (tag+" renderer.js ERROR: "+err.message+"\n")
           if (time_id != null) msgbuf += this.timeEndMsg(time_id)
           time_id = null
-          return { error:err.message, msgbuf: msgbuf }
+          return { error: err.message, msgbuf: msgbuf }
         }
         if (time_id != null) msgbuf += this.timeEndMsg(time_id)
         time_id = null
@@ -256,7 +289,28 @@ class Renderer {
         return { error:err, msgbuf: msgbuf }
       }
     } finally {
-      if (page) await page.close()
+      if (page) {
+        // Remove listeners to prevent accumulation of old listeners
+        // for reused pages
+        page.removeListener('console', msglog)
+        page.removeListener('error', errlog)
+        page.removeListener('pageeerror', errlog)
+        pageinfo.busy = false
+        pageinfo.timeout
+          = setTimeout(
+            function(){
+              if (pageinfo) {
+                if (pageinfo.page) {
+                  console.log(tag+"renderer.js: Closing page after timeout in slot "
+                              +pageinfo.slot)
+                  pageinfo.page.close()
+                }
+                pageinfo.page = null
+                pageinfo.timeout = null
+              } else
+                console.log("Warning: pageinfo=null in timeout to close page")
+            }, 10000)
+      }
     }
     return {html: html, png: png, svg: svg, json: json, error:null, msgbuf: msgbuf}
   }
@@ -264,8 +318,9 @@ class Renderer {
 
 async function create( id ) {
   const browser 
-          = await puppeteer.launch({ args: ['--no-sandbox', 
-                                            '--allow-file-access-from-files'] })
+        = await puppeteer.launch({ /*headless:false,*/
+                                   args: ['--no-sandbox', 
+                                          '--allow-file-access-from-files'] })
   return new Renderer(browser, id)
 }
 
