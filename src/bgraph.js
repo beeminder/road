@@ -228,7 +228,7 @@
   /** Enum object to identify error types. */
   ErrMsgs = [ "Could not find goal file.", "Bad goal file.", "Beeminder error" ],
 
-  /** This function attempts to determine whether the page was loaded
+  /** This atrocity attempts to determine whether the page was loaded
    * from a mobile device or not. */
   onMobileOrTablet = () => {
     if (typeof navigator == 'undefined' && typeof window == 'undefined') return false

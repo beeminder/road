@@ -402,8 +402,7 @@ self.shdt = (t) => t === null ? 'null' : self.formatDateTime(t)
     Eg: splur(3, "boy") -> "3 boys", splur(3, "man", "men") -> "3 men" 
     @param {Number} n Count
     @param {String} noun Noun to pluralize
-    @param {String} [nounp=''] Irregular pluralization if present
-*/
+    @param {String} [nounp=''] Irregular pluralization if present */
 self.splur = (n, noun, nounp='') => {
   if (nounp === '') nounp = noun+'s'
   return self.shn(n)+' '+(n === 1 ? noun : nounp)
@@ -413,8 +412,6 @@ self.splur = (n, noun, nounp='') => {
  @param {Number} r Rate */
 self.shr = (r) => {
   if (r === null) r = 0
-  // show as a percentage if exprd is true #SCHDEL
-  //return shn((100.0 if exprd else 1.0)*r, 4,2) + ("%" if exprd else "")
   return self.shn(r, 4,2)
 }
 
@@ -436,6 +433,8 @@ self.sh1sc = function(x, e) { return self.shnsc(self.chop(x), e, 4,2) }
 /******************************************************************************
  *                               CONSERVAROUND                                *
  ******************************************************************************/
+
+// These functions are from conservaround.glitch.me
 
 // Normalize number: Return the canonical string representation. Is idempotent.
 // If we were true nerds we'd do it like wikipedia.org/wiki/Normalized_number
@@ -649,8 +648,7 @@ self.daysnap = (ut) => {
   return d.unix()
 }
 
-/** Fixes the supplied unixtime to the first day 00:00:00 on the
-    same month (uses moment)
+/** Scooches unixtime ut to 00:00:00 on the first of the month (uses Moment)
     @param {Number} ut Unix time  */
 self.monthsnap = (ut) => {
   var d = moment.unix(ut).utc()
@@ -710,7 +708,7 @@ self.dayparse = (s, sep='') => {
     pat = "YYYY"+sep+"MM"+sep+"DD"
   }
   if (!re.test(s)) { 
-      // Check if the supplied date is a timestamp or not.
+      // Check if the supplied date is a timestamp or not
       if (!isNaN(s)) return Number(s)
       else return NaN
   }

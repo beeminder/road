@@ -9,6 +9,7 @@
  @requires butil
  @requires broad
  */
+
 ;(((root, factory) => { // BEGIN PREAMBLE --------------------------------------
 
 'use strict'
@@ -35,9 +36,9 @@ if (typeof define === 'function' && define.amd) {
 // -------------------------------------------------------------
 // ------------------- FACTORY GLOBALS ---------------------
 /** Global counter to Generate unique IDs for multiple beebrain instances. */
-var gid = 1,
+let gid = 1
 
-pin = { // In Params: Graph settings and their defaults
+const pin = { // In Params: Graph settings and their defaults
   offred   : false,// Whether to use new yesterday-is-red criteria for derails
   offparis : false,// Paris boolean; schedel
   deadline : 0,    // Time of deadline given as seconds bfr or after midnight
@@ -83,9 +84,9 @@ pin = { // In Params: Graph settings and their defaults
   gldt     : null, // Synonym for tfin ################################# DEP
   goal     : null, // Synonym for vfin ################################# DEP
   rate     : null  // Synonym for rfin ################################# DEP
-},
+}
 
-pout = { // Out Params: Beebrain output fields
+const pout = { // Out Params: Beebrain output fields
   sadbrink : false,  // Whether we were red yest. & so will instaderail today
   safebump : null,   // Value needed to get one additional safe day
   dueby    : [],     // Table of daystamps, deltas, and abs amts needed by day
@@ -130,36 +131,36 @@ pout = { // Out Params: Beebrain output fields
   tfin     : null,   // Subsumed by fullroad ########################## DEP
   vfin     : null,   // Subsumed by fullroad ########################## DEP
   rfin     : null    // Subsumed by fullroad ########################## DEP
-},
+}
 
 // Input parameters to ignore; complain about anything not here or in pin.
-pig = [
+const pig = [
   'rerails', 
   'tagtime', 
   'timezone',
   'backroad', 
   'edgy'
-],
+]
 
-CNAME = { },
+const CNAME = { }
 
 /** Enum object to identify different types of datapoints. 
     @enum {number} 
     @memberof beebrain*/
-DPTYPE = {
+const DPTYPE = {
   AGGPAST:0, AGGFUTURE:1, RAWPAST:2, RAWFUTURE:3, FLATLINE:4, HOLLOW: 5
-},
+}
 
 /** Enum object to identify error types. */
-ErrType = { NOBBFILE:0, BADBBFILE:1  },
+const ErrType = { NOBBFILE:0, BADBBFILE:1  }
 
 /** Enum object to identify error types. */
-ErrMsgs = [ "Could not find goal file.", "Bad goal file." ],
+const ErrMsgs = [ "Could not find goal file.", "Bad goal file." ]
 
 /** Type of the last error */
-LastError = null,
+const LastError = null
 
-PRAF  = .015,    // Fraction of plot range that the axes extend beyond
+const PRAF  = .015    // Fraction of plot range that the axes extend beyond
 
 // ----------------- Beeminder Goal utilities ----------------------
 
@@ -174,7 +175,7 @@ PRAF  = .015,    // Fraction of plot range that the axes extend beyond
  @constructs beebrain
  @param {Object} bbin JSON input "BB file" with goal details
 */
-beebrain = function( bbin ) {
+const beebrain = function( bbin ) {
   //console.debug("beebrain constructor ("+gid+"): ");
   var self = this,
       curid = gid
@@ -281,12 +282,12 @@ beebrain = function( bbin ) {
     
     // All the in and out params are also global variables!
     var prop
-    for (prop in pout) if (pout.hasOwnProperty(prop))goal[prop] = pout[prop]
-    for (prop in pin) if (pin.hasOwnProperty(prop)) goal[prop] = pin[prop]
+    for (prop in pout) if (pout.hasOwnProperty(prop)) goal[prop] = pout[prop]
+    for (prop in pin)  if (pin.hasOwnProperty(prop))  goal[prop] = pin[prop]
   }
   
   function parserow(row) {
-    return (!Array.isArray(row) || row.length != 3)
+    return (!Array.isArray(row) || row.length !== 3)
       ?row:[bu.dayparse(row[0]), row[1], row[2]]
   }
   
