@@ -1,0 +1,37 @@
+Automon (as in "automatically monitor", pronounced "Ottomon" and previously
+known as cmonitor) is a testing utility that runs every time a source file 
+changes and alerts you if the output of any of the Beebrain test files changed.
+By default it compares all the JSON output from running Beebrain on a .bb file
+and can even compare the graph images and show an image diff if anything
+changed.
+
+Whenever we find a new bug we should put the .bb file in the private suite --
+github.com/beeminder/privatesuite -- and create a gissue pointing to it. It 
+should then stay in the test suite forever to serve as a regression test.
+
+It works by storing baseline output files in the data/jsref directory. Every
+time automon runs it puts the latest output in data/jsout and alerts you if
+anything changed.
+
+*Important*: jsbrain_server needs to be running!
+
+
+The simplest usage is 
+
+./automon.py data
+
+which goes through the bb files in the 'data' directory and generates reference 
+outputs (if they don't already exist) for these inputs. Subsequently, it 
+periodically wakes up and regenerates the output files, comparing them with the 
+reference outputs and alerting the user when differences are detected.
+
+Alternatively, instead of periodic polling, automon can monitor multiple 
+directories for any changes to the files inside to trigger reprocessing of bb 
+files. For example:
+
+./automon.py -w ../road/src -w data data
+
+monitors both the jsbrain source files and the bb files in the data
+directory to trigger reprocessing. If watch directories are specified,
+periodic polling cannot be used.
+
