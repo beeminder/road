@@ -39,98 +39,98 @@ if (typeof define === 'function' && define.amd) {
 let gid = 1
 
 const pin = { // In Params: Graph settings and their defaults
-  offred   : false,// Whether to use new yesterday-is-red criteria for derails
-  offparis : false,// Paris boolean; schedel
-  deadline : 0,    // Time of deadline given as seconds bfr or after midnight
-  sadlhole : true, // Allow the do-less l.hole where you can eke back onto YBR
-  asof     : null, // Compute everything as if it were this date
-  tini     : null, // (tini,vini) specifies the strt of the YBR, typically but
-  vini     : null, //  not necessarily the same as the initial datapoint
-  road     : [],   // List of (endTime,goalVal,rate) triples defining the YBR
-  tfin     : null, // Goal date (unixtime); end of the Yellow Brick Road
-  vfin     : null, // The actual value being targeted; any real value
-  rfin     : null, // Final rate (slope) of the YBR before it hits the goal
-  runits   : 'w',  // Rate units for road and rfin; one of "y","m","w","d","h"
-  yaw      : 0,    // Which side of the YBR you want to be on, +1 or -1
-  dir      : 0,    // Which direction you'll go (usually same as yaw)
-  pinkzone : [],   // Region to shade pink, specified like the road matrix
-  tmin     : null, // Earliest date to plot on the x-axis (unixtime):
-  tmax     : null, // ((tmin,tmax), (vmin,vmax)) give the plot range, ie, they
-  vmin     : null, // control zooming/panning; they default to the entire
-  vmax     : null, //   plot -- initial datapoint to past the akrasia horizon
-  kyoom    : false,// Cumulative; plot vals as the sum of those entered so far
-  odom     : false,// Treat zeros as accidental odom resets
-  abslnw   : null, // Override road width algorithm with a fixed lane width
-  maxflux  : 0,    // User-specified max daily fluctuation                      
-  noisy    : false,// Compute road width based on data, not just road rate
-  integery : false,// Whether vals are necessarily integers (used in limsum)  
-  monotone : false,// Whether data is necessarily monotone (used in limsum) 
-  aggday   : null, // sum/last/first/min/max/mean/median/mode/trimmean/jolly
-  plotall  : true, // Plot all the points instead of just the aggregated point
-  steppy   : false,// Join dots with purple steppy-style line
-  rosy     : false,// Show the rose-colored dots and connecting line
-  movingav : false,// Show moving average line superimposed on the data
-  aura     : false,// Show blue-green/turquoise aura/swath
-  hashtags : true, // Show annotations on graph for hashtags in datapt comments 
-  yaxis    : '',   // Label for the y-axis, eg, "kilograms"
-  waterbuf : null, // Watermark on the good side of the YBR; safebuf if null
-  waterbux : '',   // Watermark on the bad side, ie, pledge amount
-  hidey    : false,// Whether to hide the y-axis numbers
-  stathead : true, // Whether to include a label with stats at top of graph 
-  imgsz    : 760,  // Image size; width in pixels of the graph image        
-  yoog     : 'U/G',// Username/graphname, eg, "alice/weight"                
-  usr      : null, // Username (synonym for first half of yoog) ######## DEP
-  graph    : null, // Graph name (synonym for second half of yoog) ##### DEP
-  gldt     : null, // Synonym for tfin ################################# DEP
-  goal     : null, // Synonym for vfin ################################# DEP
-  rate     : null  // Synonym for rfin ################################# DEP
+offred   : false, // Whether to use new yesterday-is-red criteria for derails
+offparis : false, // Paris boolean; schedel
+deadline : 0,     // Time of deadline given as seconds bfr or after midnight
+sadlhole : true,  // Allow the do-less l.hole where you can eke back onto YBR
+asof     : null,  // Compute everything as if it were this date
+tini     : null,  // (tini,vini) specifies the strt of the YBR, typically but
+vini     : null,  //  not necessarily the same as the initial datapoint
+road     : [],    // List of (endTime,goalVal,rate) triples defining the YBR
+tfin     : null,  // Goal date (unixtime); end of the Yellow Brick Road
+vfin     : null,  // The actual value being targeted; any real value
+rfin     : null,  // Final rate (slope) of the YBR before it hits the goal
+runits   : 'w',   // Rate units for road and rfin; one of "y","m","w","d","h"
+yaw      : 0,     // Which side of the YBR you want to be on, +1 or -1
+dir      : 0,     // Which direction you'll go (usually same as yaw)
+pinkzone : [],    // Region to shade pink, specified like the road matrix
+tmin     : null,  // Earliest date to plot on the x-axis (unixtime):
+tmax     : null,  // ((tmin,tmax), (vmin,vmax)) give the plot range, ie, they
+vmin     : null,  // control zooming/panning; they default to the entire
+vmax     : null,  //   plot -- initial datapoint to past the akrasia horizon
+kyoom    : false, // Cumulative; plot vals as the sum of those entered so far
+odom     : false, // Treat zeros as accidental odom resets
+abslnw   : null,  // Override road width algorithm with a fixed lane width
+maxflux  : 0,     // User-specified max daily fluctuation                      
+noisy    : false, // Compute road width based on data, not just road rate
+integery : false, // Whether vals are necessarily integers (used in limsum)  
+monotone : false, // Whether data is necessarily monotone (used in limsum) 
+aggday   : null,  // sum/last/first/min/max/mean/median/mode/trimmean/jolly
+plotall  : true,  // Plot all the points instead of just the aggregated point
+steppy   : false, // Join dots with purple steppy-style line
+rosy     : false, // Show the rose-colored dots and connecting line
+movingav : false, // Show moving average line superimposed on the data
+aura     : false, // Show blue-green/turquoise aura/swath
+hashtags : true,  // Show annotations on graph for hashtags in datapt comments 
+yaxis    : '',    // Label for the y-axis, eg, "kilograms"
+waterbuf : null,  // Watermark on the good side of the YBR; safebuf if null
+waterbux : '',    // Watermark on the bad side, ie, pledge amount
+hidey    : false, // Whether to hide the y-axis numbers
+stathead : true,  // Whether to include a label with stats at top of graph 
+imgsz    : 760,   // Image size; width in pixels of the graph image        
+yoog     : 'U/G', // Username/graphname, eg, "alice/weight"                
+usr      : null,  // Username (synonym for first half of yoog) ######## DEP
+graph    : null,  // Graph name (synonym for second half of yoog) ##### DEP
+gldt     : null,  // Synonym for tfin ################################# DEP
+goal     : null,  // Synonym for vfin ################################# DEP
+rate     : null,  // Synonym for rfin ################################# DEP
 }
 
 const pout = { // Out Params: Beebrain output fields
-  sadbrink : false,  // Whether we were red yest. & so will instaderail today
-  safebump : null,   // Value needed to get one additional safe day
-  dueby    : [],     // Table of daystamps, deltas, and abs amts needed by day
-  fullroad : [],     // Rd matrix w/ nulls filled in, [tfin,vfin,rfin] app.
-  pinkzone : [],     // Subset of the road matrix defining the verboten zone
-  tluz     : null,   // Timestamp of derailment ("lose") if no more data added
-  tcur     : null,   // (tcur,vcur) gives the most recent datapoint, including
-  vcur     : null,   //   flatlining; see asof 
-  vprev    : null,   // Agged value yesterday 
-  rcur     : null,   // Rate at time tcur; if kink, take limit from the left
-  ravg     : null,   // Overall road rate from (tini,vini) to (tfin,vfin)
-  tdat     : null,   // Timestamp of last actually entered datapoint
-  lnw      : 0,      // Lane width at time tcur
-  stdflux  : 0,      // Rec. lanewidth .9 quantile of rate-adjusted deltas
-  delta    : 0,      // How far from centerline: vcur - rdf(tcur)
-  lane     : 666,    // Lane we're in; below=-2,bottom=-1,top=1,above=2,etc 
-  color    : 'black',// One of {"green", "blue", "orange", "red"}
-  cntdn    : 0,      // Countdown: # of days from tcur till we reach the goal
-  numpts   : 0,      // Number of real datapoints entered, before munging
-  mean     : 0,      // Mean of datapoints
-  meandelt : 0,      // Mean of the deltas of the datapoints
-  proctm   : 0,      // Unixtime Beebrain was called (specifically genStats)
-  statsum  : '',     // Human-readable summary of graph statistics
-  lanesum  : '',     // Interjection like "wrong lane!"
-  ratesum  : '',     // Text saying what the rate of the YBR is
-  limsum   : '',     // Text saying your bare min or hard cap
-  deltasum : '',     // Text saying where you are wrt the centerline
-  graphsum : '',     // Text at the top of the graph image; see stathead
-  headsum  : '',     // Text in the heading of the graph page
-  titlesum : '',     // Title text for graph thumbnail
-  progsum  : '',     // Text summarizing percent progress
-  rah      : 0,      // Y-value of the centerline of YBR at the akrasia horiz
-  error    : '',     // Empty string if no errors
-  safebuf  : null,   // Number of days of safety buffer ############### DEP
-  loser    : false,  // Whether you're irredeemably off the road ###### DEP
-  gldt     : null,   // {gldt, goal, rate} are synonyms for ########### DEP
-  goal     : null,   //   for the last row of fullroad ################ DEP
-  rate     : null,   //   like a filled-in version of {tfin, vfin, rfin} DEP
-  road     : [],     // Synonym for fullroad ########################## DEP
-  tini     : null,   // Echoes input param ############################ DEP
-  vini     : null,   // Echoes input param ############################ DEP
-  tfin     : null,   // Subsumed by fullroad ########################## DEP
-  vfin     : null,   // Subsumed by fullroad ########################## DEP
-  rfin     : null    // Subsumed by fullroad ########################## DEP
+sadbrink : false,   // Whether we were red yest. & so will instaderail today
+safebump : null,    // Value needed to get one additional safe day
+dueby    : [],      // Table of daystamps, deltas, and abs amts needed by day
+fullroad : [],      // Rd matrix w/ nulls filled in, [tfin,vfin,rfin] app.
+pinkzone : [],      // Subset of the road matrix defining the verboten zone
+tluz     : null,    // Timestamp of derailment ("lose") if no more data added
+tcur     : null,    // (tcur,vcur) gives the most recent datapoint, including
+vcur     : null,    //   flatlining; see asof 
+vprev    : null,    // Agged value yesterday 
+rcur     : null,    // Rate at time tcur; if kink, take limit from the left
+ravg     : null,    // Overall road rate from (tini,vini) to (tfin,vfin)
+tdat     : null,    // Timestamp of last actually entered datapoint
+lnw      : 0,       // Lane width at time tcur
+stdflux  : 0,       // Rec. lanewidth .9 quantile of rate-adjusted deltas
+delta    : 0,       // How far from centerline: vcur - rdf(tcur)
+lane     : 666,     // Lane we're in; below=-2,bottom=-1,top=1,above=2,etc 
+color    : 'black', // One of {"green", "blue", "orange", "red"}
+cntdn    : 0,       // Countdown: # of days from tcur till we reach the goal
+numpts   : 0,       // Number of real datapoints entered, before munging
+mean     : 0,       // Mean of datapoints
+meandelt : 0,       // Mean of the deltas of the datapoints
+proctm   : 0,       // Unixtime Beebrain was called (specifically genStats)
+statsum  : '',      // Human-readable summary of graph statistics
+lanesum  : '',      // Interjection like "wrong lane!"
+ratesum  : '',      // Text saying what the rate of the YBR is
+limsum   : '',      // Text saying your bare min or hard cap
+deltasum : '',      // Text saying where you are wrt the centerline
+graphsum : '',      // Text at the top of the graph image; see stathead
+headsum  : '',      // Text in the heading of the graph page
+titlesum : '',      // Title text for graph thumbnail
+progsum  : '',      // Text summarizing percent progress
+rah      : 0,       // Y-value of the centerline of YBR at the akrasia horiz
+error    : '',      // Empty string if no errors
+safebuf  : null,    // Number of days of safety buffer ############### DEP
+loser    : false,   // Whether you're irredeemably off the road ###### DEP
+gldt     : null,    // {gldt, goal, rate} are synonyms for ########### DEP
+goal     : null,    //   for the last row of fullroad ################ DEP
+rate     : null,    //   like a filled-in version of {tfin, vfin, rfin} DEP
+road     : [],      // Synonym for fullroad ########################## DEP
+tini     : null,    // Echoes input param ############################ DEP
+vini     : null,    // Echoes input param ############################ DEP
+tfin     : null,    // Subsumed by fullroad ########################## DEP
+vfin     : null,    // Subsumed by fullroad ########################## DEP
+rfin     : null     // Subsumed by fullroad ########################## DEP
 }
 
 // Input parameters to ignore; complain about anything not here or in pin.
