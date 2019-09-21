@@ -221,20 +221,17 @@ def paging(s, direction):
     current_page = (s.top + s.cur) // ml
     next_page = current_page + direction
 
-    # The last page may have fewer items than max lines, so we should
-    # adjust the current cursor position as maximum item count on last
-    # page
-    if next_page == s.page:
-        s.cur = min(s.cur, s.bottom % ml - 1)
+    # The last page may have fewer items than max lines, so we should adjust the
+    # current cursor position as maximum item count on last page
+    if next_page == s.page: s.cur = min(s.cur, s.bottom % ml - 1)
 
-    # Page up: if current page is not a first page, page up is
-    # possible top position can not be negative, so if top position is
+    # Page up: if current page is not a first page, page up is possible top
+    # position can not be negative, so if top position is
     # going to be negative, we should set it as 0
     if direction == UP and current_page > 0:
         s.top = max(0, s.top - ml)
         return
-    # Page down: if current page is not a last page, page down is
-    # possible
+    # Page down: if current page is not a last page, page down is possible
     if direction == DOWN and current_page < s.page:
         s.top += ml
         return
@@ -647,8 +644,14 @@ qstatus = queue.Queue()    # Status messages
 def setstatus(msg): qstatus.put(msg)
 def setprogress(percent): cm.progress = percent
 # TODO: resetAverage and updateAverage are not thread safe, fix!
-def resetAverage(): cm.total_time = 0; cm.total_count = 0; cm.last_time = 0
-def updateAverage(time): cm.total_time += time; cm.total_count += 1; cm.last_time = time
+def resetAverage(): 
+    cm.total_time = 0
+    cm.total_count = 0
+    cm.last_time = 0
+def updateAverage(time): 
+    cm.total_time += time
+    cm.total_count += 1
+    cm.last_time = time
 def statusTask():
     if (not cm.processing):
         if (cm.delay > 0): setstatus("Waiting for timer tick...")
@@ -731,8 +734,8 @@ def uiTask():
 def displayTask():
     pass
 
-def alert(): cm.req_alert = True
-def alertoff(): cm.req_alert = False; cm.alerted = False
+def alert():     cm.req_alert = True
+def alertoff():  cm.req_alert = False; cm.alerted = False
 def alertTask():
     if (not cm.alerted and cm.req_alert):
         freak()
@@ -781,7 +784,6 @@ def jobTask():
                 setprogress(100*cm.curgoal/(len(cm.goals)-1))
         except (queue.Empty): pass
 
-                
     if (cm.paused or not qpending.empty()):
         time.sleep(0.1)
         return
