@@ -361,7 +361,7 @@ def refresh_windows():
     w.refresh()
 
     w = cm.rwin
-    w.clear();w.box()
+    w.clear(); w.box()
     if (cm.ls.bottom == 0): w.addstr(0,1,"Goal: not selected", curses.A_BOLD)
     else:
         sel = cm.ls.top+cm.ls.cur
@@ -540,9 +540,11 @@ def json_compare( slug, out, ref, graph ):
             txt += "*** Prp "+prop+" is missing from the output\n"
             continue
         if (not jsonout[prop] == jsonref[prop]):
-            txt += "*** Prp "+prop+" differs in the output\n"
-            txt += " O:"+str(jsonout[prop])+"\n"
-            txt += " R:"+str(jsonref[prop])+"\n"
+            pre = prop + " (OLD -> NEW) "
+            div = '-' * (cm.ww-cm.lw-4-len(pre))
+            txt += pre + div + "\n"
+            txt += str(jsonref[prop])+"\n" # reference / old
+            txt += str(jsonout[prop])+"\n" # new / current output
             continue
             
     return None if txt == "" else txt
