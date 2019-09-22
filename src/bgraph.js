@@ -4944,7 +4944,6 @@
     /** @typedef GoalProperties
         @global
         @type {object}
-        @property {Boolean} offred Whether to use yesterday-is-red criteria for derails
         @property {Boolean} yaw Which side of the YBR you want to be on, +1 or -1
         @property {Boolean} dir Which direction you'll go (usually same as yaw)
         @property {Boolean} kyoom Cumulative; plot vals as the sum of those entered so far
@@ -4955,7 +4954,7 @@
         @property {String} aggday sum/last/first/min/max/mean/median/mode/trimmean/jolly
     */
     const goalProps
-          = ['offred','yaw','dir','kyoom','odom','noisy','integery','monotone','aggday']
+          = ['yaw','dir','kyoom','odom','noisy','integery','monotone','aggday']
     /** Returns properties for the currently loaded goal
         @returns {GoalProperties} 
         @see {@link bgraph#getVisualConfig}
