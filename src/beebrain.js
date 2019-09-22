@@ -40,7 +40,7 @@ let gid = 1
 
 const pin = { // In Params: Graph settings and their defaults
 offred   : false, // Whether to use new yesterday-is-red criteria for derails
-offparis : false, // Paris boolean; schedel
+//offparis : false, // Paris boolean; schedel
 deadline : 0,     // Time of deadline given as seconds bfr or after midnight
 sadlhole : true,  // Allow the do-less l.hole where you can eke back onto YBR
 asof     : null,  // Compute everything as if it were this date
@@ -130,16 +130,17 @@ tini     : null,    // Echoes input param ############################ DEP
 vini     : null,    // Echoes input param ############################ DEP
 tfin     : null,    // Subsumed by fullroad ########################## DEP
 vfin     : null,    // Subsumed by fullroad ########################## DEP
-rfin     : null     // Subsumed by fullroad ########################## DEP
+rfin     : null,    // Subsumed by fullroad ########################## DEP
 }
 
 // Input parameters to ignore; complain about anything not here or in pin.
 const pig = [
-  'rerails', 
-  'tagtime', 
-  'timezone',
-  'backroad', 
-  'edgy'
+'rerails', 
+'tagtime', 
+'timezone',
+'backroad', 
+'edgy',
+'offparis',
 ]
 
 const CNAME = { }

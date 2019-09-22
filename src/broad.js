@@ -200,11 +200,8 @@ self.fixRoadArray = (rd, autop=self.RP.VALUE, usematrix=false,
     wrong side gives a negative delta. */
 self.gdelt = (rd, goal, t, v) => bu.chop(goal.yaw*(v - self.rdf(rd, t)))
 
-// The bottom lane is -1, top lane is 1, below the road is -2,
-// above is +2, etc.
-
+// The bottom lane is -1, top lane is 1, below the road is -2, above is +2, etc.
 // Implementation notes:
-
 // This includes the noisy width but it does not adjust the noisy
 // width based on t. So this gives the correct lane number for
 // noisy graphs when called with (tcur,vcur) but not necessarily
@@ -249,19 +246,20 @@ self.dtd = (rd, goal, t, v) => {
     return 0 // override if offred & red yesterday (cuz do-less loophole)
   }
 
-  var tnow = goal.tcur
+  //var tnow = goal.tcur #SCHDEL
   var fnw = self.gdelt(rd, goal, t,v) >= 0 ? 0.0 : goal.nw // future noisy width
-  var elnf = (x) => (Math.max(goal.lnf(x),fnw)) // eff. lane width
+  var elnf = (x) => (Math.max(goal.lnf(x),fnw)) // effective lane width function
 
   var x = 0 // the number of steps  
-  var vpess = v // the value as we walk forward w/ pessimistic presumptive reports
-  while (self.aok( rd, goal, t+x*bu.SID, vpess, elnf( t+x*bu.SID ) ) 
+  var vpess = v // the value as we walk forward w/ PPRs
+  while (self.aok(rd, goal, t+x*bu.SID, vpess, elnf(t+x*bu.SID)) 
          && t+x*bu.SID <= Math.max(goal.tfin, t)) {
     x += 1 // walk forward until we're off the YBR
     //if (t+x*SID > tnow) xt += 1;
-    vpess += (goal.yaw*goal.dir < 0)?2*self.rtf(rd, t+x*bu.SID)*bu.SID:0
+    vpess += goal.yaw*goal.dir < 0 ? 2*self.rtf(rd, t+x*bu.SID)*bu.SID : 0
   }
   if (goal.noisy && self.gdelt(rd,goal,t,v) >= 0) x = Math.max(2, x)
+  //return goal.yaw*goal.dir < 0 ? x - 1 : x // TODO
   return x
 }
 
