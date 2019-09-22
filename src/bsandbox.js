@@ -205,7 +205,7 @@
     }
 
     const goalProps
-          = ['offred','yaw','dir','kyoom','odom','noisy','integery','monotone','aggday']
+          = ['yaw','dir','kyoom','odom','noisy','integery','monotone','aggday']
     function setGoalConfig( opts ) {
       saveState()
       goalProps.map(e=>{
