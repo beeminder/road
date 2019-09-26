@@ -304,18 +304,22 @@ self.clip = (x, a, b) => {
     @param {Number} [e=0] Error direction for conservarounding */
 self.shn = (x, t=10, d=5, e=0) => {
   if (isNaN(x)) return x.toString()
-  var i = Math.floor(Math.abs(x)), k, fmt, ostr
+  let i = Math.floor(Math.abs(x)), k, fmt, ostr
   i = i===0 ? 0 : i.toString().length // # of digits left of the decimal
   if (Math.abs(x) > Math.pow(10,i)-.5) i += 1
-  if (i === 0 && x !== 0) // get desired number of decimal digits
-    k = Math.floor(d - Math.log10(Math.abs(x)))
-  else k = d
+  if (i === 0 && x !== 0)                             // get
+    k = Math.floor(d - Math.log10(Math.abs(x)))       // desired
+  else k = d                                          // decimal digits
+
+  //return self.conservaround(x, 10**-k, e)
+
   // Round input to have the desired number of decimal digits
-  var v = x * Math.pow(10, k), vm = v % 10
+  let v = x * Math.pow(10, k), vm = v % 10
   if (vm < 0) vm += 10
+
   // Hack to prevent incorrect rounding with the decimal digits:
   if (vm >= 4.5 && vm < 4.9999999) v = Math.floor(v)
-  var xn = Math.round(v) / Math.pow(10, k) + 1e-10
+  let xn = Math.round(v) / Math.pow(10, k) + 1e-10
 
   // Conservaround
   if (e < 0 && xn > x || e > 0 && xn < x) { 
@@ -327,6 +331,7 @@ self.shn = (x, t=10, d=5, e=0) => {
   if (t < i && Math.abs(Math.pow(10, i-1) - xn) < .5) 
     xn = Math.pow(10, i-1)
   t = self.clip(t, i, i+d)
+  
   // If the magnitude <= 1e-4, prevent scientific notation
   if (Math.abs(xn) < 1e-4 || Math.floor(xn) === 9 
       || Math.floor(xn) === 99 || Math.floor(xn) === 999) {
@@ -344,7 +349,7 @@ self.shn = (x, t=10, d=5, e=0) => {
     @param {Number} [t=16] Total number of significant figures 
     @param {Number} [d=5] Number of significant figures after the decimal 
     @param {Number} [e=0] Error direction for conservarounding */
-self.shns = (x, t=16, d=5, e=0) => (x>=0 ? "+" : "")+self.shn(x, t, d, e)
+self.shns = (x, t=16, d=5, e=0) => (x>=0 ? "+" : "") + self.shn(x, t, d, e)
 
 /** Show Date: take timestamp and return something like 2012.10.22
     @param {Number} t Unix timestamp */
@@ -362,8 +367,8 @@ self.shdt = (t) => t === null ? 'null' : self.formatDateTime(t)
     @param {String} noun Noun to pluralize
     @param {String} [nounp=''] Irregular pluralization if present */
 self.splur = (n, noun, nounp='') => {
-  if (nounp === '') nounp = noun+'s'
-  return self.shn(n)+' '+(n === 1 ? noun : nounp)
+  if (nounp === '') nounp = noun + 's'
+  return self.shn(n, 10, 5) + ' ' + (n === 1 ? noun : nounp)
 }
 
 /** Rate as a string.

@@ -977,23 +977,26 @@ const beebrain = function( bbin ) {
       var tmp = minr
       minr = maxr; maxr = tmp
     }
+    let smin = bu.shr(minr)
+    let smax = bu.shr(maxr)
+    let savg = bu.shr(goal.ravg)
+    let scur = bu.shr(goal.rcur)
     goal.ratesum = 
-      ((minr == maxr)?bu.shr(minr):"between "+bu.shr(minr)+" and "+bu.shr(maxr)) +
-      " per "+bu.UNAM[goal.runits] + 
-      ((minr != maxr)?" ("+"current: "+bu.shr(goal.rcur)
-        +", average: " + bu.shr(goal.ravg)+')':"")
+      (minr === maxr ? smin : "between "+smin+" and "+smax) +
+      " per " + bu.UNAM[goal.runits] + 
+      (minr !== maxr ? " (current: " + scur + ", average: " + savg + ")" : "")
 
     // What we actually want is timesum and togosum (aka, progtsum & progvsum) 
-    // which will be displayed with labels TO GO and TIME LEFT in the stats box and
-    // will have both the absolute amounts remaining as well as the percents done 
-    // as calculated here.
+    // which will be displayed with labels TO GO and TIME LEFT in the stats box
+    // and will have both the absolute amounts remaining as well as the 
+    // percents done as calculated here.
     var pt = bu.shn(bu.cvx(bu.daysnap(goal.tcur),
                            goal.tini,bu.daysnap(goal.tfin),
                            0,100, false), 1,1)
     var pv = bu.cvx(goal.vcur, goal.vini,goal.vfin,0,100,false)
     pv = bu.shn((goal.vini<goal.vfin)?pv:100 - pv, 1,1) // meant shn(n,1,2) here?
 
-    if (pt==pv) goal.progsum = pt+"% done"
+    if (pt == pv) goal.progsum = pt+"% done"
     else goal.progsum = pt+"% done by time -- "+pv+"% by value"
 
     var x, ybrStr
@@ -1014,7 +1017,7 @@ const beebrain = function( bbin ) {
       + "targeting "+bu.shn(goal.vfin,3,1)+" on "+bu.shd(goal.tfin)+" ("
       + bu.splur(parseFloat(bu.shn(goal.cntdn,1,1)), "more day")+"). "+ybrStr
 
-    goal.deltasum = bu.shn(Math.abs(dlt),4,2)
+    goal.deltasum = bu.sh1(Math.abs(dlt))
       + ((dlt<0)?" below":" above")+" the centerline"
     var s
     if (w == 0)                    s = ""
