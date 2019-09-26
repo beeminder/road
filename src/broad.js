@@ -242,9 +242,9 @@ self.aok = (rd, g, t, v, l) => self.lanage(rd, g, t, v, l) * g.yaw >= -1.0
 /** Returns the number of days to derail for the current road
     TODO: There are some issues with computing tcur, vcur */
 self.dtd = (rd, goal, t, v) => {
-  if (goal.offred && self.isLoser(rd, goal, null, t, v)) {
-    return 0 // override if offred & red yesterday (cuz do-less loophole)
-  }
+  //if (goal.offred && self.isLoser(rd, goal, null, t, v)) {
+  //  return 0 // override if offred & red yesterday (cuz do-less loophole)
+  //}
 
   var fnw = self.gdelt(rd, goal, t,v) >= 0 ? 0.0 : goal.nw // future noisy width
   var elnf = (x) => (Math.max(goal.lnf(x),fnw)) // effective lane width function

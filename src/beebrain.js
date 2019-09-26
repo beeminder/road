@@ -535,7 +535,7 @@ const beebrain = function( bbin ) {
         let ptinf = aggpt(vl, ad)
         // Create new datapoint
         newpts.push([ct, pre+ad, ptinf[0], // This is the processed datapoint
-                     (ct <= goal.asof)?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE, 
+                     ct <= goal.asof ? DPTYPE.AGGPAST : DPTYPE.AGGFUTURE, 
                      prevpt[0], prevpt[1], // This is the previous point
                      ptinf[1]])            // v(original)
           
