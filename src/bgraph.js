@@ -390,7 +390,7 @@
     */
     function svgshn( x, d=1 ) {
       let p = Math.pow(10, d)
-      return Math.round(x * p)/p
+      return Math.round(x*p)/p
     }
     
     /** Resets the internal goal object, clearing out previous data. */
@@ -1818,7 +1818,7 @@
                     opts.keepSlopes?br.RP.VALUE
                     :br.RP.SLOPE, fromtable );
 
-      roadChanged();
+      roadChanged()
     }
 
     // -------------- Drag related utility functions ---------------
@@ -1833,14 +1833,14 @@
                                + " ("+knotdate.format("ddd")+")",
                                opts.textBoxCol.stroke);
       dottext = createTextBox(ptx, nYSc(pty)-15, 
-                              bu.shn(pt[1]), opts.textBoxCol.stroke);
+                              bu.shn(pt[1]), opts.textBoxCol.stroke)
       if (slope != undefined) {
 	      var slopex = nXSc(bu.daysnap(slope[0])*1000);
 	      var slopey = nYSc(slope[1]);
         slopetext = createTextBox(slopex,slopey, 
                                   "s:"+bu.shn(slope[2]),
                                   opts.textBoxCol.stroke);
-        if (ptx - slopex < 50) hideTextBox(slopetext, true);
+        if (ptx - slopex < 50) hideTextBox(slopetext, true)
       }
     }
     function updateDragInfo( pt, slope ) {
