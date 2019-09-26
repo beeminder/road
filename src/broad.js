@@ -252,7 +252,7 @@ self.dtd = (rd, goal, t, v) => {
   const SID = 86400 // seconds in day
   let x = 0 // the number of steps  
   let vpess = v // the value as we walk forward w/ PPRs
-  if (goal.asof === goal.tdat && goal.yaw*goal.dir < 0) 
+  if (goal.asof !== goal.tdat && goal.yaw*goal.dir < 0) 
     vpess += 2*self.rtf(rd, t+x*bu.SID)*SID
   while (self.aok(rd, goal, t+x*SID, vpess, elnf(t+x*SID)) 
          && t+x*SID <= Math.max(goal.tfin, t)) {
