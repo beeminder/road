@@ -39,7 +39,7 @@ if (typeof define === 'function' && define.amd) {
 let gid = 1
 
 const pin = { // In Params: Graph settings and their defaults
-offred   : true, // Whether to use new yesterday-is-red criteria for derails
+offred   : true,  // Whether to use new yesterday-is-red criteria for derails
 deadline : 0,     // Time of deadline given as seconds bfr or after midnight
 sadlhole : true,  // Allow the do-less l.hole where you can eke back onto YBR
 asof     : null,  // Compute everything as if it were this date
@@ -535,7 +535,7 @@ const beebrain = function( bbin ) {
         let ptinf = aggpt(vl, ad)
         // Create new datapoint
         newpts.push([ct, pre+ad, ptinf[0], // This is the processed datapoint
-                     (ct <= goal.asof)?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE, 
+                     ct <= goal.asof ? DPTYPE.AGGPAST : DPTYPE.AGGFUTURE, 
                      prevpt[0], prevpt[1], // This is the previous point
                      ptinf[1]])            // v(original)
           
