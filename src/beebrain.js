@@ -1030,19 +1030,19 @@ const beebrain = function( bbin ) {
     var c = goal.safebuf // countdown to derailment, in days
     var cd = bu.splur(c, "day")
     if (goal.kyoom) {
-      if (MOAR) goal.limsum= bu.sh1sc(br.limd(roads, goal, c),  y)+" in "+cd
-      if (PHAT) goal.limsum= bu.sh1sc(br.limd(roads, goal, c),  y)+" in "+cd
-      if (WEEN) goal.limsum= bu.sh1sc(br.limd(roads, goal, 0),  y)+" today" 
-      if (RASH) goal.limsum= bu.sh1sc(br.limd(roads, goal, 0),  y)+" today" 
+      if (MOAR) goal.limsum= bu.sh1s(br.limd(roads, goal, c),  y)+" in "+cd
+      if (PHAT) goal.limsum= bu.sh1s(br.limd(roads, goal, c),  y)+" in "+cd
+      if (WEEN) goal.limsum= bu.sh1s(br.limd(roads, goal, 0),  y)+" today" 
+      if (RASH) goal.limsum= bu.sh1s(br.limd(roads, goal, 0),  y)+" today" 
     } else {
-      if (MOAR) goal.limsum= bu.sh1sc(br.limd(roads, goal, c), y)+" in "+cd+" ("
-        +bu.sh1c(br.lim(roads, goal, c), y)+")"
-      if (PHAT) goal.limsum= bu.sh1sc(br.limd(roads, goal, c), y)+" in "+cd+" ("
-        +bu.sh1c(br.lim(roads, goal, c), y)+")"
-      if (WEEN) goal.limsum= bu.sh1sc(br.limd(roads, goal, 0), y)+" today ("
-        +bu.sh1c(br.lim(roads, goal, 0), y)+")"    
-      if (RASH) goal.limsum= bu.sh1sc(br.limd(roads, goal, 0), y)+" today ("
-        +bu.sh1c(br.lim(roads, goal, 0), y)+")"    
+      if (MOAR) goal.limsum= bu.sh1s(br.limd(roads, goal, c), y)+" in "+cd+" ("
+        +bu.sh1(br.lim(roads, goal, c), y)+")"
+      if (PHAT) goal.limsum= bu.sh1s(br.limd(roads, goal, c), y)+" in "+cd+" ("
+        +bu.sh1(br.lim(roads, goal, c), y)+")"
+      if (WEEN) goal.limsum= bu.sh1s(br.limd(roads, goal, 0), y)+" today ("
+        +bu.sh1(br.lim(roads, goal, 0), y)+")"    
+      if (RASH) goal.limsum= bu.sh1s(br.limd(roads, goal, 0), y)+" today ("
+        +bu.sh1(br.lim(roads, goal, 0), y)+")"    
     }
     if (y*d<0)      goal.safeblurb = "unknown days of safety buffer"
     else if (c>999) goal.safeblurb = "more than 999 days of safety buffer"
