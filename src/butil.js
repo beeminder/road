@@ -300,8 +300,9 @@ self.clip = (x, a, b) => {
     is the number of digits in integer part of x). 
     @param {Number} x Input number
     @param {Number} [t=10] Total number of significant figures 
-    @param {Number} [d=5] Number of significant figures after the decimal */
-self.shn = (x, t=10, d=5) => {
+    @param {Number} [d=5] Number of significant figures after the decimal 
+    @param {Number} [e=0] Error direction for conservarounding */
+self.shn = (x, t=10, d=5, e=0) => {
   if (isNaN(x)) return x.toString()
   var i = Math.floor(Math.abs(x)), k, fmt, ostr
   i = i===0 ? 0 : i.toString().length // # of digits left of the decimal
@@ -315,6 +316,13 @@ self.shn = (x, t=10, d=5) => {
   // Hack to prevent incorrect rounding with the decimal digits:
   if (vm >= 4.5 && vm < 4.9999999) v = Math.floor(v)
   var xn = Math.round(v) / Math.pow(10, k) + 1e-10
+
+  // Conservaround
+  if (e < 0 && xn > x || e > 0 && xn < x) { 
+    if (d >= 10) xn = x
+    else return self.shn(x, t, d+1, e)
+  }
+
   // If total significant digits < i, do something about it
   if (t < i && Math.abs(Math.pow(10, i-1) - xn) < .5) 
     xn = Math.pow(10, i-1)
@@ -330,63 +338,13 @@ self.shn = (x, t=10, d=5) => {
   return ostr
 }
 
-// Need to DRY this and shn() up but want to totally revamp shownum anyway.
-/** Show Number, rounded conservatively (variant of {@link
-    module:butil.shn shn} where you pass which direction, +1 or -1,
-    is safe to err on). Aka conservaround! Eg, shnc(.0000003, +1,
-    2) -> .01
-    @param {Number} x Input number
-    @param {Number} errdir Safe direction: +1 or -1
-    @param {Number} [t=10] Total number of significant figures 
-    @param {Number} [d=5] Number of significant figures after the decimal */
-self.shnc = (x, errdir, t=10, d=5) => {
-  if (isNaN(x)) return x.toString()
-  var i = Math.floor(Math.abs(x)), k, fmt, ostr
-  i = (i==0)?0:i.toString().length // # of digits left of the decimal
-  if (Math.abs(x) > Math.pow(10,i)-.5) i += 1
-  if (i == 0 && x != 0)
-    k = (Math.floor(d - Math.log10(Math.abs(x)))) // get desired 
-  else k = d                                          // dec. digits
-  // Round input to have the desired number of decimal digits
-  var v = x * Math.pow(10,k), vm = v % 10
-  if (vm < 0) vm += 10
-  // Hack to prevent incorrect rounding with the decimal digits:
-  if (vm >= 4.5 && vm < 4.9999999) v = Math.floor(v)
-  var xn = Math.round(v) / Math.pow(10,k) + 1e-10
-  //Conservaround
-  if ((errdir < 0 && xn > x) || ((errdir > 0) && (xn < x))) { 
-    if (d >= 10) xn = x
-    else return self.shnc(x, errdir, t, d+1)
-  }
-  // If total significant digits < i, do something about it
-  if (t < i && Math.abs(Math.pow(10,(i-1)) - xn) < .5) 
-    xn = Math.pow(10,(i-1))
-  t = self.clip(t, i, i+d)
-  // If the magnitude <= 1e-4, prevent scientific notation
-  if (Math.abs(xn) < 1e-4 || Math.floor(xn) == 9 
-      || Math.floor(xn) == 99 || Math.floor(xn) == 999) {
-    ostr = parseFloat(x.toPrecision(k)).toString()
-  } else {
-    ostr = xn.toPrecision(t)
-    if (!ostr.includes('e')) ostr = parseFloat(ostr)
-  }
-  return ostr
-}
-
 /** Show Number with Sign: include the sign explicitly. See {@link
     module:butil.shn shn}.
     @param {Number} x Input number
     @param {Number} [t=16] Total number of significant figures 
-    @param {Number} [d=5] Number of significant figures after the decimal */
-self.shns = (x, t=16, d=5) => (x>=0 ? "+" : "")+self.shn(x, t, d)
-
-/** Same as {@link module:butil.shns shns} but with
-    conservarounding.
-    @param {Number} x Input number
-    @param {Number} e Safe direction: +1 or -1
-    @param {Number} [t=16] Total number of significant figures 
-    @param {Number} [d=5] Number of significant figures after the decimal */
-self.shnsc = (x, e, t=16, d=5) => (x>=0 ? "+" : "")+self.shnc(x, e, t, d)
+    @param {Number} [d=5] Number of significant figures after the decimal 
+    @param {Number} [e=0] Error direction for conservarounding */
+self.shns = (x, t=16, d=5, e=0) => (x>=0 ? "+" : "")+self.shn(x, t, d, e)
 
 /** Show Date: take timestamp and return something like 2012.10.22
     @param {Number} t Unix timestamp */
@@ -417,17 +375,13 @@ self.shr = (r) => {
 
 // Shortcuts for common ways to show numbers
 /** shn(chop(x), 4, 2). See {@link module:butil.shn shn}.
-    @param {Number} x Input */
-self.sh1 = function(x)      { return self.shn(  self.chop(x),    4,2) }
-/** shnc(chop(x), 4, 2). See {@link module:butil.shnc shnc}.
-    @param {Number} x Input */
-self.sh1c = function(x, e)  { return self.shnc( self.chop(x), e, 4,2) }
+    @param {Number} x Input 
+    @param {Number} [e=0] Error direction for conservarounding */
+self.sh1 = function(x, e=0)  { return self.shn(  self.chop(x), 4,2, e) }
 /** shns(chop(x), 4, 2). See {@link module:butil.shns shns}.
-    @param {Number} x Input */
-self.sh1s = function(x)     { return self.shns( self.chop(x),    4,2) }
-/** shnsc(chop(x), 4, 2). See {@link module:butil.shnsc shnsc}.
-    @param {Number} x Input */
-self.sh1sc = function(x, e) { return self.shnsc(self.chop(x), e, 4,2) }
+    @param {Number} x Input 
+    @param {Number} [e=0] Error direction for conservarounding */
+self.sh1s = function(x, e=0) { return self.shns( self.chop(x), 4,2, e) }
 
 
 /******************************************************************************
@@ -438,11 +392,10 @@ self.sh1sc = function(x, e) { return self.shnsc(self.chop(x), e, 4,2) }
 
 // Normalize number: Return the canonical string representation. Is idempotent.
 // If we were true nerds we'd do it like wikipedia.org/wiki/Normalized_number
-// but instead we're canonicalizing via un-scientific-notation-ifying. The other
+// but instead we're canonicalizing via un-scientific-notation-ing. The other
 // point of this is to not lose trailing zeros after the decimal point.
-// Possible issue: Some equivalent number representations don't normalize to the
-// same thing. Eg, "0.5" -> "0.5", ".5" -> ".5", "2" -> "2", "+2" -> "+2", 
-// "3" -> "3", "3." -> "3.".
+// Possible issue: Some equivalent representations don't normalize to the same 
+// thing. Eg, 0.5 -> 0.5 and .5 -> .5, 2 -> 2 and +2 -> +2, 3 -> 3 and 3. -> 3.
 self.normberlize = function(x) {
   x = typeof x == 'string' ? x.trim() : (+x).toString() // stringify the input
   x = x.replace(/^([+-]?)0+([^eE\.])/, '$1$2')        // ditch the leading zeros
@@ -492,9 +445,10 @@ self.round = function(x, r=1) {
 //                          ... that's <= x if e is -1
 self.conservaround = function(x, r=1, e=0) {
   let y = self.round(x, r)
+  if (e===0) return y
   if (e < 0 && y > x) y -= r
   if (e > 0 && y < x) y += r
-  return self.round(y, r) // y's already rounded but adding r can f.p. it all up
+  return self.round(y, r) // y's already rounded but the +r can f.p. it up
 }
 
 /******************************************************************************
