@@ -494,7 +494,7 @@ def pybrain_make(pydir, slug, inpath, outpath, graph ):
     os.chdir(cwd)
     return {'dt': time.time() - starttm, 'errmsg': errmsg}
 
-# Invokes pybrain on the indiated slug from inpath, placing outputs in
+# Invokes pybrain on the indicated slug from inpath, placing outputs in
 # outpath, generating graphs if requested
 def graph_compare(slug, out, ref ):
   errmsg = ""
@@ -504,7 +504,9 @@ def graph_compare(slug, out, ref ):
   diffcnt = 0
   try: 
     try:
-      resp = subprocess.check_output(['compare', '-metric', 'AE', imgout, imgref, '-compose', 'src', imgdiff],stderr=subprocess.STDOUT)
+      resp = subprocess.check_output(
+        ['compare', '-metric', 'AE', imgref, imgout, '-compose', 'src', 
+         imgdiff], stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
       if (e.returncode == 1):
         diffcnt = int(e.output.decode('utf-8'))
@@ -520,9 +522,9 @@ def graph_compare(slug, out, ref ):
       if (diffcnt == 0):
         os.unlink(imgdiff) #Seems like there are no errors, remove diff
       else:
-        subprocess.check_output(['convert', '-append',
-                     imgdiff, imgout, imgref, imgdiff],
-                    stderr=subprocess.STDOUT)
+        subprocess.check_output(
+          ['convert', '-append', imgdiff, imgref, imgout, imgdiff],
+          stderr=subprocess.STDOUT)
     except OSError as e:
       errmsg += "\nCould not execute 'convert' (no ImageMagick?):\n"
       errmsg += " "+e.strerror
@@ -938,12 +940,12 @@ def main( argv ):
 # Make sure we only execute main in the top level environment
 if __name__ == "__main__":
   # TODO: this breaks the usage message
-  #mystdout = StdOutWrapper()
-  #sys.stdout = mystdout
-  #sys.stderr = mystdout
+  mystdout = StdOutWrapper()
+  sys.stdout = mystdout
+  sys.stderr = mystdout
 
   main(sys.argv[1:])
 
-  #sys.stdout = sys.__stdout__
-  #sys.stderr = sys.__stderr__
-  #sys.stdout.write(mystdout.get_text(0,-1))
+  sys.stdout = sys.__stdout__
+  sys.stderr = sys.__stderr__
+  sys.stdout.write(mystdout.get_text(0,-1))
