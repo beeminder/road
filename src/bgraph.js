@@ -493,7 +493,8 @@
           .style('font-weight', fw)
           .text(msgs[i])
       }
-      if (animate) pg.style("opacity", 0).transition().duration(200).style("opacity", 1)
+      if (animate) 
+        pg.style("opacity", 0).transition().duration(200).style("opacity", 1)
     }
     /** Removes the message overlay created by {@link
         bgraph~showOverlay showOverlay()}
@@ -3748,7 +3749,7 @@
       }
       // Filter to apply to all datapoints
       var adf = function(d) {
-        return (d[0] >= l[0] && d[0] <= l[1]);
+        return (d[0] >= l[0] && d[0] <= l[1])
       }
       var now = goal.asof;
       var dpelt;
@@ -3809,7 +3810,7 @@
                     +(opts.dataPoint.fsize*scf/35)+")");
           }
         } else {
-          if (!fladelt.empty()) fladelt.remove();
+          if (!fladelt.empty()) fladelt.remove()
         }
         
       } else {

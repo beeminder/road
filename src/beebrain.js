@@ -567,7 +567,7 @@ const beebrain = function( bbin ) {
     for (let t in allvals) {
       allpts = allpts.concat(allvals[t].map(
         d=>([Number(t), d[0], d[1], 
-             (Number(t) <= goal.asof)?DPTYPE.AGGPAST:DPTYPE.AGGFUTURE,
+             Number(t) <= goal.asof ? DPTYPE.AGGPAST : DPTYPE.AGGFUTURE,
              null, null, d[2]])))
     }
     alldata = allpts
@@ -732,6 +732,8 @@ const beebrain = function( bbin ) {
     }
     if (!aggvals.hasOwnProperty(x)) {
       var prevpt = data[numpts-1]
+      //if (goal.yaw*goal.dir < 0 && goal.asof !== goal.tdat)
+      //  vlast += br.ppr(roads, goal, goal.asof)
       flad = [x, vlast, "PPR", DPTYPE.FLATLINE, prevpt[0], prevpt[1], null]
       data.push(flad)
     }
@@ -1284,7 +1286,7 @@ const beebrain = function( bbin ) {
   this.allvals = allvals
   /** Holds all datapoints into the future */
   this.fuda = fuda
-  /** Holds the flattened datapoint */
+  /** Holds the flatlined datapoint */
   this.flad = flad
   /** Holds an array of odometer resets */
   this.oresets = oresets

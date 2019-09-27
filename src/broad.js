@@ -239,6 +239,11 @@ self.lanage = ( rd, goal, t, v, l = null ) => {
 /** Whether the given point is on the road if the road has lane width l */
 self.aok = (rd, g, t, v, l) => self.lanage(rd, g, t, v, l) * g.yaw >= -1.0
 
+/** Pessimistic Presumptive Report (PPR) */
+self.ppr = (rd, g, t) => { 
+  return g.yaw*g.dir >= 0 ? 0 : 2*self.rtf(rd, t)*bu.SID 
+}
+
 /** Returns the number of days to derail for the current road
     TODO: There are some issues with computing tcur, vcur */
 self.dtd = (rd, goal, t, v) => {
@@ -252,12 +257,12 @@ self.dtd = (rd, goal, t, v) => {
   const SID = 86400 // seconds in day
   let x = 0 // the number of steps  
   let vpess = v // the value as we walk forward w/ PPRs
-  if (goal.asof !== goal.tdat && goal.yaw*goal.dir < 0) 
+  if (goal.yaw*goal.dir < 0 && goal.asof !== goal.tdat) 
     vpess += 2*self.rtf(rd, t+x*bu.SID)*SID
   while (self.aok(rd, goal, t+x*SID, vpess, elnf(t+x*SID)) 
          && t+x*SID <= Math.max(goal.tfin, t)) {
     x += 1 // walk forward until we're off the YBR
-    vpess += goal.yaw*goal.dir < 0 ? 2*self.rtf(rd, t+x*SID)*SID : 0
+    vpess += self.ppr(rd, goal, t+x*SID)
   }
   if (goal.noisy && self.gdelt(rd,goal,t,v) >= 0) x = Math.max(2, x)
   //return goal.yaw*goal.dir < 0 ? x - 1 : x // just kidding; not this
