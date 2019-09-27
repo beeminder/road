@@ -3676,6 +3676,13 @@
               d += " L"+svgshn(nXSc(npts[i][0]*1000))+" "+ svgshn(nYSc(npts[i][5]));
               d += " L"+svgshn(nXSc(npts[i][0]*1000))+" "+ svgshn(nYSc(npts[i][1]));
             }
+            // Need an additional vertical steppy for do-less flatlined datapoints
+            if (bbr.flad != null) {
+              if (goal.yaw*goal.dir < 0 && goal.asof !== goal.tdat) {
+                var fy = bbr.flad[1] + br.ppr(road, goal, goal.asof)
+                d+=" L"+svgshn(nXSc(npts[npts.length-1][0]*1000))+" "+svgshn(nYSc(fy))
+              }
+            }
             if (stpelt.empty()) {
               gSteppy.append("svg:path")
                 .attr("class","steppy")
@@ -3785,12 +3792,19 @@
         // *** Plot flatlined datapoint ***
         var fladelt = gFlat.selectAll(".fladp");
         if (bbr.flad != null) {
+          var flady = bbr.flad[1]
+          var fop = 1.0
+          if (goal.yaw*goal.dir < 0 && goal.asof !== goal.tdat) {
+            flady += br.ppr(road, goal, goal.asof)
+            fop = 0.5
+          }
           if (fladelt.empty()) {
             gFlat.append("svg:use")
 		          .attr("class","fladp").attr("xlink:href", "#rightarrow")
-              .attr("fill", br.dotcolor(road,goal,bbr.flad[0],bbr.flad[1]))
+              .attr("fill", br.dotcolor(road,goal,bbr.flad[0],flady))
+              .attr("fill-opacity", fop)
               .attr("transform", "translate("+(nXSc((bbr.flad[0])*1000))+","
-                    +nYSc(bbr.flad[1])+"),scale("+(opts.dataPoint.fsize*scf/24)+")")
+                    +nYSc(flady)+"),scale("+(opts.dataPoint.fsize*scf/24)+")")
               .style("pointer-events", function() {
                 return (opts.roadEditor)?"none":"all";})
 		          .on("mouseenter",function() {
@@ -3803,11 +3817,12 @@
                 dotTimer = null;});
           } else {
             fladelt
-              .attr("fill", br.dotcolor(road,goal,bbr.flad[0],bbr.flad[1]))
+              .attr("fill", br.dotcolor(road,goal,bbr.flad[0],flady))
+              .attr("fill-opacity", fop)
               .attr("transform", 
                     "translate("+(nXSc((bbr.flad[0])*1000))+","
-                    +nYSc(bbr.flad[1])+"),scale("
-                    +(opts.dataPoint.fsize*scf/35)+")");
+                    +nYSc(flady)+"),scale("
+                    +(opts.dataPoint.fsize*scf/24)+")");
           }
         } else {
           if (!fladelt.empty()) fladelt.remove()
