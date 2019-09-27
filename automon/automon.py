@@ -172,7 +172,7 @@ def exitonerr( err, usage=True ):
   -w or --watch : Monitor directory for changes (multiple directories ok)'''
   print("\n========== jsbrain Output Monitoring/Comparison Daemon ==========")
   if (err): print(" Error: "+err)
-  if (usage): print(usage)
+  if (usage): print(usage+"\n")
   sys.exit()
 
 def play( sound ):
@@ -886,7 +886,10 @@ def monitor(stdscr, bbdir, pydir, graph, force, delay, watchdir):
       alertTask()
       
       time.sleep(0.01)
-  except: pass
+  except Exception as e:
+    print(e)
+    print("\n")
+    pass
   worker_stop()
   worker_thread.join()
   curses.curs_set(True)
@@ -944,8 +947,9 @@ if __name__ == "__main__":
   sys.stdout = mystdout
   sys.stderr = mystdout
 
-  main(sys.argv[1:])
-
-  sys.stdout = sys.__stdout__
-  sys.stderr = sys.__stderr__
-  sys.stdout.write(mystdout.get_text(0,-1))
+  try:
+    main(sys.argv[1:])
+  finally:
+    sys.stdout = sys.__stdout__
+    sys.stderr = sys.__stderr__
+    sys.stdout.write(mystdout.get_text(0,-1))
