@@ -56,6 +56,7 @@ self.Cols = {
   ROSE:   "#ff8080",
   AKRA:   "#4C4Cff",
   PURP:   "#B56bb5",
+  LPURP:  "#E5BbE5",
   BLUE:   "#EAEAFF",
   GRUE:   "#b5ffDE",
   ORNG:   "#ff8000",
