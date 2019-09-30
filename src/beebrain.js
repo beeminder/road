@@ -39,6 +39,7 @@ if (typeof define === 'function' && define.amd) {
 let gid = 1
 
 const pin = { // In Params: Graph settings and their defaults
+ppr      : true,  
 offred   : true,  // Whether to use new yesterday-is-red criteria for derails
 deadline : 0,     // Time of deadline given as seconds bfr or after midnight
 sadlhole : true,  // Allow the do-less l.hole where you can eke back onto YBR
@@ -732,8 +733,6 @@ const beebrain = function( bbin ) {
     }
     if (!aggvals.hasOwnProperty(x)) {
       var prevpt = data[numpts-1]
-      //if (goal.yaw*goal.dir < 0 && goal.asof !== goal.tdat)
-      //  vlast += br.ppr(roads, goal, goal.asof)
       flad = [x, vlast, "PPR", DPTYPE.FLATLINE, prevpt[0], prevpt[1], null]
       data.push(flad)
     }
