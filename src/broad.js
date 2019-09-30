@@ -241,7 +241,7 @@ self.aok = (rd, g, t, v, l) => self.lanage(rd, g, t, v, l) * g.yaw >= -1.0
 
 /** Pessimistic Presumptive Report (PPR) */
 self.ppr = (rd, g, t) => { 
-  return g.yaw*g.dir >= 0 ? 0 : 2*self.rtf(rd, t)*bu.SID 
+  return g.yaw*g.dir >= 0 ? 0 : Math.max(0, 2*self.rtf(rd, t)*bu.SID) 
 }
 
 /** Returns the number of days to derail for the current road
