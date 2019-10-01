@@ -209,7 +209,35 @@
   },
   
   /** This style text gets embedded into the SVG object to enable proper saving of the SVG */
-  SVGStyle = ".svg {shape-rendering: crispEdges;} .axis path, .axis line { fill: none; stroke: black; shape-rendering: crispEdges;} .axis .minor line { stroke: #777; stroke-dasharray:0,2,4,3; } .grid line { fill: none; stroke: #dddddd; stroke-width: 1px; shape-rendering: crispEdges; } .grid .minor line { stroke: none; } .axis text { font-family: sans-serif; font-size: 11px; } .axislabel { font-family: sans-serif; font-size: 11px; text-anchor: middle; } circle.dots { stroke: black; } line.roads { stroke: black; } .pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .hashtag { text-anchor: middle; font-family: sans-serif; } .waterbuf, .waterbux { shape-rendering: crispEdges; text-anchor: middle; font-family: Dejavu Sans,sans-serif; }.loading { text-anchor: middle; font-family: Dejavu Sans,sans-serif; } .zoomarea { fill: none; } circle.ap {stroke:none;} circle.rd {stroke:none;}  circle.std {stroke:none;}   circle.dp {stroke:rgb(0,0,0);} .overlay .textbox {fill: #ffffcc;fill-opacity: 0.5;stroke: black;stroke-width: 1;pointer-events: none;rx:5;ry:5;}",
+  SVGStyle = 
+    ".svg {shape-rendering: crispEdges;} " +
+    ".axis path, .axis line " + 
+    "{ fill: none; stroke: black; shape-rendering: crispEdges;} " + 
+    ".axis .minor line { stroke: #777; stroke-dasharray:0,2,4,3; } " + 
+    ".grid line " + 
+    "{ fill: none; stroke: #dddddd; stroke-width: 1px; " + 
+    "shape-rendering: crispEdges; } " + 
+    ".grid .minor line { stroke: none; } " + 
+    ".axis text { font-family: sans-serif; font-size: 11px; } " + 
+    ".axislabel " +
+    "{ font-family: sans-serif; font-size: 11px; text-anchor: middle; } " + 
+    "circle.dots { stroke: black; } " +
+    "line.roads { stroke: black; } " +
+    ".pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .hashtag " +
+    "{ text-anchor: middle; font-family: sans-serif; } " +
+    ".waterbuf, .waterbux " +
+    //"{ shape-rendering: crispEdges; " +
+    "{ text-anchor: middle; " +
+    "font-family: Dejavu Sans,sans-serif; }.loading " +
+    "{ text-anchor: middle; font-family: Dejavu Sans,sans-serif; } " +
+    ".zoomarea { fill: none; } " +
+    "circle.ap { stroke:none; } " +
+    "circle.rd { stroke:none; } " +
+    "circle.std { stroke:none; } " +
+    "circle.dp { stroke:rgb(0,0,0); } " +
+    ".overlay .textbox " +
+    "{ fill: #ffffcc;fill-opacity: 0.5; stroke: black; " +
+    "stroke-width: 1; pointer-events: none; rx:5; ry:5; }",
 
   /** Fraction of plot range that the axes extend beyond */
   PRAF  = .015,
@@ -1967,11 +1995,11 @@
       highlightSlope( kind, true );
       selection = kind; selectType = br.RP.SLOPE;
       d3.select("[name=road"+kind+"]")
-        .attr("shape-rendering", "crispEdges")
+        .attr("shape-rendering", "geometricPrecision") // crispEdges
         .attr("stroke-width",(opts.roadLine.width,3));
       selectelt = gRoads.append("svg:line")
         .attr("class", "selectedroad")
-        .attr("shape-rendering", "crispEdges")
+        .attr("shape-rendering", "geometricPrecision") // crispEdges
         .attr("pointer-events", "none")
         .attr("x1", nXSc(road[kind].sta[0]*1000))
         .attr("x2", nXSc(road[kind].end[0]*1000))
@@ -2755,7 +2783,7 @@
 
         wbufelt = gWatermark.append("svg:image")
 	        .attr("class","waterbuf")
-	        .attr("shape-rendering","crispEdges")
+	        //.attr("shape-rendering","crispEdges")
 	        .attr("xlink:href",g)
 	        .attr("externalResourcesRequired",true)
           .attr('width', wmh)
@@ -2766,7 +2794,7 @@
         y = plotbox.height/4+fs/3;
         wbufelt = gWatermark.append("svg:text")
 	        .attr("class","waterbuf")
-	        .attr("shape-rendering","crispEdges")
+	        //.attr("shape-rendering","crispEdges")
           .style('font-size', fs+"px")
           .style('font-weight', "bolder")
           .style('fill', opts.watermark.color)
@@ -2791,7 +2819,7 @@
         y = plotbox.height/4+fs/3;
         wbuxelt = gWatermark.append("svg:text")
 	        .attr("class","waterbux")
-	        .attr("shape-rendering","crispEdges")
+	        //.attr("shape-rendering","crispEdges")
           .style('font-size', fs+"px")
           .style('font-weight', "bolder")
           .style('fill', opts.watermark.color)
@@ -3150,7 +3178,7 @@
           gOldRoad.append("svg:path")
             .attr("class","oldlanes")
   		      .attr("pointer-events", "none")
-  		      .attr("shape-rendering", "crispEdges")
+  		      //.attr("shape-rendering", "crispEdges")
 	  	      .attr("d", d)
   		      .style("fill", bu.Cols.DYEL)
   		      .style("fill-opacity", 0.5)
@@ -3183,7 +3211,7 @@
         guideelt.enter().append("svg:path")
           .attr("class","oldguides")
 	  	    .attr("d", rd2)
-  		    .attr("shape-rendering", "crispEdges")
+  		    //.attr("shape-rendering", "crispEdges")
 	  	    .attr("transform", (d,i) => ("translate(0,"+((d<0)?bc[0]:((i+1)*shift))+")"))
   		    .attr("pointer-events", "none")
   		    .style("fill", "none")
