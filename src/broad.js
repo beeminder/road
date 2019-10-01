@@ -240,8 +240,12 @@ self.lanage = ( rd, goal, t, v, l = null ) => {
 self.aok = (rd, g, t, v, l) => self.lanage(rd, g, t, v, l) * g.yaw >= -1.0
 
 /** Pessimistic Presumptive Report (PPR) */
-self.ppr = (rd, g, t) => { 
-  return g.yaw*g.dir >= 0 ? 0 : Math.max(0, 2*self.rtf(rd, t)*bu.SID) 
+self.ppr = (rd, g, t) => {
+  const r = self.rtf(rd, t) * bu.SID
+  if (g.yaw*g.dir >= 0) return 0
+  if (g.yaw*r > 0) return 0
+  if (r === 0) return -g.yaw * 2
+  return 2*r
 }
 
 /** Returns the number of days to derail for the current road
