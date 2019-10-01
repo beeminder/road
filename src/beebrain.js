@@ -39,7 +39,8 @@ if (typeof define === 'function' && define.amd) {
 let gid = 1
 
 const pin = { // In Params: Graph settings and their defaults
-ppr      : true,  
+ppr      : true,
+gunits   : 'G.U.',
 offred   : true,  // Whether to use new yesterday-is-red criteria for derails
 deadline : 0,     // Time of deadline given as seconds bfr or after midnight
 sadlhole : true,  // Allow the do-less l.hole where you can eke back onto YBR
