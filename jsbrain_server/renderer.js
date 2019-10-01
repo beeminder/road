@@ -66,6 +66,11 @@ class Renderer {
       this.pages.push( pageinfo )
     }
 
+    // Install new loggers onto the page for this render
+    // instance. Will be removed at the end of processing
+    var listeners = page.listeners('console')
+    if (listeners.length != 0)
+      console.log(tag+"renderer.js ERROR: Unremoved console listeners: "+listeners)
     page.on('console', msglog )
     page.on('error', errlog )
     page.on('pageerror', errlog )
@@ -74,6 +79,9 @@ class Renderer {
     try {
       await page.goto(url, gotoOptions)
     } catch (error) {
+      page.removeListener('console', msglog)
+      page.removeListener('error', errlog)
+      page.removeListener('pageeerror', errlog)
       console.log(error)
       pageinfo.busy = false
       return null
@@ -160,8 +168,6 @@ class Renderer {
       time_id = null
 
       if (page) {
-        // Install new loggers onto the page for this render
-        // instance. Will be removed at the end of processing
 
         time_id = tag+` Page render (${slug})`
         console.time(time_id)
