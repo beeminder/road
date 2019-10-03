@@ -238,6 +238,13 @@ def paging(s, direction):
     return
 
 # Display and window management and rendering ------------------------------
+def _addstr(w,y,x,s,a=curses.A_NORMAL):
+  try:
+    w.addstr(y,x,s,a)
+  except curses.error:
+    print("_addstr error: ww:"+str(cm.ww)+",wh:"+str(cm.wh)+",y:"+str(y)+", x:"+str(x)+",str="+s)
+    pass
+
 def resize_windows():
   success = False
   # Try until successful. Sometimes, there are race conditions with
@@ -295,46 +302,46 @@ def refresh_menu():
   w.clear()
   for mi in menu:
     if (x + len(mi[0]) + len(mi[1]) + 2 < cm.ww-2):
-      w.addstr(0,x,mi[0], curses.A_REVERSE)
+      _addstr(w,0,x,mi[0], curses.A_REVERSE)
       w.addch(0,x+len(mi[0]),' ')
       x += len(mi[0])+1
-      w.addstr(0,x, mi[1])
+      _addstr(w,0,x, mi[1])
       x += len(mi[1])
-      w.addstr(0,x+1,"  ")
+      _addstr(w,0,x+1,"  ")
       x += 2
   w.refresh()
 
 def refresh_topline():
   w = cm.twin
   w.clear()
-  if (cm.graph): w.addstr(0,1,"[Graph]", curses.A_REVERSE)
-  else:  w.addstr(0,1,"[Graph]")
+  if (cm.graph): _addstr(w,0,1,"[Graph]", curses.A_REVERSE)
+  else:  _addstr(w,0,1,"[Graph]")
 
-  if (cm.references): w.addstr(0,10,"[References]", curses.A_REVERSE)
-  else:  w.addstr(0,10,"[References]")
+  if (cm.references): _addstr(w,0,10,"[References]", curses.A_REVERSE)
+  else:  _addstr(w,0,10,"[References]")
 
   if (cm.pydir):
-    if (cm.pybrain): w.addstr(0,23,"[PyBrain]", curses.A_REVERSE)
-    else: w.addstr(0,23,"[PyBrain]")
-  else:  w.addstr(0,23,"[PyBrain]", curses.A_DIM)
+    if (cm.pybrain): _addstr(w,0,23,"[PyBrain]", curses.A_REVERSE)
+    else: _addstr(w,0,23,"[PyBrain]")
+  else:  _addstr(w,0,23,"[PyBrain]", curses.A_DIM)
 
-  if (cm.paused): w.addstr(0,34,"[Paused]", curses.A_REVERSE)
-  else:  w.addstr(0,34,"[Paused]")
+  if (cm.paused): _addstr(w,0,34,"[Paused]", curses.A_REVERSE)
+  else:  _addstr(w,0,34,"[Paused]")
 
   w.refresh()
 
 def refresh_status():
   w = cm.swin
   w.clear();w.box()
-  w.addstr(0,1,"Status:", curses.A_BOLD)
+  _addstr(w,0,1,"Status:", curses.A_BOLD)
   w.addnstr(1,1,cm.status,cm.ww-2)
-  w.addstr(0,10,
+  _addstr(w,0,10,
        "(".ljust(int(cm.progress*(cm.ww-14)/100),'o').ljust(cm.ww-14)+")")
   if (cm.total_count != 0):
-    w.addstr(2,cm.ww-29,
+    _addstr(w,2,cm.ww-29,
          " Avg: "+str(int(1000*cm.total_time/cm.total_count))+"ms ",
          curses.A_BOLD)
-    w.addstr(2,cm.ww-15," Last: "+str(int(1000*cm.last_time))+"ms ",
+    _addstr(w,2,cm.ww-15," Last: "+str(int(1000*cm.last_time))+"ms ",
          curses.A_BOLD)
   w.refresh()
 
@@ -343,27 +350,27 @@ def refresh_windows():
   w.clear();w.box();w.vline(1,cm.lw-6,0,cm.lh-2)
   w.addch(0,cm.lw-6,curses.ACS_TTEE)
   w.addch(cm.lh-1,cm.lw-6,curses.ACS_BTEE)
-  w.addstr(0,1,"Errors in:", curses.A_BOLD)
-  w.addstr(0,cm.lw-5,"RJPG", curses.A_BOLD)
+  _addstr(w,0,1,"Errors in:", curses.A_BOLD)
+  _addstr(w,0,cm.lw-5,"RJPG", curses.A_BOLD)
   for i, item in enumerate(cm.problems[cm.ls.top:cm.ls.top + cm.ls.max_lines]):
     # Highlight the current cursor line
     slug = trstr(item.req.slug,cm.lw-9).ljust(cm.lw-7)
-    if i == cm.ls.cur: w.addstr(i+1, 1, slug, curses.A_REVERSE)
-    else: w.addstr(i+1, 1, slug)
+    if i == cm.ls.cur: _addstr(w,i+1, 1, slug, curses.A_REVERSE)
+    else: _addstr(w,i+1, 1, slug)
     if (item.req.reqtype == "jsref"):
-      w.addstr(i+1, cm.lw-5, "X", curses.A_REVERSE)
+      _addstr(w,i+1, cm.lw-5, "X", curses.A_REVERSE)
     elif (item.req.reqtype == "jsbrain"):
-      w.addstr(i+1, cm.lw-4, "X", curses.A_REVERSE)
+      _addstr(w,i+1, cm.lw-4, "X", curses.A_REVERSE)
     elif (item.req.reqtype == "pybrain"):
-      w.addstr(i+1, cm.lw-3, "X", curses.A_REVERSE)
+      _addstr(w,i+1, cm.lw-3, "X", curses.A_REVERSE)
     if (item.grdiff and item.grdiff > 0):
-      w.addstr(i+1, cm.lw-2, "X", curses.A_REVERSE)
+      _addstr(w,i+1, cm.lw-2, "X", curses.A_REVERSE)
       
   w.refresh()
 
   w = cm.rwin
   w.clear(); w.box()
-  if (cm.ls.bottom == 0): w.addstr(0,1,"Goal: not selected", curses.A_BOLD)
+  if (cm.ls.bottom == 0): _addstr(w,0,1,"Goal: not selected", curses.A_BOLD)
   else:
     sel = cm.ls.top+cm.ls.cur
     pr = cm.problems[sel]
@@ -377,7 +384,7 @@ def refresh_windows():
     cm.rs.page = cm.rs.bottom // int(cm.rs.max_lines/2)
     w.addnstr(0,1,"Errors: ("+pr.req.reqtype+", "+pr.req.slug+")", cm.ww-cm.lw-2,curses.A_BOLD)
     for i, item in enumerate(errtxt[cm.rs.top:cm.rs.top+cm.rs.max_lines]):
-      w.addstr(i+1, 1, item)
+      _addstr(w,i+1, 1, item)
     w.vline(1+int((cm.lh-2)*cm.rs.top/((cm.rs.page+1)*(cm.rs.max_lines//2))), cm.ww-cm.lw-2, curses.ACS_BOARD, (cm.lh-2)//(cm.rs.page+1))
   w.refresh()
 
