@@ -81,7 +81,7 @@ class Renderer {
     } catch (error) {
       page.removeListener('console', msglog)
       page.removeListener('error', errlog)
-      page.removeListener('pageeerror', errlog)
+      page.removeListener('pageerror', errlog)
       console.log(error)
       pageinfo.busy = false
       return null
@@ -300,7 +300,7 @@ class Renderer {
         // for reused pages
         page.removeListener('console', msglog)
         page.removeListener('error', errlog)
-        page.removeListener('pageeerror', errlog)
+        page.removeListener('pageerror', errlog)
         pageinfo.busy = false
         pageinfo.timeout
           = setTimeout(
