@@ -241,8 +241,8 @@ self.aok = (rd, g, t, v, l) => self.lanage(rd, g, t, v, l) * g.yaw >= -1.0
 
 /** Pessimistic Presumptive Report (PPR) */
 self.ppr = (rd, g, t) => {
+  if (!g.ppr || g.yaw*g.dir >= 0) return 0
   const r = self.rtf(rd, t) * bu.SID
-  if (g.yaw*g.dir >= 0) return 0
   if (g.yaw*r > 0) return 0
   if (r === 0) return -g.yaw * 2
   return 2*r
@@ -251,25 +251,21 @@ self.ppr = (rd, g, t) => {
 /** Returns the number of days to derail for the current road
     TODO: There are some issues with computing tcur, vcur */
 self.dtd = (rd, goal, t, v) => {
-  //if (goal.offred && self.isLoser(rd, goal, null, t, v)) {
-  //  return 0 // override if offred & red yesterday (cuz do-less loophole)
-  //}
+  //if (self.isLoser(rd, goal, null, t, v)) return 0
 
   var fnw = self.gdelt(rd, goal, t,v) >= 0 ? 0.0 : goal.nw // future noisy width
   var elnf = (x) => (Math.max(goal.lnf(x),fnw)) // effective lane width function
 
-  const SID = 86400 // seconds in day
-  let x = 0 // the number of steps  
+  const SID = 86400 // seconds in day (shorter than "bu.SID")
+  let x = 0 // the number of steps
   let vpess = v // the value as we walk forward w/ PPRs
-  if (goal.yaw*goal.dir < 0 && goal.asof !== goal.tdat) 
-    vpess += 2*self.rtf(rd, t+x*bu.SID)*SID
+  if (goal.asof !== goal.tdat) vpess += self.ppr(rd, goal, t+x*SID) 
   while (self.aok(rd, goal, t+x*SID, vpess, elnf(t+x*SID)) 
          && t+x*SID <= Math.max(goal.tfin, t)) {
     x += 1 // walk forward until we're off the YBR
     vpess += self.ppr(rd, goal, t+x*SID)
   }
   if (goal.noisy && self.gdelt(rd,goal,t,v) >= 0) x = Math.max(2, x)
-  //return goal.yaw*goal.dir < 0 ? x - 1 : x // just kidding; not this
   return x
 }
 
