@@ -39,52 +39,52 @@ if (typeof define === 'function' && define.amd) {
 let gid = 1
 
 const pin = { // In Params: Graph settings and their defaults
-ppr      : true,
-gunits   : 'G.U.',
-offred   : true,  // Whether to use new yesterday-is-red criteria for derails
-deadline : 0,     // Time of deadline given as seconds bfr or after midnight
-sadlhole : true,  // Allow the do-less l.hole where you can eke back onto YBR
-asof     : null,  // Compute everything as if it were this date
-tini     : null,  // (tini,vini) specifies the strt of the YBR, typically but
-vini     : null,  //  not necessarily the same as the initial datapoint
-road     : [],    // List of (endTime,goalVal,rate) triples defining the YBR
-tfin     : null,  // Goal date (unixtime); end of the Yellow Brick Road
-vfin     : null,  // The actual value being targeted; any real value
-rfin     : null,  // Final rate (slope) of the YBR before it hits the goal
-runits   : 'w',   // Rate units for road and rfin; one of "y","m","w","d","h"
-yaw      : 0,     // Which side of the YBR you want to be on, +1 or -1
-dir      : 0,     // Which direction you'll go (usually same as yaw)
-pinkzone : [],    // Region to shade pink, specified like the road matrix
-tmin     : null,  // Earliest date to plot on the x-axis (unixtime):
-tmax     : null,  // ((tmin,tmax), (vmin,vmax)) give the plot range, ie, they
-vmin     : null,  // control zooming/panning; they default to the entire
-vmax     : null,  //   plot -- initial datapoint to past the akrasia horizon
-kyoom    : false, // Cumulative; plot vals as the sum of those entered so far
-odom     : false, // Treat zeros as accidental odom resets
-abslnw   : null,  // Override road width algorithm with a fixed lane width
-maxflux  : 0,     // User-specified max daily fluctuation                      
-noisy    : false, // Compute road width based on data, not just road rate
-integery : false, // Whether vals are necessarily integers (used in limsum)  
-monotone : false, // Whether data is necessarily monotone (used in limsum) 
-aggday   : null,  // sum/last/first/min/max/mean/median/mode/trimmean/jolly
-plotall  : true,  // Plot all the points instead of just the aggregated point
-steppy   : false, // Join dots with purple steppy-style line
-rosy     : false, // Show the rose-colored dots and connecting line
-movingav : false, // Show moving average line superimposed on the data
-aura     : false, // Show blue-green/turquoise aura/swath
-hashtags : true,  // Show annotations on graph for hashtags in datapt comments 
-yaxis    : '',    // Label for the y-axis, eg, "kilograms"
-waterbuf : null,  // Watermark on the good side of the YBR; safebuf if null
-waterbux : '',    // Watermark on the bad side, ie, pledge amount
-hidey    : false, // Whether to hide the y-axis numbers
-stathead : true,  // Whether to include a label with stats at top of graph 
-imgsz    : 760,   // Image size; width in pixels of the graph image        
-yoog     : 'U/G', // Username/graphname, eg, "alice/weight"                
-usr      : null,  // Username (synonym for first half of yoog) ######## DEP
-graph    : null,  // Graph name (synonym for second half of yoog) ##### DEP
-gldt     : null,  // Synonym for tfin ################################# DEP
-goal     : null,  // Synonym for vfin ################################# DEP
-rate     : null,  // Synonym for rfin ################################# DEP
+ppr      : true,   // Whether PPRs are turned on (ignored if not WEEN/RASH)
+deadline : 0,      // Time of deadline given as seconds bfr or after midnight
+sadlhole : true,   // Allow the do-less l.hole where you can eke back onto YBR
+asof     : null,   // Compute everything as if it were this date
+tini     : null,   // (tini,vini) specifies the strt of the YBR, typically but
+vini     : null,   //  not necessarily the same as the initial datapoint
+road     : [],     // List of (endTime,goalVal,rate) triples defining the YBR
+tfin     : null,   // Goal date (unixtime); end of the Yellow Brick Road
+vfin     : null,   // The actual value being targeted; any real value
+rfin     : null,   // Final rate (slope) of the YBR before it hits the goal
+runits   : 'w',    // Rate units for road and rfin; one of "y","m","w","d","h"
+gunits   : 'G.U.', // Goal units like "kg" or "hours"
+yaw      : 0,      // Which side of the YBR you want to be on, +1 or -1
+dir      : 0,      // Which direction you'll go (usually same as yaw)
+pinkzone : [],     // Region to shade pink, specified like the road matrix
+tmin     : null,   // Earliest date to plot on the x-axis (unixtime):
+tmax     : null,   // ((tmin,tmax), (vmin,vmax)) give the plot range, ie, they
+vmin     : null,   // control zooming/panning; they default to the entire
+vmax     : null,   //   plot -- initial datapoint to past the akrasia horizon
+kyoom    : false,  // Cumulative; plot vals as the sum of those entered so far
+odom     : false,  // Treat zeros as accidental odom resets
+abslnw   : null,   // Override road width algorithm with a fixed lane width
+maxflux  : 0,      // User-specified max daily fluctuation                      
+noisy    : false,  // Compute road width based on data, not just road rate
+integery : false,  // Whether vals are necessarily integers (used in limsum)  
+monotone : false,  // Whether data is necessarily monotone (used in limsum) 
+aggday   : null,   // sum/last/first/min/max/mean/median/mode/trimmean/jolly
+plotall  : true,   // Plot all the points instead of just the aggregated point
+steppy   : false,  // Join dots with purple steppy-style line
+rosy     : false,  // Show the rose-colored dots and connecting line
+movingav : false,  // Show moving average line superimposed on the data
+aura     : false,  // Show blue-green/turquoise aura/swath
+hashtags : true,   // Show annotations on graph for hashtags in datapt comments 
+yaxis    : '',     // Label for the y-axis, eg, "kilograms"
+waterbuf : null,   // Watermark on the good side of the YBR; safebuf if null
+waterbux : '',     // Watermark on the bad side, ie, pledge amount
+hidey    : false,  // Whether to hide the y-axis numbers
+stathead : true,   // Whether to include a label with stats at top of graph 
+imgsz    : 760,    // Image size; width in pixels of the graph image        
+yoog     : 'U/G',  // Username/graphname, eg, "alice/weight"                
+usr      : null,   // Username (synonym for first half of yoog) ############ DEP
+graph    : null,   // Graph name (synonym for second half of yoog) ######### DEP
+gldt     : null,   // Synonym for tfin ##################################### DEP
+goal     : null,   // Synonym for vfin ##################################### DEP
+rate     : null,   // Synonym for rfin ##################################### DEP
+offred   : true,   // Yesterday-is-red criteria for derails ################ DEP
 }
 
 const pout = { // Out Params: Beebrain output fields
