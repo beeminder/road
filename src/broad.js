@@ -251,7 +251,7 @@ self.ppr = (rd, g, t) => {
 /** Returns the number of days to derail for the current road
     TODO: There are some issues with computing tcur, vcur */
 self.dtd = (rd, goal, t, v) => {
-  //if (self.isLoser(rd, goal, null, t, v)) return 0
+  if (self.isLoser(rd, goal, null, t, v)) return 0
 
   var fnw = self.gdelt(rd, goal, t,v) >= 0 ? 0.0 : goal.nw // future noisy width
   var elnf = (x) => (Math.max(goal.lnf(x),fnw)) // effective lane width function
