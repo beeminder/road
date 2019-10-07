@@ -2,7 +2,7 @@
 
 # Might need pip3 install watchdog
 import curses, sys, getopt, os, time, requests, subprocess
-import math, threading, queue, textwrap, json
+import math, threading, queue, textwrap, json, filecmp
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -507,8 +507,15 @@ def graph_compare(slug, out, ref ):
   errmsg = ""
   imgout = out+"/"+slug+".png"
   imgref = ref+"/"+slug+".png"
+  svgout = out+"/"+slug+".svg"
+  svgref = ref+"/"+slug+".svg"
   imgdiff = out+"/"+slug+"-diff.png"
   diffcnt = 0
+  try:
+    if (filecmp.cmp(svgref, svgout, shallow=False)):
+      return {'diffcnt': 0, 'imgdiff': imgdiff, 'errmsg': errmsg}
+  except OSError as e:
+    print("Error comparing SVG files: "+str(e.strerror))
   try: 
     try:
       resp = subprocess.check_output(
