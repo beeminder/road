@@ -3,9 +3,10 @@
 # Might need pip3 install watchdog
 import curses, sys, getopt, os, time, requests, subprocess
 import math, threading, queue, textwrap, json, filecmp
+import traceback
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-
+from enum import Enum
 
 ################################################################################
 ######################### CONSTANTS AND CONFIGURATION ##########################
@@ -17,10 +18,39 @@ DISPCMD = next(p for p in ['/usr/bin/open', '/usr/local/bin/display',
 ################################################################################
 ############################### EVERYTYHING ELSE ###############################
 
+class ST(Enum):
+    INIT = 0 # Initializing
+    IDLE = 1 # Waiting for trigger (delay or source change)
+    RSET = 2 # Reset job procesing parameters
+    PROC = 3 # Processing goal list, one at a time
+    JSRF = 4 # Initiate jsref generation
+    PYBR = 5 # Initiate pyref generation
+    JSBR = 6 # Initiate jsbrain generation
+    WAIT = 7 # Wait for processing to finish
+    PAUS = 8 # Processing paused
+    EXIT = 9 # Exiting automon
+
+# Transitions and triggers. ORDERING of the checks is RELEVANT and CRITICAL
+# INIT -> IDLE : Initialization completed
+# IDLE -> PROC : sourcechange OR delaydone OR forcestart
+# PROC -> IDLE : forcestop
+# PROC -> INIT : forcestart OR forcestop OR curgoal == goals
+# PROC -> PAUS : )not above) AND paused
+# PROC -> JSRF : (not above) AND (jsref OR jsbrain_checkref)
+# PROC -> PYBR : (not above) AND pyref
+# PROC -> JSBR : (not above)
+# JSRF -> PYBR : pyref
+# JSBR -> WAIT : (not above)
+# PYBR -> JSBR : NOT jsref AND NOT pyref
+# WAIT -> PROC : jobsdone
+# PAUS -> PROC : NOT paused OR forcestop
+# *    -> EXIT : exitflag
+
 class StdOutWrapper:
   text = ""
   def write(self,txt):
     self.text += txt
+    # Uluc: Why below? Seems to print only the last 30 lines?
     self.text = '\n'.join(self.text.split('\n')[-30:])
   def get_text(self,beg,end):
     return '\n'.join(self.text.split('\n')[beg:end])
@@ -82,20 +112,20 @@ class JSBrainEventHandler(FileSystemEventHandler):
   def __init__(self):
     FileSystemEventHandler.__init__(self)
   def on_modified(self, event):
-    #print(event.event_type)
-    #print(event.src_path)
-    cm.needupdate = True
-  
+    print(event.event_type)
+    print(event.src_path)
+    if (cm.sourcechange < 0): cm.sourcechange = cm.curgoal
+
 # Global structure for common data ----------------- 
 class CMonitor:
   def __init__(self):
     self.sscr = None # Stores stdscr
-    self.ww = 80 # Window width
-    self.wh = 25 # Window height
+    self.ww = 80     # Window width
+    self.wh = 25     # Window height
     self.twin = None # Top window for information
     self.lwin = None # Left window for the goal list
-    self.lw = 0 # Left window width
-    self.lh = 0 # Left window height
+    self.lw = 0      # Left window width
+    self.lh = 0      # Left window height
     self.ls = ScrollData() # Left window scrolling
     self.rwin = None # Right window for the summary of differences
     self.rs = ScrollData() # Right window scrolling
@@ -112,12 +142,21 @@ class CMonitor:
     self.bbdir = None  # Directory for bb files
     self.pydir = None  # Directory for pybrain
     self.graph = False # Whether to generate graphs or not
-    # Current state information
-    self.processing = False # Goal processing in progress
-    self.waiting = False    # Waiting for job to finish
-    self.references = False # Generating reference jsbrain graphs
-    self.pybrain = False    # Generating reference pybrain graphs
+    # Current jobTask state
+    self.state = ST.INIT
+    
+    # Various events and flags for the state machine
+    self.jobsdone = False
+    self.sourcechange = -1
+    self.delaydone = False
+    self.forcestart = True
+    self.forcestop = False
+    self.exitflag = False
+
     self.paused = False     # Processing has paused
+    self.pyref = False    # Generating reference pybrain graphs
+    self.jsref = False # Generating reference jsbrain graphs
+
     self.curgoal = 0
     self.last_update = -1
 
@@ -131,10 +170,10 @@ class CMonitor:
     self.alerted = False    # Alert has been given
 
     # Job task states
-    self.lastreq = -1    # Request ID for the last request
-    self.batchbegin = -1 # First request ID for the current processing batch
+    self.lastreq = -1   # Request ID for the last request
+    self.firstreq = -1  # First request ID for the current processing batch
     
-    self.delay = -1      # Delay between each iteration through goals
+    self.delay = -1     # Delay between each iteration through goals
 
     self.jsref = None  # directory for jsbrain reference files 
     self.jsout = None  # directory for jsbrain output files
@@ -317,11 +356,11 @@ def refresh_topline():
   if (cm.graph): _addstr(w,0,1,"[Graph]", curses.A_REVERSE)
   else:  _addstr(w,0,1,"[Graph]")
 
-  if (cm.references): _addstr(w,0,10,"[References]", curses.A_REVERSE)
+  if (cm.jsref): _addstr(w,0,10,"[References]", curses.A_REVERSE)
   else:  _addstr(w,0,10,"[References]")
 
   if (cm.pydir):
-    if (cm.pybrain): _addstr(w,0,23,"[PyBrain]", curses.A_REVERSE)
+    if (cm.pyref): _addstr(w,0,23,"[PyBrain]", curses.A_REVERSE)
     else: _addstr(w,0,23,"[PyBrain]")
   else:  _addstr(w,0,23,"[PyBrain]", curses.A_DIM)
 
@@ -333,10 +372,18 @@ def refresh_topline():
 def refresh_status():
   w = cm.swin
   w.clear();w.box()
-  _addstr(w,0,1,"Status:", curses.A_BOLD)
+  _addstr(w,0,1,str(cm.state), curses.A_BOLD)
   w.addnstr(1,1,cm.status,cm.ww-2)
-  _addstr(w,0,10,
-       "(".ljust(int(cm.progress*(cm.ww-14)/100),'o').ljust(cm.ww-14)+")")
+  if (cm.sourcechange < 0):
+    _addstr(w,0,10,
+            "(".ljust(int(cm.progress*(cm.ww-14)/100),'o').ljust(cm.ww-14)+")")
+  else:
+    tlen = int(cm.progress*(cm.ww-14)/100)
+    olen = int((100*cm.sourcechange/(len(cm.goals)-1))*(cm.ww-14)/100)
+    _addstr(w,0,10,
+            "(".ljust(olen+1,'o').ljust(cm.ww-14)+")")
+    if (tlen > olen+1):
+      _addstr(w,0,11+olen,"".ljust(tlen-olen-1,'x'))
   if (cm.total_count != 0):
     _addstr(w,2,cm.ww-29,
          " Avg: "+str(int(1000*cm.total_time/cm.total_count))+"ms ",
@@ -389,13 +436,12 @@ def refresh_windows():
   w.refresh()
 
 def refresh_all():
-#    try:
-    refresh_topline()
-    refresh_windows()
-    refresh_status()
-    refresh_menu()
-#    except: pass
+  refresh_topline()
+  refresh_windows()
+  refresh_status()
+  refresh_menu()
     
+# Rescans the bb file directory to get an updated file list
 def update_goallist():
   cm.bbfiles = [f for f in os.listdir(cm.bbdir)
          if (f.endswith(".bb") and os.path.isfile(cm.bbdir+"/"+f))]
@@ -672,7 +718,7 @@ def updateAverage(time):
   cm.total_count += 1
   cm.last_time = time
 def statusTask():
-  if (not cm.processing):
+  if (cm.state == ST.IDLE):
     if (cm.delay > 0): setstatus("Waiting for timer tick...")
     else: setstatus("Waiting for source file changes...")
   # Process pending status messages
@@ -690,11 +736,12 @@ def uiTask():
   c = cm.lwin.getch()
   if c == ord('q'): return True
   elif c == curses.KEY_ENTER or c == 10 or c == 13:
+    # ENTER displays graph diff for the currently selected problem
     if (len(cm.problems) > 0 and cm.graph):
       curpr = cm.problems[cm.ls.top+cm.ls.cur]
       if (curpr.grdiff and curpr.grdiff > 0):
         try:
-          imgdiff=cm.jsout+"/"+curpr.req.slug+"-diff.png"
+          imgdiff=cm.jsoutf+"/"+curpr.req.slug+"-diff.png"
           subprocess.Popen([DISPCMD+' '+imgdiff],
                    shell=True,stdin=None,stdout=None,stderr=None,
                    close_fds=True)
@@ -708,31 +755,20 @@ def uiTask():
       qpending.put(req)
       #jobDispatch(req, req.slug, req.inpath, req,outpath, req.graph)
   elif c == ord('r'):
-    cm.references = True
+    cm.jsref = not cm.jsref
+    cm.forcestart = True
     refresh_topline()
-    restartJobs()
   elif (c == ord('P') and cm.pydir):
-    cm.pybrain = True
+    cm.pyref = True
+    cm.forcestart = True
     refresh_topline()
-    restartJobs()
   elif c == ord('g'):
     cm.graph = not cm.graph
     refresh_topline()
   elif c == ord('s'):
-    if (cm.processing):
-      alertoff()
-      cm.paused = False
-      cm.processing = False
-      cm.waiting = False
-      cm.references = False
-      cm.pybrain = False
-      refresh_topline()
-      cm.last_update = time.time()
-      cm.curgoal = 0
-      while (not qpending.empty()): qpending.get_nowait()
-      setprogress(0)
-    else:
-      restartJobs()
+    if (cm.state == ST.IDLE): cm.forcestart = True
+    else:                     cm.forcestop = True
+      
   elif c == curses.KEY_UP:
     scroll(cm.ls, UP)
     refresh_windows()
@@ -773,21 +809,22 @@ def jobDispatch(req, slug, inpath, outpath, graph):
 
 def restartJobs():
   alertoff()
-  cm.needupdate = True
   cm.paused = False
-  cm.waiting = False
-  cm.processing = False
-  cm.batchbegin = cm.lastreq
+  cm.firstreq = cm.lastreq
+  cm.curgoal = 0
+  update_goallist()
   resetAverage()
   
+# Handles processing of jobs. Has a state machine structure defined above
 def jobTask():
+  
   # Go through job responses and interpret results
   while (not qcompleted.empty()):
     try:
       resp = qcompleted.get_nowait()
       if (resp.errmsg or resp.jsondiff or resp.grdiff):
         add_problem(resp)
-        if (cm.processing and resp.req.reqid > cm.batchbegin): alert()
+        if (cm.state != ST.IDLE and resp.req.reqid > cm.firstreq): alert()
       else:
         remove_problem(resp)
         # If the reference was regenerated, remove jsbrain problems as well
@@ -797,67 +834,118 @@ def jobTask():
           
       refresh_windows()
       
-      cm.waiting = False
-      if (cm.processing):
+      if (resp.req.reqid == cm.lastreq): cm.jobsdone = True
+      if (cm.state != ST.IDLE):
         cm.curgoal += 1
         setprogress(100*cm.curgoal/(len(cm.goals)-1))
     except (queue.Empty): pass
 
-  if (cm.paused or not qpending.empty()):
-    time.sleep(0.1)
-    return
-        
-  # Process goal list if sufficient time has elapsed
-  if (cm.needupdate
-    or (cm.delay>0 and time.time()-cm.last_update>cm.delay and not cm.processing)):
-    refresh_topline()
-    update_goallist()
-    cm.processing = True
-    cm.waiting = False
-    cm.needupdate = False
-    alertoff()
-    cm.curgoal = 0
-    resetAverage()
-        
-  if (cm.processing and not cm.waiting):
-    if (cm.curgoal >= len(cm.goals)):
-      cm.processing = False
-      cm.references = False
-      cm.pybrain = False
-      cm.curgoal = 0
-      cm.last_update = time.time()
-      setprogress(0)
-    else:
-      cm.waiting = True
-      slug = os.path.splitext(cm.goals[cm.curgoal])[0]
-      if (cm.references):
-        req = JobRequest("jsref")
-        req.graph = True # Force reference graphs
-        jobDispatch(req, slug, cm.bbdir, cm.jsref, True)
-        
-      if (cm.pybrain and cm.pydir):
-        req = JobRequest("pybrain")
-        req.pydir = cm.pydir
-        jobDispatch(req, slug, cm.bbdir, cm.pyout, cm.graph)
-      if (not cm.references and not cm.pybrain):
-        if (not jsbrain_checkref(slug, cm.bbdir, cm.jsref)):
-          req = JobRequest("jsbrain")
-          req.outpath = cm.jsout
-          req.graph = cm.graph
-          req.jsref = cm.jsref
-        else:
-          req = JobRequest("jsref")
-          req.outpath = cm.jsref
-          req.graph = True  # Force reference graphs
-        jobDispatch(req, slug, cm.bbdir, req.outpath, req.graph)
+  # Check delay
+  if (cm.delay>0 and time.time()-cm.last_update>cm.delay):
+    cm.delaydone = True
 
+  prevstate = cm.state  
+  # Process state machine transitions and tasks
+  if (cm.state == ST.INIT):
+    alertoff()
+    cm.sourcechange = -1
+    cm.forcestop = False
+    cm.paused = False
+    cm.processing = False
+    cm.waiting = False
+    refresh_topline()
+    cm.last_update = time.time()
+    cm.curgoal = 0
+    while (not qpending.empty()): qpending.get_nowait()
+    setprogress(0)
+    cm.state = ST.IDLE
+    
+  elif (cm.state == ST.IDLE):
+    if (cm.sourcechange >= 0): cm.sourcechange = -1;  cm.state = ST.PROC; restartJobs()
+    if (cm.delaydone):         cm.delaydone = False;  cm.state = ST.PROC; restartJobs()
+    if (cm.forcestart):        cm.forcestart = False; cm.state = ST.PROC; restartJobs()
+      
+  elif (cm.state == ST.PROC):
+    if (cm.forcestop):
+      cm.jsref = False
+      cm.pyref = False
+      cm.state = ST.INIT
+
+    elif (cm.curgoal >= len(cm.goals)):
+      if (cm.sourcechange < 0):
+        cm.jsref = False
+        cm.pyref = False
+      cm.state = ST.INIT
+
+    elif (cm.forcestart):
+      cm.state = ST.INIT
+
+    elif (cm.paused):
+      cm.state = ST.PAUS
+    elif (cm.jsref or jsbrain_checkref(os.path.splitext(cm.goals[cm.curgoal])[0], cm.bbdir, cm.jsreff)):
+      cm.state = ST.JSRF
+    elif (cm.pyref and cm.pydir):
+      cm.state = ST.PYBR
+    else:
+      cm.state = ST.JSBR
+
+    # Sleep longer until all pending jobs are dispatched
+    if (not qpending.empty()):
+      time.sleep(0.02)
+      return
+
+  elif (cm.state == ST.JSRF):
+    slug = os.path.splitext(cm.goals[cm.curgoal])[0]
+    req = JobRequest("jsref")
+    jobDispatch(req, slug, cm.bbdir, cm.jsreff, True)
+    if (cm.pyref): cm.state = ST.PYBR
+    else: cm.state = ST.WAIT
+    
+  elif (cm.state == ST.PYBR):
+    slug = os.path.splitext(cm.goals[cm.curgoal])[0] 
+    req = JobRequest("pybrain")
+    req.pydir = cm.pydir
+    jobDispatch(req, slug, cm.bbdir, cm.pyoutf, cm.graph)
+    if (not cm.jsref): cm.state = ST.JSBR
+    else: cm.state = ST.WAIT
+
+  elif (cm.state == ST.JSBR):
+    slug = os.path.splitext(cm.goals[cm.curgoal])[0]
+    req = JobRequest("jsbrain")
+    req.jsref = cm.jsreff
+    jobDispatch(req, slug, cm.bbdir, cm.jsoutf, cm.graph)
+    cm.state = ST.WAIT
+
+  elif (cm.state == ST.WAIT):
+    cm.last_update = time.time()
+    if (cm.jobsdone):
+      cm.jobsdone = False
+      cm.state = ST.PROC
+
+  elif (cm.state == ST.PAUS):
+    if (not cm.paused or cm.forcestop):
+      cm.state = ST.PROC
+    else:
+      # Sleep longer if paused
+      time.sleep(0.1)
+      return
+
+  elif (cm.state == ST.EXIT):
+    print(ST.EXIT)
+
+  else:
+    exitonerr("Invalid state :"+str(cm.state), false)
+    
+  if (prevstate != cm.state): refresh_status()
+  
 # Entry point for the monitoring loop ------------------------------
 def monitor(stdscr, bbdir, pydir, graph, force, delay, watchdir):
+  # Precompute various input and output path strings
   cm.bbdir = os.path.abspath(bbdir)
   if (pydir): cm.pydir = os.path.abspath(pydir)
-  cm.jsref = os.path.abspath(cm.bbdir+"/jsref")
-  cm.jsout = os.path.abspath(cm.bbdir+"/jsout")
-  cm.pyout = os.path.abspath(cm.bbdir+"/pyout")
+  cm.jsreff = os.path.abspath(cm.bbdir+"/jsref")
+  cm.jsoutf = os.path.abspath(cm.bbdir+"/jsout")
+  cm.pyoutf = os.path.abspath(cm.bbdir+"/pyout")
 
   cm.graph = graph
   cm.delay = delay
@@ -876,8 +964,8 @@ def monitor(stdscr, bbdir, pydir, graph, force, delay, watchdir):
   
   update_goallist()
   restartJobs()
-  cm.references = force
-  cm.pybrain = force and cm.pydir     # Generating reference pybrain graphs
+  cm.jsref = force
+  cm.pyref = force and cm.pydir     # Generating reference pybrain graphs
   refresh_all()
       
   # Initialize and start worker thread
@@ -898,16 +986,19 @@ def monitor(stdscr, bbdir, pydir, graph, force, delay, watchdir):
       jobTask()
       displayTask()
       alertTask()
-      
       time.sleep(0.01)
+
   except Exception as e:
-    print(e)
+    traceback.print_exc()
     print("\n")
     pass
   worker_stop()
   worker_thread.join()
   curses.curs_set(True)
 
+#  Main entry point for automon. Parses command line arguments, sets
+#  appropriate fields and flags and invokes the curses wrapper with
+#  the function monitor()
 def main( argv ):
   try:
     opts, args = getopt.getopt(argv,"hp:gfd:w:",["pydir=","graph","force","delay=","watch="])
