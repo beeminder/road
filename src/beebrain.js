@@ -201,8 +201,8 @@ const beebrain = function( bbin ) {
   derails = [],    // Derailments
   hollow = [],     // Hollow points
   allvals = {},    // Dictionary holding values for each timestamp
-  aggvals = {},    // Dictionary holding aggregated value for each timestamp
-  worstval = {},   // Map timestamp to min/max (depending on yaw) value that day
+  aggval = {},     // Dictionary holding aggregated value for each timestamp
+  derailval = {},  // Map timestamp to value as of RECOMMIT datapoint that day
   hashhash = {},   // Maps timestamp to sets of hashtags to display on the graph
   hashtags = []    // Array of timestamp string pairs for hashtag lists
    
@@ -272,8 +272,8 @@ const beebrain = function( bbin ) {
     flad = null
     fuda = []
     allvals = {}
-    aggvals = {}
-    worstval = {}
+    aggval = {}
+    derailval = {}
     
     goal = {}
     goal.nw = 0
@@ -415,7 +415,7 @@ const beebrain = function( bbin ) {
     }
   }
 
-  // Take string like "shark jumping #yolo :) #sharks", return {"#yolo", "#sharks"}
+  // Take string like "shark jumping #yolo :) #sharks", return {"#yolo", "#shark"}
   var hre = /(?:^|\s)(#[a-zA-Z]\w+)(?=$|\s)/g
   function hashextract(s){
     var set = new Set(), m
@@ -423,6 +423,29 @@ const beebrain = function( bbin ) {
     while ( (m = hre.exec(s)) != null )
       if (m[1] != "") set.add(m[1])
     return set
+  }
+
+  // Whether datapoint comment string s has the magic string indicating it's a
+  // a recommit datapoint, ie, when a derailment happened.
+  function recommitted(s) { return s.startsWith("RECOMMITTED") }
+
+  // Extract values from datapoints
+  function dval(d) { return d[0] }
+
+  // Compute [informative comment,originalv(or null)] for aggregated points
+  function aggpt(vl, v) { // v is the aggregated value
+    if (vl.length == 1) return [vl[0][1], vl[0][2]]
+    else {
+      var ind
+      // Check if aggregated value is one of the explicit points for today
+      if (goal.kyoom && goal.aggday === "sum") 
+        ind = bu.accumulate(vl.map(dval)).indexOf(v)
+      else ind = vl.map(dval).indexOf(v)
+      // If not, aggregated point stands alone
+      if (ind < 0) return [goal.aggday, null]
+      // If found, append (aggday) to comment and record original value
+      else return [vl[ind][1]+" ("+goal.aggday+")", vl[ind][2]]
+    }
   }
 
   /** Process goal data<br/>
@@ -469,15 +492,13 @@ const beebrain = function( bbin ) {
     }
   
     // Identify derailments and construct a copied array
-    derails = data.filter(e=>(e[2].startsWith("RECOMMITTED")))
+    derails = data.filter(e=>recommitted(e[2]))
     derails = derails.map(e=>e.slice())
     // CHANGEDATE is the day that we switched to recommitting goals 
     // yesterday instead of the day after the derail.
     for (i = 0; i < derails.length; i++) {
-      var CHANGEDATE = 1562299200; //2019-07-05
-      if (derails[i][0] < CHANGEDATE ) {
-        derails[i][0] = derails[i][0]-bu.SID;
-      }
+      const CHANGEDATE = 1562299200 // 2019-07-05
+      if (derails[i][0] < CHANGEDATE) derails[i][0] = derails[i][0]-bu.SID
     }
       
     // Identify, record and process odometer reset for odom goals
@@ -489,35 +510,18 @@ const beebrain = function( bbin ) {
     var nonfuda = data.filter(e=>(e[0]<=goal.asof))
     if (goal.plotall) goal.numpts = nonfuda.length
     
-    aggvals = {}
     allvals = {}
+    aggval = {}
+  
     // Aggregate datapoints and handle kyoom
     // HACK: aggday=skatesum requires knowledge of rfin
     br.rfin = goal.rfin
     var newpts = []
-    var ct = data[0][0], // Current time
-        vl = []  // Value list: All values [val, cmt, originalv] for current time ct
+    var ct = data[0][0] // Current time
+    var vl = []  // Value list: All values [val, cmt, originalv] for time ct
           
-    var pre = 0, // Current cumulative sum
-        prevpt
-
-    // Helper fn: Extract values from vl
-    var dval = (d=>d[0])
-    // Helper fn: Compute [informative comment,originalv(or null)] for aggregated points
-    var aggpt = function(vl, v) { // v is the aggregated value
-      if (vl.length == 1) return [vl[0][1], vl[0][2]]
-      else {
-        var ind
-        // Check if aggregated value is one of the explicit points for today
-        if (goal.kyoom && goal.aggday === "sum") 
-          ind = bu.accumulate(vl.map(dval)).indexOf(v)
-        else ind = vl.map(dval).indexOf(v)
-        // If not, aggregated point stands alone
-        if (ind < 0) return [goal.aggday, null]
-        // If found, append (aggday) to comment and record original value
-        else return [vl[ind][1]+" ("+goal.aggday+")", vl[ind][2]]
-      }
-    }
+    var pre = 0 // Current cumulative sum
+    var prevpt
 
     // Process all datapoints
     for (i = 0; i <= data.length; i++) {
@@ -526,14 +530,14 @@ const beebrain = function( bbin ) {
         vl.push([data[i][1],data[i][2],data[i][4]])
       }
       
-      if ( (i >= data.length) || data[i][0] != ct) {
+      if (i >= data.length || data[i][0] != ct) {
         // Done recording all data for today
-        let vlv = vl.map(dval)             // Extract all values for today
-        let ad = br.AGGR[goal.aggday](vlv) // Compute aggregated value
+        let vlv  = vl.map(dval)             // Extract all values for today
+        let ad  = br.AGGR[goal.aggday](vlv) // Compute aggregated value
         // Find previous point to record its info in the aggregated pt.
         if (newpts.length > 0) prevpt = newpts[newpts.length-1]
         else prevpt = [ct, ad+pre]
-        //pre remains 0 for non-kyoom
+        // pre remains 0 for non-kyoom
         let ptinf = aggpt(vl, ad)
         // Create new datapoint
         newpts.push([ct, pre+ad, ptinf[0], // This is the processed datapoint
@@ -541,20 +545,21 @@ const beebrain = function( bbin ) {
                      prevpt[0], prevpt[1], // This is the previous point
                      ptinf[1]])            // v(original)
           
-        // Update allvals and aggvals associative arrays
+        // Update allvals and aggval associative arrays
         // allvals[timestamp] has entries [vtotal, comment, vorig]
         if (goal.kyoom) {
           if (goal.aggday === "sum") {
             allvals[ct] = bu.accumulate(vlv).map((e,j)=>([e+pre, vl[j][1], vl[j][2]]))
           } else allvals[ct] = vl.map(e=>([e[0]+pre, e[1], e[2]]))
-          aggvals[ct] = pre+ad
+          aggval[ct] = pre+ad
           pre += ad
         } else {
           allvals[ct] = vl
-          aggvals[ct] = ad
+          aggval[ct] = ad
         }
-        let vw = allvals[ct].map(e=>e[0])
-        worstval[ct] = (goal.yaw<0)?bu.arrMax(vw):bu.arrMin(vw)
+        const vw = allvals[ct].map(e => e[0])
+
+        derailval[ct] = goal.yaw < 0 ? bu.arrMax(vw) : bu.arrMin(vw) // TODO
         
         if (i < data.length) {
           ct = data[i][0]
@@ -592,13 +597,12 @@ const beebrain = function( bbin ) {
     
     // Adjust derailment markers to indicate worst value for that day
     for (i = 0; i < derails.length; i++) {
-      var CHANGEDATE = 1562299200; //2019-07-05 // TODO: DRY
-      if (derails[i][0] < CHANGEDATE ) {
-        ct = derails[i][0]+bu.SID;
-      } else {
-        ct = derails[i][0];
-      }
-      if (worstval.hasOwnProperty(ct)) derails[i][1] = worstval[ct]
+      var CHANGEDATE = 1562299200 // 2019-07-05 // TODO: DRY
+      if (derails[i][0] < CHANGEDATE) ct = derails[i][0]+bu.SID
+      else                            ct = derails[i][0]
+      if (derailval.hasOwnProperty(ct)) 
+        //derails[i][1] = derailval[ct]
+        derails[i][1] = aggval[ct]  // TODO issue #59
     }
     
     // Extract computed points that are different than any entered
@@ -732,7 +736,7 @@ const beebrain = function( bbin ) {
         if (x == data[i][0]) return
       }
     }
-    if (!aggvals.hasOwnProperty(x)) {
+    if (!aggval.hasOwnProperty(x)) {
       var prevpt = data[numpts-1]
       flad = [x, vlast, "PPR", DPTYPE.FLATLINE, prevpt[0], prevpt[1], null]
       data.push(flad)
@@ -750,7 +754,7 @@ const beebrain = function( bbin ) {
     }
     if (goal.vmin != null && goal.vmax != null) {
       // both provided explicitly
-      if  (goal.vmin == goal.vmax) {
+      if (goal.vmin == goal.vmax) {
         goal.vmin -= 1; goal.vmax += 1    // scooch away from each other
       } else if (goal.vmin >  goal.vmax) {
         let tmp = goal.vmin
