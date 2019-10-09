@@ -848,7 +848,6 @@ def jobTask():
   # Process state machine transitions and tasks
   if (cm.state == ST.INIT):
     alertoff()
-    cm.sourcechange = -1
     cm.forcestop = False
     cm.paused = False
     cm.processing = False
