@@ -227,7 +227,7 @@
     "{ text-anchor: middle; font-family: sans-serif; } " +
     ".waterbuf, .waterbux " +
     //"{ shape-rendering: crispEdges; " +
-    "{ text-anchor: middle; " +
+    "{ text-anchor: middle; " + 
     "font-family: Dejavu Sans,sans-serif; }.loading " +
     "{ text-anchor: middle; font-family: Dejavu Sans,sans-serif; } " +
     ".zoomarea { fill: none; } " +
