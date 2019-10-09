@@ -874,6 +874,7 @@ def jobTask():
       if (cm.sourcechange < 0):
         cm.jsref = False
         cm.pyref = False
+        ahhhh()
       cm.state = ST.INIT
 
     elif (cm.forcestart):
