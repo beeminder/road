@@ -596,7 +596,7 @@ const beebrain = function( bbin ) {
     if (data.length > 1)
       goal.meandelt = bu.mean(bu.partition(gfdv,2,1).map(e => (e[1] - e[0])))
     
-    // tstamp of last ent. datapoint pre-flatline
+    // time of last entered datapoint pre-flatline (so ignoring future data)
     goal.tdat = data[data.length-1][0]
     
     // Adjust derailment markers to indicate worst value for that day

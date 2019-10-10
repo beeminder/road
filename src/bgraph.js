@@ -3843,12 +3843,9 @@
         // *** Plot flatlined datapoint ***
         var fladelt = gFlat.selectAll(".fladp");
         if (bbr.flad != null) {
-          var flady = bbr.flad[1]
-          var fop = 1.0
-          if (goal.yaw*goal.dir < 0 && goal.asof !== goal.tdat) {
-            flady += br.ppr(road, goal, goal.asof)
-            fop = 0.5
-          }
+          const ppr = br.ppr(road, goal, goal.asof)
+          const flady = bbr.flad[1] + ppr
+          const fop = ppr == 0 ? 1.0 : 0.5 // ghosty iff there's a PPR
           if (fladelt.empty()) {
             gFlat.append("svg:use")
 		          .attr("class","fladp").attr("xlink:href", "#rightarrow")
