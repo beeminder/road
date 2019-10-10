@@ -1509,7 +1509,12 @@
       extent.xMax = bu.arrMax(nd.map((d)=>d[0]));
       extent.yMin = bu.arrMin(nd.map((d)=>d[1]));
       extent.yMax = bu.arrMax(nd.map((d)=>d[1]));
-
+      
+      // If the PPR is in range for do-less goals, extend the data range
+      if (bbr.flad != null && goal.yaw*goal.dir < 0 && goal.asof !== goal.tdat) {
+        if (bbr.flad[0] <= xmax && bbr.flad[0] >= xmin)
+          extent.yMax += br.ppr(road, goal, goal.asof)
+      }
       // Extend limits by 5% so everything is visible
       var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
       if (extend) enlargeExtent(extent, p);
