@@ -1513,8 +1513,8 @@
       // If the PPR is in range for do-less goals, extend the data range
       if (bbr.flad != null && bbr.flad[0] <= xmax && bbr.flad[0] >= xmin) {
         var pprv = br.ppr(road, goal, goal.asof)
-        if (pprv > 0) extent.yMax += pprv
-        else extent.yMin -= pprv
+        if (pprv > 0 && bbr.flad[1]+pprv > extent.yMax) extent.yMax += pprv
+        else if (pprv < 0 && bbr.flad[1]+pprv < extent.yMin) extent.yMin -= pprv
       }
       // Extend limits by 5% so everything is visible
       var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};

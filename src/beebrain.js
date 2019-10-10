@@ -776,8 +776,8 @@ const beebrain = function( bbin ) {
     // If the PPR is in range for do-less goals, extend the data range
     if (flad != null && flad[0] <= goal.tmax && flad[0] >= goal.tmin) {
       var pprv = br.ppr(roads, goal, goal.asof)
-      if (pprv > 0) maxd += pprv
-      else mind -= pprv
+      if (pprv > 0 && flad[1]+pprv > maxd) maxd += pprv
+      else if (pprv < 0 && flad[1]+pprv < mind) mind -= pprv
     }
     var padding = Math.max(goal.lnw/3, (maxd-mind)*PRAF*2),
         minmin = mind - padding,
