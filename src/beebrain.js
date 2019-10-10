@@ -772,8 +772,15 @@ const beebrain = function( bbin ) {
         b = br.rdf(roads, goal.tmax),
         d0 = data.filter(e=>(e[0] <= goal.tmax && e[0] >= goal.tmin)).map(e=>e[1]),
         mind = bu.arrMin(d0),
-        maxd = bu.arrMax(d0),
-        padding = Math.max(goal.lnw/3, (maxd-mind)*PRAF*2),
+        maxd = bu.arrMax(d0);
+    // If the PPR is in range for do-less goals, extend the data range
+    if (flad != null && goal.yaw*goal.dir < 0 && goal.asof !== goal.tdat) {
+      if (flad[0] <= goal.tmax && flad[0] >= goal.tmin)
+        var pprv = br.ppr(roads, goal, goal.asof)
+      if (pprv > 0) maxd += pprv
+      else mind -= pprv
+    }
+    var padding = Math.max(goal.lnw/3, (maxd-mind)*PRAF*2),
         minmin = mind - padding,
         maxmax = maxd + padding
     if (goal.monotone && goal.dir>0) {        // Monotone up so no extra padding
