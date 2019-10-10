@@ -1511,9 +1511,8 @@
       extent.yMax = bu.arrMax(nd.map((d)=>d[1]));
       
       // If the PPR is in range for do-less goals, extend the data range
-      if (bbr.flad != null && goal.yaw*goal.dir < 0 && goal.asof !== goal.tdat) {
-        if (bbr.flad[0] <= xmax && bbr.flad[0] >= xmin)
-          var pprv = br.ppr(road, goal, goal.asof)
+      if (bbr.flad != null && bbr.flad[0] <= xmax && bbr.flad[0] >= xmin) {
+        var pprv = br.ppr(road, goal, goal.asof)
         if (pprv > 0) extent.yMax += pprv
         else extent.yMin -= pprv
       }
