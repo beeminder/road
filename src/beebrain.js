@@ -39,6 +39,7 @@ if (typeof define === 'function' && define.amd) {
 let gid = 1
 
 const pin = { // In Params: Graph settings and their defaults
+ybhp     : false,  // Yellow Brick Half-Plane!
 ppr      : true,   // Whether PPRs are turned on (ignored if not WEEN/RASH)
 deadline : 0,      // Time of deadline given as seconds bfr or after midnight
 sadlhole : true,   // Allow the do-less l.hole where you can eke back onto YBR
@@ -179,15 +180,15 @@ const PRAF  = .015    // Fraction of plot range that the axes extend beyond
 */
 const beebrain = function( bbin ) {
   //console.debug("beebrain constructor ("+gid+"): ");
-  var self = this,
-      curid = gid
+  let self = this
+  let curid = gid
   gid++
   
   // Make a new copy of the input to prevent overwriting
   bbin = bu.extend({}, bbin)
     
   // Private variables holding goal, road, and datapoint info
-  var 
+  let 
   roads = [],
 
   goal = {},       // Holds loaded goal parameters
@@ -429,23 +430,23 @@ const beebrain = function( bbin ) {
   // a recommit datapoint, ie, when a derailment happened.
   function recommitted(s) { return s.startsWith("RECOMMITTED") }
 
-  // Extract values from datapoints
+  // Convenience function to extract values from datapoints
   function dval(d) { return d[0] }
 
-  // Compute [informative comment,originalv(or null)] for aggregated points
+  // Compute [informative comment, originalv (or null)] for aggregated points
   function aggpt(vl, v) { // v is the aggregated value
-    if (vl.length == 1) return [vl[0][1], vl[0][2]]
+    const kyoomy = goal.kyoom && goal.aggday === "sum"
+    if (vl.length === 1) return [vl[0][1], vl[0][2]]
     else {
-      var ind
-      // Check if aggregated value is one of the explicit points for today
-      if (goal.kyoom && goal.aggday === "sum") 
-        ind = bu.accumulate(vl.map(dval)).indexOf(v)
-      else ind = vl.map(dval).indexOf(v)
-      // If not, aggregated point stands alone
-      if (ind < 0) return [goal.aggday, null]
-      // If found, append (aggday) to comment and record original value
-      else return [vl[ind][1]+" ("+goal.aggday+")", vl[ind][2]]
-    }
+      let i
+      // check if agg'd value is also an explicit datapoint for today
+      if (kyoomy) i = bu.accumulate(vl.map(dval)).indexOf(v)
+      else        i = vl.map(dval).indexOf(v)
+      // if not, aggregated point stands alone
+      if (i < 0) return [goal.aggday, null]
+      // if found, append (aggday) to comment and record original value
+      else return [vl[i][1]+" ("+goal.aggday+")", vl[i][2]]
+    } // first change; second change
   }
 
   /** Process goal data<br/>
@@ -559,6 +560,9 @@ const beebrain = function( bbin ) {
         }
         const vw = allvals[ct].map(e => e[0])
 
+        // What we actually want for derailval is not this "worstval" but the 
+        // agg'd value up to and including the recommit datapoint (see the
+        // recommitted() function) and nothing after that:
         derailval[ct] = goal.yaw < 0 ? bu.arrMax(vw) : bu.arrMin(vw) // TODO
         
         if (i < data.length) {
@@ -601,8 +605,8 @@ const beebrain = function( bbin ) {
       if (derails[i][0] < CHANGEDATE) ct = derails[i][0]+bu.SID
       else                            ct = derails[i][0]
       if (derailval.hasOwnProperty(ct)) 
-        //derails[i][1] = derailval[ct]
-        derails[i][1] = aggval[ct]  // TODO issue #59
+        //derails[i][1] = derailval[ct] // see TODO above...
+        derails[i][1] = aggval[ct]  // doing this until derailval's done right
     }
     
     // Extract computed points that are different than any entered
