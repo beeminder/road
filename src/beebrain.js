@@ -519,7 +519,7 @@ const beebrain = function( bbin ) {
     br.rfin = goal.rfin
     var newpts = []
     var ct = data[0][0] // Current time
-    var vl = []  // Value list: All values [val, cmt, originalv] for time ct
+    var vl = []  // Value list: All values [val, cmt, originalv] for time ct 
           
     var pre = 0 // Current cumulative sum
     var prevpt

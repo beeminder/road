@@ -107,9 +107,10 @@ class JSBrainEventHandler(FileSystemEventHandler):
   def __init__(self):
     FileSystemEventHandler.__init__(self)
   def on_modified(self, event):
-    print(event.event_type)
-    print(event.src_path)
-    if (cm.sourcechange < 0): cm.sourcechange = cm.curgoal
+    #print(event.event_type)
+    #print(event.src_path)
+    # Record where source change was detected so bb file list can be reordered
+    cm.sourcechange = cm.curgoal
 
 # Global structure for common data ----------------- 
 class CMonitor:
@@ -170,8 +171,6 @@ class CMonitor:
 
     self.jsref = None  # directory for jsbrain reference files 
     self.jsout = None  # directory for jsbrain output files
-
-    self.bbfiles = None  # List of bb files to be processed
     
 cm = CMonitor()
 
@@ -179,10 +178,11 @@ cm = CMonitor()
 # Menu details
 menu = [
   ['c', 'reCheck'],
+  ['r', 'reRef'],
   ['s', 'Stop/Start'],
   ['p', 'Pause/Resume'],
-  ['R', 'References'],
   ['g', 'Graph on/off'],
+  ['R', 'AllRefs'],
   ['q', 'Quit']
 ]
 UP = -1   # Scroll-up increment
@@ -359,16 +359,8 @@ def refresh_status():
   w.clear();w.box()
   _addstr(w,0,1,str(cm.state), curses.A_BOLD)
   w.addnstr(1,1,cm.status,cm.ww-2)
-  if (cm.sourcechange < 0):
-    _addstr(w,0,10,
-            "(".ljust(int(cm.progress*(cm.ww-14)/100),'o').ljust(cm.ww-14)+")")
-  else:
-    tlen = int(cm.progress*(cm.ww-14)/100)
-    olen = int((100*cm.sourcechange/(len(cm.goals)-1))*(cm.ww-14)/100)
-    _addstr(w,0,10,
-            "(".ljust(olen+1,'o').ljust(cm.ww-14)+")")
-    if (tlen > olen+1):
-      _addstr(w,0,11+olen,"".ljust(tlen-olen-1,'x'))
+  _addstr(w,0,10,
+          "(".ljust(int(cm.progress*(cm.ww-14)/100),'o').ljust(cm.ww-14)+")")
   if (cm.total_count != 0):
     _addstr(w,2,cm.ww-29,
          " Avg: "+str(int(1000*cm.total_time/cm.total_count))+"ms ",
@@ -426,9 +418,9 @@ def refresh_all():
     
 # Rescans the bb file directory to get an updated file list
 def update_goallist():
-  cm.bbfiles = [f for f in os.listdir(cm.bbdir)
+  bbfiles = [f for f in os.listdir(cm.bbdir)
          if (f.endswith(".bb") and os.path.isfile(cm.bbdir+"/"+f))]
-  cm.goals = [os.path.splitext(b)[0] for b in cm.bbfiles]
+  cm.goals = [os.path.splitext(b)[0] for b in bbfiles]
   cm.ls.bottom = len(cm.problems)
   
 # JSBRAIN related functions ------------------------------
@@ -764,8 +756,6 @@ def jobTask():
     alertoff()
     cm.forcestop = False
     cm.paused = False
-    cm.processing = False
-    cm.waiting = False
     refresh_topline()
     cm.last_update = time.time()
     cm.curgoal = 0
@@ -780,24 +770,34 @@ def jobTask():
       
   elif (cm.state == ST.PROC):
     if (cm.forcestop):
-      cm.jsref = False
-      cm.state = ST.INIT
-
-    elif (cm.curgoal >= len(cm.goals)):
-      if (cm.sourcechange < 0):
         cm.jsref = False
-        ahhhh()
-      cm.state = ST.INIT
+        cm.state = ST.INIT
+
+    elif (cm.sourcechange >=0 and cm.sourcechange < len(cm.goals)):
+        # Source change detected, rearrange the bb file list and
+        # continue processing without refreshing the goal list
+        newlist = cm.goals[cm.sourcechange:-1]
+        newlist.extend(cm.goals[0:cm.sourcechange])
+        cm.goals = newlist
+        cm.sourcechange = -1
+        cm.curgoal = 0
+        setprogress(0)
+        
+    elif (cm.curgoal >= len(cm.goals)):
+        if (cm.sourcechange < 0):
+            cm.jsref = False
+            ahhhh()
+            cm.state = ST.INIT
 
     elif (cm.forcestart):
       cm.state = ST.INIT
 
     elif (cm.paused):
-      cm.state = ST.PAUS
+        cm.state = ST.PAUS
     elif (cm.jsref or jsbrain_checkref(os.path.splitext(cm.goals[cm.curgoal])[0], cm.bbdir, cm.jsreff)):
-      cm.state = ST.JSRF
+        cm.state = ST.JSRF
     else:
-      cm.state = ST.JSBR
+        cm.state = ST.JSBR
 
     # Sleep longer until all pending jobs are dispatched
     if (not qpending.empty()):
