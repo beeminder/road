@@ -789,7 +789,7 @@ def jobTask():
     elif (cm.sourcechange >=0 and cm.sourcechange < len(cm.goals)):
         # Source change detected, rearrange the bb file list and
         # continue processing without refreshing the goal list
-        newlist = cm.goals[cm.sourcechange:-1]
+        newlist = cm.goals[cm.sourcechange:None]
         newlist.extend(cm.goals[0:cm.sourcechange])
         cm.goals = newlist
         cm.sourcechange = -1
