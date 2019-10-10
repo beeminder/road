@@ -24,11 +24,10 @@ class ST(Enum):
     RSET = 2 # Reset job procesing parameters
     PROC = 3 # Processing goal list, one at a time
     JSRF = 4 # Initiate jsref generation
-    PYBR = 5 # Initiate pyref generation
-    JSBR = 6 # Initiate jsbrain generation
-    WAIT = 7 # Wait for processing to finish
-    PAUS = 8 # Processing paused
-    EXIT = 9 # Exiting automon
+    JSBR = 5 # Initiate jsbrain generation
+    WAIT = 6 # Wait for processing to finish
+    PAUS = 7 # Processing paused
+    EXIT = 8 # Exiting automon
 
 # Transitions and triggers. ORDERING of the checks is RELEVANT and CRITICAL
 # INIT -> IDLE : Initialization completed
@@ -37,11 +36,8 @@ class ST(Enum):
 # PROC -> INIT : forcestart OR forcestop OR curgoal == goals
 # PROC -> PAUS : )not above) AND paused
 # PROC -> JSRF : (not above) AND (jsref OR jsbrain_checkref)
-# PROC -> PYBR : (not above) AND pyref
 # PROC -> JSBR : (not above)
-# JSRF -> PYBR : pyref
 # JSBR -> WAIT : (not above)
-# PYBR -> JSBR : NOT jsref AND NOT pyref
 # WAIT -> PROC : jobsdone
 # PAUS -> PROC : NOT paused OR forcestop
 # *    -> EXIT : exitflag
@@ -95,7 +91,6 @@ class JobRequest:
     self.inpath = ""
     self.outpath = ""
     self.graph = False
-    self.pydir = ""
     self.jsref = ""
     
 class JobResponse:
@@ -140,7 +135,6 @@ class CMonitor:
     self.needupdate = False
     
     self.bbdir = None  # Directory for bb files
-    self.pydir = None  # Directory for pybrain
     self.graph = False # Whether to generate graphs or not
     # Current jobTask state
     self.state = ST.INIT
@@ -154,7 +148,6 @@ class CMonitor:
     self.exitflag = False
 
     self.paused = False     # Processing has paused
-    self.pyref = False    # Generating reference pybrain graphs
     self.jsref = False # Generating reference jsbrain graphs
 
     self.curgoal = 0
@@ -177,7 +170,6 @@ class CMonitor:
 
     self.jsref = None  # directory for jsbrain reference files 
     self.jsout = None  # directory for jsbrain output files
-    self.pyout = None  # directory for pybrain oyutput files
 
     self.bbfiles = None  # List of bb files to be processed
     
@@ -189,9 +181,8 @@ menu = [
   ['c', 'reCheck'],
   ['s', 'Stop/Start'],
   ['p', 'Pause/Resume'],
-  ['r', 'References'],
+  ['R', 'References'],
   ['g', 'Graph on/off'],
-  ['P', 'PyBrain'],
   ['q', 'Quit']
 ]
 UP = -1   # Scroll-up increment
@@ -204,7 +195,6 @@ LWW = 40 # Width of left window
 def exitonerr( err, usage=True ):
   usage = ''' Usage: automon.py <options> bbdir
  Supported options are:
-  -p or --pydir : Enable comparison with pybrain outputs
   -g or --graph : Enable graph comparisons
   -f or --force : Force regeneration of reference outputs
   -d or --delay : Delay (in seconds) between loop iterations
@@ -359,13 +349,8 @@ def refresh_topline():
   if (cm.jsref): _addstr(w,0,10,"[References]", curses.A_REVERSE)
   else:  _addstr(w,0,10,"[References]")
 
-  if (cm.pydir):
-    if (cm.pyref): _addstr(w,0,23,"[PyBrain]", curses.A_REVERSE)
-    else: _addstr(w,0,23,"[PyBrain]")
-  else:  _addstr(w,0,23,"[PyBrain]", curses.A_DIM)
-
-  if (cm.paused): _addstr(w,0,34,"[Paused]", curses.A_REVERSE)
-  else:  _addstr(w,0,34,"[Paused]")
+  if (cm.paused): _addstr(w,0,23,"[Paused]", curses.A_REVERSE)
+  else:  _addstr(w,0,23,"[Paused]")
 
   w.refresh()
 
@@ -408,8 +393,6 @@ def refresh_windows():
       _addstr(w,i+1, cm.lw-5, "X", curses.A_REVERSE)
     elif (item.req.reqtype == "jsbrain"):
       _addstr(w,i+1, cm.lw-4, "X", curses.A_REVERSE)
-    elif (item.req.reqtype == "pybrain"):
-      _addstr(w,i+1, cm.lw-3, "X", curses.A_REVERSE)
     if (item.grdiff and item.grdiff > 0):
       _addstr(w,i+1, cm.lw-2, "X", curses.A_REVERSE)
       
@@ -490,65 +473,8 @@ def jsbrain_make(slug, inpath, outpath, graph ):
     errmsg = "Could not connect to jsbrain_server."
   return {'dt': time.time() - starttm, 'errmsg': errmsg}
 
-# PYBRAIN related functions ------------------------------
 
-# Checks timestamps of generated files wrt the pybrain reference
-# files, returns True if the BB file is more recent
-def pybrain_checkref( slug, inpath, refpath ):
-  inpath = os.path.abspath(inpath)+"/"
-  refpath = os.path.abspath(refpath)+"/"
-  bb = inpath+slug+".bb"
-  json = refpath+slug+".json"
-  img = refpath+slug+".png"
-  thm = refpath+slug+"-thumb.png"
-  if (not os.path.isfile(json) or not os.path.isfile(img) or not os.path.isfile(thm)):
-    return True
-  bbtime = os.stat(bb).st_mtime
-  jsontime = os.stat(json).st_mtime
-  imgtime = os.stat(img).st_mtime
-  thmtime = os.stat(thm).st_mtime
-  if (bbtime > jsontime or bbtime > imgtime or bbtime > thmtime): return True
-  return False
-
-# Invokes pybrain on the indiated slug from inpath, placing outputs in
-# outpath, generating graphs if requested
-def pybrain_make(pydir, slug, inpath, outpath, graph ):
-  errmsg = ""
-  starttm = time.time();
-  result = -1
-  abort = False
-  cwd = os.getcwd()
-  json = slug+".json"
-  img = slug+".png"
-  thm = slug+"-thumb.png"
-  os.chdir(pydir)
-  try:
-    try:
-      resp = subprocess.check_output(['./beebrain.py', inpath+"/"+slug+".bb"],
-                       stderr=subprocess.STDOUT)
-      #print(resp.decode('utf-8'))
-    except KeyboardInterrupt:
-      abort = True
-    except subprocess.CalledProcessError as err:
-      errmsg = "pybrain failed with exit code: "+str(err.returncode)+" and output:\n"
-      errmsg += err.output.decode('utf-8')
-      return 
-
-    if (not os.path.isfile(inpath+"/"+json) or \
-      not os.path.isfile(inpath+"/"+img) or \
-      not os.path.isfile(inpath+"/"+thm)):
-      errmsg = "pybrain failed to generate one or more output files."
-      return
-    os.rename(inpath+"/"+json, outpath+"/"+json)
-    os.rename(inpath+"/"+img, outpath+"/"+img)
-    os.rename(inpath+"/"+thm, outpath+"/"+thm)
-  finally:
-    if (abort): raise KeyboardInterrupt
-    os.chdir(cwd)
-    return {'dt': time.time() - starttm, 'errmsg': errmsg}
-
-# Invokes pybrain on the indicated slug from inpath, placing outputs in
-# outpath, generating graphs if requested
+# Compares the output graph to a reference for the supplied slug
 def graph_compare(slug, out, ref ):
   errmsg = ""
   imgout = out+"/"+slug+".png"
@@ -654,14 +580,6 @@ def worker(pending, completed):
         resp.errmsg = retval['errmsg']
         setstatus(reqstr+": Generating jsbrain reference for "+job.slug+"...done!")
         updateAverage(resp.dt)
-      elif (job.reqtype == "pybrain"):
-        setstatus(reqstr+": Running pybrain for "+job.slug+"...")
-        resp = JobResponse(job)
-        retval = pybrain_make(cm.pydir, job.slug, job.inpath, job.outpath, job.graph)
-        resp.dt = retval['dt']
-        resp.errmsg = retval['errmsg']
-        setstatus(reqstr+": Running pybrain for "+job.slug+"...done!")
-        updateAverage(resp.dt)
 
       # Inform the main thread about the result
       qcompleted.put(resp)
@@ -754,12 +672,8 @@ def uiTask():
       req = cm.problems[cm.ls.top+cm.ls.cur].req
       qpending.put(req)
       #jobDispatch(req, req.slug, req.inpath, req,outpath, req.graph)
-  elif c == ord('r'):
+  elif c == ord('R'):
     cm.jsref = not cm.jsref
-    cm.forcestart = True
-    refresh_topline()
-  elif (c == ord('P') and cm.pydir):
-    cm.pyref = True
     cm.forcestart = True
     refresh_topline()
   elif c == ord('g'):
@@ -867,13 +781,11 @@ def jobTask():
   elif (cm.state == ST.PROC):
     if (cm.forcestop):
       cm.jsref = False
-      cm.pyref = False
       cm.state = ST.INIT
 
     elif (cm.curgoal >= len(cm.goals)):
       if (cm.sourcechange < 0):
         cm.jsref = False
-        cm.pyref = False
         ahhhh()
       cm.state = ST.INIT
 
@@ -884,8 +796,6 @@ def jobTask():
       cm.state = ST.PAUS
     elif (cm.jsref or jsbrain_checkref(os.path.splitext(cm.goals[cm.curgoal])[0], cm.bbdir, cm.jsreff)):
       cm.state = ST.JSRF
-    elif (cm.pyref and cm.pydir):
-      cm.state = ST.PYBR
     else:
       cm.state = ST.JSBR
 
@@ -898,17 +808,8 @@ def jobTask():
     slug = os.path.splitext(cm.goals[cm.curgoal])[0]
     req = JobRequest("jsref")
     jobDispatch(req, slug, cm.bbdir, cm.jsreff, True)
-    if (cm.pyref): cm.state = ST.PYBR
-    else: cm.state = ST.WAIT
+    cm.state = ST.WAIT
     
-  elif (cm.state == ST.PYBR):
-    slug = os.path.splitext(cm.goals[cm.curgoal])[0] 
-    req = JobRequest("pybrain")
-    req.pydir = cm.pydir
-    jobDispatch(req, slug, cm.bbdir, cm.pyoutf, cm.graph)
-    if (not cm.jsref): cm.state = ST.JSBR
-    else: cm.state = ST.WAIT
-
   elif (cm.state == ST.JSBR):
     slug = os.path.splitext(cm.goals[cm.curgoal])[0]
     req = JobRequest("jsbrain")
@@ -939,13 +840,11 @@ def jobTask():
   if (prevstate != cm.state): refresh_status()
   
 # Entry point for the monitoring loop ------------------------------
-def monitor(stdscr, bbdir, pydir, graph, force, delay, watchdir):
+def monitor(stdscr, bbdir, graph, force, delay, watchdir):
   # Precompute various input and output path strings
   cm.bbdir = os.path.abspath(bbdir)
-  if (pydir): cm.pydir = os.path.abspath(pydir)
   cm.jsreff = os.path.abspath(cm.bbdir+"/jsref")
   cm.jsoutf = os.path.abspath(cm.bbdir+"/jsout")
-  cm.pyoutf = os.path.abspath(cm.bbdir+"/pyout")
 
   cm.graph = graph
   cm.delay = delay
@@ -965,7 +864,6 @@ def monitor(stdscr, bbdir, pydir, graph, force, delay, watchdir):
   update_goallist()
   restartJobs()
   cm.jsref = force
-  cm.pyref = force and cm.pydir     # Generating reference pybrain graphs
   refresh_all()
       
   # Initialize and start worker thread
@@ -1001,14 +899,13 @@ def monitor(stdscr, bbdir, pydir, graph, force, delay, watchdir):
 #  the function monitor()
 def main( argv ):
   try:
-    opts, args = getopt.getopt(argv,"hp:gfd:w:",["pydir=","graph","force","delay=","watch="])
+    opts, args = getopt.getopt(argv,"hgfd:w:",["graph","force","delay=","watch="])
   except getopt.GetoptError as err: exitonerr(str(err))
   
   if (len(args) != 1):
     if (len(args) == 0):  exitonerr("Missing bbdir. ")
     elif (len(args) > 1): exitonerr("Extra arguments.")
     
-  pydir = None
   graph = False
   force = False
   delay = -1
@@ -1017,14 +914,6 @@ def main( argv ):
   
   for opt, arg in opts:
     if opt == '-h': exitonerr("")
-    elif opt in ("-p", "--pydir"):
-      if (not arg): exitonerr('option -p requires argument')
-      arg = arg.rstrip("/")
-      if (not os.path.isdir(arg)): exitonerr(arg+' is not a directory')
-      if (not os.path.isfile(arg+"/beebrain.py")
-        or not os.access(arg+"/beebrain.py", os.X_OK)):
-        exitonerr(arg+' does not contain beebrain.py executable')
-      pydir = arg
     elif opt in ("-g", "--graph"): graph = True
     elif opt in ("-f", "--force"): force = True
     elif opt in ("-d", "--delay"): delay = math.ceil(int(arg))
@@ -1043,7 +932,7 @@ def main( argv ):
     exitonerr("Options -w and -d should not be used together")
   if (len(watchdir) == 0): delay = 10
   
-  curses.wrapper(monitor, bbdir, pydir, graph, force, delay, watchdir)
+  curses.wrapper(monitor, bbdir, graph, force, delay, watchdir)
 
 # Make sure we only execute main in the top level environment
 if __name__ == "__main__":
