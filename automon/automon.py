@@ -449,12 +449,12 @@ def jsbrain_checkref( slug, inpath, refpath ):
 
 # Invokes jsbrain on the indiated slug from inpath, placing outputs in
 # outpath, generating graphs if requested
-def jsbrain_make(slug, inpath, outpath, graph ):
+def jsbrain_make(job):
   errmsg = ""
   starttm = time.time();
   try:
-    payload = {"slug": slug, "inpath" : inpath, "outpath": outpath}
-    if (not graph): payload["nograph"] = "1"
+    payload = {"slug": job.slug, "inpath" : job.inpath, "outpath": job.outpath}
+    if (not job.graph): payload["nograph"] = "1"
     resp = requests.get("http://localhost:8777/", payload)
     rj = resp.json()
     if (rj['error']):
@@ -509,10 +509,10 @@ def graph_compare(slug, out, ref ):
   finally:
     return {'diffcnt': diffcnt, 'imgdiff': imgdiff, 'errmsg': errmsg}
 
-def json_compare( slug, out, ref, graph ):
+def json_compare( job ):
   txt = ""
-  with open(out+"/"+slug+".json", 'r') as myfile: jsonout=json.loads(myfile.read())
-  with open(ref+"/"+slug+".json", 'r') as myfile: jsonref=json.loads(myfile.read())
+  with open(job.outpath+"/"+job.slug+".json", 'r') as myfile: jsonout=json.loads(myfile.read())
+  with open(job.jsref+"/"+job.slug+".json", 'r') as myfile: jsonref=json.loads(myfile.read())
   for prop in jsonref:
     if (prop == "proctm" or prop == "thumburl" or prop == "graphurl"  or prop == "svgurl"):
       del jsonout[prop]
@@ -546,28 +546,32 @@ def worker(pending, completed):
       elif (job.reqtype == "jsbrain"):
         setstatus(reqstr+": Running jsbrain for "+job.slug+"...")
         resp = JobResponse(job)
-        retval = jsbrain_make(job.slug, job.inpath, job.outpath, job.graph)
+        retval = jsbrain_make(job)
         resp.dt = retval['dt']
         resp.errmsg = retval['errmsg']
-        # Compare json output to the reference
-        resp.jsondiff = json_compare(job.slug,job.outpath,job.jsref,job.graph)
+        # Check if the reference is stale, in which case no comparisons should be done
+        if (jsbrain_checkref(job.slug, cm.bbdir, cm.jsreff)):
+            resp.errmsg = "Stale reference, no comparisons are performed"
+        else:
+            # Compare json output to the reference
+            resp.jsondiff = json_compare(job)
 
-        # If enabled, compare generated graph to the reference
-        if (cm.graph):
-          setstatus(reqstr+": Comparing graphs for "+job.slug+"...")
-          gres = graph_compare(job.slug, job.outpath, job.jsref )
-          if (gres['errmsg']):
-            resp.errmsg += "\nError comparing graphs:\n"
-            resp.errmsg += gres['errmsg']
-          elif (gres['diffcnt'] > 0):
-            resp.grdiff = gres['diffcnt']
-            resp.errmsg += "Graphs differ by "+str(resp.grdiff)+" pixels."
+            # If enabled, compare generated graph to the reference
+            if (cm.graph):
+                setstatus(reqstr+": Comparing graphs for "+job.slug+"...")
+                gres = graph_compare(job.slug, job.outpath, job.jsref )
+                if (gres['errmsg']):
+                    resp.errmsg += "\nError comparing graphs:\n"
+                    resp.errmsg += gres['errmsg']
+                elif (gres['diffcnt'] > 0):
+                    resp.grdiff = gres['diffcnt']
+                    resp.errmsg += "Graphs differ by "+str(resp.grdiff)+" pixels."
         setstatus(reqstr+": Comparison for "+job.slug+" finished!")
         updateAverage(resp.dt)
       elif (job.reqtype == "jsref"):
         setstatus(reqstr+": Generating jsbrain reference for "+job.slug+"...")
         resp = JobResponse(job)
-        retval = jsbrain_make(job.slug, job.inpath, job.outpath, job.graph)
+        retval = jsbrain_make(job)
         resp.dt = retval['dt']
         resp.errmsg = retval['errmsg']
         setstatus(reqstr+": Generating jsbrain reference for "+job.slug+"...done!")
@@ -663,7 +667,16 @@ def uiTask():
     if (len(cm.problems) > 0):
       req = cm.problems[cm.ls.top+cm.ls.cur].req
       qpending.put(req)
-      #jobDispatch(req, req.slug, req.inpath, req,outpath, req.graph)
+  elif c == ord('r'):
+    if (len(cm.problems) > 0):
+      req = cm.problems[cm.ls.top+cm.ls.cur].req
+      newreq = JobRequest("jsref")
+      newreq.slug = req.slug
+      newreq.inpath = req.inpath
+      newreq.outpath = cm.jsreff
+      newreq.graph = True
+      qpending.put(newreq)
+      qpending.put(req)
   elif c == ord('R'):
     cm.jsref = not cm.jsref
     cm.forcestart = True
@@ -786,7 +799,7 @@ def jobTask():
     elif (cm.curgoal >= len(cm.goals)):
         if (cm.sourcechange < 0):
             cm.jsref = False
-            ahhhh()
+            if (len(cm.problems) == 0): ahhhh()
             cm.state = ST.INIT
 
     elif (cm.forcestart):
@@ -794,7 +807,7 @@ def jobTask():
 
     elif (cm.paused):
         cm.state = ST.PAUS
-    elif (cm.jsref or jsbrain_checkref(os.path.splitext(cm.goals[cm.curgoal])[0], cm.bbdir, cm.jsreff)):
+    elif (cm.jsref):
         cm.state = ST.JSRF
     else:
         cm.state = ST.JSBR
