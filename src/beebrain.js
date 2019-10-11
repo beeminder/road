@@ -770,14 +770,15 @@ const beebrain = function( bbin ) {
     var PRAF = 0.015,
         a = br.rdf(roads, goal.tmin),
         b = br.rdf(roads, goal.tmax),
-        d0 = data.filter(e=>(e[0] <= goal.tmax && e[0] >= goal.tmin)).map(e=>e[1]),
+        d0 = data.filter(e=>(e[0] <= goal.tmax && e[0] >= goal.tmin))
+                 .map(e=>e[1]),
         mind = bu.arrMin(d0),
-        maxd = bu.arrMax(d0);
-    // If the PPR is in range for do-less goals, extend the data range
+        maxd = bu.arrMax(d0)
+    // Make room for the ghosty PPR datapoint
     if (flad != null && flad[0] <= goal.tmax && flad[0] >= goal.tmin) {
-      var pprv = br.ppr(roads, goal, goal.asof)
-      if (pprv > 0 && flad[1]+pprv > maxd) maxd += pprv
-      else if (pprv < 0 && flad[1]+pprv < mind) mind -= pprv
+      const pprv = flad[1] + br.ppr(roads, goal, goal.asof)
+      mind = Math.min(mind, pprv) // Make room for the 
+      maxd = Math.max(maxd, pprv) // ghosty PPR datapoint.
     }
     var padding = Math.max(goal.lnw/3, (maxd-mind)*PRAF*2),
         minmin = mind - padding,
