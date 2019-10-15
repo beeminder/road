@@ -549,23 +549,23 @@ def worker(pending, completed):
         retval = jsbrain_make(job)
         resp.dt = retval['dt']
         resp.errmsg = retval['errmsg']
-        # Check if the reference is stale, in which case no comparisons should be done
+        # Check if reference is stale; refuse to compare if so
         if (jsbrain_checkref(job.slug, cm.bbdir, cm.jsreff)):
-            resp.errmsg = "Stale reference, no comparisons are performed"
+          resp.errmsg = "Stale reference, NO COMPARISON FOR YOU"
         else:
-            # Compare json output to the reference
-            resp.jsondiff = json_compare(job)
-
-            # If enabled, compare generated graph to the reference
-            if (cm.graph):
-                setstatus(reqstr+": Comparing graphs for "+job.slug+"...")
-                gres = graph_compare(job.slug, job.outpath, job.jsref )
-                if (gres['errmsg']):
-                    resp.errmsg += "\nError comparing graphs:\n"
-                    resp.errmsg += gres['errmsg']
-                elif (gres['diffcnt'] > 0):
-                    resp.grdiff = gres['diffcnt']
-                    resp.errmsg += "Graphs differ by "+str(resp.grdiff)+" pixels."
+          # Compare json output to the reference
+          resp.jsondiff = json_compare(job)
+          
+          # If enabled, compare generated graph to the reference
+          if (cm.graph):
+            setstatus(reqstr+": Comparing graphs for "+job.slug+"...")
+            gres = graph_compare(job.slug, job.outpath, job.jsref )
+            if (gres['errmsg']):
+              resp.errmsg += "\nError comparing graphs:\n"
+              resp.errmsg += gres['errmsg']
+            elif (gres['diffcnt'] > 0):
+              resp.grdiff = gres['diffcnt']
+              resp.errmsg += "Graphs differ by "+str(resp.grdiff)+" pixels."
         setstatus(reqstr+": Comparison for "+job.slug+" finished!")
         updateAverage(resp.dt)
       elif (job.reqtype == "jsref"):
