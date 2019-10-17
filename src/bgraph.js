@@ -3061,19 +3061,7 @@
       }
     }
 
-    // Creates or updates the unedited road
-    function updateOldRoad() {
-      if (opts.divGraph == null || road.length == 0) return;
-      // Find road segments intersecting current x-axis range
-      var l = [nXSc.invert(0).getTime()/1000, 
-               nXSc.invert(plotbox.width).getTime()/1000];
-      var rdfilt = function(r) {
-        return ((r.sta[0] > l[0] && r.sta[0] < l[1])
-                || (r.end[0] > l[0] && r.end[0] < l[1]));
-      };
-      var ir = iroad.filter(rdfilt);
-      if (ir.length == 0) ir = [iroad[br.findSeg(iroad, l[0])]];
-
+    function updateCenterline( ir ) {
       // **** Construct the centerline path element ****
       // fx,fy: Start of the current line segment
       // ex,ey: End of the current line segment
@@ -3112,8 +3100,147 @@
   		    .style("stroke-width",svgshn(opts.oldRoadLine.width*scf,3));
       }
 
-      // **** Construct the guideline path element ****
-      // Construct and filter a trimmed road matrix iroad2 for the guidelines
+    }
+    
+    function updateLanes(ir) {
+      
+      var laneelt = gOldRoad.select(".oldlanes");
+      if (opts.roadEditor || ir == null) {
+        laneelt.remove();
+        return
+      }      
+
+      var minpx = 3*scf; // Minimum visual width for YBR
+      var thin = Math.abs(nYSc.invert(minpx)-nYSc.invert(0));
+      var lw = (goal.lnw == 0)?thin:goal.lnw;
+      if (Math.abs(nYSc(lw)-nYSc(0)) < minpx) lw=thin;
+
+      var fx, fy, ex, ey, d, i
+      fx = nXSc(ir[0].sta[0]*1000); fy = nYSc(ir[0].sta[1]+lw);
+      ex = nXSc(ir[0].end[0]*1000); ey = nYSc(ir[0].end[1]+lw);
+        
+      // Go forward to draw the top side of YBR
+      d = "M"+svgshn(fx)+" "+svgshn(fy);
+      for (i = 0; i < ir.length; i++) {
+        ex = nXSc(ir[i].end[0]*1000);
+        ey = nYSc(ir[i].end[1]+lw);
+        if (ex > plotbox.width) {
+          fx = nXSc(ir[i].sta[0]*1000); fy = nYSc(ir[i].sta[1]+lw);
+          ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx)); ex = plotbox.width;
+        }
+        d += " L"+svgshn(ex)+" "+svgshn(ey);
+      }
+      // Go down and backward for the bottom side of the YBR
+      ey += (nYSc(0) - nYSc(2*lw));
+      d += " L"+svgshn(ex)+" "+svgshn(ey);
+      for (i = ir.length-1; i >= 0; i--) {
+        fx = nXSc(ir[i].sta[0]*1000); fy = nYSc(ir[i].sta[1]-lw);
+        if (fx < 0) {
+          ex = nXSc(ir[i].end[0]*1000); ey = nYSc(ir[i].end[1]-lw);
+          fy = (fy + (0-fx)*(ey-fy)/(ex-fx)); fx = 0;          
+        }
+        d += " L"+svgshn(fx)+" "+svgshn(fy);
+      }
+      d += " Z";
+      // **** Draw the YBR ****
+      if (laneelt.empty()) {
+        gOldRoad.append("svg:path")
+          .attr("class","oldlanes")
+  		    .attr("pointer-events", "none")
+  		  //.attr("shape-rendering", "crispEdges")
+	  	    .attr("d", d)
+  		    .style("fill", bu.Cols.DYEL)
+  		    .style("fill-opacity", 0.5)
+  		    .style("stroke", "none");
+      } else {
+        laneelt.attr("d", d);
+      }
+    }
+
+    function updateGuidelines( ir ) {
+      
+      var guideelt = gOldGuides.selectAll(".oldguides");
+      if (opts.roadEditor || ir == null) {
+        guideelt.remove();
+        return
+      }      
+
+      // fx,fy: Start of the current segment
+      // ex,ey: End of the current segment
+      var d, i
+      var fx = nXSc(ir[0].sta[0]*1000), fy = nYSc(ir[0].sta[1]);
+      var ex = nXSc(ir[0].end[0]*1000), ey = nYSc(ir[0].end[1]);
+
+      var rd2 = "M"+svgshn(fx)+" "+svgshn(fy);
+      for (i = 0; i < ir.length; i++) {
+        ex = nXSc(ir[i].end[0]*1000); ey = nYSc(ir[i].end[1]);
+        if (ex > plotbox.width) {
+          fx = nXSc(ir[i].sta[0]*1000); fy = nYSc(ir[i].sta[1]);
+          if (ex != fx) 
+            ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx));
+          ex = plotbox.width;          
+        }
+        rd2 += " L"+svgshn(ex)+" "+svgshn(ey);
+      }
+      
+      // **** Update guidelines ****
+      var yrange = [nYSc.invert(plotbox.height), nYSc.invert(0)];
+      var delta = 1, oneshift, yr = Math.abs(yrange[1] - yrange[0]);
+      var bc = goal.maxflux?[goal.yaw*goal.maxflux,0]:br.bufcap(road, goal)
+      bc[0] = nYSc(bc[0])-nYSc(0)
+      if (goal.lnw > 0 && yr / goal.lnw <= 32) delta = goal.lnw
+      else if (goal.lnw > 0 && yr / (6*goal.lnw) <= 32) {
+        delta = 6* goal.lnw
+      } else {
+        delta = yr / 32
+      }
+      oneshift = goal.yaw * delta
+      var numlines = Math.floor(Math.abs((yrange[1] - yrange[0])/oneshift))
+
+      // Create a dummy array as d3 data for guidelines
+      var arr = new Array(Math.ceil(numlines)).fill(0);
+      // Add a final data entry for the thick guideline
+      arr.push(-1)
+      var shift = nYSc(ir[0].sta[1]+oneshift) - nYSc(ir[0].sta[1]);
+      guideelt = guideelt.data(arr);
+      guideelt.exit().remove();
+      guideelt.enter().append("svg:path")
+        .attr("class","oldguides")
+	  	  .attr("d", rd2)
+  		//.attr("shape-rendering", "crispEdges")
+	  	  .attr("transform", (d,i) => ("translate(0,"+((d<0)?bc[0]:((i+1)*shift))+")"))
+  		  .attr("pointer-events", "none")
+  		  .style("fill", "none")
+  		  .attr("stroke-width",
+              (d,i) => (svgshn((d<0)?opts.guidelines.weekwidth*scf
+                               :opts.guidelines.width*scf,3)))
+  		  .attr("stroke",(d,i) => ((d<0)?bu.Cols.BIGG:bu.Cols.LYEL));
+      guideelt.attr("d", rd2)
+        .attr("transform", function(d,i) { 
+          return "translate(0,"+((d<0)?bc[0]:((i+1)*shift))+")";})
+  		  .attr("stroke-width", (d,i)=>(svgshn((d<0)?opts.guidelines.weekwidth*scf
+                                             :opts.guidelines.width*scf,3)))
+  		  .attr("stroke",  (d,i) =>((d<0)?bu.Cols.BIGG:bu.Cols.LYEL));
+
+    }
+    
+    // Creates or updates the unedited road
+    function updateOldRoad() {
+      if (opts.divGraph == null || road.length == 0) return;
+      // Find road segments intersecting current x-axis range
+      var l = [nXSc.invert(0).getTime()/1000, 
+               nXSc.invert(plotbox.width).getTime()/1000];
+      var rdfilt = function(r) {
+        return ((r.sta[0] > l[0] && r.sta[0] < l[1])
+                || (r.end[0] > l[0] && r.end[0] < l[1]));
+      };
+      var ir = iroad.filter(rdfilt);
+      if (ir.length == 0) ir = [iroad[br.findSeg(iroad, l[0])]];
+
+      updateCenterline( ir )
+      
+      // Construct and filter a trimmed road matrix iroad2 for the YBR
+      // and guidelines
       var iroad2 = iroad.slice(1,-1), ind;
       var ir2 = iroad2.filter(rdfilt);
       if (ir2.length == 0) {
@@ -3123,118 +3250,9 @@
         if (seg < 0) ir2 = null;
         else ir2 = [iroad2[seg]];
       }
-      // If no guideline was found to be in the visible range, skip guidelines
-      if (ir2 != null) {
-        // fx2,fy2: Start of the current segment
-        // ex2,ey2: End of the current segment
-        var fx2 = nXSc(ir2[0].sta[0]*1000), fy2 = nYSc(ir2[0].sta[1]);
-        var ex2 = nXSc(ir2[0].end[0]*1000), ey2 = nYSc(ir2[0].end[1]);
 
-        var rd2 = "M"+svgshn(fx2)+" "+svgshn(fy2);
-        for (i = 0; i < ir2.length; i++) {
-          ex2 = nXSc(ir2[i].end[0]*1000); ey2 = nYSc(ir2[i].end[1]);
-          if (ex2 > plotbox.width) {
-            fx2 = nXSc(ir2[i].sta[0]*1000); fy2 = nYSc(ir2[i].sta[1]);
-            if (ex2 != fx2) 
-              ey2 = (fy2 + (plotbox.width-fx2)*(ey2-fy2)/(ex2-fx2));
-            ex2 = plotbox.width;          
-          }
-          rd2 += " L"+svgshn(ex2)+" "+svgshn(ey2);
-        }
-      }
-
-      // YBR and guidelines are only drawn when the editor is disabled
-      var laneelt = gOldRoad.select(".oldlanes");
-      var guideelt = gOldGuides.selectAll(".oldguides");
-      if (!opts.roadEditor && ir2 != null) {
-
-        var minpx = 3*scf; // Minimum visual width for YBR
-        var thin = Math.abs(nYSc.invert(minpx)-nYSc.invert(0));
-        var lw = (goal.lnw == 0)?thin:goal.lnw;
-        if (Math.abs(nYSc(lw)-nYSc(0)) < minpx) lw=thin;
-
-        fx = nXSc(ir2[0].sta[0]*1000); fy = nYSc(ir2[0].sta[1]+lw);
-        ex = nXSc(ir2[0].end[0]*1000); ey = nYSc(ir2[0].end[1]+lw);
-        
-        // Go forward to draw the top side of YBR
-        d = "M"+svgshn(fx)+" "+svgshn(fy);
-        for (i = 0; i < ir2.length; i++) {
-          ex = nXSc(ir2[i].end[0]*1000);
-          ey = nYSc(ir2[i].end[1]+lw);
-          if (ex > plotbox.width) {
-            fx = nXSc(ir2[i].sta[0]*1000); fy = nYSc(ir2[i].sta[1]+lw);
-            ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx)); ex = plotbox.width;
-          }
-          d += " L"+svgshn(ex)+" "+svgshn(ey);
-        }
-        // Go down and backward for the bottom side of the YBR
-        ey += (nYSc(0) - nYSc(2*lw));
-        d += " L"+svgshn(ex)+" "+svgshn(ey);
-        for (i = ir2.length-1; i >= 0; i--) {
-          fx = nXSc(ir2[i].sta[0]*1000); fy = nYSc(ir2[i].sta[1]-lw);
-          if (fx < 0) {
-            ex = nXSc(ir2[i].end[0]*1000); ey = nYSc(ir2[i].end[1]-lw);
-            fy = (fy + (0-fx)*(ey-fy)/(ex-fx)); fx = 0;          
-          }
-          d += " L"+svgshn(fx)+" "+svgshn(fy);
-        }
-        d += " Z";
-        // **** Draw the YBR ****
-        if (laneelt.empty()) {
-          gOldRoad.append("svg:path")
-            .attr("class","oldlanes")
-  		      .attr("pointer-events", "none")
-  		      //.attr("shape-rendering", "crispEdges")
-	  	      .attr("d", d)
-  		      .style("fill", bu.Cols.DYEL)
-  		      .style("fill-opacity", 0.5)
-  		      .style("stroke", "none");
-        } else {
-          laneelt.attr("d", d);
-        }
-
-        // **** Update guidelines ****
-        var yrange = [nYSc.invert(plotbox.height), nYSc.invert(0)];
-        var delta = 1, oneshift, yr = Math.abs(yrange[1] - yrange[0]);
-        var bc = goal.maxflux?[goal.yaw*goal.maxflux,0]:br.bufcap(road, goal)
-        bc[0] = nYSc(bc[0])-nYSc(0)
-        if (goal.lnw > 0 && yr / goal.lnw <= 32) delta = goal.lnw
-        else if (goal.lnw > 0 && yr / (6*goal.lnw) <= 32) {
-          delta = 6* goal.lnw
-        } else {
-          delta = yr / 32
-        }
-        oneshift = goal.yaw * delta
-        var numlines = Math.floor(Math.abs((yrange[1] - yrange[0])/oneshift))
-
-        // Create a dummy array as d3 data for guidelines
-        var arr = new Array(Math.ceil(numlines)).fill(0);
-        // Add a final data entry for the thick guideline
-        arr.push(-1)
-        var shift = nYSc(ir2[0].sta[1]+oneshift) - nYSc(ir2[0].sta[1]);
-        guideelt = guideelt.data(arr);
-        guideelt.exit().remove();
-        guideelt.enter().append("svg:path")
-          .attr("class","oldguides")
-	  	    .attr("d", rd2)
-  		    //.attr("shape-rendering", "crispEdges")
-	  	    .attr("transform", (d,i) => ("translate(0,"+((d<0)?bc[0]:((i+1)*shift))+")"))
-  		    .attr("pointer-events", "none")
-  		    .style("fill", "none")
-  		    .attr("stroke-width",
-                (d,i) => (svgshn((d<0)?opts.guidelines.weekwidth*scf
-                                 :opts.guidelines.width*scf,3)))
-  		    .attr("stroke",(d,i) => ((d<0)?bu.Cols.BIGG:bu.Cols.LYEL));
-        guideelt.attr("d", rd2)
-          .attr("transform", function(d,i) { 
-            return "translate(0,"+((d<0)?bc[0]:((i+1)*shift))+")";})
-  		    .attr("stroke-width", (d,i)=>(svgshn((d<0)?opts.guidelines.weekwidth*scf
-                                               :opts.guidelines.width*scf,3)))
-  		    .attr("stroke",  (d,i) =>((d<0)?bu.Cols.BIGG:bu.Cols.LYEL));
-      } else {
-        laneelt.remove();
-        guideelt.remove();
-      }
+      updateLanes( ir2 )
+      updateGuidelines( ir2 )
     }
 
     function updateContextOldRoad() {
