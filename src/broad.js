@@ -68,6 +68,13 @@ self.AGGR = {
   cap1     : (x) => Math.min(1, bu.sum(x)), // for zedmango
 }
 
+/*
+For aggdays that pick one datapoint value (first, last, min, max), allvals should be the raw values (plus the previous day's aggval if kyoomy). For aggday=sum, you want to see the incremental sums. For exotic aggdays... it's super non-obvious what's best...
+
+One tiny improvement we could make to the current code though: for aggday=sum, we want allvals to use the incremental sums regardless of whether the goal is kyoomy.
+*/
+
+
 /** Enum object to identify field types for road segments. 
     @enum {number} */
 self.RP = { DATE:0, VALUE:1, SLOPE:2 }
@@ -253,9 +260,9 @@ self.ppr = (rd, g, t) => {
   if (t <= g.asof && (!g.ppr || g.tdat === g.asof)) return 0
   // Otherwise it's (a) for the future or (b) for today and PPRs are turned on
   // and there's no datapoint added for today, so go ahead and compute it...
-  const r = self.rtf(rd, t) * bu.SID
-  if (g.yaw*r > 0) return 0 // don't let it be an OPR (optimistic presumptive)
-  if (r === 0) return -g.yaw * 2 // absolute PPR of 2 gunits if flat slope
+  const r = self.rtf(rd, t) * bu.SID  // twice the current daily rate of the YBR
+  if (r === 0) return -g.yaw * 2       // absolute PPR of 2 gunits if flat slope
+  if (g.yaw*r > 0) return 0   // don't let it be an OPR (optimistic presumptive)
   return 2*r
 }
 

@@ -51,7 +51,7 @@ tfin     : null,   // Goal date (unixtime); end of the Yellow Brick Road
 vfin     : null,   // The actual value being targeted; any real value
 rfin     : null,   // Final rate (slope) of the YBR before it hits the goal
 runits   : 'w',    // Rate units for road and rfin; one of "y","m","w","d","h"
-gunits   : 'G.U.', // Goal units like "kg" or "hours"
+gunits   : 'units',// Goal units like "kg" or "hours"
 yaw      : 0,      // Which side of the YBR you want to be on, +1 or -1
 dir      : 0,      // Which direction you'll go (usually same as yaw)
 pinkzone : [],     // Region to shade pink, specified like the road matrix
@@ -770,14 +770,15 @@ const beebrain = function( bbin ) {
     var PRAF = 0.015,
         a = br.rdf(roads, goal.tmin),
         b = br.rdf(roads, goal.tmax),
-        d0 = data.filter(e=>(e[0] <= goal.tmax && e[0] >= goal.tmin)).map(e=>e[1]),
+        d0 = data.filter(e=>(e[0] <= goal.tmax && e[0] >= goal.tmin))
+                 .map(e=>e[1]),
         mind = bu.arrMin(d0),
-        maxd = bu.arrMax(d0);
-    // If the PPR is in range for do-less goals, extend the data range
+        maxd = bu.arrMax(d0)
+    // Make room for the ghosty PPR datapoint
     if (flad != null && flad[0] <= goal.tmax && flad[0] >= goal.tmin) {
-      var pprv = br.ppr(roads, goal, goal.asof)
-      if (pprv > 0 && flad[1]+pprv > maxd) maxd += pprv
-      else if (pprv < 0 && flad[1]+pprv < mind) mind -= pprv
+      const pprv = flad[1] + br.ppr(roads, goal, goal.asof)
+      mind = Math.min(mind, pprv) // Make room for the 
+      maxd = Math.max(maxd, pprv) // ghosty PPR datapoint.
     }
     var padding = Math.max(goal.lnw/3, (maxd-mind)*PRAF*2),
         minmin = mind - padding,
@@ -979,10 +980,14 @@ const beebrain = function( bbin ) {
     setDefaultRange()
     return ""
   }
+
   function sumSet(rd, goal) {
-    var y = goal.yaw, d = goal.dir, l = goal.lane, w = goal.lnw, dlt = goal.delta
-    var MOAR = (y>0 && d>0), PHAT = (y<0 && d<0),
-        WEEN = (y<0 && d>0), RASH = (y>0 && d<0)
+    var y = goal.yaw, d = goal.dir, 
+        l = goal.lane, w = goal.lnw, dlt = goal.delta
+    var MOAR = (y>0 && d>0), 
+        PHAT = (y<0 && d<0),
+        WEEN = (y<0 && d>0), 
+        RASH = (y>0 && d<0)
 
     if (goal.error != "") {
       goal.statsum = " error:    "+goal.error+"\\n"; return
@@ -1033,17 +1038,17 @@ const beebrain = function( bbin ) {
       + "targeting "+bu.shn(goal.vfin,3,1)+" on "+bu.shd(goal.tfin)+" ("
       + bu.splur(parseFloat(bu.shn(goal.cntdn,1,1)), "more day")+"). "+ybrStr
 
-    goal.deltasum = bu.sh1(Math.abs(dlt))
-      + ((dlt<0)?" below":" above")+" the centerline"
-    var s
-    if (w == 0)                    s = ""
-    else if (y>0 && l>=-1 && l<=1) s = " and "+bu.sh1(w-dlt)+" to go till top edge"
-    else if (y>0 && l>=2)          s = " and "+bu.sh1(dlt-w)+" above the top edge"
-    else if (y>0 && l<=-2)         s = " and "+bu.sh1(-w-dlt)+" to go till bottom edge"
-    else if (y<0 && l>=-1 && l<=1) s = " and "+bu.sh1(w-dlt)+" below top edge"
-    else if (y<0 && l<=-2)         s = " and "+bu.sh1(-w-dlt)+" below bottom edge"
-    else if (y<0 && l>1)           s = " and "+bu.sh1(dlt-w)+" above top edge"
-    else                           s = ""
+    goal.deltasum = bu.sh1(Math.abs(dlt)) + " " + goal.gunits
+      + (dlt<0 ? " below" : " above")+" the centerline"
+    let s
+    if (w == 0)                  s= ""
+    else if (y>0 && l>=-1&&l<=1) s= " and "+bu.sh1(w-dlt)+" to go till top edge"
+    else if (y>0 && l>=2)        s= " and "+bu.sh1(dlt-w)+" above the top edge"
+    else if (y>0 && l<=-2)   s= " and "+bu.sh1(-w-dlt)+" to go till bottom edge"
+    else if (y<0 && l>=-1&&l<=1) s= " and "+bu.sh1(w-dlt)+" below top edge"
+    else if (y<0 && l<=-2)       s= " and "+bu.sh1(-w-dlt)+" below bottom edge"
+    else if (y<0 && l>1)         s= " and "+bu.sh1(dlt-w)+" above top edge"
+    else                         s= ""
     goal.deltasum += s
 
     var c = goal.safebuf // countdown to derailment, in days
