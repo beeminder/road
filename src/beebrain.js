@@ -620,7 +620,7 @@ const beebrain = function( bbin ) {
   }
 
   /** Extracts road segments from the supplied road matrix in the *
-   input parameters as well as tini and vini. Upon compeltion, the *
+   input parameters as well as tini and vini. Upon completion, the *
    'roads' variable contains an array of road segments as javascript
    objects in the following format:<br/>
    
