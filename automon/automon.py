@@ -415,7 +415,19 @@ def refresh_all():
   refresh_windows()
   refresh_status()
   refresh_menu()
-    
+
+# Sorts the goal list based on a particular prioritization. Currently,
+# this just shifts all goals with errors to the beginning of the list
+def sort_goallist():
+    freeind = 0
+    for i in range(len(cm.goals)):
+        slug = os.path.splitext(cm.goals[i])[0]
+        if (find_problem_slug(slug) < 0):
+            continue
+        cm.goals[freeind],cm.goals[i] = cm.goals[i],cm.goals[freeind]
+        freeind += 1
+    return
+
 # Rescans the bb file directory to get an updated file list
 def update_goallist():
   bbfiles = [f for f in os.listdir(cm.bbdir)
@@ -593,6 +605,12 @@ def worker_stop():
   # Issue a kill request to the worker thread
   qpending.put(JobRequest("quit"))
 
+def find_problem_slug( slug ):
+  for i in range(len(cm.problems)):
+    e = cm.problems[i]
+    if (e.req.slug == slug): return i
+  return -1
+
 def find_problem( resp):
   for i in range(len(cm.problems)):
     e = cm.problems[i]
@@ -732,6 +750,7 @@ def restartJobs():
   cm.firstreq = cm.lastreq
   cm.curgoal = 0
   update_goallist()
+  sort_goallist()
   resetAverage()
   
 # Handles processing of jobs. Has a state machine structure defined above
@@ -792,6 +811,7 @@ def jobTask():
         newlist = cm.goals[cm.sourcechange:None]
         newlist.extend(cm.goals[0:cm.sourcechange])
         cm.goals = newlist
+        sort_goallist()
         cm.sourcechange = -1
         cm.curgoal = 0
         setprogress(0)
@@ -874,7 +894,6 @@ def monitor(stdscr, bbdir, graph, force, delay, watchdir):
   cm.lwin.keypad(True)
   cm.lwin.nodelay(True)
   
-  update_goallist()
   restartJobs()
   cm.jsref = force
   refresh_all()
