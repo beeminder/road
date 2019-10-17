@@ -1476,50 +1476,48 @@
     }
 
     function roadExtent( rd, extend = true ) {
-      var extent = {};
+      var extent = {}
       // Compute new limits for the current data
-      extent.xMin = bu.arrMin(rd.map((d)=>d.end[0]));
-      extent.xMax = bu.arrMax(rd.map((d)=>d.sta[0]));
-      extent.yMin = bu.arrMin(rd.map((d)=>d.sta[1]));
-      extent.yMax = bu.arrMax(rd.map((d)=>d.sta[1]));
+      extent.xMin = bu.arrMin(rd.map(d=>d.end[0]))
+      extent.xMax = bu.arrMax(rd.map(d=>d.sta[0]))
+      extent.yMin = bu.arrMin(rd.map(d=>d.sta[1]))
+      extent.yMax = bu.arrMax(rd.map(d=>d.sta[1]))
       // Extend limits by 5% so everything is visible
-      var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
-      if (extend) enlargeExtent(extent, p);
-      return extent;
+      var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10}
+      if (extend) enlargeExtent(extent, p)
+      return extent
     }
 
     function dataExtentPartial( data, xmin, xmax, extend = false ) {
       var extent = {};
-      var nd = data.filter((d) =>((d[0] > xmin && d[0] < xmax)));
+      var nd = data.filter(d => (d[0] > xmin && d[0] < xmax))
       if (nd.length == 0) {
         // no points are in range, find enclosing two
-        var ind = -1;
+        var ind = -1
         for (let i = 0; i < data.length-1; i++) {
           if (data[i][0]<=xmin && data[i+1][0]>=xmax) {
-            ind = i; break;
+            ind = i; break
           }
         }
-        if (ind > 0) nd = data.slice(ind, ind+1);
+        if (ind > 0) nd = data.slice(ind, ind+1)
       }
       // Inform caller if no data points are in between the supplied range.
-      if (nd.length == 0) return null;
+      if (nd.length == 0) return null
 
       // Compute new limits for the current data
-      extent.xMin = bu.arrMin(nd.map((d)=>d[0]));
-      extent.xMax = bu.arrMax(nd.map((d)=>d[0]));
-      extent.yMin = bu.arrMin(nd.map((d)=>d[1]));
-      extent.yMax = bu.arrMax(nd.map((d)=>d[1]));
-      
-      // If the PPR is in range for do-less goals, extend the data range
+      extent.xMin = bu.arrMin(nd.map(d=>d[0]))
+      extent.xMax = bu.arrMax(nd.map(d=>d[0]))
+      extent.yMin = bu.arrMin(nd.map(d=>d[1]))
+      extent.yMax = bu.arrMax(nd.map(d=>d[1]))     
       if (bbr.flad != null && bbr.flad[0] <= xmax && bbr.flad[0] >= xmin) {
-        var pprv = br.ppr(road, goal, goal.asof)
-        if (pprv > 0 && bbr.flad[1]+pprv > extent.yMax) extent.yMax += pprv
-        else if (pprv < 0 && bbr.flad[1]+pprv < extent.yMin) extent.yMin -= pprv
+        const pprv = bbr.flad[1] + br.ppr(road, goal, goal.asof)
+        extent.yMin = Math.min(extent.yMin, pprv) // Make room for the
+        extent.yMax = Math.max(extent.yMax, pprv) // ghosty PPR datapoint.
       }
       // Extend limits by 5% so everything is visible
-      var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10};
-      if (extend) enlargeExtent(extent, p);
-      return extent;
+      var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10}
+      if (extend) enlargeExtent(extent, p)
+      return extent
     }
 
     function roadExtentPartial( rd, xmin, xmax, extend = false ) {
