@@ -432,6 +432,7 @@ def sort_goallist():
 def update_goallist():
   bbfiles = [f for f in os.listdir(cm.bbdir)
          if (f.endswith(".bb") and os.path.isfile(cm.bbdir+"/"+f))]
+  bbfiles.sort(key=(lambda f: -os.stat(cm.bbdir+"/"+f).st_mtime))
   cm.goals = [os.path.splitext(b)[0] for b in bbfiles]
   cm.ls.bottom = len(cm.problems)
   
