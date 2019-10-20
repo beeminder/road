@@ -578,25 +578,28 @@ def worker(pending, completed):
         if (refstatus == -1):
           resp.errmsg = "Missing reference files, fresh json output:"
           resp.jsondiff = json_dump(job)
-        elif (refstatus == -2):
-          resp.errmsg = "Stale reference files, comparing json output"
-          resp.jsondiff = json_compare(job)
-          if (resp.jsondiff == None):
-              resp.errmsg += "\nNo differences found!"
-        else:
-          # Compare json output to the reference
-          resp.jsondiff = json_compare(job)
+        elif (refstatus == -2 or refstatus == 0):
+            # Compare json output to the reference
+            resp.jsondiff = json_compare(job)
+            # Stale graphs still perform comparison, but with an additional note.
+            if (refstatus == -2):
+                resp.errmsg = "WARNING: Stale reference files!"
+                if (resp.jsondiff == None):
+                    resp.errmsg += "\n* No json differences found."
           
-          # If enabled, compare generated graph to the reference
-          if (cm.graph):
-            setstatus(reqstr+": Comparing graphs for "+job.slug+"...")
-            gres = graph_compare(job.slug, job.outpath, job.jsref )
-            if (gres['errmsg']):
-              resp.errmsg += "\nError comparing graphs:\n"
-              resp.errmsg += gres['errmsg']
-            elif (gres['diffcnt'] > 0):
-              resp.grdiff = gres['diffcnt']
-              resp.errmsg += "Graphs differ by "+str(resp.grdiff)+" pixels."
+            # If enabled, compare generated graph to the reference
+            if (cm.graph):
+                setstatus(reqstr+": Comparing graphs for "+job.slug+"...")
+                gres = graph_compare(job.slug, job.outpath, job.jsref )
+                if (gres['errmsg']):
+                    resp.errmsg += "\nError comparing graphs:\n"
+                    resp.errmsg += gres['errmsg']
+                elif (gres['diffcnt'] > 0):
+                    resp.grdiff = gres['diffcnt']
+                    resp.errmsg += "Graphs differ by "+str(resp.grdiff)+" pixels."
+                elif (refstatus == -2):
+                    resp.errmsg += "\n* No graph differences found."
+                    
         setstatus(reqstr+": Comparison for "+job.slug+" finished!")
         updateAverage(resp.dt)
       elif (job.reqtype == "jsref"):
