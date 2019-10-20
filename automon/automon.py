@@ -438,7 +438,10 @@ def update_goallist():
 # JSBRAIN related functions ------------------------------
 
 # Checks timestamps of generated files wrt the jsbrain reference
-# files, returns True if the BB file is more recent
+# files, returns
+# 0 if the reference is up to date
+# -1 if any of the reference files are missing
+# -2 if the BB file is more recent than any of the references
 def jsbrain_checkref( slug, inpath, refpath ):
   inpath = os.path.abspath(inpath)+"/"
   refpath = os.path.abspath(refpath)+"/"
@@ -447,17 +450,18 @@ def jsbrain_checkref( slug, inpath, refpath ):
   img = refpath+slug+".png"
   thm = refpath+slug+"-thumb.png"
   svg = refpath+slug+".svg"
-  if (not os.path.isfile(json) or not os.path.isfile(img)
+  if (not os.path.isfile(bb) or
+      not os.path.isfile(json) or not os.path.isfile(img)
     or not os.path.isfile(thm) or not os.path.isfile(svg)):
-    return True
+    return -1
   bbtime = os.stat(bb).st_mtime
   jsontime = os.stat(json).st_mtime
   imgtime = os.stat(img).st_mtime
   thmtime = os.stat(thm).st_mtime
   svgtime = os.stat(svg).st_mtime
   if (bbtime > jsontime or bbtime > imgtime or bbtime > thmtime or bbtime > svgtime):
-    return True
-  return False
+    return -2
+  return 0
 
 # Invokes jsbrain on the indiated slug from inpath, placing outputs in
 # outpath, generating graphs if requested
@@ -542,6 +546,14 @@ def json_compare( job ):
       
   return None if txt == "" else txt
 
+def json_dump( job ):
+  txt = ""
+  with open(job.outpath+"/"+job.slug+".json", 'r') as myfile: jsonout=json.loads(myfile.read())
+  for prop in jsonout:
+    txt += "* "+prop+"= "+str(jsonout[prop])+"\n" # new / current output
+      
+  return None if txt == "" else txt
+
 # Job processing worker thread ---------------------------------------
 qpending = queue.Queue()   # Pending jobs requests
 qcompleted = queue.Queue() # Completed job requests
@@ -562,8 +574,15 @@ def worker(pending, completed):
         resp.dt = retval['dt']
         resp.errmsg = retval['errmsg']
         # Check if reference is stale; refuse to compare if so
-        if (jsbrain_checkref(job.slug, cm.bbdir, cm.jsreff)):
-          resp.errmsg = "Stale reference, NO COMPARISON FOR YOU"
+        refstatus = jsbrain_checkref(job.slug, cm.bbdir, cm.jsreff)
+        if (refstatus == -1):
+          resp.errmsg = "Missing reference files, fresh json output:"
+          resp.jsondiff = json_dump(job)
+        elif (refstatus == -2):
+          resp.errmsg = "Stale reference files, comparing json output"
+          resp.jsondiff = json_compare(job)
+          if (resp.jsondiff == None):
+              resp.errmsg += "\nNo differences found!"
         else:
           # Compare json output to the reference
           resp.jsondiff = json_compare(job)
@@ -679,12 +698,25 @@ def uiTask():
                    close_fds=True)
         except OSError as e:
           pass
+      else:
+        # If no graph differences are present, just show the png output
+        try:
+          img=cm.jsoutf+"/"+curpr.req.slug+".png"
+          subprocess.Popen([DISPCMD+' '+img],
+                   shell=True,stdin=None,stdout=None,stderr=None,
+                   close_fds=True)
+        except OSError as e:
+          pass
 
   elif c == ord('p'): cm.paused = not cm.paused; refresh_topline()
   elif c == ord('c'):
     if (len(cm.problems) > 0):
       req = cm.problems[cm.ls.top+cm.ls.cur].req
-      qpending.put(req)
+      bbfile = os.path.abspath(cm.bbdir)+"/"+req.slug+".bb"
+      if (os.path.isfile(bbfile)):
+          qpending.put(req)
+      else:
+          remove_problem(cm.problems[cm.ls.top+cm.ls.cur])
   elif c == ord('r'):
     if (len(cm.problems) > 0):
       req = cm.problems[cm.ls.top+cm.ls.cur].req
