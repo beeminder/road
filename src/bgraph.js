@@ -3041,7 +3041,6 @@
         // Compute road indices for left and right boundaries
         istrt = Math.max(1,br.findSeg(road, strt+ostrt+1))
         iend = Math.min(road.length-1, br.findSeg(road, end+ostrt-1))
-        console.log("ind="+rstrt+",ostrt="+ostrt+", oend="+oend+",is="+istrt+", ie="+iend)
         var d = "M"+nXSc(strt*1000)+" "+nYSc(br.rdf(road, strt+ostrt));
         var rx, ry
         for (let i = istrt; i <= iend; i++) {
@@ -3062,7 +3061,6 @@
         } else {
           istrt = Math.max(1,br.findSeg(road, strt+oend+1))
           iend = Math.min(road.length-1,br.findSeg(road, end+oend-1))
-          console.log("2ind="+rstrt+",ostrt="+ostrt+", oend="+oend+",is="+istrt+", ie="+iend)
           d += " L"+nXSc(end*1000)+" "+nYSc(br.rdf(road, end+oend));
           for (let i = iend; i >= istrt-1; i--) {
             if (goal.yaw > 0 && i < road.length-1
