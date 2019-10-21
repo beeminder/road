@@ -2988,40 +2988,93 @@
 
     function updateYBHP() {
       if (opts.divGraph == null || road.length == 0) return;
-      var pinkelt = gYBHP.select(".halfplane");
-      if (!opts.roadEditor) {
-        pinkelt.remove();
+      if (!opts.roadEditor && !goal.ybhp) {
+        gYBHP.selectAll("*").remove();
         return;
       }
-
-      var yedge, itoday, ihor;
-      var ir = road;
-      //var now = goal.xMin;
-      var now = road[0].end[0];
-      var hor = road[road.length-1].sta[0];
-      // Determine good side of the road 
-      if (goal.yaw < 0) yedge = goal.yMin - 5*(goal.yMax - goal.yMin);
-      else yedge = goal.yMax + 5*(goal.yMax - goal.yMin);
-      // Compute road indices for left and right boundaries
-      itoday = br.findSeg(ir, now);
-      ihor = br.findSeg(ir, hor);
-      var d = "M"+nXSc(now*1000)+" "
-            +nYSc(br.rdf(ir, now));
-      for (let i = itoday; i < ihor; i++) {
-        d += " L"+nXSc(ir[i].end[0]*1000)+" "
-          +nYSc(ir[i].end[1]);
-      }
-      d+=" L"+nXSc(hor*1000)+" "+nYSc(br.rdf(ir, hor));
-      d+=" L"+nXSc(hor*1000)+" "+nYSc(yedge);
-      d+=" L"+nXSc(now*1000)+" "+nYSc(yedge);
-      d+=" Z";
-      if (pinkelt.empty()) {
-        gYBHP.append("svg:path")
-	        .attr("class","halfplane")
-	  	    .attr("d", d)
-          .attr("fill", opts.halfPlaneCol.fill);
+      var regions;
+      if (opts.roadEditor || !goal.ybhp) {
+        regions = [[0, -1, opts.halfPlaneCol.fill]]
       } else {
-        pinkelt.attr("d", d);
+        regions = [[3, -1, "#bfeabf"],
+                   [2, 3, "#ceceff"],
+                   [1, 2, "#ffe8bf"],
+                   [0, 1, "#ffbfbf"],
+                   [0, -2, "#ffffff"]
+                  ]
+      }
+      
+        regions = [[3, -1, "#bfeabf"],
+                   [2, 3, "#ceceff"],
+                   [1, 2, "#ffe8bf"],
+                   [0, 1, "#ffbfbf"],
+                   [0, -2, "#ffffff"]
+                  ]
+
+      for (const reg of regions) {
+        const rstrt = reg[0], rend = reg[1]
+        const ostrt = rstrt * bu.SID, oend = rend * bu.SID
+        const clsname = "halfplane"+rstrt+rend
+        const ybhpelt = gYBHP.select("."+clsname);
+        
+        // Starting boundary for a region is not allowed to be infinity
+        if (rstrt < 0) {
+          console.log("updateYBHP(): Invalid region definition")
+          continue
+        }
+        
+        var yedge, yedgeb, istrt, iend;
+        //var now = goal.xMin;
+        var strt = road[0].end[0];
+        var end = road[road.length-1].sta[0];
+        // Determine good side of the road 
+        if (goal.yaw < 0) {
+          yedge = goal.yMin - 0.1*(goal.yMax - goal.yMin);
+          yedgeb = goal.yMax + 0.1*(goal.yMax - goal.yMin);
+        } else {
+          yedge = goal.yMax + 0.1*(goal.yMax - goal.yMin);
+          yedgeb = goal.yMin - 0.1*(goal.yMax - goal.yMin);
+        }
+        // Compute road indices for left and right boundaries
+        istrt = br.findSeg(road, strt+ostrt);
+        iend = br.findSeg(road, end+ostrt);
+        var d = "M"+nXSc(strt*1000)+" "+nYSc(br.rdf(road, strt+ostrt));
+        for (let i = istrt; i < iend; i++) {
+          d += " L"+nXSc((road[i].end[0]-ostrt)*1000)+" "+nYSc(road[i].end[1]);
+          if (goal.yaw * (road[i+1].end[1] - road[i].end[1]) < 0) {
+            d += " L"+nXSc((road[i].end[0])*1000)+" "+nYSc(road[i].end[1]);
+          }
+        }
+        if (rend == -1) {
+          d+=" L"+nXSc(end*1000)+" "+nYSc(br.rdf(road, end));
+          d+=" L"+nXSc(end*1000)+" "+nYSc(yedge);
+          d+=" L"+nXSc(strt*1000)+" "+nYSc(yedge);
+        } else if (rend == -2) {
+          d+=" L"+nXSc(end*1000)+" "+nYSc(br.rdf(road, end));
+          d+=" L"+nXSc(end*1000)+" "+nYSc(yedgeb);
+          d+=" L"+nXSc(strt*1000)+" "+nYSc(yedgeb);
+        } else {
+          istrt = br.findSeg(road, strt+oend);
+          iend = br.findSeg(road, end+oend);
+          d += "L"+nXSc(strt*1000)+" "+nYSc(br.rdf(road, strt+oend));
+          for (let i = iend-1; i >= istrt; i--) {
+            if (goal.yaw * (road[i+1].end[1] - road[i].end[1]) < 0) {
+              d += " L"+nXSc((road[i].end[0])*1000)+" "+nYSc(road[i].end[1]);
+            }
+            d += " L"+nXSc((road[i].end[0]-oend)*1000)+" "+nYSc(road[i].end[1]);
+          }
+        }
+        d+=" Z";
+
+        if (ybhpelt.empty()) {
+          gYBHP.append("svg:path")
+	          .attr("class",clsname)
+	  	      .attr("d", d)
+	  	      .attr("pointer-events", "none")
+            .attr("fill", reg[2]);
+        } else {
+          ybhpelt.attr("d", d);
+        }
       }
     }
 
@@ -3103,7 +3156,7 @@
     function updateLanes(ir) {
       
       var laneelt = gOldRoad.select(".oldlanes");
-      if (opts.roadEditor || ir == null) {
+      if (opts.roadEditor || ir == null || goal.ybhp) {
         laneelt.remove();
         return
       }      
@@ -3158,7 +3211,7 @@
     function updateGuidelines( ir ) {
       
       var guideelt = gOldGuides.selectAll(".oldguides");
-      if (opts.roadEditor || ir == null) {
+      if (opts.roadEditor || ir == null || goal.ybhp) {
         guideelt.remove();
         return
       }      
