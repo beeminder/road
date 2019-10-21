@@ -1696,7 +1696,6 @@
         alldataf = alldata.filter(function(e){
           return e[0]>(goal.asof-opts.maxDataDays*bu.SID);});
       }
-      
 
       if (opts.divGraph) {
         if (!opts.roadEditor && goal.stathead)
@@ -1705,6 +1704,7 @@
           stathead.text("")
       }
       if (timing) { console.time(graph_timeid+suffix) }
+      
       // Finally, wrap up with graph related initialization
       zoomAll();
       processing = false;
@@ -2993,30 +2993,32 @@
         return;
       }
       var regions;
-      if (opts.roadEditor || !goal.ybhp) {
-        regions = [[0, -1, opts.halfPlaneCol.fill]]
+      if (/*opts.roadEditor ||*/ !goal.ybhp) {
+        regions = [[0, -1, opts.halfPlaneCol.fill],
+                   [3, -1, null],
+                   [2, 3, null],
+                   [1, 2, null],
+                   [0, 1, null],
+                   [0, -2, null]]
       } else {
-        regions = [[3, -1, "#bfeabf"],
+        regions = [[0, -1, null],
+                   [3, -1, "#bfeabf"],
                    [2, 3, "#ceceff"],
                    [1, 2, "#ffe8bf"],
                    [0, 1, "#ffbfbf"],
                    [0, -2, "#ffffff"]
                   ]
       }
-      
-        regions = [[3, -1, "#bfeabf"],
-                   [2, 3, "#ceceff"],
-                   [1, 2, "#ffe8bf"],
-                   [0, 1, "#ffbfbf"],
-                   [0, -2, "#ffffff"]
-                  ]
 
       for (const reg of regions) {
         const rstrt = reg[0], rend = reg[1]
         const ostrt = rstrt * bu.SID, oend = rend * bu.SID
         const clsname = "halfplane"+rstrt+rend
         const ybhpelt = gYBHP.select("."+clsname);
-        
+        if (reg[2] == null) {
+          ybhpelt.remove()
+          continue
+        }
         // Starting boundary for a region is not allowed to be infinity
         if (rstrt < 0) {
           console.log("updateYBHP(): Invalid region definition")
