@@ -3011,10 +3011,10 @@
       }
 
       for (const reg of regions) {
-        const rstrt = reg[0], rend = reg[1]
-        const ostrt = rstrt * bu.SID, oend = rend * bu.SID
-        const clsname = "halfplane"+rstrt+rend
-        const ybhpelt = gYBHP.select("."+clsname);
+        var rstrt = reg[0], rend = reg[1]
+        var ostrt = rstrt * bu.SID * goal.yaw, oend = rend * bu.SID * goal.yaw
+        var clsname = "halfplane"+rstrt+rend
+        var ybhpelt = gYBHP.select("."+clsname);
         if (reg[2] == null) {
           ybhpelt.remove()
           continue
@@ -3024,6 +3024,7 @@
           console.log("updateYBHP(): Invalid region definition")
           continue
         }
+        if (rend < 0) oend = 0
         
         var yedge, yedgeb, istrt, iend;
         //var now = goal.xMin;
@@ -3038,14 +3039,17 @@
           yedgeb = goal.yMin - 0.1*(goal.yMax - goal.yMin);
         }
         // Compute road indices for left and right boundaries
-        istrt = br.findSeg(road, strt+ostrt);
-        iend = br.findSeg(road, end+ostrt);
+        istrt = Math.max(1,br.findSeg(road, strt+ostrt+1))
+        iend = Math.min(road.length-1, br.findSeg(road, end+ostrt-1))
+        console.log("ind="+rstrt+",ostrt="+ostrt+", oend="+oend+",is="+istrt+", ie="+iend)
         var d = "M"+nXSc(strt*1000)+" "+nYSc(br.rdf(road, strt+ostrt));
-        for (let i = istrt; i < iend; i++) {
-          d += " L"+nXSc((road[i].end[0]-ostrt)*1000)+" "+nYSc(road[i].end[1]);
-          if (goal.yaw * (road[i+1].end[1] - road[i].end[1]) < 0) {
-            d += " L"+nXSc((road[i].end[0])*1000)+" "+nYSc(road[i].end[1]);
+        var rx, ry
+        for (let i = istrt; i <= iend; i++) {
+          rx = road[i].end[0]-ostrt; ry = road[i].end[1]
+          if (rx > end) {
+            rx = end; ry = br.rdf(road, rx+ostrt)
           }
+          d += " L"+nXSc(rx*1000)+" "+nYSc(ry);
         }
         if (rend == -1) {
           d+=" L"+nXSc(end*1000)+" "+nYSc(br.rdf(road, end));
@@ -3056,14 +3060,23 @@
           d+=" L"+nXSc(end*1000)+" "+nYSc(yedgeb);
           d+=" L"+nXSc(strt*1000)+" "+nYSc(yedgeb);
         } else {
-          istrt = br.findSeg(road, strt+oend);
-          iend = br.findSeg(road, end+oend);
-          d += "L"+nXSc(strt*1000)+" "+nYSc(br.rdf(road, strt+oend));
-          for (let i = iend-1; i >= istrt; i--) {
-            if (goal.yaw * (road[i+1].end[1] - road[i].end[1]) < 0) {
-              d += " L"+nXSc((road[i].end[0])*1000)+" "+nYSc(road[i].end[1]);
+          istrt = Math.max(1,br.findSeg(road, strt+oend+1))
+          iend = Math.min(road.length-1,br.findSeg(road, end+oend-1))
+          console.log("2ind="+rstrt+",ostrt="+ostrt+", oend="+oend+",is="+istrt+", ie="+iend)
+          d += " L"+nXSc(end*1000)+" "+nYSc(br.rdf(road, end+oend));
+          for (let i = iend; i >= istrt-1; i--) {
+            if (goal.yaw > 0 && i < road.length-1
+                && goal.dir * road[i+1].slope < 0) {
+              d += " L"+nXSc((road[i].end[0]-ostrt)*1000)+" "+nYSc(road[i].end[1]);
             }
-            d += " L"+nXSc((road[i].end[0]-oend)*1000)+" "+nYSc(road[i].end[1]);
+            rx = road[i].end[0]-oend; ry = road[i].end[1]
+            if (rx < strt) {
+              rx = strt; ry = br.rdf(road, rx+oend)
+            }
+            d += " L"+nXSc(rx*1000)+" "+nYSc(ry);
+            if (goal.yaw < 0 && goal.dir * road[i].slope < 0) {
+              d += " L"+nXSc((road[i].end[0]-ostrt)*1000)+" "+nYSc(road[i].end[1]);
+            }
           }
         }
         d+=" Z";
