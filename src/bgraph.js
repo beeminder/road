@@ -3003,7 +3003,8 @@
                    [0, -2, null, null, null]]
       } else {
         regions = [[0, -1, null, null, null],
-                   [3, -1, "#bfeabf", "none", 0],
+                   [3, 7, "#bfeabf", "none", 0],
+                   [7, -1, "#ffffff", "none", 0],
                    [7, 7, "none", bu.Cols.BIGG, 2],
                    [2, 3, "#ceceff", "none", 0],
                    [1, 2, "#ffe8bf", "none", 0],
