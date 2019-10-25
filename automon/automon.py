@@ -496,7 +496,8 @@ def graph_compare(slug, out, ref ):
     if (filecmp.cmp(svgref, svgout, shallow=False)):
       return {'diffcnt': 0, 'imgdiff': imgdiff, 'errmsg': errmsg}
   except OSError as e:
-    print("Error comparing SVG files: "+str(e.strerror))
+      pass
+    # print("Error comparing SVG files: "+str(e.strerror))
   try: 
     try:
       resp = subprocess.check_output(
@@ -528,30 +529,35 @@ def graph_compare(slug, out, ref ):
 
 def json_compare( job ):
   txt = ""
-  with open(job.outpath+"/"+job.slug+".json", 'r') as myfile: jsonout=json.loads(myfile.read())
-  with open(job.jsref+"/"+job.slug+".json", 'r') as myfile: jsonref=json.loads(myfile.read())
-  for prop in jsonref:
-    if (prop == "proctm" or prop == "thumburl" or prop == "graphurl"  or prop == "svgurl"):
-      del jsonout[prop]
-      continue
-    if (not prop in jsonout):
-      txt += "*** Prp "+prop+" is missing from the output\n"
-      continue
-    if (not jsonout[prop] == jsonref[prop]):
-      pre = prop + " (OLD -> NEW) "
-      div = '-' * (cm.ww-cm.lw-4-len(pre))
-      txt += pre + div + "\n"
-      txt += str(jsonref[prop])+"\n" # reference / old
-      txt += str(jsonout[prop])+"\n" # new / current output
-      continue
-      
+  try:
+      with open(job.outpath+"/"+job.slug+".json", 'r') as myfile: jsonout=json.loads(myfile.read())
+      with open(job.jsref+"/"+job.slug+".json", 'r') as myfile: jsonref=json.loads(myfile.read())
+      for prop in jsonref:
+        if (prop == "proctm" or prop == "thumburl" or prop == "graphurl"  or prop == "svgurl"):
+          del jsonout[prop]
+          continue
+        if (not prop in jsonout):
+          txt += "*** Prp "+prop+" is missing from the output\n"
+          continue
+        if (not jsonout[prop] == jsonref[prop]):
+          pre = prop + " (OLD -> NEW) "
+          div = '-' * (cm.ww-cm.lw-4-len(pre))
+          txt += pre + div + "\n"
+          txt += str(jsonref[prop])+"\n" # reference / old
+          txt += str(jsonout[prop])+"\n" # new / current output
+          continue
+  except FileNotFoundError:
+      txt = "json_compare: Could not open one of the required json files"
   return None if txt == "" else txt
 
 def json_dump( job ):
   txt = ""
-  with open(job.outpath+"/"+job.slug+".json", 'r') as myfile: jsonout=json.loads(myfile.read())
-  for prop in jsonout:
-    txt += "* "+prop+"= "+str(jsonout[prop])+"\n" # new / current output
+  try:
+      with open(job.outpath+"/"+job.slug+".json", 'r') as myfile: jsonout=json.loads(myfile.read())
+      for prop in jsonout:
+        txt += "* "+prop+"= "+str(jsonout[prop])+"\n" # new / current output
+  except FileNotFoundError:
+      txt = "json_dump: Could not open json output file"
       
   return None if txt == "" else txt
 
