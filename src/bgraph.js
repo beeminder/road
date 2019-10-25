@@ -2994,19 +2994,20 @@
       }
       var regions;
       if (/*opts.roadEditor ||*/ !goal.ybhp) {
-        regions = [[0, -1, opts.halfPlaneCol.fill],
-                   [3, -1, null],
-                   [2, 3, null],
-                   [1, 2, null],
-                   [0, 1, null],
-                   [0, -2, null]]
+        regions = [[0, -1, opts.halfPlaneCol.fill, "none", 0],
+                   [3, -1, null, null, null],
+                   [2, 3, null, null, null],
+                   [1, 2, null, null, null],
+                   [0, 1, null, null, null],
+                   [0, -2, null, null, null]]
       } else {
-        regions = [[0, -1, null],
-                   [3, -1, "#bfeabf"],
-                   [2, 3, "#ceceff"],
-                   [1, 2, "#ffe8bf"],
-                   [0, 1, "#ffbfbf"],
-                   [0, -2, "#ffffff"]
+        regions = [[0, -1, null, null, null],
+                   [3, -1, "#bfeabf", "none", 0],
+                   [2, 3, "#ceceff", "none", 0],
+                   [1, 2, "#ffe8bf", "none", 0],
+                   [0, 1, "#ffbfbf", "none", 0],
+                   [7, 7, "none", bu.Cols.BIGG, 2],
+                   [0, -2, "#ffffff", "none", 0]
                   ]
       }
 
@@ -3054,11 +3055,13 @@
           d+=" L"+nXSc(end*1000)+" "+nYSc(br.rdf(road, end));
           d+=" L"+nXSc(end*1000)+" "+nYSc(yedge);
           d+=" L"+nXSc(strt*1000)+" "+nYSc(yedge);
+          d+=" Z";
         } else if (rend == -2) {
           d+=" L"+nXSc(end*1000)+" "+nYSc(br.rdf(road, end));
           d+=" L"+nXSc(end*1000)+" "+nYSc(yedgeb);
           d+=" L"+nXSc(strt*1000)+" "+nYSc(yedgeb);
-        } else {
+          d+=" Z";
+        } else if (rstrt != rend) {
           istrt = Math.max(1,br.findSeg(road, strt+oend+1))
           iend = Math.min(road.length-1,br.findSeg(road, end+oend-1))
           d += " L"+nXSc(end*1000)+" "+nYSc(br.rdf(road, end+oend));
@@ -3076,15 +3079,17 @@
               d += " L"+nXSc((road[i].end[0]-ostrt)*1000)+" "+nYSc(road[i].end[1]);
             }
           }
+          d+=" Z";
         }
-        d+=" Z";
 
         if (ybhpelt.empty()) {
           gYBHP.append("svg:path")
 	          .attr("class",clsname)
 	  	      .attr("d", d)
 	  	      .attr("pointer-events", "none")
-            .attr("fill", reg[2]);
+            .attr("fill", reg[2])
+            .attr("stroke", reg[3])
+            .attr("stroke-width", reg[4])
         } else {
           ybhpelt.attr("d", d);
         }

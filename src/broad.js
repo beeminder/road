@@ -285,7 +285,48 @@ self.dtd = (rd, goal, t, v) => {
   if (goal.noisy && self.gdelt(rd,goal,t,v) >= 0) x = Math.max(2, x)
   return x
 }
+  
+/*
+Computes piecewise linear dtd (days-to-derail) functions for every
+inflection point on the road. This is returned as an array, having as
+many elements as inflections on the road, of possibly differently
+sized arrays that describe the piecewise linear dependence of the dtd
+function on the y coordinate for the corresponding point on the
+road. For example:
+[
+  [          // Entry for the node n (rightmost) on the road
+    [t_n y0 dtd0 y1 dtd1],
+  ],          
+  [          // Entry for the node n-1 on the road
+    [t_(n-1) y0 dtd0 y1 dtd1],
+    [t_(n-1) y1 dtd1 y2 dtd2]
+  ],
+  [          // Entry for the node n-1 on the road
+    [t_(n-1) y0 dtd0 y1 dtd1],
+    [t_(n-1) y1 dtd1 y2 dtd2]
+    [t_(n-1) y2 dtd2 y3 dtd3]
+  ], ...
+]
 
+The array starts from the rightmost node, for which there is only one
+relevant dtd degment that corresponds to derailing on the next road
+line. The next entry is for node (n-1), for which two dtd segments
+will be present, corresponding to derailing on line n-1 or line
+n. Subsequent road nodes have additional rows correspondign to
+derailing on newly considered road lines.
+
+This dtd array is computed by following the endpoints of every road
+line segment backwards along the dtd vector, whose x coordinate is
+always 1 days, with the y coordinate dependent on the current road
+slope for doless goals and 0 for domore goals. This array can then be
+used later to compute isolines for the dtd function, which are curves
+along which the dtd function is constant. This is used to compute and
+visualize colored regions on graphs as well as guidelines.
+*/
+self.dtdarray = ( rd ) => {
+
+}
+  
 /** Days To Centerline: Count the integer days till you cross the
     centerline/tfin if nothing reported */
 self.dtc = (rd, goal, t, v) => {
