@@ -707,8 +707,6 @@ const beebrain = function( bbin ) {
     roads.push(finalsegment)
     
     //br.printRoad(roads)
-    // Uluc: Does not seem necessary if the above extraction is correct
-    //br.fixRoadArray( roads, br.RP.VALUE, true )
     return ""
   }
   
@@ -1170,7 +1168,10 @@ const beebrain = function( bbin ) {
     if (error != "") return error
       
     sumSet(roads, goal)
-        
+
+    // TODO: This seems to compute these entities based on old data,
+    // particularly when this function is called from bgraph as a
+    // result of an edited road.
     goal.fullroad = goal.road.slice()
     goal.fullroad.unshift( [goal.tini, goal.vini, 0, 0] )
     if (goal.error == "") {
@@ -1194,6 +1195,8 @@ const beebrain = function( bbin ) {
       goal.auraf = br.smooth(fdata)
     } else goal.auraf = (e)=>0
 
+    goal.dtdarray = br.dtdarray( roads, goal )
+    goal.isoline = br.isoline( roads, goal.dtdarray, goal, 1)
     return ""
   }
 
