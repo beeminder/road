@@ -1402,6 +1402,7 @@
         redoBuffer.push(road);
       }
       road = undoBuffer.pop();
+      bbr.setRoadObj( road ) // Since the popped version is a copy, must inform beebrain
       roadChanged();
       return;
     }
@@ -3003,13 +3004,23 @@
       } else {
         regions = [[0, -1, null, null, null],
                    [3, -1, "#bfeabf", "none", 0],
+                   [7, 7, "none", bu.Cols.BIGG, 2],
                    [2, 3, "#ceceff", "none", 0],
                    [1, 2, "#ffe8bf", "none", 0],
                    [0, 1, "#ffbfbf", "none", 0],
-                   [7, 7, "none", bu.Cols.BIGG, 2],
                    [0, -2, "#ffffff", "none", 0]
                   ]
       }
+
+      // regions = [[0, -1, null, null, null],
+      //            [3, -1, null, null, null],
+      //            [2, 3, null, null, null],
+      //            [1, 2, "#ffe8bf", "none", 0],
+      //            [0, 1, null, null, null],
+      //            [7, 7, null, null, null],
+      //            [0, -2, null, null, null]
+      //           ]
+      let dtd = br.dtdarray( road, goal )
 
       for (const reg of regions) {
         var rstrt = reg[0], rend = reg[1]
@@ -3039,44 +3050,33 @@
           yedge = goal.yMax + 0.1*(goal.yMax - goal.yMin);
           yedgeb = goal.yMin - 0.1*(goal.yMax - goal.yMin);
         }
-        // Compute road indices for left and right boundaries
-        istrt = Math.max(1,br.findSeg(road, strt+ostrt+1))
-        iend = Math.min(road.length-1, br.findSeg(road, end+ostrt-1))
-        var d = "M"+nXSc(strt*1000)+" "+nYSc(br.rdf(road, strt+ostrt));
-        var rx, ry
-        for (let i = istrt; i <= iend; i++) {
-          rx = road[i].end[0]-ostrt; ry = road[i].end[1]
-          if (rx > end) {
-            rx = end; ry = br.rdf(road, rx+ostrt)
-          }
-          d += " L"+nXSc(rx*1000)+" "+nYSc(ry);
+        var isostrt = br.isoline( road, dtd, goal, rstrt)
+
+        var d = "M"+nXSc(isostrt[0][0]*1000)+" "+nYSc(isostrt[0][1]);
+        for (let i = 1; i < isostrt.length; i++) {
+          d += " L"+nXSc(isostrt[i][0]*1000)+" "+nYSc(isostrt[i][1]);
         }
         if (rend == -1) {
-          d+=" L"+nXSc(end*1000)+" "+nYSc(br.rdf(road, end));
-          d+=" L"+nXSc(end*1000)+" "+nYSc(yedge);
+          d+=" L"+nXSc(strt*1000)+" "+nYSc(br.rdf(road, strt));
           d+=" L"+nXSc(strt*1000)+" "+nYSc(yedge);
+          d+=" L"+nXSc(end*1000)+" "+nYSc(yedge);
           d+=" Z";
         } else if (rend == -2) {
-          d+=" L"+nXSc(end*1000)+" "+nYSc(br.rdf(road, end));
-          d+=" L"+nXSc(end*1000)+" "+nYSc(yedgeb);
+          d+=" L"+nXSc(strt*1000)+" "+nYSc(br.rdf(road, strt));
           d+=" L"+nXSc(strt*1000)+" "+nYSc(yedgeb);
+          d+=" L"+nXSc(end*1000)+" "+nYSc(yedgeb);
           d+=" Z";
         } else if (rstrt != rend) {
-          istrt = Math.max(1,br.findSeg(road, strt+oend+1))
-          iend = Math.min(road.length-1,br.findSeg(road, end+oend-1))
-          d += " L"+nXSc(end*1000)+" "+nYSc(br.rdf(road, end+oend));
-          for (let i = iend; i >= istrt-1; i--) {
-            if (goal.yaw > 0 && i < road.length-1
-                && goal.dir * road[i+1].slope < 0) {
-              d += " L"+nXSc((road[i].end[0]-ostrt)*1000)+" "+nYSc(road[i].end[1]);
-            }
-            rx = road[i].end[0]-oend; ry = road[i].end[1]
-            if (rx < strt) {
-              rx = strt; ry = br.rdf(road, rx+oend)
-            }
-            d += " L"+nXSc(rx*1000)+" "+nYSc(ry);
-            if (goal.yaw < 0 && goal.dir * road[i].slope < 0) {
-              d += " L"+nXSc((road[i].end[0]-ostrt)*1000)+" "+nYSc(road[i].end[1]);
+          var isoend = br.isoline( road, dtd, goal, rend)
+          var ln = isoend.length
+          d += " L"+nXSc(isoend[ln-1][0]*1000)+" "+nYSc(isoend[ln-1][1]);
+          for (let i = ln-2; i >= 0; i--) {
+            d += " L"+nXSc(isoend[i][0]*1000)+" "+nYSc(isoend[i][1]);
+            if (goal.yaw > 0 && i != 0) {
+              let sl = (isoend[i-1][1] - isoend[i][1])/(isoend[i-1][0] - isoend[i][0])
+              if (goal.dir * sl < 0) {
+                d += " L"+nXSc((isoend[i][0]+bu.SID)*1000)+" "+nYSc(isoend[i][1]);
+              }
             }
           }
           d+=" Z";

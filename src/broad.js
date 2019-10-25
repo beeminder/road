@@ -252,15 +252,23 @@ self.aok = (rd, g, t, v, l) => self.lanage(rd, g, t, v, l) * g.yaw >= -1.0
     That's because we want the PPR setting respected for showing an anticipated 
     ghosty PPR for today or not, but then for the future if we don't assume 
     PPRs then do-less goals would always have infinite safety buffer. I.e., the
-    PPR setting only matters for *today*. */
-self.ppr = (rd, g, t) => {
+    PPR setting only matters for *today*. 
+
+    Uluc: Added two parameters, i indicated a specific road segment
+    and overrides the rtf() call. Used by the dtdarray function. The
+    second one is pastppr, which disables ppr=0 for t<asof since
+    nonzero pprs are needed to generate regions before asof
+*/
+self.ppr = (rd, g, t, i=null, pastppr = false) => {
   if (g.yaw*g.dir >= 0) return 0 // MOAR/PHAT => PPR=0; for WEEN/RASH read on...
   // Suppress the PPR if (a) we're computing it for today and (b) there's
   // already a datapoint entered today or if PPRs are explicitly turned off:
-  if (t <= g.asof && (!g.ppr || g.tdat === g.asof)) return 0
+  if (!pastppr && t <= g.asof && (!g.ppr || g.tdat === g.asof)) return 0
   // Otherwise it's (a) for the future or (b) for today and PPRs are turned on
   // and there's no datapoint added for today, so go ahead and compute it...
-  const r = self.rtf(rd, t) * bu.SID  // twice the current daily rate of the YBR
+  var r
+  if (i != null) r = rd[i].slope * bu.SID
+  else r = self.rtf(rd, t) * bu.SID  // twice the current daily rate of the YBR
   if (r === 0) return -g.yaw * 2       // absolute PPR of 2 gunits if flat slope
   if (g.yaw*r > 0) return 0   // don't let it be an OPR (optimistic presumptive)
   return 2*r
@@ -323,8 +331,91 @@ used later to compute isolines for the dtd function, which are curves
 along which the dtd function is constant. This is used to compute and
 visualize colored regions on graphs as well as guidelines.
 */
-self.dtdarray = ( rd ) => {
+self.dtdarray = ( rd, goal ) => {
+  var rdl = rd.length
+  var xcur = rd[rdl-1].sta[0], ycur = rd[rdl-1].sta[1], xn, yn
+  var ppr = self.ppr(rd, goal, 0, rdl-1), sl, dtd
+  var arr = [], seg
+  arr = [[[xcur, ycur, 0, ycur-ppr, 1]]]
+  for (var i = rdl-2; i >= 0; i--) {
+    xcur = rd[i].sta[0]
+    ycur = rd[i].sta[1]
+    xn = rd[i].end[0]
+    yn = rd[i].end[1]
+    ppr = self.ppr(rd, goal, 0, i, true)
+    dtd = ((xn-xcur)/bu.SID)
+    if (!isFinite(ppr)) {
+      if (ycur > yn)
+        seg = [[xcur, ycur, 0, yn, dtd]]
+      else
+        seg = [[xcur, ycur, 0, yn-2*(yn-ycur), dtd]]
+    } else
+      seg = [[xcur, ycur, 0, yn-ppr*dtd, dtd]]
+    
+    var last = arr[arr.length-1]
+    for (var j = 0; j < last.length; j++) {
+      if (!isFinite(ppr)) {
+        if (ycur > yn)
+          seg.push([xcur,last[j][1], last[j][2],last[j][3], last[j][4]])
+        else
+          seg.push([xcur,last[j][1]-2*(yn-ycur), last[j][2]+(xn-xcur),
+                    last[j][3]-2*(yn-ycur), last[j][4]+(xn-xcur)])
+      } else
+        seg.push([xcur,last[j][1]-ppr*dtd, last[j][2]+dtd,
+                  last[j][3]-ppr*dtd, last[j][4]+dtd])
+    }
+    arr.push(seg)
+  }
+  //console.log(arr)
+  return arr
+}
 
+/* returns an array of x.y coordinate pairs for an isoline associated
+ * with dtd=v. This can be used to compute boundaries for
+ * derailment regions, as well as guidelines. Coordinate points start
+ * from the end of the road and proceed backwards
+*/
+self.isoline = ( rd, dtdarr, goal, v ) => {
+  var n = dtdarr[0], nn, iso
+  var s = 0, ns, j, k, st, en, sl
+  // Start the isoline with a horizontal line for the end of the road
+  iso = [[n[0][0]+10*bu.SID, n[0][1]+v*(n[0][3]-n[0][1])],
+         [n[0][0], n[0][1]+v*(n[0][3]-n[0][1])]]
+  for (j = 1; j < dtdarr.length; j++) {
+    nn = dtdarr[j]
+    // Identify dtd segment in which the desired value lies
+    ns = nn.length-1
+    for (k = 0; k < nn.length; k++) {
+      if (v <= nn[k][4]) {
+        ns = k
+        break
+      }
+    }
+    // Consider inflections between the previous segment index and
+    // newly found segment index from inflection j+1 to inflection j
+    // on the road
+    for (k=s; k >= ns; k--) {
+      st = [n[k][0], n[k][1], n[k][2]]
+      en = [nn[k][0], nn[k][3], nn[k][4]]
+      if (en[2] - st[2] == 0)
+        iso.push([st[0], st[1]]);
+      else {
+        sl = (v-st[2]) / (en[2]-st[2])
+        iso.push([st[0] + sl*(en[0]-st[0]), st[1]+sl*(en[1]-st[1])]);
+      }
+    }
+    st = [nn[ns][0], nn[ns][1], nn[ns][2]]
+    en = [nn[ns][0], nn[ns][3], nn[ns][4]]
+    if (en[2] - st[2] == 0)
+      iso.push([st[0], st[1]]);
+    else {
+      sl = (v-st[2]) / (en[2]-st[2])
+      iso.push([st[0] + sl*(en[0]-st[0]), st[1]+sl*(en[1]-st[1])]);
+    }
+    s = ns
+    n = nn
+  }
+  return iso
 }
   
 /** Days To Centerline: Count the integer days till you cross the
