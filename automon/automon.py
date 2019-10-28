@@ -19,15 +19,15 @@ DISPCMD = next(p for p in ['/usr/bin/open', '/usr/local/bin/display',
 ############################### EVERYTYHING ELSE ###############################
 
 class ST(Enum):
-    INIT = 0 # Initializing
-    IDLE = 1 # Waiting for trigger (delay or source change)
-    RSET = 2 # Reset job procesing parameters
-    PROC = 3 # Processing goal list, one at a time
-    JSRF = 4 # Initiate jsref generation
-    JSBR = 5 # Initiate jsbrain generation
-    WAIT = 6 # Wait for processing to finish
-    PAUS = 7 # Processing paused
-    EXIT = 8 # Exiting automon
+  INIT = 0 # Initializing
+  IDLE = 1 # Waiting for trigger (delay or source change)
+  RSET = 2 # Reset job procesing parameters
+  PROC = 3 # Processing goal list, one at a time
+  JSRF = 4 # Initiate jsref generation
+  JSBR = 5 # Initiate jsbrain generation
+  WAIT = 6 # Wait for processing to finish
+  PAUS = 7 # Processing paused
+  EXIT = 8 # Exiting automon
 
 # Transitions and triggers. ORDERING of the checks is RELEVANT and CRITICAL
 # INIT -> IDLE : Initialization completed
@@ -46,7 +46,7 @@ class StdOutWrapper:
   text = ""
   def write(self,txt):
     self.text += txt
-    # Uluc: Why below? Seems to print only the last 30 lines?
+    # Uluc says: Why below? Seems to print only the last 30 lines?
     self.text = '\n'.join(self.text.split('\n')[-30:])
   def get_text(self,beg,end):
     return '\n'.join(self.text.split('\n')[beg:end])
@@ -419,19 +419,18 @@ def refresh_all():
 # Sorts the goal list based on a particular prioritization. Currently,
 # this just shifts all goals with errors to the beginning of the list
 def sort_goallist():
-    freeind = 0
-    for i in range(len(cm.goals)):
-        slug = os.path.splitext(cm.goals[i])[0]
-        if (find_problem_slug(slug) < 0):
-            continue
-        cm.goals[freeind],cm.goals[i] = cm.goals[i],cm.goals[freeind]
-        freeind += 1
-    return
+  freeind = 0
+  for i in range(len(cm.goals)):
+    slug = os.path.splitext(cm.goals[i])[0]
+    if (find_problem_slug(slug) < 0): continue
+    cm.goals[freeind],cm.goals[i] = cm.goals[i],cm.goals[freeind]
+    freeind += 1
+  return
 
 # Rescans the bb file directory to get an updated file list
 def update_goallist():
   bbfiles = [f for f in os.listdir(cm.bbdir)
-         if (f.endswith(".bb") and os.path.isfile(cm.bbdir+"/"+f))]
+             if (f.endswith(".bb") and os.path.isfile(cm.bbdir+"/"+f))]
   bbfiles.sort(key=(lambda f: -os.stat(cm.bbdir+"/"+f).st_mtime))
   cm.goals = [os.path.splitext(b)[0] for b in bbfiles]
   cm.ls.bottom = len(cm.problems)
@@ -451,17 +450,20 @@ def jsbrain_checkref( slug, inpath, refpath ):
   img = refpath+slug+".png"
   thm = refpath+slug+"-thumb.png"
   svg = refpath+slug+".svg"
-  if (not os.path.isfile(bb) or
-      not os.path.isfile(json) or not os.path.isfile(img)
-    or not os.path.isfile(thm) or not os.path.isfile(svg)):
-    return -1
+  if (not os.path.isfile(bb)   or
+      not os.path.isfile(json) or 
+      not os.path.isfile(img)  or
+      not os.path.isfile(thm)  or 
+      not os.path.isfile(svg)):   return -1
   bbtime = os.stat(bb).st_mtime
   jsontime = os.stat(json).st_mtime
   imgtime = os.stat(img).st_mtime
   thmtime = os.stat(thm).st_mtime
   svgtime = os.stat(svg).st_mtime
-  if (bbtime > jsontime or bbtime > imgtime or bbtime > thmtime or bbtime > svgtime):
-    return -2
+  if (bbtime > jsontime or 
+      bbtime > imgtime  or 
+      bbtime > thmtime  or 
+      bbtime > svgtime):   return -2
   return 0
 
 # Invokes jsbrain on the indiated slug from inpath, placing outputs in
@@ -530,34 +532,34 @@ def graph_compare(slug, out, ref ):
 def json_compare( job ):
   txt = ""
   try:
-      with open(job.outpath+"/"+job.slug+".json", 'r') as myfile: jsonout=json.loads(myfile.read())
-      with open(job.jsref+"/"+job.slug+".json", 'r') as myfile: jsonref=json.loads(myfile.read())
-      for prop in jsonref:
-        if (prop == "proctm" or prop == "thumburl" or prop == "graphurl"  or prop == "svgurl"):
-          del jsonout[prop]
-          continue
-        if (not prop in jsonout):
-          txt += "*** Prp "+prop+" is missing from the output\n"
-          continue
-        if (not jsonout[prop] == jsonref[prop]):
-          pre = prop + " (OLD -> NEW) "
-          div = '-' * (cm.ww-cm.lw-4-len(pre))
-          txt += pre + div + "\n"
-          txt += str(jsonref[prop])+"\n" # reference / old
-          txt += str(jsonout[prop])+"\n" # new / current output
-          continue
+    with open(job.outpath+"/"+job.slug+".json", 'r') as myfile: jsonout=json.loads(myfile.read())
+    with open(job.jsref+"/"+job.slug+".json", 'r') as myfile: jsonref=json.loads(myfile.read())
+    for prop in jsonref:
+      if (prop == "proctm" or prop == "thumburl" or prop == "graphurl"  or prop == "svgurl"):
+        del jsonout[prop]
+        continue
+      if (not prop in jsonout):
+        txt += "*** Prp "+prop+" is missing from the output\n"
+        continue
+      if (not jsonout[prop] == jsonref[prop]):
+        pre = prop + " (OLD -> NEW) "
+        div = '-' * (cm.ww-cm.lw-4-len(pre))
+        txt += pre + div + "\n"
+        txt += str(jsonref[prop])+"\n" # reference / old
+        txt += str(jsonout[prop])+"\n" # new / current output
+        continue
   except FileNotFoundError:
-      txt = "json_compare: Could not open one of the required json files"
+    txt = "json_compare: Could not open one of the required json files"
   return None if txt == "" else txt
 
 def json_dump( job ):
   txt = ""
   try:
-      with open(job.outpath+"/"+job.slug+".json", 'r') as myfile: jsonout=json.loads(myfile.read())
-      for prop in jsonout:
-        txt += "* "+prop+"= "+str(jsonout[prop])+"\n" # new / current output
+    with open(job.outpath+"/"+job.slug+".json", 'r') as myfile: jsonout=json.loads(myfile.read())
+    for prop in jsonout:
+      txt += "* "+prop+"= "+str(jsonout[prop])+"\n" # new / current output
   except FileNotFoundError:
-      txt = "json_dump: Could not open json output file"
+    txt = "json_dump: Could not open json output file"
       
   return None if txt == "" else txt
 
@@ -586,26 +588,26 @@ def worker(pending, completed):
           resp.errmsg = "Missing reference files, fresh json output:"
           resp.jsondiff = json_dump(job)
         elif (refstatus == -2 or refstatus == 0):
-            # Compare json output to the reference
-            resp.jsondiff = json_compare(job)
-            # Stale graphs still perform comparison, but with an additional note.
-            if (refstatus == -2):
-                resp.errmsg = "WARNING: Stale reference files!"
-                if (resp.jsondiff == None):
-                    resp.errmsg += "\n* No json differences found."
+          # Compare json output to the reference
+          resp.jsondiff = json_compare(job)
+          # Stale graphs still perform comparison, but with an additional note
+          if (refstatus == -2):
+            resp.errmsg = "WARNING: Stale reference files!"
+            if (resp.jsondiff == None):
+              resp.errmsg += "\n* No json differences found."
           
-            # If enabled, compare generated graph to the reference
-            if (cm.graph):
-                setstatus(reqstr+": Comparing graphs for "+job.slug+"...")
-                gres = graph_compare(job.slug, job.outpath, job.jsref )
-                if (gres['errmsg']):
-                    resp.errmsg += "\nError comparing graphs:\n"
-                    resp.errmsg += gres['errmsg']
-                elif (gres['diffcnt'] > 0):
-                    resp.grdiff = gres['diffcnt']
-                    resp.errmsg += "Graphs differ by "+str(resp.grdiff)+" pixels."
-                elif (refstatus == -2):
-                    resp.errmsg += "\n* No graph differences found."
+          # If enabled, compare generated graph to the reference
+          if (cm.graph):
+            setstatus(reqstr+": Comparing graphs for "+job.slug+"...")
+            gres = graph_compare(job.slug, job.outpath, job.jsref )
+            if (gres['errmsg']):
+              resp.errmsg += "\nError comparing graphs:\n"
+              resp.errmsg += gres['errmsg']
+            elif (gres['diffcnt'] > 0):
+              resp.grdiff = gres['diffcnt']
+              resp.errmsg += "Graphs differ by "+str(resp.grdiff)+" pixels."
+            elif (refstatus == -2):
+              resp.errmsg += "\n* No graph differences found."
                     
         setstatus(reqstr+": Comparison for "+job.slug+" finished!")
         updateAverage(resp.dt)
@@ -724,9 +726,9 @@ def uiTask():
       req = cm.problems[cm.ls.top+cm.ls.cur].req
       bbfile = os.path.abspath(cm.bbdir)+"/"+req.slug+".bb"
       if (os.path.isfile(bbfile)):
-          qpending.put(req)
+        qpending.put(req)
       else:
-          remove_problem(cm.problems[cm.ls.top+cm.ls.cur])
+        remove_problem(cm.problems[cm.ls.top+cm.ls.cur])
   elif c == ord('r'):
     if (len(cm.problems) > 0):
       req = cm.problems[cm.ls.top+cm.ls.cur].req
@@ -844,35 +846,35 @@ def jobTask():
       
   elif (cm.state == ST.PROC):
     if (cm.forcestop):
-        cm.jsref = False
-        cm.state = ST.INIT
+      cm.jsref = False
+      cm.state = ST.INIT
 
     elif (cm.sourcechange >=0 and cm.sourcechange < len(cm.goals)):
-        # Source change detected, rearrange the bb file list and
-        # continue processing without refreshing the goal list
-        newlist = cm.goals[cm.sourcechange:None]
-        newlist.extend(cm.goals[0:cm.sourcechange])
-        cm.goals = newlist
-        sort_goallist()
-        cm.sourcechange = -1
-        cm.curgoal = 0
-        setprogress(0)
+      # Source change detected, rearrange the bb file list and
+      # continue processing without refreshing the goal list
+      newlist = cm.goals[cm.sourcechange:None]
+      newlist.extend(cm.goals[0:cm.sourcechange])
+      cm.goals = newlist
+      sort_goallist()
+      cm.sourcechange = -1
+      cm.curgoal = 0
+      setprogress(0)
         
     elif (cm.curgoal >= len(cm.goals)):
-        if (cm.sourcechange < 0):
-            cm.jsref = False
-            if (len(cm.problems) == 0): ahhhh()
-            cm.state = ST.INIT
+      if (cm.sourcechange < 0):
+        cm.jsref = False
+        if (len(cm.problems) == 0): ahhhh()
+        cm.state = ST.INIT
 
     elif (cm.forcestart):
       cm.state = ST.INIT
 
     elif (cm.paused):
-        cm.state = ST.PAUS
+      cm.state = ST.PAUS
     elif (cm.jsref):
-        cm.state = ST.JSRF
+      cm.state = ST.JSRF
     else:
-        cm.state = ST.JSBR
+      cm.state = ST.JSBR
 
     # Sleep longer until all pending jobs are dispatched
     if (not qpending.empty()):
