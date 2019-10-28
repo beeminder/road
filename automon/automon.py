@@ -20,7 +20,7 @@ DISPCMD = next(p for p in ['/usr/bin/open', '/usr/local/bin/display',
 
 class ST(Enum):
   INIT = 0 # Initializing
-  IDLE = 1 # Waiting for trigger (delay or source change)
+  IDLE = 1 # Waiting for trigger (ie, for a source file to change)
   RSET = 2 # Reset job procesing parameters
   PROC = 3 # Processing goal list, one at a time
   JSRF = 4 # Initiate jsref generation
@@ -31,7 +31,7 @@ class ST(Enum):
 
 # Transitions and triggers. ORDERING of the checks is RELEVANT and CRITICAL
 # INIT -> IDLE : Initialization completed
-# IDLE -> PROC : sourcechange OR delaydone OR forcestart
+# IDLE -> PROC : sourcechange OR forcestart
 # PROC -> IDLE : forcestop
 # PROC -> INIT : forcestart OR forcestop OR curgoal == goals
 # PROC -> PAUS : )not above) AND paused
@@ -143,7 +143,6 @@ class CMonitor:
     # Various events and flags for the state machine
     self.jobsdone = False
     self.sourcechange = -1
-    self.delaydone = False
     self.forcestart = True
     self.forcestop = False
     self.exitflag = False
@@ -167,8 +166,6 @@ class CMonitor:
     self.lastreq = -1   # Request ID for the last request
     self.firstreq = -1  # First request ID for the current processing batch
     
-    self.delay = -1     # Delay between each iteration through goals
-
     self.jsref = None  # directory for jsbrain reference files 
     self.jsout = None  # directory for jsbrain output files
     
@@ -197,7 +194,6 @@ def exitonerr( err, usage=True ):
  Supported options are:
   -g or --graph : Enable graph comparisons
   -f or --force : Force regeneration of reference outputs
-  -d or --delay : Delay (in seconds) between loop iterations
   -w or --watch : Monitor directory for changes (multiple directories ok)'''
   print("\n========== jsbrain Output Monitoring/Comparison Daemon ==========")
   if (err): print(" Error: "+err)
@@ -681,9 +677,7 @@ def updateAverage(time):
   cm.total_count += 1
   cm.last_time = time
 def statusTask():
-  if (cm.state == ST.IDLE):
-    if (cm.delay > 0): setstatus("Waiting for timer tick...")
-    else: setstatus("Waiting for source file changes...")
+  if (cm.state == ST.IDLE): setstatus("Waiting for source file changes...")
   # Process pending status messages
   try:
     msg = qstatus.get_nowait()
@@ -822,10 +816,6 @@ def jobTask():
         setprogress(100*cm.curgoal/(len(cm.goals)-1))
     except (queue.Empty): pass
 
-  # Check delay
-  if (cm.delay>0 and time.time()-cm.last_update>cm.delay):
-    cm.delaydone = True
-
   prevstate = cm.state  
   # Process state machine transitions and tasks
   if (cm.state == ST.INIT):
@@ -841,7 +831,6 @@ def jobTask():
     
   elif (cm.state == ST.IDLE):
     if (cm.sourcechange >= 0): cm.sourcechange = -1;  cm.state = ST.PROC; restartJobs()
-    if (cm.delaydone):         cm.delaydone = False;  cm.state = ST.PROC; restartJobs()
     if (cm.forcestart):        cm.forcestart = False; cm.state = ST.PROC; restartJobs()
       
   elif (cm.state == ST.PROC):
@@ -917,14 +906,13 @@ def jobTask():
   if (prevstate != cm.state): refresh_status()
   
 # Entry point for the monitoring loop ------------------------------
-def monitor(stdscr, bbdir, graph, force, delay, watchdir):
+def monitor(stdscr, bbdir, graph, force, watchdir):
   # Precompute various input and output path strings
   cm.bbdir = os.path.abspath(bbdir)
   cm.jsreff = os.path.abspath(cm.bbdir+"/jsref")
   cm.jsoutf = os.path.abspath(cm.bbdir+"/jsout")
 
   cm.graph = graph
-  cm.delay = delay
   
   # Clear screen and initialize various fields
   cm.sscr = stdscr
@@ -975,7 +963,7 @@ def monitor(stdscr, bbdir, graph, force, delay, watchdir):
 #  the function monitor()
 def main( argv ):
   try:
-    opts, args = getopt.getopt(argv,"hgfd:w:",["graph","force","delay=","watch="])
+    opts, args = getopt.getopt(argv,"hgfd:w:",["graph","force","watch="])
   except getopt.GetoptError as err: exitonerr(str(err))
   
   if (len(args) != 1):
@@ -984,7 +972,6 @@ def main( argv ):
     
   graph = False
   force = False
-  delay = -1
   bbdir = args[0]
   watchdir = []
   
@@ -992,7 +979,6 @@ def main( argv ):
     if opt == '-h': exitonerr("")
     elif opt in ("-g", "--graph"): graph = True
     elif opt in ("-f", "--force"): force = True
-    elif opt in ("-d", "--delay"): delay = math.ceil(int(arg))
     elif opt in ("-w", "--watch"):
       if (not os.path.isdir(arg)): exitonerr(arg+' is not a directory')
       watchdir.append(str(arg))
@@ -1004,15 +990,11 @@ def main( argv ):
   if (not os.path.isdir(bbdir) or not os.path.exists(bbdir)):
     exitonerr(bbdir+" is not a directory.")
 
-  if (len(watchdir) != 0 and delay > 0):
-    exitonerr("Options -w and -d should not be used together")
-  if (len(watchdir) == 0): delay = 10
-  
-  curses.wrapper(monitor, bbdir, graph, force, delay, watchdir)
+  curses.wrapper(monitor, bbdir, graph, force, watchdir)
 
 # Make sure we only execute main in the top level environment
 if __name__ == "__main__":
-  # TODO: this breaks the usage message
+  # this had been breaking the usage message but seems fine now
   mystdout = StdOutWrapper()
   sys.stdout = mystdout
   sys.stderr = mystdout
