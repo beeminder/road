@@ -15,26 +15,24 @@ DISPCMD = next(p for p in ['/usr/bin/open', '/usr/local/bin/display',
                            '/usr/bin/display', '/bin/true']
                if os.path.exists(p)) # path to utility for displaying images
 
-################################################################################
-############################### EVERYTYHING ELSE ###############################
-
-class ST(Enum):
-  INIT = 0 # Initializing
-  IDLE = 1 # Waiting for trigger (ie, for a source file to change)
-  RSET = 2 # Reset job procesing parameters
-  PROC = 3 # Processing goal list, one at a time
-  JSRF = 4 # Initiate jsref generation
-  JSBR = 5 # Initiate jsbrain generation
-  WAIT = 6 # Wait for processing to finish
-  PAUS = 7 # Processing paused
-  EXIT = 8 # Exiting automon
+ST = Enum('ST', [
+  'INIT', # Initializing
+  'IDLE', # Waiting for trigger (ie, for a source file to change)
+  'RSET', # Reset job procesing parameters
+  'PROC', # Processing goal list, one at a time
+  'JSRF', # Initiate jsref generation
+  'JSBR', # Initiate jsbrain generation
+  'WAIT', # Wait for processing to finish
+  'PAUS', # Processing paused
+  'EXIT', # Exiting automon
+])
 
 # Transitions and triggers. ORDERING of the checks is RELEVANT and CRITICAL
 # INIT -> IDLE : Initialization completed
 # IDLE -> PROC : sourcechange OR forcestart
 # PROC -> IDLE : forcestop
 # PROC -> INIT : forcestart OR forcestop OR curgoal == goals
-# PROC -> PAUS : )not above) AND paused
+# PROC -> PAUS : (not above) AND paused
 # PROC -> JSRF : (not above) AND (jsref OR jsbrain_checkref)
 # PROC -> JSBR : (not above)
 # JSBR -> WAIT : (not above)
@@ -42,13 +40,15 @@ class ST(Enum):
 # PAUS -> PROC : NOT paused OR forcestop
 # *    -> EXIT : exitflag
 
+################################################################################
+############################### EVERYTYHING ELSE ###############################
+
 class StdOutWrapper:
   text = ""
-  def write(self,txt):
+  def write(self, txt):
     self.text += txt
-    # Uluc says: Why below? Seems to print only the last 30 lines?
-    self.text = '\n'.join(self.text.split('\n')[-30:])
-  def get_text(self,beg,end):
+    self.text = '\n'.join(self.text.split('\n')[-30:]) # why just last 30 lines?
+  def get_text(self, beg, end):
     return '\n'.join(self.text.split('\n')[beg:end])
 
 # Scroll related data ----------------------------
@@ -79,7 +79,7 @@ class ScrollData:
 # JobRequest and JobResponse objects are used to communicate with the worker
 # thread. Upon receiving a JobRequest on the pending job queue, the worker
 # thread executes the corresponding Beebrain task and returns the result, as
-# well as the original request object in a response queue
+# well as the original request object in a response queue.
 reqcnt = 0
 class JobRequest:
   def __init__(self, typ):
@@ -102,10 +102,9 @@ class JobResponse:
     self.grdiff = None
 
 # This FileSystemEvent handler from the watchdog library is used to monitor
-# various directories, initiating a restart for processing jsbrain goals
+# various directories, initiating a restart for processing jsbrain goals.
 class JSBrainEventHandler(FileSystemEventHandler):
-  def __init__(self):
-    FileSystemEventHandler.__init__(self)
+  def __init__(self): FileSystemEventHandler.__init__(self)
   def on_modified(self, event):
     #print(event.event_type)
     #print(event.src_path)
@@ -115,59 +114,54 @@ class JSBrainEventHandler(FileSystemEventHandler):
 # Global structure for common data ----------------- 
 class CMonitor:
   def __init__(self):
-    self.sscr = None # Stores stdscr
-    self.ww = 80     # Window width
-    self.wh = 25     # Window height
-    self.twin = None # Top window for information
-    self.lwin = None # Left window for the goal list
-    self.lw = 0      # Left window width
-    self.lh = 0      # Left window height
+    self.sscr = None       # Stores stdscr
+    self.ww = 80           # Window width
+    self.wh = 25           # Window height
+    self.twin = None       # Top window for information
+    self.lwin = None       # Left window for the goal list
+    self.lw = 0            # Left window width
+    self.lh = 0            # Left window height
     self.ls = ScrollData() # Left window scrolling
-    self.rwin = None # Right window for the summary of differences
+    self.rwin = None       # Right window for the summary of differences
     self.rs = ScrollData() # Right window scrolling
-    self.swin = None # Status window
-    self.mwin = None # Menu window
+    self.swin = None       # Status window
+    self.mwin = None       # Menu window
 
-    self.goals = []  # List of goals to be processed 
-    self.problems = []  # List of problematic goals 
+    self.goals = []        # List of goals to be processed
+    self.problems = []     # List of problem goals
 
     self.status = "Initializing..."
     self.progress = 0
     self.needupdate = False
     
-    self.bbdir = None  # Directory for bb files
-    self.graph = False # Whether to generate graphs or not
-    # Current jobTask state
-    self.state = ST.INIT
+    self.bbdir = None      # Directory for bb files
+    self.graph = False     # Whether to generate graphs or not
+    self.state = ST.INIT   # Current jobTask state
     
-    # Various events and flags for the state machine
-    self.jobsdone = False
+    self.jobsdone = False  # Various events and flags for the state machine...
     self.sourcechange = -1
     self.forcestart = True
     self.forcestop = False
     self.exitflag = False
 
-    self.paused = False     # Processing has paused
-    self.jsref = False # Generating reference jsbrain graphs
+    self.paused = False    # Processing paused
+    self.jsref = False     # Generating reference jsbrain graphs
 
     self.curgoal = 0
     self.last_update = -1
 
-    # Execution time logs
-    self.last_time = 0
+    self.last_time = 0     # Execution time logs...
     self.total_time = 0
     self.total_count = 0
     
-    # Alert task states
-    self.req_alert = False  # Alert has been requested
-    self.alerted = False    # Alert has been given
+    self.req_alert = False # Alert task state: alert has been requested
+    self.alerted = False   # Alert task state: alert has been given
 
-    # Job task states
-    self.lastreq = -1   # Request ID for the last request
-    self.firstreq = -1  # First request ID for the current processing batch
-    
-    self.jsref = None  # directory for jsbrain reference files 
-    self.jsout = None  # directory for jsbrain output files
+    self.lastreq = -1      # Job task state: request ID for the last request
+    self.firstreq = -1     # Job task state: first request ID for current batch
+
+    self.jsref = None      # Directory for jsbrain reference files 
+    self.jsout = None      # Directory for jsbrain output files
     
 cm = CMonitor()
 
@@ -185,11 +179,11 @@ menu = [
 UP = -1   # Scroll-up increment
 DOWN = 1  # Scroll-down increment
 PLAY = next(p for p in ['/usr/bin/play', '/usr/bin/afplay']
-      if os.path.exists(p)) # path to yr utility of choice to play sound 
-LWW = 40 # Width of left window
+            if os.path.exists(p)) # path to your utility of choice to play sound
+LWW = 40  # Width of left window
 
 # Utility functions  ------------------------------
-def exitonerr( err, usage=True ):
+def exitonerr(err, usage=True):
   usage = ''' Usage: automon.py <options> bbdir
  Supported options are:
   -g or --graph : Enable graph comparisons
@@ -200,7 +194,7 @@ def exitonerr( err, usage=True ):
   if (usage): print(usage+"\n")
   sys.exit()
 
-def play( sound ):
+def play(sound):
   try:
     subprocess.check_output([PLAY, sound], stderr=subprocess.STDOUT)
   except FileNotFoundError:
@@ -215,11 +209,9 @@ def trstr(s, l): return (s[:l] + '..') if len(s) > l else s
 
 # Update the scroll object 's' to advance by 1 in 'dir'
 def scroll(s, dir):
-  # next cursor position after scrolling
-  next_line = s.cur + dir
+  next_line = s.cur + dir # next cursor position after scrolling
 
-  # Up direction scroll overflow: current cursor position is zero, but top 
-  # position greater than zero 
+  # Up direction scroll overflow: current cursor position = 0 but top pos > 0
   if dir == UP and (s.top > 0 and s.cur == 0):
     s.top += dir
     return
@@ -229,12 +221,12 @@ def scroll(s, dir):
      and (s.top + s.max_lines < s.bottom):
     s.top += dir
     return
-  # Scroll up: current cursor position or top position is greater than zero
+  # Scroll up: current cursor position or top position > 0
   if (dir == UP) and (s.top > 0 or s.cur > 0):
     s.cur = next_line
     return
-  # Scroll down: next cursor position is above max lines, and absolute
-  # position of next cursor could not touch the bottom
+  # Scroll down: next cursor position is above max lines, and absolute position
+  # of next cursor could not touch the bottom
   if dir == DOWN and next_line < s.max_lines and s.top + next_line < s.bottom:
     s.cur = next_line
     return
@@ -252,8 +244,8 @@ def paging(s, direction):
   if next_page == s.page: s.cur = min(s.cur, s.bottom % ml - 1)
 
   # Page up: if current page is not a first page, page up is possible top
-  # position can not be negative, so if top position is
-  # going to be negative, we should set it as 0
+  # position can not be negative, so if top position is going to be negative, 
+  # we should set it as 0
   if direction == UP and current_page > 0:
     s.top = max(0, s.top - ml)
     return
@@ -267,14 +259,14 @@ def _addstr(w,y,x,s,a=curses.A_NORMAL):
   try:
     w.addstr(y,x,s,a)
   except curses.error:
-    print("_addstr error: ww:"+str(cm.ww)+",wh:"+str(cm.wh)+",y:"+str(y)+", x:"+str(x)+",str="+s)
+    print("_addstr error: ww:"+str(cm.ww)+",wh:"+str(cm.wh)+
+          ",y:"+str(y)+", x:"+str(x)+",str="+s)
     pass
 
 def resize_windows():
   success = False
-  # Try until successful. Sometimes, there are race conditions with
-  # resize that result in errors, in which case resizes are
-  # reattempted
+  # Try until successful. Sometimes there are race conditions with resize that
+  # result in errors, in which case resizes are reattempted
   while (not success):
     cm.wh,cm.ww = cm.sscr.getmaxyx()
     lw = min(int(cm.ww/2),LWW)
@@ -290,7 +282,7 @@ def resize_windows():
       if (cm.lwin): cm.lwin.resize(cm.wh-5,lw)
       else: cm.lwin = curses.newwin(cm.wh-5,lw,1,0)
       cm.lwin.refresh()
-      cm.lw = lw;cm.lh = cm.wh-5
+      cm.lw = lw; cm.lh = cm.wh-5
 
       # Update left and right scroll data based on the new height
       cm.ls.max_lines = cm.wh-7
@@ -299,24 +291,23 @@ def resize_windows():
         cm.ls.cur = cm.ls.max_lines-1
       
       # Update the right window and its scroll data
-      if (cm.rwin): cm.rwin.resize(cm.wh-5,cm.ww-lw);cm.rwin.mvwin(1,lw)
-      else: cm.rwin = curses.newwin(cm.wh-5,cm.ww-lw,1,lw)
+      if (cm.rwin): cm.rwin.resize(cm.wh-5, cm.ww-lw); cm.rwin.mvwin(1, lw)
+      else: cm.rwin = curses.newwin(cm.wh-5, cm.ww-lw, 1, lw)
       cm.rwin.refresh()
       cm.rw = cm.ww-lw
       cm.rs.max_lines = cm.wh-7
       cm.rs.page = cm.rs.bottom // int(cm.rs.max_lines/2)
 
       # Update status and menu windows
-      if (cm.swin): cm.swin.resize(3,cm.ww);cm.swin.mvwin(cm.wh-4,0)
-      else: cm.swin = curses.newwin(3,cm.ww,cm.wh-4,0)
+      if (cm.swin): cm.swin.resize(3, cm.ww); cm.swin.mvwin(cm.wh-4, 0)
+      else: cm.swin = curses.newwin(3, cm.ww, cm.wh-4, 0)
       cm.swin.refresh()
 
-      if (cm.mwin): cm.mwin.resize(1,cm.ww);cm.mwin.mvwin(cm.wh-1,0)
-      else: cm.mwin = curses.newwin(1,cm.ww,cm.wh-1,0)
+      if (cm.mwin): cm.mwin.resize(1, cm.ww); cm.mwin.mvwin(cm.wh-1, 0)
+      else: cm.mwin = curses.newwin(1, cm.ww, cm.wh-1, 0)
       cm.mwin.refresh()
     except:
-      # Exception may mean that resized windows ended up outside
-      # a resized screen
+      # Exception may mean resized windows ended up outside a resized screen
       success = False
       
   refresh_all()
@@ -327,83 +318,85 @@ def refresh_menu():
   w.clear()
   for mi in menu:
     if (x + len(mi[0]) + len(mi[1]) + 2 < cm.ww-2):
-      _addstr(w,0,x,mi[0], curses.A_REVERSE)
-      w.addch(0,x+len(mi[0]),' ')
+      _addstr(w, 0, x, mi[0], curses.A_REVERSE)
+      w.addch(0, x+len(mi[0]), ' ')
       x += len(mi[0])+1
-      _addstr(w,0,x, mi[1])
+      _addstr(w, 0, x, mi[1])
       x += len(mi[1])
-      _addstr(w,0,x+1,"  ")
+      _addstr(w, 0, x+1, "  ")
       x += 2
   w.refresh()
 
 def refresh_topline():
   w = cm.twin
   w.clear()
-  if (cm.graph): _addstr(w,0,1,"[Graph]", curses.A_REVERSE)
-  else:  _addstr(w,0,1,"[Graph]")
+  if (cm.graph): _addstr(w, 0, 1, "[Graph]", curses.A_REVERSE)
+  else:  _addstr(w, 0, 1, "[Graph]")
 
-  if (cm.jsref): _addstr(w,0,10,"[References]", curses.A_REVERSE)
-  else:  _addstr(w,0,10,"[References]")
+  if (cm.jsref): _addstr(w, 0, 10, "[References]", curses.A_REVERSE)
+  else:  _addstr(w, 0, 10, "[References]")
 
-  if (cm.paused): _addstr(w,0,23,"[Paused]", curses.A_REVERSE)
-  else:  _addstr(w,0,23,"[Paused]")
+  if (cm.paused): _addstr(w, 0, 23, "[Paused]", curses.A_REVERSE)
+  else:  _addstr(w, 0, 23, "[Paused]")
 
   w.refresh()
 
 def refresh_status():
   w = cm.swin
-  w.clear();w.box()
-  _addstr(w,0,1,str(cm.state), curses.A_BOLD)
-  w.addnstr(1,1,cm.status,cm.ww-2)
-  _addstr(w,0,10,
-          "(".ljust(int(cm.progress*(cm.ww-14)/100),'o').ljust(cm.ww-14)+")")
+  w.clear(); w.box()
+  _addstr(w, 0, 1, str(cm.state), curses.A_BOLD)
+  w.addnstr(1, 1, cm.status, cm.ww-2)
+  _addstr(w, 0, 10,
+          "(".ljust(int(cm.progress*(cm.ww-14)/100), 'o').ljust(cm.ww-14)+")")
   if (cm.total_count != 0):
-    _addstr(w,2,cm.ww-29,
-         " Avg: "+str(int(1000*cm.total_time/cm.total_count))+"ms ",
-         curses.A_BOLD)
-    _addstr(w,2,cm.ww-15," Last: "+str(int(1000*cm.last_time))+"ms ",
-         curses.A_BOLD)
+    _addstr(w, 2, cm.ww-29,
+            " Avg: "+str(int(1000*cm.total_time/cm.total_count))+"ms ",
+            curses.A_BOLD)
+    _addstr(w, 2, cm.ww-15, " Last: "+str(int(1000*cm.last_time))+"ms ",
+            curses.A_BOLD)
   w.refresh()
 
 def refresh_windows():
   w = cm.lwin
-  w.clear();w.box();w.vline(1,cm.lw-6,0,cm.lh-2)
-  w.addch(0,cm.lw-6,curses.ACS_TTEE)
-  w.addch(cm.lh-1,cm.lw-6,curses.ACS_BTEE)
-  _addstr(w,0,1,"Errors in:", curses.A_BOLD)
-  _addstr(w,0,cm.lw-5,"RJPG", curses.A_BOLD)
+  w.clear(); w.box(); w.vline(1, cm.lw-6, 0, cm.lh-2)
+  w.addch(0, cm.lw-6, curses.ACS_TTEE)
+  w.addch(cm.lh-1, cm.lw-6, curses.ACS_BTEE)
+  _addstr(w, 0, 1, "Errors in:", curses.A_BOLD)
+  _addstr(w, 0, cm.lw-5, "RJPG", curses.A_BOLD)
   for i, item in enumerate(cm.problems[cm.ls.top:cm.ls.top + cm.ls.max_lines]):
     # Highlight the current cursor line
-    slug = trstr(item.req.slug,cm.lw-9).ljust(cm.lw-7)
-    if i == cm.ls.cur: _addstr(w,i+1, 1, slug, curses.A_REVERSE)
-    else: _addstr(w,i+1, 1, slug)
+    slug = trstr(item.req.slug, cm.lw-9).ljust(cm.lw-7)
+    if i == cm.ls.cur: _addstr(w, i+1, 1, slug, curses.A_REVERSE)
+    else: _addstr(w, i+1, 1, slug)
     if (item.req.reqtype == "jsref"):
-      _addstr(w,i+1, cm.lw-5, "X", curses.A_REVERSE)
+      _addstr(w, i+1, cm.lw-5, "X", curses.A_REVERSE)
     elif (item.req.reqtype == "jsbrain"):
       _addstr(w,i+1, cm.lw-4, "X", curses.A_REVERSE)
     if (item.grdiff and item.grdiff > 0):
-      _addstr(w,i+1, cm.lw-2, "X", curses.A_REVERSE)
+      _addstr(w, i+1, cm.lw-2, "X", curses.A_REVERSE)
       
   w.refresh()
 
   w = cm.rwin
   w.clear(); w.box()
-  if (cm.ls.bottom == 0): _addstr(w,0,1,"Goal: not selected", curses.A_BOLD)
+  if (cm.ls.bottom == 0): _addstr(w, 0, 1, "Goal: not selected", curses.A_BOLD)
   else:
     sel = cm.ls.top+cm.ls.cur
     pr = cm.problems[sel]
     errmsgs = []
-    if (pr.errmsg): errmsgs += pr.errmsg.split('\n')
+    if (pr.errmsg):   errmsgs += pr.errmsg.split('\n')
     if (pr.jsondiff): errmsgs += pr.jsondiff.split('\n')
     errtxt = []
     for e in errmsgs:
       errtxt += textwrap.wrap(e, cm.ww-cm.lw-3)
     cm.rs.bottom = len(errtxt)
     cm.rs.page = cm.rs.bottom // int(cm.rs.max_lines/2)
-    w.addnstr(0,1,"Errors: ("+pr.req.reqtype+", "+pr.req.slug+")", cm.ww-cm.lw-2,curses.A_BOLD)
+    w.addnstr(0, 1, "Errors: ("+pr.req.reqtype+", "+pr.req.slug+")", 
+              cm.ww-cm.lw-2, curses.A_BOLD)
     for i, item in enumerate(errtxt[cm.rs.top:cm.rs.top+cm.rs.max_lines]):
-      _addstr(w,i+1, 1, item)
-    w.vline(1+int((cm.lh-2)*cm.rs.top/((cm.rs.page+1)*(cm.rs.max_lines//2))), cm.ww-cm.lw-2, curses.ACS_BOARD, (cm.lh-2)//(cm.rs.page+1))
+      _addstr(w, i+1, 1, item)
+    w.vline(1+int((cm.lh-2)*cm.rs.top/((cm.rs.page+1)*(cm.rs.max_lines//2))), 
+            cm.ww-cm.lw-2, curses.ACS_BOARD, (cm.lh-2)//(cm.rs.page+1))
   w.refresh()
 
 def refresh_all():
@@ -419,7 +412,7 @@ def sort_goallist():
   for i in range(len(cm.goals)):
     slug = os.path.splitext(cm.goals[i])[0]
     if (find_problem_slug(slug) < 0): continue
-    cm.goals[freeind],cm.goals[i] = cm.goals[i],cm.goals[freeind]
+    cm.goals[freeind], cm.goals[i] = cm.goals[i], cm.goals[freeind]
     freeind += 1
   return
 
@@ -433,8 +426,7 @@ def update_goallist():
   
 # JSBRAIN related functions ------------------------------
 
-# Checks timestamps of generated files wrt the jsbrain reference
-# files, returns
+# Checks timestamps of generated files wrt the jsbrain reference files, returns
 # 0 if the reference is up to date
 # -1 if any of the reference files are missing
 # -2 if the BB file is more recent than any of the references
@@ -462,13 +454,13 @@ def jsbrain_checkref( slug, inpath, refpath ):
       bbtime > svgtime):   return -2
   return 0
 
-# Invokes jsbrain on the indiated slug from inpath, placing outputs in
-# outpath, generating graphs if requested
+# Invokes jsbrain on the indicated slug from inpath, placing outputs in outpath,
+# generating graphs if requested
 def jsbrain_make(job):
   errmsg = ""
   starttm = time.time();
   try:
-    payload = {"slug": job.slug, "inpath" : job.inpath, "outpath": job.outpath}
+    payload = {"slug": job.slug, "inpath": job.inpath, "outpath": job.outpath}
     if (not job.graph): payload["nograph"] = "1"
     resp = requests.get("http://localhost:8777/", payload)
     rj = resp.json()
@@ -480,9 +472,8 @@ def jsbrain_make(job):
     errmsg = "Could not connect to jsbrain_server."
   return {'dt': time.time() - starttm, 'errmsg': errmsg}
 
-
 # Compares the output graph to a reference for the supplied slug
-def graph_compare(slug, out, ref ):
+def graph_compare(slug, out, ref):
   errmsg = ""
   imgout = out+"/"+slug+".png"
   imgref = ref+"/"+slug+".png"
@@ -494,13 +485,13 @@ def graph_compare(slug, out, ref ):
     if (filecmp.cmp(svgref, svgout, shallow=False)):
       return {'diffcnt': 0, 'imgdiff': imgdiff, 'errmsg': errmsg}
   except OSError as e:
-      pass
+    pass
     # print("Error comparing SVG files: "+str(e.strerror))
   try: 
     try:
       resp = subprocess.check_output(
-        ['compare', '-metric', 'AE', imgref, imgout, '-compose', 'src', 
-         imgdiff], stderr=subprocess.STDOUT)
+        ['compare', '-metric', 'AE', imgref, imgout, 
+         '-compose', 'src', imgdiff], stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
       if (e.returncode == 1):
         diffcnt = int(e.output.decode('utf-8'))
@@ -514,7 +505,7 @@ def graph_compare(slug, out, ref ):
         errmsg += " "+e.strerror
     try:
       if (diffcnt == 0):
-        os.unlink(imgdiff) #Seems like there are no errors, remove diff
+        os.unlink(imgdiff) # Seems like there are no errors, remove diff
       else:
         subprocess.check_output(
           ['convert', '-append', imgdiff, imgref, imgout, imgdiff],
@@ -525,13 +516,18 @@ def graph_compare(slug, out, ref ):
   finally:
     return {'diffcnt': diffcnt, 'imgdiff': imgdiff, 'errmsg': errmsg}
 
-def json_compare( job ):
+def json_compare(job):
   txt = ""
   try:
-    with open(job.outpath+"/"+job.slug+".json", 'r') as myfile: jsonout=json.loads(myfile.read())
-    with open(job.jsref+"/"+job.slug+".json", 'r') as myfile: jsonref=json.loads(myfile.read())
+    with open(job.outpath+"/"+job.slug+".json", 'r') as myfile: 
+      jsonout = json.loads(myfile.read())
+    with open(job.jsref+"/"+job.slug+".json", 'r') as myfile: 
+      jsonref = json.loads(myfile.read())
     for prop in jsonref:
-      if (prop == "proctm" or prop == "thumburl" or prop == "graphurl"  or prop == "svgurl"):
+      if (prop == "proctm" or 
+          prop == "thumburl" or 
+          prop == "graphurl"  or 
+          prop == "svgurl"):
         del jsonout[prop]
         continue
       if (not prop in jsonout):
@@ -548,10 +544,11 @@ def json_compare( job ):
     txt = "json_compare: Could not open one of the required json files"
   return None if txt == "" else txt
 
-def json_dump( job ):
+def json_dump(job):
   txt = ""
   try:
-    with open(job.outpath+"/"+job.slug+".json", 'r') as myfile: jsonout=json.loads(myfile.read())
+    with open(job.outpath+"/"+job.slug+".json", 'r') as myfile: 
+      jsonout = json.loads(myfile.read())
     for prop in jsonout:
       txt += "* "+prop+"= "+str(jsonout[prop])+"\n" # new / current output
   except FileNotFoundError:
@@ -613,7 +610,8 @@ def worker(pending, completed):
         retval = jsbrain_make(job)
         resp.dt = retval['dt']
         resp.errmsg = retval['errmsg']
-        setstatus(reqstr+": Generating jsbrain reference for "+job.slug+"...done!")
+        setstatus(reqstr+": Generating jsbrain reference for "+job.slug+
+                  "...done!")
         updateAverage(resp.dt)
 
       # Inform the main thread about the result
@@ -624,7 +622,7 @@ def worker(pending, completed):
   setstatus("Worker thread finished.")
     
 def worker_start():
-  return threading.Thread(target=worker,args=(qpending,qcompleted))
+  return threading.Thread(target=worker, args=(qpending,qcompleted))
 
 def worker_stop():
   # Empty the request queue
@@ -632,26 +630,26 @@ def worker_stop():
   # Issue a kill request to the worker thread
   qpending.put(JobRequest("quit"))
 
-def find_problem_slug( slug ):
+def find_problem_slug(slug):
   for i in range(len(cm.problems)):
     e = cm.problems[i]
     if (e.req.slug == slug): return i
   return -1
 
-def find_problem( resp):
+def find_problem(resp):
   for i in range(len(cm.problems)):
     e = cm.problems[i]
     if (e.req.reqtype == resp.req.reqtype and e.req.slug == resp.req.slug):
       return i
   return -1
 
-def add_problem( resp ):
+def add_problem(resp):
   i = find_problem(resp)
   if (i < 0): cm.problems.append( resp )
   else: cm.problems[i] = resp    
   cm.ls.bottom = len(cm.problems)
   
-def remove_problem( resp ):
+def remove_problem(resp):
   i = find_problem(resp)
   if (i < 0): return
   del cm.problems[i]
@@ -681,9 +679,9 @@ def statusTask():
   # Process pending status messages
   try:
     msg = qstatus.get_nowait()
-    newstat = trstr(msg.ljust(cm.ww-4),cm.ww-2)
+    newstat = trstr(msg.ljust(cm.ww-4), cm.ww-2)
     if (newstat != cm.status):
-      cm.status = trstr(msg.ljust(cm.ww-4),cm.ww-2)
+      cm.status = trstr(msg.ljust(cm.ww-4), cm.ww-2)
       refresh_status()
   except (queue.Empty): pass
 
@@ -700,19 +698,17 @@ def uiTask():
         try:
           imgdiff=cm.jsoutf+"/"+curpr.req.slug+"-diff.png"
           subprocess.Popen([DISPCMD+' '+imgdiff],
-                   shell=True,stdin=None,stdout=None,stderr=None,
-                   close_fds=True)
-        except OSError as e:
-          pass
+                           shell=True,stdin=None,stdout=None,stderr=None,
+                           close_fds=True)
+        except OSError as e: pass
       else:
         # If no graph differences are present, just show the png output
         try:
           img=cm.jsoutf+"/"+curpr.req.slug+".png"
           subprocess.Popen([DISPCMD+' '+img],
-                   shell=True,stdin=None,stdout=None,stderr=None,
-                   close_fds=True)
-        except OSError as e:
-          pass
+                           shell=True,stdin=None,stdout=None,stderr=None,
+                           close_fds=True)
+        except OSError as e: pass
 
   elif c == ord('p'): cm.paused = not cm.paused; refresh_topline()
   elif c == ord('c'):
@@ -761,8 +757,7 @@ def uiTask():
   return False
 
 # Display task: Manages the left and right windows
-def displayTask():
-  pass
+def displayTask(): pass
 
 def alert():     cm.req_alert = True
 def alertoff():  cm.req_alert = False; cm.alerted = False
