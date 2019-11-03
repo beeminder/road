@@ -62,8 +62,8 @@ self.Cols = {
   ORNG:   "#ff8000",
   WITE:   "#ffffff",
   BIGG:   "#ffe54c",
-  PINK:   "#ffe5e5",
-  PNKE:   "#ffcccc",
+  PINK:   "#ffe5e5", // original pinkzone/oinkzone
+  PNKE:   "#ffcccc", // not used apparently
   GRAY:   "#f0f0f0",
   BLCK:   "#000000",
   GRNDOT: "#00aa00", // Dark green for good side of the road
