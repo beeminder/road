@@ -208,7 +208,7 @@
     textBox:      { margin: 3 }
   },
   
-  /** This style text gets embedded into the SVG object to enable proper saving of the SVG */
+  /** Style text embedded in the SVG object for proper saving of the SVG */
   SVGStyle = 
     ".svg {shape-rendering: crispEdges;} " +
     ".axis path, .axis line " + 
@@ -2988,29 +2988,30 @@
     }
 
     function updateYBHP() {
-      if (opts.divGraph == null || road.length == 0) return;
+      if (opts.divGraph == null || road.length == 0) return
       if (!opts.roadEditor && !goal.ybhp) {
-        gYBHP.selectAll("*").remove();
-        return;
+        gYBHP.selectAll("*").remove()
+        return
       }
       var regions;
       if (/*opts.roadEditor ||*/ !goal.ybhp) {
-        regions = [[0, -1, opts.halfPlaneCol.fill, "none", 0],
-                   [3, -1, null, null, null],
-                   [2, 3, null, null, null],
-                   [1, 2, null, null, null],
-                   [0, 1, null, null, null],
-                   [0, -2, null, null, null]]
+        regions = [
+          [0, -1, opts.halfPlaneCol.fill, "none", 0],
+          [3, -1, null, null, null],
+          [2, 3, null, null, null],
+          [1, 2, null, null, null],
+          [0, 1, null, null, null],
+          [0, -2, null, null, null]]
       } else {
-        regions = [[0, -1, null, null, null],
-                   [3, 7, "#bfeabf", "none", 0],
-                   [7, -1, "#ffffff", "none", 0],
-                   [7, 7, "none", bu.Cols.BIGG, 2],
-                   [2, 3, "#ceceff", "none", 0],
-                   [1, 2, "#ffe8bf", "none", 0],
-                   [0, 1, "#ffbfbf", "none", 0],
-                   [0, -2, "#ffffff", "none", 0]
-                  ]
+        regions = [
+          [0, -1, null,      null,         null],
+          [2,  6, "#cceecc", "none",       0],    // green
+          [6, -1, "#b2e5b2", "none",       0],    // dark green
+          [6,  6, null,    bu.Cols.BIGG, 2],    // yellow guiding line
+          [1,  2, "#e5e5ff", "none",       0],    // blue
+          [0,  1, "#fff1d8", "none",       0],    // orange
+          [0, -2, "#ffe5e5", "none",       0],    // red
+          [0,  0, null,      null,         0]]    
       }
 
       // regions = [[0, -1, null, null, null],
@@ -3024,10 +3025,12 @@
       let dtd = br.dtdarray( road, goal )
 
       for (const reg of regions) {
-        var rstrt = reg[0], rend = reg[1]
-        var ostrt = rstrt * bu.SID * goal.yaw, oend = rend * bu.SID * goal.yaw
+        var rstrt = reg[0], 
+            rend  = reg[1]
+        var ostrt = rstrt * bu.SID * goal.yaw, 
+            oend  = rend  * bu.SID * goal.yaw
         var clsname = "halfplane"+rstrt+rend
-        var ybhpelt = gYBHP.select("."+clsname);
+        var ybhpelt = gYBHP.select("."+clsname)
         if (reg[2] == null) {
           ybhpelt.remove()
           continue
@@ -3125,9 +3128,10 @@
           .attr("class","pinkregion")
 	  	    .attr("d", d)
 	  	    .attr("fill-opacity", 0.4)
-          .attr("fill", bu.Cols.PINK);
+          .attr("fill", goal.ybhp ? bu.Cols.PINK 
+                                  : bu.Cols.PINK) // oinkzone
       } else {
-        pinkelt.attr("d", d);
+        pinkelt.attr("d", d)
       }
     }
 
@@ -3137,8 +3141,7 @@
       // ex,ey: End of the current line segment
       var fx = nXSc(ir[0].sta[0]*1000), fy = nYSc(ir[0].sta[1]);
       var ex = nXSc(ir[0].end[0]*1000), ey = nYSc(ir[0].end[1]);
-      // Adjust the beginning of the road to ensure dashes are
-      // stationary wrt to time
+      // Adjust start of road so dashes are stationary wrt time
       var newx = (-nXSc(iroad[0].sta[0]*1000)) % (2*opts.oldRoadLine.dash);
       if (ex != fx) fy = (fy + (-newx-fx)*(ey-fy)/(ex-fx));
       if (fx < 0 || newx > 0) fx = -newx;
@@ -3167,7 +3170,7 @@
   		    .style("stroke", bu.Cols.ORNG);
       } else {
         roadelt.attr("d", rd)
-  		    .style("stroke-width",svgshn(opts.oldRoadLine.width*scf,3));
+  		    .style("stroke-width",svgshn(opts.oldRoadLine.width*scf,3))
       }
 
     }
