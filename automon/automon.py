@@ -361,7 +361,7 @@ def refresh_windows():
   w.clear(); w.box(); w.vline(1, cm.lw-6, 0, cm.lh-2)
   w.addch(0, cm.lw-6, curses.ACS_TTEE)
   w.addch(cm.lh-1, cm.lw-6, curses.ACS_BTEE)
-  _addstr(w, 0, 1, "Errors in:", curses.A_BOLD)
+  _addstr(w, 0, 1, str(len(cm.problems)) + " errors:", curses.A_BOLD)
   _addstr(w, 0, cm.lw-5, "RJPG", curses.A_BOLD)
   for i, item in enumerate(cm.problems[cm.ls.top:cm.ls.top + cm.ls.max_lines]):
     # Highlight the current cursor line
@@ -430,7 +430,7 @@ def update_goallist():
 # 0 if the reference is up to date
 # -1 if any of the reference files are missing
 # -2 if the BB file is more recent than any of the references
-def jsbrain_checkref( slug, inpath, refpath ):
+def jsbrain_checkref(slug, inpath, refpath):
   inpath = os.path.abspath(inpath)+"/"
   refpath = os.path.abspath(refpath)+"/"
   bb = inpath+slug+".bb"
@@ -645,7 +645,7 @@ def find_problem(resp):
 
 def add_problem(resp):
   i = find_problem(resp)
-  if (i < 0): cm.problems.append( resp )
+  if (i < 0): cm.problems.append(resp)
   else: cm.problems[i] = resp    
   cm.ls.bottom = len(cm.problems)
   
@@ -956,7 +956,7 @@ def monitor(stdscr, bbdir, graph, force, watchdir):
 #  Main entry point for automon. Parses command line arguments, sets
 #  appropriate fields and flags and invokes the curses wrapper with
 #  the function monitor()
-def main( argv ):
+def main(argv):
   try:
     opts, args = getopt.getopt(argv,"hgfd:w:",["graph","force","watch="])
   except getopt.GetoptError as err: exitonerr(str(err))
