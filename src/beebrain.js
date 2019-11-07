@@ -417,7 +417,7 @@ const beebrain = function( bbin ) {
   }
 
   // Take string like "shark jumping #yolo :) #shark", return {"#yolo", "#shark"}
-  const hre = /(?:^|\s)(#\p{L}[\p{L}0-9]+)(?=$|\s)/gu // why outside function?
+  const hre = /(?:^|\s)(#\p{L}[\p{L}0-9_]+)(?=$|\s)/gu // why outside function?
   function hashextract(s) {
     let set = new Set(), m
     hre.lastIndex = 0
