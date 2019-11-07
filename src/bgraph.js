@@ -243,11 +243,11 @@
   PRAF  = .015,
 
   /** paths for various PNG images used within the SVG */
-  PNG = { beye: "https://s3.amazonaws.com/bmndr/road/bullseye.png", 
+  PNG = { beye:  "https://s3.amazonaws.com/bmndr/road/bullseye.png", 
           beyey: "https://s3.amazonaws.com/bmndr/road/bullseye_prev.png",
-          skl: "https://s3.amazonaws.com/bmndr/road/jollyroger.png",
-          inf: "https://s3.amazonaws.com/bmndr/road/infinity.png",
-          sml: "https://s3.amazonaws.com/bmndr/road/smiley.png"
+          skl:   "https://s3.amazonaws.com/bmndr/road/jollyroger.png",
+          inf:   "https://s3.amazonaws.com/bmndr/road/infinity.png",
+          sml:   "https://s3.amazonaws.com/bmndr/road/smiley.png",
         },
   
   /** Enum object to identify error types. */
@@ -434,6 +434,7 @@
       goal.xMin = goal.asof;  goal.xMax = goal.horizon
       goal.tmin = goal.asof;  goal.tmax = goal.horizon
       goal.yMin = -1;    goal.yMax = 1
+      //goal.ybhp = false // not sure if this is needed here
 
       road = []; iroad = []; data = [], alldata = []
     }
@@ -924,35 +925,29 @@
         div.removeChild(div.firstChild);
       }
       var divelt = d3.select(div);
-      var startelt = divelt.append("div")
-            .attr("class", "rtablestart");
-      var bodyelt = divelt.append("div")
-            .attr("class", "rtablebody");
-      var goalelt = divelt.append("div")
-            .attr("class", "rtablegoal");
+      var startelt = divelt.append("div").attr("class", "rtablestart")
+      var bodyelt  = divelt.append("div").attr("class", "rtablebody")
+      var goalelt  = divelt.append("div").attr("class", "rtablegoal")
       if (opts.tableHeight != 0) {
-        bodyelt
-          .style("max-height", opts.tableHeight+"px")
-          .style("overflow-y", "auto");
+        bodyelt.style("max-height", opts.tableHeight+"px")
+               .style("overflow-y", "auto")
       }
-      var table = bodyelt.append("div")
-            .attr("class", "rtable");
+      var table = bodyelt.append("div").attr("class", "rtable")
       // This element is used to hold the Pikaday instance
-      table.append("div").attr("id", "dpfloat")
-        .attr("class", "floating");
-      // This element helps figure out layout coordinates of the scrolled window top left
+      table.append("div").attr("id", "dpfloat").attr("class", "floating")
+      // This helps figure out layout coords of the scrolled window top left
       topLeft = table.append("div").attr("id", "topleft")
         .style("position", "absolute").style("left", 0).style("top",0)
         .style("width", "1px").style("height", "1px")
-        .attr("visibility","hidden");
+        .attr("visibility","hidden")
       if (opts.reverseTable) {
-        createGoalTable();
-        createRoadTable();
-        createStartTable();
+        createGoalTable()
+        createRoadTable()
+        createStartTable()
       } else {
-        createStartTable();
-        createRoadTable();  
-        createGoalTable();
+        createStartTable()
+        createRoadTable()  
+        createGoalTable()
       }
     }
 
@@ -1087,32 +1082,20 @@
       // * majorSkip is the number of ticks to skip for the annotated
       // "major" ticks. Remaining ticks are drawn as unlabeled small
       // indicators
-      if (diff < 10) {
-        tickType = 0; majorSkip = 1;
-      } else if (diff < 20) {
-        tickType = 0; majorSkip = 2;
-      } else if (diff < 45) {
-        tickType = 0; majorSkip = 7;
-      } else if (diff < 120) {
-        tickType = 1; majorSkip = 7;
-      } else if (diff < 240){
-        tickType = 2; majorSkip = 4;
-      } else if (diff < 320){
-        tickType = 4; majorSkip = 1;
-      } else if (diff < 1.5*365){
-        tickType = 4; majorSkip = 2;
-      } else if (diff < 2.6*365){
-        tickType = 4; majorSkip = 3;
-      } else if (diff < 5*365){
-        tickType = 5; majorSkip = 3;
-      } else if (diff < 10*365) {
-        tickType = 6; majorSkip = 4;              
-      } else {
-        tickType = 7; majorSkip = 1;              
-      }
+      if (diff < 10)           { tickType = 0; majorSkip = 1 }
+      else if (diff < 20)      { tickType = 0; majorSkip = 2 }
+      else if (diff < 45)      { tickType = 0; majorSkip = 7 }
+      else if (diff < 120)     { tickType = 1; majorSkip = 7 }
+      else if (diff < 240)     { tickType = 2; majorSkip = 4 }
+      else if (diff < 320)     { tickType = 4; majorSkip = 1 }
+      else if (diff < 1.5*365) { tickType = 4; majorSkip = 2 } 
+      else if (diff < 2.6*365) { tickType = 4; majorSkip = 3 } 
+      else if (diff < 5*365)   { tickType = 5; majorSkip = 3 } 
+      else if (diff < 10*365)  { tickType = 6; majorSkip = 4 } 
+      else                     { tickType = 7; majorSkip = 1 }
       // Invisible ticks to the left of the graph
-      var pt = ticks[tickType][0].filter((d)=>((d.getTime()<xr[0])));
-      // Number of minor ticks in the partially visible first major tick interval
+      var pt = ticks[tickType][0].filter((d)=>((d.getTime()<xr[0])))
+      // Number of minor ticks in the partially visible 1st major tick interval
       var ind = (majorSkip - pt.length%majorSkip)%majorSkip;
       // Filter tick values based on x axis range
       var tv = ticks[tickType][0].filter(
@@ -1566,19 +1549,14 @@
         return;
       }
 
-      if (goal.safebuf > 999) {
-        goal.waterbuf = "inf";
-      } else if (goal.safebuf >= 7) {               
-        goal.waterbuf = goal.safebuf+"d";
-      } else if (goal.safebuf <= 0) {
-        goal.waterbuf = deadtod(goal.deadline)+"!";
-      } else {
-        goal.waterbuf = deaddow(goal.tluz);
-      }
+      if      (goal.safebuf > 999){ goal.waterbuf = "inf" } 
+      else if (goal.safebuf >= 7) { goal.waterbuf = goal.safebuf+"d" } 
+      else if (goal.safebuf <= 0) { goal.waterbuf = deadtod(goal.deadline)+"!" }
+      else                        { goal.waterbuf = deaddow(goal.tluz) }
     }
 
     function computePlotLimits( adjustZoom = true ) {
-      if (road.length == 0) return;
+      if (road.length == 0) return
 
       var now = goal.asof;
       var maxx = bu.daysnap(Math.min(now+opts.maxFutureDays*bu.SID, 
@@ -3007,7 +2985,7 @@
           [0, -1, null,      null,         null],
           [2,  6, "#cceecc", "none",       0],    // green
           [6, -1, "#b2e5b2", "none",       0],    // dark green
-          [6,  6, null,    bu.Cols.BIGG, 2],    // yellow guiding line
+          [6,  6, null,      bu.Cols.BIGG, 2],    // yellow guiding line
           [1,  2, "#e5e5ff", "none",       0],    // blue
           [0,  1, "#fff1d8", "none",       0],    // orange
           [0, -2, "#ffe5e5", "none",       0],    // red
@@ -3128,7 +3106,7 @@
           .attr("class","pinkregion")
 	  	    .attr("d", d)
 	  	    .attr("fill-opacity", 0.4)
-          .attr("fill", goal.ybhp ? bu.Cols.PINK 
+          .attr("fill", goal.ybhp ? bu.Cols.PINK  // try LYEL?
                                   : bu.Cols.PINK) // oinkzone
       } else {
         pinkelt.attr("d", d)
@@ -3159,6 +3137,7 @@
 
       var roadelt = gOldCenter.select(".oldroads");
       if (roadelt.empty()) {
+        //console.log("DEBUG1")
         gOldCenter.append("svg:path")
           .attr("class","oldroads")
 	  	    .attr("d", rd)
@@ -3167,8 +3146,10 @@
                  +(opts.oldRoadLine.dash))
   		    .style("fill", "none")
   		    .style("stroke-width",svgshn(opts.oldRoadLine.width*scf,3))
-  		    .style("stroke", bu.Cols.ORNG);
+  		    .style("stroke", goal.ybhp ? bu.Cols.ORNG // try REDDOT?
+                                     : bu.Cols.ORNG) 
       } else {
+        //console.log("DEBUG1156")
         roadelt.attr("d", rd)
   		    .style("stroke-width",svgshn(opts.oldRoadLine.width*scf,3))
       }
@@ -3347,7 +3328,8 @@
                  +(opts.oldRoadLine.ctxdash)) 
   		    .style("fill", "none")
   		    .style("stroke-width",opts.oldRoadLine.ctxwidth)
-  		    .style("stroke", bu.Cols.ORNG);
+          .style("stroke", goal.ybhp ? bu.Cols.ORNG // try REDDOT?
+                                     : bu.Cols.ORNG) 
       } else {
         roadelt.attr("d", d);
       }
@@ -4156,13 +4138,11 @@
 	      var knotmax = 
               (kind == road.length-1) 
               ? road[kind].end[0]
-          :(road[kind+1].end[0]);
+          :(road[kind+1].end[0])
         // Switch all dates to local time to babysit Pikaday
-        var md = moment(focusOldText);
-        var mindate = moment(moment.unix(knotmin).utc()
-                             .format("YYYY-MM-DD"));
-        var maxdate = moment(moment.unix(knotmax).utc()
-                             .format("YYYY-MM-DD"));
+        var md = moment(focusOldText)
+        var mindate = moment(moment.unix(knotmin).utc().format("YYYY-MM-DD"))
+        var maxdate = moment(moment.unix(knotmax).utc().format("YYYY-MM-DD"))
         datePicker = new Pikaday({
           keyboardInput: false,
           onSelect: function(date) {
@@ -5167,7 +5147,7 @@
         @param {Boolean} enable Enables/disables animation */
     this.animBux = animBux
 
-  }
+  } // END bgraph object constructor
   
-  return bgraph;
-}));
+  return bgraph
+}))
