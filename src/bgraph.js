@@ -210,34 +210,27 @@
   
   /** Style text embedded in the SVG object for proper saving of the SVG */
   SVGStyle = 
-    ".svg {shape-rendering: crispEdges;} " +
-    ".axis path, .axis line " + 
-    "{ fill: none; stroke: black; shape-rendering: crispEdges;} " + 
-    ".axis .minor line { stroke: #777; stroke-dasharray:0,2,4,3; } " + 
-    ".grid line " + 
-    "{ fill: none; stroke: #dddddd; stroke-width: 1px; " + 
-    "shape-rendering: crispEdges; } " + 
-    ".grid .minor line { stroke: none; } " + 
-    ".axis text { font-family: sans-serif; font-size: 11px; } " + 
-    ".axislabel " +
-    "{ font-family: sans-serif; font-size: 11px; text-anchor: middle; } " + 
-    "circle.dots { stroke: black; } " +
-    "line.roads { stroke: black; } " +
-    ".pasttext, .ctxtodaytext, .ctxhortext, .horizontext, .hashtag " +
-    "{ text-anchor: middle; font-family: sans-serif; } " +
-    ".waterbuf, .waterbux " +
-    //"{ shape-rendering: crispEdges; " +
-    "{ text-anchor: middle; " + 
-    "font-family: Dejavu Sans,sans-serif; }.loading " +
-    "{ text-anchor: middle; font-family: Dejavu Sans,sans-serif; } " +
-    ".zoomarea { fill: none; } " +
-    "circle.ap { stroke:none; } " +
-    "circle.rd { stroke:none; } " +
-    "circle.std { stroke:none; } " +
-    "circle.dp { stroke:rgb(0,0,0); } " +
-    ".overlay .textbox " +
-    "{ fill: #ffffcc;fill-opacity: 0.5; stroke: black; " +
-    "stroke-width: 1; pointer-events: none; rx:5; ry:5; }",
+    ".svg{shape-rendering:crispEdges}" 
+  + ".axis path,.axis line{fill:none;stroke:black;shape-rendering:crispEdges}"
+  + ".axis .minor line{stroke:#777;stroke-dasharray:0,2,4,3}"
+  + ".grid line"
+  + "{fill:none;stroke:#dddddd;stroke-width:1px;shape-rendering:crispEdges}"
+  + ".grid .minor line{stroke:none}"
+  + ".axis text{font-family:sans-serif;font-size:11px}"
+  + ".axislabel{font-family:sans-serif;font-size:11px;text-anchor:middle}"
+  + "circle.dots{stroke:black}"
+  + "line.roads{stroke:black}"
+  + ".pasttext,.ctxtodaytext,.ctxhortext,.horizontext,.hashtag"
+  + "{text-anchor:middle;font-family:sans-serif}"
+  + ".waterbuf,.waterbux{text-anchor:middle;font-family:Dejavu Sans,sans-serif}"
+  + ".loading{text-anchor:middle;font-family:Dejavu Sans,sans-serif}"
+  + ".zoomarea{fill:none}"
+  + "circle.ap{stroke:none}"
+  + "circle.rd{stroke:none}"
+  + "circle.std{stroke:none}"
+  + "circle.dp{stroke:rgb(0,0,0)}"
+  + ".overlay .textbox{fill:#ffffcc;fill-opacity:0.5;stroke:black;"
+  + "stroke-width:1;pointer-events:none;rx:5;ry:5}",
 
   /** Fraction of plot range that the axes extend beyond */
   PRAF  = .015,
