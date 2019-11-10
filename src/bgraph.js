@@ -383,7 +383,7 @@
         gOldRoad, gOldCenter, gOldGuides, gOldBullseye, 
         gKnots, gSteppy, gSteppyPts, gRosy, gRosyPts, gMovingAv,
         gAura, gDerails, gAllpts, gDpts, gHollow, gFlat, 
-        gBullseye, gRoads, gDots,  gWatermark, gHashtags, gHorizon, gHorizonText, 
+        gBullseye, gRoads, gDots, gWatermark, gHashtags, gHorizon, gHorizonText,
         zoomarea, axisZoom, zoomin, zoomout,  
         brushObj, brush, focusrect, topLeft,
         scf = 1, oldscf = 0,
@@ -405,14 +405,11 @@
     var bbr, goal = {}, road = [],
         data = [], alldata = []
     
-    /** Limits an svg coordinate to d digits after the decimal 
+    /** Limits an svg coordinate to 1 or 3 digits after the decimal 
      @param {Number} x Input number 
-     @param {Number} [d=1] Number of digits after the decimal
     */
-    function svgshn( x, d=1 ) {
-      let p = Math.pow(10, d)
-      return Math.round(x*p)/p
-    }
+    function r1(x) { return Math.round(x*10)/10 }
+    function r3(x) { return Math.round(x*1000)/1000 }
     
     /** Resets the internal goal object, clearing out previous data. */
     function resetGoal() {
@@ -1878,25 +1875,25 @@
       var el = d3.select(opts.divGraph);
       for (let ii = kind; ii < rd.length; ii++) {
   	    el.select("[name=dot"+ii+"]")
-	        .attr("cx", svgshn(nXSc(rd[ii].end[0]*1000)))
-		      .attr("cy", svgshn(nYSc(rd[ii].end[1])));
+	        .attr("cx", r1(nXSc(rd[ii].end[0]*1000)))
+		      .attr("cy", r1(nYSc(rd[ii].end[1])));
   	    el.select("[name=ctxdot"+ii+"]")
-	        .attr("cx", svgshn(xScB(rd[ii].end[0]*1000)))
-		      .attr("cy", svgshn(yScB(rd[ii].end[1])));
+	        .attr("cx", r1(xScB(rd[ii].end[0]*1000)))
+		      .attr("cy", r1(yScB(rd[ii].end[1])));
   		  el.select("[name=road"+ii+"]")
-	  	    .attr("x1", svgshn(nXSc(rd[ii].sta[0]*1000)))
-		      .attr("y1", svgshn(nYSc(rd[ii].sta[1])))
-			    .attr("x2", svgshn(nXSc(rd[ii].end[0]*1000)))
-			    .attr("y2", svgshn(nYSc(rd[ii].end[1])));
+	  	    .attr("x1", r1(nXSc(rd[ii].sta[0]*1000)))
+		      .attr("y1", r1(nYSc(rd[ii].sta[1])))
+			    .attr("x2", r1(nXSc(rd[ii].end[0]*1000)))
+			    .attr("y2", r1(nYSc(rd[ii].end[1])));
   		  el.select("[name=ctxroad"+ii+"]")
-	  	    .attr("x1", svgshn(xScB(rd[ii].sta[0]*1000)))
-		      .attr("y1", svgshn(yScB(rd[ii].sta[1])))
-			    .attr("x2", svgshn(xScB(rd[ii].end[0]*1000)))
-			    .attr("y2", svgshn(yScB(rd[ii].end[1])));
+	  	    .attr("x1", r1(xScB(rd[ii].sta[0]*1000)))
+		      .attr("y1", r1(yScB(rd[ii].sta[1])))
+			    .attr("x2", r1(xScB(rd[ii].end[0]*1000)))
+			    .attr("y2", r1(yScB(rd[ii].end[1])));
         if (updateKnots) {
   	      el.select("[name=knot"+ii+"]")
-	          .attr("x1", svgshn(nXSc(rd[ii].end[0]*1000)))
-		  	    .attr("x2", svgshn(nXSc(rd[ii].end[0]*1000)));
+	          .attr("x1", r1(nXSc(rd[ii].end[0]*1000)))
+		  	    .attr("x2", r1(nXSc(rd[ii].end[0]*1000)));
 		      el.select("[name=remove"+ii+"]")
             .attr("transform", 
                   (d) => ("translate("+(nXSc(d.end[0]*1000)+plotpad.left-8)
@@ -1927,7 +1924,7 @@
       highlightDate( kind, true );
       selection = kind; selectType = br.RP.DATE;
       d3.select("[name=knot"+kind+"]")
-        .attr("stroke-width", svgshn(opts.roadKnot.width,3));
+        .attr("stroke-width", r3(opts.roadKnot.width))
       var x = nXSc(road[kind].end[0]*1000);
       selectelt = gKnots.append("svg:line")
         .attr("class", "selectedknot")
@@ -1936,35 +1933,35 @@
         .attr("y1",0).attr("y2",plotbox.height)
         .attr("stroke", opts.roadKnotCol.selected)
         .attr("stroke-opacity", 0.9)
-        .attr("stroke-width", svgshn(opts.roadKnot.width+4,3)).lower();
+        .attr("stroke-width", r3(opts.roadKnot.width+4)).lower()
     }
     function unselectKnot( kind ) {
-      highlightDate( kind, false );
+      highlightDate( kind, false )
       d3.select("[name=knot"+kind+"]")
         .attr("stroke", opts.roadKnotCol.dflt)
-        .attr("stroke-width", svgshn(opts.roadKnot.width,3));
+        .attr("stroke-width", r3(opts.roadKnot.width))
     }
     function selectDot( kind ) {
       if (opts.divGraph == null) return
       highlightValue( kind, true );
       selection = kind; selectType = br.RP.VALUE;
       d3.select("[name=dot"+kind+"]")
-        .attr("r", svgshn(opts.roadDot.size,3));
+        .attr("r", r3(opts.roadDot.size))
       selectelt = gDots.append("svg:circle")
         .attr("class", "selecteddot")
         .attr("pointer-events", "none")
-        .attr("cx", svgshn(nXSc(road[kind].end[0]*1000)))
-        .attr("cy", svgshn(nYSc(road[kind].end[1])))
+        .attr("cx", r1(nXSc(road[kind].end[0]*1000)))
+        .attr("cy", r1(nYSc(road[kind].end[1])))
         .attr("fill", opts.roadDotCol.selected)
         .attr("fill-opacity", 0.6)
-        .attr("r", svgshn(opts.roadDot.size+4,3))
-        .attr("stroke", "none").lower();
+        .attr("r", r3(opts.roadDot.size+4))
+        .attr("stroke", "none").lower()
     }
     function unselectDot( kind ) {
       highlightValue( kind, false );
       d3.select("[name=dot"+kind+"]")
         .attr("fill", opts.roadDotCol.editable)
-        .attr("r", svgshn(opts.roadDot.size,3));
+        .attr("r", r3(opts.roadDot.size))
     }
     function selectRoad( kind ) {
       if (opts.divGraph == null) return
@@ -1983,15 +1980,15 @@
         .attr("y2", nYSc(road[kind].end[1]))
         .attr("stroke", opts.roadKnotCol.selected)
         .attr("stroke-opacity", 0.9)
-        .attr("stroke-width", svgshn(opts.roadLine.width+4,3)).lower();
+        .attr("stroke-width", r3(opts.roadLine.width+4)).lower()
     }
     function unselectRoad( kind ) {
       highlightSlope( kind, false );
       var lineColor = isRoadValid( road )?
             opts.roadLineCol.valid:opts.roadLineCol.invalid;
       d3.select("[name=road"+kind+"]")
-        .style("stroke",lineColor)
-        .attr("stroke-width",svgshn(opts.roadLine.width,3));
+        .style("stroke", lineColor)
+        .attr("stroke-width", r3(opts.roadLine.width))
     }
     function unselect() {
       selection = null; selectType = null;
@@ -2560,7 +2557,7 @@
 		      .attr("x2", nXSc(goal.asof*1000))
           .attr("y2",plotbox.height)
           .style("stroke", bu.Cols.AKRA) 
-		      .style("stroke-width",svgshn(opts.today.width,3));
+		      .style("stroke-width", r3(opts.today.width))
       } else {
         todayelt
 	  	    .attr("x1", nXSc(goal.asof*1000))
@@ -2603,7 +2600,7 @@
 		      .attr("x2", xScB(goal.asof*1000))
           .attr("y2",brushbox.height)
           .style("stroke", "rgb(0,0,200)") 
-		      .style("stroke-width",svgshn(opts.horizon.ctxwidth,3));
+		      .style("stroke-width", r3(opts.horizon.ctxwidth))
       } else {
         todayelt
 	  	    .attr("x1", xScB(goal.asof*1000))
@@ -2827,11 +2824,14 @@
                        bu.arrMin([xr[1], goal.asof+bu.AKH, goal.tmax+fudge]),
                        plotbox.width/8)
         // Generate a path string for the aura
-        var d = "M"+svgshn(nXSc(xvec[0]*1000))+" "+svgshn(nYSc(goal.auraf(xvec[0])+aurup))
+        var 
+          d = "M"+r1(nXSc(xvec[0]*1000))+" "+r1(nYSc(goal.auraf(xvec[0])+aurup))
         for (i = 1; i < xvec.length; i++)
-          d += " L"+svgshn(nXSc(xvec[i]*1000))+" "+svgshn(nYSc(goal.auraf(xvec[i])+aurup))
+          d += 
+            " L"+r1(nXSc(xvec[i]*1000))+" "+r1(nYSc(goal.auraf(xvec[i])+aurup))
         for (i = xvec.length-1; i >= 0; i--)
-          d += " L"+svgshn(nXSc(xvec[i]*1000))+" "+svgshn(nYSc(goal.auraf(xvec[i])+aurdn))
+          d += 
+            " L"+r1(nXSc(xvec[i]*1000))+" "+r1(nYSc(goal.auraf(xvec[i])+aurdn))
         d += " Z"
         if (el.empty()) {
           gAura.append("svg:path")
@@ -2843,14 +2843,13 @@
         }
         if (xr[0] < goal.tmin) {
           xvec = griddle(xr[0], goal.tmin, plotbox.width/8);
-          d = "M"+svgshn(nXSc(xvec[0]*1000))+" "
-            +svgshn(nYSc(goal.auraf(xvec[0])+aurup));
+          d = "M"+r1(nXSc(xvec[0]*1000))+" "+r1(nYSc(goal.auraf(xvec[0])+aurup))
           for (i = 1; i < xvec.length; i++)
-            d += " L"+svgshn(nXSc(xvec[i]*1000))+" "
-            +svgshn(nYSc(goal.auraf(xvec[i])+aurup))
+            d += " L"+r1(nXSc(xvec[i]*1000))+" "
+                     +r1(nYSc(goal.auraf(xvec[i])+aurup))
           for (i = xvec.length-1; i >= 0; i--)
-            d += " L"+svgshn(nXSc(xvec[i]*1000))+" "
-            +svgshn(nYSc(goal.auraf(xvec[i])+aurdn))
+            d += " L"+r1(nXSc(xvec[i]*1000))+" "
+                     +r1(nYSc(goal.auraf(xvec[i])+aurdn))
           d += " Z";
           if (el2.empty()) {
             gAura.append("svg:path")
@@ -2889,14 +2888,14 @@
           .style("stroke", bu.Cols.AKRA) 
           .style("stroke-dasharray", 
                  (o.dash)+","+(o.dash)) 
-		      .attr("stroke-width",svgshn(o.width*scf,3));
+		      .attr("stroke-width", r3(o.width*scf))
       } else {
         horizonelt
 	  	    .attr("x1", nXSc(goal.horizon*1000))
           .attr("y1",0)
 		      .attr("x2", nXSc(goal.horizon*1000))
           .attr("y2",plotbox.height)
-		      .attr("stroke-width",svgshn(o.width*scf,3));
+		      .attr("stroke-width", r3(o.width*scf))
       }
       var textx = nXSc(goal.horizon*1000)+(14);
       var texty = plotbox.height/2;
@@ -2930,7 +2929,7 @@
           .style("stroke", bu.Cols.AKRA) 
           .style("stroke-dasharray", (o.ctxdash)+","
                  +(o.ctxdash)) 
-		      .style("stroke-width",svgshn(o.ctxwidth,3));
+		      .style("stroke-width", r3(o.ctxwidth))
       } else {
         horizonelt
 	  	    .attr("x1", xScB(goal.horizon*1000))
@@ -3117,8 +3116,8 @@
       var newx = (-nXSc(iroad[0].sta[0]*1000)) % (2*opts.oldRoadLine.dash);
       if (ex != fx) fy = (fy + (-newx-fx)*(ey-fy)/(ex-fx));
       if (fx < 0 || newx > 0) fx = -newx;
-      var d, rd = "M"+svgshn(fx)+" "+svgshn(fy);
-      var i;
+      var d, rd = "M"+r1(fx)+" "+r1(fy)
+      var i
       for (i = 0; i < ir.length; i++) {
         ex = nXSc(ir[i].end[0]*1000); ey = nYSc(ir[i].end[1]);
         if (ex > plotbox.width) {
@@ -3126,7 +3125,7 @@
           ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx));
           ex = plotbox.width;          
         }
-        rd += " L"+svgshn(ex)+" "+svgshn(ey);
+        rd += " L"+r1(ex)+" "+r1(ey)
       }
 
       var roadelt = gOldCenter.select(".oldroads");
@@ -3139,13 +3138,13 @@
           .style("stroke-dasharray", (opts.oldRoadLine.dash)+","
                  +(opts.oldRoadLine.dash))
   		    .style("fill", "none")
-  		    .style("stroke-width",svgshn(opts.oldRoadLine.width*scf,3))
+  		    .style("stroke-width", r3(opts.oldRoadLine.width*scf))
   		    .style("stroke", goal.ybhp ? bu.Cols.ORNG // try REDDOT?
                                      : bu.Cols.ORNG) 
       } else {
         //console.log("DEBUG1156")
         roadelt.attr("d", rd)
-  		    .style("stroke-width",svgshn(opts.oldRoadLine.width*scf,3))
+  		    .style("stroke-width", r3(opts.oldRoadLine.width*scf))
       }
 
     }
@@ -3168,7 +3167,7 @@
       ex = nXSc(ir[0].end[0]*1000); ey = nYSc(ir[0].end[1]+lw);
         
       // Go forward to draw the top side of YBR
-      d = "M"+svgshn(fx)+" "+svgshn(fy);
+      d = "M"+r1(fx)+" "+r1(fy)
       for (i = 0; i < ir.length; i++) {
         ex = nXSc(ir[i].end[0]*1000);
         ey = nYSc(ir[i].end[1]+lw);
@@ -3176,18 +3175,18 @@
           fx = nXSc(ir[i].sta[0]*1000); fy = nYSc(ir[i].sta[1]+lw);
           ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx)); ex = plotbox.width;
         }
-        d += " L"+svgshn(ex)+" "+svgshn(ey);
+        d += " L"+r1(ex)+" "+r1(ey)
       }
       // Go down and backward for the bottom side of the YBR
       ey += (nYSc(0) - nYSc(2*lw));
-      d += " L"+svgshn(ex)+" "+svgshn(ey);
+      d += " L"+r1(ex)+" "+r1(ey)
       for (i = ir.length-1; i >= 0; i--) {
         fx = nXSc(ir[i].sta[0]*1000); fy = nYSc(ir[i].sta[1]-lw);
         if (fx < 0) {
           ex = nXSc(ir[i].end[0]*1000); ey = nYSc(ir[i].end[1]-lw);
           fy = (fy + (0-fx)*(ey-fy)/(ex-fx)); fx = 0;          
         }
-        d += " L"+svgshn(fx)+" "+svgshn(fy);
+        d += " L"+r1(fx)+" "+r1(fy)
       }
       d += " Z";
       // **** Draw the YBR ****
@@ -3219,7 +3218,7 @@
       var fx = nXSc(ir[0].sta[0]*1000), fy = nYSc(ir[0].sta[1]);
       var ex = nXSc(ir[0].end[0]*1000), ey = nYSc(ir[0].end[1]);
 
-      var rd2 = "M"+svgshn(fx)+" "+svgshn(fy);
+      var rd2 = "M"+r1(fx)+" "+r1(fy)
       for (i = 0; i < ir.length; i++) {
         ex = nXSc(ir[i].end[0]*1000); ey = nYSc(ir[i].end[1]);
         if (ex > plotbox.width) {
@@ -3228,7 +3227,7 @@
             ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx));
           ex = plotbox.width;          
         }
-        rd2 += " L"+svgshn(ex)+" "+svgshn(ey);
+        rd2 += " L"+r1(ex)+" "+r1(ey)
       }
       
       // **** Update guidelines ****
@@ -3260,15 +3259,15 @@
   		  .attr("pointer-events", "none")
   		  .style("fill", "none")
   		  .attr("stroke-width",
-              (d,i) => (svgshn((d<0)?opts.guidelines.weekwidth*scf
-                               :opts.guidelines.width*scf,3)))
-  		  .attr("stroke",(d,i) => ((d<0)?bu.Cols.BIGG:bu.Cols.LYEL));
+              (d,i) => (r3(d<0 ? opts.guidelines.weekwidth*scf
+                               : opts.guidelines.width*scf)))
+  		  .attr("stroke", (d,i) => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL))
       guideelt.attr("d", rd2)
         .attr("transform", function(d,i) { 
-          return "translate(0,"+((d<0)?bc[0]:((i+1)*shift))+")";})
-  		  .attr("stroke-width", (d,i)=>(svgshn((d<0)?opts.guidelines.weekwidth*scf
-                                             :opts.guidelines.width*scf,3)))
-  		  .attr("stroke",  (d,i) =>((d<0)?bu.Cols.BIGG:bu.Cols.LYEL));
+          return "translate(0,"+(d<0 ? bc[0] : ((i+1)*shift))+")" })
+  		  .attr("stroke-width", (d,i) => r3(d<0 ? opts.guidelines.weekwidth*scf
+                                              : opts.guidelines.width*scf))
+  		  .attr("stroke", (d,i) => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL))
 
     }
     
@@ -3308,11 +3307,11 @@
       // Create, update and delete road lines on the brush graph
       var roadelt = ctxplot.selectAll(".ctxoldroads");
       var ir = iroad;
-      var d = "M"+svgshn(xScB(ir[0].sta[0]*1000))+" "
-          +svgshn(yScB(ir[0].sta[1]))
+      var d = "M"+r1(xScB(ir[0].sta[0]*1000))+" "
+                 +r1(yScB(ir[0].sta[1]))
       for (let i = 0; i < ir.length; i++) {
-        d += " L"+svgshn(xScB(ir[i].end[0]*1000))+" "+
-          svgshn(yScB(ir[i].end[1]));
+        d += " L"+r1(xScB(ir[i].end[0]*1000))+" "
+                 +r1(yScB(ir[i].end[1]))
       }
       if (roadelt.empty()) {
         ctxplot.append("svg:path")
@@ -3562,33 +3561,33 @@
       }
       dotelt.exit().remove();
       dotelt
-		    .attr("cx", function(d){ return svgshn(nXSc(d.sta[0]*1000));})
-        .attr("cy",function(d){ return svgshn(nYSc(d.sta[1]));});
+		    .attr("cx", function(d) { return r1(nXSc(d.sta[0]*1000)) })
+        .attr("cy", function(d) { return r1(nYSc(d.sta[1])) })
       dotelt.enter().append("svg:circle")
 		    .attr("class","dots")
-		    .attr("id", function(d,i) {return i-1;})
-		    .attr("name", function(d,i) {return "dot"+(i-1);})
-        .attr("cx", function(d){ return svgshn(nXSc(d.sta[0]*1000));})
-		    .attr("cy",function(d){ return svgshn(nYSc(d.sta[1]));})
-		    .attr("r", svgshn(opts.roadDot.size,3))
+		    .attr("id", function(d,i) { return i-1 })
+		    .attr("name", function(d,i) { return "dot"+(i-1) })
+        .attr("cx", function(d) { return r1(nXSc(d.sta[0]*1000)) })
+		    .attr("cy",function(d)  { return r1(nYSc(d.sta[1])) })
+		    .attr("r", r3(opts.roadDot.size))
         .attr("fill", opts.roadDotCol.editable)
 		    .style("stroke-width", opts.roadDot.border) 
         .on('wheel', function(d) { 
           // Redispatch a copy of the event to the zoom area
           var new_event = new d3.event.constructor(d3.event.type, 
-                                                   d3.event); 
-          zoomarea.node().dispatchEvent(new_event);})
+                                                   d3.event)
+          zoomarea.node().dispatchEvent(new_event) })
         .on("mouseover",function(d,i) { 
 	        if (!editingKnot && !editingDot && !editingRoad
               && !(selectType == br.RP.VALUE && i-1 == selection)) {
             highlightValue(i-1, true);
-			      d3.select(this).attr("r",svgshn(opts.roadDot.size+2,3));
+			      d3.select(this).attr("r", r3(opts.roadDot.size+2))
           }})
 		    .on("mouseout",function(d,i) { 
 	        if (!editingKnot && !editingDot && !editingRoad
               && !(selectType == br.RP.VALUE && i-1 == selection)) {
-            highlightValue(i-1, false);
-			      d3.select(this).attr("r",svgshn(opts.roadDot.size,3));
+            highlightValue(i-1, false)
+			      d3.select(this).attr("r", r3(opts.roadDot.size))
           }})
         .on("click", function(d,i) { 
           if (d3.event.ctrlKey) dotEdited(d,this.id);})
@@ -3610,15 +3609,15 @@
       }
       dotelt.exit().remove();
       dotelt
-		    .attr("cx", function(d){ return svgshn(xScB(d.sta[0]*1000));})
-        .attr("cy",function(d){ return svgshn(yScB(d.sta[1]));});
+		    .attr("cx", function(d) { return r1(xScB(d.sta[0]*1000)) })
+        .attr("cy",function(d)  { return r1(yScB(d.sta[1])) })
       dotelt.enter().append("svg:circle")
 		    .attr("class","ctxdots")
-		    .attr("r", svgshn(opts.roadDot.ctxsize,3))
+		    .attr("r", r3(opts.roadDot.ctxsize))
         .attr("fill", opts.roadDotCol.editable)
 		    .style("stroke-width", opts.roadDot.ctxborder)
-        .attr("cx", function(d){ return svgshn(xScB(d.sta[0]*1000));})
-		    .attr("cy",function(d){ return svgshn(yScB(d.sta[1]));});
+        .attr("cx", function(d) { return r1(xScB(d.sta[0]*1000)) })
+		    .attr("cy", function(d) { return r1(yScB(d.sta[1])) })
     }
 
     function dpFill( pt ) {
@@ -3653,19 +3652,19 @@
       dpelt = grp.selectAll("."+cls).data(d);
       dpelt.exit().remove();
       dpelt
-		    .attr("cx", function(d){ return svgshn(nXSc((d[0])*1000));})
-        .attr("cy",function(d){ return svgshn(nYSc(d[1]));});
-      if (r != null && scf != oldscf) dpelt.attr("r", svgshn(r,3));
-      if (sw != null) dpelt.attr("stroke-width", sw);
+		    .attr("cx", function(d) { return r1(nXSc((d[0])*1000)) })
+        .attr("cy", function(d) { return r1(nYSc(d[1])) })
+      if (r != null && scf != oldscf) dpelt.attr("r", r3(r))
+      if (sw != null) dpelt.attr("stroke-width", sw)
       if (cls != "rd" && cls != "std" && cls != "hpts") {
         if (f != null) dpelt.attr("fill", f)
         if (fop != null) dpelt.style("fill-opacity", fop)
       }
       dpelt.enter().append("svg:circle")
 		    .attr("class",cls)
-        .attr("r", svgshn(r,3))
-		    .attr("cx", function(d){ return svgshn(nXSc((d[0])*1000));})
-        .attr("cy",function(d){ return svgshn(nYSc(d[1]));})
+        .attr("r", r3(r))
+		    .attr("cx", function(d) { return r1(nXSc((d[0])*1000)) })
+        .attr("cy", function(d) { return r1(nYSc(d[1])) })
 		    .attr("stroke-width", sw)
 		    .style("stroke", s)
         .attr("fill", f)
@@ -3713,32 +3712,32 @@
             if (ind > 0) npts = bbr.rosydata.slice(ind, ind+2);
           }
           if (npts.length != 0) {
-            var d = "M"+svgshn(nXSc(npts[0][4]*1000))+" "+svgshn(nYSc(npts[0][5]));
+            var d = "M"+r1(nXSc(npts[0][4]*1000))+" "+r1(nYSc(npts[0][5]))
             for (i = 0; i < npts.length; i++) {
-              d += " L"+svgshn(nXSc(npts[i][0]*1000))+" "+ svgshn(nYSc(npts[i][1]));
+              d += " L"+r1(nXSc(npts[i][0]*1000))+" "+ r1(nYSc(npts[i][1]))
             }
             if (rosyelt.empty()) {
               gRosy.append("svg:path")
                 .attr("class","rosy")
 	  	          .attr("d", d)
   		          .style("fill", "none")
-  		          .attr("stroke-width",svgshn(4*scf,3))
+  		          .attr("stroke-width",r3(4*scf))
   		          .style("stroke", bu.Cols.ROSE);
             } else {
               rosyelt.attr("d", d)
-  		          .attr("stroke-width",svgshn(4*scf,3));
+  		          .attr("stroke-width", r3(4*scf))
             }
           } else rosyelt.remove();
           updateDotGroup(gRosyPts, npts, "rd", 
-                         svgshn(opts.dataPoint.size*scf,3),
-                         null, null, bu.Cols.ROSE, true, null);
+                         r3(opts.dataPoint.size*scf),
+                         null, null, bu.Cols.ROSE, true, null)
         } else {
-          rosyelt.remove();
-          rosydelt.remove();
+          rosyelt.remove()
+          rosydelt.remove()
         }
       } else {
-        rosyelt.remove();
-        rosydelt.remove();
+        rosyelt.remove()
+        rosydelt.remove()
       }
     }
     
@@ -3773,50 +3772,51 @@
               // Handle the initial point
               var vals = bbr.allvals[dataf[0][0]].map(e=>e[0])
               var vpre = (goal.dir<0)?bu.arrMax(vals):bu.arrMin(vals)
-              d = "M"+svgshn(nXSc(dataf[0][0]*1000))+" "+svgshn(nYSc(vpre))
-              d += "L"+svgshn(nXSc(npts[0][4]*1000))+" "+svgshn(nYSc(npts[0][5]))
+              d = "M"+r1(nXSc(dataf[0][0]*1000))+" "+r1(nYSc(vpre))
+              d += "L"+r1(nXSc(npts[0][4]*1000))+" "+r1(nYSc(npts[0][5]))
             } else {
-              d = "M"+svgshn(nXSc(npts[0][4]*1000))+" "+svgshn(nYSc(npts[0][5]))
+              d = "M"+r1(nXSc(npts[0][4]*1000))+" "+r1(nYSc(npts[0][5]))
             }
             for (i = 0; i < npts.length; i++) {
-              d += " L"+svgshn(nXSc(npts[i][0]*1000))+" "+ svgshn(nYSc(npts[i][5]));
-              d += " L"+svgshn(nXSc(npts[i][0]*1000))+" "+ svgshn(nYSc(npts[i][1]));
+              d += " L"+r1(nXSc(npts[i][0]*1000))+" "+ r1(nYSc(npts[i][5]))
+              d += " L"+r1(nXSc(npts[i][0]*1000))+" "+ r1(nYSc(npts[i][1]))
             }
             if (stpelt.empty()) {
               gSteppy.append("svg:path")
                 .attr("class","steppy")
 	  	          .attr("d", d)
   		          .style("fill", "none")
-  		          .attr("stroke-width",svgshn(4*scf,3))
-  		          .style("stroke", bu.Cols.PURP);
+  		          .attr("stroke-width", r3(4*scf))
+  		          .style("stroke", bu.Cols.PURP)
             } else {
               stpelt.attr("d", d)
-  		          .attr("stroke-width",svgshn(4*scf,3));
+  		          .attr("stroke-width", r3(4*scf))
             }
             // Need an additional vertical steppy for do-less flatlined datapoints
             var stppprelt = gSteppy.selectAll(".steppyppr");
             if (bbr.flad != null) {
               if (goal.yaw*goal.dir < 0 && goal.asof !== goal.tdat) {
                 var fy = bbr.flad[1] + br.ppr(road, goal, goal.asof)
-                d = "M"+svgshn(nXSc(npts[npts.length-1][0]*1000))+" "+svgshn(nYSc(npts[npts.length-1][1]))
-                d+=" L"+svgshn(nXSc(npts[npts.length-1][0]*1000))+" "+svgshn(nYSc(fy))
+                d = "M"+r1(nXSc(npts[npts.length-1][0]*1000))+" "
+                       +r1(nYSc(npts[npts.length-1][1]))
+                d+=" L"+r1(nXSc(npts[npts.length-1][0]*1000))+" "+r1(nYSc(fy))
                 if (stppprelt.empty()) {
                   gSteppy.append("svg:path")
                     .attr("class","steppyppr").attr("d", d)
   		              .style("fill", "none").style("stroke-opacity", 0.8)
-  		              .attr("stroke-width",svgshn(4*scf,3))
-                    .style("stroke", bu.Cols.LPURP);
+  		              .attr("stroke-width", r3(4*scf))
+                    .style("stroke", bu.Cols.LPURP)
                 } else {
                   stppprelt.attr("d", d)
-  		              .attr("stroke-width",svgshn(4*scf,3));
+  		              .attr("stroke-width",r3(4*scf))
                 }
               } else stppprelt.remove()
             } else stppprelt.remove()
             
           } else stpelt.remove();
           updateDotGroup(gSteppyPts, bbr.flad?npts.slice(0,npts.length-1):npts,
-                         "std",svgshn((opts.dataPoint.size+2)*scf,3),
-                         null, null, bu.Cols.PURP);
+                         "std",r3((opts.dataPoint.size+2)*scf),
+                         null, null, bu.Cols.PURP)
         } else {
           stpelt.remove();
           stpdelt.remove();
@@ -3887,8 +3887,8 @@
         pts = pts.filter(df);
         if (goal.plotall && !opts.roadEditor) {
           updateDotGroup(gAllpts, alldataf.filter(adf), "ap", 
-                         svgshn(0.7*(opts.dataPoint.size)*scf,3),
-                         null, null, dpFill, true, dpFillOp);
+                         r3(0.7*(opts.dataPoint.size)*scf),
+                         null, null, dpFill, true, dpFillOp)
           
         } else {
           var el = gAllpts.selectAll(".ap");
@@ -3896,16 +3896,16 @@
         }
         if (opts.roadEditor)
           updateDotGroup(gDpts, pts.concat(bbr.fuda), "dp", 
-                         svgshn(opts.dataPoint.size*scf,3), opts.dataPointCol.stroke,
-                         (opts.dataPoint.border*scf)+"px", dpFill, true, dpFillOp);
+                         r3(opts.dataPoint.size*scf), opts.dataPointCol.stroke,
+                         (opts.dataPoint.border*scf)+"px", dpFill, true, dpFillOp)
         else {
           updateDotGroup(gDpts, pts.concat(bbr.fuda), "dp", 
-                         svgshn(opts.dataPoint.size*scf,3),
-                         null, dpStrokeWidth, dpFill, true, dpFillOp);
+                         r3(opts.dataPoint.size*scf),
+                         null, dpStrokeWidth, dpFill, true, dpFillOp)
           // Compute and plot hollow datapoints
           updateDotGroup(gHollow, bbr.hollow.filter(df), "hpts", 
-                         svgshn(opts.dataPoint.hsize*scf,3), null,
-                         null, bu.Cols.WITE, true, 1);
+                         r3(opts.dataPoint.hsize*scf), null,
+                         null, bu.Cols.WITE, true, 1)
         }
           
         // *** Plot flatlined datapoint ***
@@ -3998,20 +3998,20 @@
         var pts = goal.filtpts.filter(function(e){
           return (e[0] > l[0]-2*bu.SID && e[0] < l[1]+2*bu.SID);});
         if (pts.length > 0){
-          var d = "M"+svgshn(nXSc(pts[0][0]*1000))+" "+svgshn(nYSc(pts[0][1]));
+          var d = "M"+r1(nXSc(pts[0][0]*1000))+" "+r1(nYSc(pts[0][1]))
           for (let i = 1; i < pts.length; i++) {
-            d += " L"+svgshn(nXSc(pts[i][0]*1000))+" "+svgshn(nYSc(pts[i][1]));
+            d += " L"+r1(nXSc(pts[i][0]*1000))+" "+r1(nYSc(pts[i][1]))
           }
           if (el.empty()) {
             gMovingAv.append("svg:path")
               .attr("class","movingav")
 	  	        .attr("d", d)
   		        .style("fill", "none")
-  		        .attr("stroke-width",svgshn(3*scf,3))
-  		        .style("stroke", bu.Cols.PURP);
+  		        .attr("stroke-width",r3(3*scf))
+  		        .style("stroke", bu.Cols.PURP)
           } else {
             el.attr("d", d)
-  		        .attr("stroke-width",svgshn(3*scf,3));
+  		        .attr("stroke-width",r3(3*scf))
           }
         } else el.remove();
       } else {
