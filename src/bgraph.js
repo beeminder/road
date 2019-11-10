@@ -481,9 +481,9 @@
      @param {String} [cls="overlay} CSS class of the created overlay
      @param {Boolean} [shd=true] Shade out graph if true
     */
-    function showOverlay( msgs, fs = -1, fw="bold",
-                          box=null, cls="overlay", shd = true, animate=false,
-                          parent=null) {
+    function showOverlay(msgs, fs = -1, fw="bold",
+                         box=null, cls="overlay", shd = true, animate=false,
+                         parent=null) {
       if (opts.divGraph == null) return
       if (box == null) box ={x:sw/20, y:sh/5, w:sw-2*sw/20, h:sh-2*sh/5}
       if (parent == null) parent = svg
@@ -3082,18 +3082,18 @@
       if (goal.yaw > 0) yedge = goal.yMin - 5*(goal.yMax - goal.yMin);
       else yedge = goal.yMax + 5*(goal.yMax - goal.yMin);
       // Compute road indices for left and right boundaries
-      itoday = br.findSeg(ir, now);
-      ihor = br.findSeg(ir, hor);
-      var d = "M"+nXSc(now*1000)+" "
-            +nYSc(br.rdf(ir, now));
+      itoday = br.findSeg(ir, now)
+      ihor = br.findSeg(ir, hor)
+      var d = "M"+nXSc(now*1000)
+             +" "+nYSc(br.rdf(ir, now))
       for (let i = itoday; i < ihor; i++) {
-        d += " L"+nXSc(ir[i].end[0]*1000)+" "+
-          nYSc(ir[i].end[1]);
+        d += " L"+nXSc(ir[i].end[0]*1000)
+             +" "+nYSc(ir[i].end[1])
       }
-      d+=" L"+nXSc(hor*1000)+" "+nYSc(br.rdf(ir, hor));
-      d+=" L"+nXSc(hor*1000)+" "+nYSc(yedge);
-      d+=" L"+nXSc(now*1000)+" "+nYSc(yedge);
-      d+=" Z";
+      d += " L"+nXSc(hor*1000)+" "+nYSc(br.rdf(ir, hor))
+      d += " L"+nXSc(hor*1000)+" "+nYSc(yedge)
+      d += " L"+nXSc(now*1000)+" "+nYSc(yedge)
+      d += " Z"
       if (pinkelt.empty()) {
         gPink.append("svg:path")
           .attr("class","pinkregion")
@@ -3101,6 +3101,7 @@
 	  	    .attr("fill-opacity", 0.4)
           .attr("fill", goal.ybhp ? bu.Cols.PINK  // try LYEL?
                                   : bu.Cols.PINK) // oinkzone
+        console.log(`goal.ybhp = ${goal.ybhp}`)
       } else {
         pinkelt.attr("d", d)
       }
@@ -3458,27 +3459,27 @@
       }
       roadelt.exit().remove();
       roadelt
-		    .attr("x1", function(d){ return nXSc(d.sta[0]*1000);})
-        .attr("y1",function(d){ return nYSc(d.sta[1]);})
-		    .attr("x2", function(d){ return nXSc(d.end[0]*1000);})
-		    .attr("y2",function(d){ return nYSc(d.end[1]);})
-		    .style("stroke",lineColor);
+		    .attr("x1", function(d) { return nXSc(d.sta[0]*1000) })
+        .attr("y1", function(d) { return nYSc(d.sta[1]) })
+		    .attr("x2", function(d) { return nXSc(d.end[0]*1000) })
+		    .attr("y2", function(d) { return nYSc(d.end[1]) })
+		    .style("stroke",lineColor)
       roadelt.enter()
         .append("svg:line")
 		    .attr("class","roads")
-  		  .attr("id", function(d,i) {return i;})
-	  	  .attr("name", function(d,i) {return "road"+i;})
-  		  .attr("x1", function(d){ return nXSc(d.sta[0]*1000);})
-  		  .attr("y1",function(d){ return nYSc(d.sta[1]);})
-	  	  .attr("x2", function(d){ return nXSc(d.end[0]*1000);})
-  		  .attr("y2",function(d){ return nYSc(d.end[1]);})
+  		  .attr("id",   function(d,i) { return i })
+	  	  .attr("name", function(d,i) { return "road"+i })
+  		  .attr("x1",   function(d)   { return nXSc(d.sta[0]*1000) })
+  		  .attr("y1",   function(d)   { return nYSc(d.sta[1]) })
+	  	  .attr("x2",   function(d)   { return nXSc(d.end[0]*1000) })
+  		  .attr("y2",   function(d)   { return nYSc(d.end[1]) })
 		    .style("stroke",lineColor)
   		  .attr("stroke-width",opts.roadLine.width)
         .on('wheel', function(d) { 
           // Redispatch a copy of the event to the zoom area
           var new_event = new d3.event.constructor(d3.event.type, 
-                                                   d3.event); 
-          zoomarea.node().dispatchEvent(new_event);})		  
+                                                   d3.event)
+          zoomarea.node().dispatchEvent(new_event) })		  
         .on("mouseover",function(d,i) { 
 	        if (!editingKnot && !editingDot && !editingRoad
              && !(selectType == br.RP.SLOPE && i == selection)) {
