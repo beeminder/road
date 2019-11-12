@@ -15,6 +15,7 @@
     "ejs": "^2.6.1",
     "express": "^4.16.4",
     "express-session": "^1.15.3",
+    "jsdoc": "^3.6.3",
     "moment": "^2.22.2",
     "octicons": "^6.0.1",
     "request": "^2.88.0",
