@@ -3046,7 +3046,7 @@
           d += " L"+nXSc(isoend[ln-1][0]*1000)+" "+nYSc(isoend[ln-1][1]);
           for (let i = ln-2; i >= 0; i--) {
             d += " L"+nXSc(isoend[i][0]*1000)+" "+nYSc(isoend[i][1]);
-            if (goal.yaw > 0 && i != 0) {
+            if (goal.yaw > 0 && goal.dir > 0 && i != 0) {
               let sl = (isoend[i-1][1] - isoend[i][1])/(isoend[i-1][0] - isoend[i][0])
               if (goal.dir * sl < 0) {
                 d += " L"+nXSc((isoend[i][0]+bu.SID)*1000)+" "+nYSc(isoend[i][1]);
