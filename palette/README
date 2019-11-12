@@ -4,4 +4,5 @@ Instructions for when new colors are used in graphs
 2. Open that in Gimp
 3. Under image, go to mode and pick indexed
 4. That should allow you to generate an indexed version with 256 colors with an optimized palette
-5. Save that as palette.png and that can then be used by jsbrain_server to generate the png files
+5. Save that as jsbrain_server/palette.png 
+6. Now the Beebrain server will use it to generate nice png files
