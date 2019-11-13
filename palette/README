@@ -1,8 +1,8 @@
 Instructions for when new colors are used in graphs
 
-1. Add images that showcase all the colors to js_montage.png
+1. Add images that showcase all the colors to js_montage.png (it should be a montage of production output because it factors in anti-aliasing and intermediate colors)
 2. Open that in Gimp
-3. Under image, go to mode and pick indexed
+3. Under "image", go to "mode" and pick "indexed"
 4. That should allow you to generate an indexed version with 256 colors with an optimized palette
-5. Save that as jsbrain_server/palette.png 
+5. Save that as jsbrain_server/palette.png
 6. Now the Beebrain server will use it to generate nice png files
