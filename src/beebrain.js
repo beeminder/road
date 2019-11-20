@@ -138,13 +138,12 @@ rfin     : null,    // Subsumed by fullroad ########################## DEP
 
 // Input parameters to ignore; complain about anything not here or in pin.
 const pig = [
-'rerails', 
+//'rerails', 
 'tagtime', 
 'timezone',
 'backroad', 
 'edgy',
 'offparis',
-'quantum',
 ]
 
 const CNAME = { }
