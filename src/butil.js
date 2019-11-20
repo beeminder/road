@@ -268,7 +268,7 @@ self.zip =  (av) => av[0].map((_,i) => av.map(a => a[i]))
 /** Return 0 when x is very close to 0.
     @param {Number} x Input number
     @param {Number} [delta=1e-7] Tolerance */
-self.chop = (x, delta=1e-7) => ((Math.abs(x) < delta)?0:x)
+self.chop = (x, delta=1e-7) => (Math.abs(x) < delta ? 0 : x)
 
 /** Return an integer when x is very close to an integer
     @param {Number} x Input number

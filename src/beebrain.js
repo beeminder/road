@@ -39,6 +39,7 @@ if (typeof define === 'function' && define.amd) {
 let gid = 1
 
 const pin = { // In Params: Graph settings and their defaults
+quantum  : 1,      // Precision/granularity for conservarounding baremin etc
 ybhp     : false,  // Yellow Brick Half-Plane!
 ppr      : true,   // Whether PPRs are turned on (ignored if not WEEN/RASH)
 deadline : 0,      // Time of deadline given as seconds bfr or after midnight
@@ -143,6 +144,7 @@ const pig = [
 'backroad', 
 'edgy',
 'offparis',
+'quantum',
 ]
 
 const CNAME = { }
@@ -1048,22 +1050,21 @@ const beebrain = function( bbin ) {
     else                         s= ""
     goal.deltasum += s
 
-    var c = goal.safebuf // countdown to derailment, in days
-    var cd = bu.splur(c, "day")
+    const c = goal.safebuf // countdown to derailment, in days
+    const cd = bu.splur(c, "day")
+    const lim  = br.lim (roads, goal, MOAR || PHAT ? c : 0)
+    const limd = br.limd(roads, goal, MOAR || PHAT ? c : 0)
     if (goal.kyoom) {
-      if (MOAR) goal.limsum= bu.sh1s(br.limd(roads, goal, c),  y)+" in "+cd
-      if (PHAT) goal.limsum= bu.sh1s(br.limd(roads, goal, c),  y)+" in "+cd
-      if (WEEN) goal.limsum= bu.sh1s(br.limd(roads, goal, 0),  y)+" today" 
-      if (RASH) goal.limsum= bu.sh1s(br.limd(roads, goal, 0),  y)+" today" 
+      //if (MOAR) goal.limsum = bu.sh1s(limd, y)+" in "+cd
+      if (MOAR) goal.limsum = bu.shns(limd, 4, 2, y)+" in "+cd
+      if (PHAT) goal.limsum = bu.sh1s(limd, y)+" in "+cd
+      if (WEEN) goal.limsum = bu.sh1s(limd, y)+" today" 
+      if (RASH) goal.limsum = bu.sh1s(limd, y)+" today" 
     } else {
-      if (MOAR) goal.limsum= bu.sh1s(br.limd(roads, goal, c), y)+" in "+cd+" ("
-        +bu.sh1(br.lim(roads, goal, c), y)+")"
-      if (PHAT) goal.limsum= bu.sh1s(br.limd(roads, goal, c), y)+" in "+cd+" ("
-        +bu.sh1(br.lim(roads, goal, c), y)+")"
-      if (WEEN) goal.limsum= bu.sh1s(br.limd(roads, goal, 0), y)+" today ("
-        +bu.sh1(br.lim(roads, goal, 0), y)+")"    
-      if (RASH) goal.limsum= bu.sh1s(br.limd(roads, goal, 0), y)+" today ("
-        +bu.sh1(br.lim(roads, goal, 0), y)+")"    
+      if (MOAR) goal.limsum= bu.sh1s(limd, y)+" in "+cd+" ("+bu.sh1(lim, y)+")"
+      if (PHAT) goal.limsum= bu.sh1s(limd, y)+" in "+cd+" ("+bu.sh1(lim, y)+")"
+      if (WEEN) goal.limsum= bu.sh1s(limd, y)+" today ("+bu.sh1(lim, y)+")"    
+      if (RASH) goal.limsum= bu.sh1s(limd, y)+" today ("+bu.sh1(lim, y)+")"    
     }
     if (y*d<0)      goal.safeblurb = "unknown days of safety buffer"
     else if (c>999) goal.safeblurb = "more than 999 days of safety buffer"
