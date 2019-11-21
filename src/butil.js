@@ -321,7 +321,7 @@ self.shn = (x, t=10, d=5, e=0) => {
   if (vm >= 4.5 && vm < 4.9999999) v = Math.floor(v)
   let xn = Math.round(v) / Math.pow(10, k) + 1e-10
 
-  // Conservaround
+  // Crappy conservaround that just tacks on decimal places till conservative
   if (e < 0 && xn > x || e > 0 && xn < x) { 
     if (d >= 10) xn = x
     else return self.shn(x, t, d+1, e)
