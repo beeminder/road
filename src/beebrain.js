@@ -84,7 +84,7 @@ imgsz    : 760,    // Image size; width in pixels of the graph image
 yoog     : 'U/G',  // Username/graphname, eg, "alice/weight"                
 usr      : null,   // Username (synonym for first half of yoog) ############ DEP
 graph    : null,   // Graph name (synonym for second half of yoog) ######### DEP
-gldt     : null,   // Synonym for tfin ##################################### DEP
+//gldt     : null,   // Synonym for tfin ################################### DEP
 goal     : null,   // Synonym for vfin ##################################### DEP
 rate     : null,   // Synonym for rfin ##################################### DEP
 offred   : true,   // Yesterday-is-red criteria for derails ################ DEP
@@ -113,8 +113,7 @@ numpts   : 0,       // Number of real datapoints entered, before munging
 mean     : 0,       // Mean of datapoints
 meandelt : 0,       // Mean of the deltas of the datapoints
 proctm   : 0,       // Unixtime Beebrain was called (specifically genStats)
-statsum  : '',      // Human-readable summary of graph statistics
-lanesum  : '',      // Interjection like "wrong lane!"
+statsum  : '',      // Human-readable graph stats summary (not used by Beebody)
 ratesum  : '',      // Text saying what the rate of the YBR is
 limsum   : '',      // Text saying your bare min or hard cap
 deltasum : '',      // Text saying where you are wrt the centerline
@@ -124,17 +123,17 @@ titlesum : '',      // Title text for graph thumbnail
 progsum  : '',      // Text summarizing percent progress
 rah      : 0,       // Y-value of the centerline of YBR at the akrasia horiz
 error    : '',      // Empty string if no errors
-safebuf  : null,    // Number of days of safety buffer ############### DEP
-loser    : false,   // Whether you're irredeemably off the road ###### DEP
-gldt     : null,    // {gldt, goal, rate} are synonyms for ########### DEP
-goal     : null,    //   for the last row of fullroad ################ DEP
-rate     : null,    //   like a filled-in version of {tfin, vfin, rfin} DEP
-road     : [],      // Synonym for fullroad ########################## DEP
-tini     : null,    // Echoes input param ############################ DEP
-vini     : null,    // Echoes input param ############################ DEP
-tfin     : null,    // Subsumed by fullroad ########################## DEP
-vfin     : null,    // Subsumed by fullroad ########################## DEP
-rfin     : null,    // Subsumed by fullroad ########################## DEP
+safebuf  : null,    // Number of days of safety buffer ##################### DEP
+loser    : false,   // Whether you're irredeemably off the road ############ DEP
+gldt     : null,    // {gldt, goal, rate} are synonyms for ################# DEP
+goal     : null,    //   for the last row of fullroad ###################### DEP
+rate     : null,    //   like a filled-in version of {tfin, vfin, rfin} #### DEP
+road     : [],      // Synonym for fullroad ################################ DEP
+tini     : null,    // Echoes input param ################################## DEP
+vini     : null,    // Echoes input param ################################## DEP
+tfin     : null,    // Subsumed by fullroad ################################ DEP
+vfin     : null,    // Subsumed by fullroad ################################ DEP
+rfin     : null,    // Subsumed by fullroad ################################ DEP
 }
 
 // Input parameters to ignore; complain about anything not here or in pin.
@@ -222,7 +221,7 @@ const beebrain = function( bbin ) {
   /** Convery legacy parameters to up-to-date entries 
       @param {Object} p Goal parameters from the bb file */
   function legacyIn( p ) {
-    if (p.hasOwnProperty('gldt') && !p.hasOwnProperty('tfin'))  p.tfin = p.gldt
+    //if (p.hasOwnProperty('gldt') && !p.hasOwnProperty('tfin')) p.tfin = p.gldt
     if (p.hasOwnProperty('goal') && !p.hasOwnProperty('vfin'))  p.vfin = p.goal
     if (p.hasOwnProperty('rate') && !p.hasOwnProperty('rfin'))  p.rfin = p.rate
     if (p.hasOwnProperty('usr') && p.hasOwnProperty('graph') && !p.hasOwnProperty('yoog')) 
@@ -981,15 +980,20 @@ const beebrain = function( bbin ) {
   }
 
   function sumSet(rd, goal) {
-    var y = goal.yaw, d = goal.dir, 
-        l = goal.lane, w = goal.lnw, dlt = goal.delta
-    var MOAR = (y>0 && d>0), 
-        PHAT = (y<0 && d<0),
-        WEEN = (y<0 && d>0), 
-        RASH = (y>0 && d<0)
+    const y = goal.yaw, d = goal.dir, 
+          l = goal.lane, w = goal.lnw, dlt = goal.delta, 
+          q = goal.quantum
+    const MOAR = (y>0 && d>0), 
+          PHAT = (y<0 && d<0),
+          WEEN = (y<0 && d>0), 
+          RASH = (y>0 && d<0)
+    const shn_o  = (x =>                     bu.sh1(x, y)) // Old shownums
+    const shns_o = (x => (x>=0 ? "+" : "") + bu.sh1(x, y)) // before conserva-
+    const shn0_o = (x =>                     bu.sh1(x, 0)) // round world order.
 
     if (goal.error != "") {
-      goal.statsum = " error:    "+goal.error+"\\n"; return
+      goal.statsum = " error:    "+goal.error+"\\n"
+      return
     }
     var rz = (bu.zip(goal.road))[2]
     var minr = bu.arrMin(rz), maxr = bu.arrMax(rz)
@@ -1041,12 +1045,12 @@ const beebrain = function( bbin ) {
       + (dlt<0 ? " below" : " above")+" the centerline"
     let s
     if (w == 0)                  s= ""
-    else if (y>0 && l>=-1&&l<=1) s= " and "+bu.sh1(w-dlt)+" to go till top edge"
-    else if (y>0 && l>=2)        s= " and "+bu.sh1(dlt-w)+" above the top edge"
-    else if (y>0 && l<=-2)   s= " and "+bu.sh1(-w-dlt)+" to go till bottom edge"
-    else if (y<0 && l>=-1&&l<=1) s= " and "+bu.sh1(w-dlt)+" below top edge"
-    else if (y<0 && l<=-2)       s= " and "+bu.sh1(-w-dlt)+" below bottom edge"
-    else if (y<0 && l>1)         s= " and "+bu.sh1(dlt-w)+" above top edge"
+    else if (y>0 && l>=-1&&l<=1) s= " and "+shn0_o(w-dlt)+" to go till top edge"
+    else if (y>0 && l>=2)        s= " and "+shn0_o(dlt-w)+" above the top edge"
+    else if (y>0 && l<=-2)   s= " and "+shn0_o(-w-dlt)+" to go till bottom edge"
+    else if (y<0 && l>=-1&&l<=1) s= " and "+shn0_o(w-dlt)+" below top edge"
+    else if (y<0 && l<=-2)       s= " and "+shn0_o(-w-dlt)+" below bottom edge"
+    else if (y<0 && l>1)         s= " and "+shn0_o(dlt-w)+" above top edge"
     else                         s= ""
     goal.deltasum += s
 
@@ -1055,86 +1059,88 @@ const beebrain = function( bbin ) {
     const lim  = br.lim (roads, goal, MOAR || PHAT ? c : 0)
     const limd = br.limd(roads, goal, MOAR || PHAT ? c : 0)
     if (goal.kyoom) {
-      //if (MOAR) goal.limsum = bu.sh1s(limd, y)+" in "+cd
-      if (MOAR) goal.limsum = bu.shns(limd, 4, 2, y)+" in "+cd
-      if (PHAT) goal.limsum = bu.sh1s(limd, y)+" in "+cd
-      if (WEEN) goal.limsum = bu.sh1s(limd, y)+" today" 
-      if (RASH) goal.limsum = bu.sh1s(limd, y)+" today" 
+      if (MOAR) goal.limsum = shns_o(limd)+" in "+cd
+      if (PHAT) goal.limsum = shns_o(limd)+" in "+cd
+      if (WEEN) goal.limsum = shns_o(limd)+" today" 
+      //if (WEEN) goal.limsum = (limd>=0 ? "+" : "") + bu.conservaround(limd, goal.quantum, goal.yaw)+" todayTODO"
+      if (RASH) goal.limsum = bu.sh1s(limd, y)+" today"
+      //if (RASH) goal.limsum = (limd>=0 ? "+" : "") + bu.conservaround(limd, goal.quantum, goal.yaw)+" todayTODO"
     } else {
-      if (MOAR) goal.limsum= bu.sh1s(limd, y)+" in "+cd+" ("+bu.sh1(lim, y)+")"
-      if (PHAT) goal.limsum= bu.sh1s(limd, y)+" in "+cd+" ("+bu.sh1(lim, y)+")"
-      if (WEEN) goal.limsum= bu.sh1s(limd, y)+" today ("+bu.sh1(lim, y)+")"    
-      if (RASH) goal.limsum= bu.sh1s(limd, y)+" today ("+bu.sh1(lim, y)+")"    
+      if (MOAR) goal.limsum= shns_o(limd)+" in "+cd+" ("+shn_o(lim)+")"
+      if (PHAT) goal.limsum= shns_o(limd)+" in "+cd+" ("+shn_o(lim)+")"
+      if (WEEN) goal.limsum= shns_o(limd)+" today ("+shn_o(lim)+")"    
+      if (RASH) goal.limsum= shns_o(limd)+" today ("+shn_o(lim)+")"
     }
     if (y*d<0)      goal.safeblurb = "unknown days of safety buffer"
     else if (c>999) goal.safeblurb = "more than 999 days of safety buffer"
     else            goal.safeblurb = "~"+cd+" of safety buffer"
 
+    let lanesum
     if (goal.loser) {
       goal.headsum = "Officially off the yellow brick road"
-      goal.lanesum = "officially off the road"
+      lanesum = "officially off the road"
     } else if (w==0) {
       goal.headsum = "Coasting on a currently flat yellow brick road"
-      goal.lanesum = "currently on a flat road"
+      lanesum = "currently on a flat road"
     } else if (MOAR && l==1) {
       goal.headsum = "Right on track in the top lane of the yellow brick road"
-      goal.lanesum = "in the top lane: perfect!"
+      lanesum = "in the top lane: perfect!"
     } else if (MOAR &&  l==2) {
       goal.headsum = "Sitting pretty just above the yellow brick road"
-      goal.lanesum = "above the road: awesome!"
+      lanesum = "above the road: awesome!"
     } else if (MOAR &&  l==3) {
       goal.headsum = "Well above the yellow brick road with "+goal.safeblurb
-      goal.lanesum = "well above the road: "+goal.safeblurb+"!"
+      lanesum = "well above the road: "+goal.safeblurb+"!"
     } else if (MOAR &&  l>3) {
       goal.headsum = "Way above the yellow brick road with "+goal.safeblurb
-      goal.lanesum = "way above the road: "+goal.safeblurb+"!"
+      lanesum = "way above the road: "+goal.safeblurb+"!"
     } else if (MOAR &&  l==-1) {
       goal.headsum = "On track but in the wrong lane of the yellow brick road "
         +"and in danger of derailing tomorrow"  
-      goal.lanesum = "in the wrong lane: could derail tomorrow!"
+      lanesum = "in the wrong lane: could derail tomorrow!"
     } else if (MOAR &&  l<=-2) {
-      goal.headsum = "Below the yellow brick road and will derail if still here "
-        +"at the end of the day"
-      goal.lanesum = "below the road: will derail at end of day!"
+      goal.headsum = "Below the yellow brick road and will derail if still here"
+        +" at the end of the day"
+      lanesum = "below the road: will derail at end of day!"
     } else if (PHAT &&  l==-1) {
       goal.headsum = "Right on track in the right lane of the yellow brick road"
-      goal.lanesum = "in the right lane: perfect!"
+      lanesum = "in the right lane: perfect!"
     } else if (PHAT &&  l==-2) {
       goal.headsum = "Sitting pretty just below the yellow brick road"
-      goal.lanesum = "below the road: awesome!"
+      lanesum = "below the road: awesome!"
     } else if (PHAT &&  l==-3) {
       goal.headsum = "Well below the yellow brick road with "+goal.safeblurb
-      goal.lanesum = "well below the road: "+goal.safeblurb+"!"
+      lanesum = "well below the road: "+goal.safeblurb+"!"
     } else if (PHAT &&  l<-3) {
       goal.headsum = "Way below the yellow brick road with "+goal.safeblurb
-      goal.lanesum = "way below the road: "+goal.safeblurb+"!"
+      lanesum = "way below the road: "+goal.safeblurb+"!"
     } else if (PHAT &&  l==1) {
       goal.headsum = "On track but in the wrong lane of the yellow brick road "
         +"and in danger of derailing tomorrow"
-      goal.lanesum = "in the wrong lane: could derail tomorrow!"
+      lanesum = "in the wrong lane: could derail tomorrow!"
     } else if (PHAT &&  l>=2) {
-      goal.headsum = "Above the yellow brick road and will derail if still here "
-        +"at the end of the day"
-      goal.lanesum = "above the road: will derail at end of day!"
+      goal.headsum = "Above the yellow brick road and will derail if still here"
+        +" at the end of the day"
+      lanesum = "above the road: will derail at end of day!"
     } else if (l==0) {
       goal.headsum = "Precisely on the centerline of the yellow brick road"
-      goal.lanesum = "precisely on the centerline: beautiful!"
+      lanesum = "precisely on the centerline: beautiful!"
     } else if (l==1) {
       goal.headsum = "In the top lane of the yellow brick road"
-      goal.lanesum = "in the top lane"
+      lanesum = "in the top lane"
     } else if (l==-1) {
       goal.headsum = "In the bottom lane of the yellow brick road"
-      goal.lanesum = "in the bottom lane"
+      lanesum = "in the bottom lane"
     } else if (l>1) {
       goal.headsum = "Above the yellow brick road"
-      goal.lanesum = "above the road"
+      lanesum = "above the road"
     } else if (l<-1) {
       goal.headsum = "Below the yellow brick road"
-      goal.lanesum = "below the road"
+      lanesum = "below the road"
     }
     goal.titlesum
       = bu.toTitleCase(CNAME[br.dotcolor(roads, goal, goal.tcur, goal.vcur)]) + ". "
-      + "bmndr.com/"+goal.yoog+" is " + goal.lanesum
+      + "bmndr.com/"+goal.yoog+" is " + lanesum
       + ((y*d>0)?" (safe to stay flat for ~"+cd+")":"")
 
     goal.statsum =
@@ -1145,13 +1151,13 @@ const beebrain = function( bbin ) {
       +"           "+bu.shd(goal.tfin)+"  "+bu.sh1(goal.vfin)+"\\n"
       +" rate:     "+goal.ratesum+"\\n"
       +" lane:     " +((Math.abs(l) == 666)?"n/a":l)
-      +" ("+goal.lanesum+")\\n"
+      +" ("+lanesum+")\\n"
       +" safebuf:  "+goal.safebuf+"\\n"
       +" delta:    "+goal.deltasum+"\\n"
       +" "
-    if   (y==0)     goal.statsum += "limit:    "
-    else if (y<0)   goal.statsum += "hard cap: "
-    else            goal.statsum += "bare min: "
+    if      (y==0) goal.statsum += "limit:    "
+    else if (y<0)  goal.statsum += "hard cap: "
+    else           goal.statsum += "bare min: "
     goal.statsum += goal.limsum+"\\n"
   }
     
