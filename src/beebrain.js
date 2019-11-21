@@ -40,6 +40,7 @@ let gid = 1
 
 const pin = { // In Params: Graph settings and their defaults
 quantum  : 1,      // Precision/granularity for conservarounding baremin etc
+timey    : false,  // Whether numbers should be shown in HH:MM format
 ybhp     : false,  // Yellow Brick Half-Plane!
 ppr      : true,   // Whether PPRs are turned on (ignored if not WEEN/RASH)
 deadline : 0,      // Time of deadline given as seconds bfr or after midnight
