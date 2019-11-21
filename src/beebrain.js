@@ -417,12 +417,18 @@ const beebrain = function( bbin ) {
     }
   }
 
-  // Take string like "shark jumping #yolo :) #shark", return {"#yolo", "#shark"}
-  const hre = /(?:^|\s)(#\p{L}[\p{L}0-9_]+)(?=$|\s)/gu // why outside function?
+  // Take, eg, "shark jumping #yolo :) #shark" and return {"#yolo", "#shark"}
+  let hashtagRE
+  try {
+    //hashtagRE = /(?:^|\s)(#\p{L}[\p{L}0-9_]+)(?=$|\s)/gu
+    hashtagRE = new RegExp("(?:^|\\s)(#\\p{L}[\\p{L}0-9_]+)(?=$|\\s)", "gu")
+  } catch { // Firefox can't handle the above in 2019 so...
+    hashtagRE = /(?:^|\s)(#[a-zA-Z]\w+)(?=$|\s)/g
+  }
   function hashextract(s) {
     let set = new Set(), m
-    hre.lastIndex = 0
-    while ( (m = hre.exec(s)) != null ) if (m[1] != "") set.add(m[1])
+    hashtagRE.lastIndex = 0
+    while ( (m = hashtagRE.exec(s)) != null ) if (m[1] != "") set.add(m[1])
     return set
   }
 
