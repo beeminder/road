@@ -295,24 +295,23 @@ self.clip = (x, a, b) => {
  *                                  SHOWNUM                                   *
  ******************************************************************************/
 
-/** Show Number: convert number to string. Use at most d
-    significant figures after the decimal point. Target t significant
-    figures total (clipped to be at least i and at most i+d, where i
-    is the number of digits in integer part of x). 
+/** Show Number: convert number to string. Use at most d significant figures
+    after the decimal point. Target t significant figures total (clipped to be
+    at least i and at most i+d, where i is the number of digits in the integer
+    part of x).
     @param {Number} x Input number
     @param {Number} [t=10] Total number of significant figures 
     @param {Number} [d=5] Number of significant figures after the decimal 
     @param {Number} [e=0] Error direction for conservarounding */
 self.shn = (x, t=10, d=5, e=0) => {
   if (isNaN(x)) return x.toString()
+  x = self.chop(x)
   let i = Math.floor(Math.abs(x)), k, fmt, ostr
   i = i===0 ? 0 : i.toString().length // # of digits left of the decimal
   if (Math.abs(x) > Math.pow(10,i)-.5) i += 1
   if (i === 0 && x !== 0)                             // get
     k = Math.floor(d - Math.log10(Math.abs(x)))       // desired
   else k = d                                          // decimal digits
-
-  //return self.conservaround(x, 10**-k, e)
 
   // Round input to have the desired number of decimal digits
   let v = x * Math.pow(10, k), vm = v % 10
@@ -350,7 +349,7 @@ self.shn = (x, t=10, d=5, e=0) => {
     @param {Number} [t=16] Total number of significant figures 
     @param {Number} [d=5] Number of significant figures after the decimal 
     @param {Number} [e=0] Error direction for conservarounding */
-self.shns = (x, t=16, d=5, e=0) => (x>=0 ? "+" : "") + self.shn(x, t, d, e)
+//self.shns = (x, t=16, d=5, e=0) => (x>=0 ? "+" : "") + self.shn(x, t, d, e)
 
 /** Show Date: take timestamp and return something like 2012.10.22
     @param {Number} t Unix timestamp */
@@ -373,20 +372,20 @@ self.splur = (n, noun, nounp='') => {
 
 /** Rate as a string.
  @param {Number} r Rate */
-self.shr = (r) => {
-  if (r === null) r = 0
-  return self.shn(r, 4,2)
-}
+//self.shr = (r) => {
+//  //if (r === null) r = 0 // TODO
+//  return self.shn(r, 4,2)
+//}
 
 // Shortcuts for common ways to show numbers
 /** shn(chop(x), 4, 2). See {@link module:butil.shn shn}.
     @param {Number} x Input 
     @param {Number} [e=0] Error direction for conservarounding */
-self.sh1 = function(x, e=0)  { return self.shn(  self.chop(x), 4,2, e) }
+//self.sh1 = function(x, e=0)  { return self.shn( x, 4,2, e) }
 /** shns(chop(x), 4, 2). See {@link module:butil.shns shns}.
     @param {Number} x Input 
     @param {Number} [e=0] Error direction for conservarounding */
-self.sh1s = function(x, e=0) { return self.shns( self.chop(x), 4,2, e) }
+//self.sh1s = function(x, e=0) { return self.shns(x, 4,2, e) }
 
 
 /******************************************************************************
@@ -402,11 +401,11 @@ self.sh1s = function(x, e=0) { return self.shns( self.chop(x), 4,2, e) }
 // Possible issue: Some equivalent representations don't normalize to the same 
 // thing. Eg, 0.5 -> 0.5 and .5 -> .5, 2 -> 2 and +2 -> +2, 3 -> 3 and 3. -> 3.
 self.normberlize = function(x) {
-  x = typeof x == 'string' ? x.trim() : (+x).toString() // stringify the input
+  x = typeof x == 'string' ? x.trim() : x.toString()  // stringify the input
   x = x.replace(/^([+-]?)0+([^eE\.])/, '$1$2')        // ditch the leading zeros
   const rnum = /^[+-]?(?:\d+\.?\d*|\.\d+)$/           // regex from d.glitch.me
   if (rnum.test(x)) return x                          // already normal! done!
-  const rsci = /^([+-]?(?:\d+\.?\d*|\.\d+))e([+-]?\d+$)/i // sci. notation
+  const rsci = /^([+-]?(?:\d+\.?\d*|\.\d+))e([+-]?\d+)$/i // sci. notation
   const marr = x.match(rsci)                          // match array
   if (!marr || marr.length !== 3) return 'NaN'        // hammer can't parse this
   let [, m, e] = marr                                 // mantissa & exponent
@@ -420,10 +419,11 @@ self.normberlize = function(x) {
   return m.replace(/\.$/, '').replace(/^0+(.)/, '$1') // eg 0023. -> 23
 }
 
-// Infer precision, eg, .123 -> .001 or "12.0" -> .1
-// It's sort of silly to do this with regexes on strings instead of with floors
-// and logs and powers and such but (a) the string the user typed is the ground
-// truth and (b) this is just more robust and portable.
+// Infer precision, eg, .123 -> .001 or "12.0" -> .1 or "100" -> 1.
+// It seems silly to do this with regexes on strings instead of with floors and
+// logs and powers and such but (a) the string the user typed is the ground
+// truth and (b) using the numeric representation we wouldn't be able to tell
+// the difference between, say, "3" (precision 1) and "3.00" (precision .01).
 self.quantize = function(x) {
   let s = self.normberlize(x)          // put the input in canonical string form
   if (/^-?\d+\.?$/.test(s)) return 1   // no decimal pt (or only a trailing one)
@@ -434,7 +434,7 @@ self.quantize = function(x) {
 }
 
 // Round x to nearest r, avoiding floating point crap like 9999*.1=999.900000001
-// at least when r is an integer or negative power of 10
+// at least when r is an integer or negative power of 10.
 self.round = function(x, r=1) {
   if (r < 0) return NaN
   if (r===0) return +x
@@ -449,6 +449,7 @@ self.round = function(x, r=1) {
 // Round x to the nearest r ... that's >= x if e is +1
 //                          ... that's <= x if e is -1
 self.conservaround = function(x, r=1, e=0) {
+  //x = self.chop(x)
   let y = self.round(x, r)
   if (e===0) return y
   if (e < 0 && y > x) y -= r
