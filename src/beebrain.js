@@ -39,7 +39,7 @@ if (typeof define === 'function' && define.amd) {
 let gid = 1
 
 const pin = { // In Params: Graph settings and their defaults
-quantum  : 0.01,   // Precision/granularity for conservarounding baremin etc
+quantum  : null,   // Precision/granularity for conservarounding baremin etc
 timey    : false,  // Whether numbers should be shown in HH:MM format
 ybhp     : false,  // Yellow Brick Half-Plane!
 ppr      : true,   // Whether PPRs are turned on (ignored if not WEEN/RASH)
@@ -995,16 +995,9 @@ const beebrain = function( bbin ) {
           WEEN = (y<0 && d>0), 
           RASH = (y>0 && d<0)
 
-    const shn_42   = (x =>                     bu.shn(x, 4, 2, y))
-    const shns_42  = (x => (x>=0 ? "+" : "") + bu.shn(x, 4, 2, y))
-    const shn0_42  = (x =>                     bu.shn(x, 4, 2, 0))
-    const shn0_31  = (x =>                     bu.shn(x, 3, 1, 0))
-    const shn0_21  = (x =>                     bu.shn(x, 2, 1, 0))
-    const shns0_21 = (x => (x>=0 ? "+" : "") + bu.shn(x, 2, 1, 0))
-    const shn0_11  = (x =>                     bu.shn(x, 1, 1, 0))
-
-    const shn  = (x =>                     bu.conservaround(x, q, y))
-    const shns = (x => (x>=0 ? "+" : "") + bu.conservaround(x, q, y))
+    const shn  = ((x, e=y, t=4, d=2) => q===null ? bu.shn(x, t, d, e) :
+                                                   bu.conservaround(x, q, e))
+    const shns = ((x, e=y, t=4, d=2) => (x>=0 ? "+" : "") + shn(x, e, t, d))
 
     if (goal.error != "") {
       goal.statsum = " error:    "+goal.error+"\\n"
@@ -1016,10 +1009,10 @@ const beebrain = function( bbin ) {
       var tmp = minr
       minr = maxr; maxr = tmp
     }
-    let smin = shn0_42(minr)
-    let smax = shn0_42(maxr)
-    let savg = shn0_42(goal.ravg)
-    let scur = shn0_42(goal.rcur)
+    let smin = bu.shn(minr,      4,2)
+    let smax = bu.shn(maxr,      4,2)
+    let savg = bu.shn(goal.ravg, 4,2)
+    let scur = bu.shn(goal.rcur, 4,2)
     goal.ratesum = 
       (minr === maxr ? smin : "between "+smin+" and "+smax) +
       " per " + bu.UNAM[goal.runits] + 
@@ -1029,11 +1022,11 @@ const beebrain = function( bbin ) {
     // which will be displayed with labels TO GO and TIME LEFT in the stats box
     // and will have both the absolute amounts remaining as well as the 
     // percents done as calculated here.
-    let pt = shn0_11(bu.cvx(bu.daysnap(goal.tcur),
+    let pt = bu.shn(bu.cvx(bu.daysnap(goal.tcur),
                             goal.tini,bu.daysnap(goal.tfin),
-                            0,100, false))
+                            0,100, false), 1,1)
     let pv = bu.cvx(goal.vcur, goal.vini,goal.vfin, 0,100, false)
-    pv = shn0_11(goal.vini<goal.vfin ? pv : 100 - pv)
+    pv = bu.shn(goal.vini<goal.vfin ? pv : 100 - pv, 1,1)
 
     if (pt == pv) goal.progsum = pt+"% done"
     else          goal.progsum = pt+"% done by time -- "+pv+"% by value"
@@ -1041,31 +1034,32 @@ const beebrain = function( bbin ) {
     let x, ybrStr
     if (goal.cntdn < 7) {
       x = Math.sign(goal.rfin) * (goal.vfin - goal.vcur)
-      ybrStr = "To go to goal: "+shn(x)+"."  // shn0_21
+      ybrStr = "To go to goal: "+shn(x,0,2,1)+"."
     } else {
       x = br.rdf(roads, goal.tcur+goal.siru) - br.rdf(roads, goal.tcur)
-      ybrStr = "Yellow Brick Rd = "+shns0_21(x)+" / "+bu.UNAM[goal.runits]+"."
+      ybrStr = "Yellow Brick Rd = "+(x>=0 ? "+" : "")+bu.shn(x, 2, 1, 0)
+                             +" / "+bu.UNAM[goal.runits]+"."
     }
 
     var ugprefix = false // debug mode: prefix yoog to graph title
     goal.graphsum = 
       (ugprefix ? goal.yoog : "")
-      + shn(goal.vcur)+" on "+bu.shd(goal.tcur)+" (" // shn0_31
+      + shn(goal.vcur,0,3,1)+" on "+bu.shd(goal.tcur)+" ("
       + bu.splur(goal.numpts, "datapoint")+" in "
       + bu.splur(1+Math.floor((goal.tcur-goal.tini)/bu.SID),"day")+") "
-      + "targeting "+shn(goal.vfin)+" on "+bu.shd(goal.tfin)+" (" // shn0_31
-      + bu.splur(parseFloat(shn0_11(goal.cntdn)), "more day")+"). "+ybrStr
+      + "targeting "+shn(goal.vfin,0,3,1)+" on "+bu.shd(goal.tfin)+" ("
+      + bu.splur(goal.cntdn, "more day")+"). "+ybrStr
 
-    goal.deltasum = shn(Math.abs(dlt)) + " " + goal.gunits // shn0_42
+    goal.deltasum = shn(Math.abs(dlt),0) + " " + goal.gunits
       + (dlt<0 ? " below" : " above")+" the centerline"
     let s
-    if (w == 0)                  s=""     // shn0_42
+    if (w == 0)                  s=""
     else if (y>0 && l>=-1&&l<=1) s=" and "+shn(w-dlt)+" to go till top edge"
-    else if (y>0 && l>=2)        s=" and "+shn(dlt-w)+" above the top edge"
+    else if (y>0 && l>=2)        s=" and "+shn(dlt-w,0)+" above the top edge"
     else if (y>0 && l<=-2)       s=" and "+shn(-w-dlt)+" to go till bottom edge"
-    else if (y<0 && l>=-1&&l<=1) s=" and "+shn(w-dlt)+" below top edge"
-    else if (y<0 && l<=-2)       s=" and "+shn(-w-dlt)+" below bottom edge"
-    else if (y<0 && l>1)         s=" and "+shn(dlt-w)+" above top edge"
+    else if (y<0 && l>=-1&&l<=1) s=" and "+shn(w-dlt,0)+" below top edge"
+    else if (y<0 && l<=-2)       s=" and "+shn(-w-dlt,0)+" below bottom edge"
+    else if (y<0 && l>1)         s=" and "+shn(dlt-w,0)+" above top edge"
     else                         s=""
     goal.deltasum += s
 
@@ -1074,7 +1068,7 @@ const beebrain = function( bbin ) {
     const lim  = br.lim (roads, goal, MOAR || PHAT ? c : 0)
     const limd = br.limd(roads, goal, MOAR || PHAT ? c : 0)
     if (goal.kyoom) {
-      if (MOAR) goal.limsum = shns(limd)+" in "+cd //shns_42 & shn_42
+      if (MOAR) goal.limsum = shns(limd)+" in "+cd
       if (PHAT) goal.limsum = shns(limd)+" in "+cd
       if (WEEN) goal.limsum = shns(limd)+" today" 
       if (RASH) goal.limsum = shns(limd)+" today"
@@ -1158,10 +1152,10 @@ const beebrain = function( bbin ) {
 
     goal.statsum =
       " progress: "+bu.shd(goal.tini)+"  "
-      +(data == null ? "?" : shn0_42(goal.vini))+"\\n" // shn0_42
-      +"           "+bu.shd(goal.tcur)+"  "+shn0_42(goal.vcur)
+      +(data == null ? "?" : bu.shn(goal.vini, 4, 2, 0))+"\\n"
+      +"           "+bu.shd(goal.tcur)+"  "+bu.shn(goal.vcur, 4, 2, 0)
       +"   ["+goal.progsum+"]\\n"
-      +"           "+bu.shd(goal.tfin)+"  "+shn0_42(goal.vfin)+"\\n"
+      +"           "+bu.shd(goal.tfin)+"  "+bu.shn(goal.vfin, 4, 2, 0)+"\\n"
       +" rate:     "+goal.ratesum+"\\n"
       +" lane:     " +((Math.abs(l) == 666)?"n/a":l)
       +" ("+lanesum+")\\n"
