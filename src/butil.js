@@ -356,8 +356,7 @@ self.shns = (x, t=16, d=5, e=0) => (x>=0 ? "+" : "") + self.shn(x, t, d, e)
     @param {Number} t Unix timestamp */
 self.shd = (t) => t === null ? 'null' : self.formatDate(t)
 
-/** Show Date/Time: take timestamp and return something like
-    2012.10.22 15:27:03 
+/** Show Date/Time: take timestamp and return something like 2012.10.22 15:27:03
     @param {Number} t Unix timestamp */
 self.shdt = (t) => t === null ? 'null' : self.formatDateTime(t)
 
