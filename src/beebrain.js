@@ -39,7 +39,7 @@ if (typeof define === 'function' && define.amd) {
 let gid = 1
 
 const pin = { // In Params: Graph settings and their defaults
-quantum  : 1,      // Precision/granularity for conservarounding baremin etc
+quantum  : 0.01,   // Precision/granularity for conservarounding baremin etc
 timey    : false,  // Whether numbers should be shown in HH:MM format
 ybhp     : false,  // Yellow Brick Half-Plane!
 ppr      : true,   // Whether PPRs are turned on (ignored if not WEEN/RASH)
@@ -989,13 +989,22 @@ const beebrain = function( bbin ) {
     const y = goal.yaw, d = goal.dir, 
           l = goal.lane, w = goal.lnw, dlt = goal.delta, 
           q = goal.quantum
+
     const MOAR = (y>0 && d>0), 
           PHAT = (y<0 && d<0),
           WEEN = (y<0 && d>0), 
           RASH = (y>0 && d<0)
-    const shn_o  = (x =>                     bu.sh1(x, y)) // Old shownums
-    const shns_o = (x => (x>=0 ? "+" : "") + bu.sh1(x, y)) // before conserva-
-    const shn0_o = (x =>                     bu.sh1(x, 0)) // round world order.
+
+    const shn_42   = (x =>                     bu.shn(x, 4, 2, y))
+    const shns_42  = (x => (x>=0 ? "+" : "") + bu.shn(x, 4, 2, y))
+    const shn0_42  = (x =>                     bu.shn(x, 4, 2, 0))
+    const shn0_31  = (x =>                     bu.shn(x, 3, 1, 0))
+    const shn0_21  = (x =>                     bu.shn(x, 2, 1, 0))
+    const shns0_21 = (x => (x>=0 ? "+" : "") + bu.shn(x, 2, 1, 0))
+    const shn0_11  = (x =>                     bu.shn(x, 1, 1, 0))
+
+    const shn  = (x =>                     bu.conservaround(x, q, y))
+    const shns = (x => (x>=0 ? "+" : "") + bu.conservaround(x, q, y))
 
     if (goal.error != "") {
       goal.statsum = " error:    "+goal.error+"\\n"
@@ -1007,10 +1016,10 @@ const beebrain = function( bbin ) {
       var tmp = minr
       minr = maxr; maxr = tmp
     }
-    let smin = bu.shr(minr)
-    let smax = bu.shr(maxr)
-    let savg = bu.shr(goal.ravg)
-    let scur = bu.shr(goal.rcur)
+    let smin = shn0_42(minr)
+    let smax = shn0_42(maxr)
+    let savg = shn0_42(goal.ravg)
+    let scur = shn0_42(goal.rcur)
     goal.ratesum = 
       (minr === maxr ? smin : "between "+smin+" and "+smax) +
       " per " + bu.UNAM[goal.runits] + 
@@ -1020,44 +1029,44 @@ const beebrain = function( bbin ) {
     // which will be displayed with labels TO GO and TIME LEFT in the stats box
     // and will have both the absolute amounts remaining as well as the 
     // percents done as calculated here.
-    var pt = bu.shn(bu.cvx(bu.daysnap(goal.tcur),
-                           goal.tini,bu.daysnap(goal.tfin),
-                           0,100, false), 1,1)
-    var pv = bu.cvx(goal.vcur, goal.vini,goal.vfin,0,100,false)
-    pv = bu.shn((goal.vini<goal.vfin)?pv:100 - pv, 1,1) // meant shn(n,1,2) here?
+    let pt = shn0_11(bu.cvx(bu.daysnap(goal.tcur),
+                            goal.tini,bu.daysnap(goal.tfin),
+                            0,100, false))
+    let pv = bu.cvx(goal.vcur, goal.vini,goal.vfin, 0,100, false)
+    pv = shn0_11(goal.vini<goal.vfin ? pv : 100 - pv)
 
     if (pt == pv) goal.progsum = pt+"% done"
-    else goal.progsum = pt+"% done by time -- "+pv+"% by value"
+    else          goal.progsum = pt+"% done by time -- "+pv+"% by value"
 
-    var x, ybrStr
+    let x, ybrStr
     if (goal.cntdn < 7) {
       x = Math.sign(goal.rfin) * (goal.vfin - goal.vcur)
-      ybrStr = "To go to goal: "+bu.shn(x,2,1)+"."
+      ybrStr = "To go to goal: "+shn(x)+"."  // shn0_21
     } else {
       x = br.rdf(roads, goal.tcur+goal.siru) - br.rdf(roads, goal.tcur)
-      ybrStr = "Yellow Brick Rd = "+bu.shns(x,2,1)+" / "+bu.UNAM[goal.runits]+"."
+      ybrStr = "Yellow Brick Rd = "+shns0_21(x)+" / "+bu.UNAM[goal.runits]+"."
     }
 
     var ugprefix = false // debug mode: prefix yoog to graph title
     goal.graphsum = 
-      ((ugprefix)?goal.yoog:"")
-      + bu.shn(goal.vcur,3,1)+" on "+bu.shd(goal.tcur)+" ("
+      (ugprefix ? goal.yoog : "")
+      + shn(goal.vcur)+" on "+bu.shd(goal.tcur)+" (" // shn0_31
       + bu.splur(goal.numpts, "datapoint")+" in "
       + bu.splur(1+Math.floor((goal.tcur-goal.tini)/bu.SID),"day")+") "
-      + "targeting "+bu.shn(goal.vfin,3,1)+" on "+bu.shd(goal.tfin)+" ("
-      + bu.splur(parseFloat(bu.shn(goal.cntdn,1,1)), "more day")+"). "+ybrStr
+      + "targeting "+shn(goal.vfin)+" on "+bu.shd(goal.tfin)+" (" // shn0_31
+      + bu.splur(parseFloat(shn0_11(goal.cntdn)), "more day")+"). "+ybrStr
 
-    goal.deltasum = bu.sh1(Math.abs(dlt)) + " " + goal.gunits
+    goal.deltasum = shn(Math.abs(dlt)) + " " + goal.gunits // shn0_42
       + (dlt<0 ? " below" : " above")+" the centerline"
     let s
-    if (w == 0)                  s= ""
-    else if (y>0 && l>=-1&&l<=1) s= " and "+shn0_o(w-dlt)+" to go till top edge"
-    else if (y>0 && l>=2)        s= " and "+shn0_o(dlt-w)+" above the top edge"
-    else if (y>0 && l<=-2)   s= " and "+shn0_o(-w-dlt)+" to go till bottom edge"
-    else if (y<0 && l>=-1&&l<=1) s= " and "+shn0_o(w-dlt)+" below top edge"
-    else if (y<0 && l<=-2)       s= " and "+shn0_o(-w-dlt)+" below bottom edge"
-    else if (y<0 && l>1)         s= " and "+shn0_o(dlt-w)+" above top edge"
-    else                         s= ""
+    if (w == 0)                  s=""     // shn0_42
+    else if (y>0 && l>=-1&&l<=1) s=" and "+shn(w-dlt)+" to go till top edge"
+    else if (y>0 && l>=2)        s=" and "+shn(dlt-w)+" above the top edge"
+    else if (y>0 && l<=-2)       s=" and "+shn(-w-dlt)+" to go till bottom edge"
+    else if (y<0 && l>=-1&&l<=1) s=" and "+shn(w-dlt)+" below top edge"
+    else if (y<0 && l<=-2)       s=" and "+shn(-w-dlt)+" below bottom edge"
+    else if (y<0 && l>1)         s=" and "+shn(dlt-w)+" above top edge"
+    else                         s=""
     goal.deltasum += s
 
     const c = goal.safebuf // countdown to derailment, in days
@@ -1065,17 +1074,15 @@ const beebrain = function( bbin ) {
     const lim  = br.lim (roads, goal, MOAR || PHAT ? c : 0)
     const limd = br.limd(roads, goal, MOAR || PHAT ? c : 0)
     if (goal.kyoom) {
-      if (MOAR) goal.limsum = shns_o(limd)+" in "+cd
-      if (PHAT) goal.limsum = shns_o(limd)+" in "+cd
-      if (WEEN) goal.limsum = shns_o(limd)+" today" 
-      //if (WEEN) goal.limsum = (limd>=0 ? "+" : "") + bu.conservaround(limd, goal.quantum, goal.yaw)+" todayTODO"
-      if (RASH) goal.limsum = bu.sh1s(limd, y)+" today"
-      //if (RASH) goal.limsum = (limd>=0 ? "+" : "") + bu.conservaround(limd, goal.quantum, goal.yaw)+" todayTODO"
+      if (MOAR) goal.limsum = shns(limd)+" in "+cd //shns_42 & shn_42
+      if (PHAT) goal.limsum = shns(limd)+" in "+cd
+      if (WEEN) goal.limsum = shns(limd)+" today" 
+      if (RASH) goal.limsum = shns(limd)+" today"
     } else {
-      if (MOAR) goal.limsum= shns_o(limd)+" in "+cd+" ("+shn_o(lim)+")"
-      if (PHAT) goal.limsum= shns_o(limd)+" in "+cd+" ("+shn_o(lim)+")"
-      if (WEEN) goal.limsum= shns_o(limd)+" today ("+shn_o(lim)+")"    
-      if (RASH) goal.limsum= shns_o(limd)+" today ("+shn_o(lim)+")"
+      if (MOAR) goal.limsum= shns(limd)+" in "+cd+" ("+shn(lim)+")"
+      if (PHAT) goal.limsum= shns(limd)+" in "+cd+" ("+shn(lim)+")"
+      if (WEEN) goal.limsum= shns(limd)+" today ("    +shn(lim)+")"    
+      if (RASH) goal.limsum= shns(limd)+" today ("    +shn(lim)+")"
     }
     if (y*d<0)      goal.safeblurb = "unknown days of safety buffer"
     else if (c>999) goal.safeblurb = "more than 999 days of safety buffer"
@@ -1151,10 +1158,10 @@ const beebrain = function( bbin ) {
 
     goal.statsum =
       " progress: "+bu.shd(goal.tini)+"  "
-      +((data == null)?"?":bu.sh1(goal.vini))+"\\n"
-      +"           "+bu.shd(goal.tcur)+"  "+bu.sh1(goal.vcur)
+      +(data == null ? "?" : shn0_42(goal.vini))+"\\n" // shn0_42
+      +"           "+bu.shd(goal.tcur)+"  "+shn0_42(goal.vcur)
       +"   ["+goal.progsum+"]\\n"
-      +"           "+bu.shd(goal.tfin)+"  "+bu.sh1(goal.vfin)+"\\n"
+      +"           "+bu.shd(goal.tfin)+"  "+shn0_42(goal.vfin)+"\\n"
       +" rate:     "+goal.ratesum+"\\n"
       +" lane:     " +((Math.abs(l) == 666)?"n/a":l)
       +" ("+lanesum+")\\n"
