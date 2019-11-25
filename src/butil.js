@@ -389,7 +389,7 @@ self.splur = (n, noun, nounp='') => {
 
 
 /******************************************************************************
- *                               CONSERVAROUND                                *
+ *                         QUANTIZE AND CONSERVAROUND                         *
  ******************************************************************************/
 
 // These functions are from conservaround.glitch.me
@@ -398,14 +398,15 @@ self.splur = (n, noun, nounp='') => {
 // If we were true nerds we'd do it like wikipedia.org/wiki/Normalized_number
 // but instead we're canonicalizing via un-scientific-notation-ing. The other
 // point of this is to not lose trailing zeros after the decimal point.
-// Possible issue: Some equivalent representations don't normalize to the same 
-// thing. Eg, 0.5 -> 0.5 and .5 -> .5, 2 -> 2 and +2 -> +2, 3 -> 3 and 3. -> 3.
-self.normberlize = function(x) {
+self.normberlize = (x) => {
   x = typeof x == 'string' ? x.trim() : x.toString()  // stringify the input
-  x = x.replace(/^([+-]?)0+([^eE\.])/, '$1$2')        // ditch the leading zeros
-  const rnum = /^[+-]?(?:\d+\.?\d*|\.\d+)$/           // regex from d.glitch.me
+  const car = x.charAt(0), cdr = x.substr(1)          // 1st char, rest of chars
+  if (car === '+') x = cdr                            // drop the leading '+'
+  if (car === '-') return '-'+self.normberlize(cdr)   // set aside leading '-'
+  x = x.replace(/^0+([^eE])/, '$1')                   // ditch leading zeros
+  const rnum = /^(?:\d+\.?\d*|\.\d+)$/                // eg 2 or 5. or 6.7 or .9
   if (rnum.test(x)) return x                          // already normal! done!
-  const rsci = /^([+-]?(?:\d+\.?\d*|\.\d+))e([+-]?\d+)$/i // sci. notation
+  const rsci = /^(\d+\.?\d*|\.\d+)e([+-]?\d+)$/i      // scientific notation
   const marr = x.match(rsci)                          // match array
   if (!marr || marr.length !== 3) return 'NaN'        // hammer can't parse this
   let [, m, e] = marr                                 // mantissa & exponent
@@ -424,7 +425,7 @@ self.normberlize = function(x) {
 // logs and powers and such but (a) the string the user typed is the ground
 // truth and (b) using the numeric representation we wouldn't be able to tell
 // the difference between, say, "3" (precision 1) and "3.00" (precision .01).
-self.quantize = function(x) {
+self.quantize = (x) => {
   let s = self.normberlize(x)          // put the input in canonical string form
   if (/^-?\d+\.?$/.test(s)) return 1   // no decimal pt (or only a trailing one)
   s = s.replace(/^-?\d*\./, '.')       // eg, -123.456 -> .456
@@ -435,7 +436,7 @@ self.quantize = function(x) {
 
 // Round x to nearest r, avoiding floating point crap like 9999*.1=999.900000001
 // at least when r is an integer or negative power of 10.
-self.round = function(x, r=1) {
+self.round = (x, r=1) => {
   if (r < 0) return NaN
   if (r===0) return +x
   const y = Math.round(x/r)
@@ -448,8 +449,7 @@ self.round = function(x, r=1) {
 
 // Round x to the nearest r ... that's >= x if e is +1
 //                          ... that's <= x if e is -1
-self.conservaround = function(x, r=1, e=0) {
-  //x = self.chop(x)
+self.conservaround = (x, r=1, e=0) => {
   let y = self.round(x, r)
   if (e===0) return y
   if (e < 0 && y > x) y -= r
