@@ -988,6 +988,7 @@ const beebrain = function( bbin ) {
   function sumSet(rd, goal) {
     const y = goal.yaw, d = goal.dir, 
           l = goal.lane, w = goal.lnw, dlt = goal.delta, 
+          //q = goal.integery ? 1 : goal.quantum
           q = goal.quantum
 
     const MOAR = (y>0 && d>0), 
@@ -995,9 +996,10 @@ const beebrain = function( bbin ) {
           WEEN = (y<0 && d>0), 
           RASH = (y>0 && d<0)
 
-    const shn  = ((x, e=y, t=4, d=2) => q===null ? bu.shn(x, t, d, e) :
+    const shn  = ((x, e=y, t=4, d=2) => q===null ? bu.shn(x, t, d, e) : // TODO
                                                    bu.conservaround(x, q, e))
     const shns = ((x, e=y, t=4, d=2) => (x>=0 ? "+" : "") + shn(x, e, t, d))
+
 
     if (goal.error != "") {
       goal.statsum = " error:    "+goal.error+"\\n"
@@ -1059,7 +1061,7 @@ const beebrain = function( bbin ) {
     else if (y>0 && l<=-2)       s=" and "+shn(-w-dlt)+" to go till bottom edge"
     else if (y<0 && l>=-1&&l<=1) s=" and "+shn(w-dlt,0)+" below top edge"
     else if (y<0 && l<=-2)       s=" and "+shn(-w-dlt,0)+" below bottom edge"
-    else if (y<0 && l>1)         s=" and "+shn(dlt-w,0)+" above top edge"
+    else if (y<0 && l>1)         s=" and "+shn(dlt-w,-y)+" above top edge"
     else                         s=""
     goal.deltasum += s
 
