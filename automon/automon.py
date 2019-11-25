@@ -361,7 +361,8 @@ def refresh_windows():
   w.clear(); w.box(); w.vline(1, cm.lw-6, 0, cm.lh-2)
   w.addch(0, cm.lw-6, curses.ACS_TTEE)
   w.addch(cm.lh-1, cm.lw-6, curses.ACS_BTEE)
-  _addstr(w, 0, 1, str(len(cm.problems)) + " errors:", curses.A_BOLD)
+  _addstr(w, 0, 1, str(len(cm.problems)) + " errors out of " 
+                   + str(len(cm.goals)) + " bb files:", curses.A_BOLD)
   _addstr(w, 0, cm.lw-5, "RJPG", curses.A_BOLD)
   for i, item in enumerate(cm.problems[cm.ls.top:cm.ls.top + cm.ls.max_lines]):
     # Highlight the current cursor line
