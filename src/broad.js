@@ -373,7 +373,7 @@ self.dtdarray = ( rd, goal ) => {
 /* returns an array of x.y coordinate pairs for an isoline associated
  * with dtd=v. This can be used to compute boundaries for
  * derailment regions, as well as guidelines. Coordinate points start
- * from the end of the road and proceed backwards
+ * from the beginning of the road and proceed forward
 */
 self.isoline = ( rd, dtdarr, goal, v ) => {
   var n = dtdarr[0], nn, iso
@@ -415,7 +415,29 @@ self.isoline = ( rd, dtdarr, goal, v ) => {
     s = ns
     n = nn
   }
-  return iso
+  iso = iso.reverse()
+
+  // Ensure correctness of the isoline for domore goals such that the
+  // isoline is not allowed to go against 'dir' for dtd days after an
+  // inflection point. This is done to ensure that the first
+  // intersection with the centerline is taken as the dtd value.
+  var isonew = []
+  if (goal.yaw > 0 && goal.dir > 0) {
+    for (j = 0; j < iso.length-1; j++) {
+      isonew.push(iso[j])
+      if (iso[j+1][1] < iso[j][1]) {
+        // Found an inflection point, extend horizontally for at least dtd days, or
+        // until a positive slope is found
+        k = j+1
+        while (iso[k+1][1] < iso[k][1] &&
+               iso[k][0] < iso[j][0] + v*bu.SID) k++
+        isonew.push([iso[j][0]+v*bu.SID, iso[j][1]])
+        j = k-1
+      }
+    }
+  }
+  
+  return isonew
 }
   
 /** Days To Centerline: Count the integer days till you cross the

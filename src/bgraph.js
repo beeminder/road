@@ -3031,14 +3031,14 @@
           d += " L"+nXSc(isostrt[i][0]*1000)+" "+nYSc(isostrt[i][1]);
         }
         if (rend == -1) {
-          d+=" L"+nXSc(strt*1000)+" "+nYSc(br.rdf(road, strt));
-          d+=" L"+nXSc(strt*1000)+" "+nYSc(yedge);
+          d+=" L"+nXSc(end*1000)+" "+nYSc(br.rdf(road, end));
           d+=" L"+nXSc(end*1000)+" "+nYSc(yedge);
+          d+=" L"+nXSc(strt*1000)+" "+nYSc(yedge);
           d+=" Z";
         } else if (rend == -2) {
-          d+=" L"+nXSc(strt*1000)+" "+nYSc(br.rdf(road, strt));
-          d+=" L"+nXSc(strt*1000)+" "+nYSc(yedgeb);
+          d+=" L"+nXSc(end*1000)+" "+nYSc(br.rdf(road, end));
           d+=" L"+nXSc(end*1000)+" "+nYSc(yedgeb);
+          d+=" L"+nXSc(strt*1000)+" "+nYSc(yedgeb);
           d+=" Z";
         } else if (rstrt != rend) {
           var isoend = br.isoline( road, dtd, goal, rend)
@@ -3046,12 +3046,12 @@
           d += " L"+nXSc(isoend[ln-1][0]*1000)+" "+nYSc(isoend[ln-1][1]);
           for (let i = ln-2; i >= 0; i--) {
             d += " L"+nXSc(isoend[i][0]*1000)+" "+nYSc(isoend[i][1]);
-            if (goal.yaw > 0 && goal.dir > 0 && i != 0) {
-              let sl = (isoend[i-1][1] - isoend[i][1])/(isoend[i-1][0] - isoend[i][0])
-              if (goal.dir * sl < 0) {
-                d += " L"+nXSc((isoend[i][0]+bu.SID)*1000)+" "+nYSc(isoend[i][1]);
-              }
-            }
+            //if (goal.yaw > 0 && goal.dir > 0 && i != 0) {
+            //  let sl = (isoend[i-1][1] - isoend[i][1])/(isoend[i-1][0] - isoend[i][0])
+            //  if (goal.dir * sl < 0) {
+            //    d += " L"+nXSc((isoend[i][0]+bu.SID)*1000)+" "+nYSc(isoend[i][1]);
+            //  }
+            //}
           }
           d+=" Z";
         }
@@ -3100,7 +3100,7 @@
 	  	    .attr("fill-opacity", 0.4)
           .attr("fill", goal.ybhp ? bu.Cols.PINK  // try LYEL?
                                   : bu.Cols.PINK) // oinkzone
-        console.log(`goal.ybhp = ${goal.ybhp}`)
+        //console.log(`goal.ybhp = ${goal.ybhp}`)
       } else {
         pinkelt.attr("d", d)
       }
@@ -4999,6 +4999,8 @@
         @see bgraph#setRoadObj
     */
     this.getRoadObj = () => br.copyRoad(road)
+
+    this.getGoalObj = () => (goal)
 
     var settingRoad = false;
     /** Sets the road matrix (in the internal format) for the

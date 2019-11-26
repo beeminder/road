@@ -1195,7 +1195,7 @@ const beebrain = function( bbin ) {
     } else goal.auraf = (e)=>0
 
     goal.dtdarray = br.dtdarray( roads, goal )
-    goal.isoline = br.isoline( roads, goal.dtdarray, goal, 1)
+    //goal.isoline = br.isoline( roads, goal.dtdarray, goal, 1)
     return ""
   }
 
