@@ -166,8 +166,23 @@
     
     function nextDay() {
       saveState()
-      goal.bb.params.asof
+//      var oldasof
+//        = bu.dayify(bu.daysnap(bu.dayparse(goal.bb.params.asof)))
+      var newasof
         = bu.dayify(bu.daysnap(bu.dayparse(goal.bb.params.asof)+bu.SID))
+//      var ppr = br.ppr(goal.graph.getRoadObj(), goal.graph.getGoalObj(), newasof)
+//      console.log(ppr)
+//      if (ppr != 0) {
+//        if (goal.bb.params.kyoom)
+//          goal.bb.data.push([oldasof, Number(ppr),
+//                             `PPR (#${goal.bb.data.length})`])
+//        else
+//          goal.bb.data.push([oldasof,
+//                             Number(goal.bb.data[goal.bb.data.length-1][1] + ppr),
+//                             `PPR (#${goal.bb.data.length})`])
+//        console.log(goal.bb.data)
+//      }
+      goal.bb.params.asof = newasof
       reloadGoal()
     }
     
@@ -261,7 +276,8 @@
       params.timezone = "America/Los_Angeles"
       params.imgsz = 696
       params.yaxis = (params.kyoom)?"current cumulative total":"current value"
-
+      params.ybhp = true
+      
       data = [[params.tini, Number(params.vini), "initial datapoint of "+params.vini]]
 
       goal.bb = {params: params, data: data}
