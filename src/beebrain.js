@@ -39,6 +39,8 @@ if (typeof define === 'function' && define.amd) {
 let gid = 1
 
 const pin = { // In Params: Graph settings and their defaults
+quantum  : null,   // Precision/granularity for conservarounding baremin etc
+timey    : false,  // Whether numbers should be shown in HH:MM format
 ybhp     : false,  // Yellow Brick Half-Plane!
 ppr      : true,   // Whether PPRs are turned on (ignored if not WEEN/RASH)
 deadline : 0,      // Time of deadline given as seconds bfr or after midnight
@@ -82,7 +84,7 @@ imgsz    : 760,    // Image size; width in pixels of the graph image
 yoog     : 'U/G',  // Username/graphname, eg, "alice/weight"                
 usr      : null,   // Username (synonym for first half of yoog) ############ DEP
 graph    : null,   // Graph name (synonym for second half of yoog) ######### DEP
-gldt     : null,   // Synonym for tfin ##################################### DEP
+//gldt     : null,   // Synonym for tfin ################################### DEP
 goal     : null,   // Synonym for vfin ##################################### DEP
 rate     : null,   // Synonym for rfin ##################################### DEP
 offred   : true,   // Yesterday-is-red criteria for derails ################ DEP
@@ -111,8 +113,7 @@ numpts   : 0,       // Number of real datapoints entered, before munging
 mean     : 0,       // Mean of datapoints
 meandelt : 0,       // Mean of the deltas of the datapoints
 proctm   : 0,       // Unixtime Beebrain was called (specifically genStats)
-statsum  : '',      // Human-readable summary of graph statistics
-lanesum  : '',      // Interjection like "wrong lane!"
+statsum  : '',      // Human-readable graph stats summary (not used by Beebody)
 ratesum  : '',      // Text saying what the rate of the YBR is
 limsum   : '',      // Text saying your bare min or hard cap
 deltasum : '',      // Text saying where you are wrt the centerline
@@ -122,22 +123,22 @@ titlesum : '',      // Title text for graph thumbnail
 progsum  : '',      // Text summarizing percent progress
 rah      : 0,       // Y-value of the centerline of YBR at the akrasia horiz
 error    : '',      // Empty string if no errors
-safebuf  : null,    // Number of days of safety buffer ############### DEP
-loser    : false,   // Whether you're irredeemably off the road ###### DEP
-gldt     : null,    // {gldt, goal, rate} are synonyms for ########### DEP
-goal     : null,    //   for the last row of fullroad ################ DEP
-rate     : null,    //   like a filled-in version of {tfin, vfin, rfin} DEP
-road     : [],      // Synonym for fullroad ########################## DEP
-tini     : null,    // Echoes input param ############################ DEP
-vini     : null,    // Echoes input param ############################ DEP
-tfin     : null,    // Subsumed by fullroad ########################## DEP
-vfin     : null,    // Subsumed by fullroad ########################## DEP
-rfin     : null,    // Subsumed by fullroad ########################## DEP
+safebuf  : null,    // Number of days of safety buffer ##################### DEP
+loser    : false,   // Whether you're irredeemably off the road ############ DEP
+gldt     : null,    // {gldt, goal, rate} are synonyms for ################# DEP
+goal     : null,    //   for the last row of fullroad ###################### DEP
+rate     : null,    //   like a filled-in version of {tfin, vfin, rfin} #### DEP
+road     : [],      // Synonym for fullroad ################################ DEP
+tini     : null,    // Echoes input param ################################## DEP
+vini     : null,    // Echoes input param ################################## DEP
+tfin     : null,    // Subsumed by fullroad ################################ DEP
+vfin     : null,    // Subsumed by fullroad ################################ DEP
+rfin     : null,    // Subsumed by fullroad ################################ DEP
 }
 
 // Input parameters to ignore; complain about anything not here or in pin.
 const pig = [
-'rerails', 
+//'rerails', 
 'tagtime', 
 'timezone',
 'backroad', 
@@ -220,7 +221,7 @@ const beebrain = function( bbin ) {
   /** Convery legacy parameters to up-to-date entries 
       @param {Object} p Goal parameters from the bb file */
   function legacyIn( p ) {
-    if (p.hasOwnProperty('gldt') && !p.hasOwnProperty('tfin'))  p.tfin = p.gldt
+    //if (p.hasOwnProperty('gldt') && !p.hasOwnProperty('tfin')) p.tfin = p.gldt
     if (p.hasOwnProperty('goal') && !p.hasOwnProperty('vfin'))  p.vfin = p.goal
     if (p.hasOwnProperty('rate') && !p.hasOwnProperty('rfin'))  p.rfin = p.rate
     if (p.hasOwnProperty('usr') && p.hasOwnProperty('graph') && !p.hasOwnProperty('yoog')) 
@@ -416,12 +417,18 @@ const beebrain = function( bbin ) {
     }
   }
 
-  // Take string like "shark jumping #yolo :) #shark", return {"#yolo", "#shark"}
-  const hre = /(?:^|\s)(#\p{L}[\p{L}0-9_]+)(?=$|\s)/gu // why outside function?
+  // Take, eg, "shark jumping #yolo :) #shark" and return {"#yolo", "#shark"}
+  let hashtagRE
+  try {
+    //hashtagRE = /(?:^|\s)(#\p{L}[\p{L}0-9_]+)(?=$|\s)/gu
+    hashtagRE = new RegExp("(?:^|\\s)(#\\p{L}[\\p{L}0-9_]+)(?=$|\\s)", "gu")
+  } catch { // Firefox can't handle the above in 2019 so...
+    hashtagRE = /(?:^|\s)(#[a-zA-Z]\w+)(?=$|\s)/g
+  }
   function hashextract(s) {
     let set = new Set(), m
-    hre.lastIndex = 0
-    while ( (m = hre.exec(s)) != null ) if (m[1] != "") set.add(m[1])
+    hashtagRE.lastIndex = 0
+    while ( (m = hashtagRE.exec(s)) != null ) if (m[1] != "") set.add(m[1])
     return set
   }
 
@@ -979,15 +986,24 @@ const beebrain = function( bbin ) {
   }
 
   function sumSet(rd, goal) {
-    var y = goal.yaw, d = goal.dir, 
-        l = goal.lane, w = goal.lnw, dlt = goal.delta
-    var MOAR = (y>0 && d>0), 
-        PHAT = (y<0 && d<0),
-        WEEN = (y<0 && d>0), 
-        RASH = (y>0 && d<0)
+    const y = goal.yaw, d = goal.dir, 
+          l = goal.lane, w = goal.lnw, dlt = goal.delta, 
+          //q = goal.integery ? 1 : goal.quantum
+          q = goal.quantum
+
+    const MOAR = (y>0 && d>0), 
+          PHAT = (y<0 && d<0),
+          WEEN = (y<0 && d>0), 
+          RASH = (y>0 && d<0)
+
+    const shn  = ((x, e=y, t=4, d=2) => q===null ? bu.shn(x, t, d, e) : // TODO
+                                                   bu.conservaround(x, q, e))
+    const shns = ((x, e=y, t=4, d=2) => (x>=0 ? "+" : "") + shn(x, e, t, d))
+
 
     if (goal.error != "") {
-      goal.statsum = " error:    "+goal.error+"\\n"; return
+      goal.statsum = " error:    "+goal.error+"\\n"
+      return
     }
     var rz = (bu.zip(goal.road))[2]
     var minr = bu.arrMin(rz), maxr = bu.arrMax(rz)
@@ -995,10 +1011,10 @@ const beebrain = function( bbin ) {
       var tmp = minr
       minr = maxr; maxr = tmp
     }
-    let smin = bu.shr(minr)
-    let smax = bu.shr(maxr)
-    let savg = bu.shr(goal.ravg)
-    let scur = bu.shr(goal.rcur)
+    let smin = bu.shn(minr,      4,2)
+    let smax = bu.shn(maxr,      4,2)
+    let savg = bu.shn(goal.ravg, 4,2)
+    let scur = bu.shn(goal.rcur, 4,2)
     goal.ratesum = 
       (minr === maxr ? smin : "between "+smin+" and "+smax) +
       " per " + bu.UNAM[goal.runits] + 
@@ -1008,149 +1024,149 @@ const beebrain = function( bbin ) {
     // which will be displayed with labels TO GO and TIME LEFT in the stats box
     // and will have both the absolute amounts remaining as well as the 
     // percents done as calculated here.
-    var pt = bu.shn(bu.cvx(bu.daysnap(goal.tcur),
-                           goal.tini,bu.daysnap(goal.tfin),
-                           0,100, false), 1,1)
-    var pv = bu.cvx(goal.vcur, goal.vini,goal.vfin,0,100,false)
-    pv = bu.shn((goal.vini<goal.vfin)?pv:100 - pv, 1,1) // meant shn(n,1,2) here?
+    let pt = bu.shn(bu.cvx(bu.daysnap(goal.tcur),
+                            goal.tini,bu.daysnap(goal.tfin),
+                            0,100, false), 1,1)
+    let pv = bu.cvx(goal.vcur, goal.vini,goal.vfin, 0,100, false)
+    pv = bu.shn(goal.vini<goal.vfin ? pv : 100 - pv, 1,1)
 
     if (pt == pv) goal.progsum = pt+"% done"
-    else goal.progsum = pt+"% done by time -- "+pv+"% by value"
+    else          goal.progsum = pt+"% done by time -- "+pv+"% by value"
 
-    var x, ybrStr
+    let x, ybrStr
     if (goal.cntdn < 7) {
       x = Math.sign(goal.rfin) * (goal.vfin - goal.vcur)
-      ybrStr = "To go to goal: "+bu.shn(x,2,1)+"."
+      ybrStr = "To go to goal: "+shn(x,0,2,1)+"."
     } else {
       x = br.rdf(roads, goal.tcur+goal.siru) - br.rdf(roads, goal.tcur)
-      ybrStr = "Yellow Brick Rd = "+bu.shns(x,2,1)+" / "+bu.UNAM[goal.runits]+"."
+      ybrStr = "Yellow Brick Rd = "+(x>=0 ? "+" : "")+bu.shn(x, 2, 1, 0)
+                             +" / "+bu.UNAM[goal.runits]+"."
     }
 
     var ugprefix = false // debug mode: prefix yoog to graph title
     goal.graphsum = 
-      ((ugprefix)?goal.yoog:"")
-      + bu.shn(goal.vcur,3,1)+" on "+bu.shd(goal.tcur)+" ("
+      (ugprefix ? goal.yoog : "")
+      + shn(goal.vcur,0,3,1)+" on "+bu.shd(goal.tcur)+" ("
       + bu.splur(goal.numpts, "datapoint")+" in "
       + bu.splur(1+Math.floor((goal.tcur-goal.tini)/bu.SID),"day")+") "
-      + "targeting "+bu.shn(goal.vfin,3,1)+" on "+bu.shd(goal.tfin)+" ("
-      + bu.splur(parseFloat(bu.shn(goal.cntdn,1,1)), "more day")+"). "+ybrStr
+      + "targeting "+shn(goal.vfin,0,3,1)+" on "+bu.shd(goal.tfin)+" ("
+      + bu.splur(goal.cntdn, "more day")+"). "+ybrStr
 
-    goal.deltasum = bu.sh1(Math.abs(dlt)) + " " + goal.gunits
+    goal.deltasum = shn(Math.abs(dlt),0) + " " + goal.gunits
       + (dlt<0 ? " below" : " above")+" the centerline"
     let s
-    if (w == 0)                  s= ""
-    else if (y>0 && l>=-1&&l<=1) s= " and "+bu.sh1(w-dlt)+" to go till top edge"
-    else if (y>0 && l>=2)        s= " and "+bu.sh1(dlt-w)+" above the top edge"
-    else if (y>0 && l<=-2)   s= " and "+bu.sh1(-w-dlt)+" to go till bottom edge"
-    else if (y<0 && l>=-1&&l<=1) s= " and "+bu.sh1(w-dlt)+" below top edge"
-    else if (y<0 && l<=-2)       s= " and "+bu.sh1(-w-dlt)+" below bottom edge"
-    else if (y<0 && l>1)         s= " and "+bu.sh1(dlt-w)+" above top edge"
-    else                         s= ""
+    if (w == 0)                  s=""
+    else if (y>0 && l>=-1&&l<=1) s=" and "+shn(w-dlt)+" to go till top edge"
+    else if (y>0 && l>=2)        s=" and "+shn(dlt-w,0)+" above the top edge"
+    else if (y>0 && l<=-2)       s=" and "+shn(-w-dlt)+" to go till bottom edge"
+    else if (y<0 && l>=-1&&l<=1) s=" and "+shn(w-dlt,0)+" below top edge"
+    else if (y<0 && l<=-2)       s=" and "+shn(-w-dlt,0)+" below bottom edge"
+    else if (y<0 && l>1)         s=" and "+shn(dlt-w,-y)+" above top edge"
+    else                         s=""
     goal.deltasum += s
 
-    var c = goal.safebuf // countdown to derailment, in days
-    var cd = bu.splur(c, "day")
+    const c = goal.safebuf // countdown to derailment, in days
+    const cd = bu.splur(c, "day")
+    const lim  = br.lim (roads, goal, MOAR || PHAT ? c : 0)
+    const limd = br.limd(roads, goal, MOAR || PHAT ? c : 0)
     if (goal.kyoom) {
-      if (MOAR) goal.limsum= bu.sh1s(br.limd(roads, goal, c),  y)+" in "+cd
-      if (PHAT) goal.limsum= bu.sh1s(br.limd(roads, goal, c),  y)+" in "+cd
-      if (WEEN) goal.limsum= bu.sh1s(br.limd(roads, goal, 0),  y)+" today" 
-      if (RASH) goal.limsum= bu.sh1s(br.limd(roads, goal, 0),  y)+" today" 
+      if (MOAR) goal.limsum = shns(limd)+" in "+cd
+      if (PHAT) goal.limsum = shns(limd)+" in "+cd
+      if (WEEN) goal.limsum = shns(limd)+" today" 
+      if (RASH) goal.limsum = shns(limd)+" today"
     } else {
-      if (MOAR) goal.limsum= bu.sh1s(br.limd(roads, goal, c), y)+" in "+cd+" ("
-        +bu.sh1(br.lim(roads, goal, c), y)+")"
-      if (PHAT) goal.limsum= bu.sh1s(br.limd(roads, goal, c), y)+" in "+cd+" ("
-        +bu.sh1(br.lim(roads, goal, c), y)+")"
-      if (WEEN) goal.limsum= bu.sh1s(br.limd(roads, goal, 0), y)+" today ("
-        +bu.sh1(br.lim(roads, goal, 0), y)+")"    
-      if (RASH) goal.limsum= bu.sh1s(br.limd(roads, goal, 0), y)+" today ("
-        +bu.sh1(br.lim(roads, goal, 0), y)+")"    
+      if (MOAR) goal.limsum= shns(limd)+" in "+cd+" ("+shn(lim)+")"
+      if (PHAT) goal.limsum= shns(limd)+" in "+cd+" ("+shn(lim)+")"
+      if (WEEN) goal.limsum= shns(limd)+" today ("    +shn(lim)+")"    
+      if (RASH) goal.limsum= shns(limd)+" today ("    +shn(lim)+")"
     }
     if (y*d<0)      goal.safeblurb = "unknown days of safety buffer"
     else if (c>999) goal.safeblurb = "more than 999 days of safety buffer"
     else            goal.safeblurb = "~"+cd+" of safety buffer"
 
+    let lanesum
     if (goal.loser) {
       goal.headsum = "Officially off the yellow brick road"
-      goal.lanesum = "officially off the road"
+      lanesum = "officially off the road"
     } else if (w==0) {
       goal.headsum = "Coasting on a currently flat yellow brick road"
-      goal.lanesum = "currently on a flat road"
+      lanesum = "currently on a flat road"
     } else if (MOAR && l==1) {
       goal.headsum = "Right on track in the top lane of the yellow brick road"
-      goal.lanesum = "in the top lane: perfect!"
+      lanesum = "in the top lane: perfect!"
     } else if (MOAR &&  l==2) {
       goal.headsum = "Sitting pretty just above the yellow brick road"
-      goal.lanesum = "above the road: awesome!"
+      lanesum = "above the road: awesome!"
     } else if (MOAR &&  l==3) {
       goal.headsum = "Well above the yellow brick road with "+goal.safeblurb
-      goal.lanesum = "well above the road: "+goal.safeblurb+"!"
+      lanesum = "well above the road: "+goal.safeblurb+"!"
     } else if (MOAR &&  l>3) {
       goal.headsum = "Way above the yellow brick road with "+goal.safeblurb
-      goal.lanesum = "way above the road: "+goal.safeblurb+"!"
+      lanesum = "way above the road: "+goal.safeblurb+"!"
     } else if (MOAR &&  l==-1) {
       goal.headsum = "On track but in the wrong lane of the yellow brick road "
         +"and in danger of derailing tomorrow"  
-      goal.lanesum = "in the wrong lane: could derail tomorrow!"
+      lanesum = "in the wrong lane: could derail tomorrow!"
     } else if (MOAR &&  l<=-2) {
-      goal.headsum = "Below the yellow brick road and will derail if still here "
-        +"at the end of the day"
-      goal.lanesum = "below the road: will derail at end of day!"
+      goal.headsum = "Below the yellow brick road and will derail if still here"
+        +" at the end of the day"
+      lanesum = "below the road: will derail at end of day!"
     } else if (PHAT &&  l==-1) {
       goal.headsum = "Right on track in the right lane of the yellow brick road"
-      goal.lanesum = "in the right lane: perfect!"
+      lanesum = "in the right lane: perfect!"
     } else if (PHAT &&  l==-2) {
       goal.headsum = "Sitting pretty just below the yellow brick road"
-      goal.lanesum = "below the road: awesome!"
+      lanesum = "below the road: awesome!"
     } else if (PHAT &&  l==-3) {
       goal.headsum = "Well below the yellow brick road with "+goal.safeblurb
-      goal.lanesum = "well below the road: "+goal.safeblurb+"!"
+      lanesum = "well below the road: "+goal.safeblurb+"!"
     } else if (PHAT &&  l<-3) {
       goal.headsum = "Way below the yellow brick road with "+goal.safeblurb
-      goal.lanesum = "way below the road: "+goal.safeblurb+"!"
+      lanesum = "way below the road: "+goal.safeblurb+"!"
     } else if (PHAT &&  l==1) {
       goal.headsum = "On track but in the wrong lane of the yellow brick road "
         +"and in danger of derailing tomorrow"
-      goal.lanesum = "in the wrong lane: could derail tomorrow!"
+      lanesum = "in the wrong lane: could derail tomorrow!"
     } else if (PHAT &&  l>=2) {
-      goal.headsum = "Above the yellow brick road and will derail if still here "
-        +"at the end of the day"
-      goal.lanesum = "above the road: will derail at end of day!"
+      goal.headsum = "Above the yellow brick road and will derail if still here"
+        +" at the end of the day"
+      lanesum = "above the road: will derail at end of day!"
     } else if (l==0) {
       goal.headsum = "Precisely on the centerline of the yellow brick road"
-      goal.lanesum = "precisely on the centerline: beautiful!"
+      lanesum = "precisely on the centerline: beautiful!"
     } else if (l==1) {
       goal.headsum = "In the top lane of the yellow brick road"
-      goal.lanesum = "in the top lane"
+      lanesum = "in the top lane"
     } else if (l==-1) {
       goal.headsum = "In the bottom lane of the yellow brick road"
-      goal.lanesum = "in the bottom lane"
+      lanesum = "in the bottom lane"
     } else if (l>1) {
       goal.headsum = "Above the yellow brick road"
-      goal.lanesum = "above the road"
+      lanesum = "above the road"
     } else if (l<-1) {
       goal.headsum = "Below the yellow brick road"
-      goal.lanesum = "below the road"
+      lanesum = "below the road"
     }
     goal.titlesum
       = bu.toTitleCase(CNAME[br.dotcolor(roads, goal, goal.tcur, goal.vcur)]) + ". "
-      + "bmndr.com/"+goal.yoog+" is " + goal.lanesum
+      + "bmndr.com/"+goal.yoog+" is " + lanesum
       + ((y*d>0)?" (safe to stay flat for ~"+cd+")":"")
 
     goal.statsum =
       " progress: "+bu.shd(goal.tini)+"  "
-      +((data == null)?"?":bu.sh1(goal.vini))+"\\n"
-      +"           "+bu.shd(goal.tcur)+"  "+bu.sh1(goal.vcur)
+      +(data == null ? "?" : bu.shn(goal.vini, 4, 2, 0))+"\\n"
+      +"           "+bu.shd(goal.tcur)+"  "+bu.shn(goal.vcur, 4, 2, 0)
       +"   ["+goal.progsum+"]\\n"
-      +"           "+bu.shd(goal.tfin)+"  "+bu.sh1(goal.vfin)+"\\n"
+      +"           "+bu.shd(goal.tfin)+"  "+bu.shn(goal.vfin, 4, 2, 0)+"\\n"
       +" rate:     "+goal.ratesum+"\\n"
       +" lane:     " +((Math.abs(l) == 666)?"n/a":l)
-      +" ("+goal.lanesum+")\\n"
+      +" ("+lanesum+")\\n"
       +" safebuf:  "+goal.safebuf+"\\n"
       +" delta:    "+goal.deltasum+"\\n"
       +" "
-    if   (y==0)     goal.statsum += "limit:    "
-    else if (y<0)   goal.statsum += "hard cap: "
-    else            goal.statsum += "bare min: "
+    if      (y==0) goal.statsum += "limit:    "
+    else if (y<0)  goal.statsum += "hard cap: "
+    else           goal.statsum += "bare min: "
     goal.statsum += goal.limsum+"\\n"
   }
     

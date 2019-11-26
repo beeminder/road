@@ -722,8 +722,10 @@ self.lim = (rd, g, n) => {
 
 /** The bare min needed from vcur to the critical edge of the YBR in n days */
 self.limd = (rd, g, n) => {
-  return bu.conservaround(self.lim(rd, g, n) - g.vcur, g.integery?1:0, g.yaw)
+  //return bu.conservaround(self.lim(rd, g, n) - g.vcur, g.integery?1:0, g.yaw)
+  return self.lim(rd, g, n) - g.vcur
 }
+
 return self
 
 })); // END MAIN ---------------------------------------------------------------
