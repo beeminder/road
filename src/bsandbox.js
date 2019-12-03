@@ -258,6 +258,9 @@
 
       params.stathead = false
       
+      params.ybhp - true
+      params.abslnw = 0
+
       params.asof = bu.dayify(now)
 
       params.tfin = bu.dayify(nextyear)
@@ -266,7 +269,6 @@
       
       params.tini = params.asof
       params.vini = Number(vini)
-      params.ybhp - true
       
       params.road = [[buffer?bu.dayify(nextweek):params.asof, null, 0]]
 
