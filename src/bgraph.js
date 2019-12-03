@@ -436,6 +436,7 @@
     function computeBoxes() {
       plotpad = bu.extend({}, opts.focusPad)
       contextpad = bu.extend({}, opts.ctxPad)
+      if (goal.stathead && !opts.roadEditor) plotpad.top += 15
       plotpad.left += yaxisw
       plotpad.right += yaxisw+(goal.hidey?8:0) // Extra padding if y axis text is hidden
       contextpad.left += yaxisw
@@ -578,11 +579,11 @@
       gPattern = defs.append("pattern")
         .attr("id", "pinkzonepat"+curid)
         .attr("x", 0).attr("y",0)
-        .attr("width", 15).attr("height",15)
+        .attr("width", 10).attr("height",10)
         .attr("patternUnits", "userSpaceOnUse")
       gPattern.append("line")
-        .attr("x1", 15).attr("y1", 0)
-        .attr("x2", 0).attr("y2", 15)
+        .attr("x1", 10).attr("y1", 0)
+        .attr("x2", 0).attr("y2", 10)
         .style("stroke", "#aaaaaa")
         .style("stroke-width", 1)
       
@@ -1693,6 +1694,10 @@
       updateTable();
       updateContextData();
 
+      // This next call ensures that stathead and other new graph
+      // peoperties are properly reflected in the new graph dimensions
+      resizeGraph()
+      
       if (timing) { console.timeEnd(graph_timeid+suffix) }
     }
 
