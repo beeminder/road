@@ -2987,11 +2987,12 @@
       // regions = [[0, -1, null, null, null],
       //            [3, -1, null, null, null],
       //            [2, 3, null, null, null],
-      //            [1, 2, "#ffe8bf", "none", 0],
+      //            [2, 2, "none", bu.Cols.BIGG, 2],
       //            [0, 1, null, null, null],
       //            [7, 7, null, null, null],
       //            [0, -2, null, null, null]
       //           ]
+
       let dtd = br.dtdarray( road, goal )
 
       for (const reg of regions) {

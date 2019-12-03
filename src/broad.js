@@ -416,26 +416,64 @@ self.isoline = ( rd, dtdarr, goal, v ) => {
     n = nn
   }
   iso = iso.reverse()
-
+  
   // Ensure correctness of the isoline for domore goals such that the
   // isoline is not allowed to go against 'dir' for dtd days after an
   // inflection point. This is done to ensure that the first
   // intersection with the centerline is taken as the dtd value.
-  var isonew = []
-  if (goal.yaw > 0 && goal.dir > 0) {
+  var isonew = [], downstreak = false, flatdone = false, slope, newx
+  if (goal.yaw * goal.dir > 0) {
+    k = -1
     for (j = 0; j < iso.length-1; j++) {
+      // If an upslope is detected, finish downstreak
+      if ((iso[j+1][1] - iso[j][1]) * goal.dir >= 0) downstreak = false
+      // Skip segments processed within the flat segment
+      if (j < k) continue
+      // Record existing inflection point
       isonew.push(iso[j])
-      if (iso[j+1][1] < iso[j][1]) {
-        // Found an inflection point, extend horizontally for at least dtd days, or
+
+      // Check if there is a new downstreak to initiate new flat region
+      if (v != 0 && (iso[j+1][1] - iso[j][1]) * goal.dir < 0 && !downstreak) {
+        downstreak = true
+        // Extend horizontally for at least dtd days, or
         // until a positive slope is found
         k = j+1
-        while (iso[k+1][1] < iso[k][1] &&
-               iso[k][0] < iso[j][0] + v*bu.SID) k++
-        isonew.push([iso[j][0]+v*bu.SID, iso[j][1]])
-        j = k-1
+        flatdone = false
+        while (!flatdone) {
+          if (iso[k][0] >= iso[j][0] + v*bu.SID) {
+            // Reached end of the flat region with dtd days
+            flatdone = true
+            newx = iso[j][0]+v*bu.SID
+            isonew.push([newx, iso[j][1]])
+            if (iso[k][0] != iso[k-1][0]) {
+              slope = (iso[k][1]-iso[k-1][1])/(iso[k][0]-iso[k-1][0])
+              isonew.push([iso[k][0], iso[k-1][1] + slope*(newx-iso[k-1][0]) ])
+            }
+            
+          } else if ((iso[k+1][1] - iso[k][1]) * goal.dir >= 0) {
+            // Found a positive slope, finish flat region by extending
+            // until intersection with the positive slope unless the
+            // next segment ends before that
+            if (iso[k+1][0] != iso[k][0]) {
+              slope = (iso[k+1][1]-iso[k][1])/(iso[k+1][0]-iso[k][0])
+              if (slope != 0) {
+                newx = iso[k][0] + (iso[j][1] - iso[k][1])/slope
+                if (newx <= iso[j][0]+v*bu.SID && newx <= iso[k+1][0]) {
+                  flatdone = true
+                  isonew.push([newx, iso[j][1]])
+                }
+              }
+            }
+            //if (iso[k][0] != iso[k-1][0]) {
+            //} else {
+            //isonew.push([iso[k][0], iso[j][1]])
+            //isonew.push([iso[k][0], iso[k][1]])
+          }
+          k++
+        }
       }
     }
-  }
+  } else isonew = iso
   
   return isonew
 }
