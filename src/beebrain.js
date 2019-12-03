@@ -733,7 +733,7 @@ const beebrain = function( bbin ) {
       var prevcolor = null
       var newcolor
       while (x <= Math.min(now, goal.tfin)) { // walk forward from tlast
-        newcolor = br.dotcolor( roads, goal, x, vlast )
+        newcolor = br.dotcolor( roads, goal, x, vlast, goal.isolines )
         // done iff 2 reds in a row
         if (prevcolor===newcolor && prevcolor===bu.Cols.REDDOT) break
         prevcolor = newcolor
@@ -974,10 +974,10 @@ const beebrain = function( bbin ) {
     goal.ravg = br.tvr(goal.tini, goal.vini, goal.tfin,goal.vfin,null)*goal.siru
     goal.cntdn = Math.ceil((goal.tfin-goal.tcur)/bu.SID)
     goal.lane = bu.clip(br.lanage(roads, goal, goal.tcur,goal.vcur), -32768, 32767)
-    goal.color = CNAME[br.dotcolor(roads, goal, goal.tcur,goal.vcur)]
+    goal.color = CNAME[br.dotcolor(roads, goal, goal.tcur,goal.vcur, goal.isolines)]
     goal.loser = br.isLoser(roads, goal, data, goal.tcur, goal.vcur)
     goal.sadbrink = (goal.tcur-bu.SID>goal.tini)
-      &&(br.dotcolor(roads,goal,goal.tcur-bu.SID,goal.dtf(goal.tcur-bu.SID))==bu.Cols.REDDOT)
+      &&(br.dotcolor(roads,goal,goal.tcur-bu.SID,goal.dtf(goal.tcur-bu.SID, goal.isolines))==bu.Cols.REDDOT)
     if (goal.safebuf <= 0) goal.tluz = goal.tcur
     if (goal.tfin < goal.tluz)  goal.tluz = bu.BDUSK
         
@@ -1148,7 +1148,7 @@ const beebrain = function( bbin ) {
       lanesum = "below the road"
     }
     goal.titlesum
-      = bu.toTitleCase(CNAME[br.dotcolor(roads, goal, goal.tcur, goal.vcur)]) + ". "
+      = bu.toTitleCase(CNAME[br.dotcolor(roads, goal, goal.tcur, goal.vcur, goal.isolines)]) + ". "
       + "bmndr.com/"+goal.yoog+" is " + lanesum
       + ((y*d>0)?" (safe to stay flat for ~"+cd+")":"")
 
@@ -1210,8 +1210,17 @@ const beebrain = function( bbin ) {
       goal.auraf = br.smooth(fdata)
     } else goal.auraf = (e)=>0
 
-    goal.dtdarray = br.dtdarray( roads, goal )
-    //goal.isoline = br.isoline( roads, goal.dtdarray, goal, 1)
+    if (goal.ybhp) {
+      goal.dtdarray = br.dtdarray( roads, goal )
+
+      goal.isolines = []
+      for (let i = 0; i < 7; i++)
+        goal.isolines[i] = br.isoline( roads, goal.dtdarray, goal, i)
+    } else {
+      goal.dtdarray = null
+      goal.isolines = null
+    }
+    
     return ""
   }
 

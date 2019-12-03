@@ -625,25 +625,56 @@ self.stepFunc = ( d, x, dflt=0 ) => {
 self.stepify = (d, dflt=0) =>
   d === null ? x => dflt : x => self.stepFunc(d, x, dflt)
 
+
+// Returns which side of a given isoline a given datapoint is. -1 and
+// +1 respectively mean wron and correct sides of the isoline
+self.isoside = (g, isoline, t, v) => {
+  if (t <= isoline[0][0]) return ((v - isoline[0][1])*g.yaw>0)?+1:-1
+  // Perform binary search to locate segment
+  var n = isoline.length, s = 0, e = n-1, m
+  if (t >= isoline[n-1][0]) return ((v - isoline[n-1][1])*g.yaw>0)?+1:-1
+  while (e-s > 1) {
+    m = Math.floor((s+e)/2)
+    if (isoline[m][0] <= t) s = m
+    else e = m
+  }
+  // Compute isoline value for the given time
+  if (isoline[s+1][0] == isoline[s][0]) {
+    console.log("Warning: isoside ended up with infinite slope!")
+    return 0
+  }
+  var slope = (isoline[s+1][1]-isoline[s][1]) / (isoline[s+1][0]-isoline[s][0])
+  var isoval = isoline[s][1] + slope*(t - isoline[s][0])
+  return ((v - isoval)*g.yaw > 0)?1:-1
+}
 // Appropriate color for a datapoint
-self.dotcolor = ( rd, g, t, v) => {
+self.dotcolor = ( rd, g, t, v, iso = null) => {
   if (t < g.tini) return bu.Cols.BLCK
-  var l = self.lanage(rd, g, t, v)
-  if (g.yaw===0 && Math.abs(l) > 1.0)  return bu.Cols.GRNDOT
-  if (g.yaw===0 && (l===0 || l===1.0)) return bu.Cols.BLUDOT
-  if (g.yaw===0 && l===-1.0)           return bu.Cols.ORNDOT
-  if (l*g.yaw >=   2.0)                return bu.Cols.GRNDOT
-  if (l*g.yaw ===  1.0)                return bu.Cols.BLUDOT
-  if (l*g.yaw === -1.0)                return bu.Cols.ORNDOT
-  if (l*g.yaw <=  -2.0)                return bu.Cols.REDDOT
+
+  if (g.ybhp && iso != null) {
+    if (self.isoside(g, iso[0], t, v) < 0) return bu.Cols.REDDOT
+    if (self.isoside(g, iso[1], t, v) < 0) return bu.Cols.ORNDOT
+    if (self.isoside(g, iso[2], t, v) < 0) return bu.Cols.BLUDOT
+    if (self.isoside(g, iso[3], t, v) < 0) return bu.Cols.GRNDOT
+    return bu.Cols.GRNDOT
+  } else {
+    var l = self.lanage(rd, g, t, v)
+    if (g.yaw===0 && Math.abs(l) > 1.0)  return bu.Cols.GRNDOT
+    if (g.yaw===0 && (l===0 || l===1.0)) return bu.Cols.BLUDOT
+    if (g.yaw===0 && l===-1.0)           return bu.Cols.ORNDOT
+    if (l*g.yaw >=   2.0)                return bu.Cols.GRNDOT
+    if (l*g.yaw ===  1.0)                return bu.Cols.BLUDOT
+    if (l*g.yaw === -1.0)                return bu.Cols.ORNDOT
+    if (l*g.yaw <=  -2.0)                return bu.Cols.REDDOT
+  }
   return bu.Cols.BLCK
 }
 
-self.isLoser = (rd, g, d, t, v) =>
+  self.isLoser = (rd, g, d, t, v, iso=null) =>
   g.offred ? 
-    self.dotcolor(rd,g,t-bu.SID, g.dtf(t-bu.SID)) === bu.Cols.REDDOT :
-    self.dotcolor(rd,g,t-bu.SID, g.dtf(t-bu.SID)) === bu.Cols.REDDOT
-      && self.dotcolor(rd,g,t,v) === bu.Cols.REDDOT 
+    self.dotcolor(rd,g,t-bu.SID, g.dtf(t-bu.SID), iso) === bu.Cols.REDDOT :
+    self.dotcolor(rd,g,t-bu.SID, g.dtf(t-bu.SID), iso) === bu.Cols.REDDOT
+    && self.dotcolor(rd,g,t,v, iso) === bu.Cols.REDDOT 
 
 /** For noisy graphs, compute the lane width (or half aura width)
     based on data.  Specifically, get the list of daily deltas
