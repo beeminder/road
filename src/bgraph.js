@@ -1687,6 +1687,7 @@
       if (timing) { console.time(graph_timeid+suffix) }
       
       // Finally, wrap up with graph related initialization
+      updateRoadData()
       zoomAll();
       processing = false;
       zoomDefault();
@@ -3116,6 +3117,8 @@
       d += " Z"
       gPattern
         .attr("x", nXSc(now*1000))
+        .attr("patternTransform", (goal.dir>0)?"rotate(90)":null)
+      
       if (pinkelt.empty()) {
         gPink.append("svg:path")
           .attr("class","pinkregion")
@@ -4609,7 +4612,7 @@
       else 
         scf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.55)
 
-      updateRoadData()
+      //updateRoadData()
       updateRoadValidity()
       updateWatermark()
       updatePastBox()
