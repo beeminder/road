@@ -3116,8 +3116,8 @@
       d += " L"+nXSc(now*1000)+" "+nYSc(yedge)
       d += " Z"
       gPattern
-        .attr("x", nXSc(now*1000))
         .attr("patternTransform", (goal.dir>0)?"rotate(90)":null)
+        .attr("x", -goal.dir*nXSc(now*1000))
       
       if (pinkelt.empty()) {
         gPink.append("svg:path")
