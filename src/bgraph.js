@@ -2972,6 +2972,7 @@
     function updateYBHP() {
       if (opts.divGraph == null || road.length == 0) return
       if (!opts.roadEditor && !goal.ybhp) {
+        gYBHP.selectAll("*").remove()
         return
       }
       var regions;
@@ -3120,6 +3121,8 @@
         //console.log(`goal.ybhp = ${goal.ybhp}`)
       } else {
         pinkelt.attr("d", d)
+          .attr("fill", goal.ybhp ? "url(#pinkzonepat"+curid+")"  // try LYEL?
+                                  : bu.Cols.PINK) // oinkzone
       }
     }
 
@@ -3162,7 +3165,12 @@
       } else {
         //console.log("DEBUG1156")
         roadelt.attr("d", rd)
+          .style("stroke-dasharray",
+                 (goal.ybhp&&!opts.roadEditor)?null:(opts.oldRoadLine.dash)+","
+                 +(opts.oldRoadLine.dash))
   		    .style("stroke-width", r3(opts.oldRoadLine.width*scf))
+  		    .style("stroke", (goal.ybhp&&!opts.roadEditor)?bu.Cols.REDDOT // try REDDOT?
+                                     : bu.Cols.ORNG) 
       }
 
     }
