@@ -266,7 +266,8 @@
       
       params.tini = params.asof
       params.vini = Number(vini)
-
+      params.ybhp - true
+      
       params.road = [[buffer?bu.dayify(nextweek):params.asof, null, 0]]
 
       // Some other defaults
