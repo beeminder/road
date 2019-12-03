@@ -379,7 +379,7 @@
         xSc, nXSc, xAxis, xAxisT, xGrid, xAxisObj, xAxisObjT, xGridObj,
         ySc, nYSc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel,
         xScB, xAxisB, xAxisObjB, yScB, 
-        gPB, gYBHP, gPink, gGrid, gOResets, gPastText, 
+        gPB, gYBHP, gPink, gPattern, gGrid, gOResets, gPastText, 
         gOldRoad, gOldCenter, gOldGuides, gOldBullseye, 
         gKnots, gSteppy, gSteppyPts, gRosy, gRosyPts, gMovingAv,
         gAura, gDerails, gAllpts, gDpts, gHollow, gFlat, 
@@ -574,6 +574,17 @@
       defs.append("path")
         .style("stroke", "none").attr("id", "uparrow")
         .attr("d", "M 0,-40 45,50 -45,50 z")
+
+      gPattern = defs.append("pattern")
+        .attr("id", "pinkzonepat"+curid)
+        .attr("x", 0).attr("y",0)
+        .attr("width", 15).attr("height",15)
+        .attr("patternUnits", "userSpaceOnUse")
+      gPattern.append("line")
+        .attr("x1", 15).attr("y1", 0)
+        .attr("x2", 0).attr("y2", 15)
+        .style("stroke", "#aaaaaa")
+        .style("stroke-width", 1)
       
       var buttongrp = defs.append("g")
             .attr("id", "removebutton")
@@ -3097,12 +3108,14 @@
       d += " L"+nXSc(hor*1000)+" "+nYSc(yedge)
       d += " L"+nXSc(now*1000)+" "+nYSc(yedge)
       d += " Z"
+      gPattern
+        .attr("x", nXSc(now*1000))
       if (pinkelt.empty()) {
         gPink.append("svg:path")
           .attr("class","pinkregion")
 	  	    .attr("d", d)
 	  	    .attr("fill-opacity", 0.4)
-          .attr("fill", goal.ybhp ? "#cccccc"  // try LYEL?
+          .attr("fill", goal.ybhp ? "url(#pinkzonepat"+curid+")"  // try LYEL?
                                   : bu.Cols.PINK) // oinkzone
         //console.log(`goal.ybhp = ${goal.ybhp}`)
       } else {
