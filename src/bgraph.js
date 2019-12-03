@@ -3099,7 +3099,7 @@
           .attr("class","pinkregion")
 	  	    .attr("d", d)
 	  	    .attr("fill-opacity", 0.4)
-          .attr("fill", goal.ybhp ? bu.Cols.PINK  // try LYEL?
+          .attr("fill", goal.ybhp ? "#cccccc"  // try LYEL?
                                   : bu.Cols.PINK) // oinkzone
         //console.log(`goal.ybhp = ${goal.ybhp}`)
       } else {
@@ -3136,11 +3136,12 @@
           .attr("class","oldroads")
 	  	    .attr("d", rd)
   		    .attr("pointer-events", "none")
-          .style("stroke-dasharray", (opts.oldRoadLine.dash)+","
+          .style("stroke-dasharray",
+                 (goal.ybhp&&!opts.roadEditor)?null:(opts.oldRoadLine.dash)+","
                  +(opts.oldRoadLine.dash))
   		    .style("fill", "none")
   		    .style("stroke-width", r3(opts.oldRoadLine.width*scf))
-  		    .style("stroke", goal.ybhp ? bu.Cols.ORNG // try REDDOT?
+  		    .style("stroke", (goal.ybhp&&!opts.roadEditor)?bu.Cols.REDDOT // try REDDOT?
                                      : bu.Cols.ORNG) 
       } else {
         //console.log("DEBUG1156")
@@ -3318,11 +3319,12 @@
         ctxplot.append("svg:path")
           .attr("class","ctxoldroads")
 	  	    .attr("d", d)
-          .style("stroke-dasharray", (opts.oldRoadLine.ctxdash)+","
+          .style("stroke-dasharray",
+                 (goal.ybhp&&!opts.roadEditor)?null:(opts.oldRoadLine.ctxdash)+","
                  +(opts.oldRoadLine.ctxdash)) 
   		    .style("fill", "none")
   		    .style("stroke-width",opts.oldRoadLine.ctxwidth)
-          .style("stroke", goal.ybhp ? bu.Cols.ORNG // try REDDOT?
+          .style("stroke", (goal.ybhp&&!opts.roadEditor)?bu.Cols.REDDOT // try REDDOT?
                                      : bu.Cols.ORNG) 
       } else {
         roadelt.attr("d", d);
