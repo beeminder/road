@@ -3351,7 +3351,12 @@
           .style("stroke", (goal.ybhp&&!opts.roadEditor)?bu.Cols.REDDOT // try REDDOT?
                                      : bu.Cols.ORNG) 
       } else {
-        roadelt.attr("d", d);
+        roadelt.attr("d", d)
+          .style("stroke-dasharray",
+                 (goal.ybhp&&!opts.roadEditor)?null:(opts.oldRoadLine.ctxdash)+","
+                 +(opts.oldRoadLine.ctxdash)) 
+          .style("stroke", (goal.ybhp&&!opts.roadEditor)?bu.Cols.REDDOT // try REDDOT?
+                                     : bu.Cols.ORNG) 
       }
     }
 
