@@ -403,7 +403,7 @@
     
     // Beebrain state objects
     var bbr, goal = {}, road = [],
-        data = [], alldata = []
+        data = [], alldata = [], dtd = [], iso = []
     
     /** Limits an svg coordinate to 1 or 3 digits after the decimal 
      @param {Number} x Input number 
@@ -1905,6 +1905,7 @@
       }
 
       if (opts.tableUpdateOnDrag) updateTableValues();
+      updateRoadData()
       updateRoadValidity()
       updateWatermark()
       updateBullseye()
@@ -2960,18 +2961,19 @@
     function updateYBHP() {
       if (opts.divGraph == null || road.length == 0) return
       if (!opts.roadEditor && !goal.ybhp) {
-        gYBHP.selectAll("*").remove()
         return
       }
       var regions;
       if (/*opts.roadEditor ||*/ !goal.ybhp) {
         regions = [
           [0, -1, opts.halfPlaneCol.fill, "none", 0],
-          [3, -1, null, null, null],
-          [2, 3, null, null, null],
+          [2, 6, null, null, null],
+          [6, -1, null, null, null],
+          [6, 6, null, null, null],
           [1, 2, null, null, null],
           [0, 1, null, null, null],
-          [0, -2, null, null, null]]
+          [0, -2, null, null, null],
+          [0, 0, null, null, null]]
       } else {
         regions = [
           [0, -1, null,      null,         null],
@@ -2992,8 +2994,6 @@
       //            [7, 7, null, null, null],
       //            [0, -2, null, null, null]
       //           ]
-
-      let dtd = br.dtdarray( road, goal )
 
       for (const reg of regions) {
         var rstrt = reg[0], 
@@ -3025,7 +3025,8 @@
           yedge = goal.yMax + 0.1*(goal.yMax - goal.yMin);
           yedgeb = goal.yMin - 0.1*(goal.yMax - goal.yMin);
         }
-        var isostrt = br.isoline( road, dtd, goal, rstrt)
+        if (iso[rstrt] == undefined) iso[rstrt] = br.isoline( road, dtd, goal, rstrt)
+        var isostrt = iso[rstrt]
 
         var d = "M"+nXSc(isostrt[0][0]*1000)+" "+nYSc(isostrt[0][1]);
         for (let i = 1; i < isostrt.length; i++) {
@@ -3042,7 +3043,9 @@
           d+=" L"+nXSc(strt*1000)+" "+nYSc(yedgeb);
           d+=" Z";
         } else if (rstrt != rend) {
-          var isoend = br.isoline( road, dtd, goal, rend)
+          if (iso[rend] == undefined) iso[rend] = br.isoline( road, dtd, goal, rend)
+          var isoend = iso[rend]
+          
           var ln = isoend.length
           d += " L"+nXSc(isoend[ln-1][0]*1000)+" "+nYSc(isoend[ln-1][1]);
           for (let i = ln-2; i >= 0; i--) {
@@ -3510,6 +3513,16 @@
                   roadDragEnded(d, Number(this.id));}));
     }
 
+    function updateRoadData() {
+      // Recompute dtd array and isolines for the newly edited
+      // road. Cannot rely on the beebrain object since its road
+      // object will be set to the newly edited road later, once
+      // dragging is finished.
+      dtd = br.dtdarray( road, goal )
+      iso = []
+      for (let i = 0; i < 7; i++) iso[i] = br.isoline( road, dtd, goal, i)
+    }
+    
     function updateRoadValidity() {
       if (opts.divGraph == null || road.length == 0) return;
       var lineColor = isRoadValid( road )?
@@ -3624,7 +3637,7 @@
     }
 
     function dpFill( pt ) {
-      return br.dotcolor(road, goal, pt[0], pt[1]);
+      return br.dotcolor(road, goal, pt[0], pt[1], iso);
     }
     function dpFillOp( pt ) {
       return (pt[3] == bbr.DPTYPE.AGGPAST)?1:0.3;
@@ -3643,7 +3656,7 @@
       var info = [];
       if (d[2] !== "") info.push("\""+d[2]+"\"");
       if (d[6] !== null && d[1] !== d[6]) info.push("total:"+d[1]);
-      var col = br.dotcolor(road, goal, d[0], d[1]);
+      var col = br.dotcolor(road, goal, d[0], d[1], iso);
       dotText = createTextBox(ptx, pty-(15+18*info.length), txt, 
                               col, info );
     };
@@ -3920,7 +3933,7 @@
           if (fladelt.empty()) {
             gFlat.append("svg:use")
 		          .attr("class","fladp").attr("xlink:href", "#rightarrow")
-              .attr("fill", br.dotcolor(road,goal,bbr.flad[0],flady))
+              .attr("fill", br.dotcolor(road,goal,bbr.flad[0],flady, iso))
               .attr("fill-opacity", fop)
               .attr("transform", "translate("+(nXSc((bbr.flad[0])*1000))+","
                     +nYSc(flady)+"),scale("+(opts.dataPoint.fsize*scf/24)+")")
@@ -3936,7 +3949,7 @@
                 dotTimer = null;});
           } else {
             fladelt
-              .attr("fill", br.dotcolor(road,goal,bbr.flad[0],flady))
+              .attr("fill", br.dotcolor(road,goal,bbr.flad[0],flady, iso))
               .attr("fill-opacity", fop)
               .attr("transform", 
                     "translate("+(nXSc((bbr.flad[0])*1000))+","
@@ -4564,6 +4577,9 @@
         scf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.7)
       else 
         scf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.55)
+
+      updateRoadData()
+      updateRoadValidity()
       updateWatermark()
       updatePastBox()
       updateYBHP()
@@ -4586,7 +4602,7 @@
       updateAura()
       // Record current dot color so it can be retrieved from the SVG
       // for the thumbnail border
-      zoomarea.attr('color', br.dotcolor(road, goal, goal.tcur, goal.vcur))
+      zoomarea.attr('color', br.dotcolor(road, goal, goal.tcur, goal.vcur, iso))
 
       // Store the latest scale factor for comparison. Used to
       // eliminate unnecessary attribute setting for updateDotGroup
