@@ -958,6 +958,7 @@
       computePlotLimits( true );
       horindex = br.findSeg(road, goal.horizon);
       reloadBrush();
+      updateRoadData()
       updateGraphData(true);
       updateContextData();
       updateTable();
