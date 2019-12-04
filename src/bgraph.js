@@ -1183,17 +1183,20 @@
         let vb = goal.vmax  + PRAF*(goal.vmax-goal.vmin)
         yrange = [vb, va]
       } else {
+        var margin = goal.lnw
+        if (margin == 0) margin = Math.abs(PRAF*(goal.vmax-goal.vmin))
+
         // Compute range in unixtime
         var xtimes = xrange.map((d)=>Math.floor(d.getTime()/1000))
         // Compute Y axis extent of the edited road in range
         var re 
             = roadExtentPartial(road,xtimes[0],xtimes[1],false);
-        re.yMin -= goal.lnw;
-        re.yMax += goal.lnw;
+        re.yMin -= margin;
+        re.yMax += margin;
         // Compute Y axis extent of the initial road in range
         var ore = roadExtentPartial(iroad,xtimes[0],xtimes[1],false);
-        ore.yMin -= goal.lnw;
-        ore.yMax += goal.lnw;
+        ore.yMin -= margin;
+        ore.yMax += margin;
         var ae = mergeExtents(re, ore);
         
         // Compute Y axis extent of datapoints in range
@@ -1203,13 +1206,13 @@
         if (de != null) ae = mergeExtents(ae, de);
         var p;
         if (opts.roadEditor)
-          p = {xmin:0.0, xmax:0.0, ymin:0.05, ymax:0.05};
+          p = {xmin:0.0, xmax:0.0, ymin:0.05, ymax:0.05}
         else
-          p = {xmin:0.0, xmax:0.0, ymin:0.02, ymax:0.02};
-        enlargeExtent(ae, p);
-        if ((ae.yMax - ae.yMin) < 3*goal.lnw) {
-          ae.yMax += 1.5*goal.lnw;
-          ae.yMin -= 1.5*goal.lnw;
+          p = {xmin:0.0, xmax:0.0, ymin:0.02, ymax:0.02}
+        enlargeExtent(ae, p)
+        if ((ae.yMax - ae.yMin) < 2*margin) {
+          ae.yMax += margin;
+          ae.yMin -= margin;
         }
         yrange = [ae.yMax, ae.yMin];
       }
