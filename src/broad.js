@@ -422,18 +422,21 @@ self.isoline = ( rd, dtdarr, goal, v ) => {
   // inflection point. This is done to ensure that the first
   // intersection with the centerline is taken as the dtd value.
   var isonew = [], downstreak = false, flatdone = false, slope, newx
+  var addpt = function (a, pt) {
+    a.push([pt[0], pt[1]]); return;
+  }
+
   if (goal.yaw * goal.dir > 0) {
     k = -1
     for (j = 0; j < iso.length-1; j++) {
       // If an upslope is detected, finish downstreak
       if ((iso[j+1][1] - iso[j][1]) * goal.dir >= 0) downstreak = false
-      // Skip segments processed within the flat segment
-      if (j < k) continue
-      // Record existing inflection point
-      isonew.push(iso[j])
-
+      
+      addpt(isonew, iso[j])
+      
       // Check if there is a new downstreak to initiate new flat region
       if (v != 0 && (iso[j+1][1] - iso[j][1]) * goal.dir < 0 && !downstreak) {
+        
         downstreak = true
         // Extend horizontally for at least dtd days, or
         // until a positive slope is found
@@ -444,11 +447,12 @@ self.isoline = ( rd, dtdarr, goal, v ) => {
             // Reached end of the flat region with dtd days
             flatdone = true
             newx = iso[j][0]+v*bu.SID
-            isonew.push([newx, iso[j][1]])
-            if (iso[k][0] != iso[k-1][0]) {
-              slope = (iso[k][1]-iso[k-1][1])/(iso[k][0]-iso[k-1][0])
-              isonew.push([iso[k][0], iso[k-1][1] + slope*(newx-iso[k-1][0]) ])
-            }
+            addpt(isonew, [newx, iso[j][1]])
+            
+            //if (iso[k][0] != iso[k-1][0]) {
+            //  slope = (iso[k][1]-iso[k-1][1])/(iso[k][0]-iso[k-1][0])
+            //  addpt(isonew, [iso[k][0], iso[k-1][1] + slope*(newx-iso[k-1][0]) ])
+            //}
             
           } else if ((iso[k+1][1] - iso[k][1]) * goal.dir >= 0) {
             // Found a positive slope, finish flat region by extending
@@ -460,22 +464,35 @@ self.isoline = ( rd, dtdarr, goal, v ) => {
                 newx = iso[k][0] + (iso[j][1] - iso[k][1])/slope
                 if (newx <= iso[j][0]+v*bu.SID && newx <= iso[k+1][0]) {
                   flatdone = true
-                  isonew.push([newx, iso[j][1]])
+                  addpt(isonew, [newx, iso[j][1]])
                 }
               }
             }
-            //if (iso[k][0] != iso[k-1][0]) {
-            //} else {
-            //isonew.push([iso[k][0], iso[j][1]])
-            //isonew.push([iso[k][0], iso[k][1]])
           }
           k++
         }
       }
     }
   } else isonew = iso
+
+  // Final pass to eliminate backwards line segments
+  var isofinal = [isonew[0]], lastpt, slope
+  for (j = 1; j < isonew.length; j++) {
+    lastpt = isofinal[isofinal.length-1]
+    if (isonew[j][0] < lastpt[0]) continue
+    if (isonew[j][0] > lastpt[0]) {
+      // Intermediate point needed
+      if (isonew[j][0] - isonew[j-1][0] != 0) {
+        slope = (isonew[j][1] - isonew[j-1][1])/(isonew[j][0] - isonew[j-1][0])
+        isofinal.push([lastpt[0], isonew[j-1][1] + slope*(lastpt[0]-isonew[j-1][0])])
+      }
+    }
+    isofinal.push(isonew[j])
+  }
   
-  return isonew
+  //console.log(isonew.map(e=>[e[0], bu.dayify(e[0]+bu.SID), e[1],e[2], bu.dayify(e[2]+bu.SID), e[3]]))
+  //console.log(isofinal.map(e=>[e[0], bu.dayify(e[0]+bu.SID), e[1],e[2], bu.dayify(e[2]+bu.SID), e[3]]))
+  return isofinal
 }
   
 /** Days To Centerline: Count the integer days till you cross the
