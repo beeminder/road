@@ -257,6 +257,8 @@
       var data = {}
 
       params.stathead = false
+
+      params.quantum = 1
       
       params.ybhp - true
       params.abslnw = 0

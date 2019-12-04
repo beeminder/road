@@ -222,7 +222,7 @@
   + "line.roads{stroke:black}"
   + ".pasttext,.ctxtodaytext,.ctxhortext,.horizontext,.hashtag"
   + "{text-anchor:middle;font-family:sans-serif}"
-  + ".waterbuf,.waterbux{text-anchor:middle;font-family:Dejavu Sans,sans-serif}"
+  + ".waterbuf,.waterbux{stroke:#dddddd;stroke-width:1;text-anchor:middle;font-family:Dejavu Sans,sans-serif}"
   + ".loading{text-anchor:middle;font-family:Dejavu Sans,sans-serif}"
   + ".zoomarea{fill:none}"
   + "circle.ap{stroke:none}"
@@ -2471,11 +2471,16 @@
       else stopAnim(e, 300, [], styles, "ybr")
 
       e = gOldCenter.select(".oldroads");
-      styles =[["stroke-dasharray",
-                (opts.oldRoadLine.dash*1.3)+","+(opts.oldRoadLine.dash*0.7),
-                (opts.oldRoadLine.dash)+","+(opts.oldRoadLine.dash)],
-               ["stroke-width",
-                opts.oldRoadLine.width*scf*2, opts.oldRoadLine.width*scf]]
+      if (goal.ybhp) {
+        styles =[["stroke-width",
+                  opts.oldRoadLine.width*scf*2, opts.oldRoadLine.width*scf]]
+      } else {
+        styles =[["stroke-dasharray",
+                  (opts.oldRoadLine.dash*1.3)+","+(opts.oldRoadLine.dash*0.7),
+                  (opts.oldRoadLine.dash)+","+(opts.oldRoadLine.dash)],
+                 ["stroke-width",
+                  opts.oldRoadLine.width*scf*2, opts.oldRoadLine.width*scf]]
+      }
       if (enable) startAnim(e, 500, [], styles, "ybrc")
       else stopAnim(e, 300, [], styles, "ybrc")
     }
