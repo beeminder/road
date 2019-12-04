@@ -2799,6 +2799,7 @@
           .style('font-weight', "bolder")
           .style('fill', opts.watermark.color)
           .text(goal.waterbuf);
+        if (!goal.ybhp) wbufelt.style('stroke', 'none')
         bbox = wbufelt.node().getBBox();
         if (bbox.width > plotbox.width/2.2) {
           newsize = (fs*(plotbox.width/2.2)
@@ -2824,6 +2825,7 @@
           .style('font-weight', "bolder")
           .style('fill', opts.watermark.color)
           .text(goal.waterbux);
+        if (!goal.ybhp) wbuxelt.style('stroke', 'none')
         bbox = wbuxelt.node().getBBox();
         if (bbox.width > plotbox.width/2.2) {
           newsize = (fs*(plotbox.width/2.2)/bbox.width)
