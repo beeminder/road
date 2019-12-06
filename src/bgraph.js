@@ -379,7 +379,7 @@
         xSc, nXSc, xAxis, xAxisT, xGrid, xAxisObj, xAxisObjT, xGridObj,
         ySc, nYSc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel,
         xScB, xAxisB, xAxisObjB, yScB, 
-        gPB, gYBHP, gPink, gPattern, gGrid, gOResets, gPastText, 
+        gPB, gYBHP, gPink, gPinkPat, gGrid, gOResets, gPastText, 
         gOldRoad, gOldCenter, gOldGuides, gOldBullseye, 
         gKnots, gSteppy, gSteppyPts, gRosy, gRosyPts, gMovingAv,
         gAura, gDerails, gAllpts, gDpts, gHollow, gFlat, 
@@ -576,13 +576,14 @@
         .style("stroke", "none").attr("id", "uparrow")
         .attr("d", "M 0,-40 45,50 -45,50 z")
 
-      gPattern = defs.append("pattern")
+      gPinkPat = defs.append("pattern")
         .attr("id", "pinkzonepat"+curid)
         .attr("x", 0).attr("y",0)
         .attr("width", 10).attr("height",10)
+        .attr("patternTransform", "rotate(45)")
         .attr("patternUnits", "userSpaceOnUse")
-      gPattern.append("line")
-        .attr("x1", 10).attr("y1", 0)
+      gPinkPat.append("line")
+        .attr("x1", 0).attr("y1", 0)
         .attr("x2", 0).attr("y2", 10)
         .style("stroke", "#aaaaaa")
         .style("stroke-width", 1)
@@ -3126,8 +3127,8 @@
       d += " L"+nXSc(hor*1000)+" "+nYSc(yedge)
       d += " L"+nXSc(now*1000)+" "+nYSc(yedge)
       d += " Z"
-      gPattern
-        .attr("patternTransform", (goal.dir>0)?"rotate(90)":null)
+      gPinkPat
+        .attr("patternTransform", (goal.dir>0)?"rotate(135)":"rotate(45)")
         .attr("x", -goal.dir*nXSc(now*1000))
       
       if (pinkelt.empty()) {
