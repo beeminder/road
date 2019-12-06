@@ -215,6 +215,8 @@
   + ".axis .minor line{stroke:#777;stroke-dasharray:0,2,4,3}"
   + ".grid line"
   + "{fill:none;stroke:#dddddd;stroke-width:1px;shape-rendering:crispEdges}"
+  + ".aura {fill-opacity:0.3; stroke-opacity:0.3;}"
+  + ".aurapast {fill-opacity:0.15; stroke-opacity:0.3;}"
   + ".grid .minor line{stroke:none}"
   + ".axis text{font-family:sans-serif;font-size:11px}"
   + ".axislabel{font-family:sans-serif;font-size:11px;text-anchor:middle}"
@@ -2866,8 +2868,8 @@
         if (el.empty()) {
           gAura.append("svg:path")
             .attr("class","aura").attr("d", d)
-  		      .style("fill", bu.Cols.BLUE)
-  		      .style("stroke-width", 2).style("stroke", bu.Cols.BLUE);
+  		      .style("fill", bu.Cols.LPURP)
+  		      .style("stroke-width", 2).style("stroke", bu.Cols.LPURP);
         } else {
           el.attr("d", d);
         }
@@ -2884,11 +2886,10 @@
           if (el2.empty()) {
             gAura.append("svg:path")
               .attr("class","aurapast").attr("d", d)
-  		        .style("fill", bu.Cols.BLUE)
-  		        .style("fill-opacity", 0.3)
+  		        .style("fill", bu.Cols.LPURP)
   		        .style("stroke-width", 2)
   		        .style("stroke-dasharray", "4,4")
-              .style("stroke", bu.Cols.BLUE)
+              .style("stroke", bu.Cols.LPURP)
           } else {
             el2.attr("d", d)
           }
