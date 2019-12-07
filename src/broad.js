@@ -644,7 +644,7 @@ self.stepify = (d, dflt=0) =>
 
 
 // Returns which side of a given isoline a given datapoint is. -1 and
-// +1 respectively mean wron and correct sides of the isoline
+// +1 respectively mean wrong and correct sides of the isoline
 self.isoside = (g, isoline, t, v) => {
   if (t <= isoline[0][0]) return ((v - isoline[0][1])*g.yaw>0)?+1:-1
   // Perform binary search to locate segment
@@ -662,7 +662,7 @@ self.isoside = (g, isoline, t, v) => {
   }
   var slope = (isoline[s+1][1]-isoline[s][1]) / (isoline[s+1][0]-isoline[s][0])
   var isoval = isoline[s][1] + slope*(t - isoline[s][0])
-  return ((v - isoval)*g.yaw > 0)?1:-1
+  return ((v - isoval)*g.yaw >= 0)?1:-1
 }
 // Appropriate color for a datapoint
 self.dotcolor = ( rd, g, t, v, iso = null) => {
