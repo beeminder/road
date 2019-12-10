@@ -2443,8 +2443,8 @@
       var e = gAura.selectAll(".aura");
       var ep = gAura.selectAll(".aurapast");
       
-      var s =[["stroke", "#CACAEE", bu.Cols.BLUE],["fill", "#CACAEE", bu.Cols.BLUE]]
-      var sp =[["stroke", "#CACAEE", bu.Cols.BLUE],["fill", "#CACAEE", bu.Cols.BLUE]]
+      var s =[["stroke", "#CACAEE", bu.Cols.LPURP],["fill", "#CACAEE", bu.Cols.LPURP]]
+      var sp =[["stroke", "#CACAEE", bu.Cols.LPURP],["fill", "#CACAEE", bu.Cols.LPURP]]
       if (enable) {startAnim(e, 500, [], s, "aura");startAnim(ep, 500, [], sp, "aurap")}
       else {stopAnim(e, 300, [], s, "aura"); stopAnim(ep, 300, [], sp, "aurap")}
     }
