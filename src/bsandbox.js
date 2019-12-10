@@ -229,7 +229,7 @@
       reloadGoal( false )
     }
 
-    function newGoal( gtype, runits, rfin, vini, buffer ) {
+    function newGoal( gtype, runits, rfin, vini, buffer, newparams = [] ) {
       logger.log(`newGoal(${gtype}, ${runits}, ${rfin}, ${vini}, ${buffer})`)
       if (!typefn.hasOwnProperty(gtype)) {
         logger.error("bsandbox.newGoal: Invalid goal type!")
@@ -283,6 +283,8 @@
       params.yaxis = (params.kyoom)?"current cumulative total":"current value"
       params.ybhp = true
       
+      Object.keys(newparams).forEach(e=>{params[e] = newparams[e]})
+
       data = [[params.tini, Number(params.vini), "initial datapoint of "+params.vini]]
 
       goal.bb = {params: params, data: data}
