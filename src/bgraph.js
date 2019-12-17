@@ -1088,7 +1088,8 @@
 
       var diff = ((xr[1] - xr[0])/(1000*bu.SID));
       // Adjust tick mark separation if the graph is too small
-      if (opts.focusRect.width < 500) diff = diff*1.5
+      if (opts.focusRect.width < 500) diff = diff*1.6
+      else if (opts.focusRect.width < 550) diff = diff*1.4
       else if (opts.focusRect.width < 600) diff = diff*1.2
       // * tickType identifies the separation and text of ticks
       // * majorSkip is the number of ticks to skip for the annotated
