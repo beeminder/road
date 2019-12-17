@@ -112,6 +112,9 @@
         context graph and the zoom buttons will allow zooming. */
     scrollZoom:        true,
     
+    /** Enables zooming with buttons.*/
+    buttonZoom:        true,
+    
     /** Enables the road editor. When disabled, the generated graph
         mirrors beebrain output as closely as possible. */
     roadEditor:        false,
@@ -600,7 +603,7 @@
       
       var zoomingrp = defs.append("g")
             .attr("id", "zoominbtn")
-      if (!opts.headless) {
+      if (!opts.headless && opts.buttonZoom) {
         // Zoom buttons are not visible for SVG output in headless mode
         zoomingrp.append("path").style("fill", "white")
           .attr("d", "m 530.86356,264.94116 a 264.05649,261.30591 0 1 1 -528.1129802,0 264.05649,261.30591 0 1 1 528.1129802,0 z")
@@ -610,7 +613,7 @@
 
       var zoomoutgrp = defs.append("g")
             .attr("id", "zoomoutbtn")
-      if (!opts.headless) {
+      if (!opts.headless && opts.buttonZoom) {
         // Zoom buttons are not visible for SVG output in headless mode
         zoomoutgrp.append("path").style("fill", "white")
           .attr("d", "m 530.86356,264.94116 a 264.05649,261.30591 0 1 1 -528.1129802,0 264.05649,261.30591 0 1 1 528.1129802,0 z")
