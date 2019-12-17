@@ -75,10 +75,11 @@
     function updateGoal() {
       var newparams = {}
       if (units.value != "") newparams["yaxis"] = units.value
-    var graphopts = {svgSize: { width: 420, height: 280 },
-                  focusRect: { x:0, y:0, width:420, height: 280 },
-    ctxRect: { x:0, y:240, width:420, height: 280 },
-    buttonZoom: false
+      var graphopts = {svgSize: { width: 420, height: 280 },
+                       focusRect: { x:0, y:0, width:420, height: 280 },
+                       ctxRect: { x:0, y:240, width:420, height: 280 },
+                       focusPad: { left:15, right:5, top:20, bottom: 20 },
+                       buttonZoom: false
     }
       bs.newGoal("hustler",
                  runits.options[runits.selectedIndex].value,
