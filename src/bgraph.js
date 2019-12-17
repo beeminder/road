@@ -644,7 +644,7 @@
         }
         scrollinfo.timeout= setTimeout(() => {removeOverlay("zoominfo", true);
                                               scrollinfo.shown = false},1000)
-      }
+     }
       var onmove = function() {
         if (scrollinfo.timeout != null) {
           clearTimeout(scrollinfo.timeout); scrollinfo.timeout = null
@@ -3443,9 +3443,11 @@
 	      .attr("stroke-width",opts.roadKnot.width)
         .on('wheel', function(d) { 
           // Redispatch a copy of the event to the zoom area
-          var new_event = new d3.event.constructor(d3.event.type, 
-                                                   d3.event); 
-          zoomarea.node().dispatchEvent(new_event);})
+          var new_event = new d3.event.constructor(d3.event.type, d3.event)
+          zoomarea.node().dispatchEvent(new_event)
+          // Prevents mouse wheel event from bubbling up to the page
+          d3.event.preventDefault()
+        })
 	      .on("mouseover",function(d,i) {
 	        if (!editingKnot && !editingDot && !editingRoad
              && !(selectType == br.RP.DATE && i == selection)) {
@@ -3538,7 +3540,10 @@
           // Redispatch a copy of the event to the zoom area
           var new_event = new d3.event.constructor(d3.event.type, 
                                                    d3.event)
-          zoomarea.node().dispatchEvent(new_event) })		  
+          zoomarea.node().dispatchEvent(new_event)
+          // Prevents mouse wheel event from bubbling up to the page
+          d3.event.preventDefault()
+        })		  
         .on("mouseover",function(d,i) { 
 	        if (!editingKnot && !editingDot && !editingRoad
              && !(selectType == br.RP.SLOPE && i == selection)) {
@@ -3646,7 +3651,10 @@
           // Redispatch a copy of the event to the zoom area
           var new_event = new d3.event.constructor(d3.event.type, 
                                                    d3.event)
-          zoomarea.node().dispatchEvent(new_event) })
+          zoomarea.node().dispatchEvent(new_event)
+          // Prevents mouse wheel event from bubbling up to the page
+          d3.event.preventDefault()
+        })
         .on("mouseover",function(d,i) { 
 	        if (!editingKnot && !editingDot && !editingRoad
               && !(selectType == br.RP.VALUE && i-1 == selection)) {
