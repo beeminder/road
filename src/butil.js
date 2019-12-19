@@ -658,6 +658,7 @@ let pat_empty = "YYYYMMDD"
     @param {String} [sep=''] Separator character */
 self.dayparse = (s, sep='') => {
   var re, pat
+  if (s == null) return null
   if (sep=='') {
     // Optimize for the common case
     re = dpre_empty
@@ -685,6 +686,7 @@ self.dayparse = (s, sep='') => {
     @param {String} [sep=''] Separator character to use */
 self.dayify = (t, sep = '') => {
   if (isNaN(t) || t < 0) { return "ERROR" }
+  if (t == null) return null
   var mm = moment.unix(t).utc()
   var y = mm.year()
   var m = mm.month() + 1
