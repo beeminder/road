@@ -977,9 +977,11 @@ const beebrain = function( bbin ) {
       newgoal.lnw = Math.max(newgoal.nw,newgoal.lnf( newgoal.tcur ))
       newsafe = br.dtd(roads, newgoal, newgoal.tcur, newgoal.vcur)
       safediff = goal.safebuf - newsafe
+      
       var newroad
           = oldroad.map(e => [(e[0]?e[0]+bu.SID*safediff:null), e[1], e[2]])
-      if (newroad[0][0] == null)
+      //if (newroad[0][0] == null) // Uluc: I think this is not needed/incorrect
+      if (safediff != 0)
         newroad.unshift([newgoal.tini+bu.SID*safediff, newgoal.vini, null])
       // Remove the last element [tfin,vfin], which was added by us
       newroad.pop()
