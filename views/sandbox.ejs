@@ -302,7 +302,7 @@
       goalProps.map(e=>{
         if (e=='yaw' || e=='dir')
           newconfig[e] = document.getElementById(e).checked?1:-1
-        if (e=='aggday')
+        else if (e=='aggday')
           newconfig[e] = document.getElementById(e).value
         else
           newconfig[e] = document.getElementById(e).checked

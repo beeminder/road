@@ -229,7 +229,8 @@
       reloadGoal( false )
     }
 
-    function newGoal( gtype, runits, rfin, vini, buffer ) {
+    function newGoal( gtype, runits, rfin, vini, buffer,
+                      newparams = [], graphopts = {} ) {
       logger.log(`newGoal(${gtype}, ${runits}, ${rfin}, ${vini}, ${buffer})`)
       if (!typefn.hasOwnProperty(gtype)) {
         logger.error("bsandbox.newGoal: Invalid goal type!")
@@ -283,6 +284,8 @@
       params.yaxis = (params.kyoom)?"current cumulative total":"current value"
       params.ybhp = true
       
+      Object.keys(newparams).forEach(e=>{params[e] = newparams[e]})
+
       data = [[params.tini, Number(params.vini), "initial datapoint of "+params.vini]]
 
       goal.bb = {params: params, data: data}
@@ -291,14 +294,16 @@
       // Delete div contents
       while (goal.div.firstChild) goal.div.removeChild(goal.div.firstChild);
       goal.gdiv = d3.select(goal.div)
-      goal.graph = new bgraph({divGraph: goal.gdiv.node(),
-                               roadEditor:false,
-                               svgSize: { width: 696, height: 453 },
-                               focusRect: { x:0, y:0, width:690, height: 453 },
-                               ctxRect: { x:0, y:453, width:690, height: 40 },
-                               maxFutureDays: 365,
-                               showFocusRect: false,
-                               showContext: false});
+      var opts = {divGraph: goal.gdiv.node(),
+                  roadEditor:false,
+                  svgSize: { width: 696, height: 453 },
+                  focusRect: { x:0, y:0, width:690, height: 453 },
+                  ctxRect: { x:0, y:453, width:690, height: 40 },
+                  maxFutureDays: 365,
+                  showFocusRect: false,
+                  showContext: false}
+      bu.extend(opts, graphopts)
+      goal.graph = new bgraph(opts);
       clearUndoBuffer()
       reloadGoal()
     }

@@ -95,6 +95,7 @@ sadbrink : false,   // Whether we were red yest. & so will instaderail today
 safebump : null,    // Value needed to get one additional safe day
 dueby    : [],      // Table of daystamps, deltas, and abs amts needed by day
 fullroad : [],      // Rd matrix w/ nulls filled in, [tfin,vfin,rfin] appended
+//razrroad : [],      // Adjusted road matrix for the YBHP transition
 pinkzone : [],      // Subset of the road matrix defining the verboten zone
 tluz     : null,    // Timestamp of derailment ("lose") if no more data added
 tcur     : null,    // (tcur,vcur) gives the most recent datapoint, including
@@ -324,6 +325,8 @@ const beebrain = function( bbin ) {
       @param {Object} p Computed goal statistics */
   function stampOut( p ) {
     p['fullroad'] = p['fullroad'].map(dayifyrow)
+    if (pout.hasOwnProperty('razrroad'))
+      p['razrroad'] = p['razrroad'].map(dayifyrow)
     p['pinkzone'] = p['pinkzone'].map(dayifyrow)
     p['tluz'] = bu.dayify(p['tluz'])
     p['tcur'] = bu.dayify(p['tcur'])
@@ -908,6 +911,7 @@ const beebrain = function( bbin ) {
     // maps timestamps to most recent datapoint value
     goal.dtf = br.stepify(data)
     
+    var oldroad = goal.road.map(e=>[e[0], e[1], e[2]])
     goal.road = br.fillroad(goal.road, goal)
     let rl = goal.road.length
     goal.tfin = goal.road[rl-1][0]
@@ -957,6 +961,33 @@ const beebrain = function( bbin ) {
 
     goal.lnw = Math.max(goal.nw,goal.lnf( goal.tcur ))
     goal.safebuf = br.dtd(roads, goal, goal.tcur, goal.vcur)
+    if ((!goal.ybhp || goal.abslnw != 0) && pout.hasOwnProperty('razrroad')) {
+      // Compute safebuffer with ybhp=true and abslnw=0
+      // Requires recomputation of a bunch of previously computed values.
+      var newgoal = {}, newsafe, safediff
+      bu.extend(newgoal, goal, true)
+      newgoal.ybhp = true
+      newgoal.abslnw = 0
+      newgoal.stdflux = br.noisyWidth(roads, data.filter((d)=>(d[0]>=goal.tini)))
+      newgoal.nw = (newgoal.noisy && newgoal.abslnw == null)
+        ?br.autowiden(roads, newgoal, data, newgoal.stdflux):0
+    
+      newgoal.lnf =
+        (newgoal.abslnw != null)?(x=>newgoal.abslnw)
+        :br.genLaneFunc(roads, newgoal)
+      newgoal.lnw = Math.max(newgoal.nw,newgoal.lnf( newgoal.tcur ))
+      newsafe = br.dtd(roads, newgoal, newgoal.tcur, newgoal.vcur)
+      safediff = goal.safebuf - newsafe
+      
+      var newroad
+          = oldroad.map(e => [(e[0]?e[0]+bu.SID*safediff:null), e[1], e[2]])
+      //if (newroad[0][0] == null) // Uluc: I think this is not needed/incorrect
+      if (safediff != 0)
+        newroad.unshift([newgoal.tini+bu.SID*safediff, newgoal.vini, null])
+      // Remove the last element [tfin,vfin], which was added by us
+      newroad.pop()
+      goal.razrroad = newroad
+    }
     goal.tluz = goal.tcur+goal.safebuf*bu.SID
     goal.delta = bu.chop(goal.vcur - br.rdf(roads, goal.tcur))
     goal.rah = br.rdf(roads, goal.tcur+bu.AKH)
