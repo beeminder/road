@@ -66,7 +66,7 @@ odom     : false,  // Treat zeros as accidental odom resets
 abslnw   : null,   // Override road width algorithm with a fixed lane width
 maxflux  : 0,      // User-specified max daily fluctuation                      
 noisy    : false,  // Compute road width based on data, not just road rate
-integery : false,  // Whether vals are necessarily integers (used in limsum)  
+integery : false,  // Whether vals are necessarily integers ################ DEP
 monotone : false,  // Whether data is necessarily monotone (used in limsum) 
 aggday   : null,   // sum/last/first/min/max/mean/median/mode/trimmean/jolly
 plotall  : true,   // Plot all the points instead of just the aggregated point
@@ -94,7 +94,7 @@ const pout = { // Out Params: Beebrain output fields
 sadbrink : false,   // Whether we were red yest. & so will instaderail today
 safebump : null,    // Value needed to get one additional safe day
 dueby    : [],      // Table of daystamps, deltas, and abs amts needed by day
-fullroad : [],      // Rd matrix w/ nulls filled in, [tfin,vfin,rfin] app.
+fullroad : [],      // Rd matrix w/ nulls filled in, [tfin,vfin,rfin] appended
 pinkzone : [],      // Subset of the road matrix defining the verboten zone
 tluz     : null,    // Timestamp of derailment ("lose") if no more data added
 tcur     : null,    // (tcur,vcur) gives the most recent datapoint, including
@@ -788,19 +788,20 @@ const beebrain = function( bbin ) {
         minmin = mind - padding,
         maxmax = maxd + padding
     if (goal.monotone && goal.dir>0) {        // Monotone up so no extra padding
-      minmin = bu.arrMin([minmin, a, b])         // below (the low) vini.
+      minmin = bu.arrMin([minmin, a, b])      // below (the low) vini.
       maxmax = bu.arrMax([maxmax, a+goal.lnw, b+goal.lnw])
-    } else if (goal.monotone && goal.dir<0) { // Monotone down so no extra padding
-      minmin = bu.arrMin([minmin, a-goal.lnw, b-goal.lnw]) //   above (the high) vini.
-      maxmax = bu.arrMax([maxmax, a, b])
+    } else if (goal.monotone && goal.dir<0) {       // Monotone down so no extra
+      minmin = bu.arrMin([minmin, a-goal.lnw, b-goal.lnw]) // padding above (the
+      maxmax = bu.arrMax([maxmax, a, b])                   // high) vini.
     } else {
       minmin = bu.arrMin([minmin, a-goal.lnw, b-goal.lnw])
       maxmax = bu.arrMax([maxmax, a+goal.lnw, b+goal.lnw])
     }
     if (goal.plotall && goal.tmin<=goal.tini && goal.tini<=goal.tmax
-        && allvals.hasOwnProperty(goal.tini)) {      // At tini, leave room
-      minmin = Math.min(minmin, bu.arrMin(allvals[goal.tini].map(e=>e[0])))// for all non-agg'd
-      maxmax = Math.max(maxmax, bu.arrMax(allvals[goal.tini].map(e=>e[0])))// datapoints.
+        && allvals.hasOwnProperty(goal.tini)) {      
+      // At tini, leave room for all non-agg'd datapoints.
+      minmin = Math.min(minmin, bu.arrMin(allvals[goal.tini].map(e=>e[0])))
+      maxmax = Math.max(maxmax, bu.arrMax(allvals[goal.tini].map(e=>e[0])))
     }
     if (goal.vmin == null && goal.vmax == null) {
       goal.vmin = minmin
@@ -988,8 +989,9 @@ const beebrain = function( bbin ) {
   function sumSet(rd, goal) {
     const y = goal.yaw, d = goal.dir, 
           l = goal.lane, w = goal.lnw, dlt = goal.delta, 
-          //q = goal.integery ? 1 : goal.quantum
-          q = goal.quantum
+          q = goal.integery && goal.quantum === null ? 1 : 
+              Math.max(1e-5, goal.quantum) // TODO: just trust Beebody
+          //q = goal.quantum
 
     const MOAR = (y>0 && d>0), 
           PHAT = (y<0 && d<0),
