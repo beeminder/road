@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Beeminder Goal Creation</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="../src/pikaday.css">
+    <link rel="stylesheet" href="../src/jsbrain.css">
+    <script src = "https://d3js.org/d3.v5.js"></script>
+    <script src = "../src/moment.js"></script>
+    <script src = "../src/pikaday.js"></script>
+    <script src = "../src/polyfit.js"></script>
+    <script src = "../src/butil.js"></script>
+    <script src = "../src/broad.js"></script>
+    <script src = "../src/beebrain.js"></script>
+    <script src = "../src/bgraph.js"></script>
+    <script src = "../src/bsandbox.js"></script>
+    <style>
+      input[type=number]::-webkit-inner-spin-button, 
+      input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+      }
+    </style>
+</head>
+
+<body>
+  <center><h1>Beeminder Goal Creation: Do More</h1>
+  
+  <table>
+  <tr>
+  <td valign="top"><div id="sandbox" style="width:420px; height:280px"></div><br/>
+  </td>
+  <td align="center">
+  <h2>Commit to at least</h2>
+  <button onclick="incrementValue(-1); updateGoal()">-</button>
+  <input type = "number" value="3" id="rate" style="width:4em;text-align:center;" onchange="updateGoal()"/>
+  <button onclick="incrementValue(1); updateGoal()">+</button><br/><br/>
+
+  <select id="rateunit" class="typeselect" onchange="updateGoal()">
+    <option value="d">per day</option>
+    <option value="w" selected="selected">per week</option>
+    <option value="m">per month</option>
+    <option value="y">per year</option>
+  </select><br/><br/>
+
+  What are your units for this goal?<br/>
+  <input type = "text" id="units" style="width:10em" onchange="updateGoal()">
+  </input>
+  <br/>
+  <input type = "checkbox" id="buffer" checked onchange="updateGoal()"></input>
+  Start this goal with extra leeway (safety buffer)
+  
+  </td>
+  </tr>
+  </table>
+  
+  </center>
+  <script>
+    gtype = document.getElementById("typeselect")
+    rfin = document.getElementById("rate")
+    buffer = document.getElementById("buffer")
+    gdiv = document.getElementById("sandbox")
+    runits = document.getElementById("rateunit")
+    units = document.getElementById("units")
+    dataval = document.getElementById("dataval")
+    datacmt = document.getElementById("datacmt")
+
+    function incrementValue(incr) {
+      var value = parseInt(rfin.value, 10);
+      value = isNaN(value) ? 0 : value;
+      value += incr;
+      rfin.value = value;
+    }
+    
+    function updateGoal() {
+      var newparams = {}
+      if (units.value != "") newparams["yaxis"] = units.value
+      var graphopts = {svgSize: { width: 420, height: 280 },
+                       focusRect: { x:0, y:0, width:420, height: 280 },
+                       ctxRect: { x:0, y:240, width:420, height: 280 },
+                       focusPad: { left:15, right:5, top:20, bottom: 20 },
+                       buttonZoom: false
+    }
+      bs.newGoal("hustler",
+                 runits.options[runits.selectedIndex].value,
+                 rfin.value, 0, buffer.checked, newparams, graphopts)
+      graph = bs.getGraphObj()
+    }
+
+    const defaults = {
+      hustler: {r:3, v:0}, 
+      fatloser: {r:-1, v:70}, 
+      biker: {r:1, v:0}, 
+      drinker: {r:1, v:0}, 
+      gainer: {r:1, v:70},
+      inboxer: {r:-1, v:1000}
+    }
+    
+    function setDefaults() {
+      const sel = "hustler"
+      const dflt = defaults[sel]
+      rfin.value = dflt.r
+    }
+    setDefaults()
+    
+    bs = new bsandbox(gdiv)
+    var graph
+    updateGoal()
+    
+  </script>
+
+</body>
+  
+</html>

@@ -112,6 +112,9 @@
         context graph and the zoom buttons will allow zooming. */
     scrollZoom:        true,
     
+    /** Enables zooming with buttons.*/
+    buttonZoom:        true,
+    
     /** Enables the road editor. When disabled, the generated graph
         mirrors beebrain output as closely as possible. */
     roadEditor:        false,
@@ -600,7 +603,7 @@
       
       var zoomingrp = defs.append("g")
             .attr("id", "zoominbtn")
-      if (!opts.headless) {
+      if (!opts.headless && opts.buttonZoom) {
         // Zoom buttons are not visible for SVG output in headless mode
         zoomingrp.append("path").style("fill", "white")
           .attr("d", "m 530.86356,264.94116 a 264.05649,261.30591 0 1 1 -528.1129802,0 264.05649,261.30591 0 1 1 528.1129802,0 z")
@@ -610,7 +613,7 @@
 
       var zoomoutgrp = defs.append("g")
             .attr("id", "zoomoutbtn")
-      if (!opts.headless) {
+      if (!opts.headless && opts.buttonZoom) {
         // Zoom buttons are not visible for SVG output in headless mode
         zoomoutgrp.append("path").style("fill", "white")
           .attr("d", "m 530.86356,264.94116 a 264.05649,261.30591 0 1 1 -528.1129802,0 264.05649,261.30591 0 1 1 528.1129802,0 z")
@@ -641,7 +644,7 @@
         }
         scrollinfo.timeout= setTimeout(() => {removeOverlay("zoominfo", true);
                                               scrollinfo.shown = false},1000)
-      }
+     }
       var onmove = function() {
         if (scrollinfo.timeout != null) {
           clearTimeout(scrollinfo.timeout); scrollinfo.timeout = null
@@ -1084,6 +1087,10 @@
                 nXSc.invert(plotbox.width).getTime()];
 
       var diff = ((xr[1] - xr[0])/(1000*bu.SID));
+      // Adjust tick mark separation if the graph is too small
+      if (opts.focusRect.width < 500) diff = diff*1.6
+      else if (opts.focusRect.width < 550) diff = diff*1.4
+      else if (opts.focusRect.width < 600) diff = diff*1.2
       // * tickType identifies the separation and text of ticks
       // * majorSkip is the number of ticks to skip for the annotated
       // "major" ticks. Remaining ticks are drawn as unlabeled small
@@ -2443,8 +2450,8 @@
       var e = gAura.selectAll(".aura");
       var ep = gAura.selectAll(".aurapast");
       
-      var s =[["stroke", "#CACAEE", bu.Cols.BLUE],["fill", "#CACAEE", bu.Cols.BLUE]]
-      var sp =[["stroke", "#CACAEE", bu.Cols.BLUE],["fill", "#CACAEE", bu.Cols.BLUE]]
+      var s =[["stroke", "#CACAEE", bu.Cols.LPURP],["fill", "#CACAEE", bu.Cols.LPURP]]
+      var sp =[["stroke", "#CACAEE", bu.Cols.LPURP],["fill", "#CACAEE", bu.Cols.LPURP]]
       if (enable) {startAnim(e, 500, [], s, "aura");startAnim(ep, 500, [], sp, "aurap")}
       else {stopAnim(e, 300, [], s, "aura"); stopAnim(ep, 300, [], sp, "aurap")}
     }
@@ -3436,9 +3443,11 @@
 	      .attr("stroke-width",opts.roadKnot.width)
         .on('wheel', function(d) { 
           // Redispatch a copy of the event to the zoom area
-          var new_event = new d3.event.constructor(d3.event.type, 
-                                                   d3.event); 
-          zoomarea.node().dispatchEvent(new_event);})
+          var new_event = new d3.event.constructor(d3.event.type, d3.event)
+          zoomarea.node().dispatchEvent(new_event)
+          // Prevents mouse wheel event from bubbling up to the page
+          d3.event.preventDefault()
+        })
 	      .on("mouseover",function(d,i) {
 	        if (!editingKnot && !editingDot && !editingRoad
              && !(selectType == br.RP.DATE && i == selection)) {
@@ -3531,7 +3540,10 @@
           // Redispatch a copy of the event to the zoom area
           var new_event = new d3.event.constructor(d3.event.type, 
                                                    d3.event)
-          zoomarea.node().dispatchEvent(new_event) })		  
+          zoomarea.node().dispatchEvent(new_event)
+          // Prevents mouse wheel event from bubbling up to the page
+          d3.event.preventDefault()
+        })		  
         .on("mouseover",function(d,i) { 
 	        if (!editingKnot && !editingDot && !editingRoad
              && !(selectType == br.RP.SLOPE && i == selection)) {
@@ -3639,7 +3651,10 @@
           // Redispatch a copy of the event to the zoom area
           var new_event = new d3.event.constructor(d3.event.type, 
                                                    d3.event)
-          zoomarea.node().dispatchEvent(new_event) })
+          zoomarea.node().dispatchEvent(new_event)
+          // Prevents mouse wheel event from bubbling up to the page
+          d3.event.preventDefault()
+        })
         .on("mouseover",function(d,i) { 
 	        if (!editingKnot && !editingDot && !editingRoad
               && !(selectType == br.RP.VALUE && i-1 == selection)) {
