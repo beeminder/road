@@ -41,9 +41,9 @@ let gid = 1
 const pin = { // In Params: Graph settings and their defaults
 quantum  : null,   // Precision/granularity for conservarounding baremin etc
 timey    : false,  // Whether numbers should be shown in HH:MM format
-ybhp     : false,  // Yellow Brick Half-Plane!
+ybhp     : false,  // Yellow Brick Half-Plane! For transition to New World Order
 ppr      : true,   // Whether PPRs are turned on (ignored if not WEEN/RASH)
-deadline : 0,      // Time of deadline given as seconds bfr or after midnight
+deadline : 0,      // Time of deadline given as seconds before or after midnight
 sadlhole : true,   // Allow the do-less l.hole where you can eke back onto YBR
 asof     : null,   // Compute everything as if it were this date
 tini     : null,   // (tini,vini) specifies the strt of the YBR, typically but
@@ -66,7 +66,6 @@ odom     : false,  // Treat zeros as accidental odom resets
 abslnw   : null,   // Override road width algorithm with a fixed lane width
 maxflux  : 0,      // User-specified max daily fluctuation                      
 noisy    : false,  // Compute road width based on data, not just road rate
-integery : false,  // Whether vals are necessarily integers ################ DEP
 monotone : false,  // Whether data is necessarily monotone (used in limsum) 
 aggday   : null,   // sum/last/first/min/max/mean/median/mode/trimmean/jolly
 plotall  : true,   // Plot all the points instead of just the aggregated point
@@ -88,6 +87,7 @@ graph    : null,   // Graph name (synonym for second half of yoog) ######### DEP
 goal     : null,   // Synonym for vfin ##################################### DEP
 rate     : null,   // Synonym for rfin ##################################### DEP
 offred   : true,   // Yesterday-is-red criteria for derails ################ DEP
+integery : false,  // Whether vals are necessarily integers ################ DEP
 }
 
 const pout = { // Out Params: Beebrain output fields
