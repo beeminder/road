@@ -41,9 +41,9 @@ let gid = 1
 const pin = { // In Params: Graph settings and their defaults
 quantum  : null,   // Precision/granularity for conservarounding baremin etc
 timey    : false,  // Whether numbers should be shown in HH:MM format
-ybhp     : false,  // Yellow Brick Half-Plane!
+ybhp     : false,  // Yellow Brick Half-Plane! For transition to New World Order
 ppr      : true,   // Whether PPRs are turned on (ignored if not WEEN/RASH)
-deadline : 0,      // Time of deadline given as seconds bfr or after midnight
+deadline : 0,      // Time of deadline given as seconds before or after midnight
 sadlhole : true,   // Allow the do-less l.hole where you can eke back onto YBR
 asof     : null,   // Compute everything as if it were this date
 tini     : null,   // (tini,vini) specifies the strt of the YBR, typically but
@@ -66,7 +66,6 @@ odom     : false,  // Treat zeros as accidental odom resets
 abslnw   : null,   // Override road width algorithm with a fixed lane width
 maxflux  : 0,      // User-specified max daily fluctuation                      
 noisy    : false,  // Compute road width based on data, not just road rate
-integery : false,  // Whether vals are necessarily integers (used in limsum)  
 monotone : false,  // Whether data is necessarily monotone (used in limsum) 
 aggday   : null,   // sum/last/first/min/max/mean/median/mode/trimmean/jolly
 plotall  : true,   // Plot all the points instead of just the aggregated point
@@ -88,13 +87,14 @@ graph    : null,   // Graph name (synonym for second half of yoog) ######### DEP
 goal     : null,   // Synonym for vfin ##################################### DEP
 rate     : null,   // Synonym for rfin ##################################### DEP
 offred   : true,   // Yesterday-is-red criteria for derails ################ DEP
+integery : false,  // Whether vals are necessarily integers ################ DEP
 }
 
 const pout = { // Out Params: Beebrain output fields
 sadbrink : false,   // Whether we were red yest. & so will instaderail today
 safebump : null,    // Value needed to get one additional safe day
 dueby    : [],      // Table of daystamps, deltas, and abs amts needed by day
-fullroad : [],      // Rd matrix w/ nulls filled in, [tfin,vfin,rfin] app.
+fullroad : [],      // Rd matrix w/ nulls filled in, [tfin,vfin,rfin] appended
 //razrroad : [],      // Adjusted road matrix for the YBHP transition
 pinkzone : [],      // Subset of the road matrix defining the verboten zone
 tluz     : null,    // Timestamp of derailment ("lose") if no more data added
@@ -791,19 +791,20 @@ const beebrain = function( bbin ) {
         minmin = mind - padding,
         maxmax = maxd + padding
     if (goal.monotone && goal.dir>0) {        // Monotone up so no extra padding
-      minmin = bu.arrMin([minmin, a, b])         // below (the low) vini.
+      minmin = bu.arrMin([minmin, a, b])      // below (the low) vini.
       maxmax = bu.arrMax([maxmax, a+goal.lnw, b+goal.lnw])
-    } else if (goal.monotone && goal.dir<0) { // Monotone down so no extra padding
-      minmin = bu.arrMin([minmin, a-goal.lnw, b-goal.lnw]) //   above (the high) vini.
-      maxmax = bu.arrMax([maxmax, a, b])
+    } else if (goal.monotone && goal.dir<0) {       // Monotone down so no extra
+      minmin = bu.arrMin([minmin, a-goal.lnw, b-goal.lnw]) // padding above (the
+      maxmax = bu.arrMax([maxmax, a, b])                   // high) vini.
     } else {
       minmin = bu.arrMin([minmin, a-goal.lnw, b-goal.lnw])
       maxmax = bu.arrMax([maxmax, a+goal.lnw, b+goal.lnw])
     }
     if (goal.plotall && goal.tmin<=goal.tini && goal.tini<=goal.tmax
-        && allvals.hasOwnProperty(goal.tini)) {      // At tini, leave room
-      minmin = Math.min(minmin, bu.arrMin(allvals[goal.tini].map(e=>e[0])))// for all non-agg'd
-      maxmax = Math.max(maxmax, bu.arrMax(allvals[goal.tini].map(e=>e[0])))// datapoints.
+        && allvals.hasOwnProperty(goal.tini)) {      
+      // At tini, leave room for all non-agg'd datapoints.
+      minmin = Math.min(minmin, bu.arrMin(allvals[goal.tini].map(e=>e[0])))
+      maxmax = Math.max(maxmax, bu.arrMax(allvals[goal.tini].map(e=>e[0])))
     }
     if (goal.vmin == null && goal.vmax == null) {
       goal.vmin = minmin
@@ -1019,8 +1020,9 @@ const beebrain = function( bbin ) {
   function sumSet(rd, goal) {
     const y = goal.yaw, d = goal.dir, 
           l = goal.lane, w = goal.lnw, dlt = goal.delta, 
-          //q = goal.integery ? 1 : goal.quantum
-          q = goal.quantum
+          q = goal.integery && goal.quantum === null ? 1 : 
+              Math.max(1e-5, goal.quantum) // TODO: just trust Beebody
+          //q = goal.quantum
 
     const MOAR = (y>0 && d>0), 
           PHAT = (y<0 && d<0),
