@@ -3015,13 +3015,15 @@
       } else {
         regions = [
           [0, -1, null,      null,         null],
-          [2,  6, "#cceecc", "none",       0],    // green
-          [6, -1, "#b2e5b2", "none",       0],    // dark green
-          [6,  6, null,      bu.Cols.BIGG, 2],    // yellow guiding line
-          [1,  2, "#e5e5ff", "none",       0],    // blue
-          [0,  1, "#fff1d8", "none",       0],    // orange
+//          [2,  6, "#cceecc", "none",       0],    // green
+//          [6, -1, "#b2e5b2", "none",       0],    // dark green
+          [6,  6, "none",      bu.Cols.GRNDOT, 2],    // yellow guiding line
+//          [1,  2, "#e5e5ff", "none",       0],    // blue
+          [2,  2, "none",      bu.Cols.BLUDOT, 2],    // yellow guiding line
+//          [0,  1, "#fff1d8", "none",       0],    // orange
+          [1,  1, "none",      bu.Cols.ORNDOT, 2],    // yellow guiding line
           [0, -2, "#ffe5e5", "none",       0],    // red
-          [0,  0, null,      null,         0]]    
+          [0,  0, null,      null,         0]]
       }
 
       // regions = [[0, -1, null, null, null],
@@ -3040,7 +3042,7 @@
             oend  = rend  * bu.SID * goal.yaw
         var clsname = "halfplane"+rstrt+rend
         var ybhpelt = gYBHP.select("."+clsname)
-        if (reg[2] == null) {
+        if (reg[2] == null && reg[3] == null) {
           ybhpelt.remove()
           continue
         }
@@ -3050,7 +3052,6 @@
           continue
         }
         if (rend < 0) oend = 0
-        
         var yedge, yedgeb, istrt, iend;
         //var now = goal.xMin;
         var strt = road[0].end[0];
