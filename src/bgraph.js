@@ -408,7 +408,78 @@
     
     // Beebrain state objects
     var bbr, goal = {}, road = [],
-        data = [], alldata = [], dtd = [], iso = []
+        data = [], alldata = [], dtd = [], iso = [], isopath = []
+
+    function getiso( val ) {
+      if (iso[val] == undefined) iso[val] = br.isoline( road, dtd, goal, val)
+      return iso[val]
+    }
+    function getisopath( val ) {
+      var isoline = getiso(val)
+      var xi = nXSc(isoline[0][0]*1000), yi = nYSc(isoline[0][1])
+      xi=0; yi=0
+      var d = "M"+(nXSc(isoline[0][0]*1000)-xi)+" "+(nYSc(isoline[0][1])-yi)
+      for (let i = 1; i < isoline.length; i++) {
+        d += " L"+(nXSc(isoline[i][0]*1000)-xi)+" "+(nYSc(isoline[i][1])-yi);
+      }
+      return d
+    }
+    function isoval( line, x ) {
+      var nums = line.length-1, s = 0, e = nums-1, m
+      if (x < line[0][0]) return line[0][1]
+      if (x > line[nums][0]) return line[nums][1]
+      while (e-s > 1) { // Uses binary search
+        m = Math.floor((s+e)/2)
+        if (line[m][0] <= x) s = m
+        else e = m
+      }
+      if ((x >= line[e][0]) && (x < line[e+1][0])) s = e
+      var dx = line[s+1][0] - line[s][0]
+      var dy = line[s+1][1] - line[s][1]
+      if (dx == 0) return line[s][1]
+      else return line[s][1]+(x-line[s][0])*dy/dx
+    }
+    function isovisible( val, xr, yr ) {
+      var center = getiso( 0 )
+      var isoline = getiso( val )
+      return true
+    }
+    function isolnwmax( xr ) {
+      var x, lnw = 0
+      var center = getiso( 0 )
+      var oneday = getiso( 1 )
+      for (let i = 0; i < center.length; i++) {
+        x = center[i][0]
+        if (x >= xr[0] && x <= xr[1])
+          lnw = Math.max(lnw, Math.abs(center[i][1] - isoval(oneday,x)))
+      }
+      for (let i = 0; i < oneday.length; i++) {
+        x = oneday[i][0]
+        if (x >= xr[0] && x <= xr[1])
+          lnw = Math.max(lnw, Math.abs(oneday[i][1] - isoval(center,x)))
+      }
+      return (lnw == 0)
+        ?Math.abs(isoval(center,xr[0])-isoval(oneday,xr[0]))
+        :lnw
+    }
+    function isolnwmin( xr ) {
+      var x, lnw = Infinity
+      var center = getiso( 0 )
+      var oneday = getiso( 1 )
+      for (let i = 0; i < center.length; i++) {
+        x = center[i][0]
+        var nw = Math.abs(center[i][1] - isoval(oneday,x))
+        if (nw != 0 && x >= xr[0] && x <= xr[1]) lnw = Math.min(lnw, nw)
+      }
+      for (let i = 0; i < oneday.length; i++) {
+        x = oneday[i][0]
+        var nw = Math.abs(oneday[i][1] - isoval(center,x))
+        if (nw != 0 && x >= xr[0] && x <= xr[1]) lnw = Math.min(lnw, nw)
+      }
+      return (lnw == Infinity)
+        ?Math.abs(isoval(center,xr[0])-isoval(oneday,xr[0]))
+        :lnw
+    }
     
     /** Limits an svg coordinate to 1 or 3 digits after the decimal 
      @param {Number} x Input number 
@@ -720,10 +791,10 @@
         .attr('text-anchor', 'middle')
 
       gPB = plot.append('g').attr('id', 'pastboxgrp');
+      gOldGuides = plot.append('g').attr('id', 'oldguidegrp');
       gYBHP = plot.append('g').attr('id', 'ybhpgrp');
       gAura = plot.append('g').attr('id', 'auragrp');
       gWatermark = plot.append('g').attr('id', 'wmarkgrp');
-      gOldGuides = plot.append('g').attr('id', 'oldguidegrp');
       gOldRoad = plot.append('g').attr('id', 'oldroadgrp');
       gPink = plot.append('g').attr('id', 'pinkgrp');
       gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp');
@@ -3004,26 +3075,37 @@
       var regions;
       if (/*opts.roadEditor ||*/ !goal.ybhp) {
         regions = [
-          [0, -1, opts.halfPlaneCol.fill, "none", 0],
-          [2, 6, null, null, null],
-          [6, -1, null, null, null],
-          [6, 6, null, null, null],
-          [1, 2, null, null, null],
-          [0, 1, null, null, null],
-          [0, -2, null, null, null],
-          [0, 0, null, null, null]]
+          [0, -1, opts.halfPlaneCol.fill, "none", 0, 1],
+          [2, 6, null, null, null, 1],
+          [6, -1, null, null, null, 1],
+          [6, 6, null, null, null, 1],
+          [1, 2, null, null, null, 1],
+          [0, 1, null, null, null, 1],
+          [0, -2, null, null, null, 1],
+          [0, 0, null, null, null, 1]]
       } else {
+        // Notes:
+        //
+        // - You must have a region covering the wrong side of the
+        // road, even if it's white to cover incorrect sections of
+        // isolines and other regions
+        //
+        // region format: [dtd_min, dtd_max, fillcolor, strokecolor,
+        // strokewidth, fillopacity]
+        
         regions = [
-          [0, -1, null,      null,         null],
-//          [2,  6, "#cceecc", "none",       0],    // green
-//          [6, -1, "#b2e5b2", "none",       0],    // dark green
-          [6,  6, "none",      bu.Cols.GRNDOT, 2],    // yellow guiding line
-//          [1,  2, "#e5e5ff", "none",       0],    // blue
-          [2,  2, "none",      bu.Cols.BLUDOT, 2],    // yellow guiding line
-//          [0,  1, "#fff1d8", "none",       0],    // orange
-          [1,  1, "none",      bu.Cols.ORNDOT, 2],    // yellow guiding line
-          [0, -2, "#ffe5e5", "none",       0],    // red
-          [0,  0, null,      null,         0]]
+          [0, -1, null,      null,         null, 1],
+//          [2,  6, "#cceecc", "none",       0, 1],    // green region
+//          [6, -1, "#b2e5b2", "none",       0, 1],    // dark green region
+          [6,  6, "none",      bu.Cols.DYEL, 3, 1],    // one week guidelines
+//          [1,  2, "#e5e5ff", "none",       0, 1],    // blue region
+          [2,  2, "none",      bu.Cols.BLUDOT, 2, 1],    // blue line
+//          [0,  1, "#fff1d8", "none",       0, 1],    // orange region
+          [0,  2, bu.Cols.LYEL, "none",       0, 0.5],    // YBR equivalent
+          [1,  1, "none",      bu.Cols.ORNDOT, 2, 1],    // orange line
+          [0, -2, "#ffe5e5", "none",       0, 1],    // wrong side red
+//          [0, -2, "#ffffff", "none",       0, 1],    // wrong side white
+          [0,  0, null,      null,         0, 1]]
       }
 
       // regions = [[0, -1, null, null, null],
@@ -3041,7 +3123,8 @@
         var ostrt = rstrt * bu.SID * goal.yaw, 
             oend  = rend  * bu.SID * goal.yaw
         var clsname = "halfplane"+rstrt+rend
-        var ybhpelt = gYBHP.select("."+clsname)
+        var ybhpelt= gYBHP.select("."+clsname)
+
         if (reg[2] == null && reg[3] == null) {
           ybhpelt.remove()
           continue
@@ -3064,8 +3147,7 @@
           yedge = goal.yMax + 0.1*(goal.yMax - goal.yMin);
           yedgeb = goal.yMin - 0.1*(goal.yMax - goal.yMin);
         }
-        if (iso[rstrt] == undefined) iso[rstrt] = br.isoline( road, dtd, goal, rstrt)
-        var isostrt = iso[rstrt]
+        var isostrt = getiso(rstrt)
 
         var d = "M"+nXSc(isostrt[0][0]*1000)+" "+nYSc(isostrt[0][1]);
         for (let i = 1; i < isostrt.length; i++) {
@@ -3082,8 +3164,7 @@
           d+=" L"+nXSc(strt*1000)+" "+nYSc(yedgeb);
           d+=" Z";
         } else if (rstrt != rend) {
-          if (iso[rend] == undefined) iso[rend] = br.isoline( road, dtd, goal, rend)
-          var isoend = iso[rend]
+          var isoend = getiso(rend)
           
           var ln = isoend.length
           d += " L"+nXSc(isoend[ln-1][0]*1000)+" "+nYSc(isoend[ln-1][1]);
@@ -3105,6 +3186,7 @@
 	  	      .attr("d", d)
 	  	      .attr("pointer-events", "none")
             .attr("fill", reg[2])
+            .attr("fill-opacity", reg[5])
             .attr("stroke", reg[3])
             .attr("stroke-width", reg[4])
         } else {
@@ -3262,67 +3344,103 @@
     function updateGuidelines( ir ) {
       
       var guideelt = gOldGuides.selectAll(".oldguides");
-      if (opts.roadEditor || ir == null || goal.ybhp) {
+      if (opts.roadEditor || ir == null /*|| goal.ybhp*/) {
         guideelt.remove();
         return
       }      
 
-      // fx,fy: Start of the current segment
-      // ex,ey: End of the current segment
-      var d, i
-      var fx = nXSc(ir[0].sta[0]*1000), fy = nYSc(ir[0].sta[1]);
-      var ex = nXSc(ir[0].end[0]*1000), ey = nYSc(ir[0].end[1]);
-
-      var rd2 = "M"+r1(fx)+" "+r1(fy)
-      for (i = 0; i < ir.length; i++) {
-        ex = nXSc(ir[i].end[0]*1000); ey = nYSc(ir[i].end[1]);
-        if (ex > plotbox.width) {
-          fx = nXSc(ir[i].sta[0]*1000); fy = nYSc(ir[i].sta[1]);
-          if (ex != fx) 
-            ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx));
-          ex = plotbox.width;          
-        }
-        rd2 += " L"+r1(ex)+" "+r1(ey)
-      }
-      
-      // **** Update guidelines ****
       var yrange = [nYSc.invert(plotbox.height), nYSc.invert(0)];
-      var delta = 1, oneshift, yr = Math.abs(yrange[1] - yrange[0]);
-      var bc = goal.maxflux?[goal.yaw*goal.maxflux,0]:br.bufcap(road, goal)
-      bc[0] = nYSc(bc[0])-nYSc(0)
-      if (goal.lnw > 0 && yr / goal.lnw <= 32) delta = goal.lnw
-      else if (goal.lnw > 0 && yr / (6*goal.lnw) <= 32) {
-        delta = 6* goal.lnw
-      } else {
-        delta = yr / 32
-      }
-      oneshift = goal.yaw * delta
-      var numlines = Math.floor(Math.abs((yrange[1] - yrange[0])/oneshift))
+      var delta = 1, yr = Math.abs(yrange[1] - yrange[0]);
+      
+      if (! goal.ybhp) {
+        // fx,fy: Start of the current segment
+        // ex,ey: End of the current segment
+        var d, i
+        var fx = nXSc(ir[0].sta[0]*1000), fy = nYSc(ir[0].sta[1]);
+        var ex = nXSc(ir[0].end[0]*1000), ey = nYSc(ir[0].end[1]);
 
-      // Create a dummy array as d3 data for guidelines
-      var arr = new Array(Math.ceil(numlines)).fill(0);
-      // Add a final data entry for the thick guideline
-      arr.push(-1)
-      var shift = nYSc(ir[0].sta[1]+oneshift) - nYSc(ir[0].sta[1]);
-      guideelt = guideelt.data(arr);
-      guideelt.exit().remove();
-      guideelt.enter().append("svg:path")
-        .attr("class","oldguides")
-	  	  .attr("d", rd2)
-  		//.attr("shape-rendering", "crispEdges")
-	  	  .attr("transform", (d,i) => ("translate(0,"+((d<0)?bc[0]:((i+1)*shift))+")"))
-  		  .attr("pointer-events", "none")
-  		  .style("fill", "none")
-  		  .attr("stroke-width",
-              (d,i) => (r3(d<0 ? opts.guidelines.weekwidth*scf
-                               : opts.guidelines.width*scf)))
-  		  .attr("stroke", (d,i) => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL))
-      guideelt.attr("d", rd2)
-        .attr("transform", function(d,i) { 
-          return "translate(0,"+(d<0 ? bc[0] : ((i+1)*shift))+")" })
-  		  .attr("stroke-width", (d,i) => r3(d<0 ? opts.guidelines.weekwidth*scf
-                                              : opts.guidelines.width*scf))
-  		  .attr("stroke", (d,i) => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL))
+        var rd2 = "M"+r1(fx)+" "+r1(fy)
+        for (i = 0; i < ir.length; i++) {
+          ex = nXSc(ir[i].end[0]*1000); ey = nYSc(ir[i].end[1]);
+          if (ex > plotbox.width) {
+            fx = nXSc(ir[i].sta[0]*1000); fy = nYSc(ir[i].sta[1]);
+            if (ex != fx) 
+              ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx));
+            ex = plotbox.width;          
+          }
+          rd2 += " L"+r1(ex)+" "+r1(ey)
+        }
+      
+        // **** Update guidelines ****
+        var oneshift;
+        var bc = goal.maxflux?[goal.yaw*goal.maxflux,0]:br.bufcap(road, goal)
+        bc[0] = nYSc(bc[0])-nYSc(0)
+        if (goal.lnw > 0 && yr / goal.lnw <= 32) delta = goal.lnw
+        else if (goal.lnw > 0 && yr / (6*goal.lnw) <= 32) {
+          delta = 6* goal.lnw
+        } else {
+          delta = yr / 32
+        }
+        oneshift = goal.yaw * delta
+        var numlines = Math.floor(Math.abs((yrange[1] - yrange[0])/oneshift))
+
+        // Create a dummy array as d3 data for guidelines
+        var arr = new Array(Math.ceil(numlines)).fill(0);
+        // Add a final data entry for the thick guideline
+        arr.push(-1)
+        var shift = nYSc(ir[0].sta[1]+oneshift) - nYSc(ir[0].sta[1]);
+        guideelt = guideelt.data(arr);
+        guideelt.exit().remove();
+        guideelt.enter().append("svg:path")
+          .attr("class","oldguides")
+	  	    .attr("d", rd2)
+  		  //.attr("shape-rendering", "crispEdges")
+	  	    .attr("transform", (d,i) => ("translate(0,"+((d<0)?bc[0]:((i+1)*shift))+")"))
+  		    .attr("pointer-events", "none")
+  		    .style("fill", "none")
+  		    .attr("stroke-width",
+                (d,i) => (r3(d<0 ? opts.guidelines.weekwidth*scf
+                             : opts.guidelines.width*scf)))
+  		    .attr("stroke", (d,i) => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL))
+        guideelt.attr("d", rd2)
+          .attr("transform", function(d,i) { 
+            return "translate(0,"+(d<0 ? bc[0] : ((i+1)*shift))+")" })
+  		    .attr("stroke-width", (d,i) => r3(d<0 ? opts.guidelines.weekwidth*scf
+                                            : opts.guidelines.width*scf))
+  		    .attr("stroke", (d,i) => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL))
+      } else {
+        function buildPath( d, i ) { return getisopath(d) }
+        function shiftPath( d, i ) {
+          var isoline = getiso(d)
+          var xi = nXSc(isoline[0][0]*1000), yi = nYSc(isoline[0][1])
+      xi=0; yi=0
+          return "translate("+xi+","+yi+")"
+        }
+
+        // Create an index array as d3 data for guidelines
+        var xrange = [nXSc.invert(0)/1000, nXSc.invert(plotbox.width)/1000]
+        var lnw = isolnwmin(xrange)
+        if (yr / lnw <= 48) delta = 1
+        else if (yr / (6*lnw) <= 48) delta = 6
+        else delta = 30
+        var numlines = Math.floor(Math.abs((yrange[1] - yrange[0])/(delta*lnw)))
+        if (numlines < 32) numlines = 32
+        var arr = new Array(Math.ceil(numlines)).fill(0)
+        arr = [...arr.keys()].map(d=>d*delta)
+        
+        guideelt = guideelt.data(arr);
+        guideelt.exit().remove();
+        guideelt.enter().append("svg:path")
+          .attr("class","oldguides")
+	  	    .attr("d", buildPath)
+  		    .attr("pointer-events", "none")
+  		    .attr("fill", "none")
+  		    .attr("stroke-width",opts.guidelines.width*scf)
+  		    .attr("stroke", bu.Cols.LYEL)
+        guideelt
+	  	    .attr("d", buildPath)
+  		    .attr("stroke-width", opts.guidelines.width*scf)
+      }
 
     }
     
