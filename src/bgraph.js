@@ -3088,16 +3088,22 @@
         return
       }
       var regions;
+      // Predefined x axis ranges
+      const xrfull = [goal.tini, goal.tfin]
+      const xrakr = [goal.asof, goal.asof+7*bu.SID]
+        
       if (/*opts.roadEditor ||*/ !goal.ybhp) {
         regions = [
-          [0, -1, opts.halfPlaneCol.fill, "none", 0, 1, null],
-          [2, 6, null, null, null, 1, null],
-          [6, -1, null, null, null, 1, null],
-          [6, 6, null, null, null, 1, null],
-          [1, 2, null, null, null, 1, null],
-          [0, 1, null, null, null, 1, null],
-          [0, -2, null, null, null, 1, null],
-          [0, 0, null, null, null, 1, null]]
+          [0, 0, -1, opts.halfPlaneCol.fill, "none", 0, 1, null],
+
+          // The rest removes possibly leftover regions from a previous graph
+          [1, 0, 0, null, null, null, 1, null],
+          [2, 0, 0, null, null, null, 1, null],
+          [3, 0, 0, null, null, null, 1, null],
+          [4, 0, 0, null, null, null, 1, null],
+          [5, 0, 0, null, null, null, 1, null],
+          [6, 0, 0, null, null, null, 1, null],
+          [7, 0, 0, null, null, null, 1, null]]
       } else {
         // Notes:
         //
@@ -3105,55 +3111,65 @@
         // road, even if it's white to cover incorrect sections of
         // isolines and other regions
         //
-        // region format: [dtd_min, dtd_max, fillcolor, strokecolor,
-        // strokewidth, fillopacity]
-        
-        var xrfull = [goal.tini, goal.tfin]
-        var xrakr = [goal.asof, goal.asof+7*bu.SID]
+        // region format: [id, dtd_min, dtd_max, fillcolor, strokecolor,
+        // strokewidth, fillopacity, [xmin,xmax]]
+        //
+        // - If xrange at the end is null, [-Infinity, Infinity] is used
+
         regions = [
-          [0, -1, null,      null,         null, 1, null],
-        [2,  6, "#cceecc", "none",       0, 1, xrakr],    // green region
-        [6, -1, "#b2e5b2", "none",       0, 1, xrakr],    // dark green region
-          [6,  6, "none",      bu.Cols.DYEL, 3, 1, xrfull],    // one week guidelines
-//          [0,  2, bu.Cols.LYEL, "none",       0, 0.5, xrfull],    // YBR equivalent
-          [1,  2, "#e5e5ff", "none",       0, 1, xrakr],    // blue region
-          [2,  2, "none",      bu.Cols.BLUDOT, 2, 1, xrfull],    // blue line
-          [0,  1, "#fff1d8", "none",       0, 1, xrakr],    // orange region
-          [1,  1, "none",      bu.Cols.ORNDOT, 2, 1, xrfull],    // orange line
-          [0, -2, "#ffe5e5", "none",       0, 1, null],    // wrong side red
-//        [0, -2, "#ffffff", "none",       0, 1, null],    // wrong side white
-          [0,  0, null,      null,         0, 1, null]]
+          // [xx, 2,  6, "#cceecc", "none",       0, 1, xrakr],    // green region
+          // [xx, 6, -1, "#b2e5b2", "none",       0, 1, xrakr],    // dark green region
+          [0, 6,  6, "none",      bu.Cols.DYEL, 3, 1, xrfull],    // one week guidelines
+          // [xx, 0,  2, bu.Cols.LYEL, "none",       0, 0.5, xrfull], // YBR equivalent
+          // [xx, 1,  2, "#e5e5ff", "none",       0, 1, xrakr],    // blue region
+          [1, 2,  2, "none",      bu.Cols.BLUDOT, 2, 1, xrfull],    // blue line
+          // [xx, 0,  1, "#fff1d8", "none",       0, 1, xrakr],    // orange region
+          [2, 1,  1, "none",      bu.Cols.ORNDOT, 2, 1, xrfull],    // orange line
+          [3, 0, -2, "#fff8f8", "none",       0, 1, null],    // wrong side light red
+          [4, 0, -2, "#ffe5e5", "none",       0, 1, xrakr],    // pink region red 
+          // [xx, 0, -2, "#ffffff", "none",       0, 1, null],    // wrong side white
+
+          // The rest removes possibly leftover regions from a previous graph
+          [5, 0,  0, null, null, null, null, null],
+          [6, 0,  0, null, null, null, null, null],
+          [7, 0,  0, null, null, null, null, null]]
       }
 
-      for (const reg of regions) {
-        var xr = reg[6]
+      for (var ri = 0; ri < regions.length; ri++) {
+        var reg = regions[ri]
+
+        // Adjustment to y coordinates by half the stroke width
+        var adj = goal.yaw*reg[5]/2
+
+        var xr = reg[7]
         if (xr == null) xr = [-Infinity, Infinity]
-        var rstrt = reg[0], 
-            rend  = reg[1]
-        var ostrt = rstrt * bu.SID * goal.yaw, 
-            oend  = rend  * bu.SID * goal.yaw
-        var clsname = "halfplane"+rstrt+rend
-        var ybhpelt, ybhpc
-        ybhpc = gYBHP
-        ybhpelt = ybhpc.select("."+clsname)
+
+        var rstrt = reg[1], rend  = reg[2]
+
+        // SVG elements for regions are given unique class names
+        var clsname = "halfplane"+reg[0]
+        var ybhpelt = gYBHP.select("."+clsname)
         
-        if (reg[2] == null && reg[3] == null) {
+        // Force removal of leftover regions if requested
+        if (reg[3] == null && reg[4] == null) {
           ybhpelt.remove()
           continue
         }
+
         // Starting boundary for a region is not allowed to be infinity
         if (rstrt < 0) {
           console.log("updateYBHP(): Invalid region definition")
           continue
         }
-        if (rend < 0) oend = 0
+        
         var yedge, yedgeb, istrt, iend;
-        //var now = goal.xMin;
         var strt = road[0].end[0];
-        if (strt < xr[0]) strt = xr[0]
         var end = road[road.length-1].sta[0];
+        // Clip start and end points to within the requested range
+        if (strt < xr[0]) strt = xr[0]
         if (end > xr[1]) end = xr[1]
-        // Determine good side of the road 
+
+        // Determine good side of the road for boundaries at infinity
         if (goal.yaw < 0) {
           yedge = goal.yMin - 0.1*(goal.yMax - goal.yMin);
           yedgeb = goal.yMax + 0.1*(goal.yMax - goal.yMin);
@@ -3161,56 +3177,65 @@
           yedge = goal.yMax + 0.1*(goal.yMax - goal.yMin);
           yedgeb = goal.yMin - 0.1*(goal.yMax - goal.yMin);
         }
+
+        // Construct a path element for the starting dtd value. This
+        // will be the only path if the starting and ending dtd values
+        // are the same.
         var isostrt = getiso(rstrt)
 
         var x = isostrt[0][0], y = isostrt[0][1]
         if (x < xr[0]) { x = xr[0]; y = isoval( isostrt, x ) }
-        var d = "M"+nXSc(x*1000)+" "+nYSc(y);
+        var d = "M"+nXSc(x*1000)+" "+(nYSc(y)+adj);
         for (let i = 1; i < isostrt.length; i++) {
           x = isostrt[i][0]; y = isostrt[i][1]
           if (x < xr[0]) continue
           if (x > xr[1]) {x = xr[1]; y = isoval(isostrt, x)}
-          d += " L"+nXSc(x*1000)+" "+nYSc(y);
+          d += " L"+nXSc(x*1000)+" "+(nYSc(y)+adj);
           if (isostrt[i][0] > xr[1]) break;
         }
+
         if (rend == -1) {
-          d+=" L"+nXSc(end*1000)+" "+nYSc(isoval(isostrt, end));
+          // Region on the good side of the road
+          d+=" L"+nXSc(end*1000)+" "+(nYSc(isoval(isostrt, end))+adj);
           d+=" L"+nXSc(end*1000)+" "+nYSc(yedge);
           d+=" L"+nXSc(strt*1000)+" "+nYSc(yedge);
           d+=" Z";
         } else if (rend == -2) {
-          d+=" L"+nXSc(end*1000)+" "+nYSc(isoval(isostrt, end));
+          // Region on the bad side of the road
+          d+=" L"+nXSc(end*1000)+" "+(nYSc(isoval(isostrt, end))+adj);
           d+=" L"+nXSc(end*1000)+" "+nYSc(yedgeb);
           d+=" L"+nXSc(strt*1000)+" "+nYSc(yedgeb);
           d+=" Z";
         } else if (rstrt != rend) {
+          // Ending dtd value is different than the starting value, so
+          // construct a return path to build an enclosed region
           var isoend = getiso(rend)
           
           var ln = isoend.length
           var x = isoend[ln-1][0], y = isoend[ln-1][1]
           if (x > xr[1]) { x = xr[1]; y = isoval( isoend, x ) }
-          d += " L"+nXSc(x*1000)+" "+nYSc(y);
+          d += " L"+nXSc(x*1000)+" "+(nYSc(y)+adj);
           for (let i = ln-2; i >= 0; i--) {
             x = isoend[i][0]; y = isoend[i][1]
             if (x > xr[1]) continue
             if (x < xr[0]) {
               x = xr[0]; y = isoval(isoend, x)
             }
-            d += " L"+nXSc(x*1000)+" "+nYSc(y);
+            d += " L"+nXSc(x*1000)+" "+(nYSc(y)+adj);
             if (isoend[i][0] < xr[0]) break;
           }
           d+=" Z";
         }
 
         if (ybhpelt.empty()) {
-          ybhpc.append("svg:path")
+          gYBHP.append("svg:path")
 	          .attr("class",clsname)
 	  	      .attr("d", d)
 	  	      .attr("pointer-events", "none")
-            .attr("fill", reg[2])
-            .attr("fill-opacity", reg[5])
-            .attr("stroke", reg[3])
-            .attr("stroke-width", reg[4])
+            .attr("fill", reg[3])
+            .attr("fill-opacity", reg[6])
+            .attr("stroke", reg[4])
+            .attr("stroke-width", reg[5])
         } else {
           ybhpelt.attr("d", d);
         }
@@ -3261,6 +3286,9 @@
 
     function updateCenterline( ir ) {
       // **** Construct the centerline path element ****
+      var cw = r3(opts.oldRoadLine.width*scf)
+      var adj = goal.yaw*cw/2
+      
       // fx,fy: Start of the current line segment
       // ex,ey: End of the current line segment
       var fx = nXSc(ir[0].sta[0]*1000), fy = nYSc(ir[0].sta[1]);
@@ -3269,7 +3297,7 @@
       var newx = (-nXSc(iroad[0].sta[0]*1000)) % (2*opts.oldRoadLine.dash);
       if (ex != fx) fy = (fy + (-newx-fx)*(ey-fy)/(ex-fx));
       if (fx < 0 || newx > 0) fx = -newx;
-      var d, rd = "M"+r1(fx)+" "+r1(fy)
+      var d, rd = "M"+r1(fx)+" "+(r1(fy)+adj)
       var i
       for (i = 0; i < ir.length; i++) {
         ex = nXSc(ir[i].end[0]*1000); ey = nYSc(ir[i].end[1]);
@@ -3278,7 +3306,7 @@
           ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx));
           ex = plotbox.width;          
         }
-        rd += " L"+r1(ex)+" "+r1(ey)
+        rd += " L"+r1(ex)+" "+(r1(ey)+adj)
       }
 
       var roadelt = gOldCenter.select(".oldroads");
@@ -3292,7 +3320,7 @@
                  (goal.ybhp&&!opts.roadEditor)?null:(opts.oldRoadLine.dash)+","
                  +(opts.oldRoadLine.dash))
   		    .style("fill", "none")
-  		    .style("stroke-width", r3(opts.oldRoadLine.width*scf))
+  		    .style("stroke-width", cw)
   		    .style("stroke", (goal.ybhp&&!opts.roadEditor)?bu.Cols.REDDOT // try REDDOT?
                                      : bu.Cols.ORNG) 
       } else {
@@ -3441,8 +3469,6 @@
         else delta = 28
         var numlines = Math.floor(1.2*Math.abs((yrange[1] - yrange[0])/(delta*lnw)))
         if (lnw == 0 || numlines < 28) numlines = 28
-        console.log(lnw)
-        console.log(numlines)
         var arr = new Array(Math.ceil(numlines)).fill(0)
         arr = [...arr.keys()].map(d=>(d+1)*delta-1)
         
