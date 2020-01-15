@@ -3444,7 +3444,6 @@
         guideelt.enter().append("svg:path")
           .attr("class","oldguides")
 	  	    .attr("d", rd2)
-  		  //.attr("shape-rendering", "crispEdges")
 	  	    .attr("transform", (d,i) => ("translate(0,"+((d<0)?bc[0]:((i+1)*shift))+")"))
   		    .attr("pointer-events", "none")
   		    .style("fill", "none")
@@ -3477,12 +3476,15 @@
         guideelt.enter().append("svg:path")
           .attr("class","oldguides")
 	  	    .attr("d", buildPath)
+          .attr("transform", null)
   		    .attr("pointer-events", "none")
   		    .attr("fill", "none")
   		    .attr("stroke-width",opts.guidelines.width*scf)
   		    .attr("stroke", bu.Cols.LYEL)
         guideelt
 	  	    .attr("d", buildPath)
+          .attr("transform", null)
+  		    .attr("stroke", bu.Cols.LYEL)
   		    .attr("stroke-width", opts.guidelines.width*scf)
       }
 
@@ -3741,7 +3743,7 @@
       // object will be set to the newly edited road later, once
       // dragging is finished.
       dtd = br.dtdarray( road, goal )
-      iso = []
+      iso = []; isopath = []
       for (let i = 0; i < 7; i++) iso[i] = br.isoline( road, dtd, goal, i)
     }
     
