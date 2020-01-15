@@ -414,13 +414,15 @@
       if (iso[val] == undefined) iso[val] = br.isoline( road, dtd, goal, val)
       return iso[val]
     }
-    function getisopath( val ) {
+    function getisopath( val, xr ) {
       var isoline = getiso(val)
-      var xi = nXSc(isoline[0][0]*1000), yi = nYSc(isoline[0][1])
-      xi=0; yi=0
-      var d = "M"+(nXSc(isoline[0][0]*1000)-xi)+" "+(nYSc(isoline[0][1])-yi)
+      if (xr == null) xr = [-Infinity, Infinity]
+      var x = isoline[0][0], y = isoline[0][1]
+      if (x < xr[0]) { x = xr[0]; y = isoval( isoline, x ) }
+      var d = "M"+nXSc(x*1000)+" "+nYSc(y)
       for (let i = 1; i < isoline.length; i++) {
-        d += " L"+(nXSc(isoline[i][0]*1000)-xi)+" "+(nYSc(isoline[i][1])-yi);
+        if (isoline[i][0] < xr[0]) continue
+        d += " L"+nXSc(isoline[i][0]*1000)+" "+nYSc(isoline[i][1]);
       }
       return d
     }
@@ -3088,14 +3090,14 @@
       var regions;
       if (/*opts.roadEditor ||*/ !goal.ybhp) {
         regions = [
-          [0, -1, opts.halfPlaneCol.fill, "none", 0, 1],
-          [2, 6, null, null, null, 1],
-          [6, -1, null, null, null, 1],
-          [6, 6, null, null, null, 1],
-          [1, 2, null, null, null, 1],
-          [0, 1, null, null, null, 1],
-          [0, -2, null, null, null, 1],
-          [0, 0, null, null, null, 1]]
+          [0, -1, opts.halfPlaneCol.fill, "none", 0, 1, null],
+          [2, 6, null, null, null, 1, null],
+          [6, -1, null, null, null, 1, null],
+          [6, 6, null, null, null, 1, null],
+          [1, 2, null, null, null, 1, null],
+          [0, 1, null, null, null, 1, null],
+          [0, -2, null, null, null, 1, null],
+          [0, 0, null, null, null, 1, null]]
       } else {
         // Notes:
         //
@@ -3106,31 +3108,26 @@
         // region format: [dtd_min, dtd_max, fillcolor, strokecolor,
         // strokewidth, fillopacity]
         
+        var xrfull = [goal.tini, goal.tfin]
+        var xrakr = [goal.asof, goal.asof+7*bu.SID]
         regions = [
-          [0, -1, null,      null,         null, 1],
-//          [2,  6, "#cceecc", "none",       0, 1],    // green region
-//          [6, -1, "#b2e5b2", "none",       0, 1],    // dark green region
-          [6,  6, "none",      bu.Cols.DYEL, 3, 1],    // one week guidelines
-//          [1,  2, "#e5e5ff", "none",       0, 1],    // blue region
-          [0,  2, bu.Cols.LYEL, "none",       0, 0.5],    // YBR equivalent
-          [2,  2, "none",      bu.Cols.BLUDOT, 2, 1],    // blue line
-//          [0,  1, "#fff1d8", "none",       0, 1],    // orange region
-          [1,  1, "none",      bu.Cols.ORNDOT, 2, 1],    // orange line
-          [0, -2, "#ffe5e5", "none",       0, 1],    // wrong side red
-//          [0, -2, "#ffffff", "none",       0, 1],    // wrong side white
-          [0,  0, null,      null,         0, 1]]
+          [0, -1, null,      null,         null, 1, null],
+        [2,  6, "#cceecc", "none",       0, 1, xrakr],    // green region
+        [6, -1, "#b2e5b2", "none",       0, 1, xrakr],    // dark green region
+          [6,  6, "none",      bu.Cols.DYEL, 3, 1, xrfull],    // one week guidelines
+//          [0,  2, bu.Cols.LYEL, "none",       0, 0.5, xrfull],    // YBR equivalent
+          [1,  2, "#e5e5ff", "none",       0, 1, xrakr],    // blue region
+          [2,  2, "none",      bu.Cols.BLUDOT, 2, 1, xrfull],    // blue line
+          [0,  1, "#fff1d8", "none",       0, 1, xrakr],    // orange region
+          [1,  1, "none",      bu.Cols.ORNDOT, 2, 1, xrfull],    // orange line
+          [0, -2, "#ffe5e5", "none",       0, 1, null],    // wrong side red
+//        [0, -2, "#ffffff", "none",       0, 1, null],    // wrong side white
+          [0,  0, null,      null,         0, 1, null]]
       }
 
-      // regions = [[0, -1, null, null, null],
-      //            [3, -1, null, null, null],
-      //            [2, 3, null, null, null],
-      //            [5, 5, "none", bu.Cols.BIGG, 2],
-      //            [0, 1, null, null, null],
-      //            [7, 7, null, null, null],
-      //            [0, -2, null, null, null]
-      //           ]
-
       for (const reg of regions) {
+        var xr = reg[6]
+        if (xr == null) xr = [-Infinity, Infinity]
         var rstrt = reg[0], 
             rend  = reg[1]
         var ostrt = rstrt * bu.SID * goal.yaw, 
@@ -3153,7 +3150,9 @@
         var yedge, yedgeb, istrt, iend;
         //var now = goal.xMin;
         var strt = road[0].end[0];
+        if (strt < xr[0]) strt = xr[0]
         var end = road[road.length-1].sta[0];
+        if (end > xr[1]) end = xr[1]
         // Determine good side of the road 
         if (goal.yaw < 0) {
           yedge = goal.yMin - 0.1*(goal.yMax - goal.yMin);
@@ -3164,17 +3163,23 @@
         }
         var isostrt = getiso(rstrt)
 
-        var d = "M"+nXSc(isostrt[0][0]*1000)+" "+nYSc(isostrt[0][1]);
+        var x = isostrt[0][0], y = isostrt[0][1]
+        if (x < xr[0]) { x = xr[0]; y = isoval( isostrt, x ) }
+        var d = "M"+nXSc(x*1000)+" "+nYSc(y);
         for (let i = 1; i < isostrt.length; i++) {
-          d += " L"+nXSc(isostrt[i][0]*1000)+" "+nYSc(isostrt[i][1]);
+          x = isostrt[i][0]; y = isostrt[i][1]
+          if (x < xr[0]) continue
+          if (x > xr[1]) {x = xr[1]; y = isoval(isostrt, x)}
+          d += " L"+nXSc(x*1000)+" "+nYSc(y);
+          if (isostrt[i][0] > xr[1]) break;
         }
         if (rend == -1) {
-          d+=" L"+nXSc(end*1000)+" "+nYSc(br.rdf(road, end));
+          d+=" L"+nXSc(end*1000)+" "+nYSc(isoval(isostrt, end));
           d+=" L"+nXSc(end*1000)+" "+nYSc(yedge);
           d+=" L"+nXSc(strt*1000)+" "+nYSc(yedge);
           d+=" Z";
         } else if (rend == -2) {
-          d+=" L"+nXSc(end*1000)+" "+nYSc(br.rdf(road, end));
+          d+=" L"+nXSc(end*1000)+" "+nYSc(isoval(isostrt, end));
           d+=" L"+nXSc(end*1000)+" "+nYSc(yedgeb);
           d+=" L"+nXSc(strt*1000)+" "+nYSc(yedgeb);
           d+=" Z";
@@ -3182,15 +3187,17 @@
           var isoend = getiso(rend)
           
           var ln = isoend.length
-          d += " L"+nXSc(isoend[ln-1][0]*1000)+" "+nYSc(isoend[ln-1][1]);
+          var x = isoend[ln-1][0], y = isoend[ln-1][1]
+          if (x > xr[1]) { x = xr[1]; y = isoval( isoend, x ) }
+          d += " L"+nXSc(x*1000)+" "+nYSc(y);
           for (let i = ln-2; i >= 0; i--) {
-            d += " L"+nXSc(isoend[i][0]*1000)+" "+nYSc(isoend[i][1]);
-            //if (goal.yaw > 0 && goal.dir > 0 && i != 0) {
-            //  let sl = (isoend[i-1][1] - isoend[i][1])/(isoend[i-1][0] - isoend[i][0])
-            //  if (goal.dir * sl < 0) {
-            //    d += " L"+nXSc((isoend[i][0]+bu.SID)*1000)+" "+nYSc(isoend[i][1]);
-            //  }
-            //}
+            x = isoend[i][0]; y = isoend[i][1]
+            if (x > xr[1]) continue
+            if (x < xr[0]) {
+              x = xr[0]; y = isoval(isoend, x)
+            }
+            d += " L"+nXSc(x*1000)+" "+nYSc(y);
+            if (isoend[i][0] < xr[0]) break;
           }
           d+=" Z";
         }
@@ -3424,13 +3431,7 @@
                                             : opts.guidelines.width*scf))
   		    .attr("stroke", (d,i) => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL))
       } else {
-        function buildPath( d, i ) { return getisopath(d) }
-        function shiftPath( d, i ) {
-          var isoline = getiso(d)
-          var xi = nXSc(isoline[0][0]*1000), yi = nYSc(isoline[0][1])
-      xi=0; yi=0
-          return "translate("+xi+","+yi+")"
-        }
+        function buildPath( d, i ) { return getisopath(d, [goal.tini, goal.tfin]) }
 
         // Create an index array as d3 data for guidelines
         var xrange = [nXSc.invert(0)/1000, nXSc.invert(plotbox.width)/1000]
@@ -3439,7 +3440,9 @@
         else if (7*(Math.abs(nYSc(0) - nYSc(lnw))) > 8) delta = 7
         else delta = 28
         var numlines = Math.floor(1.2*Math.abs((yrange[1] - yrange[0])/(delta*lnw)))
-        if (numlines < 28) numlines = 28
+        if (lnw == 0 || numlines < 28) numlines = 28
+        console.log(lnw)
+        console.log(numlines)
         var arr = new Array(Math.ceil(numlines)).fill(0)
         arr = [...arr.keys()].map(d=>(d+1)*delta-1)
         
