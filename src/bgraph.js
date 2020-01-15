@@ -424,6 +424,7 @@
       }
       return d
     }
+    // Evaluates a given isoline at the supplied x coordinate
     function isoval( line, x ) {
       var nums = line.length-1, s = 0, e = nums-1, m
       if (x < line[0][0]) return line[0][1]
@@ -439,10 +440,22 @@
       if (dx == 0) return line[s][1]
       else return line[s][1]+(x-line[s][0])*dy/dx
     }
-    function isovisible( val, xr, yr ) {
+    // Computes a lane width based on isolines on the left or right
+    // border for the graph depending on dir*yaw. If dir*yaw > 0
+    // (domore and similar), the left side is considered, otherwise,
+    // the right side. The average lane width is computed by computing
+    // isolines for dtd=0 and dtd=365 and dividing it by 365 to
+    // overcome isolines coinciding for flat regions
+    function isolnwborder( xr ) {
+      var x, lnw = 0
       var center = getiso( 0 )
-      var isoline = getiso( val )
-      return true
+      var oneday = getiso( 365 )
+      if (goal.yaw*goal.dir > 0) {
+        lnw = Math.abs(isoval(center, xr[0])-isoval(oneday, xr[0])) / 365
+      } else {
+        lnw = Math.abs(isoval(center, xr[1])-isoval(oneday, xr[1])) / 365
+      }
+      return lnw
     }
     function isolnwmax( xr ) {
       var x, lnw = 0
@@ -3099,9 +3112,9 @@
 //          [6, -1, "#b2e5b2", "none",       0, 1],    // dark green region
           [6,  6, "none",      bu.Cols.DYEL, 3, 1],    // one week guidelines
 //          [1,  2, "#e5e5ff", "none",       0, 1],    // blue region
+          [0,  2, bu.Cols.LYEL, "none",       0, 0.5],    // YBR equivalent
           [2,  2, "none",      bu.Cols.BLUDOT, 2, 1],    // blue line
 //          [0,  1, "#fff1d8", "none",       0, 1],    // orange region
-          [0,  2, bu.Cols.LYEL, "none",       0, 0.5],    // YBR equivalent
           [1,  1, "none",      bu.Cols.ORNDOT, 2, 1],    // orange line
           [0, -2, "#ffe5e5", "none",       0, 1],    // wrong side red
 //          [0, -2, "#ffffff", "none",       0, 1],    // wrong side white
@@ -3123,8 +3136,10 @@
         var ostrt = rstrt * bu.SID * goal.yaw, 
             oend  = rend  * bu.SID * goal.yaw
         var clsname = "halfplane"+rstrt+rend
-        var ybhpelt= gYBHP.select("."+clsname)
-
+        var ybhpelt, ybhpc
+        ybhpc = gYBHP
+        ybhpelt = ybhpc.select("."+clsname)
+        
         if (reg[2] == null && reg[3] == null) {
           ybhpelt.remove()
           continue
@@ -3181,7 +3196,7 @@
         }
 
         if (ybhpelt.empty()) {
-          gYBHP.append("svg:path")
+          ybhpc.append("svg:path")
 	          .attr("class",clsname)
 	  	      .attr("d", d)
 	  	      .attr("pointer-events", "none")
@@ -3419,14 +3434,14 @@
 
         // Create an index array as d3 data for guidelines
         var xrange = [nXSc.invert(0)/1000, nXSc.invert(plotbox.width)/1000]
-        var lnw = isolnwmin(xrange)
-        if (yr / lnw <= 48) delta = 1
-        else if (yr / (6*lnw) <= 48) delta = 6
-        else delta = 30
-        var numlines = Math.floor(Math.abs((yrange[1] - yrange[0])/(delta*lnw)))
-        if (numlines < 32) numlines = 32
+        var lnw = isolnwborder(xrange)
+        if (Math.abs(nYSc(0) - nYSc(lnw)) > 8) delta = 1
+        else if (7*(Math.abs(nYSc(0) - nYSc(lnw))) > 8) delta = 7
+        else delta = 28
+        var numlines = Math.floor(1.2*Math.abs((yrange[1] - yrange[0])/(delta*lnw)))
+        if (numlines < 28) numlines = 28
         var arr = new Array(Math.ceil(numlines)).fill(0)
-        arr = [...arr.keys()].map(d=>d*delta)
+        arr = [...arr.keys()].map(d=>(d+1)*delta-1)
         
         guideelt = guideelt.data(arr);
         guideelt.exit().remove();
