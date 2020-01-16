@@ -495,6 +495,23 @@ self.isoline = ( rd, dtdarr, goal, v ) => {
   return isofinal
 }
   
+// Evaluates a given isoline at the supplied x coordinate
+self.isoval = ( line, x ) => {
+  var nums = line.length-1, s = 0, e = nums-1, m
+  if (x < line[0][0]) return line[0][1]
+  if (x > line[nums][0]) return line[nums][1]
+  while (e-s > 1) { // Uses binary search
+    m = Math.floor((s+e)/2)
+    if (line[m][0] <= x) s = m
+    else e = m
+  }
+  if ((x >= line[e][0]) && (x < line[e+1][0])) s = e
+  var dx = line[s+1][0] - line[s][0]
+  var dy = line[s+1][1] - line[s][1]
+  if (dx == 0) return line[s][1]
+  else return line[s][1]+(x-line[s][0])*dy/dx
+}
+
 /** Days To Centerline: Count the integer days till you cross the
     centerline/tfin if nothing reported */
 self.dtc = (rd, goal, t, v) => {
