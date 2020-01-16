@@ -418,29 +418,13 @@
       var isoline = getiso(val)
       if (xr == null) xr = [-Infinity, Infinity]
       var x = isoline[0][0], y = isoline[0][1]
-      if (x < xr[0]) { x = xr[0]; y = isoval( isoline, x ) }
+      if (x < xr[0]) { x = xr[0]; y = br.isoval( isoline, x ) }
       var d = "M"+nXSc(x*1000)+" "+nYSc(y)
       for (let i = 1; i < isoline.length; i++) {
         if (isoline[i][0] < xr[0]) continue
         d += " L"+nXSc(isoline[i][0]*1000)+" "+nYSc(isoline[i][1]);
       }
       return d
-    }
-    // Evaluates a given isoline at the supplied x coordinate
-    function isoval( line, x ) {
-      var nums = line.length-1, s = 0, e = nums-1, m
-      if (x < line[0][0]) return line[0][1]
-      if (x > line[nums][0]) return line[nums][1]
-      while (e-s > 1) { // Uses binary search
-        m = Math.floor((s+e)/2)
-        if (line[m][0] <= x) s = m
-        else e = m
-      }
-      if ((x >= line[e][0]) && (x < line[e+1][0])) s = e
-      var dx = line[s+1][0] - line[s][0]
-      var dy = line[s+1][1] - line[s][1]
-      if (dx == 0) return line[s][1]
-      else return line[s][1]+(x-line[s][0])*dy/dx
     }
     // Computes a lane width based on isolines on the left or right
     // border for the graph depending on dir*yaw. If dir*yaw > 0
@@ -455,9 +439,9 @@
       var center = getiso( 0 )
       var oneday = getiso( numdays )
       if (goal.yaw*goal.dir > 0) {
-        lnw = Math.abs(isoval(center, xr[0])-isoval(oneday, xr[0])) / numdays
+        lnw = Math.abs(br.isoval(center, xr[0])-br.isoval(oneday, xr[0])) / numdays
       } else {
-        lnw = Math.abs(isoval(center, xr[1])-isoval(oneday, xr[1])) / numdays
+        lnw = Math.abs(br.isoval(center, xr[1])-br.isoval(oneday, xr[1])) / numdays
       }
       return lnw
     }
@@ -468,15 +452,15 @@
       for (let i = 0; i < center.length; i++) {
         x = center[i][0]
         if (x >= xr[0] && x <= xr[1])
-          lnw = Math.max(lnw, Math.abs(center[i][1] - isoval(oneday,x)))
+          lnw = Math.max(lnw, Math.abs(center[i][1] - br.isoval(oneday,x)))
       }
       for (let i = 0; i < oneday.length; i++) {
         x = oneday[i][0]
         if (x >= xr[0] && x <= xr[1])
-          lnw = Math.max(lnw, Math.abs(oneday[i][1] - isoval(center,x)))
+          lnw = Math.max(lnw, Math.abs(oneday[i][1] - br.isoval(center,x)))
       }
       return (lnw == 0)
-        ?Math.abs(isoval(center,xr[0])-isoval(oneday,xr[0]))
+        ?Math.abs(br.isoval(center,xr[0])-br.isoval(oneday,xr[0]))
         :lnw
     }
     function isolnwmin( xr ) {
@@ -485,16 +469,16 @@
       var oneday = getiso( 1 )
       for (let i = 0; i < center.length; i++) {
         x = center[i][0]
-        var nw = Math.abs(center[i][1] - isoval(oneday,x))
+        var nw = Math.abs(center[i][1] - br.isoval(oneday,x))
         if (nw != 0 && x >= xr[0] && x <= xr[1]) lnw = Math.min(lnw, nw)
       }
       for (let i = 0; i < oneday.length; i++) {
         x = oneday[i][0]
-        var nw = Math.abs(oneday[i][1] - isoval(center,x))
+        var nw = Math.abs(oneday[i][1] - br.isoval(center,x))
         if (nw != 0 && x >= xr[0] && x <= xr[1]) lnw = Math.min(lnw, nw)
       }
       return (lnw == Infinity)
-        ?Math.abs(isoval(center,xr[0])-isoval(oneday,xr[0]))
+        ?Math.abs(br.isoval(center,xr[0])-br.isoval(oneday,xr[0]))
         :lnw
     }
     
@@ -2853,8 +2837,8 @@
       
       if (opts.divGraph == null || road.length == 0 || hidden) return;
 
-      var tl = [0,0], bl = [0, plotbox.height/2];
-      var tr = [plotbox.width/2,0], br = [plotbox.width/2, plotbox.height/2];
+      var tl = [0,0], bbl = [0, plotbox.height/2];
+      var tr = [plotbox.width/2,0], bbr = [plotbox.width/2, plotbox.height/2];
       var offg, offb, g = null, b = null, x, y, bbox, newsize, newh;
 
       setWatermark();
@@ -2863,13 +2847,13 @@
       else if (goal.waterbuf === ':)') g = PNG.sml;
 
       if (goal.dir>0 && goal.yaw<0) { 
-        offg = br; offb = tl
+        offg = bbr; offb = tl
       } else if (goal.dir<0 && goal.yaw>0) { 
-        offg = tr; offb = bl
+        offg = tr; offb = bbl
       } else if (goal.dir<0 && goal.yaw<0) { 
-        offg = bl; offb = tr
+        offg = bbl; offb = tr
       } else {
-        offg = tl; offb = br
+        offg = tl; offb = bbr
       }
 
       xlinkloaded = false
@@ -3179,25 +3163,25 @@
         var isostrt = getiso(rstrt)
 
         var x = isostrt[0][0], y = isostrt[0][1]
-        if (x < xstrt) { x = xstrt; y = isoval( isostrt, x ) }
+        if (x < xstrt) { x = xstrt; y = br.isoval( isostrt, x ) }
         var d = "M"+nXSc(x*1000)+" "+(nYSc(y)+adj);
         for (let i = 1; i < isostrt.length; i++) {
           x = isostrt[i][0]; y = isostrt[i][1]
           if (x < xstrt) continue
-          if (x > xend) {x = xend; y = isoval(isostrt, x)}
+          if (x > xend) {x = xend; y = br.isoval(isostrt, x)}
           d += " L"+nXSc(x*1000)+" "+(nYSc(y)+adj);
           if (isostrt[i][0] > xend) break;
         }
 
         if (rend == -1) {
           // Region on the good side of the road
-          d+=" L"+nXSc(xend*1000)+" "+(nYSc(isoval(isostrt, xend))+adj);
+          d+=" L"+nXSc(xend*1000)+" "+(nYSc(br.isoval(isostrt, xend))+adj);
           d+=" L"+nXSc(xend*1000)+" "+nYSc(yedge);
           d+=" L"+nXSc(xstrt*1000)+" "+nYSc(yedge);
           d+=" Z";
         } else if (rend == -2) {
           // Region on the bad side of the road
-          d+=" L"+nXSc(xend*1000)+" "+(nYSc(isoval(isostrt, xend))+adj);
+          d+=" L"+nXSc(xend*1000)+" "+(nYSc(br.isoval(isostrt, xend))+adj);
           d+=" L"+nXSc(xend*1000)+" "+nYSc(yedgeb);
           d+=" L"+nXSc(xstrt*1000)+" "+nYSc(yedgeb);
           d+=" Z";
@@ -3208,13 +3192,13 @@
           
           var ln = isoend.length
           var x = isoend[ln-1][0], y = isoend[ln-1][1]
-          if (x > xend) { x = xend; y = isoval( isoend, x ) }
+          if (x > xend) { x = xend; y = br.isoval( isoend, x ) }
           d += " L"+nXSc(x*1000)+" "+(nYSc(y)+adj);
           for (let i = ln-2; i >= 0; i--) {
             x = isoend[i][0]; y = isoend[i][1]
             if (x > xend) continue
             if (x < xstrt) {
-              x = xstrt; y = isoval(isoend, x)
+              x = xstrt; y = br.isoval(isoend, x)
             }
             d += " L"+nXSc(x*1000)+" "+(nYSc(y)+adj);
             if (isoend[i][0] < xstrt) break;
