@@ -450,12 +450,14 @@
     // overcome isolines coinciding for flat regions
     function isolnwborder( xr ) {
       var x, lnw = 0
+      var numdays = Math.min(opts.maxFutureDays,
+                             Math.ceil((goal.tfin-goal.tini)/bu.SID))
       var center = getiso( 0 )
-      var oneday = getiso( 365 )
+      var oneday = getiso( numdays )
       if (goal.yaw*goal.dir > 0) {
-        lnw = Math.abs(isoval(center, xr[0])-isoval(oneday, xr[0])) / 365
+        lnw = Math.abs(isoval(center, xr[0])-isoval(oneday, xr[0])) / numdays
       } else {
-        lnw = Math.abs(isoval(center, xr[1])-isoval(oneday, xr[1])) / 365
+        lnw = Math.abs(isoval(center, xr[1])-isoval(oneday, xr[1])) / numdays
       }
       return lnw
     }
@@ -632,6 +634,7 @@
       // Initialize the div and the SVG
       svg = d3.select(div).attr("class", "bmndrgraph")
 	      .append('svg:svg')
+        .attr("id", "svg"+curid)
         .attr("xmlns", "http://www.w3.org/2000/svg")
         .attr("xmlns:xlink", "http://www.w3.org/1999/xlink")
         .attr("preserveAspectRatio","xMinYMin meet")
@@ -3092,69 +3095,61 @@
       const xrfull = [goal.tini, goal.tfin]
       const xrakr = [goal.asof, goal.asof+7*bu.SID]
         
-      if (/*opts.roadEditor ||*/ !goal.ybhp) {
-        regions = [
-          [0, 0, -1, opts.halfPlaneCol.fill, "none", 0, 1, null],
+      // Count all previously generated ybhp path elements on the
+      // current svg graph so we can remove unused ones automatically
+      var ybhpall = d3.selectAll("#svg"+curid+" #ybhpgrp path")
+      var prevcnt = ybhpall.size()
 
-          // The rest removes possibly leftover regions from a previous graph
-          [1, 0, 0, null, null, null, 1, null],
-          [2, 0, 0, null, null, null, 1, null],
-          [3, 0, 0, null, null, null, 1, null],
-          [4, 0, 0, null, null, null, 1, null],
-          [5, 0, 0, null, null, null, 1, null],
-          [6, 0, 0, null, null, null, 1, null],
-          [7, 0, 0, null, null, null, 1, null]]
+      // Notes:
+      //
+      // - You must have a region covering the wrong side of the
+      // road, even if it's white to cover incorrect sections of
+      // isolines and other regions
+      //
+      // region format: [ dtd_min, dtd_max, fillcolor, strokecolor,
+      // strokewidth, fillopacity, [xmin,xmax]]
+      //
+      // - If xrange at the end is null, [-Infinity, Infinity] is used
+
+      if (!goal.ybhp) {
+        regions = [
+          [0, -1, opts.halfPlaneCol.fill, "none", 0, 1, null]
+        ]
       } else {
-        // Notes:
-        //
-        // - You must have a region covering the wrong side of the
-        // road, even if it's white to cover incorrect sections of
-        // isolines and other regions
-        //
-        // region format: [id, dtd_min, dtd_max, fillcolor, strokecolor,
-        // strokewidth, fillopacity, [xmin,xmax]]
-        //
-        // - If xrange at the end is null, [-Infinity, Infinity] is used
-
         regions = [
-          // [xx, 2,  6, "#cceecc", "none",       0, 1, xrakr],    // green region
-          // [xx, 6, -1, "#b2e5b2", "none",       0, 1, xrakr],    // dark green region
-          [0, 6,  6, "none",      bu.Cols.DYEL, 3, 1, xrfull],    // one week guidelines
-          // [xx, 0,  2, bu.Cols.LYEL, "none",       0, 0.5, xrfull], // YBR equivalent
-          // [xx, 1,  2, "#e5e5ff", "none",       0, 1, xrakr],    // blue region
-          [1, 2,  2, "none",      bu.Cols.BLUDOT, 2, 1, xrfull],    // blue line
-          // [xx, 0,  1, "#fff1d8", "none",       0, 1, xrakr],    // orange region
-          [2, 1,  1, "none",      bu.Cols.ORNDOT, 2, 1, xrfull],    // orange line
-          [3, 0, -2, "#fff8f8", "none",       0, 1, null],    // wrong side light red
-          [4, 0, -2, "#ffe5e5", "none",       0, 1, xrakr],    // pink region red 
-          // [xx, 0, -2, "#ffffff", "none",       0, 1, null],    // wrong side white
-
-          // The rest removes possibly leftover regions from a previous graph
-          [5, 0,  0, null, null, null, null, null],
-          [6, 0,  0, null, null, null, null, null],
-          [7, 0,  0, null, null, null, null, null]]
+          // [2,  6, "#cceecc", "none",       0, 1, xrakr],    // green region
+          // [6, -1, "#b2e5b2", "none",       0, 1, xrakr],    // dark green region
+          [6,  6, "none",      bu.Cols.DYEL, 3, 1, xrfull],    // one week guidelines
+          // [0,  2, bu.Cols.LYEL, "none",    0, 0.5, xrfull], // YBR equivalent
+          // [1,  2, "#e5e5ff", "none",       0, 1, xrakr],    // blue region
+          [2,  2, "none",      bu.Cols.BLUDOT, 2, 1, xrfull],    // blue line
+          // [0,  1, "#fff1d8", "none",       0, 1, xrakr],    // orange region
+          [1,  1, "none",      bu.Cols.ORNDOT, 2, 1, xrfull],    // orange line
+          [0, -2, "#fff8f8", "none",       0, 1, null],    // wrong side light red
+          [0, -2, "#ffe5e5", "none",       0, 1, xrakr],    // pink region red 
+          // [0, -2, "#ffffff", "none",       0, 1, null],    // wrong side white
+        ]
       }
 
-      for (var ri = 0; ri < regions.length; ri++) {
-        var reg = regions[ri]
-
-        // Adjustment to y coordinates by half the stroke width
-        var adj = goal.yaw*reg[5]/2
-
-        var xr = reg[7]
-        if (xr == null) xr = [-Infinity, Infinity]
-
-        var rstrt = reg[1], rend  = reg[2]
-
+      for (var ri = 0; ri < Math.max(prevcnt, regions.length); ri++) {
         // SVG elements for regions are given unique class names
-        var clsname = "halfplane"+reg[0]
+        var clsname = "halfplane"+ri
         var ybhpelt = gYBHP.select("."+clsname)
+        var reg = regions[ri]
         
-        // Force removal of leftover regions if requested
-        if (reg[3] == null && reg[4] == null) {
+        // Force removal of leftover regions if requested or stale detected
+        if (reg == undefined || (reg[2] == null && reg[3] == null)) {
           ybhpelt.remove()
           continue
         }
+
+        // Adjustment to y coordinates by half the stroke width
+        var adj = goal.yaw*reg[4]/2
+
+        var xr = reg[6]
+        if (xr == null) xr = [-Infinity, Infinity]
+
+        var rstrt = reg[0], rend = reg[1]
 
         // Starting boundary for a region is not allowed to be infinity
         if (rstrt < 0) {
@@ -3162,14 +3157,14 @@
           continue
         }
         
-        var yedge, yedgeb, istrt, iend;
-        var strt = road[0].end[0];
-        var end = road[road.length-1].sta[0];
         // Clip start and end points to within the requested range
-        if (strt < xr[0]) strt = xr[0]
-        if (end > xr[1]) end = xr[1]
+        var xstrt = road[0].end[0];
+        var xend = road[road.length-1].sta[0];
+        if (xstrt < xr[0]) xstrt = xr[0]
+        if (xend > xr[1]) xend = xr[1]
 
         // Determine good side of the road for boundaries at infinity
+        var yedge, yedgeb
         if (goal.yaw < 0) {
           yedge = goal.yMin - 0.1*(goal.yMax - goal.yMin);
           yedgeb = goal.yMax + 0.1*(goal.yMax - goal.yMin);
@@ -3184,27 +3179,27 @@
         var isostrt = getiso(rstrt)
 
         var x = isostrt[0][0], y = isostrt[0][1]
-        if (x < xr[0]) { x = xr[0]; y = isoval( isostrt, x ) }
+        if (x < xstrt) { x = xstrt; y = isoval( isostrt, x ) }
         var d = "M"+nXSc(x*1000)+" "+(nYSc(y)+adj);
         for (let i = 1; i < isostrt.length; i++) {
           x = isostrt[i][0]; y = isostrt[i][1]
-          if (x < xr[0]) continue
-          if (x > xr[1]) {x = xr[1]; y = isoval(isostrt, x)}
+          if (x < xstrt) continue
+          if (x > xend) {x = xend; y = isoval(isostrt, x)}
           d += " L"+nXSc(x*1000)+" "+(nYSc(y)+adj);
-          if (isostrt[i][0] > xr[1]) break;
+          if (isostrt[i][0] > xend) break;
         }
 
         if (rend == -1) {
           // Region on the good side of the road
-          d+=" L"+nXSc(end*1000)+" "+(nYSc(isoval(isostrt, end))+adj);
-          d+=" L"+nXSc(end*1000)+" "+nYSc(yedge);
-          d+=" L"+nXSc(strt*1000)+" "+nYSc(yedge);
+          d+=" L"+nXSc(xend*1000)+" "+(nYSc(isoval(isostrt, xend))+adj);
+          d+=" L"+nXSc(xend*1000)+" "+nYSc(yedge);
+          d+=" L"+nXSc(xstrt*1000)+" "+nYSc(yedge);
           d+=" Z";
         } else if (rend == -2) {
           // Region on the bad side of the road
-          d+=" L"+nXSc(end*1000)+" "+(nYSc(isoval(isostrt, end))+adj);
-          d+=" L"+nXSc(end*1000)+" "+nYSc(yedgeb);
-          d+=" L"+nXSc(strt*1000)+" "+nYSc(yedgeb);
+          d+=" L"+nXSc(xend*1000)+" "+(nYSc(isoval(isostrt, xend))+adj);
+          d+=" L"+nXSc(xend*1000)+" "+nYSc(yedgeb);
+          d+=" L"+nXSc(xstrt*1000)+" "+nYSc(yedgeb);
           d+=" Z";
         } else if (rstrt != rend) {
           // Ending dtd value is different than the starting value, so
@@ -3213,31 +3208,38 @@
           
           var ln = isoend.length
           var x = isoend[ln-1][0], y = isoend[ln-1][1]
-          if (x > xr[1]) { x = xr[1]; y = isoval( isoend, x ) }
+          if (x > xend) { x = xend; y = isoval( isoend, x ) }
           d += " L"+nXSc(x*1000)+" "+(nYSc(y)+adj);
           for (let i = ln-2; i >= 0; i--) {
             x = isoend[i][0]; y = isoend[i][1]
-            if (x > xr[1]) continue
-            if (x < xr[0]) {
-              x = xr[0]; y = isoval(isoend, x)
+            if (x > xend) continue
+            if (x < xstrt) {
+              x = xstrt; y = isoval(isoend, x)
             }
             d += " L"+nXSc(x*1000)+" "+(nYSc(y)+adj);
-            if (isoend[i][0] < xr[0]) break;
+            if (isoend[i][0] < xstrt) break;
           }
           d+=" Z";
         }
 
         if (ybhpelt.empty()) {
+          // Create a new element if an existing one is not found
           gYBHP.append("svg:path")
 	          .attr("class",clsname)
 	  	      .attr("d", d)
 	  	      .attr("pointer-events", "none")
-            .attr("fill", reg[3])
-            .attr("fill-opacity", reg[6])
-            .attr("stroke", reg[4])
-            .attr("stroke-width", reg[5])
+            .attr("fill", reg[2])
+            .attr("fill-opacity", reg[5])
+            .attr("stroke", reg[3])
+            .attr("stroke-width", reg[4])
         } else {
-          ybhpelt.attr("d", d);
+          // Update previously created element
+          ybhpelt
+            .attr("d", d)
+            .attr("fill", reg[2])
+            .attr("fill-opacity", reg[5])
+            .attr("stroke", reg[3])
+            .attr("stroke-width", reg[4])
         }
       }
     }
@@ -3288,6 +3290,7 @@
       // **** Construct the centerline path element ****
       var cw = r3(opts.oldRoadLine.width*scf)
       var adj = goal.yaw*cw/2
+      if (opts.roadEditor) adj = 0
       
       // fx,fy: Start of the current line segment
       // ex,ey: End of the current line segment
@@ -3703,8 +3706,7 @@
   		  .attr("stroke-width",opts.roadLine.width)
         .on('wheel', function(d) { 
           // Redispatch a copy of the event to the zoom area
-          var new_event = new d3.event.constructor(d3.event.type, 
-                                                   d3.event)
+          var new_event = new d3.event.constructor(d3.event.type, d3.event)
           zoomarea.node().dispatchEvent(new_event)
           // Prevents mouse wheel event from bubbling up to the page
           d3.event.preventDefault()
@@ -3814,8 +3816,7 @@
 		    .style("stroke-width", opts.roadDot.border) 
         .on('wheel', function(d) { 
           // Redispatch a copy of the event to the zoom area
-          var new_event = new d3.event.constructor(d3.event.type, 
-                                                   d3.event)
+          var new_event = new d3.event.constructor(d3.event.type, d3.event)
           zoomarea.node().dispatchEvent(new_event)
           // Prevents mouse wheel event from bubbling up to the page
           d3.event.preventDefault()
@@ -3914,6 +3915,13 @@
         .style("fill-opacity", fop)
         .style("pointer-events", function() {
           return (opts.roadEditor&&hov)?"none":(opts.headless?null:"all");})
+        .on('wheel', function(d) { 
+          // Redispatch a copy of the event to the zoom area
+          var new_event = new d3.event.constructor(d3.event.type, d3.event)
+          zoomarea.node().dispatchEvent(new_event)
+          // Prevents mouse wheel event from bubbling up to the page
+          d3.event.preventDefault()
+        })
 		    .on("mouseenter",function(d) {
           if (dotTimer != null) window.clearTimeout(dotTimer);
           dotTimer = window.setTimeout(function() {
