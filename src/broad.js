@@ -426,15 +426,22 @@ self.isoline = ( rd, dtdarr, goal, v ) => {
     a.push([pt[0], pt[1]]); return;
   }
 
+  //if (v == 6) console.log("Starting iso "+v)
   if (goal.yaw * goal.dir > 0) {
+    // k holds the last isoline segment that has been processed and filtered
     k = -1
+    // j iterates over unfiltered isoline segments
     for (j = 0; j < iso.length-1; j++) {
       // If an upslope is detected, finish downstreak
-      if ((iso[j+1][1] - iso[j][1]) * goal.dir >= 0) downstreak = false
+      if ((iso[j+1][1] - iso[j][1]) * goal.dir > 0) downstreak = false
       
+      // if (v == 6) {
+      //   console.log("Adding "+bu.shd(iso[j][0])+", "+iso[j][1])
+      //   console.log("j = "+j+", k = "+k+", ds = "+downstreak+", fd = "+flatdone)
+      // }
       addpt(isonew, iso[j])
       
-      // Check if there is a new downstreak to initiate new flat region
+      // Check if there is a new downstreak to initiate new flat region (when dtd != 0)
       if (v != 0 && (iso[j+1][1] - iso[j][1]) * goal.dir < 0 && !downstreak) {
         
         downstreak = true
@@ -447,6 +454,10 @@ self.isoline = ( rd, dtdarr, goal, v ) => {
             // Reached end of the flat region with dtd days
             flatdone = true
             newx = iso[j][0]+v*bu.SID
+            // if (v == 6) {
+            //   console.log("Adding end of flat "+bu.shd(newx)+", "+iso[j][1])
+            //   console.log("j = "+j+", k = "+k+", ds = "+downstreak+", fd = "+flatdone)
+            // }
             addpt(isonew, [newx, iso[j][1]])
             
             //if (iso[k][0] != iso[k-1][0]) {
@@ -464,6 +475,10 @@ self.isoline = ( rd, dtdarr, goal, v ) => {
                 newx = iso[k][0] + (iso[j][1] - iso[k][1])/slope
                 if (newx <= iso[j][0]+v*bu.SID && newx <= iso[k+1][0]) {
                   flatdone = true
+                  // if (v == 6) {
+                  //   console.log("Adding early flat finish "+bu.shd(newx)+", "+iso[j][1])
+                  //   console.log("j = "+j+", k = "+k+", ds = "+downstreak+", fd = "+flatdone)
+                  // }
                   addpt(isonew, [newx, iso[j][1]])
                 }
               }
