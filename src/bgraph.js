@@ -227,7 +227,7 @@
   + "line.roads{stroke:black}"
   + ".pasttext,.ctxtodaytext,.ctxhortext,.horizontext,.hashtag"
   + "{text-anchor:middle;font-family:sans-serif}"
-  + ".waterbuf,.waterbux{stroke:#dddddd;stroke-width:1;text-anchor:middle;font-family:Dejavu Sans,sans-serif}"
+  + ".waterbuf,.waterbux{stroke:#eeeeee;stroke-width:1;text-anchor:middle;font-family:Dejavu Sans,sans-serif; fill-opacity:0.5;}"
   + ".loading{text-anchor:middle;font-family:Dejavu Sans,sans-serif}"
   + ".zoomarea{fill:none}"
   + "circle.ap{stroke:none}"
@@ -408,7 +408,7 @@
     
     // Beebrain state objects
     var bbr, goal = {}, road = [],
-        data = [], alldata = [], dtd = [], iso = [], isopath = []
+        data = [], alldata = [], dtd = [], iso = []
 
     function getiso( val ) {
       if (iso[val] == undefined) iso[val] = br.isoline( road, dtd, goal, val)
@@ -3100,21 +3100,39 @@
           [0, -1, opts.halfPlaneCol.fill, "none", 0, 1, null]
         ]
       } else {
-        regions = [
-          // [2,  6, "#cceecc", "none",       0, 1, xrakr],    // green region
-          // [6, -1, "#b2e5b2", "none",       0, 1, xrakr],    // dark green region
-          [6,  6, "none",      bu.Cols.BLUDOT, 3, 1, xrfull],    // one week guidelines
-          // [0,  2, bu.Cols.LYEL, "none",    0, 0.5, xrfull], // YBR equivalent
-          // [1,  2, "#e5e5ff", "none",       0, 1, xrakr],    // blue region
-//          [2,  2, "none",      bu.Cols.BLUDOT, 2, 1, xrfull],    // blue line
-          // [0,  1, "#fff1d8", "none",       0, 1, xrakr],    // orange region
-//          [1,  1, "none",      bu.Cols.ORNDOT, 2, 1, xrfull],    // orange line
-//          [0, -2, "#fff8f8", "none",       0, 1, null],    // wrong side light red
-          [0, -2, "#ffe5e5", "none",       0, 1, xrakr],    // pink region red 
-          // [0, -2, "#ffffff", "none",       0, 1, null],    // wrong side white
-        ]
+        if (!opts.roadEditor) {
+          regions = [
+            // [2,  6, "#cceecc", "none",       0, 1, xrakr],    // green region
+            // [6, -1, "#b2e5b2", "none",       0, 1, xrakr],    // dark green region
+            [6,  6, "none",      bu.Cols.DYEL, 3, 1, xrfull],    // one week guidelines
+            //          [7,  7, "none",      bu.Cols.REDDOT, 3, 1, xrfull],    // debugging
+            //          [8,  8, "none",      bu.Cols.GRNDOT, 3, 1, xrfull],    // debugging
+            // [0,  2, bu.Cols.LYEL, "none",    0, 0.5, xrfull], // YBR equivalent
+            // [1,  2, "#e5e5ff", "none",       0, 1, xrakr],    // blue region
+            //          [2,  2, "none",      bu.Cols.BLUDOT, 2, 1, xrfull],    // blue line
+            // [0,  1, "#fff1d8", "none",       0, 1, xrakr],    // orange region
+            //          [1,  1, "none",      bu.Cols.ORNDOT, 2, 1, xrfull],    // orange line
+            [0, -2, "#fff8f8", "none",       0, 1, null],    // wrong side light red
+            [0, -2, "#ffe5e5", "none",       0, 1, xrakr],    // pink region red 
+            // [0, -2, "#ffffff", "none",       0, 1, null],    // wrong side white
+          ]
+        } else {
+          regions = [
+            [0, -1, opts.halfPlaneCol.fill, "none", 0, 1, null], // Right side background
+            [0, -2, "#fff8f8", "none",       0, 1, null],    // wrong side light red
+            [0, -2, "#ffe5e5", "none",       0, 1, xrakr],    // pink region red 
+          ]
+        }
       }
 
+      // Debugging isolines
+      // var tmp = br.isoline(road, dtd, goal, 6, true)
+      // iso[6] = tmp[0]
+      // iso[7] = tmp[1]
+      // iso[8] = tmp[2]
+      // iso[7] = iso[7].map((e)=>([e[0], e[1]+0.2]))
+      // iso[8] = iso[8].map((e)=>([e[0], e[1]+0.4]))
+      
       for (var ri = 0; ri < Math.max(prevcnt, regions.length); ri++) {
         // SVG elements for regions are given unique class names
         var clsname = "halfplane"+ri
@@ -3729,7 +3747,7 @@
       // object will be set to the newly edited road later, once
       // dragging is finished.
       dtd = br.dtdarray( road, goal )
-      iso = []; isopath = []
+      iso = []
       for (let i = 0; i < 7; i++) iso[i] = br.isoline( road, dtd, goal, i)
     }
     
