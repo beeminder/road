@@ -375,7 +375,7 @@ self.dtdarray = ( rd, goal ) => {
  * derailment regions, as well as guidelines. Coordinate points start
  * from the beginning of the road and proceed forward
 */
-self.isoline = ( rd, dtdarr, goal, v ) => {
+self.isoline = ( rd, dtdarr, goal, v, retall=false ) => {
   var n = dtdarr[0], nn, iso
   var s = 0, ns, j, k, st, en, sl
   // Start the isoline with a horizontal line for the end of the road
@@ -425,8 +425,9 @@ self.isoline = ( rd, dtdarr, goal, v ) => {
   var addpt = function (a, pt) {
     a.push([pt[0], pt[1]]); return;
   }
-
-  //if (v == 6) console.log("Starting iso "+v)
+  const debuglines = false
+  
+  if (debuglines && v == 6) console.log("**** Starting iso "+v)
   if (goal.yaw * goal.dir > 0) {
     // k holds the last isoline segment that has been processed and filtered
     k = -1
@@ -435,16 +436,17 @@ self.isoline = ( rd, dtdarr, goal, v ) => {
       // If an upslope is detected, finish downstreak
       if ((iso[j+1][1] - iso[j][1]) * goal.dir > 0) downstreak = false
       
-      // if (v == 6) {
-      //   console.log("Adding "+bu.shd(iso[j][0])+", "+iso[j][1])
-      //   console.log("j = "+j+", k = "+k+", ds = "+downstreak+", fd = "+flatdone)
-      // }
+      if (debuglines && v == 6) {
+        console.log("Adding "+bu.shd(iso[j][0])+", "+iso[j][1]
+                    +". j = "+j+", k = "+k+", ds = "+downstreak+", fd = "+flatdone)
+      }
       addpt(isonew, iso[j])
       
       // Check if there is a new downstreak to initiate new flat region (when dtd != 0)
       if (v != 0 && (iso[j+1][1] - iso[j][1]) * goal.dir < 0 && !downstreak) {
         
         downstreak = true
+        if (debuglines && v == 6) console.log("Starting downstreak, j="+j+", k="+k)
         // Extend horizontally for at least dtd days, or
         // until a positive slope is found
         k = j+1
@@ -454,10 +456,10 @@ self.isoline = ( rd, dtdarr, goal, v ) => {
             // Reached end of the flat region with dtd days
             flatdone = true
             newx = iso[j][0]+v*bu.SID
-            // if (v == 6) {
-            //   console.log("Adding end of flat "+bu.shd(newx)+", "+iso[j][1])
-            //   console.log("j = "+j+", k = "+k+", ds = "+downstreak+", fd = "+flatdone)
-            // }
+            if (debuglines && v == 6) {
+              console.log("Adding end of flat "+bu.shd(newx)+", "+iso[j][1]
+                          +". j = "+j+", k = "+k+", ds = "+downstreak+", fd = "+flatdone)
+            }
             addpt(isonew, [newx, iso[j][1]])
             
             //if (iso[k][0] != iso[k-1][0]) {
@@ -475,14 +477,22 @@ self.isoline = ( rd, dtdarr, goal, v ) => {
                 newx = iso[k][0] + (iso[j][1] - iso[k][1])/slope
                 if (newx <= iso[j][0]+v*bu.SID && newx <= iso[k+1][0]) {
                   flatdone = true
-                  // if (v == 6) {
-                  //   console.log("Adding early flat finish "+bu.shd(newx)+", "+iso[j][1])
-                  //   console.log("j = "+j+", k = "+k+", ds = "+downstreak+", fd = "+flatdone)
-                  // }
-                  addpt(isonew, [newx, iso[j][1]])
                 }
               }
+            } else if ((iso[j][1]-iso[k][1])*(iso[j][1]-iso[k+1][1]) < 0) {
+              // Early intersection with upwards vertical segment found
+              newx = iso[k][0]+1 // +1 ensures that filtering gets rid of extra backwards segments
+              flatdone = true
+              if (debuglines && v == 6) console.log("Vertical!")
             }
+            if (flatdone) {
+              if (debuglines && v == 6) {
+                console.log("Adding early flat finish "+bu.shd(newx)+", "+iso[j][1]
+                            +". j = "+j+", k = "+k+", ds = "+downstreak+", fd = "+flatdone)
+              }
+              addpt(isonew, [newx, iso[j][1]])
+            }
+              
           }
           k++
         }
@@ -507,7 +517,8 @@ self.isoline = ( rd, dtdarr, goal, v ) => {
   
   //console.log(isonew.map(e=>[e[0], bu.dayify(e[0]+bu.SID), e[1],e[2], bu.dayify(e[2]+bu.SID), e[3]]))
   //console.log(isofinal.map(e=>[e[0], bu.dayify(e[0]+bu.SID), e[1],e[2], bu.dayify(e[2]+bu.SID), e[3]]))
-  return isofinal
+  if (retall) return [iso, isonew, isofinal]
+  else return isofinal
 }
   
 // Evaluates a given isoline at the supplied x coordinate
