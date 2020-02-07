@@ -3105,14 +3105,16 @@
             // [2,  6, "#cceecc", "none",       0, 1, xrakr],    // green region
             // [6, -1, "#b2e5b2", "none",       0, 1, xrakr],    // dark green region
             [6,  6, "none",      bu.Cols.DYEL, 3, 1, xrfull],    // one week guidelines
-            //          [7,  7, "none",      bu.Cols.REDDOT, 3, 1, xrfull],    // debugging
-            //          [8,  8, "none",      bu.Cols.GRNDOT, 3, 1, xrfull],    // debugging
+//            [6,  6, "none",      bu.Cols.REDDOT, 3, 1, xrfull],    // debugging
+//            [7,  7, "none",      bu.Cols.BLUDOT, 3, 1, xrfull],    // debugging
+//            [8,  8, "none",      bu.Cols.ORNDOT, 3, 1, xrfull],    // debugging
+//            [9,  9, "none",      bu.Cols.GRNDOT, 3, 1, xrfull],    // debugging
             // [0,  2, bu.Cols.LYEL, "none",    0, 0.5, xrfull], // YBR equivalent
             // [1,  2, "#e5e5ff", "none",       0, 1, xrakr],    // blue region
-            //          [2,  2, "none",      bu.Cols.BLUDOT, 2, 1, xrfull],    // blue line
+            // [2,  2, "none",      bu.Cols.BLUDOT, 2, 1, xrfull],    // blue line
             // [0,  1, "#fff1d8", "none",       0, 1, xrakr],    // orange region
-            //          [1,  1, "none",      bu.Cols.ORNDOT, 2, 1, xrfull],    // orange line
-            [0, -2, "#fff8f8", "none",       0, 1, null],    // wrong side light red
+            // [1,  1, "none",      bu.Cols.ORNDOT, 2, 1, xrfull],    // orange line
+//            [0, -2, "#fff8f8", "none",       0, 1, null],    // wrong side light red
             [0, -2, "#ffe5e5", "none",       0, 1, xrakr],    // pink region red 
             // [0, -2, "#ffffff", "none",       0, 1, null],    // wrong side white
           ]
@@ -3130,8 +3132,10 @@
       // iso[6] = tmp[0]
       // iso[7] = tmp[1]
       // iso[8] = tmp[2]
+      // iso[9] = tmp[3]
       // iso[7] = iso[7].map((e)=>([e[0], e[1]+0.2]))
       // iso[8] = iso[8].map((e)=>([e[0], e[1]+0.4]))
+      // iso[9] = iso[9].map((e)=>([e[0], e[1]+0.6]))
       
       for (var ri = 0; ri < Math.max(prevcnt, regions.length); ri++) {
         // SVG elements for regions are given unique class names
