@@ -1231,7 +1231,8 @@ const beebrain = function( bbin ) {
           }
         }
       )
-      goal.pinkzone.push([goal.asof+bu.AKH, br.rdf(roads, goal.asof+bu.AKH),null])
+      goal.pinkzone.push([goal.asof+bu.AKH, br.rdf(roads, goal.asof+bu.AKH),
+                          null])
       goal.pinkzone = br.fillroadall(goal.pinkzone, goal)
     }
       
@@ -1281,10 +1282,10 @@ const beebrain = function( bbin ) {
         }
       }
 
-      // Process and extract various parameters that are independent of road and data
+      // Process & extract various params that are independent of road & data
       // maybe just default to aggday=last; no such thing as aggday=null
-      if ( !p.hasOwnProperty('aggday')) p.aggday = (goal.kyoom)?"sum":"last"
-        
+      if (!p.hasOwnProperty('aggday')) p.aggday = goal.kyoom ? "sum" : "last"
+      
       goal.siru = bu.SECS[p.runits]
       goal.horizon = goal.asof+bu.AKH
       // Save initial waterbuf value for comparison in bgraph.js
@@ -1296,8 +1297,8 @@ const beebrain = function( bbin ) {
       if (goal.error == "") goal.error = vetParams()
       if (goal.error == "") goal.error = procData()
       
-      // Extract road infor into our internal format consisting of road segments:
-      // [ [startt, startv], [endt, endv], slope, autofield]
+      // Extract road info into our internal format consisting of road segments:
+      // [ [startt, startv], [endt, endv], slope, autofield ]
       if (goal.error == "") goal.error = procRoad( p.road )
       if (goal.error == "") goal.error = self.reloadRoad()
 
