@@ -384,7 +384,7 @@
         xSc, nXSc, xAxis, xAxisT, xGrid, xAxisObj, xAxisObjT, xGridObj,
         ySc, nYSc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel,
         xScB, xAxisB, xAxisObjB, yScB, 
-        gPB, gYBHP, gPink, gPinkPat, gGrid, gOResets, gPastText, 
+        gPB, gYBHP, gYBHPlines, gPink, gPinkPat, gGrid, gOResets, gPastText, 
         gOldRoad, gOldCenter, gOldGuides, gOldBullseye, 
         gKnots, gSteppy, gSteppyPts, gRosy, gRosyPts, gMovingAv,
         gAura, gDerails, gAllpts, gDpts, gHollow, gFlat, 
@@ -795,6 +795,7 @@
       gPB = plot.append('g').attr('id', 'pastboxgrp');
       gOldGuides = plot.append('g').attr('id', 'oldguidegrp');
       gYBHP = plot.append('g').attr('id', 'ybhpgrp');
+      gYBHPlines = plot.append('g').attr('id', 'ybhplinesgrp');
       gAura = plot.append('g').attr('id', 'auragrp');
       gWatermark = plot.append('g').attr('id', 'wmarkgrp');
       gOldRoad = plot.append('g').attr('id', 'oldroadgrp');
@@ -3072,6 +3073,7 @@
       if (opts.divGraph == null || road.length == 0) return
       if (!opts.roadEditor && !goal.ybhp) {
         gYBHP.selectAll("*").remove()
+        gYBHPlines.selectAll("*").remove()
         return
       }
       var regions;
@@ -3114,7 +3116,7 @@
             // [2,  2, "none",      bu.Cols.BLUDOT, 2, 1, xrfull],    // blue line
             // [0,  1, "#fff1d8", "none",       0, 1, xrakr],    // orange region
             // [1,  1, "none",      bu.Cols.ORNDOT, 2, 1, xrfull],    // orange line
-//            [0, -2, "#fff8f8", "none",       0, 1, null],    // wrong side light red
+            [0, -2, "#fff8f8", "none",       0, 1, null],    // wrong side light red
             [0, -2, "#ffe5e5", "none",       0, 1, xrakr],    // pink region red 
             // [0, -2, "#ffffff", "none",       0, 1, null],    // wrong side white
           ]
@@ -3140,8 +3142,11 @@
       for (var ri = 0; ri < Math.max(prevcnt, regions.length); ri++) {
         // SVG elements for regions are given unique class names
         var clsname = "halfplane"+ri
-        var ybhpelt = gYBHP.select("."+clsname)
+        var ybhpelt, ybhpgrp
         var reg = regions[ri]
+        if (reg[0] != reg[1]) ybhpgrp = gYBHP
+        else ybhpgrp = gYBHPlines
+        ybhpelt = ybhpgrp.select("."+clsname)
         
         // Force removal of leftover regions if requested or stale detected
         if (reg == undefined || (reg[2] == null && reg[3] == null)) {
@@ -3230,7 +3235,7 @@
 
         if (ybhpelt.empty()) {
           // Create a new element if an existing one is not found
-          gYBHP.append("svg:path")
+          ybhpgrp.append("svg:path")
 	          .attr("class",clsname)
 	  	      .attr("d", d)
 	  	      .attr("pointer-events", "none")
