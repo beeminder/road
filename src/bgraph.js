@@ -82,24 +82,23 @@
                     font: 10, ctxfont: 9 },
     /** Visual parameters for vertical line for asof */ 
     today:        { width: 2, ctxwidth: 1, font: 12, ctxfont: 9 },
-    /** Visual parameters for watermarks */ 
-    watermark:    { height:170, fntsize:150, color:"#f0f0f0" },
+    /** Visual parameters for watermarks */
+    watermark:    { height:170, fntsize:150, color:"#000000" }, // was #f0f0f0
     guidelines:   { width:2, weekwidth:4 },
     /** Visual parameters for text boxes shown during dragging */ 
     textBox:      { margin: 3 },
     /** Visual parameters for odometer resets */ 
     odomReset:    { width: 0.5, dash: 8 },
     
-    roadLineCol:  { valid: "black", invalid:"#ca1212", selected:"yellow"},
-    roadDotCol:   { fixed: "darkgray", editable:"#c2c2c2", 
-                    selected: "yellow"},
-    roadKnotCol:  { dflt: "#c2c2c2", selected: "yellow", 
-                    rmbtn: "black", rmbtnsel: "red"}, 
-    textBoxCol:   { bg: "#ffffff", stroke:"#d0d0d0"},
+    roadLineCol:  { valid: "black",    invalid:"#ca1212",  selected:"yellow" },
+    roadDotCol:   { fixed: "darkgray", editable:"#c2c2c2", selected: "yellow" },
+    roadKnotCol:  { dflt: "#c2c2c2", selected: "yellow",
+                    rmbtn: "black", rmbtnsel: "red" },
+    textBoxCol:   { bg: "#ffffff", stroke:"#d0d0d0" },
     roadTableCol: { bg:"#ffffff", bgHighlight: "#fffb55", 
                     text:"#000000", textDisabled: "#aaaaaa",
                     bgDisabled:"#f2f2f2"},
-    dataPointCol: { future: "#909090", stroke: "lightgray"},
+    dataPointCol: { future: "#909090", stroke: "lightgray" },
     halfPlaneCol: { fill: "#ffffe8" },
     pastBoxCol:   { fill: "#f8f8f8", opacity:0.5 },
     odomResetCol: { dflt: "#c2c2c2" }, 
@@ -206,7 +205,7 @@
     horizon:      { width: 2, ctxwidth: 1, dash: 8, ctxdash: 8, 
                     font: 14, ctxfont: 10 },
     today:        { width: 2, ctxwidth: 1, font: 16, ctxfont: 10 },
-    watermark:    { height:150, fntsize:100, color:"#f0f0f0" },
+    watermark:    { height:150, fntsize:100, color:"#000000" }, // was #f0f0f0
     guidelines:   { width:2, weekwidth:4 },
     textBox:      { margin: 3 }
   },
@@ -218,8 +217,8 @@
   + ".axis .minor line{stroke:#777;stroke-dasharray:0,2,4,3}"
   + ".grid line"
   + "{fill:none;stroke:#dddddd;stroke-width:1px;shape-rendering:crispEdges}"
-  + ".aura {fill-opacity:0.3; stroke-opacity:0.3;}"
-  + ".aurapast {fill-opacity:0.15; stroke-opacity:0.3;}"
+  + ".aura{fill-opacity:0.3;stroke-opacity:0.3;}"
+  + ".aurapast{fill-opacity:0.15;stroke-opacity:0.3}"
   + ".grid .minor line{stroke:none}"
   + ".axis text{font-family:sans-serif;font-size:11px}"
   + ".axislabel{font-family:sans-serif;font-size:11px;text-anchor:middle}"
@@ -227,7 +226,8 @@
   + "line.roads{stroke:black}"
   + ".pasttext,.ctxtodaytext,.ctxhortext,.horizontext,.hashtag"
   + "{text-anchor:middle;font-family:sans-serif}"
-  + ".waterbuf,.waterbux{stroke:#dddddd;stroke-width:1;text-anchor:middle;font-family:Dejavu Sans,sans-serif}"
+  + ".waterbuf,.waterbux{opacity:0.05882353;" //stroke:#dddddd;stroke-width:1;"
+  + "text-anchor:middle;font-family:Dejavu Sans,sans-serif}"
   + ".loading{text-anchor:middle;font-family:Dejavu Sans,sans-serif}"
   + ".zoomarea{fill:none}"
   + "circle.ap{stroke:none}"
@@ -243,16 +243,23 @@
   /** paths for various PNG images used within the SVG */
   PNG = { beye:  "https://s3.amazonaws.com/bmndr/road/bullseye.png", 
           beyey: "https://s3.amazonaws.com/bmndr/road/bullseye_prev.png",
-          skl:   "https://s3.amazonaws.com/bmndr/road/jollyroger.png",
-          inf:   "https://s3.amazonaws.com/bmndr/road/infinity.png",
-          sml:   "https://s3.amazonaws.com/bmndr/road/smiley.png",
+
+          // these versions are very light gray and not currently used:
+          //skl:   "https://s3.amazonaws.com/bmndr/road/jollyroger.png",
+          //inf:   "https://s3.amazonaws.com/bmndr/road/infinity.png",
+          //sml:   "https://s3.amazonaws.com/bmndr/road/smiley.png",
+          
+          // black versions which we're currently using with very low opacity:
+          infb:  "https://bmndr.s3.amazonaws.com/road/infinity_blk.png",
+          sklb:  "https://bmndr.s3.amazonaws.com/road/jollyroger_blk.png",
+          smlb:  "https://bmndr.s3.amazonaws.com/road/smiley_blk.png",
         },
   
   /** Enum object to identify error types. */
   ErrType = { NOBBFILE:0, BADBBFILE:1, BBERROR:2  },
 
   /** Enum object to identify error types. */
-  ErrMsgs = [ "Could not find goal file.", "Bad goal file.", "Beeminder error" ],
+  ErrMsgs = ["Could not find goal file.", "Bad goal file.", "Beeminder error"],
 
   /** This atrocity attempts to determine whether the page was loaded
    * from a mobile device or not. */
@@ -614,7 +621,7 @@
       if (div === null) return
       // First, remove all children from the div
       while (div.firstChild) div.removeChild(div.firstChild)
-
+      
       // Initialize the div and the SVG
       svg = d3.select(div).attr("class", "bmndrgraph")
 	      .append('svg:svg')
@@ -625,7 +632,7 @@
         .attr("viewBox","0 0 "+sw+" "+sh)
         .attr('width', "100%").attr('height', "100%")
 	      .attr('class', 'bmndrsvg')
-
+      
       // Common SVG definitions, including clip paths
       defs = svg.append('defs')
       defs.insert('style').attr('type','text/css').text(SVGStyle)
@@ -641,7 +648,7 @@
         .attr("id", "buttonareaclip"+curid)
         .append("rect").attr("x", plotbox.x).attr("y", 0)
         .attr("width", plotbox.width).attr("height", plotpad.top)
-
+      
       defs.append("path")
         .style("stroke", "none").attr("id", "rightarrow")
         .attr("d", "M 55,0 -35,45 -35,-45 z")
@@ -653,7 +660,7 @@
       defs.append("path")
         .style("stroke", "none").attr("id", "uparrow")
         .attr("d", "M 0,-40 45,50 -45,50 z")
-
+      
       gPinkPat = defs.append("pattern")
         .attr("id", "pinkzonepat"+curid)
         .attr("x", 0).attr("y",0)
@@ -683,7 +690,7 @@
         zoomingrp.append("path")
           .attr("d", "m 308.21,155.10302 -76.553,0 0,76.552 -76.552,0 0,76.553 76.552,0 0,76.552 76.553,0 0,-76.552 76.552,0 0,-76.553 -76.552,0 z m 229.659,114.829 C 537.869,119.51007 420.50428,1.9980234 269.935,1.9980234 121.959,1.9980234 2.0000001,121.95602 2.0000001,269.93202 c 0,147.976 117.2473599,267.934 267.9339999,267.934 150.68664,0 267.935,-117.51205 267.935,-267.934 z m -267.935,191.381 c -105.681,0 -191.381,-85.7 -191.381,-191.381 0,-105.681 85.701,-191.380996 191.381,-191.380996 105.681,0 191.381,85.700996 191.381,191.380996 0,105.681 -85.7,191.381 -191.381,191.381 z")
       }
-
+      
       var zoomoutgrp = defs.append("g")
             .attr("id", "zoomoutbtn")
       if (!opts.headless && opts.buttonZoom) {
@@ -693,7 +700,7 @@
         zoomoutgrp.append("path")
           .attr("d", "m 155.105,231.65502 0,76.553 229.657,0 0,-76.553 c -76.55233,0 -153.10467,0 -229.657,0 z m 382.764,38.277 C 537.869,119.51007 420.50428,1.9980234 269.935,1.9980234 121.959,1.9980234 2.0000001,121.95602 2.0000001,269.93202 c 0,147.976 117.2473599,267.934 267.9339999,267.934 150.68664,0 267.935,-117.51205 267.935,-267.934 z m -267.935,191.381 c -105.681,0 -191.381,-85.7 -191.381,-191.381 0,-105.681 85.701,-191.380996 191.381,-191.380996 105.681,0 191.381,85.700996 191.381,191.380996 0,105.681 -85.7,191.381 -191.381,191.381 z")
       }
-
+      
       // Create rectange to monitor zoom events and install handlers
       zoomarea = svg.append('rect')
         .attr("class", "zoomarea")
@@ -702,7 +709,7 @@
         .attr("width", plotbox.width).attr("height", plotbox.height)
       var oldscroll = zoomarea.on("wheel.scroll")
       var scrollinfo = {shown: false, timeout: null}
-
+      
       var onscroll = function() {
         if (scrollinfo.timeout != null) {
           clearTimeout(scrollinfo.timeout); scrollinfo.timeout = null
@@ -762,8 +769,7 @@
       }
       function dotAddedShift() {
         if (d3.event.shiftKey) dotAdded()
-        else clearSelection()
-        
+        else clearSelection()  
       }
       if (opts.roadEditor) {
         zoomarea.on("click", dotAddedShift)
@@ -785,42 +791,43 @@
         .attr('transform', 'translate('+plotpad.left
               +','+plotpad.top+')');
       plot = focusclip.append('g').attr('class', 'plot');
-
+      
       stathead = focus.append('svg:text').attr("x", sw/2).attr("y", 15)
         .attr("width", plotbox.width)
         .attr('class', 'svgtxt')
         .style("font-size", "80%")
         .attr('text-anchor', 'middle')
-
-      gPB = plot.append('g').attr('id', 'pastboxgrp');
-      gOldGuides = plot.append('g').attr('id', 'oldguidegrp');
-      gYBHP = plot.append('g').attr('id', 'ybhpgrp');
-      gAura = plot.append('g').attr('id', 'auragrp');
-      gWatermark = plot.append('g').attr('id', 'wmarkgrp');
-      gOldRoad = plot.append('g').attr('id', 'oldroadgrp');
-      gPink = plot.append('g').attr('id', 'pinkgrp');
-      gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp');
-      gOldCenter = plot.append('g').attr('id', 'oldcentergrp');
-      gGrid = plot.append('g').attr('id', 'grid');
-      gOResets = plot.append('g').attr('id', 'oresetgrp');
-      gKnots = plot.append('g').attr('id', 'knotgrp');
-      gSteppy = plot.append('g').attr('id', 'steppygrp');
-      gRosy = plot.append('g').attr('id', 'rosygrp');
-      gRosyPts = plot.append('g').attr('id', 'rosyptsgrp');
-      gDerails = plot.append('g').attr('id', 'derailsgrp');
-      gAllpts = plot.append('g').attr('id', 'allptsgrp');
-      gMovingAv = plot.append('g').attr('id', 'movingavgrp');
-      gSteppyPts = plot.append('g').attr('id', 'steppyptsgrp');
-      gDpts = plot.append('g').attr('id', 'datapointgrp');
-      gHollow = plot.append('g').attr('id', 'hollowgrp');
-      gFlat = plot.append('g').attr('id', 'flatlinegrp');
-      gHashtags = plot.append('g').attr('id', 'hashtaggrp');
-      gBullseye = plot.append('g').attr('id', 'bullseyegrp');
-      gRoads = plot.append('g').attr('id', 'roadgrp');
-      gDots = plot.append('g').attr('id', 'dotgrp');
-      gHorizon = plot.append('g').attr('id', 'horgrp');
-      gHorizonText = plot.append('g').attr('id', 'hortxtgrp');
-      gPastText = plot.append('g').attr('id', 'pasttxtgrp');
+      
+      // Order here determines z-order: [remember how 'twas while experimenting]
+      gPB          = plot.append('g').attr('id', 'pastboxgrp')     // z-order 01
+      gOldGuides   = plot.append('g').attr('id', 'oldguidegrp')    // z-order 02
+      gYBHP        = plot.append('g').attr('id', 'ybhpgrp')        // z-order 03
+      gAura        = plot.append('g').attr('id', 'auragrp')        // z-order 04
+      gWatermark   = plot.append('g').attr('id', 'wmarkgrp')       // z-order 05
+      gOldRoad     = plot.append('g').attr('id', 'oldroadgrp')     // z-order 06
+      gPink        = plot.append('g').attr('id', 'pinkgrp')        // z-order 07
+      gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp') // z-order 08
+      gOldCenter   = plot.append('g').attr('id', 'oldcentergrp')   // z-order 09
+      gGrid        = plot.append('g').attr('id', 'grid')           // z-order 10
+      gOResets     = plot.append('g').attr('id', 'oresetgrp')      // z-order 11
+      gKnots       = plot.append('g').attr('id', 'knotgrp')        // z-order 12
+      gSteppy      = plot.append('g').attr('id', 'steppygrp')      // z-order 13
+      gRosy        = plot.append('g').attr('id', 'rosygrp')        // z-order 14
+      gRosyPts     = plot.append('g').attr('id', 'rosyptsgrp')     // z-order 15
+      gDerails     = plot.append('g').attr('id', 'derailsgrp')     // z-order 16
+      gAllpts      = plot.append('g').attr('id', 'allptsgrp')      // z-order 17
+      gMovingAv    = plot.append('g').attr('id', 'movingavgrp')    // z-order 18
+      gSteppyPts   = plot.append('g').attr('id', 'steppyptsgrp')   // z-order 19
+      gDpts        = plot.append('g').attr('id', 'datapointgrp')   // z-order 20
+      gHollow      = plot.append('g').attr('id', 'hollowgrp')      // z-order 21
+      gFlat        = plot.append('g').attr('id', 'flatlinegrp')    // z-order 22
+      gHashtags    = plot.append('g').attr('id', 'hashtaggrp')     // z-order 23
+      gBullseye    = plot.append('g').attr('id', 'bullseyegrp')    // z-order 24
+      gRoads       = plot.append('g').attr('id', 'roadgrp')        // z-order 25
+      gDots        = plot.append('g').attr('id', 'dotgrp')         // z-order 26
+      gHorizon     = plot.append('g').attr('id', 'horgrp')         // z-order 27
+      gHorizonText = plot.append('g').attr('id', 'hortxtgrp')      // z-order 28
+      gPastText    = plot.append('g').attr('id', 'pasttxtgrp')     // z-order 29
 
       zoomin = focusclip.append("svg:use")
 	      .attr("class","zoomin")
@@ -1222,8 +1229,7 @@
 
         // Shift top tick marks downwards to ensure they point inwards
         xAxisObjT.selectAll("g").selectAll(".tick line")
-          .attr("transform", "translate(0,6)");
-
+          .attr("transform", "translate(0,6)")
       }
     }
 
@@ -1625,7 +1631,6 @@
     // Set the watermark (waterbuf) to number of safe days if not
     // given explicitly.
     function setWatermark() {
-
       if (goal.waterbuf0 != null) return
       
       goal.safebuf = br.dtd(road, goal, goal.tcur, goal.vcur);
@@ -1635,7 +1640,7 @@
 
       if  (goal.asof >= goal.tfin && !goal.loser)  {
         goal.waterbuf = ":)";
-        return;
+        return
       }
 
       if      (goal.safebuf > 999){ goal.waterbuf = "inf" } 
@@ -2842,19 +2847,14 @@
       var offg, offb, g = null, b = null, x, y, bbox, newsize, newh;
 
       setWatermark();
-      if (goal.loser) g = PNG.skl;
-      if (goal.waterbuf === 'inf') g = PNG.inf;
-      else if (goal.waterbuf === ':)') g = PNG.sml;
+      if      (goal.loser)              g = PNG.sklb
+      if      (goal.waterbuf === 'inf') g = PNG.infb
+      else if (goal.waterbuf === ':)')  g = PNG.smlb
 
-      if (goal.dir>0 && goal.yaw<0) { 
-        offg = bbr; offb = tl
-      } else if (goal.dir<0 && goal.yaw>0) { 
-        offg = tr; offb = bbl
-      } else if (goal.dir<0 && goal.yaw<0) { 
-        offg = bbl; offb = tr
-      } else {
-        offg = tl; offb = bbr
-      }
+      if      (goal.dir>0 && goal.yaw<0) { offg = bbr; offb = tl  }
+      else if (goal.dir<0 && goal.yaw>0) { offg = tr;  offb = bbl }
+      else if (goal.dir<0 && goal.yaw<0) { offg = bbl; offb = tr  }
+      else                               { offg = tl;  offb = bbr }
 
       xlinkloaded = false
       var wbufelt = gWatermark.select(".waterbuf");
@@ -2882,7 +2882,7 @@
           .style('font-weight', "bolder")
           .style('fill', opts.watermark.color)
           .text(goal.waterbuf);
-        if (!goal.ybhp) wbufelt.style('stroke', 'none')
+        //if (!goal.ybhp) wbufelt.style('stroke', 'none')
         bbox = wbufelt.node().getBBox();
         if (bbox.width > plotbox.width/2.2) {
           newsize = (fs*(plotbox.width/2.2)
@@ -2908,7 +2908,7 @@
           .style('font-weight', "bolder")
           .style('fill', opts.watermark.color)
           .text(goal.waterbux);
-        if (!goal.ybhp) wbuxelt.style('stroke', 'none')
+        //if (!goal.ybhp) wbuxelt.style('stroke', 'none')
         bbox = wbuxelt.node().getBBox();
         if (bbox.width > plotbox.width/2.2) {
           newsize = (fs*(plotbox.width/2.2)/bbox.width)
@@ -2917,7 +2917,7 @@
           wbuxelt.style('font-size', newsize+"px")
         }
         wbuxelt.attr("x", x + offb[0])
-          .attr("y", y + offb[1])
+               .attr("y", y + offb[1])
       } else wbuxelt.remove()
     }
     
@@ -3075,43 +3075,54 @@
         return
       }
       var regions;
-      // Predefined x axis ranges
-      const xrfull = [goal.tini, goal.tfin]
-      const xrakr = [goal.asof, goal.asof+7*bu.SID]
         
       // Count all previously generated ybhp path elements on the
       // current svg graph so we can remove unused ones automatically
       var ybhpall = d3.selectAll("#svg"+curid+" #ybhpgrp path")
       var prevcnt = ybhpall.size()
 
-      // Notes:
-      //
-      // - You must have a region covering the wrong side of the
-      // road, even if it's white to cover incorrect sections of
-      // isolines and other regions
-      //
-      // region format: [ dtd_min, dtd_max, fillcolor, strokecolor,
-      // strokewidth, fillopacity, [xmin,xmax]]
-      //
-      // - If xrange at the end is null, [-Infinity, Infinity] is used
+      // NOTE: Currently must have a region covering the wrong side of the road,
+      // even if it's white, to cover incorrect sections of isolines and other
+      // regions.
+
+      // Region format: From d to D days to derailment (if d=D it's a region
+      // boundary, i.e., an isoline of the DTD function), use fill-color
+      // fcolor, stroke-color scolor, stroke-width w, and fill-opacity op.
+      // Finally, xrange, a list like [xmin, xmax], gives the x-axis range to
+      // apply it to. If xrange=null, use [-infinity, infinity].
 
       if (!goal.ybhp) {
         regions = [
           [0, -1, opts.halfPlaneCol.fill, "none", 0, 1, null]
         ]
       } else {
+        const xrfull = [goal.tini, goal.tfin]          // x-axis range tini-tfin
+        const xrakr  = [goal.asof, goal.asof+7*bu.SID] // now to akrasia horiz.
+        const lgreen = "#cceecc" // light green region
+        const dgreen = "#b2e5b2" // dark green region
+        const bgreen = "#00aa00" // bright green same as GRNDOT for green dots
+        const lyello = "#ffff88" // light yellow same as LYEL for classic YBR
+        const lblue  = "#e5e5ff" // light blue region
+        const bblue  = "#3f3fff" // bright blue same as BLUDOT for blue dots
+        const lorang = "#fff1d8" // light orange
+        const borang = "#ffa500" // bright orange same as ORNDOT for orange dots
+        const pink   = "#ffe5e5" // pink for nozone/oinkzone or bad side of YBR
+        const white  = "#ffffff" // white to cover bad side of road artifacts
+        
         regions = [
-          // [2,  6, "#cceecc", "none",       0, 1, xrakr],    // green region
-          // [6, -1, "#b2e5b2", "none",       0, 1, xrakr],    // dark green region
-          [6,  6, "none",      bu.Cols.BLUDOT, 3, 1, xrfull],    // one week guidelines
-          // [0,  2, bu.Cols.LYEL, "none",    0, 0.5, xrfull], // YBR equivalent
-          // [1,  2, "#e5e5ff", "none",       0, 1, xrakr],    // blue region
-//          [2,  2, "none",      bu.Cols.BLUDOT, 2, 1, xrfull],    // blue line
-          // [0,  1, "#fff1d8", "none",       0, 1, xrakr],    // orange region
-//          [1,  1, "none",      bu.Cols.ORNDOT, 2, 1, xrfull],    // orange line
-//          [0, -2, "#fff8f8", "none",       0, 1, null],    // wrong side light red
-          [0, -2, "#ffe5e5", "none",       0, 1, xrakr],    // pink region red 
-          // [0, -2, "#ffffff", "none",       0, 1, null],    // wrong side white
+        //[ d,  D, fcolor, scolor,   w,  op, xrange]
+        //----------------------------------------------------------------------
+        //[ 6, -1, dgreen, "none",   0,   1, xrakr],  // dark green region
+        //[ 2,  6, lgreen, "none",   0,   1, xrfull], // green region
+          [ 6,  6, "none", bgreen, 1.5,   1, xrfull], // 1-week guiding line
+          [ 0,  2, lyello, "none",   0, 0.5, xrfull], // YBR equivalent
+        //[ 1,  2, lblue,  "none",   0,   1, xrakr],  // blue region
+          [ 2,  2, "none", bblue,  1.5,   1, xrfull], // blue line
+        //[ 0,  1, lorang, "none",   0,   1, xrakr],  // orange region
+          [ 1,  1, "none", borang, 1.5,   1, xrfull], // orange line
+          [ 0, -2, white,  "none",   0,   1, null],   // wrong side white
+        //[ 0, -2, pink,   "none",   0,   1, null],   // wrong side red
+        //[ 0, -2, pink,   "none",   0,   1, xrakr],  // nozone/oinkzone red
         ]
       }
 
@@ -3308,7 +3319,7 @@
                  +(opts.oldRoadLine.dash))
   		    .style("fill", "none")
   		    .style("stroke-width", cw)
-  		    .style("stroke", (goal.ybhp&&!opts.roadEditor)?bu.Cols.REDDOT // try REDDOT?
+  		    .style("stroke", (goal.ybhp&&!opts.roadEditor)?bu.Cols.REDDOT
                                      : bu.Cols.ORNG) 
       } else {
         //console.log("DEBUG1156")
@@ -3317,7 +3328,7 @@
                  (goal.ybhp&&!opts.roadEditor)?null:(opts.oldRoadLine.dash)+","
                  +(opts.oldRoadLine.dash))
   		    .style("stroke-width", r3(opts.oldRoadLine.width*scf))
-  		    .style("stroke", (goal.ybhp&&!opts.roadEditor)?bu.Cols.REDDOT // try REDDOT?
+  		    .style("stroke", (goal.ybhp&&!opts.roadEditor)?bu.Cols.REDDOT
                                      : bu.Cols.ORNG) 
       }
 
@@ -3528,14 +3539,14 @@
                  +(opts.oldRoadLine.ctxdash)) 
   		    .style("fill", "none")
   		    .style("stroke-width",opts.oldRoadLine.ctxwidth)
-          .style("stroke", (goal.ybhp&&!opts.roadEditor)?bu.Cols.REDDOT // try REDDOT?
+          .style("stroke", (goal.ybhp&&!opts.roadEditor)?bu.Cols.REDDOT
                                      : bu.Cols.ORNG) 
       } else {
         roadelt.attr("d", d)
           .style("stroke-dasharray",
                  (goal.ybhp&&!opts.roadEditor)?null:(opts.oldRoadLine.ctxdash)+","
                  +(opts.oldRoadLine.ctxdash)) 
-          .style("stroke", (goal.ybhp&&!opts.roadEditor)?bu.Cols.REDDOT // try REDDOT?
+          .style("stroke", (goal.ybhp&&!opts.roadEditor)?bu.Cols.REDDOT
                                      : bu.Cols.ORNG) 
       }
     }
