@@ -500,25 +500,83 @@ self.isoline = ( rd, dtdarr, goal, v, retall=false ) => {
     }
   } else isonew = iso
 
-  // Final pass to eliminate backwards line segments
-  var isofinal = [isonew[0]], lastpt, slope
+  // Second pass to eliminate backwards line segments
+  var isofinal = [isonew[0].slice()], lastpt, slope
   for (j = 1; j < isonew.length; j++) {
     lastpt = isofinal[isofinal.length-1]
     if (isonew[j][0] < lastpt[0]) continue
-    if (isonew[j][0] > lastpt[0]) {
+    if (isonew[j-1][0] < lastpt[0] && isonew[j][0] > lastpt[0]) {
       // Intermediate point needed
       if (isonew[j][0] - isonew[j-1][0] != 0) {
         slope = (isonew[j][1] - isonew[j-1][1])/(isonew[j][0] - isonew[j-1][0])
         isofinal.push([lastpt[0], isonew[j-1][1] + slope*(lastpt[0]-isonew[j-1][0])])
       }
     }
-    isofinal.push(isonew[j])
+    isofinal.push([isonew[j][0], isonew[j][1]])
+  }
+
+  // Third pass to eliminate segments on the wrong side of the road
+  var isofinal2 = []
+
+  function lineval(s, e, x) {
+    var sl = (e[1]-s[1])/(e[0]-s[0])
+    return st[1] + slope * (x-s[0])
+  }
+
+  function intersect(s1, e1, s2, e2) { 
+    // Solve the equation [(e1-s1) -(e2-s2)]*[a1 a2]^T = s2-s1
+    // for [a1 a2]. Both a1 and a2 should be in the range [0,1] for
+    // segments to intersect. The matrix on the lhs will be singular
+    // if the lines are collinear
+    var a = e1[0] - s1[0] 
+    var c = e1[1] - s1[1]
+    var b = -(e2[0] - s2[0])
+    var d = -(e2[1] - s2[1])
+    var e = s2[0] - s1[0]
+    var f = s2[1] - s1[1]
+    
+    var det = a*d - b*c
+    if (det == 0) return null
+    var a1 = (d*e - b*f)/det
+    var a2 = (-c*e + a*f)/det
+    if (a1 < 0 || a1 > 1 || a2 < 0 || a2 > 1) return null
+    return [s1[0]+a1*a, s1[1]+a1*c]
+  }
+
+  function clippt(rd, goal, pt) {
+    var newpt = pt.slice()
+    var rdy = self.rdf(rd, pt[0])
+    if ((newpt[1] - rdy) * goal.yaw < 0) newpt[1] = rdy
+    return newpt
+  }
+
+  var done = false
+  var rdind = 0, isoind = 0 // Node indices for the road and the isoline
+
+  isofinal2.push(clippt(rd, goal, isofinal[0]))
+  
+  while (!done) {
+    
+    if (rdind > rd.length-1 || isoind > isofinal.length-2) break
+
+    // Check whether segments are intersecting
+    var pt = intersect(rd[rdind].sta, rd[rdind].end,
+                       isofinal[isoind], isofinal[isoind+1])
+    if (pt != null && pt[0] != isofinal2[isofinal2.length-1][0])
+      isofinal2.push(pt)
+    //console.log("rdind="+rdind+", isoind="+isoind)
+    
+    if (rd[rdind].end[0] < isofinal[isoind+1][0]) rdind++
+    else {
+      isoind++
+      isofinal2.push(clippt(rd, goal, isofinal[isoind]))
+    }
   }
   
+  //if (v == 6) console.log((isofinal.map(e=>[e[0], bu.dayify(e[0]+bu.SID), e[1]])))
   //console.log(isonew.map(e=>[e[0], bu.dayify(e[0]+bu.SID), e[1],e[2], bu.dayify(e[2]+bu.SID), e[3]]))
-  //console.log(isofinal.map(e=>[e[0], bu.dayify(e[0]+bu.SID), e[1],e[2], bu.dayify(e[2]+bu.SID), e[3]]))
-  if (retall) return [iso, isonew, isofinal]
-  else return isofinal
+  if (retall) return [iso, isonew, isofinal, isofinal2]
+  else return isofinal2
 }
   
 // Evaluates a given isoline at the supplied x coordinate
