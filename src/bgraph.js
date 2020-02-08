@@ -800,11 +800,11 @@
       
       // Order here determines z-order: [remember how 'twas while experimenting]
       gPB          = plot.append('g').attr('id', 'pastboxgrp')     // z-order 01
-      gOldGuides   = plot.append('g').attr('id', 'oldguidegrp')    // z-order 02
       gYBHP        = plot.append('g').attr('id', 'ybhpgrp')        // z-order 03
-      gYBHPlines   = plot.append('g').attr('id', 'ybhplinesgrp');
       gAura        = plot.append('g').attr('id', 'auragrp')        // z-order 04
       gWatermark   = plot.append('g').attr('id', 'wmarkgrp')       // z-order 05
+      gOldGuides   = plot.append('g').attr('id', 'oldguidegrp')    // z-order 02
+      gYBHPlines   = plot.append('g').attr('id', 'ybhplinesgrp');
       gOldRoad     = plot.append('g').attr('id', 'oldroadgrp')     // z-order 06
       gPink        = plot.append('g').attr('id', 'pinkgrp')        // z-order 07
       gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp') // z-order 08
