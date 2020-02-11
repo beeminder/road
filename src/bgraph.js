@@ -799,36 +799,36 @@
         .attr('text-anchor', 'middle')
       
       // Order here determines z-order: [remember how 'twas while experimenting]
-      gPB          = plot.append('g').attr('id', 'pastboxgrp')     // z-order 01
-      gYBHP        = plot.append('g').attr('id', 'ybhpgrp')        // z-order 03
-      gAura        = plot.append('g').attr('id', 'auragrp')        // z-order 04
-      gWatermark   = plot.append('g').attr('id', 'wmarkgrp')       // z-order 05
-      gOldGuides   = plot.append('g').attr('id', 'oldguidegrp')    // z-order 02
-      gYBHPlines   = plot.append('g').attr('id', 'ybhplinesgrp');
-      gOldRoad     = plot.append('g').attr('id', 'oldroadgrp')     // z-order 06
-      gPink        = plot.append('g').attr('id', 'pinkgrp')        // z-order 07
-      gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp') // z-order 08
-      gOldCenter   = plot.append('g').attr('id', 'oldcentergrp')   // z-order 09
-      gGrid        = plot.append('g').attr('id', 'grid')           // z-order 10
-      gOResets     = plot.append('g').attr('id', 'oresetgrp')      // z-order 11
-      gKnots       = plot.append('g').attr('id', 'knotgrp')        // z-order 12
-      gSteppy      = plot.append('g').attr('id', 'steppygrp')      // z-order 13
-      gRosy        = plot.append('g').attr('id', 'rosygrp')        // z-order 14
-      gRosyPts     = plot.append('g').attr('id', 'rosyptsgrp')     // z-order 15
-      gDerails     = plot.append('g').attr('id', 'derailsgrp')     // z-order 16
-      gAllpts      = plot.append('g').attr('id', 'allptsgrp')      // z-order 17
-      gMovingAv    = plot.append('g').attr('id', 'movingavgrp')    // z-order 18
-      gSteppyPts   = plot.append('g').attr('id', 'steppyptsgrp')   // z-order 19
-      gDpts        = plot.append('g').attr('id', 'datapointgrp')   // z-order 20
-      gHollow      = plot.append('g').attr('id', 'hollowgrp')      // z-order 21
-      gFlat        = plot.append('g').attr('id', 'flatlinegrp')    // z-order 22
-      gHashtags    = plot.append('g').attr('id', 'hashtaggrp')     // z-order 23
-      gBullseye    = plot.append('g').attr('id', 'bullseyegrp')    // z-order 24
-      gRoads       = plot.append('g').attr('id', 'roadgrp')        // z-order 25
-      gDots        = plot.append('g').attr('id', 'dotgrp')         // z-order 26
-      gHorizon     = plot.append('g').attr('id', 'horgrp')         // z-order 27
-      gHorizonText = plot.append('g').attr('id', 'hortxtgrp')      // z-order 28
-      gPastText    = plot.append('g').attr('id', 'pasttxtgrp')     // z-order 29
+      gPB          = plot.append('g').attr('id', 'pastboxgrp')     // z = 01->01
+      gYBHP        = plot.append('g').attr('id', 'ybhpgrp')        // z = 03->02
+      gWatermark   = plot.append('g').attr('id', 'wmarkgrp')       // z = 05->04
+      gOldGuides   = plot.append('g').attr('id', 'oldguidegrp')    // z = 02->05
+      gYBHPlines   = plot.append('g').attr('id', 'ybhplinesgrp')   // z =   ->06
+      gAura        = plot.append('g').attr('id', 'auragrp')        // z = 04->03
+      gOldRoad     = plot.append('g').attr('id', 'oldroadgrp')     // z = 06->07
+      gPink        = plot.append('g').attr('id', 'pinkgrp')        // z = 07->08
+      gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp') // z = 08->09
+      gOldCenter   = plot.append('g').attr('id', 'oldcentergrp')   // z = 09->10
+      gGrid        = plot.append('g').attr('id', 'grid')           // z = 10->11
+      gOResets     = plot.append('g').attr('id', 'oresetgrp')      // z = 11->12
+      gKnots       = plot.append('g').attr('id', 'knotgrp')        // z = 12->13
+      gSteppy      = plot.append('g').attr('id', 'steppygrp')      // z = 13->14
+      gRosy        = plot.append('g').attr('id', 'rosygrp')        // z = 14->15
+      gRosyPts     = plot.append('g').attr('id', 'rosyptsgrp')     // z = 15->16
+      gDerails     = plot.append('g').attr('id', 'derailsgrp')     // z = 16->17
+      gAllpts      = plot.append('g').attr('id', 'allptsgrp')      // z = 17->18
+      gMovingAv    = plot.append('g').attr('id', 'movingavgrp')    // z = 18->19
+      gSteppyPts   = plot.append('g').attr('id', 'steppyptsgrp')   // z = 19->20
+      gDpts        = plot.append('g').attr('id', 'datapointgrp')   // z = 20->21
+      gHollow      = plot.append('g').attr('id', 'hollowgrp')      // z = 21->22
+      gFlat        = plot.append('g').attr('id', 'flatlinegrp')    // z = 22->23
+      gHashtags    = plot.append('g').attr('id', 'hashtaggrp')     // z = 23->24
+      gBullseye    = plot.append('g').attr('id', 'bullseyegrp')    // z = 24->25
+      gRoads       = plot.append('g').attr('id', 'roadgrp')        // z = 25->26
+      gDots        = plot.append('g').attr('id', 'dotgrp')         // z = 26->27
+      gHorizon     = plot.append('g').attr('id', 'horgrp')         // z = 27->28
+      gHorizonText = plot.append('g').attr('id', 'hortxtgrp')      // z = 28->29
+      gPastText    = plot.append('g').attr('id', 'pasttxtgrp')     // z = 29->30
 
       zoomin = focusclip.append("svg:use")
 	      .attr("class","zoomin")
@@ -3109,22 +3109,23 @@
         const lorang = "#fff1d8" // light orange
         const borang = "#ffa500" // bright orange same as ORNDOT for orange dots
         const pink   = "#ffe5e5" // pink for nozone/oinkzone or bad side of YBR
-        const white  = "#ffffff" // white to cover bad side of road artifacts
         
         regions = [
-        //[ d,  D, fcolor, scolor,   w,  op, xrange]
+        //[ d,  D, fcolor,   scolor,   w,   op, xrange] <-- region color def'n
         //----------------------------------------------------------------------
-        //[ 6, -1, dgreen, "none",   0,   1, xrakr],  // dark green region
-        //[ 2,  6, lgreen, "none",   0,   1, xrfull], // green region
-          [ 6,  6, "none", bgreen, 1.5,   1, xrfull], // 1-week guiding line
-          [ 0,  2, lyello, "none",   0, 0.5, xrfull], // YBR equivalent
-        //[ 1,  2, lblue,  "none",   0,   1, xrakr],  // blue region
-          [ 2,  2, "none", bblue,  1.5,   1, xrfull], // blue line
-        //[ 0,  1, lorang, "none",   0,   1, xrakr],  // orange region
-          [ 1,  1, "none", borang, 1.5,   1, xrfull], // orange line
-        //[ 0, -2, white,  "none",   0,   1, null],   // wrong side white
-        //[ 0, -2, pink,   "none",   0,   1, null],   // wrong side red
-        //[ 0, -2, pink,   "none",   0,   1, xrakr],  // nozone/oinkzone red
+        //[ 6, -1, dgreen,    "none",   0,   1, xrfull], // dark green region
+          [ 6,  6, "none",    bgreen, 1.5,   1, xrfull], // 1-week guiding line
+        //[ 2,  6, lgreen,    "none",   0,   1, xrfull], // green region
+          [ 2,  2, "none",    bblue,  1.5,   1, xrfull], // blue line
+        //[ 1,  2, lblue,     "none",   0,   1, xrfull], // blue region
+          [ 1,  1, "none",    borang, 1.5,   1, xrfull], // orange line
+        //[ 0,  1, lorang,    "none",   0,   1, xrfull], // orange region
+          [ 0,  2, lyello,    "none",   0, 0.5, xrfull], // YBR equivalent
+        // bright red critical line currently in updateCenterline because we
+        // can't define dashed lines here; so the following doesn't work:
+        //[ 0,  0, "#ff0000", "none",   1,   1, xrfull], // brightline
+        //[ 0, -2, pink,      "none",   0,   1, null],   // entire wrong side
+        //[ 0, -2, pink,      "none",   0,   1, xrakr],  // nozone/oinkzone
         ]
       }
 
