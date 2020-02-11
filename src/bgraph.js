@@ -3104,7 +3104,6 @@
       const lorang = "#fff1d8" // light orange
       const borang = "#ffa500" // bright orange same as ORNDOT for orange dots
       const pink   = "#ffe5e5" // pink for nozone/oinkzone or bad side of YBR
-      const pink   = "#ffe5e5" // pink for nozone/oinkzone or bad side of YBR
 
       if (!goal.ybhp) {
         regions = [
