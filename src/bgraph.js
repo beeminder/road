@@ -3076,8 +3076,8 @@
         gYBHPlines.selectAll("*").remove()
         return
       }
-      var regions;
-        
+      var regions
+      
       // Count all previously generated ybhp path elements on the
       // current svg graph so we can remove unused ones automatically
       var ybhpall = d3.selectAll("#svg"+curid+" #ybhpgrp path")
@@ -3093,23 +3093,24 @@
       // Finally, xrange, a list like [xmin, xmax], gives the x-axis range to
       // apply it to. If xrange=null, use [-infinity, infinity].
 
+      const xrfull = [goal.tini, goal.tfin]          // x-axis range tini-tfin
+      const xrakr  = [goal.asof, goal.asof+7*bu.SID] // now to akrasia horiz.
+      const lgreen = "#cceecc" // light green region
+      const dgreen = "#b2e5b2" // dark green region
+      const bgreen = "#00aa00" // bright green same as GRNDOT for green dots
+      const lyello = "#ffff88" // light yellow same as LYEL for classic YBR
+      const lblue  = "#e5e5ff" // light blue region
+      const bblue  = "#3f3fff" // bright blue same as BLUDOT for blue dots
+      const lorang = "#fff1d8" // light orange
+      const borang = "#ffa500" // bright orange same as ORNDOT for orange dots
+      const pink   = "#ffe5e5" // pink for nozone/oinkzone or bad side of YBR
+      const white  = "#ffffff" // white to cover bad side of road artifacts
+
       if (!goal.ybhp) {
         regions = [
           [0, -1, opts.halfPlaneCol.fill, "none", 0, 1, null]
         ]
       } else {
-        const xrfull = [goal.tini, goal.tfin]          // x-axis range tini-tfin
-        const xrakr  = [goal.asof, goal.asof+7*bu.SID] // now to akrasia horiz.
-        const lgreen = "#cceecc" // light green region
-        const dgreen = "#b2e5b2" // dark green region
-        const bgreen = "#00aa00" // bright green same as GRNDOT for green dots
-        const lyello = "#ffff88" // light yellow same as LYEL for classic YBR
-        const lblue  = "#e5e5ff" // light blue region
-        const bblue  = "#3f3fff" // bright blue same as BLUDOT for blue dots
-        const lorang = "#fff1d8" // light orange
-        const borang = "#ffa500" // bright orange same as ORNDOT for orange dots
-        const pink   = "#ffe5e5" // pink for nozone/oinkzone or bad side of YBR
-        const white  = "#ffffff" // white to cover bad side of road artifacts
         
         regions = [
         //[ d,  D, fcolor, scolor,   w,  op, xrange]
@@ -3126,17 +3127,34 @@
         //[ 0, -2, pink,   "none",   0,   1, null],   // wrong side red
         //[ 0, -2, pink,   "none",   0,   1, xrakr],  // nozone/oinkzone red
         ]
+
       }
 
-      // Debugging isolines
-      // var tmp = br.isoline(road, dtd, goal, 6, true)
-      // iso[6] = tmp[0]
-      // iso[7] = tmp[1]
-      // iso[8] = tmp[2]
-      // iso[9] = tmp[3]
-      // iso[7] = iso[7].map((e)=>([e[0], e[1]+0.2]))
-      // iso[8] = iso[8].map((e)=>([e[0], e[1]+0.4]))
-      // iso[9] = iso[9].map((e)=>([e[0], e[1]+0.6]))
+      var debuglines = -1 // Use -1 to disable, 0 or more to debug
+      if (debuglines >= 0) {
+        // Debugging isolines
+        regions = [
+          //[ d,  D, fcolor, scolor,   w,  op, xrange]
+          //----------------------------------------------------------------------
+          [ 6,  6, "none", bgreen, 1.5,   1, xrfull], // 1-week guiding line
+          [ 7,  7, "none", bblue, 1.5,   1, xrfull], // 1-week guiding line
+          [ 8,  8, "none", borang, 1.5,   1, xrfull], // 1-week guiding line
+          [ 9,  9, "none", "red", 1.5,   1, xrfull], // 1-week guiding line
+          [ 0,  2, lyello, "none",   0, 0.5, xrfull], // YBR equivalent
+          //[ 2,  2, "none", bblue,  1.5,   1, xrfull], // blue line
+          //[ 1,  1, "none", borang, 1.5,   1, xrfull], // orange line
+        ]
+        var tmp = br.isoline(road, dtd, goal, debuglines, true)
+        var adj = Math.abs(nYSc.invert(2.5)-nYSc.invert(0))
+        //console.log(JSON.stringify(tmp[3].map(e=>[bu.dayify(e[0]), e[1]])))
+        iso[6] = tmp[0]
+        iso[7] = tmp[1]
+        iso[8] = tmp[2]
+        iso[9] = tmp[3]
+        iso[7] = iso[7].map((e)=>([e[0], e[1]+adj]))
+        iso[8] = iso[8].map((e)=>([e[0], e[1]+2*adj]))
+        iso[9] = iso[9].map((e)=>([e[0], e[1]+3*adj]))
+      }
       
       for (var ri = 0; ri < Math.max(prevcnt, regions.length); ri++) {
         // SVG elements for regions are given unique class names
