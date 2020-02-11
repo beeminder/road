@@ -417,6 +417,8 @@ self.isoline = ( rd, dtdarr, goal, v, retall=false ) => {
   }
   iso = iso.reverse()
   
+  //console.log(JSON.stringify(iso.map(e=>[bu.dayify(e[0]), e[1]])))
+  
   // Ensure correctness of the isoline for domore goals such that the
   // isoline is not allowed to go against 'dir' for dtd days after an
   // inflection point. This is done to ensure that the first
@@ -545,7 +547,15 @@ self.isoline = ( rd, dtdarr, goal, v, retall=false ) => {
 
   function clippt(rd, goal, pt) {
     var newpt = pt.slice()
-    var rdy = self.rdf(rd, pt[0])
+    // Find the road segment [sta, end[ containing the pt
+    var seg = self.findSeg(rd, pt[0])
+    var rdy = self.segValue(rd[seg], pt[0])
+    // If there are preceding vertical segments, take the boundary
+    // value based on road yaw
+    while(--seg >= 0 && rd[seg].sta[0] == pt[0]) {
+      if (goal.yaw > 0) rdy = Math.min(rdy, rd[seg].sta[1])
+      else rdy = Math.max(rdy, rd[seg].sta[1])
+    }
     if ((newpt[1] - rdy) * goal.yaw < 0) newpt[1] = rdy
     return newpt
   }
@@ -573,7 +583,13 @@ self.isoline = ( rd, dtdarr, goal, v, retall=false ) => {
     }
   }
   
-  //if (v == 6) console.log((isofinal.map(e=>[e[0], bu.dayify(e[0]+bu.SID), e[1]])))
+  // if (v == 0) {
+  //   console.log("debug:")
+  //   console.log(JSON.stringify(iso.map(e=>[e[0], bu.dayify(e[0]+bu.SID), e[1]])))
+  //   console.log(JSON.stringify(isonew.map(e=>[e[0], bu.dayify(e[0]+bu.SID), e[1]])))
+  //   console.log(JSON.stringify(isofinal.map(e=>[e[0], bu.dayify(e[0]+bu.SID), e[1]])))
+  //   console.log(JSON.stringify(isofinal2.map(e=>[e[0], bu.dayify(e[0]+bu.SID), e[1]])))
+  // }
   //console.log(isonew.map(e=>[e[0], bu.dayify(e[0]+bu.SID), e[1],e[2], bu.dayify(e[2]+bu.SID), e[3]]))
   if (retall) return [iso, isonew, isofinal, isofinal2]
   else return isofinal2
