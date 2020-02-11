@@ -370,17 +370,17 @@ self.dtdarray = ( rd, goal ) => {
   return arr
 }
 
-/* returns an array of x.y coordinate pairs for an isoline associated
- * with dtd=v. This can be used to compute boundaries for
- * derailment regions, as well as guidelines. Coordinate points start
- * from the beginning of the road and proceed forward
+/* Return an array of x.y coordinate pairs for an isoline associated with dtd=v.
+ * This can be used to compute boundaries for derailment regions, as well as 
+ * guidelines. Coordinate points start from the beginning of the road and 
+ * proceed forward.
 */
 self.isoline = ( rd, dtdarr, goal, v, retall=false ) => {
   var n = dtdarr[0], nn, iso
   var s = 0, ns, j, k, st, en, sl
   // Start the isoline with a horizontal line for the end of the road
   iso = [[n[0][0]+10*bu.SID, n[0][1]+v*(n[0][3]-n[0][1])],
-         [n[0][0], n[0][1]+v*(n[0][3]-n[0][1])]]
+         [n[0][0],           n[0][1]+v*(n[0][3]-n[0][1])]]
   for (j = 1; j < dtdarr.length; j++) {
     nn = dtdarr[j]
     // Identify dtd segment in which the desired value lies
@@ -391,17 +391,16 @@ self.isoline = ( rd, dtdarr, goal, v, retall=false ) => {
         break
       }
     }
-    // Consider inflections between the previous segment index and
-    // newly found segment index from inflection j+1 to inflection j
-    // on the road
+    // Consider inflections between the previous segment index and newly found
+    // segment index from inflection j+1 to inflection j on the road
     for (k=s; k >= ns; k--) {
       st = [n[k][0], n[k][1], n[k][2]]
       en = [nn[k][0], nn[k][3], nn[k][4]]
       if (en[2] - st[2] == 0)
-        iso.push([st[0], st[1]]);
+        iso.push([st[0], st[1]])
       else {
         sl = (v-st[2]) / (en[2]-st[2])
-        iso.push([st[0] + sl*(en[0]-st[0]), st[1]+sl*(en[1]-st[1])]);
+        iso.push([st[0] + sl*(en[0]-st[0]), st[1]+sl*(en[1]-st[1])])
       }
     }
     st = [nn[ns][0], nn[ns][1], nn[ns][2]]

@@ -3094,38 +3094,31 @@
       // apply it to. If xrange=null, use [-infinity, infinity].
 
       const xrfull = [goal.tini, goal.tfin]          // x-axis range tini-tfin
-      const xrakr  = [goal.asof, goal.asof+7*bu.SID] // now to akrasia horiz.
-      const lgreen = "#cceecc" // light green region
-      const dgreen = "#b2e5b2" // dark green region
-      const bgreen = "#00aa00" // bright green same as GRNDOT for green dots
-      const lyello = "#ffff88" // light yellow same as LYEL for classic YBR
-      const lblue  = "#e5e5ff" // light blue region
-      const bblue  = "#3f3fff" // bright blue same as BLUDOT for blue dots
-      const lorang = "#fff1d8" // light orange
-      const borang = "#ffa500" // bright orange same as ORNDOT for orange dots
-      const pink   = "#ffe5e5" // pink for nozone/oinkzone or bad side of YBR
+      //const xrakr  = [goal.asof, goal.asof+7*bu.SID] // now to akrasia horiz.
+      const bgreen  = "#00aa00" // bright green same as GRNDOT for green dots
+      const bblue   = "#3f3fff" // bright blue same as BLUDOT for blue dots
+      const borange = "#ffa500" // bright orange same as ORNDOT for orange dots
+      const lyellow = "#ffff88" // light yellow same as LYEL for classic YBR
 
       if (!goal.ybhp) {
-        regions = [
-          [0, -1, opts.halfPlaneCol.fill, "none", 0, 1, null]
-        ]
+        regions = [ [0, -1, opts.halfPlaneCol.fill, "none", 0, 1, null] ]
       } else {
         regions = [
-        //[ d,  D, fcolor,   scolor,   w,   op, xrange] <-- region color def'n
+        //  d,  D, fcolor,    scolor,      w,  op, xrange
         //----------------------------------------------------------------------
-        //[ 6, -1, dgreen,    "none",   0,   1, xrfull], // dark green region
-          [ 6,  6, "none",    bgreen, 1.5,   1, xrfull], // 1-week guiding line
-        //[ 2,  6, lgreen,    "none",   0,   1, xrfull], // green region
-          [ 2,  2, "none",    bblue,  1.5,   1, xrfull], // blue line
-        //[ 1,  2, lblue,     "none",   0,   1, xrfull], // blue region
-          [ 1,  1, "none",    borang, 1.5,   1, xrfull], // orange line
-        //[ 0,  1, lorang,    "none",   0,   1, xrfull], // orange region
-          [ 0,  2, lyello,    "none",   0, 0.5, xrfull], // YBR equivalent
+        //[ 6, -1, "#b2e5b2", "none",      0,   1, xrfull], // dark green region
+          [ 6,  6, "none",    bgreen,    1.5,   1, xrfull], // 1-week line
+        //[ 2,  6, "#cceecc", "none",      0,   1, xrfull], // green region
+          [ 2,  2, "none",    bblue,     1.5,   1, xrfull], // blue line
+        //[ 1,  2, "#e5e5ff", "none",      0,   1, xrfull], // blue region
+          [ 1,  1, "none",    borange,   1.5,   1, xrfull], // orange line
+        //[ 0,  1, "#fff1d8", "none",      0,   1, xrfull], // orange region
+          [ 0,  2, lyellow,   "none",      0, 0.5, xrfull], // YBR equivalent
         // bright red critical line currently in updateCenterline because we
         // can't define dashed lines here; so the following doesn't work:
-        //[ 0,  0, "#ff0000", "none",   1,   1, xrfull], // brightline
-        //[ 0, -2, pink,      "none",   0,   1, null],   // entire wrong side
-        //[ 0, -2, pink,      "none",   0,   1, xrakr],  // nozone/oinkzone
+        //[ 0,  0, "#ff0000", "none",      1,   1, xrfull], // brightline
+        //[ 0, -2, "#ffe5e5", "none",      0,   1, null],   // entire wrong side
+        //[ 0, -2, "#ffe5e5", "none",      0,   1, xrakr],  // nozone/oinkzone
         ]
       }
 
@@ -3134,12 +3127,12 @@
         // Debugging isolines
         regions = [
           //[ d,  D, fcolor, scolor,   w,  op, xrange]
-          //----------------------------------------------------------------------
-          [ 6,  6, "none", bgreen, 1.5,   1, xrfull], // 1-week guiding line
-          [ 7,  7, "none", bblue, 1.5,   1, xrfull], // 1-week guiding line
-          [ 8,  8, "none", borang, 1.5,   1, xrfull], // 1-week guiding line
-          [ 9,  9, "none", "red", 1.5,   1, xrfull], // 1-week guiding line
-          [ 0,  2, lyello, "none",   0, 0.5, xrfull], // YBR equivalent
+          //--------------------------------------------------------------------
+          [ 6,  6, "none",  bgreen,  1.5,   1, xrfull], // 1-week guiding line
+          [ 7,  7, "none",  bblue,   1.5,   1, xrfull], // 1-week guiding line
+          [ 8,  8, "none",  borange, 1.5,   1, xrfull], // 1-week guiding line
+          [ 9,  9, "none",  "red",   1.5,   1, xrfull], // 1-week guiding line
+          [ 0,  2, lyellow, "none",    0, 0.5, xrfull], // YBR equivalent
           //[ 2,  2, "none", bblue,  1.5,   1, xrfull], // blue line
           //[ 1,  1, "none", borang, 1.5,   1, xrfull], // orange line
         ]
