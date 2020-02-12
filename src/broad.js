@@ -370,12 +370,12 @@ self.dtdarray = ( rd, goal ) => {
   return arr
 }
 
-/* Return an array of x.y coordinate pairs for an isoline associated with dtd=v.
- * This can be used to compute boundaries for derailment regions, as well as 
- * guidelines. Coordinate points start from the beginning of the road and 
- * proceed forward.
+/* Generates and returns an initial version of the isoline by
+ * processing the supplied dtdarray. The resulting isoline is correct
+ * for doless and rash goals, but will need further processing for
+ * goal with dir*yaw>0.
 */
-self.isoline = ( rd, dtdarr, goal, v, retall=false ) => {
+self.isoline_generate = ( rd, dtdarr, goal, v ) => {
   var n = dtdarr[0], nn, iso
   var s = 0, ns, j, k, st, en, sl
   // Start the isoline with a horizontal line for the end of the road
@@ -414,110 +414,98 @@ self.isoline = ( rd, dtdarr, goal, v, retall=false ) => {
     s = ns
     n = nn
   }
-  iso = iso.reverse()
+  return iso.reverse()  
+}
+
+/* Ensure correctness of the isoline for domore goals such that the
+   isoline is not allowed to go against 'dir' for dtd days after an
+   inflection point. This is done to ensure that the first
+   intersection with the centerline is taken as the dtd value.
+*/
+self.isoline_monotonicity = ( iso, rd, dtdarr, goal, v ) => {
+  if (goal.yaw * goal.dir < 0) return iso
   
-  //console.log(JSON.stringify(iso.map(e=>[bu.dayify(e[0]), e[1]])))
-  
-  // Ensure correctness of the isoline for domore goals such that the
-  // isoline is not allowed to go against 'dir' for dtd days after an
-  // inflection point. This is done to ensure that the first
-  // intersection with the centerline is taken as the dtd value.
-  var isonew = [], downstreak = false, flatdone = false, slope, newx
+  var isoout = [], downstreak = false, flatdone = false, slope, newx, j, k
   var addpt = function (a, pt) {
     a.push([pt[0], pt[1]]); return;
   }
-  const debuglines = false
-  
-  if (debuglines && v == 6) console.log("**** Starting iso "+v)
-  if (goal.yaw * goal.dir > 0) {
-    // k holds the last isoline segment that has been processed and filtered
-    k = -1
-    // j iterates over unfiltered isoline segments
-    for (j = 0; j < iso.length-1; j++) {
-      // If an upslope is detected, finish downstreak
-      if ((iso[j+1][1] - iso[j][1]) * goal.dir > 0) downstreak = false
+
+  // k holds the last isoline segment that has been processed and filtered
+  k = -1
+  // j iterates over unfiltered isoline segments
+  for (j = 0; j < iso.length-1; j++) {
+    // If an upslope is detected, finish downstreak
+    if ((iso[j+1][1] - iso[j][1]) * goal.dir > 0) downstreak = false
+    
+    addpt(isoout, iso[j])
+    
+    // Check if there is a new downstreak to initiate new flat region (when dtd != 0)
+    if (v != 0 && (iso[j+1][1] - iso[j][1]) * goal.dir < 0 && !downstreak) {
       
-      if (debuglines && v == 6) {
-        console.log("Adding "+bu.shd(iso[j][0])+", "+iso[j][1]
-                    +". j = "+j+", k = "+k+", ds = "+downstreak+", fd = "+flatdone)
-      }
-      addpt(isonew, iso[j])
-      
-      // Check if there is a new downstreak to initiate new flat region (when dtd != 0)
-      if (v != 0 && (iso[j+1][1] - iso[j][1]) * goal.dir < 0 && !downstreak) {
-        
-        downstreak = true
-        if (debuglines && v == 6) console.log("Starting downstreak, j="+j+", k="+k)
-        // Extend horizontally for at least dtd days, or
-        // until a positive slope is found
-        k = j+1
-        flatdone = false
-        while (!flatdone) {
-          if (iso[k][0] >= iso[j][0] + v*bu.SID) {
-            // Reached end of the flat region with dtd days
+      downstreak = true
+      // Extend horizontally for at least dtd days, or
+      // until a positive slope is found
+      k = j+1
+      flatdone = false
+      while (!flatdone) {
+        if (iso[k][0] >= iso[j][0] + v*bu.SID) {
+          // Reached end of the flat region with dtd days
+          flatdone = true
+          newx = iso[j][0]+v*bu.SID
+          addpt(isoout, [newx, iso[j][1]])
+          
+        } else if ((iso[k+1][1] - iso[k][1]) * goal.dir >= 0) {
+          // Found a positive slope, finish flat region by extending
+          // until intersection with the positive slope unless the
+          // next segment ends before that
+          if (iso[k+1][0] != iso[k][0]) {
+            slope = (iso[k+1][1]-iso[k][1])/(iso[k+1][0]-iso[k][0])
+            if (slope != 0) {
+              newx = iso[k][0] + (iso[j][1] - iso[k][1])/slope
+              if (newx <= iso[j][0]+v*bu.SID && newx <= iso[k+1][0]) {
+                flatdone = true
+              }
+            }
+          } else if ((iso[j][1]-iso[k][1])*(iso[j][1]-iso[k+1][1]) < 0) {
+            // Early intersection with upwards vertical segment found
+            // +1 ensures that filtering gets rid of extra backwards
+            // segments
+            newx = iso[k][0]+1
             flatdone = true
-            newx = iso[j][0]+v*bu.SID
-            if (debuglines && v == 6) {
-              console.log("Adding end of flat "+bu.shd(newx)+", "+iso[j][1]
-                          +". j = "+j+", k = "+k+", ds = "+downstreak+", fd = "+flatdone)
-            }
-            addpt(isonew, [newx, iso[j][1]])
-            
-            //if (iso[k][0] != iso[k-1][0]) {
-            //  slope = (iso[k][1]-iso[k-1][1])/(iso[k][0]-iso[k-1][0])
-            //  addpt(isonew, [iso[k][0], iso[k-1][1] + slope*(newx-iso[k-1][0]) ])
-            //}
-            
-          } else if ((iso[k+1][1] - iso[k][1]) * goal.dir >= 0) {
-            // Found a positive slope, finish flat region by extending
-            // until intersection with the positive slope unless the
-            // next segment ends before that
-            if (iso[k+1][0] != iso[k][0]) {
-              slope = (iso[k+1][1]-iso[k][1])/(iso[k+1][0]-iso[k][0])
-              if (slope != 0) {
-                newx = iso[k][0] + (iso[j][1] - iso[k][1])/slope
-                if (newx <= iso[j][0]+v*bu.SID && newx <= iso[k+1][0]) {
-                  flatdone = true
-                }
-              }
-            } else if ((iso[j][1]-iso[k][1])*(iso[j][1]-iso[k+1][1]) < 0) {
-              // Early intersection with upwards vertical segment found
-              newx = iso[k][0]+1 // +1 ensures that filtering gets rid of extra backwards segments
-              flatdone = true
-              if (debuglines && v == 6) console.log("Vertical!")
-            }
-            if (flatdone) {
-              if (debuglines && v == 6) {
-                console.log("Adding early flat finish "+bu.shd(newx)+", "+iso[j][1]
-                            +". j = "+j+", k = "+k+", ds = "+downstreak+", fd = "+flatdone)
-              }
-              addpt(isonew, [newx, iso[j][1]])
-            }
-              
           }
-          k++
+          if (flatdone) {
+            addpt(isoout, [newx, iso[j][1]])
+          }
         }
+        k++
       }
     }
-  } else isonew = iso
-
-  // Second pass to eliminate backwards line segments
-  var isofinal = [isonew[0].slice()], lastpt, slope
-  for (j = 1; j < isonew.length; j++) {
-    lastpt = isofinal[isofinal.length-1]
-    if (isonew[j][0] < lastpt[0]) continue
-    if (isonew[j-1][0] < lastpt[0] && isonew[j][0] > lastpt[0]) {
-      // Intermediate point needed
-      if (isonew[j][0] - isonew[j-1][0] != 0) {
-        slope = (isonew[j][1] - isonew[j-1][1])/(isonew[j][0] - isonew[j-1][0])
-        isofinal.push([lastpt[0], isonew[j-1][1] + slope*(lastpt[0]-isonew[j-1][0])])
-      }
-    }
-    isofinal.push([isonew[j][0], isonew[j][1]])
   }
+  return isoout
+}
 
-  // Third pass to eliminate segments on the wrong side of the road
-  var isofinal2 = []
+/** Eliminates backwards line segments that are introduced by the
+ * monotonicty pass */
+self.isoline_nobackward = ( iso, rd, dtdarr, goal, v ) => {
+  var isoout = [iso[0].slice()], lastpt, slope, j
+  for (j = 1; j < iso.length; j++) {
+    lastpt = isoout[isoout.length-1]
+    if (iso[j][0] < lastpt[0]) continue
+    if (iso[j-1][0] < lastpt[0] && iso[j][0] > lastpt[0]) {
+      // Intermediate point needed
+      if (iso[j][0] - iso[j-1][0] != 0) {
+        slope = (iso[j][1] - iso[j-1][1])/(iso[j][0] - iso[j-1][0])
+        isoout.push([lastpt[0], iso[j-1][1] + slope*(lastpt[0]-iso[j-1][0])])
+      }
+    }
+    isoout.push([iso[j][0], iso[j][1]])
+  }
+  return isoout
+}
+
+/* Eliminates segments on the wrong side of the road */
+self.isoline_clip = ( iso, rd, dtdarr, goal, v ) => {
+  var isoout = []
 
   function lineval(s, e, x) {
     var sl = (e[1]-s[1])/(e[0]-s[0])
@@ -529,21 +517,19 @@ self.isoline = ( rd, dtdarr, goal, v, retall=false ) => {
     // for [a1 a2]. Both a1 and a2 should be in the range [0,1] for
     // segments to intersect. The matrix on the lhs will be singular
     // if the lines are collinear
-    var a = e1[0] - s1[0] 
-    var c = e1[1] - s1[1]
-    var b = -(e2[0] - s2[0])
-    var d = -(e2[1] - s2[1])
-    var e = s2[0] - s1[0]
-    var f = s2[1] - s1[1]
-    
+    var a = e1[0] - s1[0],    c = e1[1] - s1[1]
+    var b = -(e2[0] - s2[0]), d = -(e2[1] - s2[1])
+    var e = s2[0] - s1[0],    f = s2[1] - s1[1]
     var det = a*d - b*c
     if (det == 0) return null
-    var a1 = (d*e - b*f)/det
-    var a2 = (-c*e + a*f)/det
+    var a1 = (d*e - b*f)/det, a2 = (-c*e + a*f)/det
     if (a1 < 0 || a1 > 1 || a2 < 0 || a2 > 1) return null
     return [s1[0]+a1*a, s1[1]+a1*c]
   }
 
+  // Clips a single point to the right side of the road.Assumes that
+  // points that are on vertical segments are clipped wrt to the
+  // closest boundary to the wrong side of the road
   function clippt(rd, goal, pt) {
     var newpt = pt.slice()
     // Find the road segment [sta, end[ containing the pt
@@ -559,39 +545,41 @@ self.isoline = ( rd, dtdarr, goal, v, retall=false ) => {
     return newpt
   }
 
-  var done = false
-  var rdind = 0, isoind = 0 // Node indices for the road and the isoline
+  var done = false, rdind = 0, isoind = 0
 
-  isofinal2.push(clippt(rd, goal, isofinal[0]))
-  
+  isoout.push(clippt(rd, goal, iso[0]))
   while (!done) {
     
-    if (rdind > rd.length-1 || isoind > isofinal.length-2) break
+    if (rdind > rd.length-1 || isoind > iso.length-2) break
 
     // Check whether segments are intersecting
-    var pt = intersect(rd[rdind].sta, rd[rdind].end,
-                       isofinal[isoind], isofinal[isoind+1])
-    if (pt != null && pt[0] != isofinal2[isofinal2.length-1][0])
-      isofinal2.push(pt)
-    //console.log("rdind="+rdind+", isoind="+isoind)
+    var pt = intersect(rd[rdind].sta, rd[rdind].end, iso[isoind], iso[isoind+1])
+    if (pt != null && pt[0] != isoout[isoout.length-1][0]) isoout.push(pt)
     
-    if (rd[rdind].end[0] < isofinal[isoind+1][0]) rdind++
+    if (rd[rdind].end[0] < iso[isoind+1][0])
+      rdind++
     else {
       isoind++
-      isofinal2.push(clippt(rd, goal, isofinal[isoind]))
+      isoout.push(clippt(rd, goal, iso[isoind]))
     }
   }
+  return isoout
+}
   
-  // if (v == 0) {
-  //   console.log("debug:")
-  //   console.log(JSON.stringify(iso.map(e=>[e[0], bu.dayify(e[0]+bu.SID), e[1]])))
-  //   console.log(JSON.stringify(isonew.map(e=>[e[0], bu.dayify(e[0]+bu.SID), e[1]])))
-  //   console.log(JSON.stringify(isofinal.map(e=>[e[0], bu.dayify(e[0]+bu.SID), e[1]])))
-  //   console.log(JSON.stringify(isofinal2.map(e=>[e[0], bu.dayify(e[0]+bu.SID), e[1]])))
-  // }
-  //console.log(isonew.map(e=>[e[0], bu.dayify(e[0]+bu.SID), e[1],e[2], bu.dayify(e[2]+bu.SID), e[3]]))
-  if (retall) return [iso, isonew, isofinal, isofinal2]
-  else return isofinal2
+/* Return an array of x.y coordinate pairs for an isoline associated with dtd=v.
+ * This can be used to compute boundaries for derailment regions, as well as 
+ * guidelines. Coordinate points start from the beginning of the road and 
+ * proceed forward.
+*/
+self.isoline = ( rd, dtdarr, goal, v, retall=false ) => {
+  var iso1, iso2, iso3, iso4
+  iso1 = self.isoline_generate( rd, dtdarr, goal, v)
+  iso2 = self.isoline_monotonicity( iso1, rd, dtdarr, goal, v)
+  iso3 = self.isoline_nobackward( iso2, rd, dtdarr, goal, v)
+  iso4 = self.isoline_clip( iso3, rd, dtdarr, goal, v)
+
+  if (retall) return [iso1, iso2, iso3, iso4]
+  else return iso4
 }
   
 // Evaluates a given isoline at the supplied x coordinate
