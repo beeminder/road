@@ -3094,7 +3094,7 @@
       // apply it to. If xrange=null, use [-infinity, infinity].
 
       const xrfull = [goal.tini, goal.tfin]          // x-axis range tini-tfin
-      //const xrakr  = [goal.asof, goal.asof+7*bu.SID] // now to akrasia horiz.
+      const xrakr  = [goal.asof, goal.asof+7*bu.SID] // now to akrasia horiz.
       const bgreen  = "#00aa00" // bright green same as GRNDOT for green dots
       const bblue   = "#3f3fff" // bright blue same as BLUDOT for blue dots
       const borange = "#ffa500" // bright orange same as ORNDOT for orange dots
@@ -3118,7 +3118,7 @@
         // can't define dashed lines here; so the following doesn't work:
         //[ 0,  0, "#ff0000", "none",      1,   1, xrfull], // brightline
         //[ 0, -2, "#ffe5e5", "none",      0,   1, null],   // entire wrong side
-        //[ 0, -2, "#ffe5e5", "none",      0,   1, xrakr],  // nozone/oinkzone
+          [ 0, -2, "#fff5f5", "none",      0,   1, xrakr],  // nozone/oinkzone
         ]
       }
 
