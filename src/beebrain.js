@@ -736,6 +736,9 @@ const beebrain = function( bbin ) {
       var prevcolor = null
       var newcolor
       while (x <= Math.min(now, goal.tfin)) { // walk forward from tlast
+        // TODO: goal.isolines isn't defined yet so not sure how it works to 
+        //       call dotcolor here
+        //newcolor = null
         newcolor = br.dotcolor( roads, goal, x, vlast, goal.isolines )
         // done iff 2 reds in a row
         if (prevcolor===newcolor && prevcolor===bu.Cols.REDDOT) break
@@ -1006,7 +1009,10 @@ const beebrain = function( bbin ) {
     goal.ravg = br.tvr(goal.tini, goal.vini, goal.tfin,goal.vfin,null)*goal.siru
     goal.cntdn = Math.ceil((goal.tfin-goal.tcur)/bu.SID)
     goal.lane = bu.clip(br.lanage(roads, goal, goal.tcur,goal.vcur), -32768, 32767)
-    goal.color = CNAME[br.dotcolor(roads, goal, goal.tcur,goal.vcur, goal.isolines)]
+    //goal.color = CNAME[br.dotcolor(roads, goal, goal.tcur,goal.vcur, goal.isolines)]
+    goal.color = (goal.safebuf < 1 ? "red"    :
+                  goal.safebuf < 2 ? "orange" :
+                  goal.safebuf < 3 ? "blue"   : "green")
     goal.loser = br.isLoser(roads, goal, data, goal.tcur, goal.vcur)
     goal.sadbrink = (goal.tcur-bu.SID>goal.tini)
       &&(br.dotcolor(roads,goal,goal.tcur-bu.SID,goal.dtf(goal.tcur-bu.SID, goal.isolines))==bu.Cols.REDDOT)
@@ -1181,7 +1187,9 @@ const beebrain = function( bbin ) {
       lanesum = "below the road"
     }
     goal.titlesum
-      = bu.toTitleCase(CNAME[br.dotcolor(roads, goal, goal.tcur, goal.vcur, goal.isolines)]) + ". "
+      = bu.toTitleCase(goal.color)
+        //CNAME[br.dotcolor(roads, goal, goal.tcur, goal.vcur, goal.isolines)])
+      + ". "
       + "bmndr.com/"+goal.yoog+" is " + lanesum
       + ((y*d>0)?" (safe to stay flat for ~"+cd+")":"")
 
