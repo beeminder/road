@@ -216,8 +216,8 @@ const beebrain = function( bbin ) {
   now.hour(0); now.minute(0); now.second(0); now.millisecond(0)
   goal.asof = now.unix()
   goal.horizon = goal.asof+bu.AKH
-  goal.xMin = goal.asof;  goal.xMax = goal.horizon
-  goal.yMin = -1;    goal.yMax = 1
+  goal.xMin =    goal.asof;  goal.xMax = goal.horizon
+  goal.yMin = -1;            goal.yMax = 1
 
   /** Convery legacy parameters to up-to-date entries 
       @param {Object} p Goal parameters from the bb file */
@@ -720,15 +720,35 @@ const beebrain = function( bbin ) {
   }
   
   
-  var flad = null     // Holds the flatlined datapoint if it exists
+  // Turns out we only need to do this for WEEN/RASH goals and I'm not sure why.
+  // Back in Pybrain the intention was to flatline all the way to today for 
+  // WEEN/RASH and to stop flatlining if 2 red days in a row for MOAR/PHAT.
+  // That might've stopped making sense after the new red-yesterday derailment
+  // criterion. In any case, bgraph.js:updateDataPoints() seems to draw the 
+  // flatlined datapoint fine for do-more goals and I'm not sure why we still
+  // need this for do-less goals but things break without it.
+  let flad = null // Holds the flatlined datapoint if it exists
   function flatline() {
     flad = null
+    const prevpt = data[data.length-1]
+    const tlast  = prevpt[0]
+    const vlast  = prevpt[1]
+    if (goal.yaw * goal.dir < 0 && tlast <= goal.tfin) {
+      const tflat = Math.min(goal.asof, goal.tfin)
+      if (!aggval.hasOwnProperty(tflat)) {
+        flad = [tflat, vlast, "PPR", DPTYPE.FLATLINE, tlast, vlast, null]
+        data.push(flad)
+      }
+    }
+
+/* SCHDEL: old version of flatline for temporary comparison
     var now = goal.asof
     var numpts = data.length
     var tlast = data[numpts-1][0]
     var vlast = data[numpts-1][1]
     
     if (tlast > goal.tfin) return
+
     var x = tlast // x = the time we're flatlining to
     if (goal.yaw * goal.dir < 0) 
       x = Math.min(now, goal.tfin) // WEEN/RASH: flatline all the way
@@ -736,25 +756,26 @@ const beebrain = function( bbin ) {
       var prevcolor = null
       var newcolor
       while (x <= Math.min(now, goal.tfin)) { // walk forward from tlast
-        // TODO: goal.isolines isn't defined yet so not sure how it works to 
-        //       call dotcolor here
-        //newcolor = null
+        // goal.isolines not defined yet so makes no sense calling dotcolor()
         newcolor = br.dotcolor( roads, goal, x, vlast, goal.isolines )
         // done iff 2 reds in a row
         if (prevcolor===newcolor && prevcolor===bu.Cols.REDDOT) break
         prevcolor = newcolor
         x += bu.SID // or see eth.pad/ppr
       }
-      x = bu.arrMin([x, now, goal.tfin])
+      // the following looks particularly unnecessary
+      x = Math.min(x, now, goal.tfin)
       for (let i = 0; i < numpts; i++) {
         if (x == data[i][0]) return
       }
     }
+
     if (!aggval.hasOwnProperty(x)) {
       var prevpt = data[numpts-1]
       flad = [x, vlast, "PPR", DPTYPE.FLATLINE, prevpt[0], prevpt[1], null]
       data.push(flad)
     }
+*/
   }
   
   /** Set any of {tmin, tmax, vmin, vmax} that don't have explicit

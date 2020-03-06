@@ -2469,23 +2469,22 @@
     function startAnim(elt, dur, attrs, styles, tag){
       var tr = elt.transition().duration(dur), i
       
-      for (i = 0; i < attrs.length; i++) tr = tr.attr(attrs[i][0], attrs[i][1])
-      for (i = 0; i < styles.length; i++) tr = tr.style(styles[i][0], styles[i][1])
+      for (i= 0; i< attrs.length; i++) tr = tr.attr(  attrs[i][0],  attrs[i][1])
+      for (i= 0; i<styles.length; i++) tr = tr.style(styles[i][0], styles[i][1])
 
       tr = tr.transition().duration(dur)
-      for (i = 0; i < attrs.length; i++) tr = tr.attr(attrs[i][0], attrs[i][2])
-      for (i = 0; i < styles.length; i++) tr = tr.style(styles[i][0], styles[i][2])
+      for (i= 0; i< attrs.length; i++) tr = tr.attr(attrs[i][0],    attrs[i][2])
+      for (i= 0; i<styles.length; i++) tr = tr.style(styles[i][0], styles[i][2])
       tr.on("end", ()=>{if (anim[tag]) startAnim(elt, dur, attrs, styles, tag)})
       anim[tag] = true
     }
     function stopAnim(elt, dur, attrs, styles, tag){
       anim[tag] = false
       var tr = elt.transition().duration(dur)
-      for (let i = 0; i < attrs.length; i++) tr = tr.attr(attrs[i][0], attrs[i][2])
-      for (let i = 0; i < styles.length; i++) tr = tr.style(styles[i][0], styles[i][2])
+      for (let i= 0; i<attrs.length; i++) tr = tr.attr(attrs[i][0], attrs[i][2])
+      for (let i= 0; i<styles.length; i++) tr = tr.style(styles[i][0], styles[i][2])
       tr.on("end", ()=>{anim[tag] = false})
     }
-      
 
     function animBuf(enable) {
       if (opts.roadEditor) return
@@ -3095,9 +3094,9 @@
 
       const xrfull = [goal.tini, goal.tfin]          // x-axis range tini-tfin
       const xrakr  = [goal.asof, goal.asof+7*bu.SID] // now to akrasia horiz.
-      const bgreen  = "#00aa00" // bright green same as GRNDOT for green dots
-      const bblue   = "#3f3fff" // bright blue same as BLUDOT for blue dots
-      const borange = "#ffa500" // bright orange same as ORNDOT for orange dots
+      const bgreen  = bu.Cols.RAZR3 // green isoline for 7 safe days
+      const bblue   = bu.Cols.RAZR2 // blue isoline for 2 safe days 
+      const borange = bu.Cols.RAZR1 // orange isoline for 1 safe day
       const lyellow = "#ffff88" // light yellow same as LYEL for classic YBR
 
       if (!goal.ybhp) {
@@ -3107,7 +3106,7 @@
         //  d,  D, fcolor,    scolor,      w,  op, xrange
         //----------------------------------------------------------------------
         //[ 6, -1, "#b2e5b2", "none",      0,   1, xrfull], // dark green region
-          [ 6,  6, "none",    bgreen,    1.5,   1, xrfull], // 1-week line
+          [ 6,  6, "none",    bgreen    ,1.5,   1, xrfull], // 1-week line
         //[ 2,  6, "#cceecc", "none",      0,   1, xrfull], // green region
           [ 2,  2, "none",    bblue,     1.5,   1, xrfull], // blue line
         //[ 1,  2, "#e5e5ff", "none",      0,   1, xrfull], // blue region
@@ -3344,8 +3343,8 @@
                  +(opts.oldRoadLine.dash))
   		    .style("fill", "none")
   		    .style("stroke-width", cw)
-  		    .style("stroke", (goal.ybhp&&!opts.roadEditor)?bu.Cols.REDDOT
-                                     : bu.Cols.ORNG) 
+  		    .style("stroke", goal.ybhp && !opts.roadEditor ? bu.Cols.RAZR0
+                                                         : bu.Cols.ORNG) 
       } else {
         //console.log("DEBUG1156")
         roadelt.attr("d", rd)
@@ -3353,8 +3352,8 @@
                  (goal.ybhp&&!opts.roadEditor)?null:(opts.oldRoadLine.dash)+","
                  +(opts.oldRoadLine.dash))
   		    .style("stroke-width", r3(opts.oldRoadLine.width*scf))
-  		    .style("stroke", (goal.ybhp&&!opts.roadEditor)?bu.Cols.REDDOT
-                                     : bu.Cols.ORNG) 
+  		    .style("stroke", goal.ybhp && !opts.roadEditor ? bu.Cols.RAZR0
+                                                         : bu.Cols.ORNG) 
       }
 
     }
@@ -3450,7 +3449,7 @@
         bc[0] = nYSc(bc[0])-nYSc(0)
         if (goal.lnw > 0 && yr / goal.lnw <= 32) delta = goal.lnw
         else if (goal.lnw > 0 && yr / (6*goal.lnw) <= 32) {
-          delta = 6* goal.lnw
+          delta = 6 * goal.lnw
         } else {
           delta = yr / 32
         }
@@ -3465,23 +3464,32 @@
         guideelt = guideelt.data(arr);
         guideelt.exit().remove();
         guideelt.enter().append("svg:path")
-          .attr("class","oldguides")
+          .attr("class", "oldguides")
 	  	    .attr("d", rd2)
-	  	    .attr("transform", (d,i) => ("translate(0,"+((d<0)?bc[0]:((i+1)*shift))+")"))
+	  	    .attr("transform", (d,i) => 
+            ("translate(0,"+(d<0 ? bc[0] : ((i+1)*shift))+")"))
   		    .attr("pointer-events", "none")
   		    .style("fill", "none")
   		    .attr("stroke-width",
                 (d,i) => (r3(d<0 ? opts.guidelines.weekwidth*scf
-                             : opts.guidelines.width*scf)))
+                                 : opts.guidelines.width*scf)))
   		    .attr("stroke", (d,i) => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL))
         guideelt.attr("d", rd2)
           .attr("transform", function(d,i) { 
             return "translate(0,"+(d<0 ? bc[0] : ((i+1)*shift))+")" })
   		    .attr("stroke-width", (d,i) => r3(d<0 ? opts.guidelines.weekwidth*scf
-                                            : opts.guidelines.width*scf))
+                                                : opts.guidelines.width*scf))
   		    .attr("stroke", (d,i) => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL))
       } else {
-        function buildPath( d, i ) { return getisopath(d, [goal.tini, goal.tfin]) }
+
+        // trying kludging in the thick guiding line for maxflux
+        //var bc= goal.maxflux? [goal.yaw*goal.maxflux,0] : br.bufcap(road,goal)
+        //bc[0] = nYSc(bc[0]) - nYSc(0)
+        //delta = yr / 32 // probably don't want this for maxflux guideline
+
+
+
+        function buildPath(d,i) { return getisopath(d, [goal.tini, goal.tfin]) }
 
         // Create an index array as d3 data for guidelines
         var xrange = [nXSc.invert(0)/1000, nXSc.invert(plotbox.width)/1000]
@@ -3564,15 +3572,15 @@
                  +(opts.oldRoadLine.ctxdash)) 
   		    .style("fill", "none")
   		    .style("stroke-width",opts.oldRoadLine.ctxwidth)
-          .style("stroke", (goal.ybhp&&!opts.roadEditor)?bu.Cols.REDDOT
-                                     : bu.Cols.ORNG) 
+          .style("stroke", goal.ybhp && !opts.roadEditor ? bu.Cols.RAZR0
+                                                         : bu.Cols.ORNG)
       } else {
         roadelt.attr("d", d)
           .style("stroke-dasharray",
                  (goal.ybhp&&!opts.roadEditor)?null:(opts.oldRoadLine.ctxdash)+","
                  +(opts.oldRoadLine.ctxdash)) 
-          .style("stroke", (goal.ybhp&&!opts.roadEditor)?bu.Cols.REDDOT
-                                     : bu.Cols.ORNG) 
+          .style("stroke", goal.ybhp && !opts.roadEditor ? bu.Cols.RAZR0
+                                                         : bu.Cols.ORNG) 
       }
     }
 
@@ -4063,7 +4071,7 @@
               stpelt.attr("d", d)
   		          .attr("stroke-width", r3(4*scf))
             }
-            // Need an additional vertical steppy for do-less flatlined datapoints
+            // Need additional vertical steppy for do-less flatlined datapoints
             var stppprelt = gSteppy.selectAll(".steppyppr");
             if (bbr.flad != null) {
               if (goal.yaw*goal.dir < 0 && goal.asof !== goal.tdat) {

@@ -259,7 +259,8 @@ self.aok = (rd, g, t, v, l) => self.lanage(rd, g, t, v, l) * g.yaw >= -1.0
     second one is pastppr, which disables ppr=0 for t<asof since
     nonzero pprs are needed to generate regions before asof
 */
-self.ppr = (rd, g, t, i=null, pastppr = false) => {
+self.ppr = (rd, g, t, i=null, pastppr=false) => {
+  // TODO: we may want to use g.maxflux as the PPR for MOAR/PHAT
   if (g.yaw*g.dir >= 0) return 0 // MOAR/PHAT => PPR=0; for WEEN/RASH read on...
   // Suppress the PPR if (a) we're computing it for today and (b) there's
   // already a datapoint entered today or if PPRs are explicitly turned off:
