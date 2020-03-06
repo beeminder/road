@@ -11,12 +11,12 @@
   "dependencies": {
     "cluster": "^0.7.7",
     "content-disposition": "^0.5.3",
-    "express": "^4.16.4",
+    "express": "^4.17.1",
     "fs": "0.0.1-security",
     "gm": "^1.23.1",
     "os": "^0.1.1",
-    "puppeteer": "^1.13.0",
+    "puppeteer": "^1.20.0",
     "sleep": ">=5.2.3",
-    "uuid": "^3.3.2"
+    "uuid": "^3.4.0"
   }
 }

@@ -16,15 +16,15 @@ DISPCMD = next(p for p in ['/usr/bin/open', '/usr/local/bin/display',
                if os.path.exists(p)) # path to utility for displaying images
 
 ST = Enum('ST', [
-  'INIT', # Initializing
-  'IDLE', # Waiting for trigger (ie, for a source file to change)
-  'RSET', # Reset job procesing parameters
-  'PROC', # Processing goal list, one at a time
-  'JSRF', # Initiate jsref generation
-  'JSBR', # Initiate jsbrain generation
-  'WAIT', # Wait for processing to finish
-  'PAUS', # Processing paused
-  'EXIT', # Exiting automon
+  'INIT', # Initializing                                            INIT ~ INIT
+  'IDLE', # Waiting for trigger (ie, for a source file to change)   IDLE ~ IDLE
+  'RSET', # Reset job procesing parameters                          RSET ~ RSET
+  'PROC', # Processing goal list, one at a time                     PROC ~ PROC
+  'JSRF', # Initiate jsref (bbref) generation                       JSRF ~ REFG
+  'JSBR', # Initiate jsbrain (beebrain) generation                  JSBR ~ BEEB
+  'WAIT', # Wait for processing to finish                           WAIT ~ WAIT
+  'PAUS', # Processing paused                                       PAUS ~ PAUS
+  'EXIT', # Exiting automon                                         EXIT ~ EXIT
 ])
 
 # Transitions and triggers. ORDERING of the checks is RELEVANT and CRITICAL
@@ -39,6 +39,22 @@ ST = Enum('ST', [
 # WAIT -> PROC : jobsdone
 # PAUS -> PROC : NOT paused OR forcestop
 # *    -> EXIT : exitflag
+
+menu = [
+  ['c', 'reCheck'],
+  ['r', 'reRef'],
+  ['s', 'Stop/Start'],
+  ['p', 'Pause/Resume'],
+  ['g', 'Graph on/off'],
+  ['R', 'AllRefs'],
+  ['q', 'Quit']
+]
+UP = -1   # Scroll-up increment
+DOWN = 1  # Scroll-down increment
+LWW = 40  # Width of left window
+PLAY = next(p for p in ['/usr/bin/play', '/usr/bin/afplay']
+            if os.path.exists(p)) # path to your utility of choice to play sound
+
 
 ################################################################################
 ############################### EVERYTYHING ELSE ###############################
@@ -111,7 +127,8 @@ class JSBrainEventHandler(FileSystemEventHandler):
     # Record where source change was detected so bb file list can be reordered
     cm.sourcechange = cm.curgoal
 
-# Global structure for common data ----------------- 
+# Global structure for common data ---------------------------------------------
+
 class CMonitor:
   def __init__(self):
     self.sscr = None       # Stores stdscr
@@ -165,31 +182,15 @@ class CMonitor:
     
 cm = CMonitor()
 
-# Some constants and configuration elements ----------------- 
-# Menu details
-menu = [
-  ['c', 'reCheck'],
-  ['r', 'reRef'],
-  ['s', 'Stop/Start'],
-  ['p', 'Pause/Resume'],
-  ['g', 'Graph on/off'],
-  ['R', 'AllRefs'],
-  ['q', 'Quit']
-]
-UP = -1   # Scroll-up increment
-DOWN = 1  # Scroll-down increment
-PLAY = next(p for p in ['/usr/bin/play', '/usr/bin/afplay']
-            if os.path.exists(p)) # path to your utility of choice to play sound
-LWW = 40  # Width of left window
+# Utility functions  -----------------------------------------------------------
 
-# Utility functions  ------------------------------
 def exitonerr(err, usage=True):
   usage = ''' Usage: automon.py <options> bbdir
  Supported options are:
   -g or --graph : Enable graph comparisons
   -f or --force : Force regeneration of reference outputs
   -w or --watch : Monitor directory for changes (multiple directories ok)'''
-  print("\n========== jsbrain Output Monitoring/Comparison Daemon ==========")
+  print("========= Automon: Test Suite Monitoring/Comparison Daemon =========")
   if (err): print(" Error: "+err)
   if (usage): print(usage+"\n")
   sys.exit()
@@ -205,7 +206,7 @@ def ahhhh(): play("phew.wav")
 
 def trstr(s, l): return (s[:l] + '..') if len(s) > l else s
 
-# Scrolling related functions ------------------------------
+# Scrolling related functions --------------------------------------------------
 
 # Update the scroll object 's' to advance by 1 in 'dir'
 def scroll(s, dir):
@@ -254,7 +255,8 @@ def paging(s, direction):
     s.top += ml
     return
 
-# Display and window management and rendering ------------------------------
+# Display and window management and rendering ----------------------------------
+
 def _addstr(w,y,x,s,a=curses.A_NORMAL):
   try:
     w.addstr(y,x,s,a)
@@ -425,7 +427,7 @@ def update_goallist():
   cm.goals = [os.path.splitext(b)[0] for b in bbfiles]
   cm.ls.bottom = len(cm.problems)
   
-# JSBRAIN related functions ------------------------------
+# BEEBRAIN related functions ---------------------------------------------------
 
 # Checks timestamps of generated files wrt the jsbrain reference files, returns
 # 0 if the reference is up to date
@@ -557,7 +559,8 @@ def json_dump(job):
       
   return None if txt == "" else txt
 
-# Job processing worker thread ---------------------------------------
+# Job processing worker thread -------------------------------------------------
+
 qpending = queue.Queue()   # Pending jobs requests
 qcompleted = queue.Queue() # Completed job requests
 
@@ -659,11 +662,10 @@ def remove_problem(resp):
     elif (cm.ls.cur != 0): cm.ls.cur -= 1
   cm.ls.bottom = len(cm.problems)
   
-# Main round-robin loop tasks
+# Main round-robin loop tasks --------------------------------------------------
 
-# Status task: Monitors the status message queue and updates the
-# status window
-qstatus = queue.Queue()    # Status messages
+# Status task: Monitors status message queue and updates status window
+qstatus = queue.Queue() # status messages
 def setstatus(msg): qstatus.put(msg)
 def setprogress(percent): cm.progress = percent
 # TODO: resetAverage and updateAverage are not thread safe, fix!
@@ -757,8 +759,7 @@ def uiTask():
     resize_windows()
   return False
 
-# Display task: Manages the left and right windows
-def displayTask(): pass
+def displayTask(): pass # manages the left and right windows
 
 def alert():     cm.req_alert = True
 def alertoff():  cm.req_alert = False; cm.alerted = False
@@ -799,7 +800,7 @@ def jobTask():
         if (cm.state != ST.IDLE and resp.req.reqid > cm.firstreq): alert()
       else:
         remove_problem(resp)
-        # If the reference was regenerated, remove jsbrain problems as well
+        # If the reference was regenerated, remove Beebrain problems as well
         if (resp.req.reqtype == "jsref"):
           resp.req.reqtype = "jsbrain"
           remove_problem(resp)
@@ -901,7 +902,7 @@ def jobTask():
     
   if (prevstate != cm.state): refresh_status()
   
-# Entry point for the monitoring loop ------------------------------
+# Entry point for the monitoring loop
 def monitor(stdscr, bbdir, graph, force, watchdir):
   # Precompute various input and output path strings
   cm.bbdir = os.path.abspath(bbdir)
