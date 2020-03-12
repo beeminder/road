@@ -13,7 +13,7 @@
  @requires broad
  @requires beebrain
  */
-;((function (root, factory) {
+;((function (root, factory) { // BEGIN PREAMBLE --------------------------------
   'use strict'
   if (typeof define === 'function' && define.amd) {
     // AMD. Register as an anonymous module.
@@ -30,7 +30,8 @@
     //console.log("bgraph: Using Browser globals")
     root.bgraph = factory(root.d3, root.moment, root.butil, root.broad, root.beebrain)
   }
-})(this, function (d3, moment, bu, br, bb) {
+})(this, function (d3, moment, bu, br, bb) { // END PREAMBLE -- BEGIN MAIN -----
+
   'use strict'
 
   // -------------------------------------------------------------
@@ -3098,6 +3099,9 @@
       const bblue   = bu.Cols.RAZR2 // blue isoline for 2 safe days 
       const borange = bu.Cols.RAZR1 // orange isoline for 1 safe day
       const lyellow = "#ffff88" // light yellow same as LYEL for classic YBR
+      const gsw     = .99 // stroke width for guiding lines
+      const gfo     = 1   // fill-opacity for guiding lines -- may not matter
+      const rfo     = 0.72 // fill-opacity for regions
 
       if (!goal.ybhp) {
         regions = [ [0, -1, opts.halfPlaneCol.fill, "none", 0, 1, null] ]
@@ -3105,18 +3109,18 @@
         regions = [
         //  d,  D, fcolor,    scolor,      w,  op, xrange
         //----------------------------------------------------------------------
-        //[ 6, -1, "#b2e5b2", "none",      0,   1, xrfull], // dark green region
-          [ 6,  6, "none",    bgreen    ,1.5,   1, xrfull], // 1-week line
-        //[ 2,  6, "#cceecc", "none",      0,   1, xrfull], // green region
-          [ 2,  2, "none",    bblue,     1.5,   1, xrfull], // blue line
-        //[ 1,  2, "#e5e5ff", "none",      0,   1, xrfull], // blue region
-          [ 1,  1, "none",    borange,   1.5,   1, xrfull], // orange line
-        //[ 0,  1, "#fff1d8", "none",      0,   1, xrfull], // orange region
-          [ 0,  2, lyellow,   "none",      0, 0.5, xrfull], // YBR equivalent
+        //[ 6, -1, "#b2e5b2", "none",      0, rfo, xrfull], // dark green region
+          [ 6,  6, "none",    bgreen,    gsw, gfo, xrfull], // 1-week line
+        //[ 2,  6, "#cceecc", "none",      0, rfo, xrfull], // green region
+          [ 2,  2, "none",    bblue,     gsw, gfo, xrfull], // blue line
+        //[ 1,  2, "#e5e5ff", "none",      0, rfo, xrfull], // blue region
+          [ 1,  1, "none",    borange,   gsw, gfo, xrfull], // orange line
+        //[ 0,  1, "#fff1d8", "none",      0, rfo, xrfull], // orange region
+          [ 0,  2, lyellow,   "none",      0, rfo, xrfull], // YBR equivalent
         // bright red critical line currently in updateCenterline because we
         // can't define dashed lines here; so the following doesn't work:
-        //[ 0,  0, "#ff0000", "none",      1,   1, xrfull], // brightline
-        //[ 0, -2, "#ffe5e5", "none",      0,   1, null],   // entire wrong side
+        //[ 0,  0, "#ff0000", "none",      1, gfo, xrfull], // brightline
+        //[ 0, -2, "#ffe5e5", "none",      0, rfo, null],   // entire wrong side
           [ 0, -2, "#fff5f5", "none",      0,   1, xrakr],  // nozone/oinkzone
         ]
       }
@@ -3307,55 +3311,49 @@
 
     function updateCenterline( ir ) {
       // **** Construct the centerline path element ****
-      var cw = r3(opts.oldRoadLine.width*scf)
-      var adj = goal.yaw*cw/2
-      if (opts.roadEditor) adj = 0
+      const cw   = r3(opts.oldRoadLine.width*scf)
+      const adj  = opts.roadEditor ? 0 : goal.yaw*cw/2
+      const ybhp = (goal.ybhp && !opts.roadEditor)
+      const dash = (opts.oldRoadLine.dash)+","+(opts.oldRoadLine.dash)
+      const sw   = ybhp ? 1.001 : cw // stroke-width
+      const sda  = ybhp ? null : dash // stroke-dasharray
+      const scol = ybhp ? bu.Cols.RAZR0 : bu.Cols.ORNG // stroke color
       
       // fx,fy: Start of the current line segment
       // ex,ey: End of the current line segment
-      var fx = nXSc(ir[0].sta[0]*1000), fy = nYSc(ir[0].sta[1]);
-      var ex = nXSc(ir[0].end[0]*1000), ey = nYSc(ir[0].end[1]);
+      let fx = nXSc(ir[0].sta[0]*1000), fy = nYSc(ir[0].sta[1])
+      let ex = nXSc(ir[0].end[0]*1000), ey = nYSc(ir[0].end[1])
       // Adjust start of road so dashes are stationary wrt time
-      var newx = (-nXSc(iroad[0].sta[0]*1000)) % (2*opts.oldRoadLine.dash);
-      if (ex != fx) fy = (fy + (-newx-fx)*(ey-fy)/(ex-fx));
-      if (fx < 0 || newx > 0) fx = -newx;
-      var d, rd = "M"+r1(fx)+" "+(r1(fy)+adj)
-      var i
-      for (i = 0; i < ir.length; i++) {
-        ex = nXSc(ir[i].end[0]*1000); ey = nYSc(ir[i].end[1]);
+      const newx = (-nXSc(iroad[0].sta[0]*1000)) % (2*opts.oldRoadLine.dash)
+      if (ex !== fx) fy = (fy + (-newx-fx)*(ey-fy)/(ex-fx))
+      if (fx < 0 || newx > 0) fx = -newx
+      let rd = "M"+r1(fx)+" "+(r1(fy)+adj)
+      for (const segment of ir) {
+        ex = nXSc(segment.end[0]*1000)
+        ey = nYSc(segment.end[1])
         if (ex > plotbox.width) {
-          fx = nXSc(ir[i].sta[0]*1000); fy = nYSc(ir[i].sta[1]);
-          ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx));
-          ex = plotbox.width;          
+          fx = nXSc(segment.sta[0]*1000)
+          fy = nYSc(segment.sta[1])
+          ey = fy + (plotbox.width-fx)*(ey-fy)/(ex-fx)
+          ex = plotbox.width
         }
         rd += " L"+r1(ex)+" "+(r1(ey)+adj)
       }
 
-      var roadelt = gOldCenter.select(".oldroads");
+      const roadelt = gOldCenter.select(".oldroads")
       if (roadelt.empty()) {
-        //console.log("DEBUG1")
-        gOldCenter.append("svg:path")
-          .attr("class","oldroads")
-	  	    .attr("d", rd)
-  		    .attr("pointer-events", "none")
-          .style("stroke-dasharray",
-                 (goal.ybhp&&!opts.roadEditor)?null:(opts.oldRoadLine.dash)+","
-                 +(opts.oldRoadLine.dash))
-  		    .style("fill", "none")
-  		    .style("stroke-width", cw)
-  		    .style("stroke", goal.ybhp && !opts.roadEditor ? bu.Cols.RAZR0
-                                                         : bu.Cols.ORNG) 
+        gOldCenter.append("svg:path").attr("class","oldroads")
+	  	                               .attr("d", rd)
+  		                               .attr("pointer-events", "none")
+                                     .style("stroke-dasharray", sda)
+  		                               .style("fill", "none")
+  		                               .style("stroke-width", sw)
+  		                               .style("stroke", scol) 
       } else {
-        //console.log("DEBUG1156")
-        roadelt.attr("d", rd)
-          .style("stroke-dasharray",
-                 (goal.ybhp&&!opts.roadEditor)?null:(opts.oldRoadLine.dash)+","
-                 +(opts.oldRoadLine.dash))
-  		    .style("stroke-width", r3(opts.oldRoadLine.width*scf))
-  		    .style("stroke", goal.ybhp && !opts.roadEditor ? bu.Cols.RAZR0
-                                                         : bu.Cols.ORNG) 
+        roadelt.attr("d", rd).style("stroke-dasharray", sda)
+  		                       .style("stroke-width", sw)
+    		                     .style("stroke", scol)
       }
-
     }
     
     function updateLanes(ir) {

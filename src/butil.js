@@ -70,10 +70,10 @@ self.Cols = {
   ORNDOT: "#ffa500", // Orange dots for 1 safe day
   BLUDOT: "#3f3fff", // Blue dots for 2 safe days
   GRNDOT: "#00aa00", // Green dots for 3+ safe days
-  RAZR0:  "#FF5436", // Bright red line for razor road
-  RAZR1:  "#FEB642", // Orange line
-  RAZR2:  "#8C7AFF", // Blue line
-  RAZR3:  "#6BC461", // Green line
+  RAZR0:  "#ff0000", // Bright red line for razor road; faded = #FF5436
+  RAZR1:  "#ffa500", // Orange line;                    faded = #FEB642
+  RAZR2:  "#3f3fff", // Blue line;                      faded = #8C7AFF
+  RAZR3:  "#6BC461", // Green line;                     faded = #6BC461
 }
 
 /** Days in year
