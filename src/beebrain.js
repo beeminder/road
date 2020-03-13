@@ -719,8 +719,6 @@ const beebrain = function( bbin ) {
     return ""
   }
   
-  
-  // Turns out we only need to do this for WEEN/RASH goals and I'm not sure why.
   // Back in Pybrain the intention was to flatline all the way to today for 
   // WEEN/RASH and to stop flatlining if 2 red days in a row for MOAR/PHAT.
   // That might've stopped making sense after the new red-yesterday derailment
@@ -729,6 +727,7 @@ const beebrain = function( bbin ) {
   // need this for do-less goals but things break without it.
   let flad = null // Holds the flatlined datapoint if it exists
   function flatline() {
+/************** candidate new version of this function that breaks flatlining...
     flad = null
     const prevpt = data[data.length-1]
     const tlast  = prevpt[0]
@@ -740,8 +739,7 @@ const beebrain = function( bbin ) {
         data.push(flad)
       }
     }
-
-/* SCHDEL: old version of flatline for temporary comparison
+original version of flatline() ************************************************/
     var now = goal.asof
     var numpts = data.length
     var tlast = data[numpts-1][0]
@@ -775,7 +773,7 @@ const beebrain = function( bbin ) {
       flad = [x, vlast, "PPR", DPTYPE.FLATLINE, prevpt[0], prevpt[1], null]
       data.push(flad)
     }
-*/
+
   }
   
   /** Set any of {tmin, tmax, vmin, vmax} that don't have explicit
