@@ -294,7 +294,7 @@
 
     return opts
   },
-  
+
   // -------------------------------------------------------------
   // ------------------- BGRAPH CONSTRUCTOR ---------------------
   /** @typedef BGraphOptions
@@ -358,7 +358,7 @@
     @property {object} pastBoxCol Colors for the past, e.g. { fill: "#f8f8f8", opacity:0.5 }
     @property {object} odomResetCol Colors for odometer reset indicators, e.g. { dflt: "#c2c2c2" }
     
-*/
+  */
 
   /** bgraph object constructor. Creates an empty beeminder graph
    * and/or road matrix table with the supplied options. Particular
@@ -625,14 +625,14 @@
       
       // Initialize the div and the SVG
       svg = d3.select(div).attr("class", "bmndrgraph")
-	      .append('svg:svg')
+        .append('svg:svg')
         .attr("id", "svg"+curid)
         .attr("xmlns", "http://www.w3.org/2000/svg")
         .attr("xmlns:xlink", "http://www.w3.org/1999/xlink")
         .attr("preserveAspectRatio","xMinYMin meet")
         .attr("viewBox","0 0 "+sw+" "+sh)
         .attr('width', "100%").attr('height', "100%")
-	      .attr('class', 'bmndrsvg')
+        .attr('class', 'bmndrsvg')
       
       // Common SVG definitions, including clip paths
       defs = svg.append('defs')
@@ -780,14 +780,14 @@
       }
       
       focus = svg.append('g')
-	      .attr('class', 'focus')
+        .attr('class', 'focus')
         .attr('transform', 'translate('+opts.focusRect.x
               +','+opts.focusRect.y+')');
       buttonarea = focus.append('g')
         .attr('clip-path', 'url(#buttonareaclip'+curid+')')
         .attr('class', 'buttonarea'); 
       focusclip = focus.append('g')
-	      .attr('class', 'focusclip')
+        .attr('class', 'focusclip')
         .attr('clip-path', 'url(#plotclip'+curid+')')
         .attr('transform', 'translate('+plotpad.left
               +','+plotpad.top+')');
@@ -832,23 +832,23 @@
       gPastText    = plot.append('g').attr('id', 'pasttxtgrp')     // z = 29->30
 
       zoomin = focusclip.append("svg:use")
-	      .attr("class","zoomin")
+        .attr("class","zoomin")
         .attr("xlink:href", "#zoominbtn")
-	  	  .attr("opacity",opts.zoomButton.opacity)
+    	  .attr("opacity",opts.zoomButton.opacity)
         .attr("transform", zoombtntr.botin)
         .on("click", () => {zoomarea.call(axisZoom.scaleBy, opts.zoomButton.factor)})
         .on("mouseover", () =>{
           if (!mobileOrTablet) d3.select(this).style("fill", "red")})
-	      .on("mouseout",(d,i) => {d3.select(this).style("fill", "black")});
+        .on("mouseout",(d,i) => {d3.select(this).style("fill", "black")});
       zoomout = focusclip.append("svg:use")
-	      .attr("class","zoomout")
-	      .attr("xlink:href","#zoomoutbtn")
-	  	  .attr("opacity",opts.zoomButton.opacity)
+        .attr("class","zoomout")
+        .attr("xlink:href","#zoomoutbtn")
+    	  .attr("opacity",opts.zoomButton.opacity)
         .attr("transform", zoombtntr.botout)
         .on("click", () => {zoomarea.call(axisZoom.scaleBy, 1/opts.zoomButton.factor)})
         .on("mouseover", () =>{
           if (!mobileOrTablet) d3.select(this).style("fill", "red")})
-	      .on("mouseout",(d,i) =>{d3.select(this).style("fill", "black")});
+        .on("mouseout",(d,i) =>{d3.select(this).style("fill", "black")});
 
       // Create and initialize the x and y axes
       xSc = d3.scaleUtc().range([0,plotbox.width]);
@@ -894,7 +894,7 @@
       
       // Create brush area
       context = svg.append('g')
-	      .attr('class', 'brush')
+        .attr('class', 'brush')
         .attr('transform', 'translate('
               +opts.ctxRect.x+','+opts.ctxRect.y+')');
       ctxclip = context.append('g')
@@ -1938,8 +1938,8 @@
     var knottext = null, dottext = null, slopetext = null;
 
     function createDragInfo( pt, slope = undefined ) {
-	    var ptx = nXSc(bu.daysnap(pt[0])*1000);
-	    var pty = pt[1];
+      var ptx = nXSc(bu.daysnap(pt[0])*1000);
+      var pty = pt[1];
       knotdate = moment.unix(pt[0]).utc();
       knottext = createTextBox(ptx, plotbox.height-15, 
                                knotdate.format('YYYY-MM-DD')
@@ -1948,8 +1948,8 @@
       dottext = createTextBox(ptx, nYSc(pty)-15, 
                               bu.shn(pt[1]), opts.textBoxCol.stroke)
       if (slope != undefined) {
-	      var slopex = nXSc(bu.daysnap(slope[0])*1000);
-	      var slopey = nYSc(slope[1]);
+        var slopex = nXSc(bu.daysnap(slope[0])*1000);
+        var slopey = nYSc(slope[1]);
         slopetext = createTextBox(slopex,slopey, 
                                   "s:"+bu.shn(slope[2]),
                                   opts.textBoxCol.stroke);
@@ -1965,8 +1965,8 @@
       updateTextBox(dottext, nXSc(ptx*1000), nYSc(pty)-15, 
                     bu.shn(pt[1]));
       if (slope != undefined) {
-	      var slopex = bu.daysnap(slope[0]);
-	      var slopey = slope[1];
+        var slopex = bu.daysnap(slope[0]);
+        var slopey = slope[1];
         updateTextBox(slopetext, nXSc(slopex*1000), 
                       nYSc(slopey), 
                       "s:"+bu.shn(slope[2]));
@@ -1986,26 +1986,26 @@
       var el = d3.select(opts.divGraph);
       for (let ii = kind; ii < rd.length; ii++) {
   	    el.select("[name=dot"+ii+"]")
-	        .attr("cx", r1(nXSc(rd[ii].end[0]*1000)))
-		      .attr("cy", r1(nYSc(rd[ii].end[1])));
+          .attr("cx", r1(nXSc(rd[ii].end[0]*1000)))
+  	      .attr("cy", r1(nYSc(rd[ii].end[1])));
   	    el.select("[name=ctxdot"+ii+"]")
-	        .attr("cx", r1(xScB(rd[ii].end[0]*1000)))
-		      .attr("cy", r1(yScB(rd[ii].end[1])));
+          .attr("cx", r1(xScB(rd[ii].end[0]*1000)))
+  	      .attr("cy", r1(yScB(rd[ii].end[1])));
   		  el.select("[name=road"+ii+"]")
-	  	    .attr("x1", r1(nXSc(rd[ii].sta[0]*1000)))
-		      .attr("y1", r1(nYSc(rd[ii].sta[1])))
-			    .attr("x2", r1(nXSc(rd[ii].end[0]*1000)))
-			    .attr("y2", r1(nYSc(rd[ii].end[1])));
+    	    .attr("x1", r1(nXSc(rd[ii].sta[0]*1000)))
+  	      .attr("y1", r1(nYSc(rd[ii].sta[1])))
+  		    .attr("x2", r1(nXSc(rd[ii].end[0]*1000)))
+  		    .attr("y2", r1(nYSc(rd[ii].end[1])));
   		  el.select("[name=ctxroad"+ii+"]")
-	  	    .attr("x1", r1(xScB(rd[ii].sta[0]*1000)))
-		      .attr("y1", r1(yScB(rd[ii].sta[1])))
-			    .attr("x2", r1(xScB(rd[ii].end[0]*1000)))
-			    .attr("y2", r1(yScB(rd[ii].end[1])));
+    	    .attr("x1", r1(xScB(rd[ii].sta[0]*1000)))
+  	      .attr("y1", r1(yScB(rd[ii].sta[1])))
+  		    .attr("x2", r1(xScB(rd[ii].end[0]*1000)))
+  		    .attr("y2", r1(yScB(rd[ii].end[1])));
         if (updateKnots) {
   	      el.select("[name=knot"+ii+"]")
-	          .attr("x1", r1(nXSc(rd[ii].end[0]*1000)))
-		  	    .attr("x2", r1(nXSc(rd[ii].end[0]*1000)));
-		      el.select("[name=remove"+ii+"]")
+            .attr("x1", r1(nXSc(rd[ii].end[0]*1000)))
+  	  	    .attr("x2", r1(nXSc(rd[ii].end[0]*1000)));
+  	      el.select("[name=remove"+ii+"]")
             .attr("transform", 
                   (d) => ("translate("+(nXSc(d.end[0]*1000)+plotpad.left-8)
                           +","+(plotpad.top-20)+") scale(0.6,0.6)"))
@@ -2121,7 +2121,7 @@
 
     var editingKnot = false;
     function knotDragStarted(d,i) {
-	    d3.event.sourceEvent.stopPropagation();
+      d3.event.sourceEvent.stopPropagation();
       editingKnot = true;
       pushUndoState();
       var kind = Number(this.id);
@@ -2148,7 +2148,7 @@
     function knotDragged(d,i) {
       unselect();
       // event coordinates are pre-scaled, so use normal scale
-	    var x = bu.daysnap(nXSc.invert(d3.event.x)/1000);
+      var x = bu.daysnap(nXSc.invert(d3.event.x)/1000);
       var kind = Number(this.id);
       var rd = road;
       // Clip drag x between the beginning of the current segment and
@@ -2160,7 +2160,7 @@
       var maxind = kind+1;
       if (opts.keepIntervals) maxind = rd.length;
       for (let ii = kind; ii < maxind; ii++) {
-	      rd[ii].end[0] 
+        rd[ii].end[0] 
           = x + roadsave[ii].end[0] - roadsave[kind].end[0];
       }
       if (isFinite(prevslopes[0]) && road[kind].sta[0]!=road[kind].end[0]) {
@@ -2195,8 +2195,8 @@
     function changeKnotDate( kind, newDate, fromtable = true ) {
       pushUndoState();
 
-	    var knotmin = (kind == 0) ? goal.xMin-10*bu.SID*bu.DIY : (road[kind].sta[0]) + 0.01;
-	    var knotmax = 
+      var knotmin = (kind == 0) ? goal.xMin-10*bu.SID*bu.DIY : (road[kind].sta[0]) + 0.01;
+      var knotmax = 
             (kind == road.length-1) 
             ? road[kind].end[0]+0.01
         :(road[kind+1].end[0]+0.01);
@@ -2262,11 +2262,11 @@
     function dotDragged(d, id) {
       unselect();
       var now = goal.asof;
-	    var y = nYSc.invert(d3.event.y);
+      var y = nYSc.invert(d3.event.y);
       var kind = id;
       var rd = road;
       var seg = road[kind];
-	    seg.end[1] = y;
+      seg.end[1] = y;
       seg.slope = br.segSlope(seg);
       br.fixRoadArray( rd, opts.keepSlopes?br.RP.VALUE
                     :br.RP.SLOPE,
@@ -2302,8 +2302,8 @@
         if (kind == 1) {
           road[kind-1].sta[1] = newValue;
         } else if (kind == road.length-1) {
-	        road[kind].end[1] = newValue;
-	        road[kind-1].slope = 
+          road[kind].end[1] = newValue;
+          road[kind-1].slope = 
             (road[kind].sta[1] - road[kind-1].sta[1])
             / (road[kind].sta[0] - road[kind-1].sta[0]);
         } else {
@@ -2375,7 +2375,7 @@
       unselect();
       var now = goal.asof;
       var x = bu.daysnap(nXSc.invert(d3.event.x)/1000);
-	    var y = nYSc.invert(d3.event.y);
+      var y = nYSc.invert(d3.event.y);
       var kind = id;
       var rd = road;
 
@@ -2636,9 +2636,9 @@
       if (pastelt.empty()) {
         gPB.insert("svg:rect", ":first-child")
           .attr("class","past")
-	  	    .attr("x", nXSc(goal.xMin))
+    	    .attr("x", nXSc(goal.xMin))
           .attr("y", nYSc(goal.yMax+3*(goal.yMax-goal.yMin)))
-		      .attr("width", nXSc(goal.asof*1000)
+  	      .attr("width", nXSc(goal.asof*1000)
                 -nXSc(goal.xMin))		  
   		    .attr("height",7*Math.abs(nYSc(goal.yMin)
                                     -nYSc(goal.yMax)))
@@ -2646,9 +2646,9 @@
           .attr("fill-opacity", opts.pastBoxCol.opacity);
       } else {
         pastelt
-	  	    .attr("x", nXSc(goal.xMin))
+    	    .attr("x", nXSc(goal.xMin))
           .attr("y", nYSc(goal.yMax+3*(goal.yMax-goal.yMin)))
-		      .attr("width", nXSc(goal.asof*1000)
+  	      .attr("width", nXSc(goal.asof*1000)
                 -nXSc(goal.xMin))		  
   		    .attr("height",7*Math.abs(nYSc(goal.yMin)
                                     -nYSc(goal.yMax)));
@@ -2667,33 +2667,33 @@
       }
       if (todayelt.empty()) {
         gGrid.append("svg:line")
-	        .attr("class","pastline")
-	  	    .attr("x1", nXSc(goal.asof*1000))
+          .attr("class","pastline")
+    	    .attr("x1", nXSc(goal.asof*1000))
           .attr("y1",0)
-		      .attr("x2", nXSc(goal.asof*1000))
+  	      .attr("x2", nXSc(goal.asof*1000))
           .attr("y2",plotbox.height)
           .style("stroke", bu.Cols.AKRA) 
-		      .style("stroke-width", r3(opts.today.width))
+  	      .style("stroke-width", r3(opts.today.width))
       } else {
         todayelt
-	  	    .attr("x1", nXSc(goal.asof*1000))
+    	    .attr("x1", nXSc(goal.asof*1000))
           .attr("y1", 0)
-		      .attr("x2", nXSc(goal.asof*1000))
+  	      .attr("x2", nXSc(goal.asof*1000))
           .attr("y2", plotbox.height);
       }
       var textx = nXSc(goal.asof*1000)-8;
       var texty = plotbox.height/2;
       if (pasttextelt.empty()) {
         gPastText.append("svg:text")
-	        .attr("class","pasttext")
-	  	    .attr("x",textx ).attr("y",texty)
+          .attr("class","pasttext")
+    	    .attr("x",textx ).attr("y",texty)
           .attr("transform", "rotate(-90,"+textx+","+texty+")")
           .attr("fill", bu.Cols.AKRA) 
           .style("font-size", opts.horizon.font+"px") 
           .text("Today"+" ("+moment.unix(goal.asof).utc().format("ddd")+")");
       } else {
         pasttextelt
-	  	    .attr("x", textx).attr("y", texty)
+    	    .attr("x", textx).attr("y", texty)
           .attr("transform", "rotate(-90,"+textx+","+texty+")")
           .text("Today"+" ("+moment.unix(goal.asof).utc().format("ddd")+")");
       }
@@ -2710,18 +2710,18 @@
       }
       if (todayelt.empty()) {
         ctxplot.append("svg:line")
-	        .attr("class","ctxtoday")
-	  	    .attr("x1", xScB(goal.asof*1000))
+          .attr("class","ctxtoday")
+    	    .attr("x1", xScB(goal.asof*1000))
           .attr("y1",0)
-		      .attr("x2", xScB(goal.asof*1000))
+  	      .attr("x2", xScB(goal.asof*1000))
           .attr("y2",brushbox.height)
           .style("stroke", "rgb(0,0,200)") 
-		      .style("stroke-width", r3(opts.horizon.ctxwidth))
+  	      .style("stroke-width", r3(opts.horizon.ctxwidth))
       } else {
         todayelt
-	  	    .attr("x1", xScB(goal.asof*1000))
+    	    .attr("x1", xScB(goal.asof*1000))
           .attr("y1",0)
-		      .attr("x2", xScB(goal.asof*1000))
+  	      .attr("x2", xScB(goal.asof*1000))
           .attr("y2",brushbox.height);
       }
       var textx = xScB(goal.asof*1000)-5;
@@ -2729,15 +2729,15 @@
 
       if (pasttextelt.empty()) {
         ctxplot.append("svg:text")
-	        .attr("class","ctxtodaytext")
-	  	    .attr("x",textx ).attr("y",texty)
+          .attr("class","ctxtodaytext")
+    	    .attr("x",textx ).attr("y",texty)
           .attr("transform", "rotate(-90,"+textx+","+texty+")")
           .attr("fill", "rgb(0,0,200)") 
           .style("font-size", (opts.today.ctxfont)+"px") 
           .text("Today");
       } else {
         pasttextelt
-	  	    .attr("x", textx).attr("y", texty)
+    	    .attr("x", textx).attr("y", texty)
           .attr("transform", "rotate(-90,"+textx+","+texty+")");
       }
     }
@@ -2756,15 +2756,15 @@
       var by = nYSc(br.rdf(road, goal.tfin))-(opts.bullsEye.size/2);
       if (bullseyeelt.empty()) {
         gBullseye.append("svg:image")
-	        .attr("class","bullseye")
-	        .attr("xlink:href",PNG.beye)
-	        .attr("externalResourcesRequired",true)
-	  	    .attr("x",bx ).attr("y",by)
+          .attr("class","bullseye")
+          .attr("xlink:href",PNG.beye)
+          .attr("externalResourcesRequired",true)
+    	    .attr("x",bx ).attr("y",by)
           .attr('width', opts.bullsEye.size)
           .attr('height', opts.bullsEye.size);
       } else {
         bullseyeelt
-	  	    .attr("x", bx).attr("y", by);
+    	    .attr("x", bx).attr("y", by);
       }
     }
 
@@ -2781,10 +2781,10 @@
       var by = yScB(br.rdf(road, goal.tfin))-(opts.bullsEye.ctxsize/2);
       if (bullseyeelt.empty()) {
         ctxplot.append("svg:image")
-	        .attr("class","ctxbullseye")
-	        .attr("xlink:href",PNG.beyey)
-	        .attr("externalResourcesRequired",true)
-	  	    .attr("x",bx ).attr("y",by)
+          .attr("class","ctxbullseye")
+          .attr("xlink:href",PNG.beyey)
+          .attr("externalResourcesRequired",true)
+    	    .attr("x",bx ).attr("y",by)
           .attr('width', (opts.bullsEye.ctxsize))
           .attr('height', (opts.bullsEye.ctxsize));
       } else {
@@ -2803,15 +2803,15 @@
       var by = nYSc(br.rdf(iroad, goal.tfin))-(opts.bullsEye.size/2);
       if (bullseyeelt.empty()) {
         gOldBullseye.append("svg:image")
-	        .attr("class","oldbullseye")
-	        .attr("xlink:href",png)
-	        .attr("externalResourcesRequired",true)
-	  	    .attr("x",bx ).attr("y",by)
+          .attr("class","oldbullseye")
+          .attr("xlink:href",png)
+          .attr("externalResourcesRequired",true)
+    	    .attr("x",bx ).attr("y",by)
           .attr('width', (opts.bullsEye.size))
           .attr('height', (opts.bullsEye.size));
       } else {
         bullseyeelt
-	  	    .attr("x", bx).attr("y", by);
+    	    .attr("x", bx).attr("y", by);
       }
     }
 
@@ -2825,15 +2825,15 @@
         -(opts.bullsEye.ctxsize/2);
       if (bullseyeelt.empty()) {
         ctxplot.append("svg:image")
-	        .attr("class","ctxoldbullseye")
-	        .attr("xlink:href",png)
-	        .attr("externalResourcesRequired",true)
-	  	    .attr("x",bx ).attr("y",by)
+          .attr("class","ctxoldbullseye")
+          .attr("xlink:href",png)
+          .attr("externalResourcesRequired",true)
+    	    .attr("x",bx ).attr("y",by)
           .attr('width', (opts.bullsEye.ctxsize))
           .attr('height', (opts.bullsEye.ctxsize));
       } else {
         bullseyeelt
-	  	    .attr("x", bx).attr("y", by);
+    	    .attr("x", bx).attr("y", by);
       }
     }
 
@@ -2866,19 +2866,19 @@
         y = (plotbox.height/2-wmh)/2;
 
         wbufelt = gWatermark.append("svg:image")
-	        .attr("class","waterbuf")
-	        //.attr("shape-rendering","crispEdges")
-	        .attr("xlink:href",g)
-	        .attr("externalResourcesRequired",true)
+          .attr("class","waterbuf")
+          //.attr("shape-rendering","crispEdges")
+          .attr("xlink:href",g)
+          .attr("externalResourcesRequired",true)
           .attr('width', wmh)
           .attr('height', wmh)
           .on('load', ()=>{xlinkloaded = true});
       } else {
-	  	  x = plotbox.width/4;
+    	  x = plotbox.width/4;
         y = plotbox.height/4+fs/3;
         wbufelt = gWatermark.append("svg:text")
-	        .attr("class","waterbuf")
-	        //.attr("shape-rendering","crispEdges")
+          .attr("class","waterbuf")
+          //.attr("shape-rendering","crispEdges")
           .style('font-size', fs+"px")
           .style('font-weight', "bolder")
           .style('fill', opts.watermark.color)
@@ -2900,11 +2900,11 @@
       var wbuxelt = gWatermark.select(".waterbux");
       wbuxelt.remove();
       if (!opts.roadEditor) {
-	  	  x = plotbox.width/4;
+    	  x = plotbox.width/4;
         y = plotbox.height/4+fs/3;
         wbuxelt = gWatermark.append("svg:text")
-	        .attr("class","waterbux")
-	        //.attr("shape-rendering","crispEdges")
+          .attr("class","waterbux")
+          //.attr("shape-rendering","crispEdges")
           .style('font-size', fs+"px")
           .style('font-weight', "bolder")
           .style('fill', opts.watermark.color)
@@ -2992,37 +2992,37 @@
       
       if (horizonelt.empty()) {
         gHorizon.append("svg:line")
-	        .attr("class","horizon")
-	  	    .attr("x1", nXSc(goal.horizon*1000))
+          .attr("class","horizon")
+    	    .attr("x1", nXSc(goal.horizon*1000))
           .attr("y1",0)
-		      .attr("x2", nXSc(goal.horizon*1000))
+  	      .attr("x2", nXSc(goal.horizon*1000))
           .attr("y2",plotbox.height)
           .style("stroke", bu.Cols.AKRA) 
           .style("stroke-dasharray", 
                  (o.dash)+","+(o.dash)) 
-		      .attr("stroke-width", r3(o.width*scf))
+  	      .attr("stroke-width", r3(o.width*scf))
       } else {
         horizonelt
-	  	    .attr("x1", nXSc(goal.horizon*1000))
+    	    .attr("x1", nXSc(goal.horizon*1000))
           .attr("y1",0)
-		      .attr("x2", nXSc(goal.horizon*1000))
+  	      .attr("x2", nXSc(goal.horizon*1000))
           .attr("y2",plotbox.height)
-		      .attr("stroke-width", r3(o.width*scf))
+  	      .attr("stroke-width", r3(o.width*scf))
       }
       var textx = nXSc(goal.horizon*1000)+(14);
       var texty = plotbox.height/2;
       var horizontextelt = gHorizonText.select(".horizontext");
       if (horizontextelt.empty()) {
         gHorizonText.append("svg:text")
-	        .attr("class","horizontext")
-	  	    .attr("x",textx ).attr("y",texty)
+          .attr("class","horizontext")
+    	    .attr("x",textx ).attr("y",texty)
           .attr("transform", "rotate(-90,"+textx+","+texty+")")
           .attr("fill", bu.Cols.AKRA) 
           .style("font-size", (o.font)+"px") 
           .text("Akrasia Horizon");
       } else {
         horizontextelt
-	  	    .attr("x", textx).attr("y", texty)
+    	    .attr("x", textx).attr("y", texty)
           .attr("transform", "rotate(-90,"+textx+","+texty+")");
       }
     }
@@ -3033,20 +3033,20 @@
       const o = opts.horizon
       if (horizonelt.empty()) {
         ctxplot.append("svg:line")
-	        .attr("class","ctxhorizon")
-	  	    .attr("x1", xScB(goal.horizon*1000))
+          .attr("class","ctxhorizon")
+    	    .attr("x1", xScB(goal.horizon*1000))
           .attr("y1",yScB(goal.yMin-5*(goal.yMax-goal.yMin)))
-		      .attr("x2", xScB(goal.horizon*1000))
+  	      .attr("x2", xScB(goal.horizon*1000))
           .attr("y2",yScB(goal.yMax+5*(goal.yMax-goal.yMin)))
           .style("stroke", bu.Cols.AKRA) 
           .style("stroke-dasharray", (o.ctxdash)+","
                  +(o.ctxdash)) 
-		      .style("stroke-width", r3(o.ctxwidth))
+  	      .style("stroke-width", r3(o.ctxwidth))
       } else {
         horizonelt
-	  	    .attr("x1", xScB(goal.horizon*1000))
+    	    .attr("x1", xScB(goal.horizon*1000))
           .attr("y1",yScB(goal.yMin-5*(goal.yMax-goal.yMin)))
-		      .attr("x2", xScB(goal.horizon*1000))
+  	      .attr("x2", xScB(goal.horizon*1000))
           .attr("y2",yScB(goal.yMax+5*(goal.yMax-goal.yMin)));
       }
 
@@ -3056,15 +3056,15 @@
       var hortextelt = ctxplot.select(".ctxhortext");
       if (hortextelt.empty()) {
         ctxplot.append("svg:text")
-	        .attr("class","ctxhortext")
-	  	    .attr("x",textx ).attr("y",texty)
+          .attr("class","ctxhortext")
+    	    .attr("x",textx ).attr("y",texty)
           .attr("transform", "rotate(-90,"+textx+","+texty+")")
           .attr("fill", bu.Cols.AKRA) 
           .style("font-size", (o.ctxfont)+"px") 
           .text("Horizon");
       } else {
         hortextelt
-	  	    .attr("x", textx).attr("y", texty)
+    	    .attr("x", textx).attr("y", texty)
           .attr("transform", "rotate(-90,"+textx+","+texty+")");
       }
     }
@@ -3248,9 +3248,9 @@
         if (ybhpelt.empty()) {
           // Create a new element if an existing one is not found
           ybhpgrp.append("svg:path")
-	          .attr("class",clsname)
-	  	      .attr("d", d)
-	  	      .attr("pointer-events", "none")
+            .attr("class",clsname)
+    	      .attr("d", d)
+    	      .attr("pointer-events", "none")
             .attr("fill", reg[2])
             .attr("fill-opacity", reg[5])
             .attr("stroke", reg[3])
@@ -3297,8 +3297,8 @@
       if (pinkelt.empty()) {
         gPink.append("svg:path")
           .attr("class","pinkregion")
-	  	    .attr("d", d)
-	  	    .attr("fill-opacity", 0.4)
+    	    .attr("d", d)
+    	    .attr("fill-opacity", 0.4)
           .attr("fill", goal.ybhp ? "url(#pinkzonepat"+curid+")"  // try LYEL?
                                   : bu.Cols.PINK) // oinkzone
         //console.log(`goal.ybhp = ${goal.ybhp}`)
@@ -3343,7 +3343,7 @@
       const roadelt = gOldCenter.select(".oldroads")
       if (roadelt.empty()) {
         gOldCenter.append("svg:path").attr("class","oldroads")
-	  	                               .attr("d", rd)
+    	                               .attr("d", rd)
   		                               .attr("pointer-events", "none")
                                      .style("stroke-dasharray", sda)
   		                               .style("fill", "none")
@@ -3402,7 +3402,7 @@
           .attr("class","oldlanes")
   		    .attr("pointer-events", "none")
   		  //.attr("shape-rendering", "crispEdges")
-	  	    .attr("d", d)
+    	    .attr("d", d)
   		    .style("fill", bu.Cols.DYEL)
   		    .style("fill-opacity", 0.5)
   		    .style("stroke", "none");
@@ -3463,8 +3463,8 @@
         guideelt.exit().remove();
         guideelt.enter().append("svg:path")
           .attr("class", "oldguides")
-	  	    .attr("d", rd2)
-	  	    .attr("transform", (d,i) => 
+    	    .attr("d", rd2)
+    	    .attr("transform", (d,i) => 
             ("translate(0,"+(d<0 ? bc[0] : ((i+1)*shift))+")"))
   		    .attr("pointer-events", "none")
   		    .style("fill", "none")
@@ -3504,14 +3504,14 @@
         guideelt.exit().remove();
         guideelt.enter().append("svg:path")
           .attr("class","oldguides")
-	  	    .attr("d", buildPath)
+    	    .attr("d", buildPath)
           .attr("transform", null)
   		    .attr("pointer-events", "none")
   		    .attr("fill", "none")
   		    .attr("stroke-width",opts.guidelines.width*scf)
   		    .attr("stroke", bu.Cols.LYEL)
         guideelt
-	  	    .attr("d", buildPath)
+    	    .attr("d", buildPath)
           .attr("transform", null)
   		    .attr("stroke", bu.Cols.LYEL)
   		    .attr("stroke-width", opts.guidelines.width*scf)
@@ -3564,7 +3564,7 @@
       if (roadelt.empty()) {
         ctxplot.append("svg:path")
           .attr("class","ctxoldroads")
-	  	    .attr("d", d)
+    	    .attr("d", d)
           .style("stroke-dasharray",
                  (goal.ybhp&&!opts.roadEditor)?null:(opts.oldRoadLine.ctxdash)+","
                  +(opts.oldRoadLine.ctxdash)) 
@@ -3593,20 +3593,20 @@
       }
       orelt.exit().remove();
       orelt
-	      .attr("x1", function(d){ return nXSc(d*1000);})
-	      .attr("y1", 0)
-	      .attr("x2", function(d){ return nXSc(d*1000);})
+        .attr("x1", function(d){ return nXSc(d*1000);})
+        .attr("y1", 0)
+        .attr("x2", function(d){ return nXSc(d*1000);})
         .attr("y2", plotbox.height)
       orelt.enter().append("svg:line")
-	      .attr("class","oresets")
-	      .attr("id", function(d,i) {return i;})
-	      .attr("name", function(d,i) {return "oreset"+i;})
-	      .attr("x1", function(d){ return nXSc(d*1000);})
-	      .attr("x2", function(d){ return nXSc(d*1000);})
-	      .attr("stroke", "rgb(200,200,200)") 
+        .attr("class","oresets")
+        .attr("id", function(d,i) {return i;})
+        .attr("name", function(d,i) {return "oreset"+i;})
+        .attr("x1", function(d){ return nXSc(d*1000);})
+        .attr("x2", function(d){ return nXSc(d*1000);})
+        .attr("stroke", "rgb(200,200,200)") 
           .style("stroke-dasharray", 
                  (opts.odomReset.dash)+","+(opts.odomReset.dash)) 
-	      .attr("stroke-width",opts.odomReset.width);
+        .attr("stroke-width",opts.odomReset.width);
     }
 
     function updateKnots() {
@@ -3621,20 +3621,20 @@
       }
       knotelt.exit().remove();
       knotelt
-	      .attr("x1", function(d){ return nXSc(d.end[0]*1000);})
-	      .attr("y1", 0)
-	      .attr("x2", function(d){ return nXSc(d.end[0]*1000);})
+        .attr("x1", function(d){ return nXSc(d.end[0]*1000);})
+        .attr("y1", 0)
+        .attr("x2", function(d){ return nXSc(d.end[0]*1000);})
         .attr("y2", plotbox.height)
-	      .attr("stroke", "rgb(200,200,200)") 
-	      .attr("stroke-width",opts.roadKnot.width);
+        .attr("stroke", "rgb(200,200,200)") 
+        .attr("stroke-width",opts.roadKnot.width);
       knotelt.enter().append("svg:line")
-	      .attr("class","knots")
-	      .attr("id", function(d,i) {return i;})
-	      .attr("name", function(d,i) {return "knot"+i;})
-	      .attr("x1", function(d){ return nXSc(d.end[0]*1000);})
-	      .attr("x2", function(d){ return nXSc(d.end[0]*1000);})
-	      .attr("stroke", "rgb(200,200,200)") 
-	      .attr("stroke-width",opts.roadKnot.width)
+        .attr("class","knots")
+        .attr("id", function(d,i) {return i;})
+        .attr("name", function(d,i) {return "knot"+i;})
+        .attr("x1", function(d){ return nXSc(d.end[0]*1000);})
+        .attr("x2", function(d){ return nXSc(d.end[0]*1000);})
+        .attr("stroke", "rgb(200,200,200)") 
+        .attr("stroke-width",opts.roadKnot.width)
         .on('wheel', function(d) { 
           // Redispatch a copy of the event to the zoom area
           var new_event = new d3.event.constructor(d3.event.type, d3.event)
@@ -3642,15 +3642,15 @@
           // Prevents mouse wheel event from bubbling up to the page
           d3.event.preventDefault()
         })
-	      .on("mouseover",function(d,i) {
-	        if (!editingKnot && !editingDot && !editingRoad
+        .on("mouseover",function(d,i) {
+          if (!editingKnot && !editingDot && !editingRoad
              && !(selectType == br.RP.DATE && i == selection)) {
             highlightDate(i,true);
             d3.select(this)
               .attr("stroke-width",(opts.roadKnot.width+2));
           }})
-	      .on("mouseout",function(d,i) {
-	        if (!editingKnot && !editingDot && !editingRoad
+        .on("mouseout",function(d,i) {
+          if (!editingKnot && !editingDot && !editingRoad
              && !(selectType == br.RP.DATE && i == selection)) {
             highlightDate(i,false);
             d3.select(this)
@@ -3682,7 +3682,7 @@
         .attr("class", "remove")
         .attr("xlink:href", "#removebutton")
   	    .attr("id", function(d,i) {return i;})
-	      .attr("name", function(d,i) {return "remove"+i;})
+        .attr("name", function(d,i) {return "remove"+i;})
         .attr("transform", 
               function(d){ 
                 return "translate("+(nXSc(d.end[0]*1000)
@@ -3692,13 +3692,13 @@
         .style("visibility", function(d,i) {
           return (i > 0 && i < road.length-2)
             ?"visible":"hidden";})
-		    .on("mouseenter",function(d,i) {
-			    d3.select(this).attr("fill",opts.roadKnotCol.rmbtnsel); 
+  	    .on("mouseenter",function(d,i) {
+  		    d3.select(this).attr("fill",opts.roadKnotCol.rmbtnsel); 
           highlightDate(i, true);})
-		    .on("mouseout",function(d,i) {
-			    d3.select(this).attr("fill",opts.roadKnotCol.rmbtns);
+  	    .on("mouseout",function(d,i) {
+  		    d3.select(this).attr("fill",opts.roadKnotCol.rmbtns);
           highlightDate(i, false);})
-		    .on("click",knotDeleted);
+  	    .on("click",knotDeleted);
     }
 
     function updateRoads() {
@@ -3714,21 +3714,21 @@
       }
       roadelt.exit().remove();
       roadelt
-		    .attr("x1", function(d) { return nXSc(d.sta[0]*1000) })
+  	    .attr("x1", function(d) { return nXSc(d.sta[0]*1000) })
         .attr("y1", function(d) { return nYSc(d.sta[1]) })
-		    .attr("x2", function(d) { return nXSc(d.end[0]*1000) })
-		    .attr("y2", function(d) { return nYSc(d.end[1]) })
-		    .style("stroke",lineColor)
+  	    .attr("x2", function(d) { return nXSc(d.end[0]*1000) })
+  	    .attr("y2", function(d) { return nYSc(d.end[1]) })
+  	    .style("stroke",lineColor)
       roadelt.enter()
         .append("svg:line")
-		    .attr("class","roads")
+  	    .attr("class","roads")
   		  .attr("id",   function(d,i) { return i })
-	  	  .attr("name", function(d,i) { return "road"+i })
+    	  .attr("name", function(d,i) { return "road"+i })
   		  .attr("x1",   function(d)   { return nXSc(d.sta[0]*1000) })
   		  .attr("y1",   function(d)   { return nYSc(d.sta[1]) })
-	  	  .attr("x2",   function(d)   { return nXSc(d.end[0]*1000) })
+    	  .attr("x2",   function(d)   { return nXSc(d.end[0]*1000) })
   		  .attr("y2",   function(d)   { return nYSc(d.end[1]) })
-		    .style("stroke",lineColor)
+  	    .style("stroke",lineColor)
   		  .attr("stroke-width",opts.roadLine.width)
         .on('wheel', function(d) { 
           // Redispatch a copy of the event to the zoom area
@@ -3738,17 +3738,17 @@
           d3.event.preventDefault()
         })		  
         .on("mouseover",function(d,i) { 
-	        if (!editingKnot && !editingDot && !editingRoad
+          if (!editingKnot && !editingDot && !editingRoad
              && !(selectType == br.RP.SLOPE && i == selection)) {
             if (i > 0 && i < road.length-1) {
-			        d3.select(this)
+  		        d3.select(this)
                 .attr("stroke-width",(opts.roadLine.width+2));
               highlightSlope(i, true);}}})
-		    .on("mouseout",function(d,i) { 
-	        if (!editingKnot && !editingDot && !editingRoad
+  	    .on("mouseout",function(d,i) { 
+          if (!editingKnot && !editingDot && !editingRoad
              && !(selectType == br.RP.SLOPE && i == selection)) {
             if (i > 0 && i < road.length-1) {
-			        d3.select(this)
+  		        d3.select(this)
                 .attr("stroke-width",opts.roadLine.width);
               highlightSlope(i, false);}}})
         .on("click", function(d,i) { 
@@ -3801,19 +3801,19 @@
       }
       roadelt.exit().remove();
       roadelt
-		    .attr("x1", function(d){ return xScB(d.sta[0]*1000);})
+  	    .attr("x1", function(d){ return xScB(d.sta[0]*1000);})
         .attr("y1",function(d){ return yScB(d.sta[1]);})
-		    .attr("x2", function(d){ return xScB(d.end[0]*1000);})
-		    .attr("y2",function(d){ return yScB(d.end[1]);})
+  	    .attr("x2", function(d){ return xScB(d.end[0]*1000);})
+  	    .attr("y2",function(d){ return yScB(d.end[1]);})
   		  .style("stroke", lineColor);
       roadelt.enter()
         .append("svg:line")
-		    .attr("class","ctxroads")
+  	    .attr("class","ctxroads")
   		  .attr("id", function(d,i) {return i;})
-	  	  .attr("name", function(d,i) {return "ctxroad"+i;})
+    	  .attr("name", function(d,i) {return "ctxroad"+i;})
   		  .attr("x1", function(d){ return xScB(d.sta[0]*1000);})
   		  .attr("y1",function(d){ return yScB(d.sta[1]);})
-	  	  .attr("x2", function(d){ return xScB(d.end[0]*1000);})
+    	  .attr("x2", function(d){ return xScB(d.end[0]*1000);})
   		  .attr("y2",function(d){ return yScB(d.end[1]);})
   		  .style("stroke", lineColor)
   		  .style("stroke-width",opts.roadLine.ctxwidth);
@@ -3829,17 +3829,17 @@
       }
       dotelt.exit().remove();
       dotelt
-		    .attr("cx", function(d) { return r1(nXSc(d.sta[0]*1000)) })
+  	    .attr("cx", function(d) { return r1(nXSc(d.sta[0]*1000)) })
         .attr("cy", function(d) { return r1(nYSc(d.sta[1])) })
       dotelt.enter().append("svg:circle")
-		    .attr("class","dots")
-		    .attr("id", function(d,i) { return i-1 })
-		    .attr("name", function(d,i) { return "dot"+(i-1) })
+  	    .attr("class","dots")
+  	    .attr("id", function(d,i) { return i-1 })
+  	    .attr("name", function(d,i) { return "dot"+(i-1) })
         .attr("cx", function(d) { return r1(nXSc(d.sta[0]*1000)) })
-		    .attr("cy",function(d)  { return r1(nYSc(d.sta[1])) })
-		    .attr("r", r3(opts.roadDot.size))
+  	    .attr("cy",function(d)  { return r1(nYSc(d.sta[1])) })
+  	    .attr("r", r3(opts.roadDot.size))
         .attr("fill", opts.roadDotCol.editable)
-		    .style("stroke-width", opts.roadDot.border) 
+  	    .style("stroke-width", opts.roadDot.border) 
         .on('wheel', function(d) { 
           // Redispatch a copy of the event to the zoom area
           var new_event = new d3.event.constructor(d3.event.type, d3.event)
@@ -3848,16 +3848,16 @@
           d3.event.preventDefault()
         })
         .on("mouseover",function(d,i) { 
-	        if (!editingKnot && !editingDot && !editingRoad
+          if (!editingKnot && !editingDot && !editingRoad
               && !(selectType == br.RP.VALUE && i-1 == selection)) {
             highlightValue(i-1, true);
-			      d3.select(this).attr("r", r3(opts.roadDot.size+2))
+  		      d3.select(this).attr("r", r3(opts.roadDot.size+2))
           }})
-		    .on("mouseout",function(d,i) { 
-	        if (!editingKnot && !editingDot && !editingRoad
+  	    .on("mouseout",function(d,i) { 
+          if (!editingKnot && !editingDot && !editingRoad
               && !(selectType == br.RP.VALUE && i-1 == selection)) {
             highlightValue(i-1, false)
-			      d3.select(this).attr("r", r3(opts.roadDot.size))
+  		      d3.select(this).attr("r", r3(opts.roadDot.size))
           }})
         .on("click", function(d,i) { 
           if (d3.event.ctrlKey) dotEdited(d,this.id);})
@@ -3879,15 +3879,15 @@
       }
       dotelt.exit().remove();
       dotelt
-		    .attr("cx", function(d) { return r1(xScB(d.sta[0]*1000)) })
+  	    .attr("cx", function(d) { return r1(xScB(d.sta[0]*1000)) })
         .attr("cy",function(d)  { return r1(yScB(d.sta[1])) })
       dotelt.enter().append("svg:circle")
-		    .attr("class","ctxdots")
-		    .attr("r", r3(opts.roadDot.ctxsize))
+  	    .attr("class","ctxdots")
+  	    .attr("r", r3(opts.roadDot.ctxsize))
         .attr("fill", opts.roadDotCol.editable)
-		    .style("stroke-width", opts.roadDot.ctxborder)
+  	    .style("stroke-width", opts.roadDot.ctxborder)
         .attr("cx", function(d) { return r1(xScB(d.sta[0]*1000)) })
-		    .attr("cy", function(d) { return r1(yScB(d.sta[1])) })
+  	    .attr("cy", function(d) { return r1(yScB(d.sta[1])) })
     }
 
     function dpFill( pt ) {
@@ -3902,8 +3902,8 @@
 
     var dotTimer = null, dotText = null;
     function showDotText(d) {
-	    var ptx = nXSc(bu.daysnap(d[0])*1000);
-	    var pty = nYSc(d[1]);
+      var ptx = nXSc(bu.daysnap(d[0])*1000);
+      var pty = nYSc(d[1]);
       var txt = moment.unix(d[0]).utc().format("YYYY-MM-DD")
         +", "+((d[6] != null)?bu.shn(d[6]):bu.shn(d[1]));
       if (dotText != null) rmTextBox(dotText);
@@ -3922,7 +3922,7 @@
       dpelt = grp.selectAll("."+cls).data(d);
       dpelt.exit().remove();
       dpelt
-		    .attr("cx", function(d) { return r1(nXSc((d[0])*1000)) })
+  	    .attr("cx", function(d) { return r1(nXSc((d[0])*1000)) })
         .attr("cy", function(d) { return r1(nYSc(d[1])) })
       if (r != null && scf != oldscf) dpelt.attr("r", r3(r))
       if (sw != null) dpelt.attr("stroke-width", sw)
@@ -3931,12 +3931,12 @@
         if (fop != null) dpelt.style("fill-opacity", fop)
       }
       dpelt.enter().append("svg:circle")
-		    .attr("class",cls)
+  	    .attr("class",cls)
         .attr("r", r3(r))
-		    .attr("cx", function(d) { return r1(nXSc((d[0])*1000)) })
+  	    .attr("cx", function(d) { return r1(nXSc((d[0])*1000)) })
         .attr("cy", function(d) { return r1(nYSc(d[1])) })
-		    .attr("stroke-width", sw)
-		    .style("stroke", s)
+  	    .attr("stroke-width", sw)
+  	    .style("stroke", s)
         .attr("fill", f)
         .style("fill-opacity", fop)
         .style("pointer-events", function() {
@@ -3948,12 +3948,12 @@
           // Prevents mouse wheel event from bubbling up to the page
           d3.event.preventDefault()
         })
-		    .on("mouseenter",function(d) {
+  	    .on("mouseenter",function(d) {
           if (dotTimer != null) window.clearTimeout(dotTimer);
           dotTimer = window.setTimeout(function() {
             showDotText(d); dotTimer = null;
-			    }, 500);})
-		    .on("mouseout",function() { 
+  		    }, 500);})
+  	    .on("mouseout",function() { 
           if (dotText != null) {
             removeDotText();
             dotText = null;
@@ -3996,7 +3996,7 @@
             if (rosyelt.empty()) {
               gRosy.append("svg:path")
                 .attr("class","rosy")
-	  	          .attr("d", d)
+    	          .attr("d", d)
   		          .style("fill", "none")
   		          .attr("stroke-width",r3(4*scf))
   		          .style("stroke", bu.Cols.ROSE);
@@ -4061,7 +4061,7 @@
             if (stpelt.empty()) {
               gSteppy.append("svg:path")
                 .attr("class","steppy")
-	  	          .attr("d", d)
+    	          .attr("d", d)
   		          .style("fill", "none")
   		          .attr("stroke-width", r3(4*scf))
   		          .style("stroke", bu.Cols.PURP)
@@ -4122,14 +4122,14 @@
         drelt = gDerails.selectAll(".derails").data(drpts);
         drelt.exit().remove();
         drelt
-		      .attr("transform", function(d){ return "translate("+(nXSc((d[0])*1000))+","
+  	      .attr("transform", function(d){ return "translate("+(nXSc((d[0])*1000))+","
                                           +nYSc(d[1])+"),scale("
                                           +(opts.dataPoint.fsize*scf/24)+")"})
       
         drelt.enter().append("svg:use")
-		      .attr("class","derails")
+  	      .attr("class","derails")
           .attr("xlink:href", arrow)
-		      .attr("transform", function(d){ return "translate("+(nXSc((d[0])*1000))+","
+  	      .attr("transform", function(d){ return "translate("+(nXSc((d[0])*1000))+","
                                           +nYSc(d[1])+"),scale("
                                           +(opts.dataPoint.fsize*scf/24)+")"})
           .attr("fill", bu.Cols.REDDOT)
@@ -4193,18 +4193,18 @@
           const fop = ppr == 0 ? 1.0 : 0.5 // ghosty iff there's a PPR
           if (fladelt.empty()) {
             gFlat.append("svg:use")
-		          .attr("class","fladp").attr("xlink:href", "#rightarrow")
+  	          .attr("class","fladp").attr("xlink:href", "#rightarrow")
               .attr("fill", br.dotcolor(road,goal,bbr.flad[0],flady, iso))
               .attr("fill-opacity", fop)
               .attr("transform", "translate("+(nXSc((bbr.flad[0])*1000))+","
                     +nYSc(flady)+"),scale("+(opts.dataPoint.fsize*scf/24)+")")
               .style("pointer-events", function() {
                 return (opts.roadEditor)?"none":"all";})
-		          .on("mouseenter",function() {
+  	          .on("mouseenter",function() {
                 if (dotTimer != null)  window.clearTimeout(dotTimer);
                 dotTimer = window.setTimeout(function() {
                   showDotText(bbr.flad); dotTimer = null;}, 500);})
-		          .on("mouseout",function() { 
+  	          .on("mouseout",function() { 
                 if (dotText != null) { removeDotText(); dotText = null; }
                 window.clearTimeout(dotTimer); 
                 dotTimer = null;});
@@ -4237,14 +4237,14 @@
         hashel = gHashtags.selectAll(".hashtag").data(bbr.hashtags);
         hashel.exit().remove();
         hashel
-		      .attr("x", function(d){ return nXSc((d[0])*1000);})
+  	      .attr("x", function(d){ return nXSc((d[0])*1000);})
           .attr("transform", d=>("rotate(-90,"+nXSc((d[0])*1000)
                                  +","+(plotbox.height/2)+")"))
           .text(d=>(d[1]))
         hashel.enter().append("svg:text")
-	        .attr("class","hashtag")
-		      .attr("x", d=>(nXSc((d[0])*1000)))
-		      .attr("y", plotbox.height/2)
+          .attr("class","hashtag")
+  	      .attr("x", d=>(nXSc((d[0])*1000)))
+  	      .attr("y", plotbox.height/2)
           .attr("transform", d=>("rotate(-90,"+nXSc((d[0])*1000)+","+(plotbox.height/2)+")"))
           .attr("fill", bu.Cols.BLACK) 
           .style("font-size", opts.horizon.font+"px") 
@@ -4282,7 +4282,7 @@
           if (el.empty()) {
             gMovingAv.append("svg:path")
               .attr("class","movingav")
-	  	        .attr("d", d)
+    	        .attr("d", d)
   		        .style("fill", "none")
   		        .attr("stroke-width",r3(3*scf))
   		        .style("stroke", bu.Cols.PURP)
@@ -4405,8 +4405,8 @@
           datePicker.destroy();
           datePicker = null;
         }
-	      var knotmin = (kind == 0) ? goal.xMin-10*bu.SID*bu.DIY : (road[kind].sta[0]);
-	      var knotmax = 
+        var knotmin = (kind == 0) ? goal.xMin-10*bu.SID*bu.DIY : (road[kind].sta[0]);
+        var knotmax = 
               (kind == road.length-1) 
               ? road[kind].end[0]
           :(road[kind+1].end[0])
@@ -5424,6 +5424,7 @@
     this.animBux = animBux
 
   } // END bgraph object constructor
-  
+
   return bgraph
-}))
+
+})) // END MAIN ----------------------------------------------------------------
