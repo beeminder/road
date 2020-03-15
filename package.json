@@ -1,33 +1,33 @@
 {
   "name": "roadeditor",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Experimental Road Editor interface",
   "main": "server.js",
   "scripts": {
     "start": "node app/server.js"
   },
   "dependencies": {
-    "beeminder": "^1.5.2",
-    "body-parser": "^1.18.3",
+    "beeminder": "^1.6.2",
+    "body-parser": "^1.19.0",
     "cluster": "^0.7.7",
-    "connect-session-sequelize": "^4.1.0",
+    "connect-session-sequelize": "^6.1.1",
     "d3": "5.9.2",
-    "ejs": "^2.6.1",
-    "express": "^4.16.4",
-    "express-session": "^1.15.3",
+    "ejs": "^3.0.1",
+    "express": "^4.17.1",
+    "express-session": "^1.16.1",
     "jsdoc": "^3.6.3",
-    "moment": "^2.22.2",
-    "octicons": "^6.0.1",
-    "request": "^2.88.0",
-    "sequelize": "^5.15.1",
-    "sqlite3": "^3.1.8"
+    "moment": "^2.24.0",
+    "octicons": "^8.5.0",
+    "request": "^2.88.2",
+    "sequelize": "^5.21.5",
+    "sqlite3": "^4.1.1"
   },
   "engines": {
-    "node": "6.x"
+    "node": "12.x"
   },
   "repository": {
     "type": "git",
-    "url": "https://hyperdev.com/#!/project/welcome-project"
+    "url": "https://github.com/beeminder/road"
   },
   "keywords": [
     "node",
