@@ -19,7 +19,7 @@
     "moment": "^2.22.2",
     "octicons": "^6.0.1",
     "request": "^2.88.0",
-    "sequelize": "^4.41.2",
+    "sequelize": "^5.15.1",
     "sqlite3": "^3.1.8"
   },
   "engines": {
