@@ -108,7 +108,7 @@ class Renderer {
     let pagelog = {msg:""}
     let pageinfo = null
     function msglog(msg) {
-      pagelog.msg +=(tag+" PAGE LOG: " + msg.text().replace(/\n/g, '\n'+tag)+"\n")}
+      pagelog.msg += (tag+" PAGE LOG: " + msg.text().replace(/\n/g, '\n'+tag)+"\n")}
     function errlog(error) {
       pagelog.msg += (tag+" PAGE ERROR: " + error.message.replace(/\n/g, '\n'+tag)+"\n")}
     
