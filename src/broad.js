@@ -44,28 +44,28 @@ self.rfin = 0 // Hack to implement skatesum
 /** Collection of functiont to perform datapoint aggregation
     @enum {function} */
 self.AGGR = {
-  last     : (x) => x[x.length-1],
-  first    : (x) => x[0],
-  min      : (x) => bu.arrMin(x),
-  max      : (x) => bu.arrMax(x),
-  truemean : (x) => bu.mean(x),
-  uniqmean : (x) => bu.mean(bu.deldups(x)),
-  mean     : (x) => bu.mean(bu.deldups(x)),
-  median   : (x) => bu.median(x),
-  mode     : (x) => bu.mode(x),
-  trimmean : (x) => bu.mean(x), // Uluc: did not bother
-  sum      : (x) => bu.sum(x),
-  jolly    : (x) => x.length > 0 ? 1 : 0,
-  binary   : (x) => x.length > 0 ? 1 : 0,
-  nonzero  : bu.nonzero,
-  triangle : (x) => bu.sum(x)*(bu.sum(x)+1)/2,
-  square   : (x) => Math.pow(bu.sum(x),2),
-  clocky   : bu.clocky, // sum of pair diff.
-  count    : (x) => x.length, // number of datapoints
-  kyshoc   : (x) => Math.min(2600, bu.sum(x)), // ad hoc, guineapigging
-  //TODO: FIXHACK?: Introduced internal state for rfin for skatesum
-  skatesum : (x) => Math.min(self.rfin, bu.sum(x)), // only count daily min
-  cap1     : (x) => Math.min(1, bu.sum(x)), // for zedmango
+last     : (x) => x[x.length-1],
+first    : (x) => x[0],
+min      : (x) => bu.arrMin(x),
+max      : (x) => bu.arrMax(x),
+truemean : (x) => bu.mean(x),
+uniqmean : (x) => bu.mean(bu.deldups(x)),
+mean     : (x) => bu.mean(bu.deldups(x)),
+median   : (x) => bu.median(x),
+mode     : (x) => bu.mode(x),
+trimmean : (x) => bu.mean(x), // Uluc: did not bother
+sum      : (x) => bu.sum(x),
+jolly    : (x) => x.length > 0 ? 1 : 0,
+binary   : (x) => x.length > 0 ? 1 : 0,
+nonzero  : bu.nonzero,
+triangle : (x) => bu.sum(x)*(bu.sum(x)+1)/2,
+square   : (x) => Math.pow(bu.sum(x),2),
+clocky   : bu.clocky, // sum of pair diff.
+count    : (x) => x.length, // number of datapoints
+kyshoc   : (x) => Math.min(2600, bu.sum(x)), // ad hoc, guineapigging
+//TODO: FIXHACK?: Introduced internal state for rfin for skatesum
+skatesum : (x) => Math.min(self.rfin, bu.sum(x)), // only count daily min
+cap1     : (x) => Math.min(1, bu.sum(x)), // for zedmango
 }
 
 /*

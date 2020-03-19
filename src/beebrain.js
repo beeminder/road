@@ -156,8 +156,6 @@ const pig = [ // In Params to ignore; complain about anything not here or in pin
 'offparis',
 ]
 
-//const CNAME = { } // SCHDEL along with all other instances of CNAME 
-
 /** Enum object to identify different types of datapoints
     @enum {number} 
     @memberof beebrain */
@@ -221,7 +219,7 @@ goal.horizon = goal.asof+bu.AKH
 goal.xMin =    goal.asof;  goal.xMax = goal.horizon
 goal.yMin =    -1;         goal.yMax = 1
 
-/** Convery legacy parameters to up-to-date entries 
+/** Convert legacy parameters to up-to-date entries 
     @param {Object} p Goal parameters from the bb file */
 function legacyIn(p) {
   //if (p.hasOwnProperty('gldt') && !p.hasOwnProperty('tfin')) p.tfin = p.gldt
@@ -265,13 +263,6 @@ function legacyOut(p) {
 
 /** Initialize various global variables before use */
 function initGlobals() {
-  // Can't do object member initialization w/ dynamic names so have to do this:
-  //CNAME[bu.Cols.GRNDOT] = "green"
-  //CNAME[bu.Cols.BLUDOT] = "blue"
-  //CNAME[bu.Cols.ORNDOT] = "orange"
-  //CNAME[bu.Cols.REDDOT] = "red"
-  //CNAME[bu.Cols.BLCK]   = "black" 
-  
   // Data related variables
   data = []
   flad = null
@@ -287,10 +278,9 @@ function initGlobals() {
   derails = []
   hashhash = {}
   
-  // All the in and out params are also global variables!
-  let prop
-  for (prop in pout) if (pout.hasOwnProperty(prop)) goal[prop] = pout[prop]
-  for (prop in pin)  if (pin.hasOwnProperty(prop))  goal[prop] = pin[prop]
+  // All the in and out params are also global, via the goal hash
+  for (const key in pout) goal[key] = pout[key]
+  for (const key in pin)  goal[key] = pin[key]
 }
 
 function parserow(row) {
@@ -1199,7 +1189,6 @@ function sumSet(rd, goal) {
   }
   goal.titlesum
     = bu.toTitleCase(goal.color)
-      //CNAME[br.dotcolor(roads, goal, goal.tcur, goal.vcur, goal.isolines)])
     + ". "
     + "bmndr.com/"+goal.yoog+" is " + lanesum
     + ((y*d>0)?" (safe to stay flat for ~"+cd+")":"")
@@ -1221,12 +1210,13 @@ function sumSet(rd, goal) {
   else           goal.statsum += "bare min: "
   goal.statsum += goal.limsum+"\\n"
 }
-  
-function getNumParam(p, n, dflt) { 
-  return p.hasOwnProperty(n) ? Number(p[n]) : dflt
-}
-function getBoolParam(p, n, dflt) { return p.hasOwnProperty(n) ? p[n] : dflt }
-function getStrParam (p, n, dflt) { return p.hasOwnProperty(n) ? p[n] : dflt }
+
+// Fetch value with key n from hash p, defaulting to d -- NOT USED 
+/*
+function getNumParam (p, n, d) { return p.hasOwnProperty(n) ? Number(p[n]) : d }
+function getBoolParam(p, n, d) { return p.hasOwnProperty(n) ? p[n]         : d }
+function getStrParam (p, n, d) { return p.hasOwnProperty(n) ? p[n]         : d }
+*/
 
 /** Initiates reprocessing of a newly changed road, recomputing
  * associated goal stats and internal details.*/
