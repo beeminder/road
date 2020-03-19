@@ -412,14 +412,14 @@ function getiso( val ) {
   return iso[val]
 }
 function getisopath( val, xr ) {
-  var isoline = getiso(val)
+  const isoline = getiso(val)
   if (xr == null) xr = [-Infinity, Infinity]
-  var x = isoline[0][0], y = isoline[0][1]
-  if (x < xr[0]) { x = xr[0]; y = br.isoval( isoline, x ) }
-  var d = "M"+nXSc(x*1000)+" "+nYSc(y)
+  let x = isoline[0][0], y = isoline[0][1]
+  if (x < xr[0]) { x = xr[0]; y = br.isoval(isoline, x) }
+  let d = "M"+nXSc(x*1000)+" "+nYSc(y)
   for (let i = 1; i < isoline.length; i++) {
     if (isoline[i][0] < xr[0]) continue
-    d += " L"+nXSc(isoline[i][0]*1000)+" "+nYSc(isoline[i][1]);
+    d += " L"+nXSc(isoline[i][0]*1000)+" "+nYSc(isoline[i][1])
   }
   return d
 }
@@ -430,11 +430,11 @@ function getisopath( val, xr ) {
 // isolines for dtd=0 and dtd=365 and dividing it by 365 to
 // overcome isolines coinciding for flat regions
 function isolnwborder( xr ) {
-  var x, lnw = 0
-  var numdays = Math.min(opts.maxFutureDays,
-                         Math.ceil((goal.tfin-goal.tini)/bu.SID))
-  var center = getiso( 0 )
-  var oneday = getiso( numdays )
+  let lnw = 0
+  const numdays = Math.min(opts.maxFutureDays,
+                           Math.ceil((goal.tfin-goal.tini)/bu.SID))
+  const center = getiso(0)
+  const oneday = getiso( numdays )
   if (goal.yaw*goal.dir > 0) {
     lnw = Math.abs(br.isoval(center, xr[0])-br.isoval(oneday, xr[0])) / numdays
   } else {
@@ -443,9 +443,9 @@ function isolnwborder( xr ) {
   return lnw
 }
 function isolnwmax( xr ) {
-  var x, lnw = 0
-  var center = getiso( 0 )
-  var oneday = getiso( 1 )
+  let x, lnw = 0
+  const center = getiso(0)
+  const oneday = getiso(1)
   for (let i = 0; i < center.length; i++) {
     x = center[i][0]
     if (x >= xr[0] && x <= xr[1])
@@ -456,27 +456,25 @@ function isolnwmax( xr ) {
     if (x >= xr[0] && x <= xr[1])
       lnw = Math.max(lnw, Math.abs(oneday[i][1] - br.isoval(center,x)))
   }
-  return (lnw == 0)
-    ?Math.abs(br.isoval(center,xr[0])-br.isoval(oneday,xr[0]))
-    :lnw
+  return lnw == 0 ? Math.abs(br.isoval(center, xr[0]) - 
+                             br.isoval(oneday, xr[0])) : lnw
 }
 function isolnwmin( xr ) {
-  var x, lnw = Infinity
-  var center = getiso( 0 )
-  var oneday = getiso( 1 )
+  let x, lnw = Infinity
+  const center = getiso(0)
+  const oneday = getiso(1)
   for (let i = 0; i < center.length; i++) {
     x = center[i][0]
-    var nw = Math.abs(center[i][1] - br.isoval(oneday,x))
+    const nw = Math.abs(center[i][1] - br.isoval(oneday,x))
     if (nw != 0 && x >= xr[0] && x <= xr[1]) lnw = Math.min(lnw, nw)
   }
   for (let i = 0; i < oneday.length; i++) {
     x = oneday[i][0]
-    var nw = Math.abs(oneday[i][1] - br.isoval(center,x))
+    const nw = Math.abs(oneday[i][1] - br.isoval(center,x))
     if (nw != 0 && x >= xr[0] && x <= xr[1]) lnw = Math.min(lnw, nw)
   }
-  return (lnw == Infinity)
-    ?Math.abs(br.isoval(center,xr[0])-br.isoval(oneday,xr[0]))
-    :lnw
+  return lnw == Infinity ? Math.abs(br.isoval(center,xr[0]) - 
+                                    br.isoval(oneday,xr[0])) : lnw
 }
 
 /** Limits an svg coordinate to 1 or 3 digits after the decimal 
@@ -491,7 +489,7 @@ function resetGoal() {
   goal = {}
   goal.yaw = +1; goal.dir = +1
   goal.tcur = 0; goal.vcur = 0
-  var now = moment.utc()
+  const now = moment.utc()
   now.hour(0); now.minute(0); now.second(0); now.millisecond(0)
   goal.asof = now.unix()
   goal.horizon = goal.asof+bu.AKH
@@ -512,24 +510,20 @@ function computeBoxes() {
   contextpad = bu.extend({}, opts.ctxPad)
   if (goal.stathead && !opts.roadEditor) plotpad.top += 15
   plotpad.left += yaxisw
-  plotpad.right += yaxisw+(goal.hidey?8:0) // Extra padding if y axis text is hidden
+  plotpad.right += yaxisw+(goal.hidey?8:0) // Extra padding if yaxis text hidden
   contextpad.left += yaxisw
   contextpad.right += yaxisw+(goal.hidey?8:0)
   plotbox = {
-    x:     opts.focusRect.x + plotpad.left,
-    y:     opts.focusRect.y + plotpad.top,
-    width: opts.focusRect.width
-      - plotpad.left - plotpad.right, 
-    height:opts.focusRect.height
-      - plotpad.top - plotpad.bottom
+    x:      opts.focusRect.x      + plotpad.left,
+    y:      opts.focusRect.y      + plotpad.top,
+    width:  opts.focusRect.width  - plotpad.left - plotpad.right, 
+    height: opts.focusRect.height - plotpad.top  - plotpad.bottom,
   }
   brushbox = {
-    x:     opts.ctxRect.x + contextpad.left,
-    y:     opts.ctxRect.y + contextpad.top,
-    width: opts.ctxRect.width
-      - contextpad.left - contextpad.right, 
-    height:opts.ctxRect.height
-      - contextpad.top - contextpad.bottom
+    x:      opts.ctxRect.x      + contextpad.left,
+    y:      opts.ctxRect.y      + contextpad.top,
+    width:  opts.ctxRect.width  - contextpad.left - contextpad.right, 
+    height: opts.ctxRect.height - contextpad.top  - contextpad.bottom,
   }
   zoombtntr = {botin:"translate("+(plotbox.width-2*(zoombtnsize+5))
                +","+(plotbox.height-(zoombtnsize+5))
