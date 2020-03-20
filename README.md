@@ -143,13 +143,12 @@ Emacs environment:
     * OfficeCodePro: https://github.com/nathco/Office-Code-Pro
     * Font rendering: https://wiki.manjaro.org/index.php?title=Improve_Font_Rendering
 
-### B. Deployment to glitch, or local server
+### B. Deployment to Glitch (or similar)
 
-When deploying a new version of the road editor to glitch (as in setting up a 
-new road-staging glitch)
-
-- create a new beeminder client at https://www.beeminder.com/apps/new
-- the redirect uri is `https://[project].glitch.me/connect`
-- add the client id to your .env file
-- add the redirect uri in your .env file
-- launch the glitch console and create .data/database.sqlite for the session store to connect to
+1. Import from https://github.com/beeminder/road
+2. Create a new Beeminder client at https://www.beeminder.com/apps/new
+3. Set the redirect URI in the .env file to `https://[project].glitch.me/connect`
+4. Add the client ID Beeminder assigns you to the .env file
+5. Same with the redirect URI, add it to the .env file
+6. Open the Glitch console and do `mkdir .data` and `cd .data`
+7. Create an empty SQLite file for the session store: `touch database.sqlite`
