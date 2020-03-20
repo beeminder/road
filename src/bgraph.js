@@ -1944,7 +1944,7 @@ function updateDragInfo( pt, slope ) {
   var pty = pt[1];
   knotdate = moment.unix(ptx).utc(); 
   updateTextBox(knottext, nXSc(ptx*1000), plotbox.height-15, 
-                knotdate.format('YYYY-MM-DD') + " ("+knotdate.format("ddd")+")");
+                knotdate.format('YYYY-MM-DD') + " ("+knotdate.format("ddd")+")")
   updateTextBox(dottext, nXSc(ptx*1000), nYSc(pty)-15, 
                 bu.shn(pt[1]));
   if (slope != undefined) {
@@ -2009,7 +2009,8 @@ function updateDragPositions( kind, updateKnots ) {
   updateYBHP()
 }
 
-// -------- Functions related to selection of components --------
+// --------------- Functions related to selection of components ----------------
+
 var selection = null;
 var selectType = null;
 var selectelt = null;
@@ -2099,8 +2100,9 @@ function clearSelection() {
   unselect();
 }
 
-// -------------- Functions for manipulating knots ---------------
-var roadsave, knotind, knotdate, prevslopes;
+// --------------------- Functions for manipulating knots ----------------------
+
+var roadsave, knotind, knotdate, prevslopes
 
 var editingKnot = false;
 function knotDragStarted(d,i) {
@@ -2217,7 +2219,8 @@ function knotEdited(d, id) {
   }
 };
 
-// ------------------- Functions for manipulating dots -----------------
+// ---------------------- Functions for manipulating dots ----------------------
+
 var editingDot = false;
 function dotDragStarted(d,id) {
   d3.event.sourceEvent.stopPropagation();
@@ -2324,7 +2327,8 @@ function dotEdited(d, id) {
   }
 };
 
-// -------------- Functions for manipulating road segments ----------
+// ----------------- Functions for manipulating road segments ------------------
+
 var editingRoad = false;
 var roadedit_x;
 function roadDragStarted(d,id) {
@@ -2436,7 +2440,7 @@ function roadEdited(d, id) {
   }
 };
 
-// ---------------- Functions to animate SVG components ----------------
+// -------------------- Functions to animate SVG components --------------------
 
 var anim = {
   buf: false, bux: false, aura: false, aurap: false,
@@ -2606,7 +2610,7 @@ function animMav( enable ) {
   else stopAnim(e, 300, a, [], "mav")
 }
 
-// ---------------- Functions to update SVG components ----------------
+// -------------------- Functions to update SVG components ---------------------
 
 // Creates or updates the shaded box to indicate past dates
 function updatePastBox() {
@@ -2963,12 +2967,10 @@ function updateAura() {
     el.remove()
     el2.remove()
   }
-
 }
 
-// Creates or updates the Akrasia Horizon line
+// Create or update the Akrasia Horizon line
 function updateHorizon() {
-    
   if (opts.divGraph == null || road.length == 0) return;
   const horizonelt = gHorizon.select(".horizon");
   const o = opts.horizon
@@ -3059,16 +3061,16 @@ function updateYBHP() {
     gYBHPlines.selectAll("*").remove()
     return
   }
-  var regions
+  let regions
   
-  // Count all previously generated ybhp path elements on the
-  // current svg graph so we can remove unused ones automatically
-  var ybhpall = d3.selectAll("#svg"+curid+" #ybhpgrp path")
-  var prevcnt = ybhpall.size()
+  // Count all previously generated ybhp path elements on the current svg graph
+  // so we can remove unused ones automatically
+  const ybhpall = d3.selectAll("#svg"+curid+" #ybhpgrp path")
+  const prevcnt = ybhpall.size()
 
   // NOTE: Currently must have a region covering the wrong side of the road,
   // even if it's white, to cover incorrect sections of isolines and other
-  // regions.
+  // regions.  OH HEY THIS IS FIXED NOW YAY #SCHDEL
 
   // Region format: From d to D days to derailment (if d=D it's a region
   // boundary, i.e., an isoline of the DTD function), use fill-color
@@ -3122,23 +3124,23 @@ function updateYBHP() {
       //[ 2,  2, "none", bblue,  1.5,   1, xrfull], // blue line
       //[ 1,  1, "none", borang, 1.5,   1, xrfull], // orange line
     ]
-    var tmp = br.isoline(road, dtd, goal, debuglines, true)
-    var adj = Math.abs(nYSc.invert(2.5)-nYSc.invert(0))
+    const tmp = br.isoline(road, dtd, goal, debuglines, true)
+    const adj = Math.abs(nYSc.invert(2.5)-nYSc.invert(0))
     //console.log(JSON.stringify(tmp[3].map(e=>[bu.dayify(e[0]), e[1]])))
     iso[6] = tmp[0]
     iso[7] = tmp[1]
     iso[8] = tmp[2]
     iso[9] = tmp[3]
-    iso[7] = iso[7].map((e)=>([e[0], e[1]+adj]))
-    iso[8] = iso[8].map((e)=>([e[0], e[1]+2*adj]))
-    iso[9] = iso[9].map((e)=>([e[0], e[1]+3*adj]))
+    iso[7] = iso[7].map(e => [e[0], e[1]+adj])
+    iso[8] = iso[8].map(e => [e[0], e[1]+2*adj])
+    iso[9] = iso[9].map(e => [e[0], e[1]+3*adj])
   }
   
   for (var ri = 0; ri < Math.max(prevcnt, regions.length); ri++) {
     // SVG elements for regions are given unique class names
-    var clsname = "halfplane"+ri
-    var ybhpelt, ybhpgrp
-    var reg = regions[ri]
+    const clsname = "halfplane"+ri
+    let ybhpelt, ybhpgrp
+    const reg = regions[ri]
     if (reg[0] != reg[1]) ybhpgrp = gYBHP
     else ybhpgrp = gYBHPlines
     ybhpelt = ybhpgrp.select("."+clsname)
@@ -3150,12 +3152,13 @@ function updateYBHP() {
     }
 
     // Adjustment to y coordinates by half the stroke width
-    var adj = goal.yaw*reg[4]/2
+    const adj = goal.yaw*reg[4]/2
 
-    var xr = reg[6]
+    let xr = reg[6]
     if (xr == null) xr = [-Infinity, Infinity]
 
-    var rstrt = reg[0], rend = reg[1]
+    const rstrt = reg[0]
+    const rend  = reg[1]
 
     // Starting boundary for a region is not allowed to be infinity
     if (rstrt < 0) {
@@ -3164,88 +3167,82 @@ function updateYBHP() {
     }
     
     // Clip start and end points to within the requested range
-    var xstrt = road[0].end[0];
-    var xend = road[road.length-1].sta[0];
+    let xstrt = road[0].end[0]
+    let xend = road[road.length-1].sta[0]
     if (xstrt < xr[0]) xstrt = xr[0]
-    if (xend > xr[1]) xend = xr[1]
+    if (xend  > xr[1]) xend = xr[1]
 
     // Determine good side of the road for boundaries at infinity
-    var yedge, yedgeb
+    let yedge, yedgeb
     if (goal.yaw < 0) {
-      yedge = goal.yMin - 0.1*(goal.yMax - goal.yMin);
-      yedgeb = goal.yMax + 0.1*(goal.yMax - goal.yMin);
+      yedge  = goal.yMin - 0.1*(goal.yMax - goal.yMin)
+      yedgeb = goal.yMax + 0.1*(goal.yMax - goal.yMin)
     } else {
-      yedge = goal.yMax + 0.1*(goal.yMax - goal.yMin);
-      yedgeb = goal.yMin - 0.1*(goal.yMax - goal.yMin);
+      yedge  = goal.yMax + 0.1*(goal.yMax - goal.yMin)
+      yedgeb = goal.yMin - 0.1*(goal.yMax - goal.yMin)
     }
 
-    // Construct a path element for the starting dtd value. This
-    // will be the only path if the starting and ending dtd values
-    // are the same.
-    var isostrt = getiso(rstrt)
+    // Construct a path element for the starting DTD value. This will be the
+    // only path if the starting and ending DTD values are the same.
+    const isostrt = getiso(rstrt)
 
-    var x = isostrt[0][0], y = isostrt[0][1]
-    if (x < xstrt) { x = xstrt; y = br.isoval( isostrt, x ) }
-    var d = "M"+nXSc(x*1000)+" "+(nYSc(y)+adj);
+    let x = isostrt[0][0], y = isostrt[0][1]
+    if (x < xstrt) { x = xstrt; y = br.isoval(isostrt, x) }
+    let d = "M"+nXSc(x*1000)+" "+(nYSc(y)+adj)
     for (let i = 1; i < isostrt.length; i++) {
       x = isostrt[i][0]; y = isostrt[i][1]
       if (x < xstrt) continue
-      if (x > xend) {x = xend; y = br.isoval(isostrt, x)}
-      d += " L"+nXSc(x*1000)+" "+(nYSc(y)+adj);
-      if (isostrt[i][0] > xend) break;
+      if (x > xend) { x = xend; y = br.isoval(isostrt, x) }
+      d += " L"+nXSc(x*1000)+" "+(nYSc(y)+adj)
+      if (isostrt[i][0] > xend) break
     }
 
     if (rend == -1) {
       // Region on the good side of the road
-      d+=" L"+nXSc(xend*1000)+" "+(nYSc(br.isoval(isostrt, xend))+adj);
-      d+=" L"+nXSc(xend*1000)+" "+nYSc(yedge);
-      d+=" L"+nXSc(xstrt*1000)+" "+nYSc(yedge);
-      d+=" Z";
+      d += " L"+nXSc(xend *1000)+" "+(nYSc(br.isoval(isostrt, xend))+adj)
+      d += " L"+nXSc(xend *1000)+" "+nYSc(yedge)
+      d += " L"+nXSc(xstrt*1000)+" "+nYSc(yedge)
+      d += " Z"
     } else if (rend == -2) {
       // Region on the bad side of the road
-      d+=" L"+nXSc(xend*1000)+" "+(nYSc(br.isoval(isostrt, xend))+adj);
-      d+=" L"+nXSc(xend*1000)+" "+nYSc(yedgeb);
-      d+=" L"+nXSc(xstrt*1000)+" "+nYSc(yedgeb);
-      d+=" Z";
+      d += " L"+nXSc(xend *1000)+" "+(nYSc(br.isoval(isostrt, xend))+adj)
+      d += " L"+nXSc(xend *1000)+" "+nYSc(yedgeb)
+      d += " L"+nXSc(xstrt*1000)+" "+nYSc(yedgeb)
+      d += " Z"
     } else if (rstrt != rend) {
-      // Ending dtd value is different than the starting value, so
-      // construct a return path to build an enclosed region
-      var isoend = getiso(rend)
-      
-      var ln = isoend.length
-      var x = isoend[ln-1][0], y = isoend[ln-1][1]
-      if (x > xend) { x = xend; y = br.isoval( isoend, x ) }
-      d += " L"+nXSc(x*1000)+" "+(nYSc(y)+adj);
+      // End DTD value different than start value, so construct a return path
+      // to build an enclosed region
+      const isoend = getiso(rend)
+      const ln = isoend.length
+      let x = isoend[ln-1][0]
+      let y = isoend[ln-1][1]
+      if (x > xend) { x = xend; y = br.isoval(isoend, x) }
+      d += " L"+nXSc(x*1000)+" "+(nYSc(y)+adj)
       for (let i = ln-2; i >= 0; i--) {
-        x = isoend[i][0]; y = isoend[i][1]
+        x = isoend[i][0]
+        y = isoend[i][1]
         if (x > xend) continue
-        if (x < xstrt) {
-          x = xstrt; y = br.isoval(isoend, x)
-        }
-        d += " L"+nXSc(x*1000)+" "+(nYSc(y)+adj);
-        if (isoend[i][0] < xstrt) break;
+        if (x < xstrt) { x = xstrt; y = br.isoval(isoend, x) }
+        d += " L"+nXSc(x*1000)+" "+(nYSc(y)+adj)
+        if (isoend[i][0] < xstrt) break
       }
-      d+=" Z";
+      d += " Z"
     }
 
-    if (ybhpelt.empty()) {
-      // Create a new element if an existing one is not found
-      ybhpgrp.append("svg:path")
-        .attr("class",clsname)
-	      .attr("d", d)
-	      .attr("pointer-events", "none")
-        .attr("fill", reg[2])
-        .attr("fill-opacity", reg[5])
-        .attr("stroke", reg[3])
-        .attr("stroke-width", reg[4])
-    } else {
-      // Update previously created element
-      ybhpelt
-        .attr("d", d)
-        .attr("fill", reg[2])
-        .attr("fill-opacity", reg[5])
-        .attr("stroke", reg[3])
-        .attr("stroke-width", reg[4])
+    if (ybhpelt.empty()) { // create a new element if an existing one not found
+      ybhpgrp.append("svg:path").attr("class",          clsname)
+	                              .attr("d",              d)
+	                              .attr("pointer-events", "none")
+                                .attr("fill",           reg[2])
+                                .attr("fill-opacity",   reg[5])
+                                .attr("stroke",         reg[3])
+                                .attr("stroke-width",   reg[4])
+    } else { // update previously created element
+      ybhpelt.attr("d",            d)
+             .attr("fill",         reg[2])
+             .attr("fill-opacity", reg[5])
+             .attr("stroke",       reg[3])
+             .attr("stroke-width", reg[4])
     }
   }
 }
@@ -3340,171 +3337,170 @@ function updateCenterline( ir ) {
 }
 
 function updateLanes(ir) {
-  
-  var laneelt = gOldRoad.select(".oldlanes");
+  let laneelt = gOldRoad.select(".oldlanes")
   if (opts.roadEditor || ir == null || goal.ybhp) {
-    laneelt.remove();
+    laneelt.remove()
     return
   }      
 
-  var minpx = 3*scf; // Minimum visual width for YBR
-  var thin = Math.abs(nYSc.invert(minpx)-nYSc.invert(0));
-  var lw = (goal.lnw == 0)?thin:goal.lnw;
-  if (Math.abs(nYSc(lw)-nYSc(0)) < minpx) lw=thin;
+  const minpx = 3*scf // minimum visual width for YBR
+  const thin = Math.abs(nYSc.invert(minpx)-nYSc.invert(0))
+  let lw = goal.lnw == 0 ? thin : goal.lnw
+  if (Math.abs(nYSc(lw)-nYSc(0)) < minpx) lw = thin
 
-  var fx, fy, ex, ey, d, i
-  fx = nXSc(ir[0].sta[0]*1000); fy = nYSc(ir[0].sta[1]+lw);
-  ex = nXSc(ir[0].end[0]*1000); ey = nYSc(ir[0].end[1]+lw);
+  let d, i
+  let fx = nXSc(ir[0].sta[0]*1000)
+  let fy = nYSc(ir[0].sta[1]+lw)
+  let ex = nXSc(ir[0].end[0]*1000)
+  let ey = nYSc(ir[0].end[1]+lw)
     
   // Go forward to draw the top side of YBR
   d = "M"+r1(fx)+" "+r1(fy)
   for (i = 0; i < ir.length; i++) {
-    ex = nXSc(ir[i].end[0]*1000);
-    ey = nYSc(ir[i].end[1]+lw);
+    ex = nXSc(ir[i].end[0]*1000)
+    ey = nYSc(ir[i].end[1]+lw)
     if (ex > plotbox.width) {
-      fx = nXSc(ir[i].sta[0]*1000); fy = nYSc(ir[i].sta[1]+lw);
-      ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx)); ex = plotbox.width;
+      fx = nXSc(ir[i].sta[0]*1000)
+      fy = nYSc(ir[i].sta[1]+lw);
+      ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx))
+      ex = plotbox.width
     }
     d += " L"+r1(ex)+" "+r1(ey)
   }
   // Go down and backward for the bottom side of the YBR
-  ey += (nYSc(0) - nYSc(2*lw));
+  ey += (nYSc(0) - nYSc(2*lw))
   d += " L"+r1(ex)+" "+r1(ey)
   for (i = ir.length-1; i >= 0; i--) {
-    fx = nXSc(ir[i].sta[0]*1000); fy = nYSc(ir[i].sta[1]-lw);
+    fx = nXSc(ir[i].sta[0]*1000)
+    fy = nYSc(ir[i].sta[1]-lw)
     if (fx < 0) {
-      ex = nXSc(ir[i].end[0]*1000); ey = nYSc(ir[i].end[1]-lw);
-      fy = (fy + (0-fx)*(ey-fy)/(ex-fx)); fx = 0;          
+      ex = nXSc(ir[i].end[0]*1000)
+      ey = nYSc(ir[i].end[1]-lw)
+      fy = (fy + (0-fx)*(ey-fy)/(ex-fx))
+      fx = 0
     }
     d += " L"+r1(fx)+" "+r1(fy)
   }
-  d += " Z";
+  d += " Z"
   // **** Draw the YBR ****
   if (laneelt.empty()) {
-    gOldRoad.append("svg:path")
-      .attr("class","oldlanes")
-	    .attr("pointer-events", "none")
-	  //.attr("shape-rendering", "crispEdges")
-	    .attr("d", d)
-	    .style("fill", bu.Cols.DYEL)
-	    .style("fill-opacity", 0.5)
-	    .style("stroke", "none");
+    gOldRoad.append("svg:path").attr("class","oldlanes")
+	                             .attr("pointer-events", "none")
+	                           //.attr("shape-rendering", "crispEdges")
+	                             .attr("d", d)
+	                             .style("fill", bu.Cols.DYEL)
+	                             .style("fill-opacity", 0.5)
+	                             .style("stroke", "none")
   } else {
-    laneelt.attr("d", d);
+    laneelt.attr("d", d)
   }
 }
 
-function updateGuidelines( ir ) {
-  
-  var guideelt = gOldGuides.selectAll(".oldguides");
+function updateGuidelines(ir) {
+  let guideelt = gOldGuides.selectAll(".oldguides")
   if (opts.roadEditor || ir == null /*|| goal.ybhp*/) {
-    guideelt.remove();
+    guideelt.remove()
     return
-  }      
+  }
 
-  var yrange = [nYSc.invert(plotbox.height), nYSc.invert(0)];
-  var delta = 1, yr = Math.abs(yrange[1] - yrange[0]);
+  const yrange = [nYSc.invert(plotbox.height), nYSc.invert(0)]
+  let delta = 1
+  const yr = Math.abs(yrange[1] - yrange[0])
   
-  if (! goal.ybhp) {
-    // fx,fy: Start of the current segment
-    // ex,ey: End of the current segment
-    var d, i
-    var fx = nXSc(ir[0].sta[0]*1000), fy = nYSc(ir[0].sta[1]);
-    var ex = nXSc(ir[0].end[0]*1000), ey = nYSc(ir[0].end[1]);
+  if (!goal.ybhp) {
+    let fx = nXSc(ir[0].sta[0]*1000) // fx,fy: start of the current segment
+    let fy = nYSc(ir[0].sta[1])
+    let ex = nXSc(ir[0].end[0]*1000) // ex,ey: end of the current segment
+    let ey = nYSc(ir[0].end[1])
 
-    var rd2 = "M"+r1(fx)+" "+r1(fy)
-    for (i = 0; i < ir.length; i++) {
-      ex = nXSc(ir[i].end[0]*1000); ey = nYSc(ir[i].end[1]);
+    let rd2 = "M"+r1(fx)+" "+r1(fy)
+    for (let i = 0; i < ir.length; i++) {
+      ex = nXSc(ir[i].end[0]*1000)
+      ey = nYSc(ir[i].end[1])
       if (ex > plotbox.width) {
-        fx = nXSc(ir[i].sta[0]*1000); fy = nYSc(ir[i].sta[1]);
-        if (ex != fx) 
-          ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx));
-        ex = plotbox.width;          
+        fx = nXSc(ir[i].sta[0]*1000)
+        fy = nYSc(ir[i].sta[1])
+        if (ex != fx) ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx))
+        ex = plotbox.width
       }
       rd2 += " L"+r1(ex)+" "+r1(ey)
     }
   
     // **** Update guidelines ****
-    var oneshift;
-    var bc = goal.maxflux?[goal.yaw*goal.maxflux,0]:br.bufcap(road, goal)
+    let oneshift
+    let bc = goal.maxflux ? [goal.yaw*goal.maxflux,0] : br.bufcap(road, goal)
     bc[0] = nYSc(bc[0])-nYSc(0)
     if (goal.lnw > 0 && yr / goal.lnw <= 32) delta = goal.lnw
-    else if (goal.lnw > 0 && yr / (6*goal.lnw) <= 32) {
-      delta = 6 * goal.lnw
-    } else {
-      delta = yr / 32
-    }
+    else if (goal.lnw > 0 && yr / (6*goal.lnw) <= 32) { delta = 6 * goal.lnw }
+    else                                              { delta = yr / 32      }
     oneshift = goal.yaw * delta
-    var numlines = Math.floor(Math.abs((yrange[1] - yrange[0])/oneshift))
+    const numlines = Math.floor(Math.abs((yrange[1] - yrange[0])/oneshift))
 
-    // Create a dummy array as d3 data for guidelines
-    var arr = new Array(Math.ceil(numlines)).fill(0);
+    // Create dummy array as d3 data for guidelines
+    let arr = new Array(Math.ceil(numlines)).fill(0)
     // Add a final data entry for the thick guideline
     arr.push(-1)
-    var shift = nYSc(ir[0].sta[1]+oneshift) - nYSc(ir[0].sta[1]);
-    guideelt = guideelt.data(arr);
-    guideelt.exit().remove();
+    const shift = nYSc(ir[0].sta[1]+oneshift) - nYSc(ir[0].sta[1])
+    guideelt = guideelt.data(arr)
+    guideelt.exit().remove()
     guideelt.enter().append("svg:path")
       .attr("class", "oldguides")
 	    .attr("d", rd2)
-	    .attr("transform", (d,i) => 
-        ("translate(0,"+(d<0 ? bc[0] : ((i+1)*shift))+")"))
+	    .attr("transform", (d,i) => "translate(0,"+(d<0? bc[0] : (i+1)*shift)+")")
 	    .attr("pointer-events", "none")
 	    .style("fill", "none")
-	    .attr("stroke-width",
-            (d,i) => (r3(d<0 ? opts.guidelines.weekwidth*scf
-                             : opts.guidelines.width*scf)))
+	    .attr("stroke-width", (d,i) => r3(d<0 ? opts.guidelines.weekwidth*scf
+                                            : opts.guidelines.width*scf))
 	    .attr("stroke", (d,i) => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL))
     guideelt.attr("d", rd2)
-      .attr("transform", function(d,i) { 
-        return "translate(0,"+(d<0 ? bc[0] : ((i+1)*shift))+")" })
+      .attr("transform", (d,i)=> "translate(0,"+(d<0 ? bc[0] : (i+1)*shift)+")")
 	    .attr("stroke-width", (d,i) => r3(d<0 ? opts.guidelines.weekwidth*scf
                                             : opts.guidelines.width*scf))
 	    .attr("stroke", (d,i) => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL))
   } else {
-
     // trying kludging in the thick guiding line for maxflux
     //var bc= goal.maxflux? [goal.yaw*goal.maxflux,0] : br.bufcap(road,goal)
     //bc[0] = nYSc(bc[0]) - nYSc(0)
     //delta = yr / 32 // probably don't want this for maxflux guideline
 
-
-
-    function buildPath(d,i) { return getisopath(d, [goal.tini, goal.tfin]) }
+    function buildPath(d, i) { return getisopath(d, [goal.tini, goal.tfin]) }
 
     // Create an index array as d3 data for guidelines
-    var xrange = [nXSc.invert(0)/1000, nXSc.invert(plotbox.width)/1000]
-    var lnw = isolnwborder(xrange)
-    if (Math.abs(nYSc(0) - nYSc(lnw)) > 8) delta = 1
-    else if (7*(Math.abs(nYSc(0) - nYSc(lnw))) > 8) delta = 7
-    else delta = 28
-    var numlines = Math.floor(1.2*Math.abs((yrange[1] - yrange[0])/(delta*lnw)))
+    const xrange = [nXSc.invert(0)/1000, nXSc.invert(plotbox.width)/1000]
+    const lnw = isolnwborder(xrange)
+    if      (   Math.abs(nYSc(0) - nYSc(lnw))  > 8) delta =  1
+    else if (7*(Math.abs(nYSc(0) - nYSc(lnw))) > 8) delta =  7
+    else                                            delta = 28
+    let numlines = Math.floor(1.2*Math.abs((yrange[1]-yrange[0])/(delta*lnw)))
     if (lnw == 0 || numlines < 28) numlines = 28
-    var arr = new Array(Math.ceil(numlines)).fill(0)
-    arr = [...arr.keys()].map(d=>(d+1)*delta-1)
+    let arr = new Array(Math.ceil(numlines)).fill(0)
+    arr = [...arr.keys()].map(d => (d+1)*delta-1)
     
-    guideelt = guideelt.data(arr);
-    guideelt.exit().remove();
+    guideelt = guideelt.data(arr)
+    guideelt.exit().remove()
     guideelt.enter().append("svg:path")
       .attr("class","oldguides")
-	    .attr("d", buildPath)
+      .attr("d", buildPath)
       .attr("transform", null)
-	    .attr("pointer-events", "none")
-	    .attr("fill", "none")
-	    .attr("stroke-width",opts.guidelines.width*scf)
-	    .attr("stroke", bu.Cols.LYEL)
+      .attr("pointer-events", "none")
+      .attr("fill", "none")
+      .attr("stroke-width", opts.guidelines.width*scf)
+      .attr("stroke", bu.Cols.LYEL)
     guideelt
 	    .attr("d", buildPath)
       .attr("transform", null)
 	    .attr("stroke", bu.Cols.LYEL)
 	    .attr("stroke-width", opts.guidelines.width*scf)
   }
+}
+
+function updateMaxfluxLine() {
 
 }
 
 // Creates or updates the unedited road
 function updateOldRoad() {
-  if (opts.divGraph == null || road.length == 0) return;
+  if (opts.divGraph == null || road.length == 0) return
   // Find road segments intersecting current x-axis range
   var l = [nXSc.invert(0).getTime()/1000, 
            nXSc.invert(plotbox.width).getTime()/1000];
@@ -3529,8 +3525,9 @@ function updateOldRoad() {
     else ir2 = [iroad2[seg]];
   }
 
-  updateLanes( ir2 )
-  updateGuidelines( ir2 )
+  updateLanes(ir2)
+  updateGuidelines(ir2)
+  updateMaxfluxLine(ir2)
 }
 
 function updateContextOldRoad() {
