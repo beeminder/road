@@ -93,6 +93,7 @@ let defaults = {
   /** Visual parameters for watermarks */
   watermark:    { height:170, fntsize:150, color:"#000000" }, // was #f0f0f0
   guidelines:   { width:2, weekwidth:4 },
+  maxfluxline:  4, // width
   /** Visual parameters for text boxes shown during dragging */ 
   textBox:      { margin: 3 },
   /** Visual parameters for odometer resets */ 
@@ -192,6 +193,7 @@ let mobiledefaults = {
   today:       { width: 2, ctxwidth: 1, font: 16, ctxfont: 10 },
   watermark:   { height: 150, fntsize: 100, color: "#000000" }, // was #f0f0f0
   guidelines:  { width: 2, weekwidth: 4 },
+  maxfluxline: 4, // width
   textBox:     { margin: 3 },
 }
 
@@ -333,6 +335,8 @@ let config = ( obj, options ) => {
     @property {object} today Visual parameters for vertical line for asof  e.g. { width: 2, ctxwidth: 1, font: 12, ctxfont: 9 }
     @property {object} watermark Visual parameters for watermarks e.g. { height:170, fntsize:130 }
     @property {object} guidelines Visual parameters for guidelines e.g. { width:2, weekwidth:4 }
+    @property {object} maxfluxline Visual parameter for maxfluxline (width)
+
     @property {object} textBox Visual parameters for text boxes shown during dragging e.g. { margin: 3 }
     @property {object} odomReset Visual parameters for odometer resets e.g. { width: 0.5, dash: 8 }
     
@@ -382,7 +386,7 @@ let svg, defs, graphs, buttonarea, stathead, focus, focusclip, plot,
     ySc, nYSc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel,
     xScB, xAxisB, xAxisObjB, yScB, 
     gPB, gYBHP, gYBHPlines, gPink, gPinkPat, gGrid, gOResets, gPastText, 
-    gOldRoad, gOldCenter, gOldGuides, gOldBullseye, 
+    gOldRoad, gOldCenter, gOldGuides, gOldMaxflux, gOldBullseye, 
     gKnots, gSteppy, gSteppyPts, gRosy, gRosyPts, gMovingAv,
     gAura, gDerails, gAllpts, gDpts, gHollow, gFlat, 
     gBullseye, gRoads, gDots, gWatermark, gHashtags, gHorizon, gHorizonText,
@@ -787,6 +791,7 @@ function createGraph() {
   gYBHP        = plot.append('g').attr('id', 'ybhpgrp')        // z = 03->02
   gWatermark   = plot.append('g').attr('id', 'wmarkgrp')       // z = 05->04
   gOldGuides   = plot.append('g').attr('id', 'oldguidegrp')    // z = 02->05
+  gOldMaxflux  = plot.append('g').attr('id', 'oldmaxfluxgrp')  // z =   ->05.5
   gYBHPlines   = plot.append('g').attr('id', 'ybhplinesgrp')   // z =   ->06
   gAura        = plot.append('g').attr('id', 'auragrp')        // z = 04->03
   gOldRoad     = plot.append('g').attr('id', 'oldroadgrp')     // z = 06->07
@@ -1026,119 +1031,114 @@ function createTable() {
 
 function roadChanged() {
   if (!settingRoad) bbr.reloadRoad()
-  computePlotLimits( true );
-  horindex = br.findSeg(road, goal.horizon);
-  reloadBrush();
+  computePlotLimits(true)
+  horindex = br.findSeg(road, goal.horizon)
+  reloadBrush()
   updateRoadData()
-  updateGraphData(true);
-  updateContextData();
-  updateTable();
-  if (typeof opts.onRoadChange === 'function') {
-    opts.onRoadChange.call();
-  }
+  updateGraphData(true)
+  updateContextData()
+  updateTable()
+  if (typeof opts.onRoadChange === 'function') opts.onRoadChange.call()
 }
 
-// ------------------ Text Box Utilities ---------------------
-function createTextBox( x, y, text, col, textr=null ){
-  var textobj = {};
-  if (y < 20-plotpad.top)    y = 20 -plotpad.top;
-  if (y > plotbox.height-15) y = plotbox.height-15;
-  textobj.grp = focus.append('g');
+// ---------------------------- Text Box Utilities -----------------------------
+
+function createTextBox(x, y, text, col, textr=null) {
+  let textobj = {}
+  if (y < 20-plotpad.top)    y = 20 -plotpad.top
+  if (y > plotbox.height-15) y = plotbox.height-15
+  textobj.grp = focus.append('g')
   textobj.rect = textobj.grp.append('svg:rect')
     .attr('pointer-events', "none")
     .attr('fill',   opts.textBoxCol.bg)
     .style('stroke', col);
-  textobj.text = textobj.grp.append('svg:text')
-    .attr('pointer-events', "none")
-    .attr('text-anchor', 'middle');
+  textobj.text = textobj.grp.append('svg:text').attr('pointer-events', "none")
+                                               .attr('text-anchor', 'middle')
   if (textr == null) {
-    textobj.text.text(text).attr('class', 'svgtxt');
+    textobj.text.text(text).attr('class', 'svgtxt')
   } else {
-    textobj.text.append("tspan")
-      .attr("x", 0).attr("dy", "0.6em")
-      .text(text).attr('class', 'svgtxt');
-    for (let i = 0; i < textr.length; i++) {
+    textobj.text.append("tspan").attr("x", 0).attr("dy", "0.6em")
+                                .text(text).attr('class', 'svgtxt')
+    for (const i = 0; i < textr.length; i++) {
       textobj.text.append("tspan").attr("dy", "1.2em")
         .attr("x", 0).text(textr[i])
-        .attr("font-size", "0.7em");
+        .attr("font-size", "0.7em")
     }
   }
-  var bbox = textobj.text.node().getBBox();
-  var margin = opts.textBox.margin;
-  textobj.rect
-    .attr('x', bbox.x-margin)
-    .attr('y', bbox.y-margin)
-    .attr('width',  bbox.width + margin*2)
-    .attr('height', bbox.height+ margin*2);
+  var bbox = textobj.text.node().getBBox()
+  var margin = opts.textBox.margin
+  textobj.rect.attr('x',      bbox.x - margin)
+              .attr('y',      bbox.y - margin)
+              .attr('width',  bbox.width + margin*2)
+              .attr('height', bbox.height+ margin*2)
 
-  if (x < bbox.width/2) x = bbox.width/2;
-  if (x > plotbox.width-bbox.width/2) x =plotbox.width-bbox.width/2;
+  if (x < bbox.width/2)               x = bbox.width/2
+  if (x > plotbox.width-bbox.width/2) x = plotbox.width - bbox.width/2
 
-  textobj.grp
-    .attr('transform', 'translate('+(x+plotpad.left)+","
-          +(y+plotpad.top)+")");
-  return textobj;
+  textobj.grp.attr('transform', 'translate('+(x+plotpad.left)+","
+                                            +(y+plotpad.top)+")")
+  return textobj
 }
 
 function updateTextBox( obj, x, y, text ) {
   if (!obj) {console.debug("updateTextBox: null input"); return }
-  if (y < 20-plotpad.top) y = 20 -plotpad.top;
-  if (y > plotbox.height-15) y = plotbox.height-15;
-  obj.text.text(text);
-  var bbox = obj.text.node().getBBox();
-  var margin = opts.textBox.margin;
-  obj.rect
-    .attr('x', bbox.x-margin)
-    .attr('y', bbox.y-margin)
-    .attr('width',  bbox.width +margin*2)
-    .attr('height', bbox.height+margin*2);
+  if (y < 20-plotpad.top)    y = 20 - plotpad.top
+  if (y > plotbox.height-15) y = plotbox.height - 15
+  obj.text.text(text)
+  var bbox = obj.text.node().getBBox()
+  var margin = opts.textBox.margin
+  obj.rect.attr('x', bbox.x-margin)
+          .attr('y', bbox.y-margin)
+          .attr('width',  bbox.width +margin*2)
+          .attr('height', bbox.height+margin*2)
 
-  if (x < bbox.width/2) x = bbox.width/2;
-  if (x > plotbox.width-bbox.width/2) x =plotbox.width-bbox.width/2;
+  if (x < bbox.width/2)               x = bbox.width/2
+  if (x > plotbox.width-bbox.width/2) x =plotbox.width - bbox.width/2
   obj.grp.attr('transform', 'translate('+(x+plotpad.left)+","
-               +(y+plotpad.top)+")");
+                                        +(y+plotpad.top)+")")
 }
 
 function rmTextBox( obj ) {
   if (!obj) {console.debug("updateTextBox: null input"); return }
-  obj.grp.remove();
+  obj.grp.remove()
 }
 
 function hideTextBox( obj, hide ) {
   if (!obj) {console.debug("updateTextBox: null input"); return }
-  obj.grp.attr("visibility", (hide)?"hidden":"visible");
+  obj.grp.attr("visibility", hide ? "hidden" : "visible")
 }
 
 
-// ------- Zoom and brush  related private functions ---------
-var ticks, tickType = 1, majorSkip = 7;
+// ----------------- Zoom and brush  related private functions -----------------
+
+var ticks, tickType = 1, majorSkip = 7
 /** Compute locations and labels for X axis ticks corresponding to
  * the entire graph range for different zoom levels. These are
  * stored in the "ticks" member of the bgraph instance. utilized
  * later by the {@link bgraph~redrawXTicks redrawXTicks()}
  * function for rendering. */
 function computeXTicks() {
-  let xr = xSc.domain();
+  let xr = xSc.domain()
 
   // The following make sure that the initial element of the tick
   // values array is at the proper boundary (day, month, year)
   // depending on the tick types.
-  let xt = xr.map(e=>e.getTime()/1000)
+  let xt = xr.map(e => e.getTime()/1000)
   let xtm = xt.slice(); xtm[0] = bu.monthsnap(xtm[0])
   let xty = xt.slice(); xty[0] = bu.yearsnap(xty[0])
-  let xrm = xtm.map(e=>(new Date(e*1000)))
-  let xry = xty.map(e=>(new Date(e*1000)))
+  let xrm = xtm.map(e => (new Date(e*1000)))
+  let xry = xty.map(e => (new Date(e*1000)))
 
   // [0]: tick dates, [1]: tick text,
-  ticks = [];
-  ticks.push([d3.utcDay.range(xr[0], xr[1], 1),"%b %d"]);
-  ticks.push([d3.utcDay.range(xr[0], xr[1], 2),"%b %d"]);
-  ticks.push([d3.utcWeek.range(xrm[0], xrm[1], 1),"%b %d"]);
-  ticks.push([d3.utcWeek.range(xrm[0], xrm[1], 2),"%b %d"]);
-  ticks.push([d3.utcMonth.every(1).range(xry[0], xry[1]),"%b %Y"]);
-  ticks.push([d3.utcMonth.every(2).range(xry[0], xry[1]),"%b %Y"]);
-  ticks.push([d3.utcMonth.every(3).range(xry[0], xry[1]),"%Y"]);
-  ticks.push([d3.utcYear.every(1).range(xry[0], xry[1]),"%Y"]);
+  ticks = []
+  ticks.push([d3.utcDay.range(xr[0], xr[1], 1),"%b %d"])
+  ticks.push([d3.utcDay.range(xr[0], xr[1], 2),"%b %d"])
+  ticks.push([d3.utcWeek.range(xrm[0], xrm[1], 1),"%b %d"])
+  ticks.push([d3.utcWeek.range(xrm[0], xrm[1], 2),"%b %d"])
+  ticks.push([d3.utcMonth.every(1).range(xry[0], xry[1]),"%b %Y"])
+  ticks.push([d3.utcMonth.every(2).range(xry[0], xry[1]),"%b %Y"])
+  ticks.push([d3.utcMonth.every(3).range(xry[0], xry[1]),"%Y"])
+  ticks.push([d3.utcYear.every(1).range(xry[0], xry[1]),"%Y"])
 }
 
 /** Redraws X Axis tick marks based on the current X axis range
@@ -2542,7 +2542,7 @@ function animHor( enable ) {
   }
 }
 
-function animYBR( enable ) {
+function animYBR(enable) {
   if (opts.roadEditor) return
   var e = gOldRoad.select(".oldlanes");
   var styles =[["fill-opacity", 1.0, 0.5],
@@ -2565,17 +2565,19 @@ function animYBR( enable ) {
   else stopAnim(e, 300, [], styles, "ybrc")
 }
 
-function animGuides( enable ) {
+function animGuides(enable) {
   if (opts.roadEditor) return
-  var e = gOldGuides.selectAll(".oldguides");
-  var a =[["stroke-width", opts.guidelines.width*scf*2.5,
-           (d) => ((d<0)?opts.guidelines.weekwidth*scf
-                      :opts.guidelines.width*scf)],
-          ["stroke",
-           (d) => ((d<0)?bu.Cols.BIGG:"#ffff00"),
-           (d) => ((d<0)?bu.Cols.BIGG:bu.Cols.LYEL)]]
+  const e = gOldGuides.selectAll(".oldguides")
+  const a =[["stroke-width", opts.guidelines.width*scf*2.5,
+             d => (d<0 ? opts.guidelines.weekwidth*scf
+                       : opts.guidelines.width*scf)],
+            ["stroke", d => (d<0 ? bu.Cols.BIGG : "#ffff00"),
+                       d => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL)]]
   if (enable) startAnim(e, 500, a, [], "guides")
-  else stopAnim(e, 300, a, [], "guides")
+  else        stopAnim( e, 300, a, [], "guides")
+  // TODO: also animate the maxflux line: 
+  // oldguides -> oldmaxflux
+  // guidelines -> maxfluxline
 }
 
 function animRosy( enable ) {
@@ -3398,10 +3400,7 @@ function updateLanes(ir) {
 
 function updateGuidelines(ir) {
   let guideelt = gOldGuides.selectAll(".oldguides")
-  if (opts.roadEditor || ir == null /*|| goal.ybhp*/) {
-    guideelt.remove()
-    return
-  }
+  if (opts.roadEditor || ir == null) { guideelt.remove(); return }
 
   const yrange = [nYSc.invert(plotbox.height), nYSc.invert(0)]
   let delta = 1
@@ -3430,9 +3429,9 @@ function updateGuidelines(ir) {
     let oneshift
     let bc = goal.maxflux ? [goal.yaw*goal.maxflux,0] : br.bufcap(road, goal)
     bc[0] = nYSc(bc[0])-nYSc(0)
-    if (goal.lnw > 0 && yr / goal.lnw <= 32) delta = goal.lnw
-    else if (goal.lnw > 0 && yr / (6*goal.lnw) <= 32) { delta = 6 * goal.lnw }
-    else                                              { delta = yr / 32      }
+    if (goal.lnw > 0 && yr / goal.lnw <= 32)            delta = goal.lnw
+    else if (goal.lnw > 0 && yr / (6*goal.lnw) <= 32)   delta = 6 * goal.lnw
+    else                                                delta = yr / 32
     oneshift = goal.yaw * delta
     const numlines = Math.floor(Math.abs((yrange[1] - yrange[0])/oneshift))
 
@@ -3458,15 +3457,11 @@ function updateGuidelines(ir) {
                                             : opts.guidelines.width*scf))
 	    .attr("stroke", (d,i) => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL))
   } else {
-    // trying kludging in the thick guiding line for maxflux
-    //var bc= goal.maxflux? [goal.yaw*goal.maxflux,0] : br.bufcap(road,goal)
-    //bc[0] = nYSc(bc[0]) - nYSc(0)
-    //delta = yr / 32 // probably don't want this for maxflux guideline
-
-    function buildPath(d, i) { return getisopath(d, [goal.tini, goal.tfin]) }
+    const buildPath = ((d,i) => getisopath(d, [goal.tini, goal.tfin]))
 
     // Create an index array as d3 data for guidelines
-    const xrange = [nXSc.invert(0)/1000, nXSc.invert(plotbox.width)/1000]
+    const xrange = [nXSc.invert(            0)/1000,
+                    nXSc.invert(plotbox.width)/1000]
     const lnw = isolnwborder(xrange)
     if      (   Math.abs(nYSc(0) - nYSc(lnw))  > 8) delta =  1
     else if (7*(Math.abs(nYSc(0) - nYSc(lnw))) > 8) delta =  7
@@ -3479,23 +3474,62 @@ function updateGuidelines(ir) {
     guideelt = guideelt.data(arr)
     guideelt.exit().remove()
     guideelt.enter().append("svg:path")
-      .attr("class","oldguides")
-      .attr("d", buildPath)
-      .attr("transform", null)
-      .attr("pointer-events", "none")
-      .attr("fill", "none")
-      .attr("stroke-width", opts.guidelines.width*scf)
-      .attr("stroke", bu.Cols.LYEL)
+      .attr("class",           "oldguides")
+      .attr("d",               buildPath)
+      .attr("transform",       null)
+      .attr("pointer-events",  "none")
+      .attr("fill",            "none")
+      .attr("stroke-width",    opts.guidelines.width*scf)
+      .attr("stroke",          bu.Cols.LYEL)
     guideelt
-	    .attr("d", buildPath)
-      .attr("transform", null)
-	    .attr("stroke", bu.Cols.LYEL)
-	    .attr("stroke-width", opts.guidelines.width*scf)
+	    .attr("d",               buildPath)
+      .attr("transform",       null)
+	    .attr("stroke",          bu.Cols.LYEL)
+	    .attr("stroke-width",    opts.guidelines.width*scf)
   }
 }
 
-function updateMaxfluxLine() {
+// unDRY alert: we're just mimicking what updateCenterline does for the razor
+// road but shifted by maxflux.
+function updateMaxfluxLine(ir) {
+  if (!goal.ybhp || goal.maxflux == 0) return
+  let guideelt = gOldMaxflux.selectAll(".oldmaxflux")
+  if (opts.roadEditor || ir == null) { guideelt.remove(); return }
 
+  const sw    = r3(opts.maxfluxline*scf) // stroke-width
+  const scol  = bu.Cols.BIGG             // stroke color
+  const delta = goal.yaw * goal.maxflux
+
+  let fx = nXSc((ir[0].sta[0]+delta)*1000) // fx,fy: start of current segment
+  let fy = nYSc(ir[0].sta[1]+delta)
+  let ex = nXSc((ir[0].end[0]+delta)*1000) // ex,ey: end of current segment
+  let ey = nYSc(ir[0].end[1]+delta)
+  if (ex !== fx) fy = (fy + (-fx)*(ey-fy)/(ex-fx))
+  let rd = "M"+r1(fx)+" "+r1(fy)
+  for (const segment of ir) {
+    ex = nXSc((segment.end[0]+delta)*1000)
+    ey = nYSc((segment.end[1]+delta))
+    if (ex > plotbox.width) {
+      fx = nXSc((segment.sta[0]+delta)*1000)
+      fy = nYSc((segment.sta[1]+delta))
+      ey = fy + (plotbox.width-fx)*(ey-fy)/(ex-fx)
+      ex = plotbox.width
+    }
+    rd += " L"+r1(ex)+" "+r1(ey)
+  }
+
+  const roadelt = gOldMaxflux.select(".oldmaxflux")
+  if (roadelt.empty()) {
+    gOldMaxflux.append("svg:path").attr("class",          "oldmaxflux")
+                                  .attr("d",              rd)
+                                  .attr("pointer-events", "none")
+                                  .style("fill",          "none")
+                                  .style("stroke-width",  sw)
+                                  .style("stroke",        scol) 
+  } else {
+    roadelt.attr("d", rd)         .style("stroke-width",  sw)
+                                  .style("stroke",        scol)
+  }
 }
 
 // Creates or updates the unedited road
@@ -3511,12 +3545,12 @@ function updateOldRoad() {
   var ir = iroad.filter(rdfilt);
   if (ir.length == 0) ir = [iroad[br.findSeg(iroad, l[0])]];
 
-  updateCenterline( ir )
+  updateCenterline(ir)
   
   // Construct and filter a trimmed road matrix iroad2 for the YBR
   // and guidelines
-  var iroad2 = iroad.slice(1,-1), ind;
-  var ir2 = iroad2.filter(rdfilt);
+  var iroad2 = iroad.slice(1,-1), ind
+  var ir2 = iroad2.filter(rdfilt)
   if (ir2.length == 0) {
     // If no segmens were found, check if we can find a segment
     // that traverses the current x-axis range
@@ -4811,8 +4845,8 @@ function updateContextData() {
 function updateGraphData(force = false) {
   if (opts.divGraph == null) return
   clearSelection()
-  var limits = [nXSc.invert(0).getTime()/1000, 
-                nXSc.invert(plotbox.width).getTime()/1000];
+  const limits = [nXSc.invert(            0).getTime()/1000, 
+                  nXSc.invert(plotbox.width).getTime()/1000]
   if (force) oldscf = 0
   if (opts.roadEditor)
     scf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.7)
@@ -5176,11 +5210,10 @@ this.getRoad = () => {
  a simple SVG.
 @param {object} [linkelt=null] Element to provide a link for the SVG object to download. If null, current page contents are replaced. */
 this.saveGraph = ( linkelt = null ) => {
-
-  // retrieve svg source as a string.
-  var svge = svg.node()
-  var serializer = new XMLSerializer()
-  var source = serializer.serializeToString(svge)
+  // retrieve svg source as a string
+  const svge = svg.node()
+  const serializer = new XMLSerializer()
+  let source = serializer.serializeToString(svge)
 
   //set url value to a element's href attribute.
   if (opts.headless || linkelt == null) {
@@ -5201,24 +5234,23 @@ this.saveGraph = ( linkelt = null ) => {
       //newroot.selectAll(".minor").remove()
     }
   } else {
-
     // Remove styling once serialization is completed
-    //defs.select('style').remove();
+    //defs.select('style').remove()
 
-    // add name spaces.
-    if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
-      source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"')
+    // add name spaces
+    if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
+      source= source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"')
     }
-    if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)){
-      source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"')
+    if (!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)) {
+      source = source.replace(/^<svg/, 
+                              '<svg xmlns:xlink="http://www.w3.org/1999/xlink"')
     }
 
     //add xml declaration
     source = '<?xml version="1.0" standalone="no"?>\n' + source
 
     //convert svg source to URI data scheme.
-    var url = "data:image/svg+xml;charset=utf-8,"
-          +encodeURIComponent(source)
+    var url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(source)
 
     //set url value to a element's href attribute.
     linkelt.href = url
@@ -5249,7 +5281,7 @@ this.show = () => {
   resizeBrush()
   updateTable()
   updateContextData()
-  updateGraphData( true )
+  updateGraphData(true)
 }
 
 /** Returns the road matrix object (in the internal format) for the
