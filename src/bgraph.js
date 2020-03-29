@@ -3245,21 +3245,22 @@ function updateYBHP() {
   }
 }
 
-function updatePinkRegion() {
-  if (opts.divGraph == null || road.length == 0) return;
-  var pinkelt = gPink.select(".pinkregion");
-  var yedge, itoday, ihor;
-  var ir = iroad;
-  var now = goal.asof;
-  var hor = goal.horizon;
-  // Determine good side of the road 
-  if (goal.yaw > 0) yedge = goal.yMin - 5*(goal.yMax - goal.yMin);
-  else yedge = goal.yMax + 5*(goal.yMax - goal.yMin);
+function updatePinkRegion() {                         // AKA nozone AKA oinkzone
+  if (opts.divGraph == null || road.length == 0) return
+
+  const pinkelt = gPink.select(".pinkregion")
+  const ir = iroad
+  const now = goal.asof
+  const hor = goal.horizon
+  let yedge
+  if (goal.yaw > 0) yedge = goal.yMin - 5*(goal.yMax - goal.yMin)
+  else              yedge = goal.yMax + 5*(goal.yMax - goal.yMin)
+  const color = goal.ybhp ? "url(#pinkzonepat"+curid+")" : bu.Cols.PINK
+
   // Compute road indices for left and right boundaries
-  itoday = br.findSeg(ir, now)
-  ihor = br.findSeg(ir, hor)
-  var d = "M"+nXSc(now*1000)
-         +" "+nYSc(br.rdf(ir, now))
+  const itoday = br.findSeg(ir, now)
+  const ihor   = br.findSeg(ir, hor)
+  let d = "M"+nXSc(now*1000)+" "+nYSc(br.rdf(ir, now))
   for (let i = itoday; i < ihor; i++) {
     d += " L"+nXSc(ir[i].end[0]*1000)
          +" "+nYSc(ir[i].end[1])
@@ -3268,29 +3269,23 @@ function updatePinkRegion() {
   d += " L"+nXSc(hor*1000)+" "+nYSc(yedge)
   d += " L"+nXSc(now*1000)+" "+nYSc(yedge)
   d += " Z"
-  gPinkPat
-    .attr("patternTransform", (goal.dir>0)?"rotate(135)":"rotate(45)")
-    .attr("x", -goal.dir*nXSc(now*1000))
+  gPinkPat.attr("patternTransform", goal.dir > 0 ? "rotate(135)" : "rotate(45)")
+          .attr("x", -goal.dir*nXSc(now*1000))
   
   if (pinkelt.empty()) {
-    gPink.append("svg:path")
-      .attr("class","pinkregion")
-	    .attr("d", d)
-	    .attr("fill-opacity", 0.4)
-      .attr("fill", goal.ybhp ? "url(#pinkzonepat"+curid+")"  // try LYEL?
-                              : bu.Cols.PINK) // oinkzone
-    //console.log(`goal.ybhp = ${goal.ybhp}`)
+    gPink.append("svg:path").attr("class",        "pinkregion")
+                            .attr("d",            d)
+                            .attr("fill-opacity", 0.4)
+                            .attr("fill",         color)
   } else {
-    pinkelt.attr("d", d)
-      .attr("fill", goal.ybhp ? "url(#pinkzonepat"+curid+")"  // try LYEL?
-                              : bu.Cols.PINK) // oinkzone
+    pinkelt.attr("d", d).attr("fill", color)
   }
 }
 
-function updateCenterline( ir ) {
-  // **** Construct the centerline path element ****
-  const cw   = r3(opts.oldRoadLine.width*scf)
-  const adj  = opts.roadEditor ? 0 : goal.yaw*cw/2
+// post-YBHP we should be able to merge this into updateYBHP
+function updateCenterline(ir) {        // AKA the razor road in the case of YBHP
+  const cw   = r3(opts.oldRoadLine.width*scf)                 // Construct the
+  const adj  = opts.roadEditor ? 0 : goal.yaw*cw/2            // path element...
   const ybhp = (goal.ybhp && !opts.roadEditor)
   const dash = (opts.oldRoadLine.dash)+","+(opts.oldRoadLine.dash)
   const sw   = ybhp ? 1.001 : cw // stroke-width
@@ -3320,17 +3315,17 @@ function updateCenterline( ir ) {
 
   const roadelt = gOldCenter.select(".oldroads")
   if (roadelt.empty()) {
-    gOldCenter.append("svg:path").attr("class","oldroads")
-	                               .attr("d", rd)
-	                               .attr("pointer-events", "none")
+    gOldCenter.append("svg:path").attr("class",             "oldroads")
+	                               .attr("d",                 rd)
+	                               .attr("pointer-events",    "none")
                                  .style("stroke-dasharray", sda)
-	                               .style("fill", "none")
-	                               .style("stroke-width", sw)
-	                               .style("stroke", scol) 
+	                               .style("fill",             "none")
+	                               .style("stroke-width",     sw)
+	                               .style("stroke",           scol) 
   } else {
     roadelt.attr("d", rd).style("stroke-dasharray", sda)
-	                       .style("stroke-width", sw)
-		                     .style("stroke", scol)
+	                       .style("stroke-width",     sw)
+		                     .style("stroke",           scol)
   }
 }
 
@@ -3532,27 +3527,22 @@ function updateMaxfluxLine(ir) {
 function updateOldRoad() {
   if (opts.divGraph == null || road.length == 0) return
   // Find road segments intersecting current x-axis range
-  var l = [nXSc.invert(0).getTime()/1000, 
-           nXSc.invert(plotbox.width).getTime()/1000];
-  var rdfilt = function(r) {
-    return ((r.sta[0] > l[0] && r.sta[0] < l[1])
-            || (r.end[0] > l[0] && r.end[0] < l[1]));
-  };
-  var ir = iroad.filter(rdfilt);
-  if (ir.length == 0) ir = [iroad[br.findSeg(iroad, l[0])]];
+  const xr = [nXSc.invert(0)            .getTime()/1000,
+              nXSc.invert(plotbox.width).getTime()/1000]
+  const rdfilt = (r =>    (r.sta[0] > xr[0] && r.sta[0] < xr[1])
+                       || (r.end[0] > xr[0] && r.end[0] < xr[1]))
+  let ir = iroad.filter(rdfilt)
+  if (ir.length == 0) ir = [iroad[br.findSeg(iroad, xr[0])]]
 
   updateCenterline(ir)
   
-  // Construct and filter a trimmed road matrix iroad2 for the YBR
-  // and guidelines
-  var iroad2 = iroad.slice(1,-1), ind
-  var ir2 = iroad2.filter(rdfilt)
+  // Construct and filter a trimmed road matrix iroad2 for YBR & guidelines
+  const iroad2 = iroad.slice(1,-1)
+  let ir2 = iroad2.filter(rdfilt)
   if (ir2.length == 0) {
-    // If no segmens were found, check if we can find a segment
-    // that traverses the current x-axis range
-    var seg = br.findSeg(iroad2, l[0]);
-    if (seg < 0) ir2 = null;
-    else ir2 = [iroad2[seg]];
+    // If no segments, look for a segment that traverses current x-axis range
+    const seg = br.findSeg(iroad2, xr[0])
+    ir2 = seg < 0 ? null : [iroad2[seg]]
   }
 
   updateLanes(ir2)

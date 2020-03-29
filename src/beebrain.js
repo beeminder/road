@@ -118,7 +118,7 @@ lnw      : 0,       // Lane width at time tcur
 stdflux  : 0,       // Rec. lanewidth .9 quantile of rate-adjusted deltas
 delta    : 0,       // How far from centerline: vcur - rdf(tcur)
 lane     : 666,     // Lane we're in; below=-2,bottom=-1,top=1,above=2,etc 
-color    : 'black', // One of {"green", "blue", "orange", "red"}
+color    : 'black', // One of {"green", "blue", "orange", "red"} ########### DEP
 cntdn    : 0,       // Countdown: # of days from tcur till we reach the goal
 numpts   : 0,       // Number of real datapoints entered, before munging
 mean     : 0,       // Mean of datapoints

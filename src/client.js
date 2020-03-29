@@ -234,7 +234,8 @@ function handleRoadSubmit() {
     return;
   }
   if (!newRoad.valid) {
-    window.alert("New road intersects pink region!");
+    window.alert(
+      "New road intersects pink region (i.e., violates the akrasia horizon)!");
     return;
   }
   if (newRoad.loser) {
