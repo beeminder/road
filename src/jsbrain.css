@@ -1,52 +1,36 @@
-.bmndrgraph { 
-  border: 0px solid #cccccc;
-  display: inline-block
-}
-svg text {
-  -webkit-user-select: none;
-     -moz-user-select: none;
-      -ms-user-select: none;
-          user-select: none;
-}
-svg text::selection {
-  background: none;
-}
+.bmndrgraph { border:  0px solid #cccccc;
+              display: inline-block       }
 
-.zoomarea {
-  cursor: move;
-  pointer-events: all;
-}
+svg text {  -webkit-user-select: none;
+               -moz-user-select: none;
+                -ms-user-select: none;
+                    user-select: none;  }
 
-.overlay .textbox {
-    fill: #ffffcc;
-    fill-opacity: 0.5;
-    stroke: black;
-    stroke-width: 1;
-    pointer-events: none;
-    rx:5;
-    ry:5;
-}
+svg text::selection { background: none; }
 
-.message .textbox {
-    fill: #ffffcc;
-    fill-opacity: 0.9;
-    stroke: black;
-    stroke-width: 1;
-    pointer-events: none;
-    rx:5;
-    ry:5;
-}
+.zoomarea { cursor: move;
+            pointer-events: all; }
 
-.zoominfo .textbox {
-    fill: #000000;
-    fill-opacity: 0.4;
-    stroke: none;
-    stroke-width: 0;
-    pointer-events: none;
-}
-.zoominfo .loading {
-    fill: #ffffff;
-}
+.overlay .textbox  { fill:           #ffffcc;
+                     fill-opacity:   0.5;
+                     stroke:         black;
+                     stroke-width:   1;
+                     pointer-events: none;
+                     rx:             5;
+                     ry:             5;         }
+.message .textbox  { fill:           #ffffcc;
+                     fill-opacity:   0.9;
+                     stroke:         black;
+                     stroke-width:   1;
+                     pointer-events: none;
+                     rx:             5;
+                     ry:             5;         }
+.zoominfo .textbox { fill:           #000000;
+                     fill-opacity:   0.4;
+                     stroke:         none;
+                     stroke-width:   0;
+                     pointer-events: none;     }
+.zoominfo .loading { fill: #ffffff;            }
 
 .axis path, .axis line, .grid line, .axis text,
 .pasttext, .ctxtodaytext, .ctxhortext, 
@@ -55,107 +39,72 @@ svg text::selection {
 .ctxroads, .ctxdots, .ctxoldroads, .oldroads, 
 .bullseye, .oldbullseye, .ctxbullseye, .ctxoldbullseye, 
 .ctxtoday, .ctxtodaytext, .dpts, .allpts, .steppy, .steppyd, 
-.aura, .aurapast  {
-  pointer-events: none;
-}
+.aura, .aurapast { pointer-events: none; }
 
-.brush rect.selection {
-  fill: #9090ff;
-  fill-opacity: .125;
-}
-.brush rect.focusrect {
-  stroke: #7070ff;
-  pointer-events: none;
-}
+.brush rect.selection { fill:         #9090ff;
+                        fill-opacity: .125;     }
+.brush rect.focusrect { stroke: #7070ff;
+                        pointer-events: none;   }
 
-/*.rtable, .rtablestart, .rtablegoal {
-  display: table;
-} */
-.roadhdr {
-  display: table-header-group;
-}
-.roadbody {
-  display: table-row-group;
-  border-spacing:4px;
-}
-.roadrow {
-  display: table-row;
-  white-space: nowrap;
-}
-.roadhdrrow {
-  display: table-row;
-  white-space: nowrap;
-}
+/*.rtable, .rtablestart, .rtablegoal { display: table; } */
+.roadhdr    { display:        table-header-group; }
+.roadbody   { display:        table-row-group;
+              border-spacing: 4px;                }
+.roadrow    { display:        table-row;
+              white-space:    nowrap;             }
+.roadhdrrow { display:        table-row;
+              white-space:    nowrap;             }
 
-.roadbtn {
-  margin-left: 3px;
-  margin-right: 1px;
-  visibility: collapse;
-  font-size:80%;
-}
+.roadbtn { margin-left:  3px;
+           margin-right: 1px;
+           visibility:   collapse;
+           font-size:    80%;      }
 
-.rowid {
-  display: table-cell;
-  border: 0px;
-  padding: 2px;
-  text-align: right;
-  white-space: nowrap;
-}
-.roadhdrcell {
-  display: table-cell;
-  border: 0px;
-  padding: 5px 2px 2px 2px;
-  text-align: center;
-  font-size:90%;
-  white-space: nowrap;
-}
-.roadcell {
-  display: table-cell;
-  border: 1px solid black;
-  padding: 2px 2px 2px 2px;
-  text-align: center;
-  white-space: nowrap;
-  background-color: white;
-  font-size:90%;
-}
-.rtablebody, .rtablestart {
-  padding: 1px 0px 4px 0px;
-  border: 1px solid transparent;
-  border-collapse:separate;
-  border-spacing:8px 1px;
-}
-.rtablegoal {
-  border-collapse:separate;
-  background-color: #eeffee;
-  padding: 0px 0px 5px 0px;
-  margin: 8px 0px 4px 0px;
-  border: 1px solid black;
-  border-collapse:separate;
-  border-spacing:8px 1px;
-}
-.rtablegoal .rowid {
-  visibility: hidden;
-}
-div.roadcell {
-  min-width:95px;
-}
-div.rowid {
-  min-width:35px;
-}
+.rowid       { display:          table-cell;
+               border:           0px;
+               padding:          2px;
+               text-align:       right;
+               white-space:      nowrap;           }
+.roadhdrcell { display:          table-cell;
+               border:           0px;
+               padding:          5px 2px 2px 2px;
+               text-align:       center;
+               font-size:        90%;
+               white-space:      nowrap;           }
+.roadcell    { display:          table-cell;
+               border:           1px solid black;
+               padding:          2px 2px 2px 2px;
+               text-align:       center;
+               white-space:      nowrap;
+               background-color: white;
+               font-size:        90%;              }
 
-.floating {
-  float: left;
-  position: absolute;
-}
+.rtablebody, 
+.rtablestart { padding:          1px 0px 4px 0px;
+               border:           1px solid transparent;
+               border-collapse:  separate;
+               border-spacing:   8px 1px;                }
+.rtablegoal {  border-collapse:  separate;
+               background-color: #eeffee;
+               padding:          0px 0px 5px 0px;
+               margin:           8px 0px 4px 0px;
+               border:           1px solid black;
+               border-collapse:  separate;
+               border-spacing:   8px 1px;                }
 
-.ratchet, .break {
-  background-color: #f1f1f1;
-  border: 1px solid #d0d0d0;
-  margin: 10px 0px 10px 0px;
-  padding: 5px 15px 5px 15px;
-}
-.gopts, .commit {
-  margin: 0px 0px 10px 0px;
-  padding: 5px 15px 5px 15px;
-}
+.rtablegoal .rowid { visibility: hidden; }
+
+div.roadcell { min-width: 95px; }
+div.rowid    { min-width: 35px; }
+
+.floating { float:    left;
+            position: absolute; }
+
+.ratchet, .break { background-color: #f1f1f1;
+                   border:           1px solid #d0d0d0;
+                   margin:           10px 0px 10px 0px;
+                   padding:          5px 15px 5px 15px; }
+
+.gopts, .commit { margin:  0px 0px 10px 0px;
+                  padding: 5px 15px 5px 15px; }
 

@@ -72,12 +72,12 @@ Manipulating the road:
   * The lines connecting the black dots ("road segments") can also be grabbed and moved, allowing the user to change the slope of road segments,
   * The 'x' buttons on top of each knot allow deletion of the corresponding knot, removing the associated inflection point on the road,
   * You can left double click to create a new inflection point (knot/dot pair) on the road
-  * The road line appears to be black when it is "valid" (i.e. does not intersect the pink region), and appears to be red when it is "invalid" (i.e. intersects the pink region),
+  * The road line appears black when it's valid and red when invalid, where valid means not intersecting the pink region, i.e., not violating the akrasia horizon
 
 Visual indicators:
   * Datapoints for the goal are shown as small circles,
-  * The pink area below the graph shows the "forbidden area" up until a week from now, which the edited road is not allowed to intersect to remain valid,
-  * When you "select" any knot, dot or segment with a single left mouse click, the corresponding entry in the road matrix table will be highlighted and corresponding date,value,slope values displayed on tooltips,
+  * The pink / grayed out area of the graph shows the range from now to a week from now which the edited road is not allowed to intersect to remain valid,
+  * When you select any knot, dot, or segment with a single left mouse click, the corresponding entry in the road matrix table is highlighted and corresponding date,value,slope values displayed on tooltips,
 
 Moving around and zooming:
   * You can zoom in/out with the scroll wheel on the mouse, and drag the graph left/right to focus on different time periods on the graph,
