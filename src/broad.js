@@ -96,16 +96,16 @@ self.printRoad = (rd) => {
 self.sameRoads = ( rda, rdb ) => {
   if (rda.length != rdb.length) return false
   for (let i = 0; i < rda.length; i++) {
-    if (!bu.nearEq(rda[i].end[0], rdb[i].end[0], 10)) return false
-    if (!bu.nearEq(rda[i].end[1], rdb[i].end[1], 10)) return false
-    if (!bu.nearEq(rda[i].slope, rdb[i].slope, 1e-14)) return false
+    if (!bu.nearEq(rda[i].end[0], rdb[i].end[0], 10))   return false
+    if (!bu.nearEq(rda[i].end[1], rdb[i].end[1], 10))   return false
+    if (!bu.nearEq(rda[i].slope,  rdb[i].slope, 1e-14)) return false
   }
   return true
 }
 
 /** Creates and returns a clone of the supplied road array */
 self.copyRoad = (rd) => {
-  var nr = [];
+  var nr = []
   for (let i = 0; i < rd.length; i++) {
     var s = {
       sta: rd[i].sta.slice(), end: rd[i].end.slice(),
@@ -154,7 +154,7 @@ self.fixRoadArray = (rd, autop=self.RP.VALUE, usematrix=false,
                        for (let i = 1; i < nr-1; i++) {
                          //console.debug("before("+i+"):[("+rd[i].sta[0]+
                          //","+rd[i].sta[1]+"),("+rd[i].end[0]+","
-                         //+rd[i].end[1]+"),"+rd[i].slope+"]");
+                         //+rd[i].end[1]+"),"+rd[i].slope+"]")
                          if (usematrix) autop = rd[i].auto
                          
                          var dv = rd[i].end[1] - rd[i].sta[1] 
@@ -222,15 +222,15 @@ self.gdelt = (rd, goal, t, v) => bu.chop(goal.yaw*(v - self.rdf(rd, t)))
 //  lanage*yaw ==  1: right lane (blue dot)
 //  lanage*yaw == -1: wrong lane (orange dot)
 //  lanage*yaw <= -2: emergency day or derailed (red dot)
-self.lanage = ( rd, goal, t, v, l = null ) => {
-  var ln = goal.lnf( t )
+self.lanage = (rd, goal, t, v, l = null) => {
+  const ln = goal.lnf(t)
   if (l === null) l = goal.noisy ? Math.max(ln, goal.nw) : ln
-  var d = v - self.rdf(rd, t)
+  const d = v - self.rdf(rd, t)
   if (bu.chop(l) === 0)
     return rnd(bu.chop(d) === 0.0 ? goal.yaw : Math.sign(d)*666)
-  var x = bu.ichop(d/l)
-  var fracp = x % 1
-  var intp = x -fracp
+  const x = bu.ichop(d/l)
+  let fracp = x % 1
+  let intp = x - fracp // differs from floor() for negative numbers, eg -.5 -> 0
   if (fracp > .99999999) {
     intp += 1
     fracp = 0
@@ -275,7 +275,7 @@ self.ppr = (rd, g, t, i=null, pastppr=false) => {
   return 2*r
 }
 
-/** Returns the number of days to derail for the current road
+/** Return number of days to derail for the current road.
     TODO: There are some issues with computing tcur, vcur */
 self.dtd = (rd, goal, t, v) => {
   if (self.isLoser(rd, goal, null, t, v)) return 0
@@ -286,6 +286,7 @@ self.dtd = (rd, goal, t, v) => {
   const SID = 86400 // seconds in day (shorter than "bu.SID")
   let x = 0 // the number of steps
   let vpess = v + self.ppr(rd, goal, t+x*SID) // value as we walk fwd w/ PPRs
+  // TODO: let's not use aok (which uses lanage) in the YBHP case
   while (self.aok(rd, goal, t+x*SID, vpess, elnf(t+x*SID)) 
          && t+x*SID <= Math.max(goal.tfin, t)) {
     x += 1 // walk forward until we're off the YBR
@@ -371,12 +372,10 @@ self.dtdarray = ( rd, goal ) => {
   return arr
 }
 
-/* Generates and returns an initial version of the isoline by
- * processing the supplied dtdarray. The resulting isoline is correct
- * for doless and rash goals, but will need further processing for
- * goal with dir*yaw>0.
-*/
-self.isoline_generate = ( rd, dtdarr, goal, v ) => {
+/**Generate and return an initial version of the isoline by processing the
+   supplied dtdarray. The resulting isoline is correct for doless and rash
+   goals, but will need further processing for goal with dir*yaw>0. */
+self.isoline_generate = (rd, dtdarr, goal, v) => {
   var n = dtdarr[0], nn, iso
   var s = 0, ns, j, k, st, en, sl
   // Start the isoline with a horizontal line for the end of the road
@@ -401,16 +400,17 @@ self.isoline_generate = ( rd, dtdarr, goal, v ) => {
         iso.push([st[0], st[1]])
       else {
         sl = (v-st[2]) / (en[2]-st[2])
-        iso.push([st[0] + sl*(en[0]-st[0]), st[1]+sl*(en[1]-st[1])])
+        iso.push([st[0] + sl*(en[0]-st[0]), 
+                  st[1] + sl*(en[1]-st[1])])
       }
     }
     st = [nn[ns][0], nn[ns][1], nn[ns][2]]
     en = [nn[ns][0], nn[ns][3], nn[ns][4]]
     if (en[2] - st[2] == 0)
-      iso.push([st[0], st[1]]);
+      iso.push([st[0], st[1]])
     else {
       sl = (v-st[2]) / (en[2]-st[2])
-      iso.push([st[0] + sl*(en[0]-st[0]), st[1]+sl*(en[1]-st[1])]);
+      iso.push([st[0] + sl*(en[0]-st[0]), st[1]+sl*(en[1]-st[1])])
     }
     s = ns
     n = nn
@@ -418,20 +418,19 @@ self.isoline_generate = ( rd, dtdarr, goal, v ) => {
   return iso.reverse()  
 }
 
-/* Ensure correctness of the isoline for domore goals such that the
-   isoline is not allowed to go against 'dir' for dtd days after an
-   inflection point. This is done to ensure that the first
-   intersection with the centerline is taken as the dtd value.
-*/
-self.isoline_monotonicity = ( iso, rd, dtdarr, goal, v ) => {
+/**Ensure correctness of the isoline for do-more goals such that the isoline is
+   not allowed to go against 'dir' for dtd days after a road kink. This ensures
+   that the first intersection with the centerline is taken as the dtd value. */
+self.isoline_monotonicity = (iso, rd, dtdarr, goal, v) => {
   if (goal.yaw * goal.dir < 0) return iso
   
-  var isoout = [], downstreak = false, flatdone = false, slope, newx, j, k
-  var addpt = function (a, pt) {
-    a.push([pt[0], pt[1]]); return;
-  }
+  let isoout = []
+  let downstreak = false
+  let flatdone = false
+  let slope, newx, j, k
+  const addpt = function(a, pt) { a.push([pt[0], pt[1]]) }
 
-  // k holds the last isoline segment that has been processed and filtered
+  // k holds the last isoline segment that's been processed and filtered
   k = -1
   // j iterates over unfiltered isoline segments
   for (j = 0; j < iso.length-1; j++) {
@@ -440,12 +439,11 @@ self.isoline_monotonicity = ( iso, rd, dtdarr, goal, v ) => {
     
     addpt(isoout, iso[j])
     
-    // Check if there is a new downstreak to initiate new flat region (when dtd != 0)
+    // Check if new downstreak to initiate new flat region (when dtd != 0)
     if (v != 0 && (iso[j+1][1] - iso[j][1]) * goal.dir < 0 && !downstreak) {
       
       downstreak = true
-      // Extend horizontally for at least dtd days, or
-      // until a positive slope is found
+      // Extend horizontally by at least dtd days or till we find positive slope
       k = j+1
       flatdone = false
       while (!flatdone) {
@@ -456,11 +454,12 @@ self.isoline_monotonicity = ( iso, rd, dtdarr, goal, v ) => {
           addpt(isoout, [newx, iso[j][1]])
           
         } else if ((iso[k+1][1] - iso[k][1]) * goal.dir >= 0) {
-          // Found a positive slope, finish flat region by extending
-          // until intersection with the positive slope unless the
-          // next segment ends before that
+          // Found a positive slope, finish flat region by extending until 
+          // intersection with the positive slope unless the next segment ends
+          // before that.
           if (iso[k+1][0] != iso[k][0]) {
-            slope = (iso[k+1][1]-iso[k][1])/(iso[k+1][0]-iso[k][0])
+            slope = (iso[k+1][1]-iso[k][1])
+                   /(iso[k+1][0]-iso[k][0])
             if (slope != 0) {
               newx = iso[k][0] + (iso[j][1] - iso[k][1])/slope
               if (newx <= iso[j][0]+v*bu.SID && newx <= iso[k+1][0]) {
@@ -468,9 +467,8 @@ self.isoline_monotonicity = ( iso, rd, dtdarr, goal, v ) => {
               }
             }
           } else if ((iso[j][1]-iso[k][1])*(iso[j][1]-iso[k+1][1]) < 0) {
-            // Early intersection with upwards vertical segment found
-            // +1 ensures that filtering gets rid of extra backwards
-            // segments
+            // Early intersection with upward vertical segment found.
+            // +1 ensures that filtering gets rid of extra backward segments
             newx = iso[k][0]+1
             flatdone = true
           }
@@ -485,9 +483,8 @@ self.isoline_monotonicity = ( iso, rd, dtdarr, goal, v ) => {
   return isoout
 }
 
-/** Eliminates backwards line segments that are introduced by the
- * monotonicty pass */
-self.isoline_nobackward = ( iso, rd, dtdarr, goal, v ) => {
+/** Eliminate backward line segments introduced by the monotonicty pass. */
+self.isoline_nobackward = (iso, rd, dtdarr, goal, v) => {
   var isoout = [iso[0].slice()], lastpt, slope, j
   for (j = 1; j < iso.length; j++) {
     lastpt = isoout[isoout.length-1]
@@ -514,33 +511,35 @@ self.isoline_clip = ( iso, rd, dtdarr, goal, v ) => {
   }
 
   function intersect(s1, e1, s2, e2) { 
-    // Solve the equation [(e1-s1) -(e2-s2)]*[a1 a2]^T = s2-s1
-    // for [a1 a2]. Both a1 and a2 should be in the range [0,1] for
-    // segments to intersect. The matrix on the lhs will be singular
-    // if the lines are collinear
-    var a = e1[0] - s1[0],    c = e1[1] - s1[1]
-    var b = -(e2[0] - s2[0]), d = -(e2[1] - s2[1])
-    var e = s2[0] - s1[0],    f = s2[1] - s1[1]
-    var det = a*d - b*c
+    // Solve the equation 
+    //   [(e1-s1) -(e2-s2)]*[a1 a2]^T = s2-s1
+    // for [a1 a2]. Both a1 and a2 should be in the range [0,1] for segments to
+    // intersect. The matrix on the lhs will be singular if the lines are
+    // collinear.
+    const a =   e1[0] - s1[0],  c =   e1[1] - s1[1]
+    const b = -(e2[0] - s2[0]), d = -(e2[1] - s2[1])
+    const e =   s2[0] - s1[0],  f =   s2[1] - s1[1]
+    const det = a*d - b*c
     if (det == 0) return null
-    var a1 = (d*e - b*f)/det, a2 = (-c*e + a*f)/det
+    const a1 = ( d*e - b*f)/det
+    const a2 = (-c*e + a*f)/det
     if (a1 < 0 || a1 > 1 || a2 < 0 || a2 > 1) return null
     return [s1[0]+a1*a, s1[1]+a1*c]
   }
 
-  // Clips a single point to the right side of the road.Assumes that
-  // points that are on vertical segments are clipped wrt to the
-  // closest boundary to the wrong side of the road
+  // Clip a single point to the right side of the road. Assume points on
+  // vertical segments are clipped wrt to the closest boundary to the wrong
+  // side of the road.
   function clippt(rd, goal, pt) {
     var newpt = pt.slice()
     // Find the road segment [sta, end[ containing the pt
     var seg = self.findSeg(rd, pt[0])
     var rdy = self.segValue(rd[seg], pt[0])
-    // If there are preceding vertical segments, take the boundary
-    // value based on road yaw
+    // If there are preceding vertical segments, take the boundary value based
+    // on road yaw.
     while(--seg >= 0 && rd[seg].sta[0] == pt[0]) {
       if (goal.yaw > 0) rdy = Math.min(rdy, rd[seg].sta[1])
-      else rdy = Math.max(rdy, rd[seg].sta[1])
+      else              rdy = Math.max(rdy, rd[seg].sta[1])
     }
     if ((newpt[1] - rdy) * goal.yaw < 0) newpt[1] = rdy
     return newpt

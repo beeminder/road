@@ -183,13 +183,14 @@ self.modf = (f) =>{
 }
 
 /** The qth quantile of values in l. For median, set q=1/2.  See
-    http://reference.wolfram.com/mathematica/ref/Quantile.html Author:
-    Ernesto P. Adorio, PhD; UP Extension Program in Pampanga, Clark
-    Field. 
+    http://reference.wolfram.com/mathematica/ref/Quantile.html 
+    by Ernesto P. Adorio, PhD; UP Extension Program in Pampanga, Clark Field
     @param {Number[]} l Input array
     @param {Number} q Desired quantile, in range [0,1]
-    @param {Number} [qt=1] Type of quantile computation, Hyndman and Fan algorithm, integer between 1 and 9
-    @param {boolean} [issorted=false] Flag to indicate whether the input array is sorted
+    @param {Number} [qt=1] Type of quantile computation, Hyndman and Fan
+      algorithm, integer between 1 and 9
+    @param {boolean} [issorted=false] Flag to indicate whether the input array
+      is sorted
 */
 self.quantile = (l, q, qt=1, issorted=false) => {
   var y

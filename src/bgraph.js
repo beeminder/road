@@ -50,7 +50,7 @@ let gid = 1
 /** Default settings */
 let defaults = {
   /** Generates an empty graph and JSON */
-  noGraph:      false,
+  noGraph:      false, 
   /** Binds the graph to a div element */
   divGraph:     null,
   /** Binds the road table to a div element */
