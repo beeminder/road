@@ -2,7 +2,8 @@
 
 This repository includes Javascript packages implementing all Beebrain functionality, as well as an interactive editor for Beeminder's Yellow Brick Roads.
 
-Description of original Beebrain: <http://doc.beeminder.com/beebrain>
+Description of original Beebrain: 
+<http://doc.beeminder.com/beebrain>
 
 ## Components and Features
 
@@ -118,7 +119,12 @@ This reads the file `u+g.bb` (or `slug.bb`) from `/path/to/input`, and
 generates `u+g.png`, `u+g-thumb.png`, `u+g.svg` and `u+g.json` in
 `/path/to/output`. 
 
-## Appendices
+### Generating this documentation
+
+Do `gulp gendoc` in the root directory and point your browser to 
+`file:///path/to/road/docs/index.html`
+
+## Appendix
 
 ### A. Directory structure 
 
