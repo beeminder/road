@@ -1010,8 +1010,9 @@ function procParams() {
   goal.rcur = br.rtf(roads, goal.tcur)*goal.siru  
   goal.ravg = br.tvr(goal.tini, goal.vini, goal.tfin,goal.vfin, null)*goal.siru
   goal.cntdn = Math.ceil((goal.tfin-goal.tcur)/bu.SID)
-  goal.lane = bu.clip(br.lanage(roads, goal, goal.tcur, goal.vcur), 
-                      -32768, 32767)
+  goal.lane = goal.ybhp ?  // backward-compatible version for YBHP
+    goal.yaw * (goal.safebuf - (goal.safebuf <= 1 ? 2 : 1)) :
+    bu.clip(br.lanage(roads, goal, goal.tcur, goal.vcur), -32768, 32767)
   goal.color = (goal.safebuf < 1 ? "red"    :
                 goal.safebuf < 2 ? "orange" :
                 goal.safebuf < 3 ? "blue"   : "green")
