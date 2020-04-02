@@ -201,12 +201,15 @@ self.fixRoadArray = (rd, autop=self.RP.VALUE, usematrix=false,
                        }
                      }
 
-/** Good delta: Returns the delta from the given point to the
-    centerline of the road but with the sign such that being on the
-    good side of the road gives a positive delta and being on the
-    wrong side gives a negative delta. */
+/**Good delta: Returns the delta from the given point to the centerline of the
+   road but with the sign such that being on the good side of the road gives a
+   positive delta and being on the wrong side gives a negative delta. */
 self.gdelt = (rd, goal, t, v) => bu.chop(goal.yaw*(v - self.rdf(rd, t)))
 
+/** Whether the given point is on or on the good side of the razor road */
+self.aok = (rd, g, t, v) => { return g.yaw * (v - self.rdf(rd, t)) >= 0 }
+
+// ONLY USED IN NON-YBHP CASE
 // The bottom lane is -1, top lane is 1, below the road is -2, above is +2, etc.
 // Implementation notes:
 // This includes the noisy width but it does not adjust the noisy
@@ -243,8 +246,41 @@ self.lanage = (rd, goal, t, v, l = null) => {
   return rnd(Math.sign(x)*Math.ceil(Math.abs(x)))
 }
 
+// ONLY USED IN NON-YBHP
 /** Whether the given point is on the road if the road has lane width l */
-self.aok = (rd, g, t, v, l) => self.lanage(rd, g, t, v, l) * g.yaw >= -1.0
+self.aokold = (rd, g, t, v, l) => self.lanage(rd, g, t, v, l) * g.yaw >= -1.0
+
+/* SCHDEL
+  const d = v - self.rdf(rd, t) // the given point's delta from the razor road
+  return g.yaw > 0 && g.dir > 0 ? d >= 0 :   // MOAR
+         g.yaw < 0 && g.dir > 0 ? d <= 0 :   // WEEN
+         g.yaw < 0 && g.dir < 0 ? d <= 0 :   // PHAT
+         g.yaw > 0 && g.dir < 0 ? d >= 0 :   // RASH
+         console.log("ERROR: bad yaw/dir"); false
+
+  SCRATCH:
+  let lane // refactor me
+  const ln = g.lnf(t)
+  if (true || bu.chop(ln) === 0) {
+    lane = rnd(bu.chop(d) === 0.0 ? g.yaw : Math.sign(d)*666)
+    return lane * g.yaw >= -1.0
+  } else {
+    const x = bu.ichop(d/ln)
+    let fracp = x % 1
+    let intp = x - fracp // differs from floor() if negative, eg -.5 -> 0
+    if (fracp > .99999999) {
+      intp += 1
+      fracp = 0
+    }
+    if (bu.chop(fracp) === 0) {
+      if (g.yaw > 0 && intp >= 0) return rnd(intp+1)
+      if (g.yaw < 0 && intp <= 0) return rnd(intp-1)
+      lane = rnd(Math.sign(x)*Math.ceil(Math.abs(x)))
+    } else
+      lane = rnd(Math.sign(x)*Math.ceil(Math.abs(x)))
+  }
+  //return lane * g.yaw >= -1.0
+*/
 
 /** Pessimistic Presumptive Report (PPR). If this is being computed for *today*
     then return 0 when PPRs are actually turned off (g.ppr==false). If it's
@@ -287,10 +323,18 @@ self.dtd = (rd, goal, t, v) => {
   let x = 0 // the number of steps
   let vpess = v + self.ppr(rd, goal, t+x*SID) // value as we walk fwd w/ PPRs
   // TODO: let's not use aok (which uses lanage) in the YBHP case
-  while (self.aok(rd, goal, t+x*SID, vpess, elnf(t+x*SID)) 
-         && t+x*SID <= Math.max(goal.tfin, t)) {
-    x += 1 // walk forward until we're off the YBR
-    vpess += self.ppr(rd, goal, t+x*SID)
+  if (goal.ybhp) {
+    while (self.aok(rd, goal, t+x*SID, vpess) 
+           && t+x*SID <= Math.max(goal.tfin, t)) {
+      x += 1 // walk forward until we're off the YBR
+      vpess += self.ppr(rd, goal, t+x*SID)
+    }
+  } else {
+    while (self.aokold(rd, goal, t+x*SID, vpess, elnf(t+x*SID)) 
+           && t+x*SID <= Math.max(goal.tfin, t)) {
+      x += 1 // walk forward until we're off the YBR
+      vpess += self.ppr(rd, goal, t+x*SID)
+    }    
   }
   if (goal.noisy && self.gdelt(rd,goal,t,v) >= 0) x = Math.max(2, x)
   return x
@@ -779,7 +823,7 @@ self.dotcolor = ( rd, g, t, v, iso = null) => {
     if (self.isoside(g, iso[3], t, v) < 0) return bu.Cols.GRNDOT
     return bu.Cols.GRNDOT
   } else {
-    var l = self.lanage(rd, g, t, v)
+    const l = self.lanage(rd, g, t, v)
     if (g.yaw===0 && Math.abs(l) > 1.0)  return bu.Cols.GRNDOT
     if (g.yaw===0 && (l===0 || l===1.0)) return bu.Cols.BLUDOT
     if (g.yaw===0 && l===-1.0)           return bu.Cols.ORNDOT
