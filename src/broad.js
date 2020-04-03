@@ -21,17 +21,24 @@ if (typeof define === 'function' && define.amd) {
 
 'use strict'
 
-const rnd = Math.round
+const rnd   = Math.round
+const max   = Math.max
+const min   = Math.min
+const abs   = Math.abs
+const pow   = Math.pow
+const floor = Math.floor
+const ceil  = Math.ceil
+const sign  = Math.sign
 
 /**
- * Javascript library of road utilities for beebrain, provided as a
+ * Javascript library of road utilities for Beebrain, provided as a
  * UMD module. Returns a "broad" object, whose public members provide
  * a number of road related constants and functions. Does not hold any
  * internal state.
  *
  * The following member variables and methods are provided:
  *
- * Copyright © 2018 Uluc Saranli
+ * Copyright © 2018 Uluc Saranli and Daniel Reeves
 
  @requires moment
  @requires butil
@@ -59,13 +66,13 @@ jolly    : (x) => x.length > 0 ? 1 : 0,
 binary   : (x) => x.length > 0 ? 1 : 0,
 nonzero  : bu.nonzero,
 triangle : (x) => bu.sum(x)*(bu.sum(x)+1)/2,
-square   : (x) => Math.pow(bu.sum(x),2),
+square   : (x) => pow(bu.sum(x),2),
 clocky   : bu.clocky, // sum of pair diff.
 count    : (x) => x.length, // number of datapoints
-kyshoc   : (x) => Math.min(2600, bu.sum(x)), // ad hoc, guineapigging
+kyshoc   : (x) => min(2600, bu.sum(x)), // ad hoc, guineapigging
 //TODO: FIXHACK?: Introduced internal state for rfin for skatesum
-skatesum : (x) => Math.min(self.rfin, bu.sum(x)), // only count daily min
-cap1     : (x) => Math.min(1, bu.sum(x)), // for zedmango
+skatesum : (x) => min(self.rfin, bu.sum(x)), // only count daily min
+cap1     : (x) => min(1, bu.sum(x)), // for zedmango
 }
 
 /*
@@ -120,7 +127,7 @@ self.findSeg = (rd, x, dir=0) => {
   var nums = rd.length-1, s = 0, e = nums, m
   if (x < rd[0].sta[0] || x > rd[nums].end[0]) return -1
   while (e-s > 1) { // Uses binary search
-    m = Math.floor((s+e)/2)
+    m = floor((s+e)/2)
     if (rd[m].sta[0] <= x) s = m
     else e = m
   }
@@ -209,7 +216,7 @@ self.gdelt = (rd, goal, t, v) => bu.chop(goal.yaw*(v - self.rdf(rd, t)))
 /** Whether the given point is on or on the good side of the razor road */
 self.aok = (rd, g, t, v) => { return g.yaw * (v - self.rdf(rd, t)) >= 0 }
 
-// ONLY USED IN NON-YBHP CASE
+// #DIELANES (code only used in non-ybhp case and can die post-ybhp)
 // The bottom lane is -1, top lane is 1, below the road is -2, above is +2, etc.
 // Implementation notes:
 // This includes the noisy width but it does not adjust the noisy
@@ -227,10 +234,10 @@ self.aok = (rd, g, t, v) => { return g.yaw * (v - self.rdf(rd, t)) >= 0 }
 //  lanage*yaw <= -2: emergency day or derailed (red dot)
 self.lanage = (rd, goal, t, v, l = null) => {
   const ln = goal.lnf(t)
-  if (l === null) l = goal.noisy ? Math.max(ln, goal.nw) : ln
+  if (l === null) l = goal.noisy ? max(ln, goal.nw) : ln
   const d = v - self.rdf(rd, t)
   if (bu.chop(l) === 0)
-    return rnd(bu.chop(d) === 0.0 ? goal.yaw : Math.sign(d)*666)
+    return rnd(bu.chop(d) === 0.0 ? goal.yaw : sign(d)*666)
   const x = bu.ichop(d/l)
   let fracp = x % 1
   let intp = x - fracp // differs from floor() for negative numbers, eg -.5 -> 0
@@ -241,46 +248,14 @@ self.lanage = (rd, goal, t, v, l = null) => {
   if (bu.chop(fracp) === 0) {
     if (goal.yaw > 0 && intp >= 0) return rnd(intp+1)
     if (goal.yaw < 0 && intp <= 0) return rnd(intp-1)
-    return rnd(Math.sign(x)*Math.ceil(Math.abs(x)))
+    return rnd(sign(x)*ceil(abs(x)))
   }
-  return rnd(Math.sign(x)*Math.ceil(Math.abs(x)))
+  return rnd(sign(x)*ceil(abs(x)))
 }
 
-// ONLY USED IN NON-YBHP
+// #DIELANES
 /** Whether the given point is on the road if the road has lane width l */
 self.aokold = (rd, g, t, v, l) => self.lanage(rd, g, t, v, l) * g.yaw >= -1.0
-
-/* SCHDEL
-  const d = v - self.rdf(rd, t) // the given point's delta from the razor road
-  return g.yaw > 0 && g.dir > 0 ? d >= 0 :   // MOAR
-         g.yaw < 0 && g.dir > 0 ? d <= 0 :   // WEEN
-         g.yaw < 0 && g.dir < 0 ? d <= 0 :   // PHAT
-         g.yaw > 0 && g.dir < 0 ? d >= 0 :   // RASH
-         console.log("ERROR: bad yaw/dir"); false
-
-  SCRATCH:
-  let lane // refactor me
-  const ln = g.lnf(t)
-  if (true || bu.chop(ln) === 0) {
-    lane = rnd(bu.chop(d) === 0.0 ? g.yaw : Math.sign(d)*666)
-    return lane * g.yaw >= -1.0
-  } else {
-    const x = bu.ichop(d/ln)
-    let fracp = x % 1
-    let intp = x - fracp // differs from floor() if negative, eg -.5 -> 0
-    if (fracp > .99999999) {
-      intp += 1
-      fracp = 0
-    }
-    if (bu.chop(fracp) === 0) {
-      if (g.yaw > 0 && intp >= 0) return rnd(intp+1)
-      if (g.yaw < 0 && intp <= 0) return rnd(intp-1)
-      lane = rnd(Math.sign(x)*Math.ceil(Math.abs(x)))
-    } else
-      lane = rnd(Math.sign(x)*Math.ceil(Math.abs(x)))
-  }
-  //return lane * g.yaw >= -1.0
-*/
 
 /** Pessimistic Presumptive Report (PPR). If this is being computed for *today*
     then return 0 when PPRs are actually turned off (g.ppr==false). If it's
@@ -317,26 +292,24 @@ self.dtd = (rd, goal, t, v) => {
   if (self.isLoser(rd, goal, null, t, v)) return 0
 
   var fnw = self.gdelt(rd, goal, t,v) >= 0 ? 0.0 : goal.nw // future noisy width
-  var elnf = x => Math.max(goal.lnf(x), fnw) // effective lane width function
+  var elnf = x => max(goal.lnf(x), fnw) // effective lane width function
 
   const SID = 86400 // seconds in day (shorter than "bu.SID")
   let x = 0 // the number of steps
   let vpess = v + self.ppr(rd, goal, t+x*SID) // value as we walk fwd w/ PPRs
-  // TODO: let's not use aok (which uses lanage) in the YBHP case
   if (goal.ybhp) {
-    while (self.aok(rd, goal, t+x*SID, vpess) 
-           && t+x*SID <= Math.max(goal.tfin, t)) {
+    while (self.aok(rd, goal, t+x*SID, vpess) && t+x*SID <= max(goal.tfin, t)) {
       x += 1 // walk forward until we're off the YBR
       vpess += self.ppr(rd, goal, t+x*SID)
     }
   } else {
     while (self.aokold(rd, goal, t+x*SID, vpess, elnf(t+x*SID)) 
-           && t+x*SID <= Math.max(goal.tfin, t)) {
+           && t+x*SID <= max(goal.tfin, t)) {
       x += 1 // walk forward until we're off the YBR
       vpess += self.ppr(rd, goal, t+x*SID)
     }    
   }
-  if (goal.noisy && self.gdelt(rd,goal,t,v) >= 0) x = Math.max(2, x)
+  if (goal.noisy && self.gdelt(rd,goal,t,v) >= 0) x = max(2, x)
   return x
 }
   
@@ -582,8 +555,8 @@ self.isoline_clip = ( iso, rd, dtdarr, goal, v ) => {
     // If there are preceding vertical segments, take the boundary value based
     // on road yaw.
     while(--seg >= 0 && rd[seg].sta[0] == pt[0]) {
-      if (goal.yaw > 0) rdy = Math.min(rdy, rd[seg].sta[1])
-      else              rdy = Math.max(rdy, rd[seg].sta[1])
+      if (goal.yaw > 0) rdy = min(rdy, rd[seg].sta[1])
+      else              rdy = max(rdy, rd[seg].sta[1])
     }
     if ((newpt[1] - rdy) * goal.yaw < 0) newpt[1] = rdy
     return newpt
@@ -632,7 +605,7 @@ self.isoval = ( line, x ) => {
   if (x < line[0][0]) return line[0][1]
   if (x > line[nums][0]) return line[nums][1]
   while (e-s > 1) { // Uses binary search
-    m = Math.floor((s+e)/2)
+    m = floor((s+e)/2)
     if (line[m][0] <= x) s = m
     else e = m
   }
@@ -657,7 +630,7 @@ self.dtc = (rd, goal, t, v) => {
 self.bufcap = (rd, g, n=7) => {
   var t = g.tcur, v = self.rdf(rd, t), r = self.rtf(rd, t), d, i
   if (r === 0) r = g.lnw
-  r = Math.abs(r)
+  r = abs(r)
   d = 0
   i = 0
   while(self.dtc(rd, g, t,v+d) < n && i <= 70) { 
@@ -676,7 +649,7 @@ self.tvr = (tp, vp, t, v, r) => {
   
   if (t === null) {
     if (r === 0) return bu.BDUSK
-    else         return Math.min(bu.BDUSK, tp + (v-vp)/r)
+    else         return min(bu.BDUSK, tp + (v-vp)/r)
   }
   if (v === null) return vp+r*(t-tp)
   if (r === null) {
@@ -728,21 +701,21 @@ self.rtf = (rd, t) => (rd[self.findSeg( rd, t )].slope)
 self.genLaneFunc = function(rd, goal ) {
   var r0 = bu.deldups(rd, e=>e.end[0])
   var t = r0.map(elt => elt.end[0])
-  var r = r0.map(elt => Math.abs(elt.slope)*bu.SID )
+  var r = r0.map(elt => abs(elt.slope)*bu.SID )
   // pretend flat spots have the previous or next non-flat rate
   var rb = r.slice(), i
   for (i = 1; i < rb.length; i++) 
-    if (Math.abs(rb[i]) < 1e-7 || !isFinite(rb[i])) rb[i] = rb[i-1]
+    if (abs(rb[i]) < 1e-7 || !isFinite(rb[i])) rb[i] = rb[i-1]
   var rr = r.reverse()
   var rf = rr.slice()
   for (i = 1; i < rf.length; i++) 
-    if (Math.abs(rf[i]) < 1e-7 || !isFinite(rf[i])) rf[i] = rf[i-1]
+    if (abs(rf[i]) < 1e-7 || !isFinite(rf[i])) rf[i] = rf[i-1]
   rf = rf.reverse()
-  r = bu.zip([rb,rf]).map(e => bu.argmax(Math.abs, [e[0],e[1]]) )
+  r = bu.zip([rb,rf]).map(e => bu.argmax(abs, [e[0],e[1]]) )
   t.pop()
   r.splice(0,1)
   var rtf0 = self.stepify(bu.zip([t,r]))
-  return (x => Math.max(Math.abs(self.vertseg(rd,x) ? 0 : 
+  return (x => max(abs(self.vertseg(rd,x) ? 0 : 
                                  self.rdf(rd, x) - self.rdf(rd, x-bu.SID)), 
                         rtf0(x)))
   //return x=>self.lnfraw(rd, goal, x)
@@ -776,7 +749,7 @@ self.stepFunc = ( d, x, dflt=0 ) => {
   var numpts = d.length, s = 0, e = numpts-1, m
   if (x > d[numpts-1][0]) return d[numpts-1][1]
   while (e-s > 1) {
-    m = Math.floor((s+e)/2)
+    m = floor((s+e)/2)
     if (d[m][0] <= x) s = m
     else e = m
   }
@@ -799,7 +772,7 @@ self.isoside = (g, isoline, t, v) => {
   var n = isoline.length, s = 0, e = n-1, m
   if (t >= isoline[n-1][0]) return ((v - isoline[n-1][1])*g.yaw>0)?+1:-1
   while (e-s > 1) {
-    m = Math.floor((s+e)/2)
+    m = floor((s+e)/2)
     if (isoline[m][0] <= t) s = m
     else e = m
   }
@@ -824,7 +797,7 @@ self.dotcolor = ( rd, g, t, v, iso = null) => {
     return bu.Cols.GRNDOT
   } else {
     const l = self.lanage(rd, g, t, v)
-    if (g.yaw===0 && Math.abs(l) > 1.0)  return bu.Cols.GRNDOT
+    if (g.yaw===0 && abs(l) > 1.0)  return bu.Cols.GRNDOT
     if (g.yaw===0 && (l===0 || l===1.0)) return bu.Cols.BLUDOT
     if (g.yaw===0 && l===-1.0)           return bu.Cols.ORNDOT
     if (l*g.yaw >=   2.0)                return bu.Cols.GRNDOT
@@ -856,7 +829,7 @@ self.noisyWidth = (rd, d) => {
     v = p[i][0][1]
     u = p[i][1][0]
     w = p[i][1][1]
-    ad.push(Math.abs(w-v-self.rdf(rd,u)+self.rdf(rd,t))/(u-t)*bu.SID)
+    ad.push(abs(w-v-self.rdf(rd,u)+self.rdf(rd,t))/(u-t)*bu.SID)
   }
   return bu.chop(ad.length===1 ? ad[0] : bu.quantile(ad, .90))
 }
@@ -878,7 +851,7 @@ self.autowiden = (rd, g, d, nw) => {
     while (i >= -n && self.gdelt(rd, g, d[i][0], d[i][1]) < 0) i -= 1
     i += 1
     if (i > -n && d[i][0] - d[i-1][0] <= bu.SID) 
-      nw = Math.max(nw, Math.abs(d[i][1] - self.rdf(rd,d[i][0])))
+      nw = max(nw, abs(d[i][1] - self.rdf(rd,d[i][0])))
   }
   return bu.chop(nw)
 }
@@ -892,7 +865,7 @@ self.vertseg = (rd, t) => (rd.filter(e=>(e.sta[0] === t)).length > 1)
 self.gapFill = (d) => {
   var interp = (bef, aft, atPt) => (bef + (aft - bef) * atPt)
   var start = d[0][0], end = d[d.length-1][0]
-  var n = Math.floor((end-start)/bu.SID)
+  var n = floor((end-start)/bu.SID)
   var out = Array(n), i, j = 0, t = start
   for (i = 0; i < d.length-1; i++) {
     var den = (d[i+1][0]-d[i][0])
@@ -912,7 +885,7 @@ self.smooth = (d) => {
   var xnew = dz[0].map((e)=>(e-SMOOTH)/bu.SID)
   var poly = new Polyfit(xnew, dz[1])
   var solver = poly.getPolynomial(3)
-  var range = Math.abs(Math.max(...dz[1])-Math.min(...dz[1]))
+  var range = abs(max(...dz[1])-min(...dz[1]))
   var error = poly.standardError(poly.computeCoefficients(3))
   if (error > 10000*range) {
     // Very large error. Potentially due to ill-conditioned matrices
@@ -950,8 +923,8 @@ self.interpData = (d, xv) => {
 self.lim = (rd, g, n) => {
   var t = g.tcur+n*bu.SID
   return self.rdf(rd, t)
-    - Math.sign(g.yaw)
-    * (g.noisy ? Math.max(g.nw, g.lnf(t)) : g.lnf(t))
+    - sign(g.yaw)
+    * (g.noisy ? max(g.nw, g.lnf(t)) : g.lnf(t))
 }
 
 /** The bare min needed from vcur to the critical edge of the YBR in n days */
