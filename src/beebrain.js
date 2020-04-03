@@ -3,6 +3,13 @@
  * Provides a {@link beebrain} class, which can be used to construct independent
  * Beebrain objects each with their own internal state.<br/>
 
+Beebrain -- doc.bmndr.com/beebrain
+Originally written in Mathematica by dreeves, 2008-2010.
+Ported to Python by Uluc Saranli around 2011.12.20.
+Maintained and evolved by dreeves, 2012-2018.
+Ported to Javascript in 2018-2019 by Uluc Saranli.
+
+
  * <br/>Copyright 2017-2020 Uluc Saranli and Daniel Reeves
  @module beebrain
  @requires moment
@@ -914,7 +921,7 @@ function vetParams() {
       return "Invalid road matrix row: "+showrow(rd[i])
   // At this point road is guaranteed to be a list of length-3 lists.
   // I guess we don't mind a redundant final road row.
-  const mrd = rd.slice(1,rd.length-1)
+  const mrd = rd.slice(1, rd.length-1)
   if (mrd.length != bu.deldups(mrd).length) {
     let prev = mrd[0] // previous row
     for (i = 1; i < mrd.length; i++) {
@@ -926,13 +933,14 @@ function vetParams() {
   }
   if (goal.kyoom && goal.odom)
     return "The odometer setting doesn't make sense for an auto-summing goal!"
-    
+  if (goal.ybhp && goal.abslnw > 0)
+    return "Yellow Brick Half-Plane goals must have zero absolute lane width"
+
   return ""
 }
   
 /** Process goal parameters */
 function procParams() {
-  
   goal.dtf = br.stepify(data) // map timestamps to most recent datapoint value
   
   const oldroad = goal.road.map(e=>[e[0], e[1], e[2]])
