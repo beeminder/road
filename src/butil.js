@@ -21,11 +21,11 @@ if (typeof define === 'function' && define.amd) {
 'use strict'
 
 /**
- * Library of general purpose utilities for Beebrain, provided as a UMD
- * module. Provides a "butil" object holding various constants and utility
- * functions. No internal state.<br/>
+ * Library of general purpose utilities for Beebrain, provided as a UMD module.
+ * Provides a "butil" object holding various constants and utility functions.
+ * No internal state.<br/>
  *
- * Copyright © 2018-2019 Uluc Saranli and Daniel Reeves
+ * Copyright © 2018-2020 Uluc Saranli and Daniel Reeves
  *
  * @requires moment
  * @exports butil
@@ -49,7 +49,7 @@ self.MAXTIME = 60000,
 self.BBURL = "http://brain.beeminder.com/"
 
 /** Beeminder colors for datapoints 
-    @enum {string}*/
+    @enum {string} */
 self.Cols = {
   DYEL:   "#ffff44", // Dark yellow  (mma 1,1,.55; py 1,1,.4)
   LYEL:   "#ffff88", // Light yellow (mma 1,1,.68; py 1,1,.6)
