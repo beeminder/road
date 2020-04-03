@@ -429,23 +429,27 @@ def update_goallist():
   
 # BEEBRAIN related functions ---------------------------------------------------
 
-# Checks timestamps of generated files wrt the jsbrain reference files, returns
-# 0 if the reference is up to date
-# -1 if any of the reference files are missing
-# -2 if the BB file is more recent than any of the references
+# Check timestamps of generated files wrt the beebrain reference files, return:
+#  0 if the reference is up to date
+# -1 if any reference file is missing
+# -2 if any reference file is older than the bbfile's last-modified time
+# For the last case, stale reference files, we normally don't care. It happens
+# when edit the BB files to see how that changes the JSON out put or the graph.
+# But it's fine, we just get a warning that we can ignore.
 def jsbrain_checkref(slug, inpath, refpath):
-  inpath = os.path.abspath(inpath)+"/"
+  inpath  = os.path.abspath(inpath)+"/"
   refpath = os.path.abspath(refpath)+"/"
   bb = inpath+slug+".bb"
   json = refpath+slug+".json"
-  img = refpath+slug+".png"
-  thm = refpath+slug+"-thumb.png"
-  svg = refpath+slug+".svg"
+  img  = refpath+slug+".png"
+  thm  = refpath+slug+"-thumb.png"
+  svg  = refpath+slug+".svg"
   if (not os.path.isfile(bb)   or
       not os.path.isfile(json) or 
       not os.path.isfile(img)  or
       not os.path.isfile(thm)  or 
       not os.path.isfile(svg)):   return -1
+
   bbtime = os.stat(bb).st_mtime
   jsontime = os.stat(json).st_mtime
   imgtime = os.stat(img).st_mtime
@@ -455,6 +459,7 @@ def jsbrain_checkref(slug, inpath, refpath):
       bbtime > imgtime  or 
       bbtime > thmtime  or 
       bbtime > svgtime):   return -2
+
   return 0
 
 # Invokes jsbrain on the indicated slug from inpath, placing outputs in outpath,
@@ -589,9 +594,10 @@ def worker(pending, completed):
           resp.jsondiff = json_compare(job)
           # Stale graphs still perform comparison, but with an additional note
           if (refstatus == -2):
-            resp.errmsg = "WARNING: Stale reference files!"
+            resp.errmsg = "WARNING: Stale reference files. " + \
+              "BB file was edited after the references were last generated.\n"
             if (resp.jsondiff == None):
-              resp.errmsg += "\n* No json differences found."
+              resp.errmsg += "* No json differences found."
           
           # If enabled, compare generated graph to the reference
           if (cm.graph):
