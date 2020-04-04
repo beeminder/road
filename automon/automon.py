@@ -436,6 +436,9 @@ def update_goallist():
 # For the last case, stale reference files, we normally don't care. It happens
 # when edit the BB files to see how that changes the JSON out put or the graph.
 # But it's fine, we just get a warning that we can ignore.
+# What we might really want is to watch the bb files exactly as if they're
+# source code files, so we can try a change and have it automatically show up
+# in the list of errors and see the diff.
 def jsbrain_checkref(slug, inpath, refpath):
   inpath  = os.path.abspath(inpath)+"/"
   refpath = os.path.abspath(refpath)+"/"
@@ -597,7 +600,7 @@ def worker(pending, completed):
             resp.errmsg = "WARNING: Stale reference files. " + \
               "BB file was edited after the references were last generated.\n"
             if (resp.jsondiff == None):
-              resp.errmsg += "* No json differences found."
+              resp.errmsg += "* No json differences found.\n"
           
           # If enabled, compare generated graph to the reference
           if (cm.graph):
