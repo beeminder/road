@@ -887,7 +887,7 @@ function createGraph() {
     .attr("class", "axislabel")
     .attr("transform", 
           "translate(15,"+(plotbox.height/2+plotpad.top)+") rotate(-90)")
-    .text("deneme")
+    .text("") // used to say "deneme" but was user-visible in error graphs
   
   // Create brush area
   context = svg.append('g')
