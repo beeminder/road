@@ -1296,25 +1296,26 @@ this.reloadRoad = function() {
 let stats = {}
 
 /** Process goal details */
-function genStats( p, d, tm=null ) {
+function genStats(p, d, tm=null) {
   //console.debug("genStats: id="+curid+", "+p.yoog)
 
   try {
-    if (tm == null) tm = moment.utc().unix() // start the clock immediately
-
-    legacyIn(p)
-    initGlobals()
-    goal.proctm = tm
+    if (tm == null) tm = moment.utc().unix() // Start the clock immediately!
+    legacyIn(p)                              // Which is kind of silly because
+    initGlobals()                            // legacyIn and initGlobals take no
+    goal.proctm = tm                         // time so could just get time here
     data = stampIn(p, d)
 
-    // make sure all supplied params are recognized 
-    for (const prop in p) {
-      if (p.hasOwnProperty(prop)) {
-        if (!pin.hasOwnProperty(prop) && (!pig.includes(prop)))
-          goal.error += "Unknown param: "+prop+"="+p[prop]+","
-        else goal[prop] = p[prop]
+    // make sure all supplied params are recognized
+    const lup = [] // list of unknown parameters
+    for (const k in p) {
+      if (p.hasOwnProperty(k)) {
+        if (!pin.hasOwnProperty(k) && !pig.includes(k)) lup.push(`${k}=${p[k]}`)
+        else goal[k] = p[k]
       }
     }
+    if (lup.length > 0) goal.error += 
+      `Unknown param${lup.length===1 ? "" : "s"}: ${lup.join(', ')}`
 
     // Process & extract various params that are independent of road & data
     // maybe just default to aggday=last; no such thing as aggday=null
