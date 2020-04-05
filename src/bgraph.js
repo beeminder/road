@@ -15,6 +15,7 @@
 ;((function (root, factory) { // BEGIN PREAMBLE --------------------------------
 
 'use strict'
+
 if (typeof define === 'function' && define.amd) {
   // AMD. Register as an anonymous module.
   //console.log("bgraph: Using AMD module definition")
@@ -40,6 +41,17 @@ if (typeof define === 'function' && define.amd) {
 })(this, function (d3, moment, bu, br, bb) { // END PREAMBLE -- BEGIN MAIN -----
 
 'use strict'
+
+// -----------------------------------------------------------------------------
+// --------------------------- CONVENIENCE CONSTANTS ---------------------------
+
+const max   = Math.max
+const min   = Math.min
+const abs   = Math.abs
+const floor = Math.floor
+const ceil  = Math.ceil
+const round = Math.round
+
 
 // -----------------------------------------------------------------------------
 // ------------------------------ FACTORY GLOBALS ------------------------------
@@ -436,14 +448,14 @@ function getisopath( val, xr ) {
 // isolines coinciding for flat regions.
 function isolnwborder(xr) {
   let lnw = 0
-  const numdays = Math.min(opts.maxFutureDays,
-                           Math.ceil((goal.tfin-goal.tini)/bu.SID))
+  const numdays = min(opts.maxFutureDays,
+                      ceil((goal.tfin-goal.tini)/bu.SID))
   const center = getiso(0)
   const oneday = getiso( numdays )
   if (goal.yaw*goal.dir > 0) {
-    lnw = Math.abs(br.isoval(center, xr[0])-br.isoval(oneday, xr[0])) / numdays
+    lnw = abs(br.isoval(center, xr[0])-br.isoval(oneday, xr[0])) / numdays
   } else {
-    lnw = Math.abs(br.isoval(center, xr[1])-br.isoval(oneday, xr[1])) / numdays
+    lnw = abs(br.isoval(center, xr[1])-br.isoval(oneday, xr[1])) / numdays
   }
   return lnw
 }
@@ -454,15 +466,15 @@ function isolnwmax( xr ) {
   for (let i = 0; i < center.length; i++) {
     x = center[i][0]
     if (x >= xr[0] && x <= xr[1])
-      lnw = Math.max(lnw, Math.abs(center[i][1] - br.isoval(oneday,x)))
+      lnw = max(lnw, abs(center[i][1] - br.isoval(oneday,x)))
   }
   for (let i = 0; i < oneday.length; i++) {
     x = oneday[i][0]
     if (x >= xr[0] && x <= xr[1])
-      lnw = Math.max(lnw, Math.abs(oneday[i][1] - br.isoval(center,x)))
+      lnw = max(lnw, abs(oneday[i][1] - br.isoval(center,x)))
   }
-  return lnw == 0 ? Math.abs(br.isoval(center, xr[0]) - 
-                             br.isoval(oneday, xr[0])) : lnw
+  return lnw == 0 ? abs(br.isoval(center, xr[0]) - 
+                        br.isoval(oneday, xr[0])) : lnw
 }
 function isolnwmin( xr ) {
   let x, lnw = Infinity
@@ -470,23 +482,23 @@ function isolnwmin( xr ) {
   const oneday = getiso(1)
   for (let i = 0; i < center.length; i++) {
     x = center[i][0]
-    const nw = Math.abs(center[i][1] - br.isoval(oneday,x))
-    if (nw != 0 && x >= xr[0] && x <= xr[1]) lnw = Math.min(lnw, nw)
+    const nw = abs(center[i][1] - br.isoval(oneday,x))
+    if (nw != 0 && x >= xr[0] && x <= xr[1]) lnw = min(lnw, nw)
   }
   for (let i = 0; i < oneday.length; i++) {
     x = oneday[i][0]
-    const nw = Math.abs(oneday[i][1] - br.isoval(center,x))
-    if (nw != 0 && x >= xr[0] && x <= xr[1]) lnw = Math.min(lnw, nw)
+    const nw = abs(oneday[i][1] - br.isoval(center,x))
+    if (nw != 0 && x >= xr[0] && x <= xr[1]) lnw = min(lnw, nw)
   }
-  return lnw == Infinity ? Math.abs(br.isoval(center,xr[0]) - 
-                                    br.isoval(oneday,xr[0])) : lnw
+  return lnw == Infinity ? abs(br.isoval(center,xr[0]) - 
+                               br.isoval(oneday,xr[0])) : lnw
 }
 
 /** Limits an svg coordinate to 1 or 3 digits after the decimal 
  @param {Number} x Input number 
 */
-function r1(x) { return Math.round(x*10)/10 }
-function r3(x) { return Math.round(x*1000)/1000 }
+function r1(x) { return round(x*10)/10 }
+function r3(x) { return round(x*1000)/1000 }
 
 /** Resets the internal goal object, clearing out previous data. */
 function resetGoal() {
@@ -1240,8 +1252,8 @@ function handleYAxisWidth() {
     // causes a bit jumpy behavior when dragging the brush
     // across the boundary of width change, but that seems
     // to not be too bad a problem.
-    if (Math.abs(bbox.width-yaxisw) > 5) {
-      yaxisw = Math.floor(bbox.width)
+    if (abs(bbox.width-yaxisw) > 5) {
+      yaxisw = floor(bbox.width)
       resizeGraph()
     }
   }
@@ -1261,10 +1273,10 @@ function adjustYScale() {
     yrange = [vb, va]
   } else {
     var margin = goal.lnw
-    if (margin == 0) margin = Math.abs(PRAF*(goal.vmax-goal.vmin))
+    if (margin == 0) margin = abs(PRAF*(goal.vmax-goal.vmin))
 
     // Compute range in unixtime
-    var xtimes = xrange.map(d => Math.floor(d.getTime()/SMS))
+    var xtimes = xrange.map(d => floor(d.getTime()/SMS))
     // Compute Y axis extent of the edited road in range
     var re = roadExtentPartial(road,xtimes[0],xtimes[1],false)
     re.yMin -= margin
@@ -1309,15 +1321,15 @@ function adjustYScale() {
   var sx = xrange.map( x => xScB(x))
   var sy = yrange.map( y => yScB(y))
   focusrect
-    .attr("x", sx[0]+1).attr("width",  Math.max(0, sx[1]-sx[0]-2))
-    .attr("y", sy[0]+1).attr("height", Math.max(0, sy[1]-sy[0]-2))
+    .attr("x", sx[0]+1).attr("width",  max(0, sx[1]-sx[0]-2))
+    .attr("y", sy[0]+1).attr("height", max(0, sy[1]-sy[0]-2))
 }
 
 /** Update context graph X and Y axis scales to consider newest graph ranges */
 function resizeContext() {
   if (opts.divGraph == null) return
-  xScB.domain([new Date(Math.min(goal.tmin, goal.xMin)*SMS), 
-               new Date(Math.max(goal.tmax, goal.xMax)*SMS)])
+  xScB.domain([new Date(min(goal.tmin, goal.xMin)*SMS), 
+               new Date(max(goal.tmax, goal.xMax)*SMS)])
   xAxisObjB.call(xAxisB.scale(xScB))
   yScB.domain([goal.yMin, goal.yMax])
 }
@@ -1412,8 +1424,8 @@ function zoomAll( ) {
   if (opts.divGraph == null) return
   computePlotLimits(false)
   // Redefine the unzoomed X and Y scales in case graph range was redefined
-  xSc.domain([new Date(Math.min(goal.tmin, goal.xMin)*SMS), 
-              new Date(Math.max(goal.tmax, goal.xMax)*SMS)])
+  xSc.domain([new Date(min(goal.tmin, goal.xMin)*SMS), 
+              new Date(max(goal.tmax, goal.xMax)*SMS)])
   computeXTicks()
   ySc.domain([goal.yMin, goal.yMax])
   nXSc = xSc
@@ -1504,10 +1516,10 @@ function isRoadValid(rd) {
 
 function mergeExtents(ext1, ext2) {
   let ne = {}
-  ne.xMin = Math.min(ext1.xMin, ext2.xMin)
-  ne.xMax = Math.max(ext1.xMax, ext2.xMax)
-  ne.yMin = Math.min(ext1.yMin, ext2.yMin)
-  ne.yMax = Math.max(ext1.yMax, ext2.yMax)
+  ne.xMin = min(ext1.xMin, ext2.xMin)
+  ne.xMax = max(ext1.xMax, ext2.xMax)
+  ne.yMin = min(ext1.yMin, ext2.yMin)
+  ne.yMax = max(ext1.yMax, ext2.yMax)
   return ne
 }
 
@@ -1557,8 +1569,8 @@ function dataExtentPartial(data, xmin, xmax, extend = false) {
   extent.yMax = bu.arrMax(nd.map(d=>d[1]))     
   if (bbr.flad != null && bbr.flad[0] <= xmax && bbr.flad[0] >= xmin) {
     const pprv = bbr.flad[1] + br.ppr(road, goal, goal.asof)
-    extent.yMin = Math.min(extent.yMin, pprv) // Make room for the
-    extent.yMax = Math.max(extent.yMax, pprv) // ghosty PPR datapoint.
+    extent.yMin = min(extent.yMin, pprv) // Make room for the
+    extent.yMax = max(extent.yMax, pprv) // ghosty PPR datapoint.
   }
   // Extend limits by 5% so everything is visible
   var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10}
@@ -1617,7 +1629,7 @@ function computePlotLimits(adjustZoom = true) {
   if (road.length == 0) return
 
   var now = goal.asof
-  var maxx = bu.daysnap(Math.min(now+opts.maxFutureDays*bu.SID, 
+  var maxx = bu.daysnap(min(now+opts.maxFutureDays*bu.SID, 
                                  road[road.length-1].sta[0]))
   var cur = roadExtentPartial(road, road[0].end[0], maxx, false)
   var old = roadExtentPartial(iroad,road[0].end[0],maxx,false)
@@ -1645,8 +1657,8 @@ function computePlotLimits(adjustZoom = true) {
                   nXSc.invert(plotbox.width)]
     var yrange = [nYSc.invert(0), 
                   nYSc.invert(plotbox.height)]
-    xSc.domain([new Date(Math.min(goal.tmin, goal.xMin)*SMS), 
-                new Date(Math.max(goal.tmax, goal.xMax)*SMS)])
+    xSc.domain([new Date(min(goal.tmin, goal.xMin)*SMS), 
+                new Date(max(goal.tmax, goal.xMax)*SMS)])
     computeXTicks()
     ySc.domain([goal.yMin, goal.yMax])
     var newtr = d3.zoomIdentity.scale(plotbox.width/(xSc(xrange[1]) 
@@ -1658,13 +1670,13 @@ function computePlotLimits(adjustZoom = true) {
 
 // Function to generate samples for the Butterworth filter
 function griddlefilt(a, b) {
-  return bu.linspace(a, b, Math.floor(bu.clip((b-a)/(bu.SID+1), 40, 2000)))
+  return bu.linspace(a, b, floor(bu.clip((b-a)/(bu.SID+1), 40, 2000)))
 }
 
 // Function to generate samples for the Butterworth filter
 function griddle(a, b, maxcnt = 6000) {
-  return bu.linspace(a, b, Math.floor(bu.clip((b-a)/(bu.SID+1), 
-                                      Math.min(300, plotbox.width/8),
+  return bu.linspace(a, b, floor(bu.clip((b-a)/(bu.SID+1), 
+                                      min(300, plotbox.width/8),
                                       maxcnt)))
 }
 
@@ -2326,7 +2338,7 @@ function roadDragged(d, id) {
   var kind = id
   var rd = road
 
-  road[kind].slope = ((y - d.sta[1])/Math.max(x - d.sta[0], bu.SID))
+  road[kind].slope = ((y - d.sta[1])/max(x - d.sta[0], bu.SID))
   road[kind].end[1] = road[kind].sta[1] + road[kind].slope*(road[kind].end[0] 
                                                           - road[kind].sta[0])
   road[kind+1].sta[1] = road[kind].end[1]
@@ -2594,14 +2606,14 @@ function updatePastBox() {
 	    .attr("x", nXSc(goal.xMin))
       .attr("y", nYSc(goal.yMax+3*(goal.yMax-goal.yMin)))
       .attr("width", nXSc(goal.asof*SMS) - nXSc(goal.xMin))
-	    .attr("height",7*Math.abs(nYSc(goal.yMin) - nYSc(goal.yMax)))
+	    .attr("height",7*abs(nYSc(goal.yMin) - nYSc(goal.yMax)))
       .attr("fill", opts.pastBoxCol.fill)
       .attr("fill-opacity", opts.pastBoxCol.opacity)
   } else {
     pastelt.attr("x", nXSc(goal.xMin))
            .attr("y", nYSc(goal.yMax + 3*(goal.yMax-goal.yMin)))
            .attr("width", nXSc(goal.asof*SMS) - nXSc(goal.xMin))
-	    .attr("height",7*Math.abs(nYSc(goal.yMin) - nYSc(goal.yMax)))
+	    .attr("height",7*abs(nYSc(goal.yMin) - nYSc(goal.yMax)))
   }
 }
 
@@ -2874,13 +2886,13 @@ function updateAura() {
   var el = gAura.selectAll(".aura")
   var el2 = gAura.selectAll(".aurapast")
   if (goal.aura && opts.showData) {
-    var aurdn = Math.min(-goal.lnw/2.0, -goal.stdflux)
-    var aurup = Math.max(goal.lnw/2.0,  goal.stdflux)
+    var aurdn = min(-goal.lnw/2.0, -goal.stdflux)
+    var aurup = max(goal.lnw/2.0,  goal.stdflux)
     var fudge = PRAF*(goal.tmax-goal.tmin);
     var xr = [nXSc.invert(0).getTime()/SMS, 
               nXSc.invert(plotbox.width).getTime()/SMS]
     var xvec,i
-    xvec = griddle(Math.max(xr[0], goal.tmin),
+    xvec = griddle(max(xr[0], goal.tmin),
                    bu.arrMin([xr[1], goal.asof+bu.AKH, goal.tmax+fudge]),
                    plotbox.width/8)
     // Generate a path string for the aura
@@ -3085,7 +3097,7 @@ function updateYBHP() {
       //[ 1,  1, "none", borang, 1.5,   1, xrfull], // orange line
     ]
     const tmp = br.isoline(road, dtd, goal, debuglines, true)
-    const adj = Math.abs(nYSc.invert(2.5)-nYSc.invert(0))
+    const adj = abs(nYSc.invert(2.5)-nYSc.invert(0))
     //console.log(JSON.stringify(tmp[3].map(e=>[bu.dayify(e[0]), e[1]])))
     iso[6] = tmp[0]
     iso[7] = tmp[1]
@@ -3096,7 +3108,7 @@ function updateYBHP() {
     iso[9] = iso[9].map(e => [e[0], e[1]+3*adj])
   }
   
-  for (var ri = 0; ri < Math.max(prevcnt, regions.length); ri++) {
+  for (var ri = 0; ri < max(prevcnt, regions.length); ri++) {
     // SVG elements for regions are given unique class names
     const clsname = "halfplane"+ri
     let ybhpelt, ybhpgrp
@@ -3297,9 +3309,9 @@ function updateLanes(ir) {
   if (opts.roadEditor || ir == null || goal.ybhp) { laneelt.remove(); return }
 
   const minpx = 3*scf // minimum visual width for YBR
-  const thin = Math.abs(nYSc.invert(minpx)-nYSc.invert(0))
+  const thin = abs(nYSc.invert(minpx)-nYSc.invert(0))
   let lw = goal.lnw == 0 ? thin : goal.lnw
-  if (Math.abs(nYSc(lw)-nYSc(0)) < minpx) lw = thin
+  if (abs(nYSc(lw)-nYSc(0)) < minpx) lw = thin
 
   let d, i
   let fx = nXSc(ir[0].sta[0]*SMS)
@@ -3355,7 +3367,7 @@ function updateGuidelines(ir) {
 
   const yrange = [nYSc.invert(plotbox.height), nYSc.invert(0)]
   let delta = 1
-  const yr = Math.abs(yrange[1] - yrange[0])
+  const yr = abs(yrange[1] - yrange[0])
   
   if (!goal.ybhp) {
     let fx = nXSc(ir[0].sta[0]*SMS) // fx,fy: start of the current segment
@@ -3384,10 +3396,10 @@ function updateGuidelines(ir) {
     else if (goal.lnw > 0 && yr / (6*goal.lnw) <= 32)   delta = 6 * goal.lnw
     else                                                delta = yr / 32
     oneshift = goal.yaw * delta
-    const numlines = Math.floor(Math.abs((yrange[1] - yrange[0])/oneshift))
+    const numlines = floor(abs((yrange[1] - yrange[0])/oneshift))
 
     // Create dummy array as d3 data for guidelines
-    let arr = new Array(Math.ceil(numlines)).fill(0)
+    let arr = new Array(ceil(numlines)).fill(0)
     // Add a final data entry for the thick guideline
     arr.push(-1)
     const shift = nYSc(ir[0].sta[1]+oneshift) - nYSc(ir[0].sta[1])
@@ -3414,12 +3426,12 @@ function updateGuidelines(ir) {
     const xrange = [nXSc.invert(            0)/SMS,
                     nXSc.invert(plotbox.width)/SMS]
     const lnw = isolnwborder(xrange)
-    if      (   Math.abs(nYSc(0) - nYSc(lnw))  > 8) delta =  1
-    else if (7*(Math.abs(nYSc(0) - nYSc(lnw))) > 8) delta =  7
+    if      (   abs(nYSc(0) - nYSc(lnw))  > 8) delta =  1
+    else if (7*(abs(nYSc(0) - nYSc(lnw))) > 8) delta =  7
     else                                            delta = 28
-    let numlines = Math.floor(1.2*Math.abs((yrange[1]-yrange[0])/(delta*lnw)))
+    let numlines = floor(1.2*abs((yrange[1]-yrange[0])/(delta*lnw)))
     if (lnw == 0 || numlines < 28) numlines = 28
-    let arr = new Array(Math.ceil(numlines)).fill(0)
+    let arr = new Array(ceil(numlines)).fill(0)
     arr = [...arr.keys()].map(d => (d+1)*delta-1)
     
     guideelt = guideelt.data(arr)

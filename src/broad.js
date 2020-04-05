@@ -21,6 +21,9 @@ if (typeof define === 'function' && define.amd) {
 
 'use strict'
 
+// -----------------------------------------------------------------------------
+// --------------------------- CONVENIENCE CONSTANTS ---------------------------
+
 const rnd   = Math.round
 const max   = Math.max
 const min   = Math.min

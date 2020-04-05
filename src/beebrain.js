@@ -34,6 +34,7 @@ Good d3 practice!
 ;(((root, factory) => { // BEGIN PREAMBLE --------------------------------------
 
 'use strict'
+
 if (typeof define === 'function' && define.amd) {
   // AMD. Register as an anonymous module.
   //console.log("beebrain: Using AMD module definition")
@@ -42,7 +43,8 @@ if (typeof define === 'function' && define.amd) {
   // Node. Does not work with strict CommonJS, but only CommonJS-like
   // environments that support module.exports, like Node.
   //console.log("beebrain: Using CommonJS module.exports")
-  module.exports = factory(require('./moment'), require('./butil'), 
+  module.exports = factory(require('./moment'), 
+                           require('./butil'), 
                            require('./broad'))
 } else {
   //console.log("beebrain: Using Browser globals")
@@ -53,8 +55,21 @@ if (typeof define === 'function' && define.amd) {
 
 'use strict'
 
+// -----------------------------------------------------------------------------
+// --------------------------- CONVENIENCE CONSTANTS ---------------------------
+
+const max   = Math.max
+const min   = Math.min
+const abs   = Math.abs
+const exp   = Math.exp
+const floor = Math.floor
+const ceil  = Math.ceil
+const sign  = Math.sign
+
+
 let gid = 1 // Global counter giving unique IDs for multiple beebrain instances
 
+// -----------------------------------------------------------------------------
 // In-params and out-params are documented at doc.bmndr.com/beebrain
 
 // NOTES / IDEAS:
@@ -365,28 +380,28 @@ function ema(d, x) {
     B = yp
     if (x < i[0]) { // found interval; compute intermediate point
       dt = x-xp
-      return B+A*dt-A/KEXP + (prev-B+A/KEXP) * Math.exp(-KEXP*dt)
+      return B+A*dt-A/KEXP + (prev-B+A/KEXP) * exp(-KEXP*dt)
     } else { // not the current interval; compute next point
-      prev = B+A*dt-A/KEXP + (prev-B+A/KEXP) * Math.exp(-KEXP*dt)
+      prev = B+A*dt-A/KEXP + (prev-B+A/KEXP) * exp(-KEXP*dt)
       xp = i[0]
       yp = i[1]
     }
   }
   // keep computing exponential past the last datapoint if needed
   dt = x-xp
-  return B + A*dt - A/KEXP + (prev-B+A/KEXP) * Math.exp(-KEXP*dt)
+  return B + A*dt - A/KEXP + (prev-B+A/KEXP) * exp(-KEXP*dt)
 }
 
 // Function to generate samples for the Butterworth filter
 function griddlefilt(a, b) {
-  return bu.linspace(a, b, Math.floor(bu.clip((b-a)/(bu.SID+1), 40, 2000)))
+  return bu.linspace(a, b, floor(bu.clip((b-a)/(bu.SID+1), 40, 2000)))
 }
 
 // Function to generate samples for the Butterworth filter
 function griddle(a, b, maxcnt = 6000) {
-  return bu.linspace(a, b, Math.floor(bu.clip((b-a)/(bu.SID+1), 
-                                           Math.min(600, /*plotbox.width*/ 640),
-                                           maxcnt)))
+  return bu.linspace(a, b, floor(bu.clip((b-a)/(bu.SID+1), 
+                                         min(600, /*plotbox.width*/ 640),
+                                         maxcnt)))
 }
 
 // Start at the first datapoint plus sign*delta & walk forward making the next
@@ -410,7 +425,7 @@ function inertiaRev(dat, dlt, sgn) {
 function computeRosy() {
   if (!goal.rosy || data.length == 0) return
   // Pre-compute rosy datapoints
-  const delta = Math.max(goal.lnw, goal.stdflux)
+  const delta = max(goal.lnw, goal.stdflux)
   let lo, hi
   if (goal.dir > 0) {
     lo = inertia(   data, delta, -1)
@@ -691,7 +706,7 @@ function procRoad(json) {
         segment.end[0] = bu.BDUSK
         segment.end[1] = segment.sta[1]
       }
-      segment.end[0] = Math.min(bu.BDUSK, segment.end[0])
+      segment.end[0] = min(bu.BDUSK, segment.end[0])
       // Readjust the end value in case we clipped the date to BDUSK
       segment.end[1] = 
         segment.sta[1] + segment.slope*(segment.end[0]-segment.sta[0])
@@ -742,7 +757,7 @@ function flatline() {
   const tlast  = prevpt[0]
   const vlast  = prevpt[1]
   if (goal.yaw * goal.dir < 0 && tlast <= goal.tfin) {
-    const tflat = Math.min(goal.asof, goal.tfin)
+    const tflat = min(goal.asof, goal.tfin)
     if (!(tflat in aggval)) {
       flad = [tflat, vlast, "PPR", DPTYPE.FLATLINE, tlast, vlast, null]
       data.push(flad)
@@ -758,11 +773,11 @@ original version of flatline() ************************************************/
 
   let x = tlast // x = the time we're flatlining to
   if (goal.yaw * goal.dir < 0) 
-    x = Math.min(now, goal.tfin) // WEEN/RASH: flatline all the way
+    x = min(now, goal.tfin) // WEEN/RASH: flatline all the way
   else { // for MOAR/PHAT, stop flatlining if 2 red days in a row
     let prevcolor = null
     let newcolor
-    while (x <= Math.min(now, goal.tfin)) { // walk forward from tlast
+    while (x <= min(now, goal.tfin)) { // walk forward from tlast
       // goal.isolines not defined yet so makes no sense calling dotcolor()
       newcolor = br.dotcolor(roads, goal, x, vlast, goal.isolines)
       // done iff 2 reds in a row
@@ -771,7 +786,7 @@ original version of flatline() ************************************************/
       x += bu.SID // or see eth.pad/ppr
     }
     // the following looks particularly unnecessary
-    x = Math.min(x, now, goal.tfin)
+    x = min(x, now, goal.tfin)
     for (let i = 0; i < numpts; i++) if (x == data[i][0]) return
   }
 
@@ -785,10 +800,10 @@ original version of flatline() ************************************************/
 /** Set any of {tmin, tmax, vmin, vmax} that don't have explicit values.
  * Duplicates Pybrain's setRange() behavior. */
 function setDefaultRange() {
-  if (goal.tmin == null) goal.tmin = Math.min(goal.tini, goal.asof)
+  if (goal.tmin == null) goal.tmin = min(goal.tini, goal.asof)
   if (goal.tmax == null) {
     // Make more room beyond the askrasia horizon if lots of data
-    const years = Math.floor((goal.tcur - goal.tmin) / (bu.DIY*bu.SID))
+    const years = floor((goal.tcur - goal.tmin) / (bu.DIY*bu.SID))
     goal.tmax = bu.daysnap((1+years/2)*2*bu.AKH + goal.tcur)
   }
   if (goal.vmin != null && goal.vmax != null) {
@@ -812,10 +827,10 @@ function setDefaultRange() {
   // Make room for the ghosty PPR datapoint
   if (flad != null && flad[0] <= goal.tmax && flad[0] >= goal.tmin) {
     const pprv = flad[1] + br.ppr(roads, goal, goal.asof)
-    mind = Math.min(mind, pprv) // Make room for the 
-    maxd = Math.max(maxd, pprv) // ghosty PPR datapoint.
+    mind = min(mind, pprv) // Make room for the 
+    maxd = max(maxd, pprv) // ghosty PPR datapoint.
   }
-  const padding = Math.max(goal.lnw/3, (maxd-mind)*PRAF*2)
+  const padding = max(goal.lnw/3, (maxd-mind)*PRAF*2)
   let minmin = mind - padding
   let maxmax = maxd + padding
   if (goal.monotone && goal.dir>0) {          // Monotone up so no extra padding
@@ -831,8 +846,8 @@ function setDefaultRange() {
   if (goal.plotall && goal.tmin<=goal.tini && goal.tini<=goal.tmax
       && goal.tini in allvals) {      
     // At tini, leave room for all non-agg'd datapoints
-    minmin = Math.min(minmin, bu.arrMin(allvals[goal.tini].map(e => e[0])))
-    maxmax = Math.max(maxmax, bu.arrMax(allvals[goal.tini].map(e => e[0])))
+    minmin = min(minmin, bu.arrMin(allvals[goal.tini].map(e => e[0])))
+    maxmax = max(maxmax, bu.arrMax(allvals[goal.tini].map(e => e[0])))
   }
   if (goal.vmin == null && goal.vmax == null) {
     goal.vmin = minmin
@@ -983,9 +998,9 @@ function procParams() {
   
   goal.tcur = data[dl-1][0]
   goal.vcur = data[dl-1][1]
-  goal.vprev= data[Math.max(dl-2,0)][1] // default to vcur if < 2 datapts
+  goal.vprev= data[max(dl-2,0)][1] // default to vcur if < 2 datapts
 
-  goal.lnw = Math.max(goal.nw, goal.lnf(goal.tcur))
+  goal.lnw = max(goal.nw, goal.lnf(goal.tcur))
   goal.safebuf = br.dtd(roads, goal, goal.tcur, goal.vcur)
   if ((!goal.ybhp || goal.abslnw != 0) && 'razrroad' in pout) {
     // Compute safebuffer with ybhp=true and abslnw=0
@@ -1000,7 +1015,7 @@ function procParams() {
   
     newgoal.lnf = newgoal.abslnw != null ? 
       (x => newgoal.abslnw) : br.genLaneFunc(roads, newgoal)
-    newgoal.lnw = Math.max(newgoal.nw, newgoal.lnf(newgoal.tcur))
+    newgoal.lnw = max(newgoal.nw, newgoal.lnf(newgoal.tcur))
     newsafe = br.dtd(roads, newgoal, newgoal.tcur, newgoal.vcur)
     safediff = goal.safebuf - newsafe
     
@@ -1029,7 +1044,7 @@ function procParams() {
   
   goal.rcur = br.rtf(roads, goal.tcur)*goal.siru  
   goal.ravg = br.tvr(goal.tini, goal.vini, goal.tfin,goal.vfin, null)*goal.siru
-  goal.cntdn = Math.ceil((goal.tfin-goal.tcur)/bu.SID)
+  goal.cntdn = ceil((goal.tfin-goal.tcur)/bu.SID)
   goal.lane = goal.ybhp ?  // backward-compatible version for YBHP
     goal.yaw * (goal.safebuf - (goal.safebuf <= 1 ? 2 : 1)) :
     bu.clip(br.lanage(roads, goal, goal.tcur, goal.vcur), -32768, 32767)
@@ -1050,7 +1065,7 @@ function sumSet(rd, goal) {
   const y = goal.yaw, d = goal.dir, 
         l = goal.lane, w = goal.lnw, dlt = goal.delta, 
         q = goal.integery && goal.quantum === null ? 1 : 
-            Math.max(1e-5, goal.quantum) // TODO: just trust Beebody
+            max(1e-5, goal.quantum) // TODO: just trust Beebody
         //q = goal.quantum
 
   const MOAR = (y>0 && d>0), 
@@ -1070,9 +1085,7 @@ function sumSet(rd, goal) {
   const rz = (bu.zip(goal.road))[2]
   let minr = bu.arrMin(rz)
   let maxr = bu.arrMax(rz)
-  if (Math.abs(minr) > Math.abs(maxr)) {
-    const tmp = minr; minr = maxr; maxr = tmp
-  }
+  if (abs(minr) > abs(maxr)) { const tmp = minr; minr = maxr; maxr = tmp }
   const smin = bu.shn(minr,      4,2)
   const smax = bu.shn(maxr,      4,2)
   const savg = bu.shn(goal.ravg, 4,2)
@@ -1096,7 +1109,7 @@ function sumSet(rd, goal) {
 
   let x, ybrStr
   if (goal.cntdn < 7) {
-    x = Math.sign(goal.rfin) * (goal.vfin - goal.vcur)
+    x = sign(goal.rfin) * (goal.vfin - goal.vcur)
     ybrStr = "To go to goal: "+shn(x,0,2,1)+"."
   } else {
     x = br.rdf(roads, goal.tcur+goal.siru) - br.rdf(roads, goal.tcur)
@@ -1109,11 +1122,11 @@ function sumSet(rd, goal) {
     (ugprefix ? goal.yoog : "")
     + shn(goal.vcur,0,3,1)+" on "+bu.shd(goal.tcur)+" ("
     + bu.splur(goal.numpts, "datapoint")+" in "
-    + bu.splur(1+Math.floor((goal.tcur-goal.tini)/bu.SID),"day")+") "
+    + bu.splur(1+floor((goal.tcur-goal.tini)/bu.SID),"day")+") "
     + "targeting "+shn(goal.vfin,0,3,1)+" on "+bu.shd(goal.tfin)+" ("
     + bu.splur(goal.cntdn, "more day")+"). "+ybrStr
 
-  goal.deltasum = shn(Math.abs(dlt),0) + " " + goal.gunits
+  goal.deltasum = shn(abs(dlt),0) + " " + goal.gunits
     + (dlt<0 ? " below" : " above")+" the centerline"
   let s
   if (w == 0)                  s=""
@@ -1221,7 +1234,7 @@ function sumSet(rd, goal) {
     +"   ["+goal.progsum+"]\\n"
     +"           "+bu.shd(goal.tfin)+"  "+bu.shn(goal.vfin, 4, 2, 0)+"\\n"
     +" rate:     "+goal.ratesum+"\\n"
-    +" lane:     " +((Math.abs(l) == 666)?"n/a":l)
+    +" lane:     " +((abs(l) == 666)?"n/a":l)
     +" ("+lanesum+")\\n"
     +" safebuf:  "+goal.safebuf+"\\n"
     +" delta:    "+goal.deltasum+"\\n"
