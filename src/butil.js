@@ -507,15 +507,17 @@ self.cvx = (x, a,b, c,d, clipQ=true) => {
   }
 }
 
-/** Delete Duplicates. The ID function maps elements to something
-    that defines equivalence classes.
-    @param {Array} a Input array
-    @param {function} [idfun=(x=>x)] Function to map elements to an equivalence class */
-self.deldups = (a, idfun = (x=>x)) => {
-  var seen = {}
-  return a.filter(it=>{var marker = JSON.stringify(idfun(it));
-                       return seen.hasOwnProperty(marker)?false
-                       :(seen[marker] = true)})
+/**Delete Duplicates. The ID function maps elements to something that defines
+   equivalence classes.
+   @param {Array} a Input array
+   @param {function} [idfun=(x=>x)] Function to map elements to an equivalence
+           class */
+self.deldups = (a, idfun=(x=>x)) => {
+  let seen = {}
+  return a.filter(i => {
+    const marker = JSON.stringify(idfun(i))
+    return marker in seen ? false : (seen[marker] = true)
+  })
 }
 
 /** Whether list l is sorted in increasing order.
@@ -573,9 +575,7 @@ self.mode = (a) => {
     if (count[num] > maxi) maxi = count[num]
   }
   
-  for (i in count)
-    if (count.hasOwnProperty(i)) 
-      if (count[i] === maxi) md.push(Number(i))
+  for (i in count) if (count[i] === maxi) md.push(Number(i))
   return md
 }
 

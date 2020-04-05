@@ -245,11 +245,10 @@ goal.yMin =    -1;         goal.yMax = 1
 /** Convert legacy parameters to up-to-date entries 
     @param {Object} p Goal parameters from the bb file */
 function legacyIn(p) {
-  //if (p.hasOwnProperty('gldt') && !p.hasOwnProperty('tfin')) p.tfin = p.gldt
-  if (p.hasOwnProperty('goal') && !p.hasOwnProperty('vfin'))  p.vfin = p.goal
-  if (p.hasOwnProperty('rate') && !p.hasOwnProperty('rfin'))  p.rfin = p.rate
-  if (p.hasOwnProperty('usr') && p.hasOwnProperty('graph') && 
-      !p.hasOwnProperty('yoog')) 
+  //if (p.gldt!==undefined && p.tfin===undefined) p.tfin = p.gldt
+  if ('goal' in p && !('vfin' in p))  p.vfin = p.goal
+  if ('rate' in p && !('rfin' in p))  p.rfin = p.rate
+  if ('usr'  in p && 'graph' in p && !('yoog' in p)) 
     p.yoog = p.usr + "/" + p.graph
 }
   
@@ -324,9 +323,8 @@ function dayifyrow(row) {
  @param {Array} d Datapoints from the BB file */
 function stampIn(p, d) {
   ['asof', 'tini', 'tfin', 'tmin', 'tmax']
-    .map(e => { if (p.hasOwnProperty(e)) p[e] = bu.dayparse(p[e]) })
-  if (p.hasOwnProperty('road'))
-    if (bu.listy(p.road)) p.road = p.road.map(parserow)
+    .map(e => { if (e in p) p[e] = bu.dayparse(p[e]) })
+  if ('road' in p && bu.listy(p.road)) p.road = p.road.map(parserow)
   
   // Stable-sort by timestamp before dayparsing the timestamps because if the
   // timestamps were actually given as unixtime then dayparse works like
@@ -340,8 +338,7 @@ function stampIn(p, d) {
     @param {Object} p Computed goal statistics */
 function stampOut(p) {
   p['fullroad'] = p['fullroad'].map(dayifyrow)
-  if (pout.hasOwnProperty('razrroad')) 
-    p['razrroad'] = p['razrroad'].map(dayifyrow)
+  if ('razrroad' in pout) p['razrroad'] = p['razrroad'].map(dayifyrow)
   p['pinkzone'] = p['pinkzone'].map(dayifyrow)
   p['tluz'] = bu.dayify(p['tluz'])
   p['tcur'] = bu.dayify(p['tcur'])
@@ -502,7 +499,7 @@ function procData() {
     if (goal.hashtags) {
       const hset = hashextract(d[2])
       if (hset.size == 0) continue
-      if (!hashhash.hasOwnProperty(d[0])) hashhash[d[0]] = new Set()
+      if (!(d[0] in hashhash)) hashhash[d[0]] = new Set()
       for (const x of hset) hashhash[d[0]].add(x)
     }
   }
@@ -628,7 +625,7 @@ function procData() {
     const CHANGEDATE = 1562299200 // 2019-07-05 // TODO: DRY
     if (derails[i][0] < CHANGEDATE) ct = derails[i][0]+bu.SID
     else                            ct = derails[i][0]
-    if (derailval.hasOwnProperty(ct)) 
+    if (ct in derailval)
       //derails[i][1] = derailval[ct] // see TODO above...
       derails[i][1] = aggval[ct]  // doing this until derailval's done right
   }
@@ -636,7 +633,7 @@ function procData() {
   // Extract computed points that are different than any entered data (hollow
   // pts)
   hollow = data.filter(e => {
-    if (!allvals.hasOwnProperty(e[0])) return false
+    if (!(e[0] in allvals)) return false
     return (e[0]<goal.asof && !allvals[e[0]].map(e => e[0]).includes(e[1]))
   })
   
@@ -746,7 +743,7 @@ function flatline() {
   const vlast  = prevpt[1]
   if (goal.yaw * goal.dir < 0 && tlast <= goal.tfin) {
     const tflat = Math.min(goal.asof, goal.tfin)
-    if (!aggval.hasOwnProperty(tflat)) {
+    if (!(tflat in aggval)) {
       flad = [tflat, vlast, "PPR", DPTYPE.FLATLINE, tlast, vlast, null]
       data.push(flad)
     }
@@ -778,7 +775,7 @@ original version of flatline() ************************************************/
     for (let i = 0; i < numpts; i++) if (x == data[i][0]) return
   }
 
-  if (!aggval.hasOwnProperty(x)) {
+  if (!(x in aggval)) {
     const prevpt = data[numpts-1]
     flad = [x, vlast, "PPR", DPTYPE.FLATLINE, prevpt[0], prevpt[1], null]
     data.push(flad)
@@ -832,7 +829,7 @@ function setDefaultRange() {
     maxmax = bu.arrMax([maxmax, a+goal.lnw, b+goal.lnw])
   }
   if (goal.plotall && goal.tmin<=goal.tini && goal.tini<=goal.tmax
-      && allvals.hasOwnProperty(goal.tini)) {      
+      && goal.tini in allvals) {      
     // At tini, leave room for all non-agg'd datapoints
     minmin = Math.min(minmin, bu.arrMin(allvals[goal.tini].map(e => e[0])))
     maxmax = Math.max(maxmax, bu.arrMax(allvals[goal.tini].map(e => e[0])))
@@ -875,7 +872,7 @@ const pchk = [
 ['tfin', bu.torn, "isn't a valid timestamp"],
 ['vfin', bu.norn, "isn't numeric or null"],
 ['rfin', bu.norn, "isn't numeric or null"],
-['runits', v => bu.SECS.hasOwnProperty(v), "isn't a valid rate unit"],
+['runits', v => v in bu.SECS, "isn't a valid rate unit"],
 ['yaw', v => v==0 || v==1 || v==-1, "isn't in [0,-1,1]"],
 ['dir', v => v==1 || v==-1, "isn't in -1,1]"],
 ['tmin', bu.torn, "isn't a number/timestamp"],
@@ -888,8 +885,7 @@ const pchk = [
 ['noisy', bu.torf, "isn't boolean"],
 ['integery', bu.torf, "isn't boolean"],
 ['monotone', bu.torf, "isn't boolean"],
-['aggday', v => br.AGGR.hasOwnProperty(v),
- "isn't one of max, sum, last, mean, etc"],
+['aggday', v => v in br.AGGR, "isn't one of max, sum, last, mean, etc"],
 ['plotall', bu.torf, "isn't boolean"],
 ['steppy', bu.torf, "isn't boolean"],
 ['rosy', bu.torf, "isn't boolean"],
@@ -991,7 +987,7 @@ function procParams() {
 
   goal.lnw = Math.max(goal.nw, goal.lnf(goal.tcur))
   goal.safebuf = br.dtd(roads, goal, goal.tcur, goal.vcur)
-  if ((!goal.ybhp || goal.abslnw != 0) && pout.hasOwnProperty('razrroad')) {
+  if ((!goal.ybhp || goal.abslnw != 0) && 'razrroad' in pout) {
     // Compute safebuffer with ybhp=true and abslnw=0
     // Requires recomputation of a bunch of previously computed values.
     let newgoal = {}, newsafe, safediff
@@ -1238,9 +1234,9 @@ function sumSet(rd, goal) {
 
 // Fetch value with key n from hash p, defaulting to d -- NOT USED 
 /*
-function getNumParam (p, n, d) { return p.hasOwnProperty(n) ? Number(p[n]) : d }
-function getBoolParam(p, n, d) { return p.hasOwnProperty(n) ? p[n]         : d }
-function getStrParam (p, n, d) { return p.hasOwnProperty(n) ? p[n]         : d }
+function getNumParam (p, n, d) { return n in p ? Number(p[n]) : d }
+function getBoolParam(p, n, d) { return n in p ? p[n]         : d }
+function getStrParam (p, n, d) { return n in p ? p[n]         : d }
 */
 
 /** Initiates reprocessing of a newly changed road, recomputing
@@ -1309,8 +1305,8 @@ function genStats(p, d, tm=null) {
     // make sure all supplied params are recognized
     const lup = [] // list of unknown parameters
     for (const k in p) {
-      if (p.hasOwnProperty(k)) {
-        if (!pin.hasOwnProperty(k) && !pig.includes(k)) lup.push(`${k}=${p[k]}`)
+      if (k in p) {
+        if (!(k in pin) && !pig.includes(k)) lup.push(`${k}=${p[k]}`)
         else goal[k] = p[k]
       }
     }
@@ -1319,7 +1315,7 @@ function genStats(p, d, tm=null) {
 
     // Process & extract various params that are independent of road & data
     // maybe just default to aggday=last; no such thing as aggday=null
-    if (!p.hasOwnProperty('aggday')) p.aggday = goal.kyoom ? "sum" : "last"
+    if (!('aggday' in p)) p.aggday = goal.kyoom ? "sum" : "last"
     
     goal.siru = bu.SECS[p.runits]
     goal.horizon = goal.asof+bu.AKH

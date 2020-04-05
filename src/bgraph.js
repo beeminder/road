@@ -1673,15 +1673,14 @@ const graph_timeid = `bgraph(${curid}): Goal graph`
 // Recreates the road array from the "rawknots" array, which includes only
 // timestamp,value pairs
 
-/** Load goal details from the supplied JSON input and populate the graph and
- * road matrix table with necessary components based on initially supplied
- * options.
-
-    @param {Object} json JSON object with the contents of a BB file, directly
-    fed to a {@link beebrain} object instance. */
+/**Load goal details from the supplied JSON input and populate the graph and
+   road matrix table with necessary components based on initially supplied
+   options.
+   @param {Object} json JSON object with the contents of a BB file, directly fed
+   to a {@link beebrain} object instance. */
 function loadGoal(json, timing = true) {
   //console.debug("id="+curid+", loadGoal()->"+json.params.yoog)
-  if (!json.hasOwnProperty("params") || !json.hasOwnProperty("data")) {
+  if (!('params' in json) || !('data' in json)) {
     throw new Error("loadGoal: JSON input lacks params or data")
   }
   
@@ -1766,7 +1765,7 @@ async function loadGoalFromURL( url, callback = null ) {
   loading = true
   showOverlay( ["loading..."], sh/10 )
   var resp = await bu.loadJSON( url )
-  if (resp.hasOwnProperty("errstring")) {
+  if ('errstring' in resp) {
     removeOverlay()
     throw new Error("loadGoalFromURL: BB file has errors: "+resp.errstring)
   }
@@ -3147,7 +3146,8 @@ function updateYBHP() {
     // only path if the starting and ending DTD values are the same.
     const isostrt = getiso(rstrt)
 
-    let x = isostrt[0][0], y = isostrt[0][1]
+    let x = isostrt[0][0]
+    let y = isostrt[0][1]
     if (x < xstrt) { x = xstrt; y = br.isoval(isostrt, x) }
     let d = "M"+nXSc(x*SMS)+" "+(nYSc(y)+adj)
     for (let i = 1; i < isostrt.length; i++) {
@@ -4002,9 +4002,9 @@ function updateSteppy() {
         if (ind > 0) npts = dataf.slice(ind, ind+2);
       }
       if (npts.length != 0) {
-        var d;
-        if (dataf[0][0] > l[0] && dataf[0][0] < l[1]
-            && bbr.allvals.hasOwnProperty(dataf[0][0])) {
+        var d
+        if (   dataf[0][0] > l[0] 
+            && dataf[0][0] < l[1] && dataf[0][0] in bbr.allvals) {
           // Handle the initial point
           var vals = bbr.allvals[dataf[0][0]].map(e=>e[0])
           var vpre = (goal.dir<0)?bu.arrMax(vals):bu.arrMin(vals)
