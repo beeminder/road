@@ -37,12 +37,11 @@ var self = {}
  *                                 CONSTANTS                                  *
  ******************************************************************************/
 
-/** Maximum amount of time beebrain related processing should take
-   * (in ms). Users of bgraph and related tools should implement
-   * timeouts with this amount to avoid infinite waits in case
-   * something goes wrong
+/**Maximum amount of time Beebrain processing should take (in ms). Users of
+   bgraph and related tools should implement timeouts with this amount to avoid
+   infinite waits in case something goes wrong.
    @type {Number}*/
-self.MAXTIME = 60000,
+self.MAXTIME = 60000
 
 /** Base URL for images.
     @type {String}*/
