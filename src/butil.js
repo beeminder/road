@@ -1,3 +1,14 @@
+/**
+ * Library of general purpose utilities for Beebrain, provided as a UMD module.
+ * Provides a "butil" object holding various constants and utility functions.
+ * No internal state.<br/>
+ *
+ * Copyright 2018-2020 Uluc Saranli and Daniel Reeves
+ *
+ * @requires moment
+ * @exports butil
+ */
+
 ;((function (root, factory) { // BEGIN PREAMBLE --------------------------------
 
 'use strict'
@@ -20,22 +31,25 @@ if (typeof define === 'function' && define.amd) {
 
 'use strict'
 
-/**
- * Library of general purpose utilities for Beebrain, provided as a UMD module.
- * Provides a "butil" object holding various constants and utility functions.
- * No internal state.<br/>
- *
- * Copyright © 2018-2020 Uluc Saranli and Daniel Reeves
- *
- * @requires moment
- * @exports butil
- */
+
+// -----------------------------------------------------------------------------
+// --------------------------- CONVENIENCE CONSTANTS ---------------------------
+
+const min   = Math.min  
+const max   = Math.max  
+const abs   = Math.abs  
+const pow   = Math.pow  
+const log10 = Math.log10
+const floor = Math.floor
+const round = Math.round
+
+const DIY = 365.25 // this is what physicists use, eg, to define a light year
+const SID = 86400  // seconds in a day (not used: DIM=DIY/12, WIM=DIY/12/7)
+
+// -----------------------------------------------------------------------------
+// ---------------------------- BEEBRAIN CONSTANTS -----------------------------
 
 var self = {}
-
-/******************************************************************************
- *                                 CONSTANTS                                  *
- ******************************************************************************/
 
 /**Maximum amount of time Beebrain processing should take (in ms). Users of
    bgraph and related tools should implement timeouts with this amount to avoid
@@ -75,28 +89,22 @@ self.Cols = {
   RAZR3:  "#6BC461", // Green line;                     faded = #6BC461
 }
 
-/** Days in year
-    @type {Number}*/
-self.DIY   = 365.25
-/** Seconds in day 
-    @type {Number}*/
-self.SID   = 86400
 /** Akrasia horizon, in seconds 
-    @type {Number}*/
-self.AKH   = 7*self.SID
+    @type {Number} */
+self.AKH   = 7*SID
 /** ~2038, rails's ENDOFDAYS+1 (was 2^31-2weeks) 
-    @type {Number}*/
+    @type {Number} */
 self.BDUSK = 2147317201
 /** Unary function that always returns zero 
-    @param {} x*/
+    @param {} x */
 // self.ZFUN = (_) => 0 // not used
 
 /** Number of seconds in a year, month, etc 
     @enum {Number} */
-self.SECS = { 'y' : self.DIY*self.SID, 
-              'm' : self.DIY*self.SID/12,
-              'w' : 7*self.SID,
-              'd' : self.SID,
+self.SECS = { 'y' : DIY*SID, 
+              'm' : DIY*SID/12,
+              'w' : 7*SID,
+              'd' : SID,
               'h' : 3600        }
 /** Unit names
     @enum {string} */
@@ -112,10 +120,10 @@ self.UNAM = { 'y' : 'year',
 
 /** Returns minimum from an array of numbers 
     @param {Number[]} arr Input array */
-self.arrMin = (arr) =>( Math.min.apply(null, arr)) // could use spread operator
+self.arrMin = (arr) =>( min.apply(null, arr)) // could use spread operator
 /** Returns maximum from an array of numbers
     @param {Number[]} arr Input array */
-self.arrMax = (arr) =>( Math.max.apply(null, arr)) // could use spread operator
+self.arrMax = (arr) =>( max.apply(null, arr)) // could use spread operator
 
 /** Returns true if input is an array 
     @param {} o Input parameter*/
@@ -177,7 +185,7 @@ self.partition = (l, n, d) => {
 /** Returns a list containing the fraction and integer parts of a float
     @param {Number} f Input number */
 self.modf = (f) =>{
-  var fp = (f<0)?-f:f, fl = Math.floor(fp)
+  var fp = (f<0)?-f:f, fl = floor(fp)
   return (f<0)?[-(fp-fl),-fl]:[(fp-fl),fl]
 }
 
@@ -217,7 +225,7 @@ self.quantile = (l, q, qt=1, issorted=false) => {
       j = out[1]
   if (j < 0) return y[0]
   else if (j >= n) return y[n-1] // oct.8,2010 y[n]?! off by 1 error!!
-  j = Math.floor(j)
+  j = floor(j)
   return (g==0)?y[j]:(y[j] + (y[j+1] - y[j])* (c + d*g))
 }
 
@@ -258,9 +266,9 @@ self.accumulate = (l) => {
 self.monotonize = (l, dir=1) => {
   var lo = l.slice(), i
   if (dir === 1) {
-    for (i = 1; i < lo.length; i++) lo[i] = Math.max(lo[i-1],lo[i])
+    for (i = 1; i < lo.length; i++) lo[i] = max(lo[i-1],lo[i])
   } else {
-    for (i = 1; i < lo.length; i++) lo[i] = Math.min(lo[i-1],lo[i])
+    for (i = 1; i < lo.length; i++) lo[i] = min(lo[i-1],lo[i])
   }
   return lo
 }
@@ -272,7 +280,7 @@ self.zip =  (av) => av[0].map((_,i) => av.map(a => a[i]))
 /** Return 0 when x is very close to 0.
     @param {Number} x Input number
     @param {Number} [delta=1e-7] Tolerance */
-self.chop = (x, delta=1e-7) => (Math.abs(x) < delta ? 0 : x)
+self.chop = (x, delta=1e-7) => (abs(x) < delta ? 0 : x)
 
 /** Return an integer when x is very close to an integer
     @param {Number} x Input number
@@ -281,7 +289,7 @@ self.ichop = (x, delta=1e-7) => {
   var fp = x % 1, ip = x - fp
   if (fp < 0) {fp += 1; ip -= 1;}
   if (fp > 0.5) fp = 1 - self.chop(1-fp)
-  return Math.floor(ip) + self.chop(fp, delta)
+  return floor(ip) + self.chop(fp, delta)
 }
 
 /** clip(x, a,b) = min(b,max(a,x)). Swaps a and b if a > b.
@@ -310,20 +318,20 @@ self.clip = (x, a, b) => {
 self.shn = (x, t=10, d=5, e=0) => {
   if (isNaN(x)) return x.toString()
   x = self.chop(x)
-  let i = Math.floor(Math.abs(x)), k, fmt, ostr
+  let i = floor(abs(x)), k, fmt, ostr
   i = i===0 ? 0 : i.toString().length // # of digits left of the decimal
-  if (Math.abs(x) > Math.pow(10,i)-.5) i += 1
-  if (i === 0 && x !== 0)                             // get
-    k = Math.floor(d - Math.log10(Math.abs(x)))       // desired
-  else k = d                                          // decimal digits
+  if (abs(x) > pow(10,i)-.5) i += 1
+  if (i === 0 && x !== 0)                   // get
+    k = floor(d - log10(abs(x)))       // desired
+  else k = d                                // decimal digits
 
   // Round input to have the desired number of decimal digits
-  let v = x * Math.pow(10, k), vm = v % 10
+  let v = x * pow(10, k), vm = v % 10
   if (vm < 0) vm += 10
 
   // Hack to prevent incorrect rounding with the decimal digits:
-  if (vm >= 4.5 && vm < 4.9999999) v = Math.floor(v)
-  let xn = Math.round(v) / Math.pow(10, k) + 1e-10
+  if (vm >= 4.5 && vm < 4.9999999) v = floor(v)
+  let xn = round(v) / pow(10, k) + 1e-10
 
   // Crappy conservaround that just tacks on decimal places till conservative
   if (e < 0 && xn > x || e > 0 && xn < x) { 
@@ -332,13 +340,13 @@ self.shn = (x, t=10, d=5, e=0) => {
   }
 
   // If total significant digits < i, do something about it
-  if (t < i && Math.abs(Math.pow(10, i-1) - xn) < .5) 
-    xn = Math.pow(10, i-1)
+  if (t < i && abs(pow(10, i-1) - xn) < .5) 
+    xn = pow(10, i-1)
   t = self.clip(t, i, i+d)
   
   // If the magnitude <= 1e-4, prevent scientific notation
-  if (Math.abs(xn) < 1e-4 || Math.floor(xn) === 9 
-      || Math.floor(xn) === 99 || Math.floor(xn) === 999) {
+  if (abs(xn) < 1e-4 || floor(xn) === 9 
+      || floor(xn) === 99 || floor(xn) === 999) {
     ostr = parseFloat(x.toPrecision(k)).toString()
   } else {
     ostr = xn.toPrecision(t)
@@ -443,7 +451,7 @@ self.quantize = (x) => {
 self.round = (x, r=1) => {
   if (r < 0) return NaN
   if (r===0) return +x
-  const y = Math.round(x/r)
+  const y = round(x/r)
   const rpow = /^0?\.(0*)1$/   // eg .1 or .01 or .001 -- a negative power of 10
   const marr = r.toString().match(rpow)   // match array; marr[0] is whole match
   if (!marr) return y*r
@@ -470,7 +478,7 @@ self.conservaround = (x, r=1, e=0) => {
  @param {Number} b Right boundary
  @param {Number} n Number of samples */
 self.linspace = (a, b, n) => {
-  if (typeof n === "undefined") n = Math.max(Math.round(b-a)+1, 1)
+  if (typeof n === "undefined") n = max(round(b-a)+1, 1)
   if (n < 2) return n===1 ? [a] : []
   var i,ret = Array(n)
   n--
@@ -493,8 +501,8 @@ self.linspace = (a, b, n) => {
 self.cvx = (x, a,b, c,d, clipQ=true) => {
   var tmp
   if (self.chop(a-b) === 0) {
-    if (x <= a) return Math.min(c,d)
-    else        return Math.max(c,d)
+    if (x <= a) return min(c,d)
+    else        return max(c,d)
   }
   if (self.chop(c-d) === 0) return c
   if (clipQ)
@@ -588,7 +596,7 @@ self.inrange = (x, min, max) => x >= min && x <= max
     @param {Number} a
     @param {Number} b
     @param {Number} eps */
-self.nearEq = (a, b, eps) => Math.abs(a-b) < eps
+self.nearEq = (a, b, eps) => abs(a-b) < eps
 
 /******************************************************************************
  *                              DATE FACILITIES                               *
@@ -701,7 +709,7 @@ self.dayify = (t, sep = '') => {
 
 /** Converts a number to an integer string.
     @param {Number} x Input number */
-self.sint = (x) => Math.round(x).toString()
+self.sint = (x) => round(x).toString()
 
 /** Returns a promise that loads a JSON file from the supplied
     URL. Resolves to null on error, parsed JSON object on
