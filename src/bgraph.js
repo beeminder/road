@@ -52,6 +52,8 @@ const floor = Math.floor
 const ceil  = Math.ceil
 const round = Math.round
 
+const DIY = 365.25
+const SID = 86400
 
 // -----------------------------------------------------------------------------
 // ------------------------------ FACTORY GLOBALS ------------------------------
@@ -449,7 +451,7 @@ function getisopath( val, xr ) {
 function isolnwborder(xr) {
   let lnw = 0
   const numdays = min(opts.maxFutureDays,
-                      ceil((goal.tfin-goal.tini)/bu.SID))
+                      ceil((goal.tfin-goal.tini)/SID))
   const center = getiso(0)
   const oneday = getiso( numdays )
   if (goal.yaw*goal.dir > 0) {
@@ -1166,7 +1168,7 @@ function redrawXTicks() {
   var xr = [nXSc.invert(0).getTime(), 
             nXSc.invert(plotbox.width).getTime()]
 
-  var diff = ((xr[1] - xr[0])/(SMS*bu.SID))
+  var diff = ((xr[1] - xr[0])/(SMS*SID))
   // Adjust tick mark separation if the graph is too small
   if (opts.focusRect.width < 500) diff = diff*1.6
   else if (opts.focusRect.width < 550) diff = diff*1.4
@@ -1610,7 +1612,7 @@ function setWatermark() {
   if (goal.waterbuf0 != null) return
   
   goal.safebuf = br.dtd(road, goal, goal.tcur, goal.vcur)
-  goal.tluz = goal.tcur+goal.safebuf*bu.SID
+  goal.tluz = goal.tcur+goal.safebuf*SID
   if (goal.tfin < goal.tluz) goal.tluz = bu.BDUSK
   goal.loser = br.isLoser(road,goal,data,goal.tcur,goal.vcur)
 
@@ -1629,7 +1631,7 @@ function computePlotLimits(adjustZoom = true) {
   if (road.length == 0) return
 
   var now = goal.asof
-  var maxx = bu.daysnap(min(now+opts.maxFutureDays*bu.SID, 
+  var maxx = bu.daysnap(min(now+opts.maxFutureDays*SID, 
                                  road[road.length-1].sta[0]))
   var cur = roadExtentPartial(road, road[0].end[0], maxx, false)
   var old = roadExtentPartial(iroad,road[0].end[0],maxx,false)
@@ -1670,12 +1672,12 @@ function computePlotLimits(adjustZoom = true) {
 
 // Function to generate samples for the Butterworth filter
 function griddlefilt(a, b) {
-  return bu.linspace(a, b, floor(bu.clip((b-a)/(bu.SID+1), 40, 2000)))
+  return bu.linspace(a, b, floor(bu.clip((b-a)/(SID+1), 40, 2000)))
 }
 
 // Function to generate samples for the Butterworth filter
 function griddle(a, b, maxcnt = 6000) {
-  return bu.linspace(a, b, floor(bu.clip((b-a)/(bu.SID+1), 
+  return bu.linspace(a, b, floor(bu.clip((b-a)/(SID+1), 
                                       min(300, plotbox.width/8),
                                       maxcnt)))
 }
@@ -1742,9 +1744,9 @@ function loadGoal(json, timing = true) {
     alldataf = alldata.slice()
   } else {
     dataf = data.filter(function(e){
-      return e[0]>(goal.asof-opts.maxDataDays*bu.SID)})
+      return e[0]>(goal.asof-opts.maxDataDays*SID)})
     alldataf = alldata.filter(function(e){
-      return e[0]>(goal.asof-opts.maxDataDays*bu.SID)})
+      return e[0]>(goal.asof-opts.maxDataDays*SID)})
   }
 
   if (opts.divGraph) {
@@ -1810,8 +1812,8 @@ function setSafeDays( days ) {
   // Look into the future to see the road value to ratchet to
   var daydiff = curdtd - (days - 1) - 1
   if (daydiff <= 0) return
-  var futureDate= goal.asof + daydiff*bu.SID
-  var ratchetValue = br.rdf( road, futureDate)
+  var futureDate = goal.asof + daydiff*SID
+  var ratchetValue = br.rdf(road, futureDate)
 
   // Find or add two new dots at asof
   // We only allow the first step to record undo info.
@@ -1842,7 +1844,7 @@ function addNewDot(x, y = null) {
   var found = br.findSeg(road, x)
   if (found >= 0) {
     var s = {}
-    var newx = bu.daysnap(x+bu.SID/2)
+    var newx = bu.daysnap(x+SID/2)
     var newy = y
     if (y == null) {
       newy = road[found].sta[1] + road[found].slope*(newx - road[found].sta[0])
@@ -1885,10 +1887,10 @@ function addNewDot(x, y = null) {
 function addNewKnot(kind) {
   if (kind < road.length-1) {
     var newt = (road[kind].sta[0] + road[kind+1].sta[0])/2
-    if (newt - road[kind].sta[0] > 30*bu.SID) newt = road[kind].sta[0]+30*bu.SID
+    if (newt - road[kind].sta[0] > 30*SID) newt = road[kind].sta[0]+30*SID
     addNewDot(newt)
   } else {
-    addNewDot(road[kind].sta[0] + 7*bu.SID)
+    addNewDot(road[kind].sta[0] + 7*SID)
   }
 }
 
@@ -2160,7 +2162,7 @@ function knotDeleted(d) {
 function changeKnotDate(kind, newDate, fromtable = true) {
   pushUndoState()
 
-  var knotmin = (kind == 0) ? goal.xMin-10*bu.SID*bu.DIY 
+  var knotmin = (kind == 0) ? goal.xMin-10*SID*DIY 
                             : (road[kind].sta[0]) + 0.01
   var knotmax = (kind == road.length-1) ? road[kind].end[0]+0.01
                                         : road[kind+1].end[0]+0.01
@@ -2338,7 +2340,7 @@ function roadDragged(d, id) {
   var kind = id
   var rd = road
 
-  road[kind].slope = ((y - d.sta[1])/max(x - d.sta[0], bu.SID))
+  road[kind].slope = ((y - d.sta[1])/max(x - d.sta[0], SID))
   road[kind].end[1] = road[kind].sta[1] + road[kind].slope*(road[kind].end[0] 
                                                           - road[kind].sta[0])
   road[kind+1].sta[1] = road[kind].end[1]
@@ -3051,7 +3053,7 @@ function updateYBHP() {
   // apply it to. If xrange=null, use [-infinity, infinity].
 
   const xrfull = [goal.tini, goal.tfin]          // x-axis range tini-tfin
-  const xrakr  = [goal.asof, goal.asof+7*bu.SID] // now to akrasia horiz.
+  const xrakr  = [goal.asof, goal.asof+7*SID] // now to akrasia horiz.
   const bgreen  = bu.Cols.RAZR3 // green isoline for 7 safe days
   const bblue   = bu.Cols.RAZR2 // blue isoline for 2 safe days 
   const borange = bu.Cols.RAZR1 // orange isoline for 1 safe day
@@ -4245,7 +4247,7 @@ function updateMovingAv() {
               || (r.end[0] > l[0] && r.end[0] < l[1]));
     };
     var pts = goal.filtpts.filter(function(e){
-      return (e[0] > l[0]-2*bu.SID && e[0] < l[1]+2*bu.SID);});
+      return (e[0] > l[0]-2*SID && e[0] < l[1]+2*SID);});
     if (pts.length > 0){
       var d = "M"+r1(nXSc(pts[0][0]*SMS))+" "+r1(nYSc(pts[0][1]))
       for (let i = 1; i < pts.length; i++) {
@@ -4377,11 +4379,9 @@ function tableFocusIn( d, i ){
       datePicker.destroy();
       datePicker = null;
     }
-    var knotmin = (kind == 0) ? goal.xMin-10*bu.SID*bu.DIY : (road[kind].sta[0]);
-    var knotmax = 
-          (kind == road.length-1) 
-          ? road[kind].end[0]
-      :(road[kind+1].end[0])
+    var knotmin = (kind == 0) ? goal.xMin-10*SID*DIY : (road[kind].sta[0])
+    var knotmax = (kind == road.length-1) ? road[kind].end[0]
+                                          : (road[kind+1].end[0])
     // Switch all dates to local time to babysit Pikaday
     var md = moment(focusOldText)
     var mindate = moment(moment.unix(knotmin).utc().format("YYYY-MM-DD"))
@@ -4808,9 +4808,9 @@ function updateGraphData(force = false) {
                   nXSc.invert(plotbox.width).getTime()/SMS]
   if (force) oldscf = 0
   if (opts.roadEditor)
-    scf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.7)
+    scf = bu.cvx(limits[1], limits[0], limits[0]+73*SID, 1,0.7)
   else 
-    scf = bu.cvx(limits[1], limits[0], limits[0]+73*bu.SID, 1,0.55)
+    scf = bu.cvx(limits[1], limits[0], limits[0]+73*SID, 1,0.55)
 
   //updateRoadData()
   updateRoadValidity()
@@ -5046,17 +5046,17 @@ this.scheduleBreak = ( start, days, insert ) => {
   if (insert) {
     // First, shift all remaining knots right by the requested
     // number of days
-    road[firstseg].end[0] = bu.daysnap(road[firstseg].end[0]+days*bu.SID)
+    road[firstseg].end[0] = bu.daysnap(road[firstseg].end[0]+days*SID)
     for (j = firstseg+1; j < road.length; j++) {
-      road[j].sta[0] = bu.daysnap(road[j].sta[0]+days*bu.SID)
-      road[j].end[0] = bu.daysnap(road[j].end[0]+days*bu.SID)
+      road[j].sta[0] = bu.daysnap(road[j].sta[0]+days*SID)
+      road[j].end[0] = bu.daysnap(road[j].end[0]+days*SID)
     }
     // Now, create and add the end segment if the value of the
     // subsequent endpoint was different
     if (road[firstseg].sta[1] != road[firstseg].end[1]) {
       var segment = {}
       segment.sta = road[firstseg].sta.slice()
-      segment.sta[0] = bu.daysnap(segment.sta[0]+days*bu.SID)
+      segment.sta[0] = bu.daysnap(segment.sta[0]+days*SID)
       segment.end = road[firstseg].end.slice()
       segment.slope = br.segSlope(segment)
       segment.auto = br.RP.VALUE
@@ -5067,7 +5067,7 @@ this.scheduleBreak = ( start, days, insert ) => {
     }
   } else {
     // Find the right boundary for the segment for overwriting
-    var endtime = bu.daysnap(road[firstseg].sta[0]+days*bu.SID)
+    var endtime = bu.daysnap(road[firstseg].sta[0]+days*SID)
     var lastseg = br.findSeg( road, endtime )
     if (road[lastseg].sta[0] != endtime) {
       // If there are no dots on the endpoint, add a new one

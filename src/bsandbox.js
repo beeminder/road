@@ -36,6 +36,12 @@
 })(this, function (moment, bu, br, bb, bg) {
   'use strict'
 
+// -----------------------------------------------------------------------------
+// --------------------------- CONVENIENCE CONSTANTS ---------------------------
+
+const DIY = 365.25
+const SID = 86400
+
   // -------------------------------------------------------------
   // ------------------- FACTORY GLOBALS ---------------------
   /** Global counter to Generate unique IDs for multiple bsandbox
@@ -148,7 +154,7 @@
         // Clean up road ahead
         goal.bb.params.road = goal.bb.params.road.filter(e=>(bu.dayparse(e[0])<cur[0]))
         let road = goal.bb.params.road
-        var nextweek = bu.daysnap(cur[0]+7*bu.SID)
+        var nextweek = bu.daysnap(cur[0]+7*SID)
         var derail = bu.dayify(cur[0])
         road.push([derail, null, cur[2]])
         road.push([derail, Number(cur[1]), null])
@@ -169,7 +175,7 @@
 //      var oldasof
 //        = bu.dayify(bu.daysnap(bu.dayparse(goal.bb.params.asof)))
       var newasof
-        = bu.dayify(bu.daysnap(bu.dayparse(goal.bb.params.asof)+bu.SID))
+        = bu.dayify(bu.daysnap(bu.dayparse(goal.bb.params.asof)+SID))
 //      var ppr = br.ppr(goal.graph.getRoadObj(), goal.graph.getGoalObj(), newasof)
 //      console.log(ppr)
 //      if (ppr != 0) {
@@ -199,7 +205,7 @@
       saveState()
       // check if there is a road segment ending a week from now
       var asof = bu.dayparse(goal.bb.params.asof)
-      var nextweek = bu.daysnap(asof + 7*bu.SID)
+      var nextweek = bu.daysnap(asof + 7*SID)
       var road = goal.bb.params.road
       var roadlast = bu.dayparse(road[road.length-1][0])
 
@@ -251,8 +257,8 @@
       goal.runits = runits
       goal.buffer = buffer
       var now = bu.daysnap(moment.now()/1000)
-      var nextweek = bu.daysnap(moment.now()/1000 + 7*bu.SID)
-      var nextyear = bu.daysnap(moment.now()/1000 + bu.DIY*bu.SID)
+      var nextweek = bu.daysnap(moment.now()/1000 + 7*SID)
+      var nextyear = bu.daysnap(moment.now()/1000 + DIY*SID)
 
       var params = typefn[gtype]()
       var data = {}

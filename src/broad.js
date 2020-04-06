@@ -1,23 +1,37 @@
-;((function (root, factory) { // BEGIN PREAMBLE --------------------------------
+/**
+ * Library of utilities for Beebrain, provided as a UMD module. Returns a
+ * "broad" object with public member functions and constants for calculating 
+ * things about yellow brick roads. Does not hold any internal state.
+ *
+ * Copyright 2018-2020 Uluc Saranli and Daniel Reeves
+
+ @requires moment
+ @requires butil
+
+ @exports broad
+*/
+
+;((function(root, factory) { // BEGIN PREAMBLE ---------------------------------
 
 'use strict'
+
 if (typeof define === 'function' && define.amd) {
   // AMD. Register as an anonymous module.
   //console.log("broad: Using AMD module definition")
   define(['moment', 'Polyfit', 'butil'], factory)
 } else if (typeof module === 'object' && module.exports) {
-  // Node. Does not work with strict CommonJS, but
-  // only CommonJS-like environments that support module.exports,
-  // like Node.    
+  // Node. Does not work with strict CommonJS, but only CommonJS-like
+  // environments that support module.exports, like Node.
   //console.log("broad: Using CommonJS module.exports")
-  module.exports = factory(require('./moment'), require('./polyfit'), 
+  module.exports = factory(require('./moment'), 
+                           require('./polyfit'), 
                            require('./butil'))
 } else {
   //console.log("broad: Using Browser globals")
   root.broad = factory(root.moment, root.Polyfit, root.butil)
 }
 
-})(this, function (moment, Polyfit, bu) { // END PREAMBLE -- BEGIN MAIN --------
+})(this, function(moment, Polyfit, bu) { // END PREAMBLE -- BEGIN MAIN ---------
 
 'use strict'
 
@@ -33,24 +47,16 @@ const floor = Math.floor
 const ceil  = Math.ceil
 const sign  = Math.sign
 
-/**
- * Javascript library of road utilities for Beebrain, provided as a
- * UMD module. Returns a "broad" object, whose public members provide
- * a number of road related constants and functions. Does not hold any
- * internal state.
- *
- * The following member variables and methods are provided:
- *
- * Copyright © 2018 Uluc Saranli and Daniel Reeves
+const DIY = 365.25
+const SID = 86400
 
- @requires moment
- @requires butil
+// -----------------------------------------------------------------------------
+// ------------------- PUBLIC MEMBER CONSTANTS AND FUNCTIONS -------------------
 
- @exports broad
-*/
 var self = {}
 
 self.rfin = 0 // Hack to implement skatesum
+
 /** Collection of functiont to perform datapoint aggregation
     @enum {function} */
 self.AGGR = {
@@ -63,7 +69,7 @@ uniqmean : (x) => bu.mean(bu.deldups(x)),
 mean     : (x) => bu.mean(bu.deldups(x)),
 median   : (x) => bu.median(x),
 mode     : (x) => bu.mode(x),
-trimmean : (x) => bu.mean(x), // Uluc: did not bother
+trimmean : (x) => -1505, // bu.mean(x), // TODO: implement this if anyone cares
 sum      : (x) => bu.sum(x),
 jolly    : (x) => x.length > 0 ? 1 : 0,
 binary   : (x) => x.length > 0 ? 1 : 0,
@@ -149,67 +155,62 @@ self.segValue = (rdseg, x) => rdseg.sta[1] + rdseg.slope*(x - rdseg.sta[0])
 /** Computes the value of a road array at the given timestamp */
 self.rdf = (rd, x) => self.segValue( rd[self.findSeg(rd, x)], x )
 
-/** Recomputes the road array starting from the first node and
-    assuming that the one of slope, enddate, or endvalue parameters is
-    chosen to be automatically computed. If usematrix is true,
-    autocompute parameter selections from the road matrix are used */
+/**Recompute road matrix starting from the first node and assuming that exactly
+   one of the slope, enddate, or endvalue parameters is chosen to be
+   automatically computed. If usematrix is true, autocompute parameter
+   selections from the road matrix are used. */
 self.fixRoadArray = (rd, autop=self.RP.VALUE, usematrix=false, 
                      edited=self.RP.VALUE) => {
-                       var nr = rd.length
-                       // Fix the special first road segment w/ slope always 0.
-                       rd[0].sta[0] = rd[0].end[0] - 100*bu.DIY*bu.SID
-                       rd[0].sta[1] = rd[0].end[1]
-
-                       // Iterate thru the remaining segments until the last one
-                       for (let i = 1; i < nr-1; i++) {
-                         //console.debug("before("+i+"):[("+rd[i].sta[0]+
-                         //","+rd[i].sta[1]+"),("+rd[i].end[0]+","
-                         //+rd[i].end[1]+"),"+rd[i].slope+"]")
-                         if (usematrix) autop = rd[i].auto
-                         
-                         var dv = rd[i].end[1] - rd[i].sta[1] 
-                         
-                         rd[i].sta[0] = rd[i-1].end[0]
-                         rd[i].sta[1] = rd[i-1].end[1]
-                         
-                         if (autop === self.RP.DATE) {
-                           if (isFinite(rd[i].slope) && rd[i].slope != 0) {
-                             rd[i].end[0] = bu.daysnap(
-                               rd[i].sta[0]
-                               +(rd[i].end[1]-rd[i].sta[1])/rd[i].slope)
-                           }
-                           // Sanity check
-                           if (rd[i].end[0] <= rd[i].sta[0])
-                             rd[i].end[0] = bu.daysnap(rd[i].sta[0]+bu.SID)
-                            
-                           if (edited === self.RP.SLOPE)
-                             // Readjust value if slope was edited
-                             rd[i].end[1] = 
-                               rd[i].sta[1]+rd[i].slope
-                               *(rd[i].end[0]-rd[i].sta[0])
-                           else
-                             // Readjust value if value was edited
-                             rd[i].slope = self.segSlope(rd[i])
-                         } else if (autop === self.RP.VALUE) {
-                           if (isFinite(rd[i].slope))
-                             rd[i].end[1] = rd[i].sta[1]+rd[i].slope
-                             *(rd[i].end[0]-rd[i].sta[0])
-                           else
-                             // If slope is infinite, preserve previous delta
-                             rd[i].end[1] = rd[i].sta[1]+dv
-
-                         } else if (autop === self.RP.SLOPE)
-                           rd[i].slope = self.segSlope(rd[i])
-                       }
-                          
-                       // Fix the last segment
-                       if (nr > 1) {
-                         rd[nr-1].sta[0] = rd[nr-2].end[0]
-                         rd[nr-1].sta[1] = rd[nr-2].end[1]
-                         rd[nr-1].end[0] = rd[nr-1].sta[0] + 100*bu.DIY*bu.SID
-                         rd[nr-1].end[1] = rd[nr-1].sta[1]
-                       }
-                     }
+  const nr = rd.length
+  // Fix the special first road segment w/ slope always 0
+  rd[0].sta[0] = rd[0].end[0] - 100*DIY*SID
+  rd[0].sta[1] = rd[0].end[1]
+  
+  // Iterate thru the remaining segments until the last one
+  for (let i = 1; i < nr-1; i++) {
+    //console.debug("before("+i+"):[("+rd[i].sta[0]+
+    //","+rd[i].sta[1]+"),("+rd[i].end[0]+","
+    //+rd[i].end[1]+"),"+rd[i].slope+"]")
+    if (usematrix) autop = rd[i].auto
+    
+    var dv = rd[i].end[1] - rd[i].sta[1] 
+    
+    rd[i].sta[0] = rd[i-1].end[0]
+    rd[i].sta[1] = rd[i-1].end[1]
+    
+    if (autop === self.RP.DATE) {
+      if (isFinite(rd[i].slope) && rd[i].slope != 0) {
+        rd[i].end[0] = bu.daysnap(
+          rd[i].sta[0]+(rd[i].end[1]-rd[i].sta[1])/rd[i].slope)
+      }
+      // Sanity check
+      if (rd[i].end[0] <= rd[i].sta[0])
+        rd[i].end[0] = bu.daysnap(rd[i].sta[0]+SID)
+       
+      if (edited === self.RP.SLOPE)
+        // Readjust value if slope was edited
+        rd[i].end[1] = rd[i].sta[1]+rd[i].slope*(rd[i].end[0]-rd[i].sta[0])
+      else
+        // Readjust value if value was edited
+        rd[i].slope = self.segSlope(rd[i])
+    } else if (autop === self.RP.VALUE) {
+      if (isFinite(rd[i].slope))
+        rd[i].end[1] = rd[i].sta[1]+rd[i].slope*(rd[i].end[0]-rd[i].sta[0])
+      else
+        // If slope is infinite, preserve previous delta
+        rd[i].end[1] = rd[i].sta[1]+dv  
+    } else if (autop === self.RP.SLOPE)
+      rd[i].slope = self.segSlope(rd[i])
+  }
+     
+  // Fix the last segment
+  if (nr > 1) {
+    rd[nr-1].sta[0] = rd[nr-2].end[0]
+    rd[nr-1].sta[1] = rd[nr-2].end[1]
+    rd[nr-1].end[0] = rd[nr-1].sta[0] + 100*DIY*SID
+    rd[nr-1].end[1] = rd[nr-1].sta[1]
+  }
+}
 
 /**Good delta: Returns the delta from the given point to the centerline of the
    road but with the sign such that being on the good side of the road gives a
@@ -282,9 +283,9 @@ self.ppr = (rd, g, t, i=null, pastppr=false) => {
   // Otherwise it's (a) for the future or (b) for today and PPRs are turned on
   // and there's no datapoint added for today, so go ahead and compute it...
   var r
-  if (i != null) r = rd[i].slope * bu.SID
-  else r = self.rtf(rd, t) * bu.SID  // twice the current daily rate of the YBR
-  if (r === 0) return -g.yaw * 2       // absolute PPR of 2 gunits if flat slope
+  if (i != null) r = rd[i].slope * SID
+  else r = self.rtf(rd, t) * SID  // twice the current daily rate of the YBR
+  if (r === 0) return -g.yaw * 2  // absolute PPR of 2 gunits if flat slope
   if (g.yaw*r > 0) return 0   // don't let it be an OPR (optimistic presumptive)
   return 2*r
 }
@@ -297,7 +298,6 @@ self.dtd = (rd, goal, t, v) => {
   var fnw = self.gdelt(rd, goal, t,v) >= 0 ? 0.0 : goal.nw // future noisy width
   var elnf = x => max(goal.lnf(x), fnw) // effective lane width function
 
-  const SID = 86400 // seconds in day (shorter than "bu.SID")
   let x = 0 // the number of steps
   let vpess = v + self.ppr(rd, goal, t+x*SID) // value as we walk fwd w/ PPRs
   if (goal.ybhp) {
@@ -365,7 +365,7 @@ self.dtdarray = ( rd, goal ) => {
     xn = rd[i].end[0]
     yn = rd[i].end[1]
     ppr = self.ppr(rd, goal, 0, i, true)
-    dtd = ((xn-xcur)/bu.SID)
+    dtd = ((xn-xcur)/SID)
     if (!isFinite(ppr)) {
       if (ycur > yn)
         seg = [[xcur, ycur, 0, yn, dtd]]
@@ -399,8 +399,8 @@ self.isoline_generate = (rd, dtdarr, goal, v) => {
   var n = dtdarr[0], nn, iso
   var s = 0, ns, j, k, st, en, sl
   // Start the isoline with a horizontal line for the end of the road
-  iso = [[n[0][0]+10*bu.SID, n[0][1]+v*(n[0][3]-n[0][1])],
-         [n[0][0],           n[0][1]+v*(n[0][3]-n[0][1])]]
+  iso = [[n[0][0]+10*SID, n[0][1]+v*(n[0][3]-n[0][1])],
+         [n[0][0],        n[0][1]+v*(n[0][3]-n[0][1])]]
   for (j = 1; j < dtdarr.length; j++) {
     nn = dtdarr[j]
     // Identify dtd segment in which the desired value lies
@@ -467,10 +467,10 @@ self.isoline_monotonicity = (iso, rd, dtdarr, goal, v) => {
       k = j+1
       flatdone = false
       while (!flatdone) {
-        if (iso[k][0] >= iso[j][0] + v*bu.SID) {
+        if (iso[k][0] >= iso[j][0] + v*SID) {
           // Reached end of the flat region with dtd days
           flatdone = true
-          newx = iso[j][0]+v*bu.SID
+          newx = iso[j][0]+v*SID
           addpt(isoout, [newx, iso[j][1]])
           
         } else if ((iso[k+1][1] - iso[k][1]) * goal.dir >= 0) {
@@ -482,7 +482,7 @@ self.isoline_monotonicity = (iso, rd, dtdarr, goal, v) => {
                    /(iso[k+1][0]-iso[k][0])
             if (slope != 0) {
               newx = iso[k][0] + (iso[j][1] - iso[k][1])/slope
-              if (newx <= iso[j][0]+v*bu.SID && newx <= iso[k+1][0]) {
+              if (newx <= iso[j][0]+v*SID && newx <= iso[k+1][0]) {
                 flatdone = true
               }
             }
@@ -623,7 +623,7 @@ self.isoval = ( line, x ) => {
     centerline/tfin if nothing reported */
 self.dtc = (rd, goal, t, v) => {
   var x = 0
-  while(self.gdelt(rd, goal, t+x*bu.SID, v) >= 0 && t+x*bu.SID <= goal.tfin)
+  while(self.gdelt(rd, goal, t+x*SID, v) >= 0 && t+x*SID <= goal.tfin)
     x += 1 // dpl
   return x
 }
@@ -637,7 +637,7 @@ self.bufcap = (rd, g, n=7) => {
   d = 0
   i = 0
   while(self.dtc(rd, g, t,v+d) < n && i <= 70) { 
-    d += g.yaw*r*bu.SID
+    d += g.yaw*r*SID
     i += 1
   }
   return [d, i]
@@ -704,7 +704,7 @@ self.rtf = (rd, t) => (rd[self.findSeg( rd, t )].slope)
 self.genLaneFunc = function(rd, goal ) {
   var r0 = bu.deldups(rd, e=>e.end[0])
   var t = r0.map(elt => elt.end[0])
-  var r = r0.map(elt => abs(elt.slope)*bu.SID )
+  var r = r0.map(elt => abs(elt.slope)*SID )
   // pretend flat spots have the previous or next non-flat rate
   var rb = r.slice(), i
   for (i = 1; i < rb.length; i++) 
@@ -719,7 +719,7 @@ self.genLaneFunc = function(rd, goal ) {
   r.splice(0,1)
   var rtf0 = self.stepify(bu.zip([t,r]))
   return (x => max(abs(self.vertseg(rd,x) ? 0 : 
-                                 self.rdf(rd, x) - self.rdf(rd, x-bu.SID)), 
+                                 self.rdf(rd, x) - self.rdf(rd, x-SID)), 
                         rtf0(x)))
   //return x=>self.lnfraw(rd, goal, x)
 }
@@ -813,8 +813,8 @@ self.dotcolor = ( rd, g, t, v, iso = null) => {
 
   self.isLoser = (rd, g, d, t, v, iso=null) =>
   g.offred ? 
-    self.dotcolor(rd,g,t-bu.SID, g.dtf(t-bu.SID), iso) === bu.Cols.REDDOT :
-    self.dotcolor(rd,g,t-bu.SID, g.dtf(t-bu.SID), iso) === bu.Cols.REDDOT
+    self.dotcolor(rd,g,t-SID, g.dtf(t-SID), iso) === bu.Cols.REDDOT :
+    self.dotcolor(rd,g,t-SID, g.dtf(t-SID), iso) === bu.Cols.REDDOT
     && self.dotcolor(rd,g,t,v, iso) === bu.Cols.REDDOT 
 
 /** For noisy graphs, compute the lane width (or half aura width)
@@ -832,7 +832,7 @@ self.noisyWidth = (rd, d) => {
     v = p[i][0][1]
     u = p[i][1][0]
     w = p[i][1][1]
-    ad.push(abs(w-v-self.rdf(rd,u)+self.rdf(rd,t))/(u-t)*bu.SID)
+    ad.push(abs(w-v-self.rdf(rd,u)+self.rdf(rd,t))/(u-t)*SID)
   }
   return bu.chop(ad.length===1 ? ad[0] : bu.quantile(ad, .90))
 }
@@ -853,7 +853,7 @@ self.autowiden = (rd, g, d, nw) => {
   if (self.gdelt(rd, g, d[d.length-1][0], d[d.length-1][1]) < 0) {
     while (i >= -n && self.gdelt(rd, g, d[i][0], d[i][1]) < 0) i -= 1
     i += 1
-    if (i > -n && d[i][0] - d[i-1][0] <= bu.SID) 
+    if (i > -n && d[i][0] - d[i-1][0] <= SID) 
       nw = max(nw, abs(d[i][1] - self.rdf(rd,d[i][0])))
   }
   return bu.chop(nw)
@@ -868,13 +868,13 @@ self.vertseg = (rd, t) => (rd.filter(e=>(e.sta[0] === t)).length > 1)
 self.gapFill = (d) => {
   var interp = (bef, aft, atPt) => (bef + (aft - bef) * atPt)
   var start = d[0][0], end = d[d.length-1][0]
-  var n = floor((end-start)/bu.SID)
+  var n = floor((end-start)/SID)
   var out = Array(n), i, j = 0, t = start
   for (i = 0; i < d.length-1; i++) {
     var den = (d[i+1][0]-d[i][0])
     while (t <= d[i+1][0]) {
       out[j] = [t,interp(d[i][1], d[i+1][1], (t-d[i][0])/den)]
-      j++; t += bu.SID
+      j++; t += SID
     }
   }
   if (out.length === 0) out.push(d[0])
@@ -885,7 +885,7 @@ self.gapFill = (d) => {
 self.smooth = (d) => {
   var SMOOTH = (d[0][0] + d[d.length-1][0])/2
   var dz = bu.zip(d)
-  var xnew = dz[0].map((e)=>(e-SMOOTH)/bu.SID)
+  var xnew = dz[0].map((e)=>(e-SMOOTH)/SID)
   var poly = new Polyfit(xnew, dz[1])
   var solver = poly.getPolynomial(3)
   var range = abs(max(...dz[1])-min(...dz[1]))
@@ -897,7 +897,7 @@ self.smooth = (d) => {
     solver = poly.getPolynomial(2)
   }
 
-  return (x) =>(solver((x-SMOOTH)/bu.SID))
+  return (x) =>(solver((x-SMOOTH)/SID))
 }
 
 /** Assumes both datapoints and the x values are sorted */
@@ -924,7 +924,7 @@ self.interpData = (d, xv) => {
 
 /**  The value of the relevant/critical edge of the YBR in n days */
 self.lim = (rd, g, n) => {
-  var t = g.tcur+n*bu.SID
+  var t = g.tcur+n*SID
   return self.rdf(rd, t)
     - sign(g.yaw)
     * (g.noisy ? max(g.nw, g.lnf(t)) : g.lnf(t))

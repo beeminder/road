@@ -3,18 +3,19 @@
  * Provides a {@link beebrain} class, which can be used to construct independent
  * Beebrain objects each with their own internal state.<br/>
 
+ @module beebrain
+ @requires moment
+ @requires butil
+ @requires broad
+
 Beebrain -- doc.bmndr.com/beebrain
 Originally written in Mathematica by dreeves, 2008-2010.
 Ported to Python by Uluc Saranli around 2011.12.20.
 Maintained and evolved by dreeves, 2012-2018.
 Ported to Javascript in 2018-2019 by Uluc Saranli.
 
-
  * <br/>Copyright 2017-2020 Uluc Saranli and Daniel Reeves
- @module beebrain
- @requires moment
- @requires butil
- @requires broad
+
  */
 
 
@@ -66,6 +67,11 @@ const floor = Math.floor
 const ceil  = Math.ceil
 const sign  = Math.sign
 
+const DIY = 365.25
+const SID = 86400
+
+// -----------------------------------------------------------------------------
+// ---------------------- BEEBRAIN CONSTANTS AND GLOBALS -----------------------
 
 let gid = 1 // Global counter giving unique IDs for multiple beebrain instances
 
@@ -366,9 +372,9 @@ function stampOut(p) {
 function ema(d, x) {
   // The Hacker's Diet recommends 0.1; Uluc had .0864
   // http://forum.beeminder.com/t/control-exp-moving-av/2938/7 suggests 0.25
-  let KEXP = .25/bu.SID 
-  if (goal.yoog==='meta/derev')   KEXP = .03/bu.SID   // .015 for meta/derev
-  if (goal.yoog==='meta/dpledge') KEXP = .03/bu.SID   // .1 jagged
+  let KEXP = .25/SID 
+  if (goal.yoog==='meta/derev')   KEXP = .03/SID   // .015 for meta/derev
+  if (goal.yoog==='meta/dpledge') KEXP = .03/SID   // .1 jagged
   let xp = d[0][0]
   let yp = d[0][1]
   let prev = yp, dt, i, ii, A, B
@@ -394,12 +400,12 @@ function ema(d, x) {
 
 // Function to generate samples for the Butterworth filter
 function griddlefilt(a, b) {
-  return bu.linspace(a, b, floor(bu.clip((b-a)/(bu.SID+1), 40, 2000)))
+  return bu.linspace(a, b, floor(bu.clip((b-a)/(SID+1), 40, 2000)))
 }
 
 // Function to generate samples for the Butterworth filter
 function griddle(a, b, maxcnt = 6000) {
-  return bu.linspace(a, b, floor(bu.clip((b-a)/(bu.SID+1), 
+  return bu.linspace(a, b, floor(bu.clip((b-a)/(SID+1), 
                                          min(600, /*plotbox.width*/ 640),
                                          maxcnt)))
 }
@@ -534,7 +540,7 @@ function procData() {
   // instead of the day after the derail.
   for (i = 0; i < derails.length; i++) {
     const CHANGEDATE = 1562299200 // 2019-07-05
-    if (derails[i][0] < CHANGEDATE) derails[i][0] = derails[i][0]-bu.SID
+    if (derails[i][0] < CHANGEDATE) derails[i][0] = derails[i][0]-SID
   }
     
   // Identify, record and process odometer reset for odom goals
@@ -638,7 +644,7 @@ function procData() {
   // Adjust derailment markers to indicate worst value for that day
   for (i = 0; i < derails.length; i++) {
     const CHANGEDATE = 1562299200 // 2019-07-05 // TODO: DRY
-    if (derails[i][0] < CHANGEDATE) ct = derails[i][0]+bu.SID
+    if (derails[i][0] < CHANGEDATE) ct = derails[i][0]+SID
     else                            ct = derails[i][0]
     if (ct in derailval)
       //derails[i][1] = derailval[ct] // see TODO above...
@@ -682,7 +688,7 @@ function procRoad(json) {
     sta: [tini, Number(vini)],
     slope: 0, auto: br.RP.SLOPE }
   firstsegment.end = firstsegment.sta.slice()
-  firstsegment.sta[0] = bu.daysnap(firstsegment.sta[0]-100*bu.DIY*bu.SID)
+  firstsegment.sta[0] = bu.daysnap(firstsegment.sta[0]-100*DIY*SID)
   roads.push(firstsegment)
   for (let i = 0; i < nk; i++) {
     // Each segment i starts from the end of the previous segment and continues
@@ -736,7 +742,7 @@ function procRoad(json) {
     sta: goalseg.end.slice(),
     end: goalseg.end.slice(),
     slope: 0, auto: br.RP.VALUE }
-  finalsegment.end[0] = bu.daysnap(finalsegment.end[0]+100*bu.DIY*bu.SID)
+  finalsegment.end[0] = bu.daysnap(finalsegment.end[0]+100*DIY*SID)
   roads.push(finalsegment)
   
   //br.printRoad(roads)
@@ -783,7 +789,7 @@ original version of flatline() ************************************************/
       // done iff 2 reds in a row
       if (prevcolor===newcolor && prevcolor===bu.Cols.REDDOT) break
       prevcolor = newcolor
-      x += bu.SID // or see padm.us/ppr
+      x += SID // or see padm.us/ppr
     }
     // the following looks particularly unnecessary
     x = min(x, now, goal.tfin)
@@ -803,7 +809,7 @@ function setDefaultRange() {
   if (goal.tmin == null) goal.tmin = min(goal.tini, goal.asof)
   if (goal.tmax == null) {
     // Make more room beyond the askrasia horizon if lots of data
-    const years = floor((goal.tcur - goal.tmin) / (bu.DIY*bu.SID))
+    const years = floor((goal.tcur - goal.tmin) / (DIY*SID))
     goal.tmax = bu.daysnap((1+years/2)*2*bu.AKH + goal.tcur)
   }
   if (goal.vmin != null && goal.vmax != null) {
@@ -990,7 +996,7 @@ function procParams() {
     
       // Create new vector for filtering datapoints
       const newx = griddle(data[0][0], data[dl-1][0],
-                           (data[dl-1][0]-data[0][0])*4/bu.SID)
+                           (data[dl-1][0]-data[0][0])*4/SID)
       JSON.stringify(newx)
       goal.filtpts = newx.map(d => [d, ema(data, d)])
     } else goal.filtpts = []
@@ -1020,20 +1026,20 @@ function procParams() {
     safediff = goal.safebuf - newsafe
     
     let newroad = 
-      oldroad.map(e => [(e[0] ? e[0]+bu.SID*safediff : null), e[1], e[2]])
+      oldroad.map(e => [(e[0] ? e[0]+SID*safediff : null), e[1], e[2]])
     //if (newroad[0][0] == null) // Uluc: I think this is not needed/incorrect
     if (safediff != 0)
-      newroad.unshift([newgoal.tini+bu.SID*safediff, newgoal.vini, null])
+      newroad.unshift([newgoal.tini+SID*safediff, newgoal.vini, null])
     // Remove the last element [tfin,vfin], which was added by us
     newroad.pop()
     goal.razrroad = newroad
   }
-  goal.tluz = goal.tcur+goal.safebuf*bu.SID
+  goal.tluz = goal.tcur+goal.safebuf*SID
   goal.delta = bu.chop(goal.vcur - br.rdf(roads, goal.tcur))
   goal.rah = br.rdf(roads, goal.tcur+bu.AKH)
   
   goal.dueby = [...Array(7).keys()]
-    .map(i => [bu.dayify(goal.tcur+i*bu.SID),
+    .map(i => [bu.dayify(goal.tcur+i*SID),
                br.limd(roads, goal, i),
                br.lim(roads, goal, i)])
   const tmpdueby = bu.zip(goal.dueby)
@@ -1044,7 +1050,7 @@ function procParams() {
   
   goal.rcur = br.rtf(roads, goal.tcur)*goal.siru  
   goal.ravg = br.tvr(goal.tini, goal.vini, goal.tfin,goal.vfin, null)*goal.siru
-  goal.cntdn = ceil((goal.tfin-goal.tcur)/bu.SID)
+  goal.cntdn = ceil((goal.tfin-goal.tcur)/SID)
   goal.lane = goal.ybhp ?  // backward-compatible version for YBHP
     goal.yaw * (goal.safebuf - (goal.safebuf <= 1 ? 2 : 1)) :
     bu.clip(br.lanage(roads, goal, goal.tcur, goal.vcur), -32768, 32767)
@@ -1052,8 +1058,8 @@ function procParams() {
                 goal.safebuf < 2 ? "orange" :
                 goal.safebuf < 3 ? "blue"   : "green")
   goal.loser = br.isLoser(roads, goal, data, goal.tcur, goal.vcur)
-  goal.sadbrink = (goal.tcur-bu.SID>goal.tini)
-    &&(br.dotcolor(roads,goal,goal.tcur-bu.SID,goal.dtf(goal.tcur-bu.SID, goal.isolines))==bu.Cols.REDDOT)
+  goal.sadbrink = (goal.tcur-SID>goal.tini)
+    &&(br.dotcolor(roads,goal,goal.tcur-SID,goal.dtf(goal.tcur-SID, goal.isolines))==bu.Cols.REDDOT)
   if (goal.safebuf <= 0) goal.tluz = goal.tcur
   if (goal.tfin < goal.tluz)  goal.tluz = bu.BDUSK
       
@@ -1122,7 +1128,7 @@ function sumSet(rd, goal) {
     (ugprefix ? goal.yoog : "")
     + shn(goal.vcur,0,3,1)+" on "+bu.shd(goal.tcur)+" ("
     + bu.splur(goal.numpts, "datapoint")+" in "
-    + bu.splur(1+floor((goal.tcur-goal.tini)/bu.SID),"day")+") "
+    + bu.splur(1+floor((goal.tcur-goal.tini)/SID),"day")+") "
     + "targeting "+shn(goal.vfin,0,3,1)+" on "+bu.shd(goal.tfin)+" ("
     + bu.splur(goal.cntdn, "more day")+"). "+ybrStr
 
