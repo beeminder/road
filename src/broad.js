@@ -811,11 +811,12 @@ self.dotcolor = ( rd, g, t, v, iso = null) => {
   return bu.Cols.BLCK
 }
 
-  self.isLoser = (rd, g, d, t, v, iso=null) =>
-  g.offred ? 
-    self.dotcolor(rd,g,t-SID, g.dtf(t-SID), iso) === bu.Cols.REDDOT :
-    self.dotcolor(rd,g,t-SID, g.dtf(t-SID), iso) === bu.Cols.REDDOT
-    && self.dotcolor(rd,g,t,v, iso) === bu.Cols.REDDOT 
+self.isLoser = (rd, g, d, t, v, iso=null) =>
+//  g.offred ?  #SCHDEL
+  self.dotcolor(rd,g,t-SID, g.dtf(t-SID), iso) === bu.Cols.REDDOT 
+//:
+//    self.dotcolor(rd,g,t-SID, g.dtf(t-SID), iso) === bu.Cols.REDDOT
+//    && self.dotcolor(rd,g,t,v, iso) === bu.Cols.REDDOT 
 
 /** For noisy graphs, compute the lane width (or half aura width)
     based on data.  Specifically, get the list of daily deltas

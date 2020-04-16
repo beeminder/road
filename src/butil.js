@@ -63,6 +63,7 @@ self.BBURL = "http://brain.beeminder.com/"
 
 /** Beeminder colors for datapoints 
     @enum {string} */
+// Handy: https://material.io/design/color/#tools-for-picking-colors
 self.Cols = {
   DYEL:   "#ffff44", // Dark yellow  (mma 1,1,.55; py 1,1,.4)
   LYEL:   "#ffff88", // Light yellow (mma 1,1,.68; py 1,1,.6)

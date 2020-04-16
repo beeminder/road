@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Might need pip3 install watchdog
+# Might need to do pip3 install watchdog
 import curses, sys, getopt, os, time, requests, subprocess
 import math, threading, queue, textwrap, json, filecmp
 import traceback

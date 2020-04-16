@@ -140,7 +140,7 @@ graph    : null,   // Graph name (synonym for second half of yoog) ######### DEP
 //gldt     : null,   // Synonym for tfin ################################### DEP
 goal     : null,   // Synonym for vfin ##################################### DEP
 rate     : null,   // Synonym for rfin ##################################### DEP
-offred   : true,   // Yesterday-is-red criteria for derails ################ DEP
+//offred   : true, // Yesterday-is-red criteria for derails ################ DEP
 integery : false,  // Whether vals are necessarily integers ################ DEP
 }
 
@@ -197,6 +197,7 @@ const pig = [ // In Params to ignore; complain about anything not here or in pin
 'timezone',
 'backroad', 
 'edgy',
+'offred',
 'offparis',
 ]
 
