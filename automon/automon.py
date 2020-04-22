@@ -964,9 +964,8 @@ def monitor(stdscr, bbdir, graph, force, watchdir):
   worker_thread.join()
   curses.curs_set(True)
 
-#  Main entry point for automon. Parses command line arguments, sets
-#  appropriate fields and flags and invokes the curses wrapper with
-#  the function monitor()
+# Main entry point for Automon. Parse command line arguments, set appropriate
+# fields and flags, and invoke the curses wrapper with the function monitor().
 def main(argv):
   try:
     opts, args = getopt.getopt(argv,"hgfd:w:",["graph","force","watch="])
