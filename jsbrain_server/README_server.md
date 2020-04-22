@@ -35,18 +35,29 @@ generates `u+g.png`, `u+g-thumb.png`, `u+g.svg` and `u+g.json` in
 
 ### Testing the server
 
-To make sure everything is running, start the server, and then make a request using one of the test files.  From this `jsbrain_server` directory:
+To make sure everything is running, start the server, and then make a request using one of the test files in the automon directory.
+From this `jsbrain_server` directory:
 
-`curl "localhost:8777?slug=testroad1&inpath=`pwd`/../data"`
+`curl "localhost:8777?slug=testroad1&inpath=`pwd`/../automon/data"`
 
-This tell the server you have running to process testroad1.bb in the `data/` directory next to the `jsbrain_server` directory.  You shouldn't see an error, but instead should get a response of something like:
+This tells the running server to process testroad1.bb in the `data/` directory next to the `jsbrain_server` directory.
+You shouldn't see an error, but instead should get a response of something like:
 
-{"inpath":"/Volumes/UNTITLED/road/jsbrain_server/../data","outpath":"/Volumes/UNTITLED/road/jsbrain_server/../data","slug":"testroad1","host":"Amandas-MBP","process":1,"request":2,"log":"testroad1 @ 2019-07-15 15:20:19\n(1:2)  Page creation (testroad1): 1965.953ms\n(1:2)  PAGE LOG: bgraph(1): Goal stats (test/test1): 20.510986328125ms\n(1:2)  PAGE LOG: bgraph(1): Goal graph (test/test1): 153.082275390625ms\n(1:2)  Page render (testroad1): 316.587ms\n(1:2)  Screenshot (testroad1): 867.273ms\n","bb":"/Volumes/UNTITLED/road/jsbrain_server/../data/testroad1.bb","svg":"/Volumes/UNTITLED/road/jsbrain_server/../data/testroad1.svg","png":"/Volumes/UNTITLED/road/jsbrain_server/../data/testroad1.png","json":"/Volumes/UNTITLED/road/jsbrain_server/../data/testroad1.json","error":null}
+{ "inpath":"/path/to/road/jsbrain_server/../automon/data",
+  "outpath":"/path/to/road/jsbrain_server/../data",
+  "slug":"testroad1",
+  "host":"my-laptop",
+  "process":1,"request":2,
+  "log":"testroad1 @ 2019-07-15 15:20:19\n(1:2)  Page creation (testroad1): 1965.953ms\n(1:2)  PAGE LOG: bgraph(1): Goal stats (test/test1): 20.510986328125ms\n(1:2)  PAGE LOG: bgraph(1): Goal graph (test/test1): 153.082275390625ms\n(1:2)  Page render (testroad1): 316.587ms\n(1:2)  Screenshot (testroad1): 867.273ms\n",
+  "bb":"/path/to/road/jsbrain_server/../automon/data/testroad1.bb",
+  "svg":"/path/to/road/jsbrain_server/../automon/data/testroad1.svg",
+  "png":"/path/to/road/jsbrain_server/../automon/data/testroad1.png",
+  "json":"/path/to/road/jsbrain_server/../automon/data/testroad1.json",
+  "error":null }
 
 ## Principles of operation
 
-The following sequence of events occur upon reception of a request of
-the form described above:
+The following sequence of events occur upon receiving a request of the form described above:
 
 - A new page is created within the headless chrome instance through puppeteer
 - This page loads `generate.html` with the parameter `bb=file://path/base.bb`
