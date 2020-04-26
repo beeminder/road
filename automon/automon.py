@@ -1,4 +1,27 @@
 #!/usr/bin/env python3
+# Automon: Test Suite Monitoring/Comparison Daemon
+
+# NOTE: I've refactored this a bit so that the data directory with the bb files
+# is treated exactly the same as any source directory.
+# So no -w switch for the watch directories. You specify at least one directory
+# which is both the data directory and a watch directory. You can also 
+# optionally specify any number of additional directories on the command line
+# which are taken as additional watch directories.
+# Would it be cleaner / more consistent if all the directories were treated 
+# identically?
+# Like you specify any directories you want and it processes any .bb files it 
+# finds in them and reruns whenever any file at all in those directories
+# changes. But not recursively.
+# Ok, but... simplest is to just have one bbdir so the first directory is
+# special -- both the bbdir and a watch directory -- and the additional ones are
+# just watch directories.
+# One thing that would be nice is, when a bb file changes, only regenerate the 
+# output for that file. So that's another way the bbdir is different than a
+# source code watch directory.
+# Probably I should've just done that directly rather than treating the bbdir
+# as a watchdir. But I don't edit the bb files often so it's not a big deal.
+# It's nice that when I do, automon picks up on it.
+
 
 # Might need to do pip3 install watchdog
 import curses, sys, getopt, os, time, requests, subprocess
@@ -10,6 +33,8 @@ from enum import Enum
 
 ################################################################################
 ######################### CONSTANTS AND CONFIGURATION ##########################
+
+DEBUG = 'init'
 
 DISPCMD = next(p for p in ['/usr/bin/open', '/usr/local/bin/display',
                            '/usr/bin/display', '/bin/true']
@@ -47,14 +72,13 @@ menu = [
   ['p', 'Pause/Resume'],
   ['g', 'Graph on/off'],
   ['R', 'AllRefs'],
-  ['q', 'Quit']
+  ['q', 'Quit'],
 ]
 UP = -1   # Scroll-up increment
 DOWN = 1  # Scroll-down increment
 LWW = 40  # Width of left window
 PLAY = next(p for p in ['/usr/bin/play', '/usr/bin/afplay']
             if os.path.exists(p)) # path to your utility of choice to play sound
-
 
 ################################################################################
 ############################### EVERYTYHING ELSE ###############################
@@ -118,14 +142,18 @@ class JobResponse:
     self.grdiff = None
 
 # This FileSystemEvent handler from the watchdog library is used to monitor
-# various directories, initiating a restart for processing jsbrain goals.
+# various directories, initiating a restart for processing bb files.
 class JSBrainEventHandler(FileSystemEventHandler):
   def __init__(self): FileSystemEventHandler.__init__(self)
   def on_modified(self, event):
+    #global DEBUG
+    #DEBUG += f'[event: {cm.jsoutf} {event.src_path}]'                   #SCHDEL
+    #print("DEBUG")
     #print(event.event_type)
     #print(event.src_path)
-    # Record where source change was detected so bb file list can be reordered
-    cm.sourcechange = cm.curgoal
+    if event.src_path != cm.jsoutf: # automon modifies jsoutf so doesn't count
+      # Record where source change was detected so bb file list can be reordered
+      cm.sourcechange = cm.curgoal
 
 # Global structure for common data ---------------------------------------------
 
@@ -185,13 +213,14 @@ cm = CMonitor()
 # Utility functions  -----------------------------------------------------------
 
 def exitonerr(err, usage=True):
-  usage = ''' Usage: automon.py <options> bbdir
- Supported options are:
+  usage = '''\
+Usage: automon.py <options> bbdir [other directories to monitor for changes]
+Supported options:
   -g or --graph : Enable graph comparisons
-  -f or --force : Force regeneration of reference outputs
-  -w or --watch : Monitor directory for changes (multiple directories ok)'''
-  print("========= Automon: Test Suite Monitoring/Comparison Daemon =========")
-  if (err): print(" Error: "+err)
+  -f or --force : Force regeneration of reference outputs'''
+  #-w or --watch : Monitor directory for changes (multiple directories ok)'''
+  #print("========= Automon: Test Suite Monitoring/Comparison Daemon =========")
+  if (err): print("Error: "+err)
   if (usage): print(usage+"\n")
   sys.exit()
 
@@ -442,7 +471,7 @@ def update_goallist():
 def jsbrain_checkref(slug, inpath, refpath):
   inpath  = os.path.abspath(inpath)+"/"
   refpath = os.path.abspath(refpath)+"/"
-  bb = inpath+slug+".bb"
+  bb   = inpath+slug+".bb"
   json = refpath+slug+".json"
   img  = refpath+slug+".png"
   thm  = refpath+slug+"-thumb.png"
@@ -453,11 +482,11 @@ def jsbrain_checkref(slug, inpath, refpath):
       not os.path.isfile(thm)  or 
       not os.path.isfile(svg)):   return -1
 
-  bbtime = os.stat(bb).st_mtime
+  bbtime   = os.stat(bb)  .st_mtime
   jsontime = os.stat(json).st_mtime
-  imgtime = os.stat(img).st_mtime
-  thmtime = os.stat(thm).st_mtime
-  svgtime = os.stat(svg).st_mtime
+  imgtime  = os.stat(img) .st_mtime
+  thmtime  = os.stat(thm) .st_mtime
+  svgtime  = os.stat(svg) .st_mtime
   if (bbtime > jsontime or 
       bbtime > imgtime  or 
       bbtime > thmtime  or 
@@ -465,7 +494,7 @@ def jsbrain_checkref(slug, inpath, refpath):
 
   return 0
 
-# Invokes jsbrain on the indicated slug from inpath, placing outputs in outpath,
+# Invoke Beebrain on the indicated slug from inpath, placing outputs in outpath,
 # generating graphs if requested
 def jsbrain_make(job):
   errmsg = ""
@@ -483,7 +512,7 @@ def jsbrain_make(job):
     errmsg = "Could not connect to jsbrain_server."
   return {'dt': time.time() - starttm, 'errmsg': errmsg}
 
-# Compares the output graph to a reference for the supplied slug
+# Compare the output graph to a reference for the supplied slug
 def graph_compare(slug, out, ref):
   errmsg = ""
   imgout = out+"/"+slug+".png"
@@ -587,7 +616,7 @@ def worker(pending, completed):
         retval = jsbrain_make(job)
         resp.dt = retval['dt']
         resp.errmsg = retval['errmsg']
-        # Check if reference is stale; refuse to compare if so
+        # Check if reference is stale (refuse to compare if so? not true now?)
         refstatus = jsbrain_checkref(job.slug, cm.bbdir, cm.jsreff)
         if (refstatus == -1):
           resp.errmsg = "Missing reference files, fresh json output:"
@@ -596,11 +625,16 @@ def worker(pending, completed):
           # Compare json output to the reference
           resp.jsondiff = json_compare(job)
           # Stale graphs still perform comparison, but with an additional note
-          if (refstatus == -2):
-            resp.errmsg = "WARNING: Stale reference files. " + \
-              "BB file was edited after the references were last generated.\n"
-            if (resp.jsondiff == None):
-              resp.errmsg += "* No json differences found.\n"
+          # PS: turns out we never want this note because the only reason the
+          # reference files are supposedly stale is that we edited the bb file
+          # which is always on purpose and we want to treat that the same as
+          # any source code change and just regenerate the output files and 
+          # compare them to the reference files same as ever.
+          #if (refstatus == -2):
+          #  resp.errmsg = "WARNING: Stale reference files. " + \
+          #    "BB file was edited after the references were last generated.\n"
+          #  if (resp.jsondiff == None):
+          #    resp.errmsg += "* No json differences found.\n"
           
           # If enabled, compare generated graph to the reference
           if (cm.graph):
@@ -612,8 +646,8 @@ def worker(pending, completed):
             elif (gres['diffcnt'] > 0):
               resp.grdiff = gres['diffcnt']
               resp.errmsg += "Graphs differ by "+str(resp.grdiff)+" pixels."
-            elif (refstatus == -2):
-              resp.errmsg += "\n* No graph differences found."
+            #elif (refstatus == -2):
+            #  resp.errmsg += "\n* No graph differences found."
                     
         setstatus(reqstr+": Comparison for "+job.slug+" finished!")
         updateAverage(resp.dt)
@@ -638,10 +672,8 @@ def worker_start():
   return threading.Thread(target=worker, args=(qpending,qcompleted))
 
 def worker_stop():
-  # Empty the request queue
-  while (not qpending.empty()): qpending.get_nowait()
-  # Issue a kill request to the worker thread
-  qpending.put(JobRequest("quit"))
+  while (not qpending.empty()): qpending.get_nowait()  # empty the request queue
+  qpending.put(JobRequest("quit"))   # issue a kill request to the worker thread
 
 def find_problem_slug(slug):
   for i in range(len(cm.problems)):
@@ -778,8 +810,8 @@ def alertTask():
     cm.alerted = True
     cm.req_alert = False
   
-# Job manager task: Coordinates dispatching of goal processing jobs
-# and interprets their responses from the worker thread.
+# Job manager task: Coordinates dispatching of goal processing jobs and
+# interprets their responses from the worker thread.
 def jobDispatch(req, slug, inpath, outpath, graph):
   req.slug = slug
   req.inpath = inpath
@@ -797,7 +829,7 @@ def restartJobs():
   sort_goallist()
   resetAverage()
   
-# Handles processing of jobs. Has a state machine structure defined above
+# Handles processing of jobs. Has a state machine structure defined above.
 def jobTask():
   
   # Go through job responses and interpret results
@@ -899,8 +931,7 @@ def jobTask():
     if (not cm.paused or cm.forcestop):
       cm.state = ST.PROC
     else:
-      # Sleep longer if paused
-      time.sleep(0.1)
+      time.sleep(0.1) # sleep longer if paused
       return
 
   elif (cm.state == ST.EXIT):
@@ -967,35 +998,38 @@ def monitor(stdscr, bbdir, graph, force, watchdir):
 # Main entry point for Automon. Parse command line arguments, set appropriate
 # fields and flags, and invoke the curses wrapper with the function monitor().
 def main(argv):
-  try:
-    opts, args = getopt.getopt(argv,"hgfd:w:",["graph","force","watch="])
+  try: opts, args = getopt.getopt(argv, "hgf", ["help", "graph", "force"])
   except getopt.GetoptError as err: exitonerr(str(err))
-  
-  if (len(args) != 1):
-    if (len(args) == 0):  exitonerr("Missing bbdir. ")
-    elif (len(args) > 1): exitonerr("Extra arguments.")
     
   graph = False
   force = False
-  bbdir = args[0]
-  watchdir = []
-  
   for opt, arg in opts:
-    if opt == '-h': exitonerr("")
-    elif opt in ("-g", "--graph"): graph = True
-    elif opt in ("-f", "--force"): force = True
-    elif opt in ("-w", "--watch"):
-      if (not os.path.isdir(arg)): exitonerr(arg+' is not a directory')
-      watchdir.append(str(arg))
-    else:
-      print("Unrecognized option: "+opt)
-      print(usage)
-      sys.exit(2)
-      
-  if (not os.path.isdir(bbdir) or not os.path.exists(bbdir)):
-    exitonerr(bbdir+" is not a directory.")
+    if   opt in ('-h', '--help'): exitonerr('')
+    elif opt in ('-g', '--graph'): graph = True
+    elif opt in ('-f', '--force'): force = True
+    else: exitonerr(f'Unrecognized option: {opt}')
 
+  if (len(args) == 0): exitonerr("Must provide a directory of .bb files")
+
+  bbdir = args[0]
+  watchdir = args  # every arg *including bbdir* is watched for changes
+  for d in watchdir:
+    if (not os.path.isdir(d) or not os.path.exists(d)): 
+      exitonerr(f'{d} is not a directory')
+  
   curses.wrapper(monitor, bbdir, graph, force, watchdir)
+  #global DEBUG
+  #DEBUG += f'[test{4-3}]'
+  #print(f'DEBUG: {DEBUG}\n') # this happens after exiting the automon interface
+
+  #SCHDEL
+      #print("Unrecognized option: "+opt)
+      #print(usage)
+      #sys.exit(2)      
+  #if (not os.path.isdir(bbdir) or not os.path.exists(bbdir)):
+  #  exitonerr(bbdir+" is not a directory.")
+  #print(f'DEBUG: opts: {opts} // args: {args}\n')
+
 
 # Make sure we only execute main in the top level environment
 if __name__ == "__main__":
