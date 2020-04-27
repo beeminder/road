@@ -140,8 +140,8 @@ self.findSeg = (rd, x, dir=0) => {
     if (rd[m].sta[0] <= x) s = m
     else e = m
   }
-  if ((x >= rd[e].sta[0]) && (x < rd[e].end[0])) s = e
-  if (dir < 0) while(s > 0 && rd[s-1].sta[0] === x) s--
+  if (x >= rd[e].sta[0] && x < rd[e].end[0]) s = e
+  if (dir < 0) while(s > 0      && rd[s-1].sta[0] === x) s--
   if (dir > 0) while(s < nums-1 && rd[s+1].sta[0] === x) s++
   return s
 }
@@ -212,10 +212,10 @@ self.fixRoadArray = (rd, autop=self.RP.VALUE, usematrix=false,
   }
 }
 
-/**Good delta: Returns the delta from the given point to the centerline of the
+/**Good delta: Return the delta from the given point to the centerline of the
    road but with the sign such that being on the good side of the road gives a
    positive delta and being on the wrong side gives a negative delta. */
-self.gdelt = (rd, goal, t, v) => bu.chop(goal.yaw*(v - self.rdf(rd, t)))
+self.gdelt = (rd, g, t, v) => bu.chop(g.yaw*(v - self.rdf(rd, t)))
 
 /** Whether the given point is on or on the good side of the razor road */
 self.aok = (rd, g, t, v) => { return g.yaw * (v - self.rdf(rd, t)) >= 0 }
@@ -293,7 +293,7 @@ self.ppr = (rd, g, t, i=null, pastppr=false) => {
 /** Return number of days to derail for the current road.
     TODO: There are some issues with computing tcur, vcur */
 self.dtd = (rd, goal, t, v) => {
-  if (self.isLoser(rd, goal, null, t, v)) return 0
+  if (self.redyest(rd, goal, t)) return 0 // TODO: need iso here
 
   var fnw = self.gdelt(rd, goal, t,v) >= 0 ? 0.0 : goal.nw // future noisy width
   var elnf = x => max(goal.lnf(x), fnw) // effective lane width function
@@ -306,11 +306,12 @@ self.dtd = (rd, goal, t, v) => {
       vpess += self.ppr(rd, goal, t+x*SID)
     }
   } else {
+    //#DIELANES
     while (self.aokold(rd, goal, t+x*SID, vpess, elnf(t+x*SID)) 
            && t+x*SID <= max(goal.tfin, t)) {
       x += 1 // walk forward until we're off the YBR
       vpess += self.ppr(rd, goal, t+x*SID)
-    }    
+    }
   }
   if (goal.noisy && self.gdelt(rd,goal,t,v) >= 0) x = max(2, x)
   return x
@@ -767,13 +768,13 @@ self.stepify = (d, dflt=0) =>
   d === null ? x => dflt : x => self.stepFunc(d, x, dflt)
 
 
-// Returns which side of a given isoline a given datapoint is. -1 and
-// +1 respectively mean wrong and correct sides of the isoline
+// Return which side of a given isoline a given datapoint is: -1 for wrong and
+// +1 for correct side.
 self.isoside = (g, isoline, t, v) => {
-  if (t <= isoline[0][0]) return ((v - isoline[0][1])*g.yaw>0)?+1:-1
+  if (t <= isoline[0][0])   return (v - isoline[0][1])*g.yaw > 0 ? +1 : -1
   // Perform binary search to locate segment
   var n = isoline.length, s = 0, e = n-1, m
-  if (t >= isoline[n-1][0]) return ((v - isoline[n-1][1])*g.yaw>0)?+1:-1
+  if (t >= isoline[n-1][0]) return (v - isoline[n-1][1])*g.yaw > 0 ? +1 : -1
   while (e-s > 1) {
     m = floor((s+e)/2)
     if (isoline[m][0] <= t) s = m
@@ -784,46 +785,54 @@ self.isoside = (g, isoline, t, v) => {
     console.log("Warning: isoside ended up with infinite slope!")
     return 0
   }
-  var slope = (isoline[s+1][1]-isoline[s][1]) / (isoline[s+1][0]-isoline[s][0])
+  var slope =   (isoline[s+1][1]-isoline[s][1]) 
+              / (isoline[s+1][0]-isoline[s][0])
   var isoval = isoline[s][1] + slope*(t - isoline[s][0])
-  return ((v - isoval)*g.yaw >= 0)?1:-1
+  return (v - isoval)*g.yaw >= 0 ? +1 : -1
 }
-// Appropriate color for a datapoint
-self.dotcolor = ( rd, g, t, v, iso = null) => {
-  if (t < g.tini) return bu.Cols.BLCK
+
+// Determine the color for datapoint {t, v}
+self.dotcolor = (rd, g, t, v, iso=null) => {
+  if (t < g.tini) return bu.Cols.BLCK // dots before tini have no color!
 
   if (g.ybhp && iso != null) {
     if (self.isoside(g, iso[0], t, v) < 0) return bu.Cols.REDDOT
     if (self.isoside(g, iso[1], t, v) < 0) return bu.Cols.ORNDOT
     if (self.isoside(g, iso[2], t, v) < 0) return bu.Cols.BLUDOT
     if (self.isoside(g, iso[3], t, v) < 0) return bu.Cols.GRNDOT
-    return bu.Cols.GRNDOT
-  } else {
+    //if (self.isoside(g, iso[7], t, v) < 0) return bu.Cols.GRNDOT
+    else                                   return bu.Cols.GRNDOT
+  } else if (g.ybhp) { // how/why would iso be null?
+    return self.aok(rd,g,t,v) ? bu.Cols.GRNDOT : bu.Cols.REDDOT
+  } else { //#DIELANES
     const l = self.lanage(rd, g, t, v)
-    if (g.yaw===0 && abs(l) > 1.0)  return bu.Cols.GRNDOT
+    if (g.yaw===0 && abs(l) > 1.0)       return bu.Cols.GRNDOT
     if (g.yaw===0 && (l===0 || l===1.0)) return bu.Cols.BLUDOT
     if (g.yaw===0 && l===-1.0)           return bu.Cols.ORNDOT
     if (l*g.yaw >=   2.0)                return bu.Cols.GRNDOT
     if (l*g.yaw ===  1.0)                return bu.Cols.BLUDOT
     if (l*g.yaw === -1.0)                return bu.Cols.ORNDOT
     if (l*g.yaw <=  -2.0)                return bu.Cols.REDDOT
+    else                                 return bu.Cols.BLCK
   }
-  return bu.Cols.BLCK
 }
 
-self.isLoser = (rd, g, d, t, v, iso=null) =>
-//  g.offred ?  #SCHDEL
-  self.dotcolor(rd,g,t-SID, g.dtf(t-SID), iso) === bu.Cols.REDDOT 
-//:
+// This was previously called isLoser
+self.redyest = (rd, g, t, iso=null) =>
+  self.dotcolor(rd, g, t-SID, g.dtf(t-SID), iso) === bu.Cols.REDDOT 
+
+//self.isLoserold = (rd, g, t) =>                                        #SCHDEL
+//  self.dotcolor(rd, g, t-SID, g.dtf(t-SID)) === bu.Cols.REDDOT
+
+// We used to do the following version for offred==false                 #SCHDEL
 //    self.dotcolor(rd,g,t-SID, g.dtf(t-SID), iso) === bu.Cols.REDDOT
 //    && self.dotcolor(rd,g,t,v, iso) === bu.Cols.REDDOT 
 
-/** For noisy graphs, compute the lane width (or half aura width)
-    based on data.  Specifically, get the list of daily deltas
-    between all the points, but adjust each delta by the road rate
-    (eg, if the delta is equal to the delta of the road itself,
-    that's an adjusted delta of 0).  Return the 90% quantile of those
-    adjusted deltas. */
+/**For noisy graphs, compute lane width (or half aura width) based on data.
+   Specifically, get the list of daily deltas between all the points, but
+   adjust each delta by the road rate (eg, if the delta is equal to the delta
+   of the road itself, that's an adjusted delta of 0). Return the 90% quantile
+   of those adjusted deltas. Post-YBHP this'll just be for computing stdflux. */
 self.noisyWidth = (rd, d) => {
   if (d.length <= 1) return 0
   var p = bu.partition(d,2,1), el, ad = []
@@ -838,19 +847,20 @@ self.noisyWidth = (rd, d) => {
   return bu.chop(ad.length===1 ? ad[0] : bu.quantile(ad, .90))
 }
 
-/** Increase the width if necessary for the guarantee that you
-    can't lose tomorrow if you're in the right lane today.
-    Specifically, when you first cross from right lane to wrong lane
-    (if it happened from one day to the next), the road widens if
-    necessary to accommodate that jump and then the road width stays
-    fixed until you get back in the right lane.  So for this function
-    that means if the current point is in the wrong lane, look
-    backwards to find the most recent one-day jump from right to
-    wrong. That wrong point's deviation from the centerline is what
-    to max the default road width with. */
+// This should be safe to kill but probably have some cleanup in the test suite.
+/**Increase the width if necessary for the guarantee that you can't lose
+   tomorrow if you're in the right lane today. Specifically, when you first
+   cross from right lane to wrong lane (if it happened from one day to the
+   next), the road widens if necessary to accommodate that jump and then the
+   road width stays fixed until you get back in the right lane. So for this
+   function that means if the current point is in the wrong lane, look
+   backwards to find the most recent one-day jump from right to wrong. That
+   wrong point's deviation from the centerline is what to max the default road
+   width with. */
 self.autowiden = (rd, g, d, nw) => {
-  var n = d, length, i=-1
+  let n = d  // pretty sure we meant n = d.length here killing this anyway, so.
   if (n <= 1) return 0
+  let i = -1
   if (self.gdelt(rd, g, d[d.length-1][0], d[d.length-1][1]) < 0) {
     while (i >= -n && self.gdelt(rd, g, d[i][0], d[i][1]) < 0) i -= 1
     i += 1
