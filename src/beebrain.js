@@ -19,7 +19,7 @@ Ported to Javascript in 2018-2019 by Uluc Saranli.
  */
 
 
-/* Notes for maxflux line:
+/* Notes for maxflux line [this is done now; #SCHDEL on these notes]:
 User should try to hew to the YBR-minus-maxflux guiding line for weightloss.
 Drawn as a thicker yellow guiding line, in addition to the green isoline.
 And the maxflux line is not an isoline, it's just the razor road shifted down by
@@ -198,7 +198,7 @@ const pig = [ // In Params to ignore; complain about anything not here or in pin
 'backroad', 
 'edgy',
 'offred',
-'offparis',
+//'offparis',
 ]
 
 /** Enum object to identify different types of datapoints
@@ -606,7 +606,7 @@ function procData() {
       // What we actually want for derailval is not this "worstval" but the 
       // agg'd value up to and including the recommit datapoint (see the
       // recommitted() function) and nothing after that:
-      derailval[ct] = goal.yaw < 0 ? bu.arrMax(vw) : bu.arrMin(vw) // TODO
+      derailval[ct] = goal.yaw < 0 ? bu.arrMax(vw) : bu.arrMin(vw)
       
       if (i < data.length) {
         ct = data[i][0]
@@ -644,11 +644,11 @@ function procData() {
   
   // Adjust derailment markers to indicate worst value for that day
   for (i = 0; i < derails.length; i++) {
-    const CHANGEDATE = 1562299200 // 2019-07-05 // TODO: DRY
+    const CHANGEDATE = 1562299200 // 2019-07-05 // yuck, DRY this up
     if (derails[i][0] < CHANGEDATE) ct = derails[i][0]+SID
     else                            ct = derails[i][0]
     if (ct in derailval)
-      //derails[i][1] = derailval[ct] // see TODO above...
+      //derails[i][1] = derailval[ct] // see "What we actually want" above...
       derails[i][1] = aggval[ct]  // doing this until derailval's done right
   }
   
@@ -777,7 +777,7 @@ original version of flatline() ************************************************/
   const vlast = data[numpts-1][1]
   
   if (tlast > goal.tfin) return
-
+  
   let x = tlast // x = the time we're flatlining to
   if (goal.yaw * goal.dir < 0) 
     x = min(now, goal.tfin) // WEEN/RASH: flatline all the way
@@ -785,7 +785,7 @@ original version of flatline() ************************************************/
     let prevcolor = null
     let newcolor
     while (x <= min(now, goal.tfin)) { // walk forward from tlast
-      // goal.isolines not defined yet so makes no sense calling dotcolor()
+      // goal.isolines not defined yet so makes no sense calling dotcolor() TODO
       newcolor = br.dotcolor(roads, goal, x, vlast, goal.isolines)
       // done iff 2 reds in a row
       if (prevcolor===newcolor && prevcolor===bu.Cols.REDDOT) break
@@ -1058,9 +1058,10 @@ function procParams() {
   goal.color = (goal.safebuf < 1 ? "red"    :
                 goal.safebuf < 2 ? "orange" :
                 goal.safebuf < 3 ? "blue"   : "green")
-  goal.loser = br.isLoser(roads, goal, data, goal.tcur, goal.vcur)
-  goal.sadbrink = (goal.tcur-SID>goal.tini)
-    &&(br.dotcolor(roads,goal,goal.tcur-SID,goal.dtf(goal.tcur-SID, goal.isolines))==bu.Cols.REDDOT)
+  goal.loser = br.redyest(roads, goal, goal.tcur) // TODO: need iso here
+  goal.sadbrink = (goal.tcur-SID > goal.tini)
+    && (br.dotcolor(roads, goal, goal.tcur-SID,
+                    goal.dtf(goal.tcur-SID, goal.isolines))==bu.Cols.REDDOT)
   if (goal.safebuf <= 0) goal.tluz = goal.tcur
   if (goal.tfin < goal.tluz)  goal.tluz = bu.BDUSK
       
@@ -1300,7 +1301,7 @@ this.reloadRoad = function() {
 
     goal.isolines = []
     for (let i = 0; i < 7; i++)
-      goal.isolines[i] = br.isoline( roads, goal.dtdarray, goal, i)
+      goal.isolines[i] = br.isoline(roads, goal.dtdarray, goal, i)
   } else {
     goal.dtdarray = null
     goal.isolines = null
@@ -1350,7 +1351,7 @@ function genStats(p, d, tm=null) {
     
     // Extract road info into our internal format consisting of road segments:
     // [ [startt, startv], [endt, endv], slope, autofield ]
-    if (goal.error == "") goal.error = procRoad( p.road )
+    if (goal.error == "") goal.error = procRoad(p.road)
     if (goal.error == "") goal.error = self.reloadRoad()
 
     computeRosy()
@@ -1368,11 +1369,10 @@ function genStats(p, d, tm=null) {
  * and other details.*/
 this.getStats = function() { return bu.extend({}, stats) }
 
-/** Sets a new road object for beebrain. Should be followed by a
- * call to {@link beebrain#reloadRoad reloadRoad()} to perform a
- * recomputation of goal stats. Used by the road editor
- * implemented by the {@link bgraph} module.*/
-this.setRoadObj = function( newroad ) {
+/**Set a new road object for Beebrain. Should be followed by a call to 
+   {@link beebrain#reloadRoad reloadRoad()} to perform a recomputation of goal
+   stats. Used by the road editor implemented by the {@link bgraph} module.*/
+this.setRoadObj = function(newroad) {
   if (newroad.length == 0) {
     console.log("id="+curid+", setRoadObj(), null road!")
     return

@@ -64,6 +64,7 @@ self.BBURL = "http://brain.beeminder.com/"
 /** Beeminder colors for datapoints 
     @enum {string} */
 // Handy: https://material.io/design/color/#tools-for-picking-colors
+//        http://tutorials.jenkov.com/svg/fill-patterns.html
 self.Cols = {
   DYEL:   "#ffff44", // Dark yellow  (mma 1,1,.55; py 1,1,.4)
   LYEL:   "#ffff88", // Light yellow (mma 1,1,.68; py 1,1,.6)
@@ -84,6 +85,7 @@ self.Cols = {
   ORNDOT: "#ffa500", // Orange dots for 1 safe day
   BLUDOT: "#3f3fff", // Blue dots for 2 safe days
   GRNDOT: "#00aa00", // Green dots for 3+ safe days
+  GRADOT: "#7E9671", // Gray(son) dots for 7+ safe days (grayer = #87907D)
   RAZR0:  "#ff0000", // Bright red line for razor road; faded = #FF5436
   RAZR1:  "#ffa500", // Orange line;                    faded = #FEB642
   RAZR2:  "#3f3fff", // Blue line;                      faded = #8C7AFF
@@ -132,12 +134,11 @@ self.arrMax = (arr) =>( max.apply(null, arr)) // could use spread operator
 self.isArray = Array.isArray
 
 // TODO: Does not properly copy, especially for array properties. FIX
-/** Extends a destination object with properties from a source
- * object, optionally overwriting existing elements
-
-    @param {object} fr Source object 
-    @param {object} to Destination object
-    @param {boolean} owr Whether to overwrite existing properties of destination
+/**Extends a destination object with properties from a source object,
+   optionally overwriting existing elements.
+   @param {object} fr Source object 
+   @param {object} to Destination object
+   @param {boolean} owr Whether to overwrite existing properties of destination
 */
 self.extend = (to, fr, owr) => {
   var prop, hasProp
@@ -386,7 +387,7 @@ self.splur = (n, noun, nounp='') => {
 /** Rate as a string.
  @param {Number} r Rate */
 //self.shr = (r) => {
-//  //if (r === null) r = 0 // TODO
+//  //if (r === null) r = 0 // maybe?
 //  return self.shn(r, 4,2)
 //}
 

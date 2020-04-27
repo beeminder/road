@@ -1614,7 +1614,7 @@ function setWatermark() {
   goal.safebuf = br.dtd(road, goal, goal.tcur, goal.vcur)
   goal.tluz = goal.tcur+goal.safebuf*SID
   if (goal.tfin < goal.tluz) goal.tluz = bu.BDUSK
-  goal.loser = br.isLoser(road,goal,data,goal.tcur,goal.vcur)
+  goal.loser = br.redyest(road, goal, goal.tcur) // TODO: needs iso here
 
   if  (goal.asof >= goal.tfin && !goal.loser) {
     goal.waterbuf = ":)"
@@ -5135,7 +5135,7 @@ this.getRoad = () => {
     return null
   }
   r.valid = isRoadValid(road)
-  r.loser = br.isLoser(road,goal,data,goal.tcur,goal.vcur)
+  r.loser = br.redyest(road, goal, goal.tcur) // TODO: needs iso here
   r.asof = goal.asof
   r.horizon = goal.horizon
   r.siru = goal.siru
@@ -5281,12 +5281,12 @@ this.setRoadObj = ( newroad, resetinitial = true ) => {
   settingRoad = false
 }
 
-/** Checks whether the goal is currently a loser
+/** Checks whether the goal is currently in a derailed state
     @returns {Boolean} 
 */
 this.isLoser = () => {
   if (goal && road.length != 0)
-    return br.isLoser(road,goal,data,goal.tcur,goal.vcur)
+    return br.redyest(road, goal, goal.tcur) // TODO: needs iso here
   else return false
 }
 /** Returns current goal state
