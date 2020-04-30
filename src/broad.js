@@ -218,7 +218,10 @@ self.fixRoadArray = (rd, autop=self.RP.VALUE, usematrix=false,
 self.gdelt = (rd, g, t, v) => bu.chop(g.yaw*(v - self.rdf(rd, t)))
 
 /** Whether the given point is on or on the good side of the razor road */
-self.aok = (rd, g, t, v) => { return g.yaw * (v - self.rdf(rd, t)) >= 0 }
+self.aok = (rd, g, t, v) => {
+  //console.log(`DEBUG: rdfy=${self.rdf(rd, t)} t=${t}`)
+  //console.log(`DEBUG: ${JSON.stringify(rd)}`)
+  return g.yaw * (v - self.rdf(rd, t)) >= 0 }
 
 // #DIELANES (code only used in non-ybhp case and can die post-ybhp)
 // The bottom lane is -1, top lane is 1, below the road is -2, above is +2, etc.
@@ -802,8 +805,8 @@ self.dotcolor = (rd, g, t, v, iso=null) => {
     if (self.isoside(g, iso[3], t, v) < 0) return bu.Cols.GRNDOT
     //if (self.isoside(g, iso[7], t, v) < 0) return bu.Cols.GRNDOT
     else                                   return bu.Cols.GRNDOT
-  } else if (g.ybhp) { // how/why would iso be null?
-    return self.aok(rd,g,t,v) ? bu.Cols.GRNDOT : bu.Cols.REDDOT
+  } else if (g.ybhp) { // if called without iso
+    return self.aok(rd, g, t, v) ? bu.Cols.BLCK : bu.Cols.REDDOT
   } else { //#DIELANES
     const l = self.lanage(rd, g, t, v)
     if (g.yaw===0 && abs(l) > 1.0)       return bu.Cols.GRNDOT
@@ -818,8 +821,14 @@ self.dotcolor = (rd, g, t, v, iso=null) => {
 }
 
 // This was previously called isLoser
-self.redyest = (rd, g, t, iso=null) =>
-  self.dotcolor(rd, g, t-SID, g.dtf(t-SID), iso) === bu.Cols.REDDOT 
+self.redyest = (rd, g, t, iso=null) => {
+  //const dcy = self.dotcolor(rd, g, t-SID, g.dtf(t-SID), iso)
+  //const dct = self.dotcolor(rd, g, t, g.dtf(t), iso)
+  const x = self.dotcolor(rd, g, t-SID, g.dtf(t-SID), iso) === bu.Cols.REDDOT 
+  //console.log(
+  //  `DEBUG iso=${JSON.stringify(iso)} dotcolory=${dcy} dotcolort=${dct} redyest=${x}`)
+  return x
+}
 
 //self.isLoserold = (rd, g, t) =>                                        #SCHDEL
 //  self.dotcolor(rd, g, t-SID, g.dtf(t-SID)) === bu.Cols.REDDOT
