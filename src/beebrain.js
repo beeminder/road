@@ -977,15 +977,17 @@ function procParams() {
       +" goal date is in the past?)"
   }
   
+  if (goal.ybhp && goal.abslnw === null) goal.abslnw = 0
+
   // rdf function is implemented in broad.js
   // rtf function is implemented in broad.js
-  
+
   goal.stdflux = br.noisyWidth(roads, data.filter(d => d[0]>=goal.tini))
   goal.nw = goal.noisy && goal.abslnw == null ? 
-      br.autowiden(roads, goal, data, goal.stdflux) : 0
+            br.autowiden(roads, goal, data, goal.stdflux) : 0
   
   goal.lnf = goal.abslnw != null ? 
-    (x => goal.abslnw) : br.genLaneFunc(roads, goal)
+             (x => goal.abslnw) : br.genLaneFunc(roads, goal)
   
   flatline()
 
@@ -1007,7 +1009,7 @@ function procParams() {
   goal.vcur = data[dl-1][1]
   goal.vprev= data[max(dl-2,0)][1] // default to vcur if < 2 datapts
 
-  goal.lnw = max(goal.nw, goal.lnf(goal.tcur))
+  goal.lnw = goal.ybhp ? 0 : max(goal.nw, goal.lnf(goal.tcur))
   goal.safebuf = br.dtd(roads, goal, goal.tcur, goal.vcur)
   if ((!goal.ybhp || goal.abslnw != 0) && 'razrroad' in pout) {
     // Compute safebuffer with ybhp=true and abslnw=0
@@ -1170,7 +1172,7 @@ function sumSet(rd, goal) {
   if (goal.loser) {
     goal.headsum = "Officially off the yellow brick road"
     lanesum = "officially off the road"
-  } else if (w==0) {
+  } else if (w==0) { // TODO: lnw==0 doesn't mean flat road WTF
     goal.headsum = "Coasting on a currently flat yellow brick road"
     lanesum = "currently on a flat road"
   } else if (MOAR && l==1) {
@@ -1251,6 +1253,7 @@ function sumSet(rd, goal) {
   else if (y<0)  goal.statsum += "hard cap: "
   else           goal.statsum += "bare min: "
   goal.statsum += goal.limsum+"\\n"
+  //goal.statsum = encodeURI(goal.statsum) // TODO
 }
 
 // Fetch value with key n from hash p, defaulting to d -- NOT USED 
@@ -1270,9 +1273,8 @@ this.reloadRoad = function() {
     
   sumSet(roads, goal)
 
-  // TODO: This seems to compute these entities based on old data,
-  // particularly when this function is called from bgraph as a
-  // result of an edited road.
+  // TODO: This seems to compute these entities based on old data, particularly
+  // when this function is called from bgraph as a result of an edited road.
   goal.fullroad = goal.road.slice()
   goal.fullroad.unshift( [goal.tini, goal.vini, 0, 0] )
   if (goal.error == "") {
@@ -1352,7 +1354,7 @@ function genStats(p, d, tm=null) {
     // Extract road info into our internal format consisting of road segments:
     // [ [startt, startv], [endt, endv], slope, autofield ]
     if (goal.error == "") goal.error = procRoad(p.road)
-    if (goal.error == "") goal.error = self.reloadRoad()
+    if (goal.error == "") goal.error = self.reloadRoad() // does procParams here
 
     computeRosy()
       
