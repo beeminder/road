@@ -196,7 +196,9 @@ class Renderer {
 
           return { error:err, msgbuf: msgbuf }
         }
+        //console.log(`DEBUG:\n${jsonstr}\n`) // TODO
         json = JSON.parse(jsonstr)
+        //console.log("DEBUG: parse error?") // TODO
         json.graphurl=this.BBURL()+imgf
         json.svgurl=this.BBURL()+svgf
         json.thumburl=this.BBURL()+thmf
@@ -244,7 +246,7 @@ class Renderer {
                                        clip:{x:rect.left, y:rect.top, 
                                              width:rect.width, height:rect.height}})
 
-          // Generate palette optimized thumbnail through cropping with ImageMagick
+          // Generate palette optimized thumbnail thru cropping with ImageMagick
           //var thmratio = 140/zi.height
           //var thmw = 212-4 // = Math.round(zi.width*thmratio)-4
           //var thmh = 140-4 // = Math.round(zi.height*thmratio)-4

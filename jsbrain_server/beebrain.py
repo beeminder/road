@@ -25,5 +25,5 @@ slug  = m.group(2)  # eg, "alice+foo"
 #print(   f'curl "{BBURL}?slug={quote_plus(slug)}&inpath=`pwd`/{path}"')
 os.system(f'curl "{BBURL}?slug={quote_plus(slug)}&inpath=`pwd`/{path}"')
 print() # curl's output doesn't end in a newline so, you're welcome 
-os.system(f'open {path}{slug}.png') # this might only work on macs?
+os.system(f'open -g {path}{slug}.png') # this might only work on macs?
 
