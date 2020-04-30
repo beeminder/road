@@ -21,6 +21,15 @@
 # Probably I should've just done that directly rather than treating the bbdir
 # as a watchdir. But I don't edit the bb files often so it's not a big deal.
 # It's nice that when I do, automon picks up on it.
+# PS: OMG it's so nice to be able to experiment with changes in bb files and 
+# have automon regenerate them. It's so nice that I now think it will be worth
+# it to smarten this up slightly so that if a bb file changes then automon 
+# regenerates the output just for that bb file. So definitely treat the bbdir
+# differently from the other watchdirs.
+# TODO: i think there's a bug where, if you edit a bb file and it shows the
+# json diff and then you hit g to generate graphs as well and then hit c to 
+# regenerate the output, automon won't notice that it should regenerate the 
+# graph until you edit the bb file again.
 
 
 # Might need to do pip3 install watchdog
@@ -611,7 +620,7 @@ def worker(pending, completed):
       reqstr = "R"+str(job.reqid)
       if (job.reqtype == "quit"): worker_kill = True; continue
       elif (job.reqtype == "jsbrain"):
-        setstatus(reqstr+": Running jsbrain for "+job.slug+"...")
+        setstatus(reqstr+": Beebraining "+job.slug+"...")
         resp = JobResponse(job)
         retval = jsbrain_make(job)
         resp.dt = retval['dt']
@@ -652,13 +661,12 @@ def worker(pending, completed):
         setstatus(reqstr+": Comparison for "+job.slug+" finished!")
         updateAverage(resp.dt)
       elif (job.reqtype == "jsref"):
-        setstatus(reqstr+": Generating jsbrain reference for "+job.slug+"...")
+        setstatus(reqstr+": Generating reference for "+job.slug+"...")
         resp = JobResponse(job)
         retval = jsbrain_make(job)
         resp.dt = retval['dt']
         resp.errmsg = retval['errmsg']
-        setstatus(reqstr+": Generating jsbrain reference for "+job.slug+
-                  "...done!")
+        setstatus(reqstr+": Generating reference for "+job.slug+"... done!")
         updateAverage(resp.dt)
 
       # Inform the main thread about the result
