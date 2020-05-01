@@ -149,7 +149,7 @@ sadbrink : false,   // Whether we were red yesterday & so will instaderail today
 safebump : null,    // Value needed to get one additional safe day
 dueby    : [],      // Table of daystamps, deltas, and abs amts needed by day
 fullroad : [],      // Road matrix w/ nulls filled in, [tfin,vfin,rfin] appended
-//razrroad : [],      // Adjusted road matrix for the YBHP transition
+razrroad : [],      // Adjusted road matrix for the YBHP transition
 pinkzone : [],      // Subset of the road matrix defining the verboten zone
 tluz     : null,    // Timestamp of derailment ("lose") if no more data is added
 tcur     : null,    // (tcur,vcur) gives the most recent datapoint, including
