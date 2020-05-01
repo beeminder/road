@@ -1172,7 +1172,7 @@ function sumSet(rd, goal) {
   if (goal.loser) {
     goal.headsum = "Officially off the yellow brick road"
     lanesum = "officially off the road"
-  } else if (w==0) { // TODO: lnw==0 doesn't mean flat road WTF
+  } else if (w==0 && false) { // TODO: lnw==0 doesn't mean flat road WTF
     goal.headsum = "Coasting on a currently flat yellow brick road"
     lanesum = "currently on a flat road"
   } else if (MOAR && l==1) {
