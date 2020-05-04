@@ -956,12 +956,45 @@ function vetParams() {
 
   return ""
 }
+
+// Generate razrroad for YBHP migration
+// (razrroad is the razor road that coincides with the critical edge of the 
+// old-style laney road)
+function genRazr() {
+  const oldroad = goal.road.map(e => [e[0], e[1], e[2]])
+  // Compute safebuffer with ybhp=true and abslnw=0
+  // Requires recomputation of a bunch of previously computed values.
+  let newgoal = {}, newsafe, safediff
+  //bu.extend(newgoal, goal, true)
+  //newgoal = JSON.parse(JSON.stringify(goal)) // very safe deep copy?
+  newgoal = {...goal} // this may just be a shallow copy?
   
+  newgoal.ybhp = true
+  newgoal.abslnw = 0
+  newgoal.stdflux = br.noisyWidth(roads, data.filter(d => d[0]>=goal.tini))
+  newgoal.nw = newgoal.noisy && newgoal.abslnw == null ?
+    br.autowiden(roads, newgoal, data, newgoal.stdflux) : 0
+  
+  newgoal.lnf = newgoal.abslnw != null ? 
+    (x => newgoal.abslnw) : br.genLaneFunc(roads, newgoal)
+  newgoal.lnw = max(newgoal.nw, newgoal.lnf(newgoal.tcur))
+  newsafe = br.dtd(roads, newgoal, newgoal.tcur, newgoal.vcur)
+  safediff = goal.safebuf - newsafe
+  
+  let newroad = 
+             oldroad.map(e => [(e[0] ? e[0]+0*SID*safediff : null), e[1], e[2]])
+  //if (newroad[0][0] == null) // Uluc: I think this is not needed/incorrect
+  if (safediff != 0)
+    newroad.unshift([newgoal.tini+SID*safediff, newgoal.vini, null])
+  // Remove the last element [tfin,vfin], which was added by us
+  newroad.pop()
+  return []
+}
+
 /** Process goal parameters */
 function procParams() {
   goal.dtf = br.stepify(data) // map timestamps to most recent datapoint value
   
-  const oldroad = goal.road.map(e=>[e[0], e[1], e[2]])
   goal.road = br.fillroad(goal.road, goal)
   const rl = goal.road.length
   goal.tfin = goal.road[rl-1][0]
@@ -978,6 +1011,7 @@ function procParams() {
   }
   
   if (goal.ybhp && goal.abslnw === null) goal.abslnw = 0
+  //if (goal.ybhp) goal.abslnw = 0  // fuck abslnw? no, better to fail loudly
 
   // rdf function is implemented in broad.js
   // rtf function is implemented in broad.js
@@ -1012,30 +1046,7 @@ function procParams() {
   goal.lnw = goal.ybhp ? 0 : max(goal.nw, goal.lnf(goal.tcur))
   goal.safebuf = br.dtd(roads, goal, goal.tcur, goal.vcur)
   if ((!goal.ybhp || goal.abslnw != 0) && 'razrroad' in pout) {
-    // Compute safebuffer with ybhp=true and abslnw=0
-    // Requires recomputation of a bunch of previously computed values.
-    let newgoal = {}, newsafe, safediff
-    bu.extend(newgoal, goal, true)
-    newgoal.ybhp = true
-    newgoal.abslnw = 0
-    newgoal.stdflux = br.noisyWidth(roads, data.filter(d => d[0]>=goal.tini))
-    newgoal.nw = newgoal.noisy && newgoal.abslnw == null ?
-      br.autowiden(roads, newgoal, data, newgoal.stdflux) : 0
-  
-    newgoal.lnf = newgoal.abslnw != null ? 
-      (x => newgoal.abslnw) : br.genLaneFunc(roads, newgoal)
-    newgoal.lnw = max(newgoal.nw, newgoal.lnf(newgoal.tcur))
-    newsafe = br.dtd(roads, newgoal, newgoal.tcur, newgoal.vcur)
-    safediff = goal.safebuf - newsafe
-    
-    let newroad = 
-      oldroad.map(e => [(e[0] ? e[0]+SID*safediff : null), e[1], e[2]])
-    //if (newroad[0][0] == null) // Uluc: I think this is not needed/incorrect
-    if (safediff != 0)
-      newroad.unshift([newgoal.tini+SID*safediff, newgoal.vini, null])
-    // Remove the last element [tfin,vfin], which was added by us
-    newroad.pop()
-    goal.razrroad = newroad
+    goal.razrroad = genRazr()
   }
   goal.tluz = goal.tcur+goal.safebuf*SID
   goal.delta = bu.chop(goal.vcur - br.rdf(roads, goal.tcur))
