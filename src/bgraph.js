@@ -3469,7 +3469,6 @@ function updateMaxfluxLine(ir) {
   let fy = nYSc(ir[0].sta[1]+delta)
   let ex = nXSc(ir[0].end[0]*SMS) // ex,ey: end of current segment
   let ey = nYSc(ir[0].end[1]+delta)
-  if (ex !== fx) fy = (fy + (-fx)*(ey-fy)/(ex-fx))
   let rd = "M"+r1(fx)+" "+r1(fy)
   for (const segment of ir) {
     ex = nXSc(segment.end[0]*SMS)
