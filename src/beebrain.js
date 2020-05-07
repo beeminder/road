@@ -360,7 +360,7 @@ function stampIn(p, d) {
     @param {Object} p Computed goal statistics */
 function stampOut(p) {
   p['fullroad'] = p['fullroad'].map(dayifyrow)
-  if ('razrroad' in pout) p['razrroad'] = p['razrroad'].map(dayifyrow)
+  // TODO RAZR if ('razrroad' in pout) p['razrroad'] = p['razrroad'].map(dayifyrow)
   p['pinkzone'] = p['pinkzone'].map(dayifyrow)
   p['tluz'] = bu.dayify(p['tluz'])
   p['tcur'] = bu.dayify(p['tcur'])
@@ -961,6 +961,17 @@ function vetParams() {
 // (razrroad is the razor road that coincides with the critical edge of the 
 // old-style laney road)
 function genRazr() {
+  // the plan: 
+  // loop through the road adjusting each segment value by lnw
+  // console.log("debug: "+goal.lnf(roads[0].sta[0]))
+  return roads.map(seg => ({
+    sta:   [seg.sta[0], seg.sta[1]],// - seg.sta[0]*goal.yaw], 
+    end:   [seg.end[0], seg.end[1]],// - seg.sta[0]*goal.yaw],
+    slope: seg.slope,
+    auto:  seg.auto,
+  }))
+}
+/*
   const oldroad = goal.road.map(e => [e[0], e[1], e[2]])
   // Compute safebuffer with ybhp=true and abslnw=0
   // Requires recomputation of a bunch of previously computed values.
@@ -988,8 +999,9 @@ function genRazr() {
     newroad.unshift([newgoal.tini+SID*safediff, newgoal.vini, null])
   // Remove the last element [tfin,vfin], which was added by us
   newroad.pop()
-  return []
+  return newroad 
 }
+*/
 
 /** Process goal parameters */
 function procParams() {

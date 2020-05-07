@@ -3502,7 +3502,6 @@ function updateMaxfluxLine(ir) {
 function updateRazrLine(rz) {
   if (goal.razrroad.length === 0) return
 
-
   let razrelt = gOldRazr.selectAll(".oldrazr")
   if (opts.roadEditor || rz == null) { razrelt.remove(); return }
   
@@ -3513,7 +3512,6 @@ function updateRazrLine(rz) {
   let fy = nYSc(rz[0].sta[1])
   let ex = nXSc(rz[0].end[0]*SMS) // ex,ey: end of current segment
   let ey = nYSc(rz[0].end[1])
-  //if (ex !== fx) fy -= fx*(ey-fy)/(ex-fx) // TODO: what was this for?
   let rd = "M"+r1(fx)+" "+r1(fy)
   for (const segment of rz) {
     ex = nXSc(segment.end[0]*SMS)
@@ -3564,16 +3562,19 @@ function updateOldRoad() {
     ir2 = seg < 0 ? null : [iroad2[seg]]
   }
 
+  updateLanes(ir2)
+  updateGuidelines(ir2)
+  updateMaxfluxLine(ir2)
+
+  //let razr = razrroad.filter(rdfilt)
+  //if (razr.length == 0) razr = [razrroad[br.findSeg(razrroad, xrange[0])]]
   //const razrroad = goal.razrroad.slice(1,-1)
-  //let razr2 = razrroad.filter(rdfilt)
   //if (razr2.length == 0 ) {
   //  const seg = br.findSeg(razrroad, xrange[0])
   //  razr2 = seg < 0 ? null : [razrroad[seg]]
   //}
-  updateLanes(ir2)
-  updateGuidelines(ir2)
-  updateMaxfluxLine(ir2)
-  //updateRazrLine(razr2)
+  updateRazrLine(goal.razrroad)
+  //iroad   = br.copyRoad(road)
 }
 
 function updateContextOldRoad() {
