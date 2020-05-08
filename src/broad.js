@@ -124,8 +124,11 @@ self.copyRoad = (rd) => {
   var nr = []
   for (let i = 0; i < rd.length; i++) {
     var s = {
-      sta: rd[i].sta.slice(), end: rd[i].end.slice(),
-      slope: rd[i].slope, auto: rd[i].auto }
+      sta:   rd[i].sta.slice(), 
+      end:   rd[i].end.slice(),
+      slope: rd[i].slope, 
+      auto:  rd[i].auto,
+    }
     nr.push(s)
   }
   return nr
@@ -705,10 +708,17 @@ self.fillroadall = (rd, g) => {
 /** Computes the slope of the supplied road array at the given timestamp */
 self.rtf = (rd, t) => (rd[self.findSeg( rd, t )].slope)
 
-self.genLaneFunc = function(rd, goal ) {
+// Return pure function mapping timestamp to the width of the YBR at that time.
+// This does not incorporate noisyWidth -- this is the minimum width given the 
+// rate of the road. If noisy this has to be maxed with noisyWidth.
+// Mostly the lane width at a given time is the daily absolute rate of the road
+// at that time, but there's an exception for flat spots (until YBHP!):
+// * The lane width for a flat spot is the rate of the previous or next non-flat
+//   segment, whichever's bigger. 
+self.genLaneFunc = function(rd, goal) {
   var r0 = bu.deldups(rd, e=>e.end[0])
   var t = r0.map(elt => elt.end[0])
-  var r = r0.map(elt => abs(elt.slope)*SID )
+  var r = r0.map(elt => abs(elt.slope)*SID)
   // pretend flat spots have the previous or next non-flat rate
   var rb = r.slice(), i
   for (i = 1; i < rb.length; i++) 
@@ -722,9 +732,15 @@ self.genLaneFunc = function(rd, goal ) {
   t.pop()
   r.splice(0,1)
   var rtf0 = self.stepify(bu.zip([t,r]))
-  return (x => max(abs(self.vertseg(rd,x) ? 0 : 
-                                 self.rdf(rd, x) - self.rdf(rd, x-SID)), 
-                        rtf0(x)))
+  return x =>
+    //const isvert = self.vertseg(rd, x)
+    //const rtoday = self.rdf(rd, x)
+    //const ryest  = self.rdf(rd, x-SID)
+    //const rate   = rtf0(x)
+    //return max(abs(isvert ? 0 : rtoday - ryest), rate) 
+    //return
+    max(abs(self.vertseg(rd,x) ? 0 : self.rdf(rd, x) - self.rdf(rd, x-SID)), 
+        rtf0(x))
   //return x=>self.lnfraw(rd, goal, x)
 }
 

@@ -360,7 +360,8 @@ function stampIn(p, d) {
     @param {Object} p Computed goal statistics */
 function stampOut(p) {
   p['fullroad'] = p['fullroad'].map(dayifyrow)
-  // TODO RAZR if ('razrroad' in pout) p['razrroad'] = p['razrroad'].map(dayifyrow)
+  // TODO-RAZR we need to convert this back to a road matrix 
+  //if ('razrroad' in pout) p['razrroad'] = p['razrroad'].map(dayifyrow)
   p['pinkzone'] = p['pinkzone'].map(dayifyrow)
   p['tluz'] = bu.dayify(p['tluz'])
   p['tcur'] = bu.dayify(p['tcur'])
@@ -957,21 +958,32 @@ function vetParams() {
   return ""
 }
 
-// Generate razrroad for YBHP migration
-// (razrroad is the razor road that coincides with the critical edge of the 
-// old-style laney road)
+// Generate razrroad for YBHP migration by shifting each segment by the lane
+// width in the negative yaw direction, ie, towards the bad side of the road.
+// And use lnf(), getting the lane width for each segment at that point in time.
+// This yields a razrroad that coincides with the critical edge of the old-style
+// laney road.
 function genRazr() {
-  // the plan: 
-  // loop through the road adjusting each segment value by lnw
-  // console.log("debug: "+goal.lnf(roads[0].sta[0]))
-  return roads.map(seg => ({
-    sta:   [seg.sta[0], seg.sta[1]],// - seg.sta[0]*goal.yaw], 
-    end:   [seg.end[0], seg.end[1]],// - seg.sta[0]*goal.yaw],
+  return roads.slice(1).map(seg => ({
+    sta:   [seg.sta[0], seg.sta[1] - goal.lnf(seg.sta[0])*goal.yaw], 
+    end:   [seg.end[0], seg.end[1] - goal.lnf(seg.sta[0])*goal.yaw],
     slope: seg.slope,
     auto:  seg.auto,
   }))
 }
-/*
+
+/* SCHDEL: debugging scratch pad
+lnf
+x => max(abs(self.vertseg(rd,x) ? 0 : self.rdf(rd, x) - self.rdf(rd, x-SID)), 
+         rtf0(x))
+
+{"sta":[-1591660800,0],"slope":0,"auto":2,"end":[1564099200,0]},
+{"sta":[1564099200,0],"end":[1564185600,0],"slope":0,"auto":1},
+{"sta":[1564185600,0],"end":[1895702400,1644.4285714285713],"slope":0.00000496031746031746,"auto":1},
+{"sta":[1895702400,1644.4285714285713],"end":[5051462400,1644.4285714285713],"slope":0,"auto":1}
+*/
+
+/* SCHDEL: uluc's original code for calculating razrroad
   const oldroad = goal.road.map(e => [e[0], e[1], e[2]])
   // Compute safebuffer with ybhp=true and abslnw=0
   // Requires recomputation of a bunch of previously computed values.
