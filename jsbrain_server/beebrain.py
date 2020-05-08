@@ -10,7 +10,7 @@ from urllib.parse import quote_plus
 
 BBURL = "http://localhost:8777/"
 
-if len(argv) != 2: print(f"USAGE: {argv[0]} BBFILE")
+if len(argv) != 2: print(f"USAGE: {argv[0]} BBFILE"); exit(1)
 # (might be handy to do this for all bbfiles provided if more than one)
 bbf = argv[1]
 if not os.path.isfile(bbf): print('Not a beebrain file:',bbf); exit(1)
