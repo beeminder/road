@@ -43,7 +43,7 @@ from enum import Enum
 ################################################################################
 ######################### CONSTANTS AND CONFIGURATION ##########################
 
-DEBUG = 'init'
+DEBUG = 'init\n'
 
 DISPCMD = next(p for p in ['/usr/bin/open', '/usr/local/bin/display',
                            '/usr/bin/display', '/bin/true']
@@ -155,14 +155,31 @@ class JobResponse:
 class JSBrainEventHandler(FileSystemEventHandler):
   def __init__(self): FileSystemEventHandler.__init__(self)
   def on_modified(self, event):
-    #global DEBUG
-    #DEBUG += f'[event: {cm.jsoutf} {event.src_path}]'                   #SCHDEL
-    #print("DEBUG")
-    #print(event.event_type)
-    #print(event.src_path)
-    if event.src_path != cm.jsoutf: # automon modifies jsoutf so doesn't count
-      # Record where source change was detected so bb file list can be reordered
-      cm.sourcechange = cm.curgoal
+    global DEBUG
+    DEBUG += f'[event: ' \
+            +f'type={event.event_type} ' \
+            +f'path={event.src_path} ' \
+            +f'dir={event.is_directory} ' \
+            +f'cm.curgoal={cm.curgoal}]\n'
+    # Record where source change was detected so bb file list can be reordered
+    cm.sourcechange = cm.curgoal
+
+# I think we want a separate event handler to notice changes to bb files and 
+# regenerate the references for just that bb file when the bb file is edited.
+# Don't count changes in jsref or jsout since automon itself modifies those!
+class EventHandler2(FileSystemEventHandler):
+  def __init__(self): FileSystemEventHandler.__init__(self)
+  def on_modified(self, event):
+    if os.path.splitext(event.src_path)[1] == '.bb':
+    #if event.src_path != cm.jsoutf and event.src_path != cm.jsreff:
+      global DEBUG
+      DEBUG += f'[event: ' \
+              +f'type={event.event_type} ' \
+              +f'path={event.src_path} ' \
+              +f'dir={event.is_directory} ' \
+              +f'cm.curgoal={cm.curgoal}]\n'
+      cm.bbedit = event.src_path
+
 
 # Global structure for common data ---------------------------------------------
 
@@ -194,6 +211,7 @@ class CMonitor:
     
     self.jobsdone = False  # Various events and flags for the state machine...
     self.sourcechange = -1
+    self.bbedit = ''       # Keep track of when a bbfile is edited
     self.forcestart = True
     self.forcestop = False
     self.exitflag = False
@@ -386,8 +404,12 @@ def refresh_status():
   w.clear(); w.box()
   _addstr(w, 0, 1, str(cm.state), curses.A_BOLD)
   w.addnstr(1, 1, cm.status, cm.ww-2)
-  _addstr(w, 0, 10,
-          "(".ljust(int(cm.progress*(cm.ww-14)/100), 'o').ljust(cm.ww-14)+")")
+  wwx = cm.ww - 14
+  ndots = int(cm.progress/100*wwx)
+  if ndots > wwx: # never happens anymore; SCHDEL 
+    print(f'DEBUG: prog={cm.progress} ndots={ndots} wwx={wwx}\n')
+    sys.exit(1)
+  _addstr(w, 0, 10, "(".ljust(ndots, 'o').ljust(wwx)+")")
   if (cm.total_count != 0):
     _addstr(w, 2, cm.ww-29,
             " Avg: "+str(int(1000*cm.total_time/cm.total_count))+"ms ",
@@ -446,6 +468,10 @@ def refresh_all():
   refresh_status()
   refresh_menu()
 
+# Take a full path and extract the slug, eg, "/path/to/foo-bar.bb" -> "foo-bar"
+def extract_slug(p): 
+  return os.path.splitext(os.path.split(p)[1])[0]
+
 # Sorts the goal list based on a particular prioritization. Currently,
 # this just shifts all goals with errors to the beginning of the list
 def sort_goallist():
@@ -472,11 +498,13 @@ def update_goallist():
 # -1 if any reference file is missing
 # -2 if any reference file is older than the bbfile's last-modified time
 # For the last case, stale reference files, we normally don't care. It happens
-# when edit the BB files to see how that changes the JSON out put or the graph.
+# when we edit bbfiles to see how that changes the JSON output or the graph.
 # But it's fine, we just get a warning that we can ignore.
 # What we might really want is to watch the bb files exactly as if they're
 # source code files, so we can try a change and have it automatically show up
 # in the list of errors and see the diff.
+# But if a bb file changes we want to regenerate just that output, not all the
+# outputs!
 def jsbrain_checkref(slug, inpath, refpath):
   inpath  = os.path.abspath(inpath)+"/"
   refpath = os.path.abspath(refpath)+"/"
@@ -509,6 +537,10 @@ def jsbrain_make(job):
   errmsg = ""
   starttm = time.time();
   try:
+    # possibly this is now slightly redundant with the beebrain.py command line
+    # interface to beebrain that lives in the beebrain server directory so we
+    # could maybe call that instead of doing the GET request to localhost?
+    # but maybe it makes more sense to do it this way; just thinking out loud!
     payload = {"slug": job.slug, "inpath": job.inpath, "outpath": job.outpath}
     if (not job.graph): payload["nograph"] = "1"
     resp = requests.get("http://localhost:8777/", payload)
@@ -590,7 +622,9 @@ def json_compare(job):
         txt += str(jsonout[prop])+"\n" # new / current output
         continue
   except FileNotFoundError:
-    txt = "json_compare: Could not open one of the required json files"
+    txt = f'json_compare: Could not open ' \
+         +f'{job.outpath+"/"+job.slug+".json"} or ' \
+         +f'{job.jsref+"/"+job.slug+".json"}'
   return None if txt == "" else txt
 
 def json_dump(job):
@@ -699,7 +733,7 @@ def find_problem(resp):
 def add_problem(resp):
   i = find_problem(resp)
   if (i < 0): cm.problems.append(resp)
-  else: cm.problems[i] = resp    
+  else:       cm.problems[i] = resp
   cm.ls.bottom = len(cm.problems)
   
 def remove_problem(resp):
@@ -763,8 +797,13 @@ def uiTask():
         except OSError as e: pass
 
   elif c == ord('p'): cm.paused = not cm.paused; refresh_topline()
+  # ooh, what this does is what the bbedit thing should do.
+  # but in this case we're counting on cm.problems being non-empty because you
+  # couldn't hit the 'c' key on bbfile unless was something to hit 'c' on.
+  # in the case of editing a bbfile, we need to do this even if cm.problems is
+  # empty, probably by just adding the edited bbfile to cm.problems...
   elif c == ord('c'):
-    if (len(cm.problems) > 0):
+    if (len(cm.problems) > 0): 
       req = cm.problems[cm.ls.top+cm.ls.cur].req
       bbfile = os.path.abspath(cm.bbdir)+"/"+req.slug+".bb"
       if (os.path.isfile(bbfile)):
@@ -773,12 +812,21 @@ def uiTask():
         remove_problem(cm.problems[cm.ls.top+cm.ls.cur])
   elif c == ord('r'):
     if (len(cm.problems) > 0):
+      # here we're queueing a new request for whatever bbfile the cursor is on
+      # because we want to regenerate the references for it.
+      # i think the idea is to queue the generation of new references and then
+      # also requeue the request in the list of problems but i'm a bit fuzzy on
+      # that part. the list of problems are things where the reference and the
+      # output don't match. what's a req for a problem bbfile?
       req = cm.problems[cm.ls.top+cm.ls.cur].req
       newreq = JobRequest("jsref")
       newreq.slug = req.slug
+      #global DEBUG   #SCHDEL
+      #DEBUG += f'(slug={req.slug})\n'
       newreq.inpath = req.inpath
       newreq.outpath = cm.jsreff
       newreq.graph = True
+      # why is it ok not to set newreq.jsref here? it seems to work, but why?
       qpending.put(newreq)
       qpending.put(req)
   elif c == ord('R'):
@@ -859,7 +907,7 @@ def jobTask():
       if (resp.req.reqid == cm.lastreq): cm.jobsdone = True
       if (cm.state != ST.IDLE):
         cm.curgoal += 1
-        setprogress(100*cm.curgoal/(len(cm.goals)-1))
+        setprogress(100*cm.curgoal/len(cm.goals))
     except (queue.Empty): pass
 
   prevstate = cm.state  
@@ -877,6 +925,21 @@ def jobTask():
     
   elif (cm.state == ST.IDLE):
     if (cm.sourcechange >= 0): cm.sourcechange = -1;  cm.state = ST.PROC; restartJobs()
+    if (cm.bbedit != ''):
+      # bb file edited; figure out which one it is and just queue it up...
+      newreq = JobRequest("jsbrain")
+      newreq.slug    = extract_slug(cm.bbedit)
+      newreq.inpath  = cm.bbdir
+      newreq.outpath = cm.jsoutf
+      newreq.jsref   = cm.jsreff
+      newreq.graph   = True
+      qpending.put(newreq)
+      # do we need to also do anything with the list of cm.problems?
+      # when we hit 'c' to recheck the bbfile that the cursor is on we do 
+      # something with the list of problems as well and i'm fuzzy on what and
+      # why that is...
+      cm.bbedit = ''
+
     if (cm.forcestart):        cm.forcestart = False; cm.state = ST.PROC; restartJobs()
       
   elif (cm.state == ST.PROC):
@@ -951,7 +1014,7 @@ def jobTask():
   if (prevstate != cm.state): refresh_status()
   
 # Entry point for the monitoring loop
-def monitor(stdscr, bbdir, graph, force, watchdir):
+def monitor(stdscr, bbdir, graph, force, watchdirs):
   # Precompute various input and output path strings
   cm.bbdir = os.path.abspath(bbdir)
   cm.jsreff = os.path.abspath(cm.bbdir+"/jsref")
@@ -982,7 +1045,10 @@ def monitor(stdscr, bbdir, graph, force, watchdir):
   # Source directoty observer
   event_handler = JSBrainEventHandler()
   observer = Observer()
-  for d in watchdir: observer.schedule(event_handler, d)
+  for d in watchdirs: observer.schedule(event_handler, d)
+  # TODO: also notice when a bb file is edited and regenerate the references
+  # for just that bb file when that happens. See "bbedit" above.
+  observer.schedule(EventHandler2(), bbdir)
   observer.start()
   
   cm.paused = False
@@ -1020,15 +1086,15 @@ def main(argv):
   if (len(args) == 0): exitonerr("Must provide a directory of .bb files")
 
   bbdir = args[0]
-  watchdir = args  # every arg *including bbdir* is watched for changes
-  for d in watchdir:
+  watchdirs = args[1:]
+  for d in watchdirs:
     if (not os.path.isdir(d) or not os.path.exists(d)): 
       exitonerr(f'{d} is not a directory')
   
-  curses.wrapper(monitor, bbdir, graph, force, watchdir)
-  #global DEBUG
+  curses.wrapper(monitor, bbdir, graph, force, watchdirs)
+  global DEBUG
   #DEBUG += f'[test{4-3}]'
-  #print(f'DEBUG: {DEBUG}\n') # this happens after exiting the automon interface
+  print(f'DEBUG: {DEBUG}') # this happens after exiting the automon interface
 
   #SCHDEL
       #print("Unrecognized option: "+opt)
