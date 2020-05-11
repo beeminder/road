@@ -108,6 +108,7 @@ let defaults = {
   watermark:    { height:170, fntsize:150, color:"#000000" }, // was #f0f0f0
   guidelines:   { width:2, weekwidth:4 },
   maxfluxline:  4, // width
+  razrline:     1, 
   /** Visual parameters for text boxes shown during dragging */ 
   textBox:      { margin: 3 },
   /** Visual parameters for odometer resets */ 
@@ -208,6 +209,7 @@ const mobiledefaults = {
   watermark:   { height: 150, fntsize: 100, color: "#000000" }, // was #f0f0f0
   guidelines:  { width: 2, weekwidth: 4 },
   maxfluxline: 4, // width
+  razrline:    1,
   textBox:     { margin: 3 },
 }
 
@@ -402,7 +404,7 @@ let svg, defs, graphs, buttonarea, stathead, focus, focusclip, plot,
     ySc, nYSc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel,
     xScB, xAxisB, xAxisObjB, yScB, 
     gPB, gYBHP, gYBHPlines, gPink, gPinkPat, gGrid, gOResets, gPastText, 
-    gOldRoad, gOldCenter, gOldGuides, gOldMaxflux, gOldBullseye, 
+    gOldRoad, gOldCenter, gOldGuides, gOldMaxflux, gOldRazr, gOldBullseye, 
     gKnots, gSteppy, gSteppyPts, gRosy, gRosyPts, gMovingAv,
     gAura, gDerails, gAllpts, gDpts, gHollow, gFlat, 
     gBullseye, gRoads, gDots, gWatermark, gHashtags, gHorizon, gHorizonText,
@@ -817,6 +819,7 @@ function createGraph() {
   gWatermark   = plot.append('g').attr('id', 'wmarkgrp')       // z = 05->04
   gOldGuides   = plot.append('g').attr('id', 'oldguidegrp')    // z = 02->05
   gOldMaxflux  = plot.append('g').attr('id', 'oldmaxfluxgrp')  // z =   ->05.5
+  gOldRazr     = plot.append('g').attr('id', 'oldrazrgrp')
   gYBHPlines   = plot.append('g').attr('id', 'ybhplinesgrp')   // z =   ->06
   gAura        = plot.append('g').attr('id', 'auragrp')        // z = 04->03
   gOldRoad     = plot.append('g').attr('id', 'oldroadgrp')     // z = 06->07
@@ -3496,6 +3499,46 @@ function updateMaxfluxLine(ir) {
   }
 }
 
+function updateRazrLine(rz) {
+  if (goal.razrroad.length === 0) return // TODO: should be safe to kill this
+
+  let razrelt = gOldRazr.selectAll(".oldrazr")
+  if (opts.roadEditor || rz == null) { razrelt.remove(); return }
+  
+  const sw    = r3(opts.razrline*scf) // stroke-width
+  const scol  = bu.Cols.REDDOT        // stroke color
+  
+  let fx = nXSc(rz[0].sta[0]*SMS) // fx,fy: start of current segment
+  let fy = nYSc(rz[0].sta[1])
+  let ex = nXSc(rz[0].end[0]*SMS) // ex,ey: end of current segment
+  let ey = nYSc(rz[0].end[1])
+  let rd = "M"+r1(fx)+" "+r1(fy)
+  for (const segment of rz) {
+    ex = nXSc(segment.end[0]*SMS)
+    ey = nYSc((segment.end[1]))
+    if (ex > plotbox.width) {
+      fx = nXSc(segment.sta[0]*SMS)
+      fy = nYSc((segment.sta[1]))
+      ey = fy + (plotbox.width-fx)*(ey-fy)/(ex-fx)
+      ex = plotbox.width
+    }
+    rd += " L"+r1(ex)+" "+r1(ey)
+  }
+  
+  const roadelt = gOldRazr.select(".oldrazr")
+  if (roadelt.empty()) {
+    gOldRazr.append("svg:path").attr("class",          "oldrazr")
+                                  .attr("d",              rd)
+                                  .attr("pointer-events", "none")
+                                  .style("fill",          "none")
+                                  .style("stroke-width",  sw)
+                                  .style("stroke",        scol) 
+  } else {
+    roadelt.attr("d", rd)         .style("stroke-width",  sw)
+                                  .style("stroke",        scol)
+  }
+}
+
 // Creates or updates the unedited road
 function updateOldRoad() {
   if (opts.divGraph == null || road.length == 0) return
@@ -3521,6 +3564,15 @@ function updateOldRoad() {
   updateLanes(ir2)
   updateGuidelines(ir2)
   updateMaxfluxLine(ir2)
+
+  let rr = goal.razrroad.slice(1,-1)
+  rr = rr.filter(rdfilt)  // doing the same thing as ir2 above
+  if (rr.length == 0) {
+    const seg = br.findSeg(goal.razrroad, xrange[0]) // findSeg returns an index
+    rr = seg < 0 ? null : [goal.razrroad[seg]]
+  }
+
+  updateRazrLine(rr)
 }
 
 function updateContextOldRoad() {

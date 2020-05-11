@@ -149,7 +149,8 @@ sadbrink : false,   // Whether we were red yesterday & so will instaderail today
 safebump : null,    // Value needed to get one additional safe day
 dueby    : [],      // Table of daystamps, deltas, and abs amts needed by day
 fullroad : [],      // Road matrix w/ nulls filled in, [tfin,vfin,rfin] appended
-razrroad : [],      // Adjusted road matrix for the YBHP transition
+//razrroad : [],      // Adjusted road data struct for the YBHP transition
+razrmatr : [],      // Adjusted road matrix for the YBHP transition
 pinkzone : [],      // Subset of the road matrix defining the verboten zone
 tluz     : null,    // Timestamp of derailment ("lose") if no more data is added
 tcur     : null,    // (tcur,vcur) gives the most recent datapoint, including
@@ -264,8 +265,8 @@ goal.horizon = goal.asof+bu.AKH
 goal.xMin =    goal.asof;  goal.xMax = goal.horizon
 goal.yMin =    -1;         goal.yMax = 1
 
-/** Convert legacy parameters to up-to-date entries 
-    @param {Object} p Goal parameters from the bb file */
+/**Convert legacy parameters to modern counterparts for backward compatibility.
+   @param {Object} p Goal parameters from the bb file */
 function legacyIn(p) {
   //if (p.gldt!==undefined && p.tfin===undefined) p.tfin = p.gldt
   if ('goal' in p && !('vfin' in p))  p.vfin = p.goal
@@ -360,7 +361,7 @@ function stampIn(p, d) {
     @param {Object} p Computed goal statistics */
 function stampOut(p) {
   p['fullroad'] = p['fullroad'].map(dayifyrow)
-  if ('razrroad' in pout) p['razrroad'] = p['razrroad'].map(dayifyrow)
+  if ('razrmatr' in pout) p['razrmatr'] = p['razrmatr'].map(dayifyrow)
   p['pinkzone'] = p['pinkzone'].map(dayifyrow)
   p['tluz'] = bu.dayify(p['tluz'])
   p['tcur'] = bu.dayify(p['tcur'])
@@ -956,12 +957,85 @@ function vetParams() {
 
   return ""
 }
+
+// Generate razrroad for YBHP migration by shifting each segment by the lane
+// width in the negative yaw direction, ie, towards the bad side of the road.
+// And use lnf(), getting the lane width for each segment at that point in time.
+// This yields a razrroad that coincides with the critical edge of the old-style
+// laney road.
+// (For dumb crufty reasons we're generating both the road matrix version as
+// razrmatr and the version with Uluc's new road data structure as razrroad.
+// It's razrmatr that Beebody wants and razrroad that bgraph wants, since we're
+// also displaying the critical edge of laney roads as a thin red line now.
+// Of course all this cruft will go away when the YBHP transition is complete!)
+function genRazr() {
+  goal.razrroad = roads.map(s => ({ // s for road segment
+    sta:   [s.sta[0], s.sta[1] - goal.lnf((s.sta[0]+s.end[0])/2)*goal.yaw], 
+    end:   [s.end[0], s.end[1] - goal.lnf((s.sta[0]+s.end[0])/2)*goal.yaw],
+    slope: s.slope,
+    auto:  s.auto,
+  }))
+  goal.razrmatr = goal.razrroad.slice(0,-1).map(s => {
+    if (s.auto === 0) return [null,     s.end[1], s.slope*goal.siru]
+    if (s.auto === 1) return [s.end[0], null,     s.slope*goal.siru]
+    if (s.auto === 2) return [s.end[0], s.end[1], null   ]
+    return "ERROR"
+  })
+}
+
+/* SCHDEL: debugging scratch pad
+lnf
+x => max(abs(self.vertseg(rd,x) ? 0 : self.rdf(rd, x) - self.rdf(rd, x-SID)), 
+         rtf0(x))
+
+{"sta":[-1591660800,0],"slope":0,"auto":2,"end":[1564099200,0]},
+{"sta":[1564099200,0],"end":[1564185600,0],"slope":0,"auto":1},
+{"sta":[1564185600,0],"end":[1895702400,1644.4285714285713],"slope":0.00000496031746031746,"auto":1},
+{"sta":[1895702400,1644.4285714285713],"end":[5051462400,1644.4285714285713],"slope":0,"auto":1}
+*/
+
+/* SCHDEL: uluc's original code for calculating razrroad
+  const oldroad = goal.road.map(e => [e[0], e[1], e[2]])
+  // Compute safebuffer with ybhp=true and abslnw=0
+  // Requires recomputation of a bunch of previously computed values.
+  let newgoal = {}, newsafe, safediff
+  //bu.extend(newgoal, goal, true)
+  //newgoal = JSON.parse(JSON.stringify(goal)) // very safe deep copy?
+  newgoal = {...goal} // this may just be a shallow copy?
   
+  newgoal.ybhp = true
+  newgoal.abslnw = 0
+  newgoal.stdflux = br.noisyWidth(roads, data.filter(d => d[0]>=goal.tini))
+  newgoal.nw = newgoal.noisy && newgoal.abslnw == null ?
+    br.autowiden(roads, newgoal, data, newgoal.stdflux) : 0
+  
+  newgoal.lnf = newgoal.abslnw != null ? 
+    (x => newgoal.abslnw) : br.genLaneFunc(roads, newgoal)
+  newgoal.lnw = max(newgoal.nw, newgoal.lnf(newgoal.tcur))
+  newsafe = br.dtd(roads, newgoal, newgoal.tcur, newgoal.vcur)
+  safediff = goal.safebuf - newsafe
+  
+  let newroad = 
+             oldroad.map(e => [(e[0] ? e[0]+0*SID*safediff : null), e[1], e[2]])
+  //if (newroad[0][0] == null) // Uluc: I think this is not needed/incorrect
+  if (safediff != 0)
+    newroad.unshift([newgoal.tini+SID*safediff, newgoal.vini, null])
+  // Remove the last element [tfin,vfin], which was added by us
+  newroad.pop()
+  return newroad 
+}
+*/
+
 /** Process goal parameters */
 function procParams() {
   goal.dtf = br.stepify(data) // map timestamps to most recent datapoint value
   
-  const oldroad = goal.road.map(e=>[e[0], e[1], e[2]])
+  //SCHDEL
+  // remember original road (kludgery here) including tini/vini/tvrfin
+  //goal.razrorig = bu.deepcopy(goal.road) // probably unnecessary to deepcopy?
+  //goal.razrorig = [[goal.tini, goal.vini, null]].concat(
+  //  goal.razrorig, [[goal.tfin, goal.vfin, goal.rfin]])
+
   goal.road = br.fillroad(goal.road, goal)
   const rl = goal.road.length
   goal.tfin = goal.road[rl-1][0]
@@ -978,6 +1052,7 @@ function procParams() {
   }
   
   if (goal.ybhp && goal.abslnw === null) goal.abslnw = 0
+  //if (goal.ybhp) goal.abslnw = 0  // fuck abslnw? no, better to fail loudly
 
   // rdf function is implemented in broad.js
   // rtf function is implemented in broad.js
@@ -1011,32 +1086,7 @@ function procParams() {
 
   goal.lnw = goal.ybhp ? 0 : max(goal.nw, goal.lnf(goal.tcur))
   goal.safebuf = br.dtd(roads, goal, goal.tcur, goal.vcur)
-  if ((!goal.ybhp || goal.abslnw != 0) && 'razrroad' in pout) {
-    // Compute safebuffer with ybhp=true and abslnw=0
-    // Requires recomputation of a bunch of previously computed values.
-    let newgoal = {}, newsafe, safediff
-    bu.extend(newgoal, goal, true)
-    newgoal.ybhp = true
-    newgoal.abslnw = 0
-    newgoal.stdflux = br.noisyWidth(roads, data.filter(d => d[0]>=goal.tini))
-    newgoal.nw = newgoal.noisy && newgoal.abslnw == null ?
-      br.autowiden(roads, newgoal, data, newgoal.stdflux) : 0
-  
-    newgoal.lnf = newgoal.abslnw != null ? 
-      (x => newgoal.abslnw) : br.genLaneFunc(roads, newgoal)
-    newgoal.lnw = max(newgoal.nw, newgoal.lnf(newgoal.tcur))
-    newsafe = br.dtd(roads, newgoal, newgoal.tcur, newgoal.vcur)
-    safediff = goal.safebuf - newsafe
-    
-    let newroad = 
-      oldroad.map(e => [(e[0] ? e[0]+SID*safediff : null), e[1], e[2]])
-    //if (newroad[0][0] == null) // Uluc: I think this is not needed/incorrect
-    if (safediff != 0)
-      newroad.unshift([newgoal.tini+SID*safediff, newgoal.vini, null])
-    // Remove the last element [tfin,vfin], which was added by us
-    newroad.pop()
-    goal.razrroad = newroad
-  }
+  genRazr()
   goal.tluz = goal.tcur+goal.safebuf*SID
   goal.delta = bu.chop(goal.vcur - br.rdf(roads, goal.tcur))
   goal.rah = br.rdf(roads, goal.tcur+bu.AKH)
@@ -1367,8 +1417,8 @@ function genStats(p, d, tm=null) {
   }
 }
 
-/** Returns an object with pre-computed goal statistics, summaries
- * and other details.*/
+/**Returns an object with pre-computed goal statistics, summaries and other
+   details. */
 this.getStats = function() { return bu.extend({}, stats) }
 
 /**Set a new road object for Beebrain. Should be followed by a call to 
