@@ -149,9 +149,8 @@ sadbrink : false,   // Whether we were red yesterday & so will instaderail today
 safebump : null,    // Value needed to get one additional safe day
 dueby    : [],      // Table of daystamps, deltas, and abs amts needed by day
 fullroad : [],      // Road matrix w/ nulls filled in, [tfin,vfin,rfin] appended
-razrroad : [],      // Adjusted road data struct for the YBHP transition
+//razrroad : [],      // Adjusted road data struct for the YBHP transition
 razrmatr : [],      // Adjusted road matrix for the YBHP transition
-razrorig : [],      // Echo of road passed to Beebrain + tini/vini + tvrfin
 pinkzone : [],      // Subset of the road matrix defining the verboten zone
 tluz     : null,    // Timestamp of derailment ("lose") if no more data is added
 tcur     : null,    // (tcur,vcur) gives the most recent datapoint, including
@@ -363,7 +362,6 @@ function stampIn(p, d) {
 function stampOut(p) {
   p['fullroad'] = p['fullroad'].map(dayifyrow)
   if ('razrmatr' in pout) p['razrmatr'] = p['razrmatr'].map(dayifyrow)
-  if ('razrorig' in pout) p['razrorig'] = p['razrorig'].map(dayifyrow)
   p['pinkzone'] = p['pinkzone'].map(dayifyrow)
   p['tluz'] = bu.dayify(p['tluz'])
   p['tcur'] = bu.dayify(p['tcur'])
@@ -977,9 +975,6 @@ function genRazr() {
     slope: s.slope,
     auto:  s.auto,
   }))
-  // current references use goal.razrmatr = goal.road so we can see how this 
-  // calculation differs in automon
-  //goal.razrmatr = bu.deepcopy(goal.razrorig)
   goal.razrmatr = goal.razrroad.slice(0,-1).map(s => {
     if (s.auto === 0) return [null,     s.end[1], s.slope*goal.siru]
     if (s.auto === 1) return [s.end[0], null,     s.slope*goal.siru]
@@ -1035,10 +1030,11 @@ x => max(abs(self.vertseg(rd,x) ? 0 : self.rdf(rd, x) - self.rdf(rd, x-SID)),
 function procParams() {
   goal.dtf = br.stepify(data) // map timestamps to most recent datapoint value
   
+  //SCHDEL
   // remember original road (kludgery here) including tini/vini/tvrfin
-  goal.razrorig = bu.deepcopy(goal.road) // probably unnecessary to deepcopy?
-  goal.razrorig = [[goal.tini, goal.vini, null]].concat(
-    goal.razrorig, [[goal.tfin, goal.vfin, goal.rfin]])
+  //goal.razrorig = bu.deepcopy(goal.road) // probably unnecessary to deepcopy?
+  //goal.razrorig = [[goal.tini, goal.vini, null]].concat(
+  //  goal.razrorig, [[goal.tfin, goal.vfin, goal.rfin]])
 
   goal.road = br.fillroad(goal.road, goal)
   const rl = goal.road.length
@@ -1090,9 +1086,7 @@ function procParams() {
 
   goal.lnw = goal.ybhp ? 0 : max(goal.nw, goal.lnf(goal.tcur))
   goal.safebuf = br.dtd(roads, goal, goal.tcur, goal.vcur)
-  if ((true || !goal.ybhp /*|| goal.abslnw != 0*/) && 'razrroad' in pout) {
-    genRazr()
-  }
+  genRazr()
   goal.tluz = goal.tcur+goal.safebuf*SID
   goal.delta = bu.chop(goal.vcur - br.rdf(roads, goal.tcur))
   goal.rah = br.rdf(roads, goal.tcur+bu.AKH)
