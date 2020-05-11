@@ -108,7 +108,7 @@ let defaults = {
   watermark:    { height:170, fntsize:150, color:"#000000" }, // was #f0f0f0
   guidelines:   { width:2, weekwidth:4 },
   maxfluxline:  4, // width
-  razrline:     2, 
+  razrline:     1, 
   /** Visual parameters for text boxes shown during dragging */ 
   textBox:      { margin: 3 },
   /** Visual parameters for odometer resets */ 
@@ -209,7 +209,7 @@ const mobiledefaults = {
   watermark:   { height: 150, fntsize: 100, color: "#000000" }, // was #f0f0f0
   guidelines:  { width: 2, weekwidth: 4 },
   maxfluxline: 4, // width
-  razrline: 2,
+  razrline:    1,
   textBox:     { margin: 3 },
 }
 
@@ -3500,13 +3500,13 @@ function updateMaxfluxLine(ir) {
 }
 
 function updateRazrLine(rz) {
-  if (goal.razrroad.length === 0) return
+  if (goal.razrroad.length === 0) return // TODO: should be safe to kill this
 
   let razrelt = gOldRazr.selectAll(".oldrazr")
   if (opts.roadEditor || rz == null) { razrelt.remove(); return }
   
   const sw    = r3(opts.razrline*scf) // stroke-width
-  const scol  = bu.Cols.BLCK             // stroke color
+  const scol  = bu.Cols.REDDOT        // stroke color
   
   let fx = nXSc(rz[0].sta[0]*SMS) // fx,fy: start of current segment
   let fy = nYSc(rz[0].sta[1])
@@ -3539,7 +3539,6 @@ function updateRazrLine(rz) {
   }
 }
 
-
 // Creates or updates the unedited road
 function updateOldRoad() {
   if (opts.divGraph == null || road.length == 0) return
@@ -3566,15 +3565,14 @@ function updateOldRoad() {
   updateGuidelines(ir2)
   updateMaxfluxLine(ir2)
 
-  //let razr = razrroad.filter(rdfilt)
-  //if (razr.length == 0) razr = [razrroad[br.findSeg(razrroad, xrange[0])]]
-  //const razrroad = goal.razrroad.slice(1,-1)
-  //if (razr2.length == 0 ) {
-  //  const seg = br.findSeg(razrroad, xrange[0])
-  //  razr2 = seg < 0 ? null : [razrroad[seg]]
-  //}
-  updateRazrLine(goal.razrroad)
-  //iroad   = br.copyRoad(road)
+  let rr = goal.razrroad.slice(1,-1)
+  rr = rr.filter(rdfilt)  // doing the same thing as ir2 above
+  if (rr.length == 0) {
+    const seg = br.findSeg(goal.razrroad, xrange[0]) // findSeg returns an index
+    rr = seg < 0 ? null : [goal.razrroad[seg]]
+  }
+
+  updateRazrLine(rr)
 }
 
 function updateContextOldRoad() {

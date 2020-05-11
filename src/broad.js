@@ -136,7 +136,11 @@ self.copyRoad = (rd) => {
 
 /** Finds index for the road segment containing the supplied x value */
 self.findSeg = (rd, x, dir=0) => {
-  var nums = rd.length-1, s = 0, e = nums, m
+  if (rd.length === 0 || rd.length === undefined) return -1
+  const nums = rd.length-1
+  let s = 0
+  let e = nums
+  let m
   if (x < rd[0].sta[0] || x > rd[nums].end[0]) return -1
   while (e-s > 1) { // Uses binary search
     m = floor((s+e)/2)
