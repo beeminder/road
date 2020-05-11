@@ -156,6 +156,18 @@ self.extend = (to, fr, owr) => {
   return to
 }
 
+// Make a deep copy of object x (simpler/better version of above?)
+self.deepcopy = (x) => {
+  let y, val, key
+  if (typeof x !== "object" || x === null) return x // base case
+  y = Array.isArray(x) ? [] : {} // initialize the copy
+  for (key in x) {
+    val = x[key]
+    y[key] = self.deepcopy(val) // recur!
+  }
+  return y
+}
+
 /** Applies f on elements of dom, picks the maximum and returns
     the domain element that achieves that maximum. 
 
