@@ -33,7 +33,7 @@
 
 
 # Might need to do pip3 install watchdog
-import curses, sys, getopt, os, time, requests, subprocess
+import curses, sys, getopt, os, time, requests, subprocess, re
 import math, threading, queue, textwrap, json, filecmp
 import traceback
 from watchdog.observers import Observer
@@ -43,7 +43,7 @@ from enum import Enum
 ################################################################################
 ######################### CONSTANTS AND CONFIGURATION ##########################
 
-DEBUG = 'init\n'
+#DEBUG = '' # for gathering up debug output to show after automon quits
 
 DISPCMD = next(p for p in ['/usr/bin/open', '/usr/local/bin/display',
                            '/usr/bin/display', '/bin/true']
@@ -51,7 +51,7 @@ DISPCMD = next(p for p in ['/usr/bin/open', '/usr/local/bin/display',
 
 ST = Enum('ST', [
   'INIT', # Initializing                                            INIT ~ INIT
-  'IDLE', # Waiting for trigger (ie, for a source file to change)   IDLE ~ IDLE
+  'IDLE', # Waiting for trigger (for a source/bb file to change)    IDLE ~ IDLE
   'RSET', # Reset job procesing parameters                          RSET ~ RSET
   'PROC', # Processing goal list, one at a time                     PROC ~ PROC
   'JSRF', # Initiate jsref (bbref) generation                       JSRF ~ REFG
@@ -73,6 +73,8 @@ ST = Enum('ST', [
 # WAIT -> PROC : jobsdone
 # PAUS -> PROC : NOT paused OR forcestop
 # *    -> EXIT : exitflag
+#
+# JSRF -> WAIT : this wasn't in Uluc's original state transition table
 
 menu = [
   ['c', 'reCheck'],
@@ -155,14 +157,24 @@ class JobResponse:
 class JSBrainEventHandler(FileSystemEventHandler):
   def __init__(self): FileSystemEventHandler.__init__(self)
   def on_modified(self, event):
-    global DEBUG
-    DEBUG += f'[event: ' \
-            +f'type={event.event_type} ' \
-            +f'path={event.src_path} ' \
-            +f'dir={event.is_directory} ' \
-            +f'cm.curgoal={cm.curgoal}]\n'
-    # Record where source change was detected so bb file list can be reordered
-    cm.sourcechange = cm.curgoal
+    if not event.is_directory and not ignorable(event.src_path):
+      #tmp = cm.state
+      #setstatus(f'DEBUG1: File {event.event_type}: {event.src_path} [{tmp}]')
+      #cm.state = ST.IDLE
+      #time.sleep(3)
+      #cm.state = tmp
+      #global DEBUG
+      #DEBUG = f'debug1 file {event.event_type}: {event.src_path} ' \
+      #       +f'curgoal={cm.curgoal}'
+      #refresh_topline()
+      # Record where source change was detected so bb file list can be reordered
+      cm.sourcechange = cm.curgoal
+
+# Cruft alert: I was desperately trying things and made a separate event handler
+# but I don't think that makes sense. The above handler can be used for both 
+# source file changes and changes to bbfiles. It just needs to see if the 
+# event.src_path refers to a source file, in which case do cm.sourcechange =
+# cm.curgoal, and if event.src_path is a bbfile then do cm.bbedit blah blah.
 
 # I think we want a separate event handler to notice changes to bb files and 
 # regenerate the references for just that bb file when the bb file is edited.
@@ -170,15 +182,32 @@ class JSBrainEventHandler(FileSystemEventHandler):
 class EventHandler2(FileSystemEventHandler):
   def __init__(self): FileSystemEventHandler.__init__(self)
   def on_modified(self, event):
-    if os.path.splitext(event.src_path)[1] == '.bb':
     #if event.src_path != cm.jsoutf and event.src_path != cm.jsreff:
-      global DEBUG
-      DEBUG += f'[event: ' \
-              +f'type={event.event_type} ' \
-              +f'path={event.src_path} ' \
-              +f'dir={event.is_directory} ' \
-              +f'cm.curgoal={cm.curgoal}]\n'
-      cm.bbedit = event.src_path
+    if not event.is_directory and not ignorable(event.src_path):
+      #tmp = cm.state
+      #setstatus(f'DEBUG2: File {event.event_type}: {event.src_path} [{tmp}]')
+      #cm.state = ST.IDLE
+      #time.sleep(3)
+      #cm.state = tmp
+      #global DEBUG
+      #DEBUG = f'debug2 file {event.event_type}: {event.src_path} ' \
+      #       +f'curgoal={cm.curgoal}'
+      #refresh_topline()
+      if os.path.splitext(event.src_path)[1] == '.bb':
+        cm.bbedit = extract_slug(event.src_path)
+
+        # this was an experiment to do this here but i think it should be better
+        # to just remember the bbfile and deal with it in the worker thread
+        # or whatever, similar to what we do when we notice a source file change
+        #newreq = JobRequest("jsbrain")
+        #newreq.slug    = extract_slug(event.src_path)
+        #newreq.inpath  = cm.bbdir
+        #newreq.outpath = cm.jsoutf
+        #newreq.jsref   = cm.jsreff
+        #newreq.graph   = True
+        #qpending.put_nowait(newreq)
+        #cm.state = ST.PROC
+
 
 
 # Global structure for common data ---------------------------------------------
@@ -261,6 +290,15 @@ def freak(): play("uhoh.wav")
 def ahhhh(): play("phew.wav")
 
 def trstr(s, l): return (s[:l] + '..') if len(s) > l else s
+
+# Take a full path and extract the slug, eg, "/path/to/foo-bar.bb" -> "foo-bar"
+def extract_slug(p): 
+  return os.path.splitext(os.path.split(p)[1])[0] # could use os.path.basename?
+
+# Take a full path and return whether it's a swap file or something else we want
+# to ignore if it changes, to not trigger unnecessary re-runs thru the suite.
+def ignorable(p):
+  return re.match(r"^\..*\.swp$", os.path.basename(p))
 
 # Scrolling related functions --------------------------------------------------
 
@@ -389,13 +427,15 @@ def refresh_topline():
   w = cm.twin
   w.clear()
   if (cm.graph): _addstr(w, 0, 1, "[Graph]", curses.A_REVERSE)
-  else:  _addstr(w, 0, 1, "[Graph]")
+  else:          _addstr(w, 0, 1, "[Graph]")
 
   if (cm.jsref): _addstr(w, 0, 10, "[References]", curses.A_REVERSE)
-  else:  _addstr(w, 0, 10, "[References]")
+  else:          _addstr(w, 0, 10, "[References]")
 
+  #global DEBUG
   if (cm.paused): _addstr(w, 0, 23, "[Paused]", curses.A_REVERSE)
-  else:  _addstr(w, 0, 23, "[Paused]")
+  else:           _addstr(w, 0, 23, "[Paused]")
+  #_addstr(w, 0, 41, "(" + DEBUG + ")")
 
   w.refresh()
 
@@ -407,7 +447,7 @@ def refresh_status():
   wwx = cm.ww - 14
   ndots = int(cm.progress/100*wwx)
   if ndots > wwx: # never happens anymore; SCHDEL 
-    print(f'DEBUG: prog={cm.progress} ndots={ndots} wwx={wwx}\n')
+    print(f'NEVER HAPPENS: prog={cm.progress} ndots={ndots} wwx={wwx}\n')
     sys.exit(1)
   _addstr(w, 0, 10, "(".ljust(ndots, 'o').ljust(wwx)+")")
   if (cm.total_count != 0):
@@ -467,10 +507,6 @@ def refresh_all():
   refresh_windows()
   refresh_status()
   refresh_menu()
-
-# Take a full path and extract the slug, eg, "/path/to/foo-bar.bb" -> "foo-bar"
-def extract_slug(p): 
-  return os.path.splitext(os.path.split(p)[1])[0]
 
 # Sorts the goal list based on a particular prioritization. Currently,
 # this just shifts all goals with errors to the beginning of the list
@@ -612,8 +648,9 @@ def json_compare(job):
         del jsonout[prop]
         continue
       if (not prop in jsonout):
-        txt += "*** Prp "+prop+" is missing from the output\n"
-        continue
+        #txt += "*** Prp "+prop+" is missing from the output\n"
+        #continue
+        jsonout[prop] = "*** NO SUCH PROPERTY: '"+prop+"' ***"
       if (not jsonout[prop] == jsonref[prop]):
         pre = prop + " (OLD -> NEW) "
         div = '-' * (cm.ww-cm.lw-4-len(pre))
@@ -717,6 +754,8 @@ def worker_stop():
   while (not qpending.empty()): qpending.get_nowait()  # empty the request queue
   qpending.put(JobRequest("quit"))   # issue a kill request to the worker thread
 
+def find_goal(slug): return cm.goals.index(slug) # i guess this is silly
+
 def find_problem_slug(slug):
   for i in range(len(cm.problems)):
     e = cm.problems[i]
@@ -761,7 +800,8 @@ def updateAverage(time):
   cm.total_count += 1
   cm.last_time = time
 def statusTask():
-  if (cm.state == ST.IDLE): setstatus("Waiting for source file changes...")
+  if (cm.state == ST.IDLE):
+    setstatus("Waiting for source file or bbfile changes...")
   # Process pending status messages
   try:
     msg = qstatus.get_nowait()
@@ -771,11 +811,11 @@ def statusTask():
       refresh_status()
   except (queue.Empty): pass
 
-# User interface task: Monitors user input, handles menu events and
-# manages the top line
+# UI task: Monitors user input, handles menu events, manages top line
 def uiTask():
   c = cm.lwin.getch()
-  if c == ord('q'): return True
+  if   c == ord('q'): return True
+  elif c == ord(' '): refresh_all()
   elif c == curses.KEY_ENTER or c == 10 or c == 13:
     # ENTER displays graph diff for the currently selected problem
     if (len(cm.problems) > 0 and cm.graph):
@@ -797,11 +837,6 @@ def uiTask():
         except OSError as e: pass
 
   elif c == ord('p'): cm.paused = not cm.paused; refresh_topline()
-  # ooh, what this does is what the bbedit thing should do.
-  # but in this case we're counting on cm.problems being non-empty because you
-  # couldn't hit the 'c' key on bbfile unless was something to hit 'c' on.
-  # in the case of editing a bbfile, we need to do this even if cm.problems is
-  # empty, probably by just adding the edited bbfile to cm.problems...
   elif c == ord('c'):
     if (len(cm.problems) > 0): 
       req = cm.problems[cm.ls.top+cm.ls.cur].req
@@ -840,20 +875,11 @@ def uiTask():
     if (cm.state == ST.IDLE): cm.forcestart = True
     else:                     cm.forcestop = True
       
-  elif c == curses.KEY_UP:
-    scroll(cm.ls, UP)
-    refresh_windows()
-  elif c == curses.KEY_DOWN:
-    scroll(cm.ls, DOWN)
-    refresh_windows()
-  elif c == curses.KEY_LEFT:
-    paging(cm.rs, UP)
-    refresh_windows()
-  elif c == curses.KEY_RIGHT:
-    paging(cm.rs, DOWN)
-    refresh_windows()
-  elif c == curses.KEY_RESIZE:
-    resize_windows()
+  elif c == curses.KEY_UP:     scroll(cm.ls, UP);   refresh_windows()
+  elif c == curses.KEY_DOWN:   scroll(cm.ls, DOWN); refresh_windows()
+  elif c == curses.KEY_LEFT:   paging(cm.rs, UP);   refresh_windows()
+  elif c == curses.KEY_RIGHT:  paging(cm.rs, DOWN); refresh_windows()
+  elif c == curses.KEY_RESIZE: resize_windows()
   return False
 
 def displayTask(): pass # manages the left and right windows
@@ -887,7 +913,7 @@ def restartJobs():
   
 # Handles processing of jobs. Has a state machine structure defined above.
 def jobTask():
-  
+  #global DEBUG
   # Go through job responses and interpret results
   while (not qcompleted.empty()):
     try:
@@ -924,28 +950,60 @@ def jobTask():
     cm.state = ST.IDLE
     
   elif (cm.state == ST.IDLE):
-    if (cm.sourcechange >= 0): cm.sourcechange = -1;  cm.state = ST.PROC; restartJobs()
+    if (cm.sourcechange >= 0): 
+      cm.sourcechange = -1
+      cm.state = ST.PROC
+      restartJobs()
     if (cm.bbedit != ''):
-      # bb file edited; figure out which one it is and just queue it up...
+      # bb file edited; queue it up or something? sadly i don't know what i'm
+      # doing here. do i want to just immediately dispatch it?
+      # what i'm trying to accomplish is to generate new output for just the one
+      # bbfile that changed, not cause automon to reprocess the whole list of
+      # goals.
+      #DEBUG = f'noticing {cm.bbedit} changed, dispatching it'
       newreq = JobRequest("jsbrain")
-      newreq.slug    = extract_slug(cm.bbedit)
+      newreq.slug    = cm.bbedit
       newreq.inpath  = cm.bbdir
       newreq.outpath = cm.jsoutf
       newreq.jsref   = cm.jsreff
       newreq.graph   = True
-      qpending.put(newreq)
-      # do we need to also do anything with the list of cm.problems?
-      # when we hit 'c' to recheck the bbfile that the cursor is on we do 
-      # something with the list of problems as well and i'm fuzzy on what and
-      # why that is...
+      # we need to insert cm.bbedit at the beginning of cm.goals maybe?
+      cm.curgoal = cm.goals.index(cm.bbedit)
+      setprogress(100*cm.curgoal/len(cm.goals))
+      cm.paused = False
+      #cm.firstreq = cm.lastreq # what is this for?
+      qpending.put(newreq)  # put vs put_nowait?
+      #jobDispatch(newreq, newreq.slug, cm.bbdir, cm.jsreff, True)
       cm.bbedit = ''
+      cm.state = ST.PROC
+      #restartJobs() # maybe? but we just want to process this one bbfile...
 
-    if (cm.forcestart):        cm.forcestart = False; cm.state = ST.PROC; restartJobs()
+    if (cm.forcestart):
+      cm.forcestart = False
+      cm.state = ST.PROC
+      restartJobs()
       
   elif (cm.state == ST.PROC):
     if (cm.forcestop):
       cm.jsref = False
       cm.state = ST.INIT
+
+    elif (cm.bbedit != ''):
+      # in this case a bbfile was changed while we're processing the goal list.
+      # we need to insert it and process it immediately, just like hitting 'c'
+      # on it if it were in the list of problems.
+      i = cm.goals.index(cm.bbedit)
+      # copying this from the condition directly below (un-DRY alert)
+      newlist = cm.goals[i:None]
+      newlist.extend(cm.goals[0:i])
+      cm.goals = newlist
+      #sort_goallist() # do we want to do this?
+      cm.bbedit = ''
+      cm.curgoal = 0
+      setprogress(0)
+      #DEBUG = \
+      #  f'noticed {cm.bbedit} changed while processing {cm.goals[cm.curgoal]}'
+      #refresh_topline()
 
     elif (cm.sourcechange >=0 and cm.sourcechange < len(cm.goals)):
       # Source change detected, rearrange the bb file list and
@@ -964,15 +1022,10 @@ def jobTask():
         if (len(cm.problems) == 0): ahhhh()
         cm.state = ST.INIT
 
-    elif (cm.forcestart):
-      cm.state = ST.INIT
-
-    elif (cm.paused):
-      cm.state = ST.PAUS
-    elif (cm.jsref):
-      cm.state = ST.JSRF
-    else:
-      cm.state = ST.JSBR
+    elif (cm.forcestart): cm.state = ST.INIT
+    elif (cm.paused):     cm.state = ST.PAUS
+    elif (cm.jsref):      cm.state = ST.JSRF
+    else:                 cm.state = ST.JSBR
 
     # Sleep longer until all pending jobs are dispatched
     if (not qpending.empty()):
@@ -980,6 +1033,11 @@ def jobTask():
       return
 
   elif (cm.state == ST.JSRF):
+    # why are we doing splitext here? the list of things in cm.goals are all
+    # just slugs. oh, turns out splitext("foo")[0] is just "foo" so that
+    # explains that. when i'm not in the middle of a million other changes to
+    # this file i can refactor this to just be 
+    # slug = cm.goals[cm.curgoal] and look for other similar cases.
     slug = os.path.splitext(cm.goals[cm.curgoal])[0]
     req = JobRequest("jsref")
     jobDispatch(req, slug, cm.bbdir, cm.jsreff, True)
@@ -1042,14 +1100,23 @@ def monitor(stdscr, bbdir, graph, force, watchdirs):
   worker_thread = worker_start()
   worker_thread.start()
   
+  #global DEBUG
   # Source directoty observer
   event_handler = JSBrainEventHandler()
   observer = Observer()
-  for d in watchdirs: observer.schedule(event_handler, d)
-  # TODO: also notice when a bb file is edited and regenerate the references
-  # for just that bb file when that happens. See "bbedit" above.
-  observer.schedule(EventHandler2(), bbdir)
+  for d in watchdirs: 
+    #DEBUG = f'adding srcdir={d} to directories to watch for changes'
+    #refresh_topline()
+    observer.schedule(event_handler, d)
   observer.start()
+  # Also notice when a bbfile is edited and regenerate the references for just
+  # that bbfile when that happens. See "bbedit" above.
+  #DEBUG = f'adding bbdir={bbdir} to directories to watch for changes'
+  #refresh_topline()
+  event_handler2 = EventHandler2()
+  observer2 = Observer()
+  observer2.schedule(event_handler2, bbdir)
+  observer2.start()
   
   cm.paused = False
   try:
@@ -1092,9 +1159,9 @@ def main(argv):
       exitonerr(f'{d} is not a directory')
   
   curses.wrapper(monitor, bbdir, graph, force, watchdirs)
-  global DEBUG
+  #global DEBUG
   #DEBUG += f'[test{4-3}]'
-  print(f'DEBUG: {DEBUG}') # this happens after exiting the automon interface
+  #print(f'DEBUG:\n{DEBUG}') # this happens after exiting the automon interface
 
   #SCHDEL
       #print("Unrecognized option: "+opt)
