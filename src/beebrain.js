@@ -969,12 +969,42 @@ function vetParams() {
 // also displaying the critical edge of laney roads as a thin red line now.
 // Of course all this cruft will go away when the YBHP transition is complete!)
 function genRazr() {
-  goal.razrroad = roads.map(s => ({ // s for road segment
-    sta:   [s.sta[0], s.sta[1] - goal.lnf((s.sta[0]+s.end[0])/2)*goal.yaw], 
-    end:   [s.end[0], s.end[1] - goal.lnf((s.sta[0]+s.end[0])/2)*goal.yaw],
+  const lnf = goal.lnf
+  const yaw = goal.yaw
+  const t1 = seg => seg.sta[0]
+  const t2 = seg => seg.end[0]
+  const v1 = seg => seg.sta[1]
+  const v2 = seg => seg.end[1]
+  // reminder that segments go from 
+  // {t1,     v1}     to {t2,     v2}     or 
+  // {sta[0], sta[1]} to {end[0], end[1]}
+  const midroad = roads.slice(1,-1).map(s => ({ // s for road segment
+    //sta:   [t1(s), v1(s) - yaw*lnf((t1(s)+t2(s))/2)],
+    //end:   [t2(s), v2(s) - yaw*lnf((t1(s)+t2(s))/2)],
+    sta:   [t1(s), v1(s) - yaw*min(lnf(t1(s)), lnf(t2(s)))],
+    end:   [t2(s), v2(s) - yaw*min(lnf(t1(s)), lnf(t2(s)))],
     slope: s.slope,
     auto:  s.auto,
   }))
+  let s = roads[0]  // first segment, which is kind of a dummy segment i guess?
+  const iniroad = [{
+    sta:   [t1(s), v1(s)],
+    end:   [t2(s), v2(s)],
+    slope: s.slope,
+    auto:  s.auto,
+  }]
+  s = roads[roads.length-1] // last segment also dummy segment? am fuzzy on this
+  const finroad = [{
+    sta:   [t1(s), v1(s)],
+    end:   [t2(s), v2(s)],
+    slope: s.slope,
+    auto:  s.auto,
+  }]
+  // if we're not going to touch iniroad and finroad we could just do this:
+  //goal.razrroad = [roads[0]].concat(midroad, [roads[-1]])
+  goal.razrroad = iniroad.concat(midroad, finroad)
+
+  // seems like this should be dropping both initial and final segment (?):
   goal.razrmatr = goal.razrroad.slice(0,-1).map(s => {
     if (s.auto === 0) return [null,     s.end[1], s.slope*goal.siru]
     if (s.auto === 1) return [s.end[0], null,     s.slope*goal.siru]
