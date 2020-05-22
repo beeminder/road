@@ -3113,7 +3113,9 @@ function updateYBHP() {
     iso[9] = iso[9].map(e => [e[0], e[1]+3*adj])
   }
   
-  for (var ri = 0; ri < min(prevcnt, regions.length); ri++) {
+  // HT cpcallen who proposed changing this max to a min, though turns out
+  // that's wrong. Sad trombone!
+  for (var ri = 0; ri < max(prevcnt, regions.length); ri++) {
     // SVG elements for regions are given unique class names
     const clsname = "halfplane"+ri
     let ybhpelt, ybhpgrp
