@@ -3403,7 +3403,7 @@ function updateGuidelines(ir) {
     else if (goal.lnw > 0 && yr / (6*goal.lnw) <= 32)   delta = 6 * goal.lnw
     else                                                delta = yr / 32
     oneshift = goal.yaw * delta
-    const numlines = floor(abs((yrange[1] - yrange[0])/oneshift))
+    const numlines = min(365, floor(abs((yrange[1] - yrange[0])/oneshift)))
 
     // Create dummy array as d3 data for guidelines
     let arr = new Array(ceil(numlines)).fill(0)
@@ -3436,7 +3436,7 @@ function updateGuidelines(ir) {
     if      (   abs(nYSc(0) - nYSc(lnw))  > 8) delta =  1
     else if (7*(abs(nYSc(0) - nYSc(lnw))) > 8) delta =  7
     else                                            delta = 28
-    let numlines = floor(1.2*abs((yrange[1]-yrange[0])/(delta*lnw)))
+    let numlines = min(365, floor(1.2*abs((yrange[1]-yrange[0])/(delta*lnw))))
     if (lnw == 0 || numlines < 28) numlines = 28
     let arr = new Array(ceil(numlines)).fill(0)
     arr = [...arr.keys()].map(d => (d+1)*delta-1)
