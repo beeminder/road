@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Automon: Test Suite Monitoring/Comparison Daemon
+# NOTE: You have to run this from the automon directory.
 
 # NOTE: I've refactored this a bit so that the data directory with the bb files
 # is treated exactly the same as any source directory.
@@ -43,8 +44,6 @@ from enum import Enum
 ################################################################################
 ######################### CONSTANTS AND CONFIGURATION ##########################
 
-#DEBUG = '' # for gathering up debug output to show after automon quits
-
 DISPCMD = next(p for p in ['/usr/bin/open', '/usr/local/bin/display',
                            '/usr/bin/display', '/bin/true']
                if os.path.exists(p)) # path to utility for displaying images
@@ -65,7 +64,7 @@ ST = Enum('ST', [
 # INIT -> IDLE : Initialization completed
 # IDLE -> PROC : sourcechange OR forcestart
 # PROC -> IDLE : forcestop
-# PROC -> INIT : forcestart OR forcestop OR curgoal == goals
+# PROC -> INIT : forcestart OR forcestop OR curgoal == len(goals)
 # PROC -> PAUS : (not above) AND paused
 # PROC -> JSRF : (not above) AND (jsref OR jsbrain_checkref)
 # PROC -> JSBR : (not above)
@@ -112,7 +111,7 @@ class StdOutWrapper:
 #  |5. Item                               |
 #  |6. Item                               |
 #  |7. Item                               |
-#  |8. Item                               | <- max_lines = 7
+#  |8. Item                               | <- maxlines = 7
 #  |--------------------------------------|
 #  |9. Item                               |
 #  |10. Item                              | <- bottom = 10
@@ -124,7 +123,7 @@ class ScrollData:
     self.top = 0
     self.bottom = 0
     self.cur = 0
-    self.max_lines = 0
+    self.maxlines = 0
     self.page = 0
 
 # JobRequest and JobResponse objects are used to communicate with the worker
@@ -152,63 +151,24 @@ class JobResponse:
     self.jsondiff = None
     self.grdiff = None
 
-# This FileSystemEvent handler from the watchdog library is used to monitor
-# various directories, initiating a restart for processing bb files.
+# Notice when source files or bbfiles change, to trigger rebraining.
 class JSBrainEventHandler(FileSystemEventHandler):
   def __init__(self): FileSystemEventHandler.__init__(self)
   def on_modified(self, event):
+    if event.is_directory and os.path.abspath(event.src_path) == \
+                              os.path.abspath(cm.jsoutf):        return
+    cg = cm.curgoal
+    cgs = None if not cm.goals or cg<0 or cg >= len(cm.goals) else cm.goals[cg]
+    flog(f'$PRE FILE {event.event_type} {event.src_path} curgoal={cgs}')
     if not event.is_directory and not ignorable(event.src_path):
-      #tmp = cm.state
-      #setstatus(f'DEBUG1: File {event.event_type}: {event.src_path} [{tmp}]')
-      #cm.state = ST.IDLE
-      #time.sleep(3)
-      #cm.state = tmp
-      #global DEBUG
-      #DEBUG = f'debug1 file {event.event_type}: {event.src_path} ' \
-      #       +f'curgoal={cm.curgoal}'
-      #refresh_topline()
-      # Record where source change was detected so bb file list can be reordered
-      cm.sourcechange = cm.curgoal
-
-# Cruft alert: I was desperately trying things and made a separate event handler
-# but I don't think that makes sense. The above handler can be used for both 
-# source file changes and changes to bbfiles. It just needs to see if the 
-# event.src_path refers to a source file, in which case do cm.sourcechange =
-# cm.curgoal, and if event.src_path is a bbfile then do cm.bbedit blah blah.
-
-# I think we want a separate event handler to notice changes to bb files and 
-# regenerate the references for just that bb file when the bb file is edited.
-# Don't count changes in jsref or jsout since automon itself modifies those!
-class EventHandler2(FileSystemEventHandler):
-  def __init__(self): FileSystemEventHandler.__init__(self)
-  def on_modified(self, event):
-    #if event.src_path != cm.jsoutf and event.src_path != cm.jsreff:
-    if not event.is_directory and not ignorable(event.src_path):
-      #tmp = cm.state
-      #setstatus(f'DEBUG2: File {event.event_type}: {event.src_path} [{tmp}]')
-      #cm.state = ST.IDLE
-      #time.sleep(3)
-      #cm.state = tmp
-      #global DEBUG
-      #DEBUG = f'debug2 file {event.event_type}: {event.src_path} ' \
-      #       +f'curgoal={cm.curgoal}'
-      #refresh_topline()
       if os.path.splitext(event.src_path)[1] == '.bb':
         cm.bbedit = extract_slug(event.src_path)
-
-        # this was an experiment to do this here but i think it should be better
-        # to just remember the bbfile and deal with it in the worker thread
-        # or whatever, similar to what we do when we notice a source file change
-        #newreq = JobRequest("jsbrain")
-        #newreq.slug    = extract_slug(event.src_path)
-        #newreq.inpath  = cm.bbdir
-        #newreq.outpath = cm.jsoutf
-        #newreq.jsref   = cm.jsreff
-        #newreq.graph   = True
-        #qpending.put_nowait(newreq)
-        #cm.state = ST.PROC
-
-
+      else:
+        # Record where source change detected so goal list can be reordered
+        cm.sourcechange = cm.curgoal
+    else:
+      flog(" -- but directory or ignorable so ignore")
+    flog('\n')
 
 # Global structure for common data ---------------------------------------------
 
@@ -268,6 +228,19 @@ cm = CMonitor()
 
 # Utility functions  -----------------------------------------------------------
 
+# Write string s to a file for debugging (now with macros!)
+def flog(s):
+  s = s.replace('$PRE',
+                f'{time.strftime("%H:%M:%S", time.localtime())} {cm.state}')
+  with open('debug.log', 'a') as f:
+    f.write(s)
+    f.flush()
+
+def flon(s): flog(f'$PRE {s}\n')
+
+def nowstamp():
+  return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+
 def exitonerr(err, usage=True):
   usage = '''\
 Usage: automon.py <options> bbdir [other directories to monitor for changes]
@@ -284,11 +257,12 @@ def play(sound):
   try:
     subprocess.check_output([PLAY, sound], stderr=subprocess.STDOUT)
   except FileNotFoundError:
-    print(" **** Cannot execute 'play' to play sounds")
+    flon("ERROR: cannot play sounds")
   
 def freak(): play("uhoh.wav")
 def ahhhh(): play("phew.wav")
 
+# Truncate string
 def trstr(s, l): return (s[:l] + '..') if len(s) > l else s
 
 # Take a full path and extract the slug, eg, "/path/to/foo-bar.bb" -> "foo-bar"
@@ -302,7 +276,7 @@ def ignorable(p):
 
 # Scrolling related functions --------------------------------------------------
 
-# Update the scroll object 's' to advance by 1 in 'dir'
+# Update the scroll object s to advance by 1 in direction dir
 def scroll(s, dir):
   next_line = s.cur + dir # next cursor position after scrolling
 
@@ -312,8 +286,8 @@ def scroll(s, dir):
     return
   # Down direction scroll overflow: next cursor position touch the max lines,
   # but absolute position of max lines could not touch the bottom
-  if dir == DOWN and (next_line == s.max_lines) \
-     and (s.top + s.max_lines < s.bottom):
+  if dir == DOWN and (next_line == s.maxlines) \
+     and (s.top + s.maxlines < s.bottom):
     s.top += dir
     return
   # Scroll up: current cursor position or top position > 0
@@ -322,17 +296,17 @@ def scroll(s, dir):
     return
   # Scroll down: next cursor position is above max lines, and absolute position
   # of next cursor could not touch the bottom
-  if dir == DOWN and next_line < s.max_lines and s.top + next_line < s.bottom:
+  if dir == DOWN and next_line < s.maxlines and s.top + next_line < s.bottom:
     s.cur = next_line
     return
     
-# Update the scroll object 's' to advance by half a page (max_lines/2) in 'dir'
-def paging(s, direction):
-  ml = int(s.max_lines/2)
+# Update scroll object s to advance by half a page (maxlines/2) in direction dir
+def paging(s, dir):
+  ml = int(s.maxlines/2)
   s.page = s.bottom // ml
   
   current_page = (s.top + s.cur) // ml
-  next_page = current_page + direction
+  next_page = current_page + dir
 
   # The last page may have fewer items than max lines, so we should adjust the
   # current cursor position as maximum item count on last page
@@ -341,11 +315,11 @@ def paging(s, direction):
   # Page up: if current page is not a first page, page up is possible top
   # position can not be negative, so if top position is going to be negative, 
   # we should set it as 0
-  if direction == UP and current_page > 0:
+  if dir == UP and current_page > 0:
     s.top = max(0, s.top - ml)
     return
   # Page down: if current page is not a last page, page down is possible
-  if direction == DOWN and current_page < s.page:
+  if dir == DOWN and current_page < s.page:
     s.top += ml
     return
 
@@ -355,8 +329,11 @@ def _addstr(w,y,x,s,a=curses.A_NORMAL):
   try:
     w.addstr(y,x,s,a)
   except curses.error:
-    print("_addstr error: ww:"+str(cm.ww)+",wh:"+str(cm.wh)+
-          ",y:"+str(y)+", x:"+str(x)+",str="+s)
+    cg = cm.curgoal
+    cgs = None if not cm.goals or cg<0 or cg >= len(cm.goals) else cm.goals[cg]
+    flon("_addstr error: ww:"+str(cm.ww)
+                     +", wh:"+str(cm.wh)+", y:"+str(y)
+                                        +", x:"+str(x)+", str="+s + f' {cgs}')
     pass
 
 def resize_windows():
@@ -381,18 +358,18 @@ def resize_windows():
       cm.lw = lw; cm.lh = cm.wh-5
 
       # Update left and right scroll data based on the new height
-      cm.ls.max_lines = cm.wh-7
-      if cm.ls.cur >= cm.ls.max_lines:
-        cm.ls.top += (cm.ls.cur-cm.ls.max_lines+1)
-        cm.ls.cur = cm.ls.max_lines-1
+      cm.ls.maxlines = cm.wh-7
+      if cm.ls.cur >= cm.ls.maxlines:
+        cm.ls.top += (cm.ls.cur-cm.ls.maxlines+1)
+        cm.ls.cur = cm.ls.maxlines-1
       
       # Update the right window and its scroll data
       if (cm.rwin): cm.rwin.resize(cm.wh-5, cm.ww-lw); cm.rwin.mvwin(1, lw)
       else: cm.rwin = curses.newwin(cm.wh-5, cm.ww-lw, 1, lw)
       cm.rwin.refresh()
       cm.rw = cm.ww-lw
-      cm.rs.max_lines = cm.wh-7
-      cm.rs.page = cm.rs.bottom // int(cm.rs.max_lines/2)
+      cm.rs.maxlines = cm.wh-7
+      cm.rs.page = cm.rs.bottom // int(cm.rs.maxlines/2)
 
       # Update status and menu windows
       if (cm.swin): cm.swin.resize(3, cm.ww); cm.swin.mvwin(cm.wh-4, 0)
@@ -432,12 +409,16 @@ def refresh_topline():
   if (cm.jsref): _addstr(w, 0, 10, "[References]", curses.A_REVERSE)
   else:          _addstr(w, 0, 10, "[References]")
 
-  #global DEBUG
   if (cm.paused): _addstr(w, 0, 23, "[Paused]", curses.A_REVERSE)
   else:           _addstr(w, 0, 23, "[Paused]")
-  #_addstr(w, 0, 41, "(" + DEBUG + ")")
 
   w.refresh()
+
+# Take a number of seconds and show it as milliseconds like "123ms"
+# (or seconds if it's 10s or more)
+def showtm(x):
+  if x >= 10: return str(int(x))+"s"
+  return str(int(1000*x))+"ms"
 
 def refresh_status():
   w = cm.swin
@@ -447,14 +428,17 @@ def refresh_status():
   wwx = cm.ww - 14
   ndots = int(cm.progress/100*wwx)
   if ndots > wwx: # never happens anymore; SCHDEL 
-    print(f'NEVER HAPPENS: prog={cm.progress} ndots={ndots} wwx={wwx}\n')
+    flon(f'NEVER HAPPENS: prog={cm.progress} ndots={ndots} wwx={wwx}')
     sys.exit(1)
   _addstr(w, 0, 10, "(".ljust(ndots, 'o').ljust(wwx)+")")
   if (cm.total_count != 0):
     _addstr(w, 2, cm.ww-29,
-            " Avg: "+str(int(1000*cm.total_time/cm.total_count))+"ms ",
+            #" Avg: "+str(int(1000*cm.total_time/cm.total_count))+"ms ", #SCHDEL
+            " Avg: "+showtm(cm.total_time/cm.total_count)+" ",
             curses.A_BOLD)
-    _addstr(w, 2, cm.ww-15, " Last: "+str(int(1000*cm.last_time))+"ms ",
+    _addstr(w, 2, cm.ww-15, 
+            #" Last: "+str(int(1000*cm.last_time))+"ms ", #SCHDEL
+            " Last: "+showtm(cm.last_time)+" ",
             curses.A_BOLD)
   w.refresh()
 
@@ -466,7 +450,7 @@ def refresh_windows():
   _addstr(w, 0, 1, str(len(cm.problems)) + " errors out of " 
                  + str(len(cm.goals)) + ":", curses.A_BOLD)
   _addstr(w, 0, cm.lw-5, "RJPG", curses.A_BOLD)
-  for i, item in enumerate(cm.problems[cm.ls.top:cm.ls.top + cm.ls.max_lines]):
+  for i, item in enumerate(cm.problems[cm.ls.top:cm.ls.top + cm.ls.maxlines]):
     # Highlight the current cursor line
     slug = trstr(item.req.slug, cm.lw-9).ljust(cm.lw-7)
     if i == cm.ls.cur: _addstr(w, i+1, 1, slug, curses.A_REVERSE)
@@ -493,12 +477,12 @@ def refresh_windows():
     for e in errmsgs:
       errtxt += textwrap.wrap(e, cm.ww-cm.lw-3)
     cm.rs.bottom = len(errtxt)
-    cm.rs.page = cm.rs.bottom // int(cm.rs.max_lines/2)
+    cm.rs.page = cm.rs.bottom // int(cm.rs.maxlines/2)
     w.addnstr(0, 1, "Errors: ("+pr.req.reqtype+", "+pr.req.slug+")", 
               cm.ww-cm.lw-2, curses.A_BOLD)
-    for i, item in enumerate(errtxt[cm.rs.top:cm.rs.top+cm.rs.max_lines]):
+    for i, item in enumerate(errtxt[cm.rs.top:cm.rs.top+cm.rs.maxlines]):
       _addstr(w, i+1, 1, item)
-    w.vline(1+int((cm.lh-2)*cm.rs.top/((cm.rs.page+1)*(cm.rs.max_lines//2))), 
+    w.vline(1+int((cm.lh-2)*cm.rs.top/((cm.rs.page+1)*(cm.rs.maxlines//2))), 
             cm.ww-cm.lw-2, curses.ACS_BOARD, (cm.lh-2)//(cm.rs.page+1))
   w.refresh()
 
@@ -811,18 +795,25 @@ def statusTask():
       refresh_status()
   except (queue.Empty): pass
 
+# Update all the last-modified-times of the bbfiles
+def lmTask():
+  return "TODO"
+
 # UI task: Monitors user input, handles menu events, manages top line
 def uiTask():
   c = cm.lwin.getch()
+  cg = cm.curgoal
+  cgs = None if not cm.goals or cg < 0 or cg >= len(cm.goals) else cm.goals[cg]
   if   c == ord('q'): return True
-  elif c == ord(' '): refresh_all()
+  elif c == ord(' '): refresh_all() # not sure this is of any value
   elif c == curses.KEY_ENTER or c == 10 or c == 13:
     # ENTER displays graph diff for the currently selected problem
+    flon(f'ENTER keypress! {cgs}')
     if (len(cm.problems) > 0 and cm.graph):
       curpr = cm.problems[cm.ls.top+cm.ls.cur]
       if (curpr.grdiff and curpr.grdiff > 0):
         try:
-          imgdiff=cm.jsoutf+"/"+curpr.req.slug+"-diff.png"
+          imgdiff = cm.jsoutf+"/"+curpr.req.slug+"-diff.png"
           subprocess.Popen([DISPCMD+' '+imgdiff],
                            shell=True,stdin=None,stdout=None,stderr=None,
                            close_fds=True)
@@ -836,8 +827,12 @@ def uiTask():
                            close_fds=True)
         except OSError as e: pass
 
-  elif c == ord('p'): cm.paused = not cm.paused; refresh_topline()
+  elif c == ord('p'): 
+    flon(f'p keypress! {cgs}')
+    cm.paused = not cm.paused
+    refresh_topline()
   elif c == ord('c'):
+    flon(f'c keypress! {cgs}')
     if (len(cm.problems) > 0): 
       req = cm.problems[cm.ls.top+cm.ls.cur].req
       bbfile = os.path.abspath(cm.bbdir)+"/"+req.slug+".bb"
@@ -846,6 +841,7 @@ def uiTask():
       else:
         remove_problem(cm.problems[cm.ls.top+cm.ls.cur])
   elif c == ord('r'):
+    flon(f'r keypress! {cgs}')
     if (len(cm.problems) > 0):
       # here we're queueing a new request for whatever bbfile the cursor is on
       # because we want to regenerate the references for it.
@@ -856,7 +852,6 @@ def uiTask():
       req = cm.problems[cm.ls.top+cm.ls.cur].req
       newreq = JobRequest("jsref")
       newreq.slug = req.slug
-      #global DEBUG   #SCHDEL
       #DEBUG += f'(slug={req.slug})\n'
       newreq.inpath = req.inpath
       newreq.outpath = cm.jsreff
@@ -865,6 +860,7 @@ def uiTask():
       qpending.put(newreq)
       qpending.put(req)
   elif c == ord('R'):
+    flon(f'R keypress! {cgs}')
     cm.jsref = not cm.jsref
     cm.forcestart = True
     refresh_topline()
@@ -872,6 +868,7 @@ def uiTask():
     cm.graph = not cm.graph
     refresh_topline()
   elif c == ord('s'):
+    flon(f's keypress! {cgs}')
     if (cm.state == ST.IDLE): cm.forcestart = True
     else:                     cm.forcestop = True
       
@@ -1064,7 +1061,7 @@ def jobTask():
       return
 
   elif (cm.state == ST.EXIT):
-    print(ST.EXIT)
+    flon("Exiting!")
 
   else:
     exitonerr("Invalid state :"+str(cm.state), false)
@@ -1104,41 +1101,43 @@ def monitor(stdscr, bbdir, graph, force, watchdirs):
   # Source directoty observer
   event_handler = JSBrainEventHandler()
   observer = Observer()
+  flon(f'adding bbdir={bbdir} to directories to watch for changes')
+  observer.schedule(event_handler, bbdir)
   for d in watchdirs: 
-    #DEBUG = f'adding srcdir={d} to directories to watch for changes'
-    #refresh_topline()
+    flon(f'adding srcdir={d} to directories to watch for changes')
     observer.schedule(event_handler, d)
   observer.start()
-  # Also notice when a bbfile is edited and regenerate the references for just
-  # that bbfile when that happens. See "bbedit" above.
-  #DEBUG = f'adding bbdir={bbdir} to directories to watch for changes'
-  #refresh_topline()
-  event_handler2 = EventHandler2()
-  observer2 = Observer()
-  observer2.schedule(event_handler2, bbdir)
-  observer2.start()
   
   cm.paused = False
   try:
     while(True):
+      #flon('start statusTask/uiTask/jobTask/displayTask/alertTask loop')
       statusTask()
       if (uiTask()): break
       jobTask()
       displayTask()
       alertTask()
-      time.sleep(0.01)
+      #flon('sleep 1s (originally 0.01)')
+      time.sleep(.01) # TODO: originally 0.01, 1 or more for debugging
 
   except Exception as e:
+    flon("Barf!")
     traceback.print_exc()
     print("\n")
     pass
+  flon('broke out of main loop, doing worker_stop()')
   worker_stop()
+  flon('worker_thread.join()?')
   worker_thread.join()
+  flon('curses.curs_set(True)?')
   curses.curs_set(True)
+  flon('end of monitor function')
 
 # Main entry point for Automon. Parse command line arguments, set appropriate
 # fields and flags, and invoke the curses wrapper with the function monitor().
 def main(argv):
+  flog('-'*80 + '\n')
+  flon(f'Automon BEGIN {nowstamp()}')
   try: opts, args = getopt.getopt(argv, "hgf", ["help", "graph", "force"])
   except getopt.GetoptError as err: exitonerr(str(err))
     
@@ -1159,18 +1158,8 @@ def main(argv):
       exitonerr(f'{d} is not a directory')
   
   curses.wrapper(monitor, bbdir, graph, force, watchdirs)
-  #global DEBUG
-  #DEBUG += f'[test{4-3}]'
-  #print(f'DEBUG:\n{DEBUG}') # this happens after exiting the automon interface
-
-  #SCHDEL
-      #print("Unrecognized option: "+opt)
-      #print(usage)
-      #sys.exit(2)      
-  #if (not os.path.isdir(bbdir) or not os.path.exists(bbdir)):
-  #  exitonerr(bbdir+" is not a directory.")
-  #print(f'DEBUG: opts: {opts} // args: {args}\n')
-
+  flon(f'Automon END   {nowstamp()}')
+  flog('-'*80 + '\n')
 
 # Make sure we only execute main in the top level environment
 if __name__ == "__main__":
