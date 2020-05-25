@@ -433,6 +433,7 @@ function getiso( val ) {
   if (iso[val] == undefined) iso[val] = br.isoline(road, dtd, goal, val)
   return iso[val]
 }
+
 function getisopath( val, xr ) {
   const isoline = getiso(val)
   if (xr == null) xr = [-Infinity, Infinity]
@@ -445,9 +446,10 @@ function getisopath( val, xr ) {
   }
   return d
 }
+
 // Compute lane width based on isolines on the left or right border for the
 // graph depending on dir*yaw. If dir*yaw > 0 (like do-more), the left side is
-// considered, otherwise, the right side. The average lane width is computed by
+// considered, otherwise the right side. The average lane width is computed by
 // computing isolines for dtd=0 and dtd=365 and dividing it by 365 to overcome
 // isolines coinciding for flat regions.
 function isolnwborder(xr) {
@@ -455,7 +457,7 @@ function isolnwborder(xr) {
   const numdays = min(opts.maxFutureDays,
                       ceil((goal.tfin-goal.tini)/SID))
   const center = getiso(0)
-  const oneday = getiso( numdays )
+  const oneday = getiso(numdays)
   if (goal.yaw*goal.dir > 0) {
     lnw = abs(br.isoval(center, xr[0])-br.isoval(oneday, xr[0])) / numdays
   } else {
@@ -463,6 +465,7 @@ function isolnwborder(xr) {
   }
   return lnw
 }
+
 function isolnwmax( xr ) {
   let x, lnw = 0
   const center = getiso(0)
@@ -480,6 +483,7 @@ function isolnwmax( xr ) {
   return lnw == 0 ? abs(br.isoval(center, xr[0]) - 
                         br.isoval(oneday, xr[0])) : lnw
 }
+
 function isolnwmin( xr ) {
   let x, lnw = Infinity
   const center = getiso(0)
@@ -3071,6 +3075,7 @@ function updateYBHP() {
     regions = [
     //  d,  D, fcolor,    scolor,      w,  op, xrange
     //----------------------------------------------------------------------
+      [ 2, -1, (goal.shadeit ? lyellow : "none"), "none", 0, rfo, xrfull], 
     //[ 6, -1, "#b2e5b2", "none",      0, rfo, xrfull], // dark green region
       [ 6,  6, "none",    bgreen,    gsw, gfo, xrfull], // 1-week line
     //[ 2,  6, "#cceecc", "none",      0, rfo, xrfull], // green region
@@ -3368,15 +3373,16 @@ function updateLanes(ir) {
   }
 }
 
-function updateGuidelines(ir) {
+function updateGuidelines(ir) {  
   let guideelt = gOldGuides.selectAll(".oldguides")
   if (opts.roadEditor || ir == null) { guideelt.remove(); return }
 
-  const yrange = [nYSc.invert(plotbox.height), nYSc.invert(0)]
-  let delta = 1
-  const yr = abs(yrange[1] - yrange[0])
-  
+  // #DIELANES BEGIN
   if (!goal.ybhp) {
+    const yrange = [nYSc.invert(plotbox.height), nYSc.invert(0)]
+    let delta = 1
+    const yr = abs(yrange[1] - yrange[0])
+
     let fx = nXSc(ir[0].sta[0]*SMS) // fx,fy: start of the current segment
     let fy = nYSc(ir[0].sta[1])
     let ex = nXSc(ir[0].end[0]*SMS) // ex,ey: end of the current segment
@@ -3427,36 +3433,68 @@ function updateGuidelines(ir) {
                                             : opts.guidelines.width*scf))
 	    .attr("stroke", (d,i) => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL))
   } else {
-    const buildPath = ((d,i) => getisopath(d, [goal.tini, goal.tfin]))
+  // #DIELANES END
 
-    // Create an index array as d3 data for guidelines
-    const xrange = [nXSc.invert(            0)/SMS,
-                    nXSc.invert(plotbox.width)/SMS]
-    const lnw = isolnwborder(xrange)
-    if      (   abs(nYSc(0) - nYSc(lnw))  > 8) delta =  1
-    else if (7*(abs(nYSc(0) - nYSc(lnw))) > 8) delta =  7
-    else                                            delta = 28
-    let numlines = min(365, floor(1.2*abs((yrange[1]-yrange[0])/(delta*lnw))))
-    if (lnw == 0 || numlines < 28) numlines = 28
-    let arr = new Array(ceil(numlines)).fill(0)
-    arr = [...arr.keys()].map(d => (d+1)*delta-1)
-    
-    guideelt = guideelt.data(arr)
-    guideelt.exit().remove()
-    guideelt.enter().append("svg:path")
-      .attr("class",           "oldguides")
-      .attr("d",               buildPath)
-      .attr("transform",       null)
-      .attr("pointer-events",  "none")
-      .attr("fill",            "none")
-      .attr("stroke-width",    opts.guidelines.width*scf)
-      .attr("stroke",          bu.Cols.LYEL)
-    guideelt
-	    .attr("d",               buildPath)
-      .attr("transform",       null)
-	    .attr("stroke",          bu.Cols.LYEL)
-	    .attr("stroke-width",    opts.guidelines.width*scf)
+  const yrange = [nYSc.invert(plotbox.height), nYSc.invert(0)]
+  let delta = 1
+  
+  const buildPath = ((d,i) => getisopath(d, [goal.tini, goal.tfin]))
+  
+  // Create an index array as d3 data for guidelines
+  // (Fun fact: the .invert() call returns a javascript date objects but when
+  // you divide a Date object by a number that coerces it to a number, namely
+  // unixtime in milliseconds. So doing .invert().getTime() is unnecessary.)
+  const xrange = [nXSc.invert(            0)/SMS,
+                  nXSc.invert(plotbox.width)/SMS]
+  const lnw = isolnwborder(xrange)
+
+  if      (    abs(nYSc(0) - nYSc(lnw))  > 8) delta =   1
+  else if ( 7*(abs(nYSc(0) - nYSc(lnw))) > 8) delta =   7
+  else                                        delta =  28
+  // TODO: don't need that abs(); yrange[0] is always less than yrange[1]:
+  let numlines = 
+    max(28, min(365, floor(1.2*abs((yrange[1]-yrange[0])/(delta*lnw)))))
+  if (lnw == 0)
+    numlines = 28 // but this makes no sense, they won't show up
+  console.log(
+    `DEBUG delta=${delta} lnw=${lnw} numlines=${numlines} \
+    yrange=${yrange[0]},${yrange[1]}`)
+  // TODO: we know numlines is an integer so the ceil() here is unnecessary:
+  let arr = new Array(ceil(numlines)).fill(0)
+  arr = [...arr.keys()].map(d => (d+1)*delta-1)
+
+  // get the last isoline and make sure it's near the far-yaw edge of the plot
+  let lastiso = getiso(numlines*delta-1)
+  lastiso = lastiso.filter(tv => tv[0] > xrange[0] && tv[0] < xrange[1])
+  // find the most extreme y-value of the last isoline so we can see if it falls
+  // short of the plotbox
+  if (lastiso.length > 0) {
+    const yextreme = goal.yaw*max(...lastiso.map(tv => goal.yaw*tv[1]))
+    console.log(
+      `DEBUG yextreme=${yextreme} -> ${nYSc(yextreme)} (${plotbox.height})`)
+    goal.shadeit = goal.yaw > 0 ? nYSc(yextreme) > 0 + 16 
+                                : nYSc(yextreme) < plotbox.height - 16
+  } else {
+    // TODO: is it ever actually possible to filter away all of segments?
+    goal.shadeit = false
   }
+
+  guideelt = guideelt.data(arr)
+  guideelt.exit().remove()
+  guideelt.enter().append("svg:path")
+    .attr("class",           "oldguides")
+    .attr("d",               buildPath)
+    .attr("transform",       null)
+    .attr("pointer-events",  "none")
+    .attr("fill",            "none")
+    .attr("stroke-width",    opts.guidelines.width*scf)
+    .attr("stroke",          bu.Cols.LYEL)
+  guideelt
+	   .attr("d",               buildPath)
+     .attr("transform",       null)
+	   .attr("stroke",          bu.Cols.LYEL)
+	   .attr("stroke-width",    opts.guidelines.width*scf)
+} // #DIELANES
 }
 
 // unDRY alert: we're just mimicking what updateCenterline does for the razor

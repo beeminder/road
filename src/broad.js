@@ -597,17 +597,16 @@ self.isoline_clip = ( iso, rd, dtdarr, goal, v ) => {
   return isoout
 }
   
-/* Return an array of x.y coordinate pairs for an isoline associated with dtd=v.
+/* Return an array of x,y coordinate pairs for an isoline associated with dtd=v.
  * This can be used to compute boundaries for derailment regions, as well as 
  * guidelines. Coordinate points start from the beginning of the road and 
  * proceed forward.
 */
 self.isoline = ( rd, dtdarr, goal, v, retall=false ) => {
-  var iso1, iso2, iso3, iso4
-  iso1 = self.isoline_generate( rd, dtdarr, goal, v)
-  iso2 = self.isoline_monotonicity( iso1, rd, dtdarr, goal, v)
-  iso3 = self.isoline_nobackward( iso2, rd, dtdarr, goal, v)
-  iso4 = self.isoline_clip( iso3, rd, dtdarr, goal, v)
+  let iso1 = self.isoline_generate( rd, dtdarr, goal, v)
+  let iso2 = self.isoline_monotonicity( iso1, rd, dtdarr, goal, v)
+  let iso3 = self.isoline_nobackward( iso2, rd, dtdarr, goal, v)
+  let iso4 = self.isoline_clip( iso3, rd, dtdarr, goal, v)
 
   if (retall) return [iso1, iso2, iso3, iso4]
   else return iso4
