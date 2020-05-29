@@ -960,7 +960,6 @@ function vetParams() {
 
 // Generate razrroad for YBHP migration by shifting each segment by the lane
 // width in the negative yaw direction, ie, towards the bad side of the road.
-// And use lnf(), getting the lane width for each segment at that point in time.
 // This yields a razrroad that coincides with the critical edge of the old-style
 // laney road.
 // (For dumb crufty reasons we're generating both the road matrix version as
@@ -969,23 +968,50 @@ function vetParams() {
 // also displaying the critical edge of laney roads as a thin red line now.
 // Of course all this cruft will go away when the YBHP transition is complete!)
 function genRazr() {
-  const lnf = goal.lnf
+  //const lnf = goal.lnf
   const yaw = goal.yaw
   const t1 = seg => seg.sta[0]
   const t2 = seg => seg.end[0]
   const v1 = seg => seg.sta[1]
   const v2 = seg => seg.end[1]
-  // reminder that segments go from 
-  // {t1,     v1}     to {t2,     v2}     or 
-  // {sta[0], sta[1]} to {end[0], end[1]}
-  const midroad = roads.slice(1,-1).map(s => ({ // s for road segment
-    //sta:   [t1(s), v1(s) - yaw*lnf((t1(s)+t2(s))/2)],
-    //end:   [t2(s), v2(s) - yaw*lnf((t1(s)+t2(s))/2)],
-    sta:   [t1(s), v1(s) - yaw*min(lnf(t1(s)), lnf(t2(s)))],
-    end:   [t2(s), v2(s) - yaw*min(lnf(t1(s)), lnf(t2(s)))],
-    slope: s.slope,
-    auto:  s.auto,
-  }))
+  const offset = goal.lnw
+
+  // Iterate over road segments, s, where segments go from
+  // {t1,       v1}       to {t2,       v2}       or 
+  // {s.sta[0], s.sta[1]} to {s.end[0], s.end[1]}
+  const midroad = roads.slice(1,-1).map(s => { // s for road segment
+    // Previous things we tried:
+    // (1) lnf of the midpoint of the segment, lnf((t1+t2)/2)
+    //const offset = lnf((t1(s)+t2(s))/2)
+    // (2) min of lnf(t1) and lnf(t2)
+    //const offset = min(lnf(t1(s)), lnf(t2(s)))
+    // (3) max of current lnw and amount needed to ensure not redyest
+    //const yest = goal.asof - SID
+    //const bdelt = -yaw*(goal.dtf(yest) - br.rdf(roads, yest)) // bad delta
+    //let offset
+    //if (yest < goal.tini) {
+    //  offset = goal.lnw
+    //} else {
+    //  offset = max(goal.lnw, bdelt)
+    //}
+    // (4) just use current lnw for chrissakes
+    return {
+      sta:   [t1(s), v1(s) - yaw*offset],
+      end:   [t2(s), v2(s) - yaw*offset],      
+      slope: s.slope,
+      auto:  s.auto,
+    }
+  })
+
+  // TODO: This wants refactored and cleaned up. If we're going to do the exact
+  // same thing to the dummy segments (iniroad and finroad) as we do to the 
+  // the road with the dummies sliced off (midroad) then we don't need to slice
+  // them off at all. Just convert the whole thing! Ie, have the map above loop
+  // through all of "roads". And if we want to set aside iniroad and finroad
+  // and do *no* conversion to them, then we can just do the following instead
+  // of going to all the trouble of constructing all the fields:
+  //goal.razrroad = [roads[0]].concat(midroad, [roads[-1]])
+
   let s = roads[0]  // first segment, which is kind of a dummy segment i guess?
   const iniroad = [{
     sta:   [t1(s), v1(s)],
@@ -995,16 +1021,16 @@ function genRazr() {
   }]
   s = roads[roads.length-1] // last segment also dummy segment? am fuzzy on this
   const finroad = [{
-    sta:   [t1(s), v1(s)],
-    end:   [t2(s), v2(s)],
+    sta:   [t1(s), v1(s) /* - yaw*offset */],
+    end:   [t2(s), v2(s) /* - yaw*offset */],
     slope: s.slope,
     auto:  s.auto,
   }]
-  // if we're not going to touch iniroad and finroad we could just do this:
-  //goal.razrroad = [roads[0]].concat(midroad, [roads[-1]])
   goal.razrroad = iniroad.concat(midroad, finroad)
 
-  // seems like this should be dropping both initial and final segment (?):
+  // um, seems like this should be dropping both initial and final segment but 
+  // apparently not because this is the version that actually generates the
+  // road matrix correctly with both tini/vini and tfin/vfin:
   goal.razrmatr = goal.razrroad.slice(0,-1).map(s => {
     if (s.auto === 0) return [null,     s.end[1], s.slope*goal.siru]
     if (s.auto === 1) return [s.end[0], null,     s.slope*goal.siru]
@@ -1116,7 +1142,7 @@ function procParams() {
 
   goal.lnw = goal.ybhp ? 0 : max(goal.nw, goal.lnf(goal.tcur))
   goal.safebuf = br.dtd(roads, goal, goal.tcur, goal.vcur)
-  genRazr()
+  // originally called genRazr() here #SCHDEL
   goal.tluz = goal.tcur+goal.safebuf*SID
   goal.delta = bu.chop(goal.vcur - br.rdf(roads, goal.tcur))
   goal.rah = br.rdf(roads, goal.tcur+bu.AKH)
@@ -1148,6 +1174,7 @@ function procParams() {
   if (goal.tfin < goal.tluz)  goal.tluz = bu.BDUSK
       
   setDefaultRange()
+  genRazr()
   return ""
 }
 
