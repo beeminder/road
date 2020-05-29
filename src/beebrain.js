@@ -979,8 +979,8 @@ function genRazr() {
   // Iterate over road segments, s, where segments go from
   // {t1,       v1}       to {t2,       v2}       or 
   // {s.sta[0], s.sta[1]} to {s.end[0], s.end[1]}
-  const midroad = roads.slice(1,-1).map(s => { // s for road segment
-    // Previous things we tried:
+  goal.razrroad = roads.slice().map(s => { // s for road segment
+    // Previous things we tried: (SCHDEL)
     // (1) lnf of the midpoint of the segment, lnf((t1+t2)/2)
     //const offset = lnf((t1(s)+t2(s))/2)
     // (2) min of lnf(t1) and lnf(t2)
@@ -988,12 +988,7 @@ function genRazr() {
     // (3) max of current lnw and amount needed to ensure not redyest
     //const yest = goal.asof - SID
     //const bdelt = -yaw*(goal.dtf(yest) - br.rdf(roads, yest)) // bad delta
-    //let offset
-    //if (yest < goal.tini) {
-    //  offset = goal.lnw
-    //} else {
-    //  offset = max(goal.lnw, bdelt)
-    //}
+    //const offset = yest < goal.tini ? goal.lnw : max(goal.lnw, bdelt)
     // (4) just use current lnw for chrissakes
     return {
       sta:   [t1(s), v1(s) - yaw*offset],
@@ -1003,34 +998,17 @@ function genRazr() {
     }
   })
 
-  // TODO: This wants refactored and cleaned up. If we're going to do the exact
-  // same thing to the dummy segments (iniroad and finroad) as we do to the 
-  // the road with the dummies sliced off (midroad) then we don't need to slice
-  // them off at all. Just convert the whole thing! Ie, have the map above loop
-  // through all of "roads". And if we want to set aside iniroad and finroad
-  // and do *no* conversion to them, then we can just do the following instead
-  // of going to all the trouble of constructing all the fields:
-  //goal.razrroad = [roads[0]].concat(midroad, [roads[-1]])
-
-  let s = roads[0]  // first segment, which is kind of a dummy segment i guess?
-  const iniroad = [{
-    sta:   [t1(s), v1(s)],
-    end:   [t2(s), v2(s)],
-    slope: s.slope,
-    auto:  s.auto,
-  }]
-  s = roads[roads.length-1] // last segment also dummy segment? am fuzzy on this
-  const finroad = [{
-    sta:   [t1(s), v1(s) /* - yaw*offset */],
-    end:   [t2(s), v2(s) /* - yaw*offset */],
-    slope: s.slope,
-    auto:  s.auto,
-  }]
-  goal.razrroad = iniroad.concat(midroad, finroad)
-
-  // um, seems like this should be dropping both initial and final segment but 
-  // apparently not because this is the version that actually generates the
-  // road matrix correctly with both tini/vini and tfin/vfin:
+  // beebody style road matrix is a list of end-of-segment values, and
+  // each segment means "start where previous segment left off, and
+  // then connect that to these new coordinates". But for the very first
+  // segment we draw, we need to know where to start, so we add the 
+  // tini/vini row, but that is kind of an exception, because we don't
+  // draw that segment, we just use it to know where to start the first
+  // segment. but the road structure that we create in razrroad for bgraph
+  // to use, each segment has a start and an end.
+  // When we map over that road struct to turn it into a road matrix style
+  // data, we need the initial dummy row to give us tini/vini, but we don't 
+  // need the final dummy row.
   goal.razrmatr = goal.razrroad.slice(0,-1).map(s => {
     if (s.auto === 0) return [null,     s.end[1], s.slope*goal.siru]
     if (s.auto === 1) return [s.end[0], null,     s.slope*goal.siru]
@@ -1039,7 +1017,38 @@ function genRazr() {
   })
 }
 
+
 /* SCHDEL: debugging scratch pad
+
+// TODO: This wants refactored and cleaned up. If we're going to do the exact
+// same thing to the dummy segments (iniroad and finroad) as we do to the
+// the road with the dummies sliced off (midroad) then we don't need to slice
+// them off at all. Just convert the whole thing! Ie, have the map above loop
+// through all of "roads". And if we want to set aside iniroad and finroad
+// and do *no* conversion to them, then we can just do the following instead
+// of going to all the trouble of constructing all the fields:
+//goal.razrroad = [roads[0]].concat(midroad, [roads[-1]])
+
+let s = roads[0]  // first segment, which is kind of a dummy segment i guess?
+ const iniroad = [{
+   sta:   [t1(s), v1(s)],
+   end:   [t2(s), v2(s)],
+   slope: s.slope,
+   auto:  s.auto,
+ }]
+ s = roads[roads.length-1] // last segment also dummy segment? am fuzzy on this
+ const finroad = [{
+   sta:   [t1(s), v1(s)],
+   end:   [t2(s), v2(s)],
+   slope: s.slope,
+   auto:  s.auto,
+ }]
+ goal.razrroad = iniroad.concat(midroad, finroad)
+
+// um, seems like this should be dropping both initial and final segment but
+// apparently not because this is the version that actually generates the
+// road matrix correctly with both tini/vini and tfin/vfin:
+
 lnf
 x => max(abs(self.vertseg(rd,x) ? 0 : self.rdf(rd, x) - self.rdf(rd, x-SID)), 
          rtf0(x))
