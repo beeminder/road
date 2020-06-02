@@ -224,9 +224,14 @@ self.fixRoadArray = (rd, autop=self.RP.VALUE, usematrix=false,
    positive delta and being on the wrong side gives a negative delta. */
 self.gdelt = (rd, g, t, v) => bu.chop(g.yaw*(v - self.rdf(rd, t)))
 
+// For debugging non-dayfloored timestamps. #SCHDEL
+//self.badtime = (s, t) => {
+//  const d = new Date(t*1000)
+//  console.log(`DEBUG: ${s} t=${d.toISOString()}`)
+//}
+
 /** Whether the given point is on or on the good side of the razor road */
 self.aok = (rd, g, t, v) => {
-  //console.log(`DEBUG: rdfy=${self.rdf(rd, t)} t=${t}`)
   //console.log(`DEBUG: ${JSON.stringify(rd)}`)
   return g.yaw * (v - self.rdf(rd, t)) >= 0 }
 
@@ -662,7 +667,7 @@ self.tvr = (tp, vp, t, v, r) => {
   
   if (t === null) {
     if (r === 0) return bu.BDUSK
-    else         return min(bu.BDUSK, tp + (v-vp)/r)
+    else         return bu.daysnap(min(bu.BDUSK, tp + (v-vp)/r))
   }
   if (v === null) return vp+r*(t-tp)
   if (r === null) {
@@ -691,7 +696,7 @@ self.fillroad = (rd, g) => {
   rd[0] = nextrow([g.tini, g.vini, 0, 0], rd[0])
   for (let i = 1; i < rd.length; i++)
     rd[i] = nextrow(rd[i-1], rd[i])
-  rd.forEach( e => (e[2] = (null==e[2])?e[2]:e[2]*g.siru))
+  rd.forEach(e => (e[2] = (null==e[2])?e[2]:e[2]*g.siru))
   return rd
 }
 
