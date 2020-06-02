@@ -675,11 +675,14 @@ function procData() {
  @param {Array} json Unprocessed road matrix from the BB file
 */
 function procRoad(json) {
+  //const BDUSK = bu.dayparse(bu.dayify(bu.BDUSK)) // make sure it's dayfloored.
+  const BDUSK = bu.BDUSK
   roads = []
   const rdData = json
   const nk = rdData.length
   let firstsegment
-  let tini = goal.tini, vini = goal.vini
+  let tini = goal.tini
+  let vini = goal.vini
   // Handle cases where first road matrix row starts earlier than (tini,vini)
   if (rdData[0][0] != null && rdData[0][0] < tini) {
     tini = rdData[0][0]
@@ -690,7 +693,7 @@ function procRoad(json) {
     sta: [tini, Number(vini)],
     slope: 0, auto: br.RP.SLOPE }
   firstsegment.end = firstsegment.sta.slice()
-  firstsegment.sta[0] = bu.daysnap(firstsegment.sta[0]-100*DIY*SID)
+  firstsegment.sta[0] = bu.daysnap(firstsegment.sta[0]-100*SID*DIY) // 100y?
   roads.push(firstsegment)
   for (let i = 0; i < nk; i++) {
     // Each segment i starts from the end of the previous segment and continues
@@ -711,10 +714,10 @@ function procRoad(json) {
                          + (segment.end[1] - segment.sta[1])/segment.slope
       } else {
         // Hack to handle tfin=null and inconsistent values
-        segment.end[0] = bu.BDUSK
+        segment.end[0] = BDUSK
         segment.end[1] = segment.sta[1]
       }
-      segment.end[0] = min(bu.BDUSK, segment.end[0])
+      segment.end[0] = min(BDUSK, segment.end[0])
       // Readjust the end value in case we clipped the date to BDUSK
       segment.end[1] = 
         segment.sta[1] + segment.slope*(segment.end[0]-segment.sta[0])
@@ -744,7 +747,7 @@ function procRoad(json) {
     sta: goalseg.end.slice(),
     end: goalseg.end.slice(),
     slope: 0, auto: br.RP.VALUE }
-  finalsegment.end[0] = bu.daysnap(finalsegment.end[0]+100*DIY*SID)
+  finalsegment.end[0] = bu.daysnap(finalsegment.end[0]+100*SID*DIY) // 100y?
   roads.push(finalsegment)
   
   //br.printRoad(roads)
@@ -1084,6 +1087,7 @@ x => max(abs(self.vertseg(rd,x) ? 0 : self.rdf(rd, x) - self.rdf(rd, x-SID)),
 
 /** Process goal parameters */
 function procParams() {
+
   goal.dtf = br.stepify(data) // map timestamps to most recent datapoint value
   
   //SCHDEL
@@ -1374,6 +1378,7 @@ function getStrParam (p, n, d) { return n in p ? p[n]         : d }
  * associated goal stats and internal details.*/
 this.reloadRoad = function() {
   //console.debug("id="+curid+", reloadRoad()")
+
   const error = procParams()
     
   if (error != "") return error

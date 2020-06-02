@@ -626,11 +626,60 @@ self.addDays = (m, days) => {
   return result
 }
 
-/** Fixes the supplied unixtime to 00:00:00 on the same day (uses moment)
+/* Utility functions from hmsparsafore in case they're useful...
+
+// Convenience function. What Jquery's isNumeric does, I guess. Javascript wat?
+function isnum(x) { return x - parseFloat(x) + 1 >= 0 }
+
+// Take a Date object, set the time back to midnight, return new Date object
+function dayfloor(d) {
+  var x = new Date(d)
+  x.setHours(0)
+  x.setMinutes(0)
+  x.setSeconds(0)
+  return x
+}
+
+// Given a time of day expressed as seconds after midnight (default midnight),
+// return a Date object corresponding to the soonest future timestamp that
+// matches that time of day
+function dateat(t=0) {
+  if (isNaN(t)) { return null }
+  var now = new Date()
+  var d = new Date()
+  d.setTime(dayfloor(d).getTime() + 1000*t)
+  if (d < now) { d.setTime(d.getTime() + 1000*86400) }
+  return d  
+}
+
+// Turn a Date object (default now) to unixtime in seconds
+function unixtm(d=null) {
+  if (d===null) { d = new Date() }
+  return d.getTime()/1000
+}
+
+// Turn a unixtime in seconds to a Date object
+function dob(t=null) {
+  if (t===null) { return new Date() }
+  return isnum(t) ? new Date(1000*t) : null
+}
+
+// [Tested, works, at least for current and future timestamps]
+// Takes unixtime and returns time of day represented as seconds after midnight.
+function TODfromUnixtime(t) {
+  var offset = new Date().getTimezoneOffset()
+  return (t - offset*60) % 86400
+}
+*/
+
+/** Fixes the supplied unixtime to 00:00:00 on the same day (uses Moment)
     @param {Number} ut Unix time  */
 self.daysnap = (ut) => {
   var d = moment.unix(ut).utc()
-  d.hours(0); d.minutes(0); d.seconds(0); d.milliseconds(0)
+  d.hours(0)
+  d.minutes(0)
+  d.seconds(0)
+  d.milliseconds(0)
   return d.unix()
 }
 
@@ -694,10 +743,9 @@ self.dayparse = (s, sep='') => {
     re = RegExp('^(\\d{4})'+sep+'(\\d{2})'+sep+'(\\d{2})$')
     pat = "YYYY"+sep+"MM"+sep+"DD"
   }
-  if (!re.test(s)) { 
-      // Check if the supplied date is a timestamp or not
-      if (!isNaN(s)) return Number(s)
-      else return NaN
+  if (!re.test(s)) { // make sure the supplied date is a timestamp
+    if (!isNaN(s)) return Number(s)
+    else return NaN
   }
   let m = moment.utc(s, pat)
   // Perform daysnap manually for efficiency
@@ -717,8 +765,7 @@ self.dayify = (t, sep = '') => {
   var y = mm.year()
   var m = mm.month() + 1
   var d = mm.date()
-  return '' + y + sep + (m < 10 ? '0' : '') + m 
-    + sep + (d < 10 ? '0' : '') + d
+  return '' + y + sep + (m < 10 ? '0' : '') + m + sep + (d < 10 ? '0' : '') + d
 }
 
 /** Converts a number to an integer string.

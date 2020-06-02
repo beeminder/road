@@ -3456,9 +3456,9 @@ function updateGuidelines(ir) {
     max(28, min(365, floor(1.2*abs((yrange[1]-yrange[0])/(delta*lnw)))))
   if (lnw == 0)
     numlines = 28 // but this makes no sense, they won't show up
-  console.log(
-    `DEBUG delta=${delta} lnw=${lnw} numlines=${numlines} \
-    yrange=${yrange[0]},${yrange[1]}`)
+  //console.log(
+  //  `DEBUG delta=${delta} lnw=${lnw} numlines=${numlines} \
+  //  yrange=${yrange[0]},${yrange[1]}`)
   // TODO: we know numlines is an integer so the ceil() here is unnecessary:
   let arr = new Array(ceil(numlines)).fill(0)
   arr = [...arr.keys()].map(d => (d+1)*delta-1)
@@ -3470,8 +3470,8 @@ function updateGuidelines(ir) {
   // short of the plotbox
   if (lastiso.length > 0) {
     const yextreme = goal.yaw*max(...lastiso.map(tv => goal.yaw*tv[1]))
-    console.log(
-      `DEBUG yextreme=${yextreme} -> ${nYSc(yextreme)} (${plotbox.height})`)
+    //console.log(
+    //  `DEBUG yextreme=${yextreme} -> ${nYSc(yextreme)} (${plotbox.height})`)
     goal.shadeit = goal.yaw > 0 ? nYSc(yextreme) > 0 + 16 
                                 : nYSc(yextreme) < plotbox.height - 16
   } else {
