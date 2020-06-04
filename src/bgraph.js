@@ -3059,37 +3059,46 @@ function updateYBHP() {
   // Finally, xrange, a list like [xmin, xmax], gives the x-axis range to
   // apply it to. If xrange=null, use [-infinity, infinity].
 
-  const xrfull = [goal.tini, goal.tfin]          // x-axis range tini-tfin
-  const xrakr  = [goal.asof, goal.asof+7*SID] // now to akrasia horiz.
-  const bgreen  = bu.Cols.RAZR3 // green isoline for 7 safe days
-  const bblue   = bu.Cols.RAZR2 // blue isoline for 2 safe days 
-  const borange = bu.Cols.RAZR1 // orange isoline for 1 safe day
-  const lyellow = "#ffff88" // light yellow same as LYEL for classic YBR
-  const gsw     = .99 // stroke width for guiding lines
-  const gfo     = 1   // fill-opacity for guiding lines -- may not matter
-  const rfo     = 0.72 // fill-opacity for regions
+  const xrfull   = [goal.tini, goal.tfin]       // x-axis range tini-tfin
+  const xrakr    = [goal.asof, goal.asof+7*SID] // now to akrasia horiz.
+  const bgreen   = bu.Cols.RAZR3
+  const bblue    = bu.Cols.RAZR2
+  const borange  = bu.Cols.RAZR1
+  const lyellow  = "#ffff88" // light yellow same as LYEL for classic YBR
+  const gsideyel = goal.shadeit ? lyellow : "none" // good side maybe shaded
+  const gsw      = .99 // stroke width for guiding lines
+  const gfo      = 1   // fill-opacity for guiding lines -- may not matter
+  const rfo      = 0.72 // fill-opacity for regions
 
   if (!goal.ybhp) {
     regions = [ [0, -1, opts.halfPlaneCol.fill, "none", 0, 1, null] ]
   } else {
-    regions = [
-    //  d,  D, fcolor,    scolor,      w,  op, xrange
-    //----------------------------------------------------------------------
-      [ 2, -1, (goal.shadeit ? lyellow : "none"), "none", 0, rfo, xrfull], 
-    //[ 6, -1, "#b2e5b2", "none",      0, rfo, xrfull], // dark green region
-      [ 6,  6, "none",    bgreen,    gsw, gfo, xrfull], // 1-week line
-    //[ 2,  6, "#cceecc", "none",      0, rfo, xrfull], // green region
-      [ 2,  2, "none",    bblue,     gsw, gfo, xrfull], // blue line
-    //[ 1,  2, "#e5e5ff", "none",      0, rfo, xrfull], // blue region
-      [ 1,  1, "none",    borange,   gsw, gfo, xrfull], // orange line
-    //[ 0,  1, "#fff1d8", "none",      0, rfo, xrfull], // orange region
-      [ 0,  2, lyellow,   "none",      0, rfo, xrfull], // YBR equivalent
-    // bright red critical line currently in updateCenterline because we
-    // can't define dashed lines here; so the following doesn't work:
-    //[ 0,  0, "#ff0000", "none",      1, gfo, xrfull], // brightline
-    //[ 0, -2, "#ffe5e5", "none",      0, rfo, null],   // entire wrong side
-      [ 0, -2, "#fff5f5", "none",      0,   1, xrakr],  // nozone/oinkzone
-    ]
+    if (goal.maxflux > 0) { // slightly unDRY here
+      regions = [
+        [ 2, -1, gsideyel,  "none",    0, rfo, xrfull], // whole good half-plane
+        [ 0,  2, lyellow,   "none",    0, rfo, xrfull], // YBR equivalent
+        [ 0, -2, "#fff5f5", "none",    0,   1, xrakr],  // nozone/oinkzone
+      ]
+    } else { // slightly unDRY here
+      regions = [
+      //  d,  D, fcolor,    scolor,    w,  op, xrange
+      //------------------------------------------------------------------------
+        [ 2, -1, gsideyel,  "none",    0, rfo, xrfull], // whole good half-plane
+      //[ 6, -1, "#b2e5b2", "none",    0, rfo, xrfull], // safe/gray region
+        [ 6,  6, "none",    bgreen,  gsw, gfo, xrfull], // 1-week isoline
+      //[ 2,  6, "#cceecc", "none",    0, rfo, xrfull], // green region
+        [ 2,  2, "none",    bblue,   gsw, gfo, xrfull], // blue isoline
+      //[ 1,  2, "#e5e5ff", "none",    0, rfo, xrfull], // blue region
+        [ 1,  1, "none",    borange, gsw, gfo, xrfull], // orange isoline
+      //[ 0,  1, "#fff1d8", "none",    0, rfo, xrfull], // orange region
+        [ 0,  2, lyellow,   "none",    0, rfo, xrfull], // YBR equivalent
+      // bright red critical line currently in updateCenterline because we
+      // can't define dashed lines here; so the following doesn't work:
+      //[ 0,  0, "#ff0000", "none",    1, gfo, xrfull], // brightline
+      //[ 0, -2, "#ffe5e5", "none",    0, rfo, null],   // whole bad half-plane
+        [ 0, -2, "#fff5f5", "none",    0,   1, xrakr],  // nozone/oinkzone
+      ]
+    }
   }
 
   var debuglines = -1 // Use -1 to disable, 0 or more to debug
