@@ -447,17 +447,21 @@ function getisopath( val, xr ) {
   return d
 }
 
-// Compute lane width based on isolines on the left or right border for the
-// graph depending on dir*yaw. If dir*yaw > 0 (like do-more), the left side is
-// considered, otherwise the right side. The average lane width is computed by
-// computing isolines for dtd=0 and dtd=365 and dividing it by 365 to overcome
-// isolines coinciding for flat regions.
+// Compute lane width (the delta between yellow guiding lines) based on
+// isolines on the left or right border for the graph depending on dir*yaw. If
+// dir*yaw > 0 (like do-more), the left side is considered, otherwise the right
+// side. The average lane width is computed by computing isolines for dtd=0 and
+// dtd=365 and dividing it by 365 to overcome isolines coinciding for flat
+// regions.
 function isolnwborder(xr) {
   let lnw = 0
-  const numdays = min(opts.maxFutureDays,
-                      ceil((goal.tfin-goal.tini)/SID))
+  const numdays = min(opts.maxFutureDays, ceil((goal.tfin-goal.tini)/SID))
   const center = getiso(0)
   const oneday = getiso(numdays)
+//TODO: switch to this version
+//const edge = goal.yaw*goal.dir > 0 ? 0 : 1 // left edge for MOAR/PHAT
+//return abs(br.isoval(center, xr[edge])-br.isoval(oneday, xr[edge])) / numdays
+
   if (goal.yaw*goal.dir > 0) {
     lnw = abs(br.isoval(center, xr[0])-br.isoval(oneday, xr[0])) / numdays
   } else {
@@ -3092,6 +3096,7 @@ function updateYBHP() {
         [ 1,  1, "none",    borange, gsw, gfo, xrfull], // orange isoline
       //[ 0,  1, "#fff1d8", "none",    0, rfo, xrfull], // orange region
         [ 0,  2, lyellow,   "none",    0, rfo, xrfull], // YBR equivalent
+      //[365, -1, lyellow,  "none",    0, .5, xrfull], // infinitly safe region
       // bright red critical line currently in updateCenterline because we
       // can't define dashed lines here; so the following doesn't work:
       //[ 0,  0, "#ff0000", "none",    1, gfo, xrfull], // brightline
@@ -3455,7 +3460,9 @@ function updateGuidelines(ir) {
   // unixtime in milliseconds. So doing .invert().getTime() is unnecessary.)
   const xrange = [nXSc.invert(            0)/SMS,
                   nXSc.invert(plotbox.width)/SMS]
-  const lnw = isolnwborder(xrange)
+  const lnw = isolnwborder(xrange) // estimate intra-isoline delta
+  // what we're calling lnw here should be called delta and what we're calling
+  // delta should be something like "delta_count" or "skip"
 
   if      (    abs(nYSc(0) - nYSc(lnw))  > 8) delta =   1
   else if ( 7*(abs(nYSc(0) - nYSc(lnw))) > 8) delta =   7
