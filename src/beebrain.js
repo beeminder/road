@@ -977,7 +977,8 @@ function genRazr() {
   const t2 = seg => seg.end[0]
   const v1 = seg => seg.sta[1]
   const v2 = seg => seg.end[1]
-  const offset = goal.lnw
+  const offset = bu.conservaround(goal.lnw, 1e-14, 1)
+  //console.log(`DEBUG: ${offset}`)
 
   // Iterate over road segments, s, where segments go from
   // {t1,       v1}       to {t2,       v2}       or 
