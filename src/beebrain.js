@@ -1189,6 +1189,7 @@ function procParams() {
       
   setDefaultRange()
   genRazr()
+  //console.log(`rdf(tfin)=${br.rdf(roads, goal.tfin)}`)
   return ""
 }
 
