@@ -798,6 +798,7 @@ self.stepify = (d, dflt=0) =>
 // Return which side of a given isoline a given datapoint is: -1 for wrong and
 // +1 for correct side.
 self.isoside = (g, isoline, t, v) => {
+  //console.log(`ISOSIDE: (${t},${v}) ${JSON.stringify(isoline)}`)
   if (t <= isoline[0][0])   return (v - isoline[0][1])*g.yaw > 0 ? +1 : -1
   // Perform binary search to locate segment
   var n = isoline.length, s = 0, e = n-1, m
@@ -815,7 +816,11 @@ self.isoside = (g, isoline, t, v) => {
   var slope =   (isoline[s+1][1]-isoline[s][1]) 
               / (isoline[s+1][0]-isoline[s][0])
   var isoval = isoline[s][1] + slope*(t - isoline[s][0])
-  return (v - isoval)*g.yaw >= 0 ? +1 : -1
+  return (v - isoval)*g.yaw >= v*-1e-15 ? +1 : -1 // note the tolerance!
+  // We multiply that tolerance times v to be a bit more robust. In the extreme
+  // case, imagine the values are already so tiny that they're about equal to
+  // the tolerance. Then checking if v - isoval was greater than -v would be way
+  // too forgiving.
 }
 
 // Determine the color for datapoint {t, v}
