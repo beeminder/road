@@ -233,7 +233,8 @@ self.gdelt = (rd, g, t, v) => bu.chop(g.yaw*(v - self.rdf(rd, t)))
 /** Whether the given point is on or on the good side of the razor road */
 self.aok = (rd, g, t, v) => {
   //console.log(`DEBUG: ${JSON.stringify(rd)}`)
-  return g.yaw * (v - self.rdf(rd, t)) >= 0 }
+  return g.yaw * (v - self.rdf(rd, t)) >= v*-1e-15 // DRY: isoside()'s tolerance
+}
 
 // #DIELANES (code only used in non-ybhp case and can die post-ybhp)
 // The bottom lane is -1, top lane is 1, below the road is -2, above is +2, etc.
