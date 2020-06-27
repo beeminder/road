@@ -187,9 +187,10 @@ if (cluster.isMaster) {
   createRenderer(cluster.worker.id).then(createdRenderer => {
     renderer = createdRenderer
     console.info(prefix+'Initialized renderer.')
+    const bindip = process.env.JSBRAIN_SERVER_BIND || 'localhost'
       
-    app.listen(port, 'localhost', () => {
-      console.info(prefix+`Listen port on localhost ${port}.`)
+    app.listen(port, bindip, () => {
+      console.info(prefix+`Listen port on ${bindip} ${port}.`)
     })
   }).catch(e => {
     console.error('Fail to initialze renderer.', e)
