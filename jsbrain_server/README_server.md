@@ -33,6 +33,8 @@ This reads the file `u+g.bb` (or `slug.bb`) from `/path/to/input`, and
 generates `u+g.png`, `u+g-thumb.png`, `u+g.svg` and `u+g.json` in
 `/path/to/output`. 
 
+By default, the server only listens to localhost--and that's probably what you want.  If you need to bind to other IPs, use the environment variable JSBRAIN_SERVER_BIND.
+
 ### Testing the server
 
 To make sure everything is running, start the server, and then make a request using one of the test files in the automon directory.
