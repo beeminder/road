@@ -38,7 +38,7 @@ The code is pulled into the image when that Dockerfile is processed in the build
 
 ### Setup
 
-If you are going to run jsbrain for testing, there is a Dockerfile and instructions in docker/.  To run jsbrain_server locally, for instance, for a Beeminder development environment, install node, and, here in the jsbrain_server directory, run
+To run jsbrain_server locally, for instance, for a Beeminder development environment, install node, and, here in the jsbrain_server directory, run
 
 `npm update`
 
