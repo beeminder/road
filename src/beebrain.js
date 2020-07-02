@@ -95,7 +95,7 @@ let gid = 1 // Global counter giving unique IDs for multiple beebrain instances
 const pin = { // In Params: Graph settings and their defaults
 quantum  : null,   // Precision/granularity for conservarounding baremin etc
 timey    : false,  // Whether numbers should be shown in HH:MM format
-ybhp     : false,  // Yellow Brick Half-Plane! For transition to New World Order
+ybhp     : true,   // Yellow Brick Half-Plane! For transition to New World Order
 ppr      : true,   // Whether PPRs are turned on (ignored if not WEEN/RASH)
 deadline : 0,      // Time of deadline given as seconds before or after midnight
 sadlhole : true,   // Allow the do-less loophole where you can eke back onto YBR
@@ -888,6 +888,7 @@ function showrow(row) {
 }
 
 const pchk = [
+['ybhp', v => v!==false, "can't be false! LANEY ZOMBIE! Tell support!"],
 ['deadline', v => (6-24)*3600 <= v && v <= 6*3600,
  "outside 6am earlybird to 6am nightowl"],
 ['asof', v => v!=null, "can't be null! Tell support!"],
