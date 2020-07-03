@@ -1790,13 +1790,11 @@ async function loadGoalFromURL( url, callback = null ) {
   loading = true
   showOverlay( ["loading..."], sh/10 )
   var resp = await bu.loadJSON( url )
-  if ('errstring' in resp) {
-    removeOverlay()
-    throw new Error("loadGoalFromURL: BB file has errors: "+resp.errstring)
-  }
-  
   if (resp != null) {
     removeOverlay()
+    if ('errstring' in resp) {
+      throw new Error("loadGoalFromURL: BB file has errors: "+resp.errstring)
+    }
     loadGoal( resp )
     if (typeof opts.onRoadChange === 'function') opts.onRoadChange.call()
     updateTableTitles()
