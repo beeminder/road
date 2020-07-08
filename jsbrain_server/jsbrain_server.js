@@ -103,7 +103,6 @@ if (cluster.isMaster) {
     let hostname = os.hostname()
     let { inpath, outpath, slug, user, goal, pyjson, nograph } = req.query
     if (!inpath)                     return res.status(400).send(noinpath)
-    if (inpath == "die")             renderer.die()
     if ((!slug && (!user || !goal))) return res.status(400).send(nofile)
     if ((slug && (user || goal)))    return res.status(400).send(paramconflict)
     var rid = reqcnt++ // Increment and store unique request id

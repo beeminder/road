@@ -31,7 +31,6 @@ class Renderer {
   
   prfinfo(r) { return [this.id,r] }
   prf(r) { return "("+this.id+":"+r+") " }
-  die() { process.exit(1) }
   
   // Renders and returns an available page (tab) within the puppeteer
   // chrome instance. Creates one if all existing ones are found to be
