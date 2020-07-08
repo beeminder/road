@@ -9,9 +9,36 @@ output with goal parameters.
 
 ## Getting started
 
+You may want to use jsbrain through Docker, or install it locally.
+
+### Docker
+
+#### Caution!
+
+The Dockerfile has *not* been setup for serving in production, and should not be used to do so unless you've audited it yourself!  If you are new to Docker, I suggest spending some time learning about it--but if you can't:
+
+* don't store data you care about inside a container and assume it will be there later
+* don't run Docker stuff on computers that have sensitive information without knowing what you're doing
+
+You can, of course, do what you want, but I feel bad when people get burned.
+
+#### Getting Started and Usage
+
+If you are going to run jsbrain for testing, there is a Dockerfile in docker/.
+
+To get it running, first install Docker on your computer.
+
+Then, go to the root of this repository, and run `docker build --tag jsbrain_server --file jsbrain_server/docker/Dockerfile .`.  This takes all the files in the repository and gives them to the Dockerfile, which is a set of instructions for setting up a Docker image.  It then runs through those instructions, using an aggressive cache, and creates an image.  Beyond its automatic hashy name, we add an extra tag of "jsbrain_server".
+
+Next, we'll run the server with `docker run --publish 127.0.0.1:8777:8777 jsbrain_server`.  It takes the jsbrain_server image, creates a new container from it, ties the port 8777 on the container to our port 8777 (only for localhost!) and starts the container.  This is now running the code that was in the repository at the time the image was created, on our port 8777.
+
+You can stop it with `docker ps` to find the container ID corresponding to this container, and then `docker stop <container ID>`.
+
+The code is pulled into the image when that Dockerfile is processed in the build step, so if you change the code, you'll need to rebuild the image. (Improving this would be awesome!)
+
 ### Setup
 
-To run jsbrain_server, for instance, for a Beeminder development environment, install node, and, here in the jsbrain_server directory, run
+To run jsbrain_server locally, for instance, for a Beeminder development environment, install node, and, here in the jsbrain_server directory, run
 
 `npm update`
 
@@ -32,6 +59,8 @@ which will fire up a node.js server on localhost:8777. You can then request proc
 This reads the file `u+g.bb` (or `slug.bb`) from `/path/to/input`, and
 generates `u+g.png`, `u+g-thumb.png`, `u+g.svg` and `u+g.json` in
 `/path/to/output`. 
+
+By default, the server only listens to localhost--and that's probably what you want.  If you need to bind to other IPs, use the environment variable JSBRAIN_SERVER_BIND.
 
 ### Testing the server
 
