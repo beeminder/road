@@ -174,7 +174,7 @@ ratesum  : '',      // Text saying what the rate of the YBR is
 limsum   : '',      // Text saying your bare min or hard cap
 deltasum : '',      // Text saying where you are wrt the centerline
 graphsum : '',      // Text at the top of the graph image; see stathead
-headsum  : '',      // Text in the heading of the graph page
+headsum  : '',      // Text in the heading of the graph page ############### DEP
 titlesum : '',      // Title text for graph thumbnail
 progsum  : '',      // Text summarizing percent progress
 rah      : 0,       // Y-value of the centerline of YBR at the akrasia horiz
@@ -1291,74 +1291,81 @@ function sumSet(rd, goal) {
   else if (c>999) goal.safeblurb = "more than 999 days of safety buffer"
   else            goal.safeblurb = "~"+cd+" of safety buffer"
 
+/* SCHDEL
   let lanesum
   if (goal.loser) {
     goal.headsum = "Officially off the yellow brick road"
-    lanesum = "officially off the road"
+    lanesum      = "officially off the road"
   } else if (w==0 && false) { // TODO: lnw==0 doesn't mean flat road WTF
     goal.headsum = "Coasting on a currently flat yellow brick road"
-    lanesum = "currently on a flat road"
+    lanesum      = "currently on a flat road"
   } else if (MOAR && l==1) {
     goal.headsum = "Right on track in the top lane of the yellow brick road"
-    lanesum = "in the top lane: perfect!"
+    lanesum      = "in the top lane: perfect!"
   } else if (MOAR &&  l==2) {
     goal.headsum = "Sitting pretty just above the yellow brick road"
-    lanesum = "above the road: awesome!"
+    lanesum      = "above the road: awesome!"
   } else if (MOAR &&  l==3) {
     goal.headsum = "Well above the yellow brick road with "+goal.safeblurb
-    lanesum = "well above the road: "+goal.safeblurb+"!"
+    lanesum      = "well above the road: "+goal.safeblurb+"!"
   } else if (MOAR &&  l>3) {
     goal.headsum = "Way above the yellow brick road with "+goal.safeblurb
-    lanesum = "way above the road: "+goal.safeblurb+"!"
+    lanesum      = "way above the road: "+goal.safeblurb+"!"
   } else if (MOAR &&  l==-1) {
     goal.headsum = "On track but in the wrong lane of the yellow brick road "
       +"and in danger of derailing tomorrow"  
-    lanesum = "in the wrong lane: could derail tomorrow!"
+    lanesum      = "in the wrong lane: could derail tomorrow!"
   } else if (MOAR &&  l<=-2) {
     goal.headsum = "Below the yellow brick road and will derail if still here"
       +" at the end of the day"
     lanesum = "below the road: will derail at end of day!"
   } else if (PHAT &&  l==-1) {
     goal.headsum = "Right on track in the right lane of the yellow brick road"
-    lanesum = "in the right lane: perfect!"
+    lanesum      = "in the right lane: perfect!"
   } else if (PHAT &&  l==-2) {
     goal.headsum = "Sitting pretty just below the yellow brick road"
-    lanesum = "below the road: awesome!"
+    lanesum      = "below the road: awesome!"
   } else if (PHAT &&  l==-3) {
     goal.headsum = "Well below the yellow brick road with "+goal.safeblurb
-    lanesum = "well below the road: "+goal.safeblurb+"!"
+    lanesum      = "well below the road: "+goal.safeblurb+"!"
   } else if (PHAT &&  l<-3) {
     goal.headsum = "Way below the yellow brick road with "+goal.safeblurb
-    lanesum = "way below the road: "+goal.safeblurb+"!"
+    lanesum      = "way below the road: "+goal.safeblurb+"!"
   } else if (PHAT &&  l==1) {
     goal.headsum = "On track but in the wrong lane of the yellow brick road "
       +"and in danger of derailing tomorrow"
-    lanesum = "in the wrong lane: could derail tomorrow!"
+    lanesum      = "in the wrong lane: could derail tomorrow!"
   } else if (PHAT &&  l>=2) {
     goal.headsum = "Above the yellow brick road and will derail if still here"
       +" at the end of the day"
-    lanesum = "above the road: will derail at end of day!"
+    lanesum      = "above the road: will derail at end of day!"
   } else if (l==0) {
     goal.headsum = "Precisely on the centerline of the yellow brick road"
-    lanesum = "precisely on the centerline: beautiful!"
+    lanesum      = "precisely on the centerline: beautiful!"
   } else if (l==1) {
     goal.headsum = "In the top lane of the yellow brick road"
-    lanesum = "in the top lane"
+    lanesum      = "in the top lane"
   } else if (l==-1) {
     goal.headsum = "In the bottom lane of the yellow brick road"
-    lanesum = "in the bottom lane"
+    lanesum      = "in the bottom lane"
   } else if (l>1) {
     goal.headsum = "Above the yellow brick road"
-    lanesum = "above the road"
+    lanesum      = "above the road"
   } else if (l<-1) {
     goal.headsum = "Below the yellow brick road"
-    lanesum = "below the road"
+    lanesum      = "below the road"
   }
+*/
   goal.titlesum
-    = bu.toTitleCase(goal.color)
-    + ". "
-    + "bmndr.com/"+goal.yoog+" is " + lanesum
-    + ((y*d>0)?" (safe to stay flat for ~"+cd+")":"")
+    //SCHDEL
+    //= bu.toTitleCase(goal.color)
+    //+ ". "
+    //+ "bmndr.com/"+goal.yoog+" is " 
+    //+ lanesum
+    //+ ((y*d>0)?" (safe to stay flat for ~"+cd+")":"")
+    = bu.toTitleCase(goal.color) + ": bmndr.com/"+goal.yoog+" is safe for ~"+cd
+    + (c===0 ? " (beemergency!)" : "")
+  goal.headsum = goal.titlesum
 
   goal.statsum =
     " progress: "+bu.shd(goal.tini)+"  "
@@ -1367,8 +1374,7 @@ function sumSet(rd, goal) {
     +"   ["+goal.progsum+"]\\n"
     +"           "+bu.shd(goal.tfin)+"  "+bu.shn(goal.vfin, 4, 2, 0)+"\\n"
     +" rate:     "+goal.ratesum+"\\n"
-    +" lane:     " +((abs(l) == 666)?"n/a":l)
-    +" ("+lanesum+")\\n"
+    +" lane:     " +((abs(l) == 666)?"n/a":l)+"\\n"
     +" safebuf:  "+goal.safebuf+"\\n"
     +" delta:    "+goal.deltasum+"\\n"
     +" "
