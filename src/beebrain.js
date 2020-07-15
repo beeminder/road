@@ -160,7 +160,7 @@ rcur     : null,    // Rate at time tcur; if kink, take the limit from the left
 ravg     : null,    // Overall road rate from (tini,vini) to (tfin,vfin)
 tdat     : null,    // Timestamp of last actually entered datapoint
 lnw      : 0,       // Lane width at time tcur
-stdflux  : 0,       // Recommended lanewidth .9 quantile of rate-adjusted deltas
+stdflux  : 0,       // Recommended maxflux .9 quantile of rate-adjusted deltas
 delta    : 0,       // How far from centerline: vcur - rdf(tcur)
 lane     : 666,     // Lane we're in; below=-2,bottom=-1,top=1,above=2,etc # DEP
 color    : 'black', // One of {"green", "blue", "orange", "red"} ########### DEP
@@ -171,11 +171,11 @@ meandelt : 0,       // Mean of the deltas of the datapoints
 proctm   : 0,       // Unixtime when Beebrain was called (specifically genStats)
 statsum  : '',      // Human-readable graph stats summary (not used by Beebody)
 ratesum  : '',      // Text saying what the rate of the YBR is
-limsum   : '',      // Text saying your bare min or hard cap
+limsum   : '',      // Text saying your bare min or hard cap ############### DEP
 deltasum : '',      // Text saying where you are wrt the centerline
 graphsum : '',      // Text at the top of the graph image; see stathead
 headsum  : '',      // Text in the heading of the graph page ############### DEP
-titlesum : '',      // Title text for graph thumbnail
+titlesum : '',      // Title text for graph thumbnail ###################### DEP
 progsum  : '',      // Text summarizing percent progress
 rah      : 0,       // Y-value of the centerline of YBR at the akrasia horiz
 error    : '',      // Empty string if no errors
@@ -962,6 +962,7 @@ function vetParams() {
   return ""
 }
 
+// DIELANES
 // Generate razrroad for YBHP migration by shifting each segment by the lane
 // width in the negative yaw direction, ie, towards the bad side of the road.
 // This yields a razrroad that coincides with the critical edge of the old-style
@@ -1260,7 +1261,8 @@ function sumSet(rd, goal) {
     + bu.splur(goal.cntdn, "more day")+"). "+ybrStr
 
   goal.deltasum = shn(abs(dlt),0) + " " + goal.gunits
-    + (dlt<0 ? " below" : " above")+" the centerline"
+    + (dlt<0 ? " below" : " above")+" the bright line"
+/* SCHDEL DIELANES
   let s
   if (w == 0)                  s=""
   else if (y>0 && l>=-1&&l<=1) s=" and "+shn(w-dlt)+" to go till top edge"
@@ -1271,6 +1273,7 @@ function sumSet(rd, goal) {
   else if (y<0 && l>1)         s=" and "+shn(dlt-w,-y)+" above top edge"
   else                         s=""
   goal.deltasum += s
+*/
 
   const c = goal.safebuf // countdown to derailment, in days
   const cd = bu.splur(c, "day")
@@ -1291,7 +1294,7 @@ function sumSet(rd, goal) {
   else if (c>999) goal.safeblurb = "more than 999 days of safety buffer"
   else            goal.safeblurb = "~"+cd+" of safety buffer"
 
-/* SCHDEL
+/* SCHDEL DIELANES
   let lanesum
   if (goal.loser) {
     goal.headsum = "Officially off the yellow brick road"
