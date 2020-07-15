@@ -799,11 +799,17 @@ self.stepify = (d, dflt=0) =>
 // Return which side of a given isoline a given datapoint is: -1 for wrong and
 // +1 for correct side.
 self.isoside = (g, isoline, t, v) => {
+  const TOL = v*-1e-15
+  // We multiply that tolerance times v to be a bit more robust. In the extreme
+  // case, imagine the values are already so tiny that they're about equal to
+  // the tolerance. Then checking if v - isoval was greater than -v would be way
+  // too forgiving.
+
   //console.log(`ISOSIDE: (${t},${v}) ${JSON.stringify(isoline)}`)
-  if (t <= isoline[0][0])   return (v - isoline[0][1])*g.yaw > 0 ? +1 : -1
+  if (t <= isoline[0][0])   return (v - isoline[  0][1])*g.yaw >= TOL ? +1 : -1
   // Perform binary search to locate segment
   var n = isoline.length, s = 0, e = n-1, m
-  if (t >= isoline[n-1][0]) return (v - isoline[n-1][1])*g.yaw > 0 ? +1 : -1
+  if (t >= isoline[n-1][0]) return (v - isoline[n-1][1])*g.yaw >= TOL ? +1 : -1
   while (e-s > 1) {
     m = floor((s+e)/2)
     if (isoline[m][0] <= t) s = m
@@ -817,11 +823,8 @@ self.isoside = (g, isoline, t, v) => {
   var slope =   (isoline[s+1][1]-isoline[s][1]) 
               / (isoline[s+1][0]-isoline[s][0])
   var isoval = isoline[s][1] + slope*(t - isoline[s][0])
-  return (v - isoval)*g.yaw >= v*-1e-15 ? +1 : -1 // note the tolerance!
-  // We multiply that tolerance times v to be a bit more robust. In the extreme
-  // case, imagine the values are already so tiny that they're about equal to
-  // the tolerance. Then checking if v - isoval was greater than -v would be way
-  // too forgiving.
+  //console.log(`DEBUG v=${v} isoval=${isoval}`)
+  return (v - isoval)*g.yaw >= TOL ? +1 : -1 // note tolerance!
 }
 
 // Determine the color for datapoint {t, v}
