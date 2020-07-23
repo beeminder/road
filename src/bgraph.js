@@ -2459,7 +2459,7 @@ function animBuf(enable) {
     let sz = e.style("font-size")
     sz = Number(sz.substring(0,sz.length-2))
     let s =[["font-size", (sz*1.3)+"px",(sz)+"px"],
-            ["fill", "#c0c0c0", bu.Cols.GRAY]]
+            ["fill", "#606060", opts.watermark.color]]
     let a =[["y", y+0.1*sz/3, y]]
     if (enable) startAnim(e, 500, a, s, "buf")
     else stopAnim(e, 300, a, s, "buf")
@@ -2480,7 +2480,7 @@ function animBux(enable) {
   sz = Number(sz.substring(0,sz.length-2))
   var y = Number(e.attr("y"))
   var s =[["font-size", (sz*1.3)+"px",(sz)+"px"],
-          ["fill", "#c0c0c0", bu.Cols.GRAY]]
+          ["fill", "#606060", opts.watermark.color]]
   var a =[["y", y+0.15*sz, y]]
   if (enable) startAnim(e, 500, a, s, "bux")
   else stopAnim(e, 300, a, s, "bux")
