@@ -89,12 +89,14 @@ if (cluster.isMaster) {
   var nofile = `Bad URL parameters: One of "slug" or ("user","goal") must be supplied!<br/><br/>`+usage
   var paramconflict = 'Bad URL parameters: "slug\" and ("user\","goal") cannot be used together!<br/><br/>'+usage
   var unknown = "Unknown error!<br/><br/>"+usage
+  var pong = "pong"
   
   // Render url.
   const proc_timeid = " Total processing"
   app.use(async (req, res, next) => {
     let hostname = os.hostname()
-    let { inpath, outpath, slug, user, goal, pyjson, nograph } = req.query
+    let { ping, inpath, outpath, slug, user, goal, pyjson, nograph } = req.query
+    if (ping)                        return res.status(200).send(pong)
     if (!inpath)                     return res.status(400).send(noinpath)
     if ((!slug && (!user || !goal))) return res.status(400).send(nofile)
     if ((slug && (user || goal)))    return res.status(400).send(paramconflict)
