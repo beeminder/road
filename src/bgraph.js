@@ -684,6 +684,11 @@ function createGraph() {
                                    .attr("height",           10)
                                    .attr("patternTransform", "rotate(45)")
                                    .attr("patternUnits",     "userSpaceOnUse")
+  gPinkPat.append("rect").attr("x",                0)
+                         .attr("y",                0)
+                         .attr("width",            10)
+                         .attr("height",           10)
+                         .attr("fill", bu.Cols.PINK)
   gPinkPat.append("line").attr("x1",            0)
                          .attr("y1",            0)
                          .attr("x2",            0)
@@ -3101,7 +3106,7 @@ function updateYBHP() {
       // can't define dashed lines here; so the following doesn't work:
       //[ 0,  0, "#ff0000", "none",    1, gfo, xrfull], // brightline
       //[ 0, -2, "#ffe5e5", "none",    0, rfo, null],   // whole bad half-plane
-        [ 0, -2, "#fff5f5", "none",    0,   1, xrakr],  // nozone/oinkzone
+      //  [ 0, -2, "#fff5f5", "none",    0,   1, xrakr],  // nozone/oinkzone
       ]
     }
   }
@@ -3292,7 +3297,7 @@ function updateCenterline(ir) {        // AKA the razor road in the case of YBHP
   const sw   = ybhp ? 1.001 : cw // stroke-width
   const sda  = ybhp ? null : dash // stroke-dasharray
   const scol = ybhp ? bu.Cols.RAZR0 : bu.Cols.ORNG // stroke color
-  
+
   // fx,fy: Start of the current line segment
   // ex,ey: End of the current line segment
   let fx = nXSc(ir[0].sta[0]*SMS), fy = nYSc(ir[0].sta[1])
