@@ -1723,8 +1723,12 @@ function loadGoal(json, timing = true) {
   if (timing) { console.time(stats_timeid+suffix) }
   bbr = new bb(json)
   goal = bbr.goal
-  if (opts.divJSON)
-    opts.divJSON.innerHTML = JSON.stringify(bbr.getStats(), null, 4)
+  if (opts.divJSON) {
+    if (opts.headless)
+      opts.divJSON.innerText = JSON.stringify(bbr.getStats())
+    else
+      opts.divJSON.innerText = JSON.stringify(bbr.getStats(), null, 4)
+  }
   if (timing) { console.timeEnd(stats_timeid+suffix) }
 
   if (goal.error != "") {
