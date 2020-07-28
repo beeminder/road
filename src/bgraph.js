@@ -1095,7 +1095,7 @@ function createTextBox(x, y, text, col, textr=null) {
   } else {
     textobj.text.append("tspan").attr("x", 0).attr("dy", "0.6em")
                                 .text(text).attr('class', 'svgtxt')
-    for (const i = 0; i < textr.length; i++) {
+    for (var i = 0; i < textr.length; i++) {
       textobj.text.append("tspan").attr("dy", "1.2em")
         .attr("x", 0).text(textr[i])
         .attr("font-size", "0.7em")
@@ -3394,7 +3394,7 @@ function updateLanes(ir) {
   }
 }
 
-function updateGuidelines(ir) {  
+function updateGuidelines(ir) {
   let guideelt = gOldGuides.selectAll(".oldguides")
   if (opts.roadEditor || ir == null) { guideelt.remove(); return }
 

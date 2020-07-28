@@ -134,7 +134,12 @@ self.copyRoad = (rd) => {
   return nr
 }
 
-/** Finds index for the road segment containing the supplied x value */
+/** Finds index for the road segment containing the supplied x
+ * value. The dir argument determines which side of streaks of
+ * vertical segments is returned if the point coincides with suh a
+ * vertical segment. dir>0 and dir<0 return the segment after and
+ * before the vertical streak coincident with the point being
+ * searched, respectively.  */
 self.findSeg = (rd, x, dir=0) => {
   if (rd.length === 0 || rd.length === undefined) return -1
   const nums = rd.length-1
@@ -415,6 +420,13 @@ self.dtdarray = ( rd, goal ) => {
 self.isoline_generate = (rd, dtdarr, goal, v) => {
   var n = dtdarr[0], nn, iso
   var s = 0, ns, j, k, st, en, sl
+
+  function addunique(arr, pt) {
+    var elt = arr[arr.length-1]
+    if (elt[0] != pt[0] || elt[1] != pt[1])
+      arr.push(pt)
+  }
+  
   // Start the isoline with a horizontal line for the end of the road
   iso = [[n[0][0]+10*SID, n[0][1]+v*(n[0][3]-n[0][1])],
          [n[0][0],        n[0][1]+v*(n[0][3]-n[0][1])]]
@@ -434,20 +446,20 @@ self.isoline_generate = (rd, dtdarr, goal, v) => {
       st = [n[k][0], n[k][1], n[k][2]]
       en = [nn[k][0], nn[k][3], nn[k][4]]
       if (en[2] - st[2] == 0)
-        iso.push([st[0], st[1]])
+        addunique(iso, [st[0], st[1]])
       else {
         sl = (v-st[2]) / (en[2]-st[2])
-        iso.push([st[0] + sl*(en[0]-st[0]), 
+        addunique(iso, [st[0] + sl*(en[0]-st[0]), 
                   st[1] + sl*(en[1]-st[1])])
       }
     }
     st = [nn[ns][0], nn[ns][1], nn[ns][2]]
     en = [nn[ns][0], nn[ns][3], nn[ns][4]]
     if (en[2] - st[2] == 0)
-      iso.push([st[0], st[1]])
+      addunique(iso, [st[0], st[1]])
     else {
       sl = (v-st[2]) / (en[2]-st[2])
-      iso.push([st[0] + sl*(en[0]-st[0]), st[1]+sl*(en[1]-st[1])])
+      addunique(iso, [st[0] + sl*(en[0]-st[0]), st[1]+sl*(en[1]-st[1])])
     }
     s = ns
     n = nn
@@ -544,7 +556,7 @@ self.isoline_clip = ( iso, rd, dtdarr, goal, v ) => {
 
   function lineval(s, e, x) {
     var sl = (e[1]-s[1])/(e[0]-s[0])
-    return st[1] + slope * (x-s[0])
+    return s[1] + sl * (x-s[0])
   }
 
   function intersect(s1, e1, s2, e2) { 
@@ -565,9 +577,9 @@ self.isoline_clip = ( iso, rd, dtdarr, goal, v ) => {
   }
 
   // Clip a single point to the right side of the road. Assume points on
-  // vertical segments are clipped wrt to the closest boundary to the wrong
-  // side of the road.
-  function clippt(rd, goal, pt) {
+  // vertical segments are clipped wrt to the closest boundary to the wrong (side=-1)
+  // or good (side=1) side of the road.
+  function clippt(rd, goal, pt, side = -1) {
     var newpt = pt.slice()
     // Find the road segment [sta, end[ containing the pt
     var seg = self.findSeg(rd, pt[0])
@@ -575,29 +587,47 @@ self.isoline_clip = ( iso, rd, dtdarr, goal, v ) => {
     // If there are preceding vertical segments, take the boundary value based
     // on road yaw.
     while(--seg >= 0 && rd[seg].sta[0] == pt[0]) {
-      if (goal.yaw > 0) rdy = min(rdy, rd[seg].sta[1])
+      if (-side*goal.yaw > 0) rdy = min(rdy, rd[seg].sta[1])
       else              rdy = max(rdy, rd[seg].sta[1])
     }
     if ((newpt[1] - rdy) * goal.yaw < 0) newpt[1] = rdy
     return newpt
   }
 
-  var done = false, rdind = 0, isoind = 0
+  var done = false, rdind = 0, isoind = 0, side
 
-  isoout.push(clippt(rd, goal, iso[0]))
+  // The loop below alternatingly iterates through the segments in the
+  // road and the isoline, ensuring that the isoline always stays on
+  // the right side of the road
+  if (iso[1][0] != iso[0][0]) side = 1
+  else
+    side = -1
+  isoout.push(clippt(rd, goal, iso[0], side))
   while (!done) {
-    
     if (rdind > rd.length-1 || isoind > iso.length-2) break
 
     // Check whether segments are intersecting
     var pt = intersect(rd[rdind].sta, rd[rdind].end, iso[isoind], iso[isoind+1])
-    if (pt != null && pt[0] != isoout[isoout.length-1][0]) isoout.push(pt)
+    if (pt != null) isoout.push(pt)
     
-    if (rd[rdind].end[0] < iso[isoind+1][0])
+    if (rd[rdind].end[0] < iso[isoind+1][0]) {
+      // If the isoline remains below the road at road inflection
+      // points, add the road inflection point to avoid leaky isolines
+      // on the wrong side of the road.
+      if ((lineval(iso[isoind], iso[isoind+1],
+                   rd[rdind].end[0]) - rd[rdind].end[1]) * goal.yaw < 0)
+        isoout.push([rd[rdind].end[0], rd[rdind].end[1]])
       rdind++
-    else {
+    } else {
       isoind++
-      isoout.push(clippt(rd, goal, iso[isoind]))
+      // If the next isoline segment is vertical, clip to the wrong
+      // side, otherwise, clip to the right side. This should resolve
+      // the leaky isoline issue
+      if (isoind < iso.length-1 && iso[isoind][0] != iso[isoind+1][0])
+        side = 1
+      else
+        side = -1
+      isoout.push(clippt(rd, goal, iso[isoind], side))
     }
   }
   return isoout
@@ -605,7 +635,7 @@ self.isoline_clip = ( iso, rd, dtdarr, goal, v ) => {
   
 /* Return an array of x,y coordinate pairs for an isoline associated with dtd=v.
  * This can be used to compute boundaries for derailment regions, as well as 
- * guidelines. Coordinate points start from the beginning of the road and 
+ * guidelines. Coordinate points stggart from the beginning of the road and 
  * proceed forward.
 */
 self.isoline = ( rd, dtdarr, goal, v, retall=false ) => {
