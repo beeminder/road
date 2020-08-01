@@ -600,15 +600,15 @@ self.isoline_clip = ( iso, rd, dtdarr, goal, v ) => {
   // road and the isoline, ensuring that the isoline always stays on
   // the right side of the road
   if (iso[1][0] != iso[0][0]) side = 1
-  else
-    side = -1
+  else side = -1
   isoout.push(clippt(rd, goal, iso[0], side))
   while (!done) {
     if (rdind > rd.length-1 || isoind > iso.length-2) break
 
     // Check whether segments are intersecting
+    var ind = isoout.length-1
     var pt = intersect(rd[rdind].sta, rd[rdind].end, iso[isoind], iso[isoind+1])
-    if (pt != null) isoout.push(pt)
+    if (pt != null && pt[0] != isoout[ind][0] && pt[1] != isoout[ind][1]) isoout.push(pt)
     
     if (rd[rdind].end[0] < iso[isoind+1][0]) {
       // If the isoline remains below the road at road inflection
@@ -623,10 +623,8 @@ self.isoline_clip = ( iso, rd, dtdarr, goal, v ) => {
       // If the next isoline segment is vertical, clip to the wrong
       // side, otherwise, clip to the right side. This should resolve
       // the leaky isoline issue
-      if (isoind < iso.length-1 && iso[isoind][0] != iso[isoind+1][0])
-        side = 1
-      else
-        side = -1
+      if (isoind < iso.length-1 && iso[isoind][0] != iso[isoind+1][0]) side = 1
+      else side = -1
       isoout.push(clippt(rd, goal, iso[isoind], side))
     }
   }
