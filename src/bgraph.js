@@ -447,65 +447,6 @@ function getisopath( val, xr ) {
   return d
 }
 
-// Compute lane width (the delta between yellow guiding lines) based on
-// isolines on the left or right border for the graph depending on dir*yaw. If
-// dir*yaw > 0 (like do-more), the left side is considered, otherwise the right
-// side. The average lane width is computed by computing isolines for dtd=0 and
-// dtd=365 and dividing it by 365 to overcome isolines coinciding for flat
-// regions.
-function isolnwborder(xr) {
-  let lnw = 0
-  const numdays = min(opts.maxFutureDays, ceil((goal.tfin-goal.tini)/SID))
-  const center = getiso(0)
-  const oneday = getiso(numdays)
-//TODO: switch to this version
-//const edge = goal.yaw*goal.dir > 0 ? 0 : 1 // left edge for MOAR/PHAT
-//return abs(br.isoval(center, xr[edge])-br.isoval(oneday, xr[edge])) / numdays
-
-  if (goal.yaw*goal.dir > 0) {
-    lnw = abs(br.isoval(center, xr[0])-br.isoval(oneday, xr[0])) / numdays
-  } else {
-    lnw = abs(br.isoval(center, xr[1])-br.isoval(oneday, xr[1])) / numdays
-  }
-  return lnw
-}
-
-function isolnwmax( xr ) {
-  let x, lnw = 0
-  const center = getiso(0)
-  const oneday = getiso(1)
-  for (let i = 0; i < center.length; i++) {
-    x = center[i][0]
-    if (x >= xr[0] && x <= xr[1])
-      lnw = max(lnw, abs(center[i][1] - br.isoval(oneday,x)))
-  }
-  for (let i = 0; i < oneday.length; i++) {
-    x = oneday[i][0]
-    if (x >= xr[0] && x <= xr[1])
-      lnw = max(lnw, abs(oneday[i][1] - br.isoval(center,x)))
-  }
-  return lnw == 0 ? abs(br.isoval(center, xr[0]) - 
-                        br.isoval(oneday, xr[0])) : lnw
-}
-
-function isolnwmin( xr ) {
-  let x, lnw = Infinity
-  const center = getiso(0)
-  const oneday = getiso(1)
-  for (let i = 0; i < center.length; i++) {
-    x = center[i][0]
-    const nw = abs(center[i][1] - br.isoval(oneday,x))
-    if (nw != 0 && x >= xr[0] && x <= xr[1]) lnw = min(lnw, nw)
-  }
-  for (let i = 0; i < oneday.length; i++) {
-    x = oneday[i][0]
-    const nw = abs(oneday[i][1] - br.isoval(center,x))
-    if (nw != 0 && x >= xr[0] && x <= xr[1]) lnw = min(lnw, nw)
-  }
-  return lnw == Infinity ? abs(br.isoval(center,xr[0]) - 
-                               br.isoval(oneday,xr[0])) : lnw
-}
-
 /** Limits an svg coordinate to 1 or 3 digits after the decimal 
  @param {Number} x Input number 
 */
@@ -863,7 +804,7 @@ function createGraph() {
   zoomin = focusclip.append("svg:use")
     .attr("class","zoomin")
     .attr("xlink:href", "#zoominbtn")
-	  .attr("opacity",opts.zoomButton.opacity)
+    .attr("opacity",opts.zoomButton.opacity)
     .attr("transform", zoombtntr.botin)
     .on("click", () => { zoomarea.call(axisZoom.scaleBy, 
                                        opts.zoomButton.factor) })
@@ -873,7 +814,7 @@ function createGraph() {
   zoomout = focusclip.append("svg:use")
     .attr("class",      "zoomout")
     .attr("xlink:href", "#zoomoutbtn")
-	  .attr("opacity",    opts.zoomButton.opacity)
+    .attr("opacity",    opts.zoomButton.opacity)
     .attr("transform",  zoombtntr.botout)
     .on("click", () => { zoomarea.call(axisZoom.scaleBy, 
                                        1/opts.zoomButton.factor) })
@@ -1977,25 +1918,25 @@ function updateDragPositions(kind, updateKnots) {
                                      .attr("cy", r1(nYSc(rd[ii].end[1])))
     el.select("[name=ctxdot" +ii+"]").attr("cx", r1(xScB(rd[ii].end[0]*SMS)))
                                      .attr("cy", r1(yScB(rd[ii].end[1])))
-	  el.select("[name=road"   +ii+"]").attr("x1", r1(nXSc(rd[ii].sta[0]*SMS)))
+    el.select("[name=road"   +ii+"]").attr("x1", r1(nXSc(rd[ii].sta[0]*SMS)))
                                      .attr("y1", r1(nYSc(rd[ii].sta[1])))
-	                                   .attr("x2", r1(nXSc(rd[ii].end[0]*SMS)))
-	                                   .attr("y2", r1(nYSc(rd[ii].end[1])))
-	  el.select("[name=ctxroad"+ii+"]").attr("x1", r1(xScB(rd[ii].sta[0]*SMS)))
+                                     .attr("x2", r1(nXSc(rd[ii].end[0]*SMS)))
+                                     .attr("y2", r1(nYSc(rd[ii].end[1])))
+    el.select("[name=ctxroad"+ii+"]").attr("x1", r1(xScB(rd[ii].sta[0]*SMS)))
                                      .attr("y1", r1(yScB(rd[ii].sta[1])))
-	                                   .attr("x2", r1(xScB(rd[ii].end[0]*SMS)))
-	                                   .attr("y2", r1(yScB(rd[ii].end[1])))
+                                     .attr("x2", r1(xScB(rd[ii].end[0]*SMS)))
+                                     .attr("y2", r1(yScB(rd[ii].end[1])))
     if (updateKnots) {
       el.select("[name=knot" +ii+"]").attr("x1", r1(nXSc(rd[ii].end[0]*SMS)))
-  	                                 .attr("x2", r1(nXSc(rd[ii].end[0]*SMS)))
+                                     .attr("x2", r1(nXSc(rd[ii].end[0]*SMS)))
       el.select("[name=remove"+ii+"]")
         .attr("transform", 
               d => ("translate("+(nXSc(d.end[0]*SMS)+plotpad.left-8)
                     +","+(plotpad.top-20)+") scale(0.6,0.6)"))
     }
-	  el.select("[name=enddate" +ii+"]").text(bu.dayify(rd[ii].end[0], '-'))
-	  el.select("[name=endvalue"+ii+"]").text(bu.shn(rd[ii].end[1]))
-	  el.select("[name=slope"   +ii+"]").text(bu.shn(rd[ii].slope*goal.siru))
+    el.select("[name=enddate" +ii+"]").text(bu.dayify(rd[ii].end[0], '-'))
+    el.select("[name=endvalue"+ii+"]").text(bu.shn(rd[ii].end[1]))
+    el.select("[name=slope"   +ii+"]").text(bu.shn(rd[ii].slope*goal.siru))
   }
 
   if (opts.tableUpdateOnDrag) updateTableValues()
@@ -2623,17 +2564,17 @@ function updatePastBox() {
   if (pastelt.empty()) {
     gPB.insert("svg:rect", ":first-child")
       .attr("class","past")
-	    .attr("x", nXSc(goal.xMin))
+      .attr("x", nXSc(goal.xMin))
       .attr("y", nYSc(goal.yMax+3*(goal.yMax-goal.yMin)))
       .attr("width", nXSc(goal.asof*SMS) - nXSc(goal.xMin))
-	    .attr("height",7*abs(nYSc(goal.yMin) - nYSc(goal.yMax)))
+      .attr("height",7*abs(nYSc(goal.yMin) - nYSc(goal.yMax)))
       .attr("fill", opts.pastBoxCol.fill)
       .attr("fill-opacity", opts.pastBoxCol.opacity)
   } else {
     pastelt.attr("x", nXSc(goal.xMin))
            .attr("y", nYSc(goal.yMax + 3*(goal.yMax-goal.yMin)))
            .attr("width", nXSc(goal.asof*SMS) - nXSc(goal.xMin))
-	    .attr("height",7*abs(nYSc(goal.yMin) - nYSc(goal.yMax)))
+      .attr("height",7*abs(nYSc(goal.yMin) - nYSc(goal.yMax)))
   }
 }
 
@@ -2649,7 +2590,7 @@ function updatePastText() {
   }
   if (todayelt.empty()) {
     gGrid.append("svg:line").attr("class",         "pastline")
-	                          .attr("x1",            nXSc(goal.asof*SMS))
+                            .attr("x1",            nXSc(goal.asof*SMS))
                             .attr("y1",            0)
                             .attr("x2",            nXSc(goal.asof*SMS))
                             .attr("y2",            plotbox.height)
@@ -2666,14 +2607,14 @@ function updatePastText() {
   if (pasttextelt.empty()) {
     gPastText.append("svg:text")
       .attr("class","pasttext")
-	    .attr("x",textx ).attr("y",texty)
+      .attr("x",textx ).attr("y",texty)
       .attr("transform", "rotate(-90,"+textx+","+texty+")")
       .attr("fill", bu.Cols.AKRA) 
       .style("font-size", opts.horizon.font+"px") 
       .text("Today"+" ("+moment.unix(goal.asof).utc().format("ddd")+")")
   } else {
     pasttextelt
-	    .attr("x", textx).attr("y", texty)
+      .attr("x", textx).attr("y", texty)
       .attr("transform", "rotate(-90,"+textx+","+texty+")")
       .text("Today"+" ("+moment.unix(goal.asof).utc().format("ddd")+")")
   }
@@ -2690,7 +2631,7 @@ function updateContextToday() {
   }
   if (todayelt.empty()) {
     ctxplot.append("svg:line").attr("class",         "ctxtoday")
-	                            .attr("x1",            xScB(goal.asof*SMS))
+                              .attr("x1",            xScB(goal.asof*SMS))
                               .attr("y1",            0)
                               .attr("x2",            xScB(goal.asof*SMS))
                               .attr("y2",            brushbox.height)
@@ -2738,12 +2679,12 @@ function updateBullseye() {
       .attr("class","bullseye")
       .attr("xlink:href",PNG.beye)
       .attr("externalResourcesRequired",true)
-	    .attr("x",bx ).attr("y",by)
+      .attr("x",bx ).attr("y",by)
       .attr('width', opts.bullsEye.size)
       .attr('height', opts.bullsEye.size);
   } else {
     bullseyeelt
-	    .attr("x", bx).attr("y", by);
+      .attr("x", bx).attr("y", by);
   }
 }
 
@@ -2763,7 +2704,7 @@ function updateContextBullseye() {
       .attr("class","ctxbullseye")
       .attr("xlink:href",PNG.beyey)
       .attr("externalResourcesRequired",true)
-	    .attr("x",bx ).attr("y",by)
+      .attr("x",bx ).attr("y",by)
       .attr('width', (opts.bullsEye.ctxsize))
       .attr('height', (opts.bullsEye.ctxsize));
   } else {
@@ -2785,12 +2726,12 @@ function updateOldBullseye() {
       .attr("class","oldbullseye")
       .attr("xlink:href",png)
       .attr("externalResourcesRequired",true)
-	    .attr("x",bx ).attr("y",by)
+      .attr("x",bx ).attr("y",by)
       .attr('width', (opts.bullsEye.size))
       .attr('height', (opts.bullsEye.size));
   } else {
     bullseyeelt
-	    .attr("x", bx).attr("y", by);
+      .attr("x", bx).attr("y", by);
   }
 }
 
@@ -2807,12 +2748,12 @@ function updateContextOldBullseye() {
       .attr("class","ctxoldbullseye")
       .attr("xlink:href",png)
       .attr("externalResourcesRequired",true)
-	    .attr("x",bx ).attr("y",by)
+      .attr("x",bx ).attr("y",by)
       .attr('width', (opts.bullsEye.ctxsize))
       .attr('height', (opts.bullsEye.ctxsize));
   } else {
     bullseyeelt
-	    .attr("x", bx).attr("y", by);
+      .attr("x", bx).attr("y", by);
   }
 }
 
@@ -2853,7 +2794,7 @@ function updateWatermark() {
       .attr('height', wmh)
       .on('load', ()=>{xlinkloaded = true});
   } else {
-	  x = plotbox.width/4;
+    x = plotbox.width/4;
     y = plotbox.height/4+fs/3;
     wbufelt = gWatermark.append("svg:text")
       .attr("class","waterbuf")
@@ -2879,7 +2820,7 @@ function updateWatermark() {
   var wbuxelt = gWatermark.select(".waterbux");
   wbuxelt.remove();
   if (!opts.roadEditor) {
-	  x = plotbox.width/4;
+    x = plotbox.width/4;
     y = plotbox.height/4+fs/3;
     wbuxelt = gWatermark.append("svg:text")
       .attr("class","waterbux")
@@ -2928,8 +2869,8 @@ function updateAura() {
     if (el.empty()) {
       gAura.append("svg:path")
         .attr("class","aura").attr("d", d)
-	      .style("fill", bu.Cols.LPURP)
-	      .style("stroke-width", 2).style("stroke", bu.Cols.LPURP);
+        .style("fill", bu.Cols.LPURP)
+        .style("stroke-width", 2).style("stroke", bu.Cols.LPURP);
     } else {
       el.attr("d", d);
     }
@@ -2946,9 +2887,9 @@ function updateAura() {
       if (el2.empty()) {
         gAura.append("svg:path")
           .attr("class","aurapast").attr("d", d)
-	        .style("fill", bu.Cols.LPURP)
-	        .style("stroke-width", 2)
-	        .style("stroke-dasharray", "4,4")
+          .style("fill", bu.Cols.LPURP)
+          .style("stroke-width", 2)
+          .style("stroke-dasharray", "4,4")
           .style("stroke", bu.Cols.LPURP)
       } else {
         el2.attr("d", d)
@@ -2970,7 +2911,7 @@ function updateHorizon() {
   if (horizonelt.empty()) {
     gHorizon.append("svg:line")
       .attr("class","horizon")
-	    .attr("x1", nXSc(goal.horizon*SMS))
+      .attr("x1", nXSc(goal.horizon*SMS))
       .attr("y1",0)
       .attr("x2", nXSc(goal.horizon*SMS))
       .attr("y2",plotbox.height)
@@ -2980,7 +2921,7 @@ function updateHorizon() {
       .attr("stroke-width", r3(o.width*scf))
   } else {
     horizonelt
-	    .attr("x1", nXSc(goal.horizon*SMS))
+      .attr("x1", nXSc(goal.horizon*SMS))
       .attr("y1",0)
       .attr("x2", nXSc(goal.horizon*SMS))
       .attr("y2",plotbox.height)
@@ -2992,14 +2933,14 @@ function updateHorizon() {
   if (horizontextelt.empty()) {
     gHorizonText.append("svg:text")
       .attr("class","horizontext")
-	    .attr("x",textx ).attr("y",texty)
+      .attr("x",textx ).attr("y",texty)
       .attr("transform", "rotate(-90,"+textx+","+texty+")")
       .attr("fill", bu.Cols.AKRA) 
       .style("font-size", (o.font)+"px") 
       .text("Akrasia Horizon");
   } else {
     horizontextelt
-	    .attr("x", textx).attr("y", texty)
+      .attr("x", textx).attr("y", texty)
       .attr("transform", "rotate(-90,"+textx+","+texty+")");
   }
 }
@@ -3011,7 +2952,7 @@ function updateContextHorizon() {
   if (horizonelt.empty()) {
     ctxplot.append("svg:line")
       .attr("class","ctxhorizon")
-	    .attr("x1", xScB(goal.horizon*SMS))
+      .attr("x1", xScB(goal.horizon*SMS))
       .attr("y1",yScB(goal.yMin-5*(goal.yMax-goal.yMin)))
       .attr("x2", xScB(goal.horizon*SMS))
       .attr("y2",yScB(goal.yMax+5*(goal.yMax-goal.yMin)))
@@ -3021,7 +2962,7 @@ function updateContextHorizon() {
       .style("stroke-width", r3(o.ctxwidth))
   } else {
     horizonelt
-	    .attr("x1", xScB(goal.horizon*SMS))
+      .attr("x1", xScB(goal.horizon*SMS))
       .attr("y1",yScB(goal.yMin-5*(goal.yMax-goal.yMin)))
       .attr("x2", xScB(goal.horizon*SMS))
       .attr("y2",yScB(goal.yMax+5*(goal.yMax-goal.yMin)));
@@ -3034,14 +2975,14 @@ function updateContextHorizon() {
   if (hortextelt.empty()) {
     ctxplot.append("svg:text")
       .attr("class","ctxhortext")
-	    .attr("x",textx ).attr("y",texty)
+      .attr("x",textx ).attr("y",texty)
       .attr("transform", "rotate(-90,"+textx+","+texty+")")
       .attr("fill", bu.Cols.AKRA) 
       .style("font-size", (o.ctxfont)+"px") 
       .text("Horizon");
   } else {
     hortextelt
-	    .attr("x", textx).attr("y", texty)
+      .attr("x", textx).attr("y", texty)
       .attr("transform", "rotate(-90,"+textx+","+texty+")");
   }
 }
@@ -3237,8 +3178,8 @@ function updateYBHP() {
 
     if (ybhpelt.empty()) { // create a new element if an existing one not found
       ybhpgrp.append("svg:path").attr("class",          clsname)
-	                              .attr("d",              d)
-	                              .attr("pointer-events", "none")
+                                .attr("d",              d)
+                                .attr("pointer-events", "none")
                                 .attr("fill",           reg[2])
                                 .attr("fill-opacity",   reg[5])
                                 .attr("stroke",         reg[3])
@@ -3324,16 +3265,16 @@ function updateCenterline(ir) {        // AKA the razor road in the case of YBHP
   const roadelt = gOldCenter.select(".oldroads")
   if (roadelt.empty()) {
     gOldCenter.append("svg:path").attr("class",             "oldroads")
-	                               .attr("d",                 rd)
-	                               .attr("pointer-events",    "none")
+                                 .attr("d",                 rd)
+                                 .attr("pointer-events",    "none")
                                  .style("stroke-dasharray", sda)
-	                               .style("fill",             "none")
-	                               .style("stroke-width",     sw)
-	                               .style("stroke",           scol) 
+                                 .style("fill",             "none")
+                                 .style("stroke-width",     sw)
+                                 .style("stroke",           scol) 
   } else {
     roadelt.attr("d", rd).style("stroke-dasharray", sda)
-	                       .style("stroke-width",     sw)
-		                     .style("stroke",           scol)
+                         .style("stroke-width",     sw)
+                         .style("stroke",           scol)
   }
 }
 
@@ -3383,17 +3324,88 @@ function updateLanes(ir) {
   // **** Draw the YBR ****
   if (laneelt.empty()) {
     gOldRoad.append("svg:path").attr("class","oldlanes")
-	                             .attr("pointer-events", "none")
-	                           //.attr("shape-rendering", "crispEdges")
-	                             .attr("d", d)
-	                             .style("fill", bu.Cols.DYEL)
-	                             .style("fill-opacity", 0.5)
-	                             .style("stroke", "none")
+                               .attr("pointer-events", "none")
+                             //.attr("shape-rendering", "crispEdges")
+                               .attr("d", d)
+                               .style("fill", bu.Cols.DYEL)
+                               .style("fill-opacity", 0.5)
+                               .style("stroke", "none")
   } else {
     laneelt.attr("d", d)
   }
 }
 
+/* Determines whether a given line segment intersects the given
+ * bounding box or not. Follows the algorithm in
+ * https://noonat.github.io/intersect/#axis-aligned-bounding-boxes. The
+ * bbox should include the center and the half sizes as such:
+
+ * bbox = [x_mid, y_mid, w_half, h_half] */
+function lineInBBox( line, bbox ) {
+//  console.log("Intersecting "+JSON.stringify(line.map(e=>[bu.dayify(e[0]), e[1]]))+" with "+JSON.stringify([bu.dayify(bbox[0]-bbox[2]), bbox[1]-bbox[3], bu.dayify(bbox[0]+bbox[2]), bbox[1]+bbox[3]]))
+  let delta = [line[1][0] - line[0][0], line[1][1] - line[0][1]]
+  const scaleX = 1.0 / delta[0]
+  const scaleY = 1.0 / delta[1]
+  const signX = Math.sign(scaleX)
+  const signY = Math.sign(scaleY)
+  const nearTimeX = (bbox[0] - signX * bbox[2] - line[0][0]) * scaleX
+  const nearTimeY = (bbox[1] - signY * bbox[3] - line[0][1]) * scaleY
+  const farTimeX = (bbox[0] + signX * bbox[2] - line[0][0]) * scaleX
+  const farTimeY = (bbox[1] + signY * bbox[3] - line[0][1]) * scaleY    
+  if (nearTimeX > farTimeY || nearTimeY > farTimeX) return false
+  const nearTime = nearTimeX > nearTimeY ? nearTimeX : nearTimeY;
+  const farTime = farTimeX < farTimeY ? farTimeX : farTimeY;
+  if (nearTime > 1 || farTime < 0) return false
+  return true
+}
+  
+function isolineVisible( iso, bbox ) {
+  // TODO: Limit intersection search to only isolines that are in the
+  // xrange for efficiency
+  let left = bbox[0]-bbox[2], right = bbox[0]+bbox[2]
+  let l = bu.binarySearch(iso, e=>(e[0] < left)?-1:1)
+  let r = bu.binarySearch(iso, e=>(e[0] < right)?-1:1)
+  if (l[0] == null) l[0] = l[1] // 
+  if (r[1] == null) r[1] = r[0]
+  for (let i = l[0]; i < r[1]; i++) {
+    let res = lineInBBox( [iso[i], iso[i+1]], bbox)
+    if (res) return true
+  }
+  return false
+}
+  
+let glarr, gllimit = -1
+/* Computes the maximum visible DTD isoline, searching up to the
+ * specific limit (default 365). The implementation uses binary search
+ * on the isolines between 0 and the specified limit, checking whether
+ * a given isoline intersetcs the visible graph or not. Since isolines
+ * never intersect each other, this should be guaranteed to work
+ * unless the maximum DTD isoline is greater than the specified
+ * limit. In that case, limit is returned. */
+function maxVisibleDTD(limit = 365) {
+  let l = 0, u = limit
+  let liso = getiso(l), uiso = getiso(u)
+  const xr = [nXSc.invert(0)/SMS         , nXSc.invert(plotbox.width)/SMS]
+  const yr = [nYSc.invert(plotbox.height), nYSc.invert(0)]
+  const bbox = [(xr[0]+xr[1])/2, (yr[0]+yr[1])/2,
+                (xr[1]-xr[0])/2, (yr[1]-yr[0])/2]
+
+  if (limit != gllimit) {
+    // For efficiency, we only compute the search array when there is
+    // a change
+    gllimit = limit
+    glarr = Array(limit).fill().map((x,i)=>i)
+  }
+
+  // If the upper limit is visible, nothing to do, affirmative
+  if (isolineVisible( uiso, bbox )) return u
+
+  // Otherwise, proceed with binary search
+  let cmpfn = e=>(isolineVisible(getiso(e), bbox)?-1:1)
+  let maxdtd = bu.binarySearch(glarr, cmpfn)
+  return maxdtd[0] 
+}
+  
 function updateGuidelines(ir) {
   let guideelt = gOldGuides.selectAll(".oldguides")
   if (opts.roadEditor || ir == null) { guideelt.remove(); return }
@@ -3441,25 +3453,24 @@ function updateGuidelines(ir) {
     guideelt.exit().remove()
     guideelt.enter().append("svg:path")
       .attr("class", "oldguides")
-	    .attr("d", rd2)
-	    .attr("transform", (d,i) => "translate(0,"+(d<0? bc[0] : (i+1)*shift)+")")
-	    .attr("pointer-events", "none")
-	    .style("fill", "none")
-	    .attr("stroke-width", (d,i) => r3(d<0 ? opts.guidelines.weekwidth*scf
+      .attr("d", rd2)
+      .attr("transform", (d,i) => "translate(0,"+(d<0? bc[0] : (i+1)*shift)+")")
+      .attr("pointer-events", "none")
+      .style("fill", "none")
+      .attr("stroke-width", (d,i) => r3(d<0 ? opts.guidelines.weekwidth*scf
                                             : opts.guidelines.width*scf))
-	    .attr("stroke", (d,i) => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL))
+      .attr("stroke", (d,i) => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL))
     guideelt.attr("d", rd2)
       .attr("transform", (d,i)=> "translate(0,"+(d<0 ? bc[0] : (i+1)*shift)+")")
-	    .attr("stroke-width", (d,i) => r3(d<0 ? opts.guidelines.weekwidth*scf
+      .attr("stroke-width", (d,i) => r3(d<0 ? opts.guidelines.weekwidth*scf
                                             : opts.guidelines.width*scf))
-	    .attr("stroke", (d,i) => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL))
+      .attr("stroke", (d,i) => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL))
   } else {
   // #DIELANES END
 
-  const yrange = [nYSc.invert(plotbox.height), nYSc.invert(0)]
-  let delta = 1
-  
   const buildPath = ((d,i) => getisopath(d, [goal.tini, goal.tfin]))
+  
+  let skip = 1 // Show only one per this many guidelines
   
   // Create an index array as d3 data for guidelines
   // (Fun fact: the .invert() call returns a javascript date objects but when
@@ -3467,27 +3478,21 @@ function updateGuidelines(ir) {
   // unixtime in milliseconds. So doing .invert().getTime() is unnecessary.)
   const xrange = [nXSc.invert(            0)/SMS,
                   nXSc.invert(plotbox.width)/SMS]
-  const lnw = isolnwborder(xrange) // estimate intra-isoline delta
-  // what we're calling lnw here should be called delta and what we're calling
-  // delta should be something like "delta_count" or "skip"
-
-  if      (    abs(nYSc(0) - nYSc(lnw))  > 8) delta =   1
-  else if ( 7*(abs(nYSc(0) - nYSc(lnw))) > 8) delta =   7
-  else                                        delta =  28
-  // TODO: don't need that abs(); yrange[0] is always less than yrange[1]:
-  let numlines = 
-    max(28, min(365, floor(1.2*abs((yrange[1]-yrange[0])/(delta*lnw)))))
-  if (lnw == 0)
-    numlines = 28 // but this makes no sense, they won't show up
+  let numlines = maxVisibleDTD()
+    
+  if      ( numlines < 6*7)  skip =   1 // All lines until 6 weeks
+  else if ( numlines < 6*28) skip =   7 // Weekly lines until 6 months
+  else                       skip =  28 // Monthly lines afterwards
+    
+  numlines = ceil(numlines/skip)
   //console.log(
   //  `DEBUG delta=${delta} lnw=${lnw} numlines=${numlines} \
   //  yrange=${yrange[0]},${yrange[1]}`)
-  // TODO: we know numlines is an integer so the ceil() here is unnecessary:
-  let arr = new Array(ceil(numlines)).fill(0)
-  arr = [...arr.keys()].map(d => (d+1)*delta-1)
 
+  // glarr should have been generated by the call to maxVisibleDTD() above
+  let arr = glarr.slice(0, numlines).map(d => (d+1)*skip-1)
   // get the last isoline and make sure it's near the far-yaw edge of the plot
-  let lastiso = getiso(numlines*delta-1)
+  let lastiso = getiso(numlines*skip-1)
   lastiso = lastiso.filter(tv => tv[0] > xrange[0] && tv[0] < xrange[1])
   // find the most extreme y-value of the last isoline so we can see if it falls
   // short of the plotbox
@@ -3513,10 +3518,10 @@ function updateGuidelines(ir) {
     .attr("stroke-width",    opts.guidelines.width*scf)
     .attr("stroke",          bu.Cols.LYEL)
   guideelt
-	   .attr("d",               buildPath)
+     .attr("d",               buildPath)
      .attr("transform",       null)
-	   .attr("stroke",          bu.Cols.LYEL)
-	   .attr("stroke-width",    opts.guidelines.width*scf)
+     .attr("stroke",          bu.Cols.LYEL)
+     .attr("stroke-width",    opts.guidelines.width*scf)
 } // #DIELANES
 }
 
@@ -3652,12 +3657,12 @@ function updateContextOldRoad() {
   if (roadelt.empty()) {
     ctxplot.append("svg:path")
       .attr("class","ctxoldroads")
-	    .attr("d", d)
+      .attr("d", d)
       .style("stroke-dasharray",
              (goal.ybhp&&!opts.roadEditor)?null:(opts.oldRoadLine.ctxdash)+","
              +(opts.oldRoadLine.ctxdash))
-	    .style("fill", "none")
-	    .style("stroke-width",opts.oldRoadLine.ctxwidth)
+      .style("fill", "none")
+      .style("stroke-width",opts.oldRoadLine.ctxwidth)
       .style("stroke", goal.ybhp && !opts.roadEditor ? bu.Cols.RAZR0
                                                      : bu.Cols.ORNG)
   } else {
@@ -3753,8 +3758,8 @@ function updateKnots() {
   // Create, update and delete removal icons for knots
   knotrmelt.exit().remove()
   knotrmelt
-  //  	            .attr("id", function(d,i) {return i;})
-  //	            .attr("name", function(d,i) {return "remove"+i;})
+  //                .attr("id", function(d,i) {return i;})
+  //              .attr("name", function(d,i) {return "remove"+i;})
     .attr("transform", 
           function(d){ 
             return "translate("+(nXSc(d.end[0]*SMS)
@@ -3780,10 +3785,10 @@ function updateKnots() {
       return (i > 0 && i < road.length-2)
         ?"visible":"hidden";})
     .on("mouseenter",function(d,i) {
-	    d3.select(this).attr("fill",opts.roadKnotCol.rmbtnsel); 
+      d3.select(this).attr("fill",opts.roadKnotCol.rmbtnsel); 
       highlightDate(i, true);})
     .on("mouseout",function(d,i) {
-	    d3.select(this).attr("fill",opts.roadKnotCol.rmbtns);
+      d3.select(this).attr("fill",opts.roadKnotCol.rmbtns);
       highlightDate(i, false);})
     .on("click",knotDeleted);
 }
@@ -3809,33 +3814,33 @@ function updateRoads() {
   roadelt.enter()
     .append("svg:line")
     .attr("class","roads")
-	  .attr("id",   function(d,i) { return i })
-	  .attr("name", function(d,i) { return "road"+i })
-	  .attr("x1",   function(d)   { return nXSc(d.sta[0]*SMS) })
-	  .attr("y1",   function(d)   { return nYSc(d.sta[1]) })
-	  .attr("x2",   function(d)   { return nXSc(d.end[0]*SMS) })
-	  .attr("y2",   function(d)   { return nYSc(d.end[1]) })
+    .attr("id",   function(d,i) { return i })
+    .attr("name", function(d,i) { return "road"+i })
+    .attr("x1",   function(d)   { return nXSc(d.sta[0]*SMS) })
+    .attr("y1",   function(d)   { return nYSc(d.sta[1]) })
+    .attr("x2",   function(d)   { return nXSc(d.end[0]*SMS) })
+    .attr("y2",   function(d)   { return nYSc(d.end[1]) })
     .style("stroke",lineColor)
-	  .attr("stroke-width",opts.roadLine.width)
+    .attr("stroke-width",opts.roadLine.width)
     .on('wheel', function(d) { 
       // Redispatch a copy of the event to the zoom area
       var new_event = new d3.event.constructor(d3.event.type, d3.event)
       zoomarea.node().dispatchEvent(new_event)
       // Prevents mouse wheel event from bubbling up to the page
       d3.event.preventDefault()
-    })		  
+    })      
     .on("mouseover",function(d,i) { 
       if (!editingKnot && !editingDot && !editingRoad
          && !(selectType == br.RP.SLOPE && i == selection)) {
         if (i > 0 && i < road.length-1) {
-	        d3.select(this)
+          d3.select(this)
             .attr("stroke-width",(opts.roadLine.width+2));
           highlightSlope(i, true);}}})
     .on("mouseout",function(d,i) { 
       if (!editingKnot && !editingDot && !editingRoad
          && !(selectType == br.RP.SLOPE && i == selection)) {
         if (i > 0 && i < road.length-1) {
-	        d3.select(this)
+          d3.select(this)
             .attr("stroke-width",opts.roadLine.width);
           highlightSlope(i, false);}}})
     .on("click", function(d,i) { 
@@ -3892,18 +3897,18 @@ function updateContextRoads() {
     .attr("y1",function(d){ return yScB(d.sta[1])})
     .attr("x2", function(d){ return xScB(d.end[0]*SMS)})
     .attr("y2",function(d){ return yScB(d.end[1])})
-	  .style("stroke", lineColor);
+    .style("stroke", lineColor);
   roadelt.enter()
     .append("svg:line")
     .attr("class","ctxroads")
-	  .attr("id", function(d,i) {return i})
-	  .attr("name", function(d,i) {return "ctxroad"+i})
-	  .attr("x1", function(d){ return xScB(d.sta[0]*SMS)})
-	  .attr("y1",function(d){ return yScB(d.sta[1])})
-	  .attr("x2", function(d){ return xScB(d.end[0]*SMS)})
-	  .attr("y2",function(d){ return yScB(d.end[1])})
-	  .style("stroke", lineColor)
-	  .style("stroke-width",opts.roadLine.ctxwidth)
+    .attr("id", function(d,i) {return i})
+    .attr("name", function(d,i) {return "ctxroad"+i})
+    .attr("x1", function(d){ return xScB(d.sta[0]*SMS)})
+    .attr("y1",function(d){ return yScB(d.sta[1])})
+    .attr("x2", function(d){ return xScB(d.end[0]*SMS)})
+    .attr("y2",function(d){ return yScB(d.end[1])})
+    .style("stroke", lineColor)
+    .style("stroke-width",opts.roadLine.ctxwidth)
 }
 
 function updateDots() {
@@ -3938,13 +3943,13 @@ function updateDots() {
       if (!editingKnot && !editingDot && !editingRoad
           && !(selectType == br.RP.VALUE && i-1 == selection)) {
         highlightValue(i-1, true)
-	      d3.select(this).attr("r", r3(opts.roadDot.size+2))
+        d3.select(this).attr("r", r3(opts.roadDot.size+2))
       }})
     .on("mouseout",function(d,i) { 
       if (!editingKnot && !editingDot && !editingRoad
           && !(selectType == br.RP.VALUE && i-1 == selection)) {
         highlightValue(i-1, false)
-	      d3.select(this).attr("r", r3(opts.roadDot.size))
+        d3.select(this).attr("r", r3(opts.roadDot.size))
       }})
     .on("click", function(d,i) { 
       if (d3.event.ctrlKey) dotEdited(d,this.id)})
@@ -4039,7 +4044,7 @@ function updateDotGroup(grp,d,cls,r,
       if (dotTimer != null) window.clearTimeout(dotTimer);
       dotTimer = window.setTimeout(function() {
         showDotText(d); dotTimer = null;
-	    }, 500);})
+      }, 500);})
     .on("mouseout",function() { 
       if (dotText != null) {
         removeDotText();
@@ -4083,13 +4088,13 @@ function updateRosy() {
         if (rosyelt.empty()) {
           gRosy.append("svg:path")
             .attr("class","rosy")
-	          .attr("d", d)
-	          .style("fill", "none")
-	          .attr("stroke-width",r3(4*scf))
-	          .style("stroke", bu.Cols.ROSE);
+            .attr("d", d)
+            .style("fill", "none")
+            .attr("stroke-width",r3(4*scf))
+            .style("stroke", bu.Cols.ROSE);
         } else {
           rosyelt.attr("d", d)
-	          .attr("stroke-width", r3(4*scf))
+            .attr("stroke-width", r3(4*scf))
         }
       } else rosyelt.remove();
       updateDotGroup(gRosyPts, npts, "rd", 
@@ -4148,13 +4153,13 @@ function updateSteppy() {
         if (stpelt.empty()) {
           gSteppy.append("svg:path")
             .attr("class","steppy")
-	          .attr("d", d)
-	          .style("fill", "none")
-	          .attr("stroke-width", r3(4*scf))
-	          .style("stroke", bu.Cols.PURP)
+            .attr("d", d)
+            .style("fill", "none")
+            .attr("stroke-width", r3(4*scf))
+            .style("stroke", bu.Cols.PURP)
         } else {
           stpelt.attr("d", d)
-	          .attr("stroke-width", r3(4*scf))
+            .attr("stroke-width", r3(4*scf))
         }
         // Need additional vertical steppy for do-less flatlined datapoints
         var stppprelt = gSteppy.selectAll(".steppyppr");
@@ -4167,12 +4172,12 @@ function updateSteppy() {
             if (stppprelt.empty()) {
               gSteppy.append("svg:path")
                 .attr("class","steppyppr").attr("d", d)
-	              .style("fill", "none").style("stroke-opacity", 0.8)
-	              .attr("stroke-width", r3(4*scf))
+                .style("fill", "none").style("stroke-opacity", 0.8)
+                .attr("stroke-width", r3(4*scf))
                 .style("stroke", bu.Cols.LPURP)
             } else {
               stppprelt.attr("d", d)
-	              .attr("stroke-width",r3(4*scf))
+                .attr("stroke-width",r3(4*scf))
             }
           } else stppprelt.remove()
         } else stppprelt.remove()
@@ -4370,13 +4375,13 @@ function updateMovingAv() {
       if (el.empty()) {
         gMovingAv.append("svg:path")
           .attr("class","movingav")
-	        .attr("d", d)
-	        .style("fill", "none")
-	        .attr("stroke-width",r3(3*scf))
-	        .style("stroke", bu.Cols.PURP)
+          .attr("d", d)
+          .style("fill", "none")
+          .attr("stroke-width",r3(3*scf))
+          .style("stroke", bu.Cols.PURP)
       } else {
         el.attr("d", d)
-	        .attr("stroke-width",r3(3*scf))
+          .attr("stroke-width",r3(3*scf))
       }
     } else el.remove();
   } else {

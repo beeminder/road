@@ -316,7 +316,50 @@ self.clip = (x, a, b) => {
   if (x > b) x = b
   return x
 }
+  
+/** [i, j] = binarySearch(arr, eltcmp). Finds bounding indices for an element
+    in a sorted (ascending) array. Uses binary search
+    @param {Array} arr A sorted array of elements
+    @param {Function} eltcmp Function to provide a comparison result for each element. Should return -1, 0 or 1 if the element is smaller than, equal to, or greater than the desired element. 
 
+    Returns two indices i and j such that arr[i] < value < arr[j]
+    based on the comparison function. If the exact desired value is
+    found, then i and j are tghe lowest and highest indices for the
+    array with that value (i.e. such that eltcmp(arr[i]) =
+    eltcmp(arr[j]) = 0). If the first element is larger than the
+    desired value, i = null. Similarly, if the last element is smaller
+    than the desired value, j = null*/
+self.binarySearch = ( arr, eltcmp ) => {
+  let l = 0, u = arr.length-1, m
+  let lv = eltcmp(arr[l]), uv = eltcmp(arr[u]), mv
+  if (lv > 0) return [null, 0]
+  if (uv < 0) return [u, null]
+  
+  // Perform binary search to locate bounding indices
+  while (lv != 0 && uv != 0 && u-l > 1) {
+    m = floor((l+u)/2)
+    mv = eltcmp(arr[m])
+    if (mv <= 0) {
+      l = m; lv = mv
+    } else {
+      u = m; uv = mv
+    }
+  }
+  // Extend and return index region if the exact element is found
+  if (lv == 0 || uv == 0) {
+    let el = (lv == 0)?l:u, eu = el
+    while (el > 0) {
+      if (eltcmp(arr[el-1]) == 0) el -= 1
+      else break
+    }
+    while (eu < arr.length-1) {
+      if (eltcmp(arr[eu+1]) == 0) eu += 1
+      else break
+    }
+    return [el, eu]
+  } else return [l, u]
+}
+  
 /******************************************************************************
  *                                  SHOWNUM                                   *
  ******************************************************************************/
