@@ -608,7 +608,7 @@ self.isoline_clip = ( iso, rd, dtdarr, goal, v ) => {
     // Check whether segments are intersecting
     var ind = isoout.length-1
     var pt = intersect(rd[rdind].sta, rd[rdind].end, iso[isoind], iso[isoind+1])
-    if (pt != null && pt[0] != isoout[ind][0] && pt[1] != isoout[ind][1]) isoout.push(pt)
+    if (pt != null && (pt[0] != isoout[ind][0] || pt[1] != isoout[ind][1])) isoout.push(pt)
     
     if (rd[rdind].end[0] < iso[isoind+1][0]) {
       // If the isoline remains below the road at road inflection
