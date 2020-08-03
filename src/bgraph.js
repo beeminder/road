@@ -3437,7 +3437,11 @@ function maxVisibleDTD(limit = 365) {
 function updateGuidelines(ir) {
   let guideelt = gOldGuides.selectAll(".oldguides")
   if (opts.roadEditor || ir == null) { guideelt.remove(); return }
-
+  // Uluc: The following is an optimization which skips generating
+  // isolines when the goal is being loaded for the first time
+  // (ie. zoomAll)
+  if (processing) return
+  
   // #DIELANES BEGIN
   if (!goal.ybhp) {
     const yrange = [nYSc.invert(plotbox.height), nYSc.invert(0)]
