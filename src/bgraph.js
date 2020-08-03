@@ -3419,8 +3419,10 @@ function maxVisibleDTD(limit = 365) {
   if (limit != gllimit) {
     // For efficiency, we only compute the search array when there is
     // a change
+    //console.log(`DEBUG limit=${limit} vs gllimit=${gllimit}`)
+    //looks like it's possible for limit to not be an integer!
     gllimit = limit
-    glarr = Array(limit).fill().map((x,i)=>i)
+    glarr = Array(round(limit)).fill().map((x,i)=>i)
   }
 
   // If the upper limit is visible, nothing to do, affirmative
