@@ -3512,10 +3512,12 @@ function updateGuidelines(ir) {
 
   let numlines = maxVisibleDTD(numdays)
 
-  if      ( lnw_px > 8 || numlines < 6*7)    skip =   1 // All lines until 6 weeks
-  else if ( 7*lnw_px > 8 || numlines < 6*28) skip =   7 // Weekly lines until 6 months
-  else                                       skip =  28 // Monthly lines afterwards
-    
+  if      (lnw_px>8 || numlines<6*7)        skip = 1    // All lines until 6 weeks
+  else if (7*lnw_px>8 || numlines<6*28)     skip = 7    // Weekly lines until 6 months
+  else if (28*lnw_px>12 || numlines<2*12*28) skip = 28   // Monthly lines until 2 years
+  else if (4*28*lnw_px>12 || numlines<6*12*28) skip = 4*28 // 4m lines until 6 years
+  else                                       skip = 12*28 // Yearly lines afterwards
+
   numlines = ceil( numlines/skip )
   //console.log(
   //  `DEBUG delta=${delta} lnw=${lnw} numlines=${numlines} \
