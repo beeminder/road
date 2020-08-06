@@ -775,7 +775,7 @@ let pat_empty = "YYYYMMDD"
     @param {String} s Daystamp as a string "YYYY[s]MM[s]DD"
     @param {String} [sep=''] Separator character */
 self.dayparse = (s, sep='') => {
-  var re, pat
+  let re, pat
   if (s == null) return null
   if (sep=='') {
     // Optimize for the common case
@@ -786,14 +786,14 @@ self.dayparse = (s, sep='') => {
     re = RegExp('^(\\d{4})'+sep+'(\\d{2})'+sep+'(\\d{2})$')
     pat = "YYYY"+sep+"MM"+sep+"DD"
   }
-  if (!re.test(s)) { // make sure the supplied date is a timestamp
+  let match
+  if (typeof(s) != 'string') match = null
+  else match = s.match(re) 
+  if (!match) { // make sure the supplied date is a timestamp
     if (!isNaN(s)) return Number(s)
     else return NaN
   }
-  let m = moment.utc(s, pat)
-  // Perform daysnap manually for efficiency
-  m.hours(0).minutes(0).seconds(0).milliseconds(0)
-  return m.unix()
+  return Date.UTC(match[1], match[2]-1, match[3])/1000
 }
 
 /** Take an integer unixtime in seconds and return a daystamp like
