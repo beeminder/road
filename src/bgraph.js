@@ -440,8 +440,8 @@ function getisopath( val, xr ) {
   let x = isoline[0][0], y = isoline[0][1]
   if (x < xr[0]) { x = xr[0]; y = br.isoval(isoline, x) }
   let d = "M"+nXSc(x*SMS)+" "+nYSc(y)
-  let strt = bu.binarySearch(isoline, e=>((e[0]<xr[0])?-1:1))
-  let end = bu.binarySearch(isoline, e=>((e[0]<xr[1])?-1:1))
+  let strt = bu.searchby(isoline, e=>((e[0]<xr[0])?-1:1))
+  let end = bu.searchby(isoline, e=>((e[0]<xr[1])?-1:1))
   for (let i = strt[1]; i <= end[1]; i++) {
     d += " L"+nXSc(isoline[i][0]*SMS)+" "+nYSc(isoline[i][1])
   }
