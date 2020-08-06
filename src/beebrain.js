@@ -1435,7 +1435,7 @@ this.reloadRoad = function() {
     goal.dtdarray = br.dtdarray( roads, goal )
 
     goal.isolines = []
-    for (let i = 0; i < 7; i++)
+    for (let i = 0; i < 4; i++)
       goal.isolines[i] = br.isoline(roads, goal.dtdarray, goal, i)
   } else {
     goal.dtdarray = null
