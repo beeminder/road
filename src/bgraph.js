@@ -440,8 +440,9 @@ function getisopath( val, xr ) {
   let x = isoline[0][0], y = isoline[0][1]
   if (x < xr[0]) { x = xr[0]; y = br.isoval(isoline, x) }
   let d = "M"+nXSc(x*SMS)+" "+nYSc(y)
-  for (let i = 1; i < isoline.length; i++) {
-    if (isoline[i][0] < xr[0]) continue
+  let strt = bu.binarySearch(isoline, e=>((e[0]<xr[0])?-1:1))
+  let end = bu.binarySearch(isoline, e=>((e[0]<xr[1])?-1:1))
+  for (let i = strt[1]; i <= end[1]; i++) {
     d += " L"+nXSc(isoline[i][0]*SMS)+" "+nYSc(isoline[i][1])
   }
   return d
@@ -3505,8 +3506,6 @@ function updateGuidelines(ir) {
   } else {
   // #DIELANES END
 
-  const buildPath = ((d,i) => getisopath(d, [goal.tini, goal.tfin]))
-  
   let skip = 1 // Show only one per this many guidelines
   
   // Create an index array as d3 data for guidelines
@@ -3515,6 +3514,10 @@ function updateGuidelines(ir) {
   // unixtime in milliseconds. So doing .invert().getTime() is unnecessary.)
   const xrange = [nXSc.invert(            0)/SMS,
                   nXSc.invert(plotbox.width)/SMS]
+  const buildPath = ((d,i) =>
+                     getisopath(d, [max(goal.tini, xrange[0]),
+                                    min(goal.tfin, xrange[1])]))
+  
   const lnw = isolnwborder(xrange) // estimate intra-isoline delta
   const lnw_px = abs(nYSc(0) - nYSc(lnw))
   const numdays = (goal.tfin-goal.tini)/SID
@@ -3913,7 +3916,7 @@ function updateRoadData() {
   else dtd = br.dtdarray( road, goal )
   iso = []
   // Precompute first few isolines for dotcolor etc. to rely on
-  for (let i = 0; i < 7; i++) iso[i] = br.isoline( road, dtd, goal, i)
+  for (let i = 0; i < 5; i++) iso[i] = br.isoline( road, dtd, goal, i)
 }
 
 function updateRoadValidity() {
