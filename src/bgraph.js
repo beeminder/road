@@ -3905,11 +3905,14 @@ function updateRoads() {
 
 function updateRoadData() {
   // Recompute dtd array and isolines for the newly edited
-  // road. Cannot rely on the beebrain object since its road
-  // object will be set to the newly edited road later, once
-  // dragging is finished.
-  dtd = br.dtdarray( road, goal )
+  // road. Cannot rely on the beebrain object since its road object
+  // will be set to the newly edited road later, once dragging is
+  // finished. If this is the first time the goal is being loaded, we
+  // can rely on the beebrain object's computation
+  if (processing) dtd = goal.dtdarray
+  else dtd = br.dtdarray( road, goal )
   iso = []
+  // Precompute first few isolines for dotcolor etc. to rely on
   for (let i = 0; i < 7; i++) iso[i] = br.isoline( road, dtd, goal, i)
 }
 
