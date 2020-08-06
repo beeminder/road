@@ -723,7 +723,7 @@ function createGraph() {
     removeOverlay("zoominfo",true)
     scrollinfo.shown = false
   }
-  zoomarea.on("wheel.scroll", onscroll)
+  zoomarea.on("wheel.scroll", onscroll, {passive:false})
   zoomarea.on("mousedown.move", onmove)
   //zoomarea.on("touchstart", ()=>{console.log("touchstart")} )
   //zoomarea.on("touchmove", ()=>{console.log("touchmove")} )
@@ -1761,10 +1761,10 @@ async function loadGoalFromURL( url, callback = null ) {
   //console.debug( "loadGoalFromURL: Loading: "+url );
   if (url == "" || loading) return
   loading = true
-  showOverlay( ["loading..."], sh/10 )
+  if (!opts.headless) showOverlay( ["loading..."], sh/10 )
   var resp = await bu.loadJSON( url )
   if (resp != null) {
-    removeOverlay()
+    if (!opts.headless) removeOverlay()
     if ('errstring' in resp) {
       throw new Error("loadGoalFromURL: BB file has errors: "+resp.errstring)
     }
@@ -3011,6 +3011,8 @@ function updateContextHorizon() {
 }
 
 function updateYBHP() {
+  if (processing) return;
+
   if (opts.divGraph == null || road.length == 0) return
   if (!opts.roadEditor && !goal.ybhp) {
     gYBHP.selectAll("*").remove()
@@ -3221,6 +3223,8 @@ function updateYBHP() {
 }
 
 function updatePinkRegion() {                         // AKA nozone AKA oinkzone
+  if (processing) return;
+
   if (opts.divGraph == null || road.length == 0) return
 
   const pinkelt = gPink.select(".pinkregion")
@@ -3436,6 +3440,7 @@ function maxVisibleDTD(limit = 365) {
   
 function updateGuidelines(ir) {
   if (processing) return
+
   let guideelt = gOldGuides.selectAll(".oldguides")
   if (opts.roadEditor || ir == null) { guideelt.remove(); return }
   // Uluc: The following is an optimization which skips generating
@@ -3567,6 +3572,8 @@ function updateGuidelines(ir) {
 // unDRY alert: we're just mimicking what updateCenterline does for the razor
 // road but shifted by maxflux.
 function updateMaxfluxLine(ir) {
+  if (processing) return;
+
   if (!goal.ybhp || goal.maxflux == 0) return
   let guideelt = gOldMaxflux.selectAll(".oldmaxflux")
   if (opts.roadEditor || ir == null) { guideelt.remove(); return }
@@ -3772,7 +3779,7 @@ function updateKnots() {
       zoomarea.node().dispatchEvent(new_event)
       // Prevents mouse wheel event from bubbling up to the page
       d3.event.preventDefault()
-    })
+    }, {passive:false})
     .on("mouseover",function(d,i) {
       if (!editingKnot && !editingDot && !editingRoad
          && !(selectType == br.RP.DATE && i == selection)) {
@@ -3867,7 +3874,7 @@ function updateRoads() {
       zoomarea.node().dispatchEvent(new_event)
       // Prevents mouse wheel event from bubbling up to the page
       d3.event.preventDefault()
-    })      
+    }, {passive:false})      
     .on("mouseover",function(d,i) { 
       if (!editingKnot && !editingDot && !editingRoad
          && !(selectType == br.RP.SLOPE && i == selection)) {
@@ -3977,7 +3984,7 @@ function updateDots() {
       zoomarea.node().dispatchEvent(new_event)
       // Prevents mouse wheel event from bubbling up to the page
       d3.event.preventDefault()
-    })
+    }, {passive:false})
     .on("mouseover",function(d,i) { 
       if (!editingKnot && !editingDot && !editingRoad
           && !(selectType == br.RP.VALUE && i-1 == selection)) {
@@ -4081,7 +4088,7 @@ function updateDotGroup(grp,d,cls,r,
         zoomarea.node().dispatchEvent(new_event)
         // Prevents mouse wheel event from bubbling up to the page
         d3.event.preventDefault()
-      })
+      }, {passive:false})
       .on("mouseenter",function(d) {
         if (dotTimer != null) window.clearTimeout(dotTimer);
         dotTimer = window.setTimeout(function() {
