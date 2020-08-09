@@ -440,8 +440,8 @@ function getisopath( val, xr ) {
   let x = isoline[0][0], y = isoline[0][1]
   if (x < xr[0]) { x = xr[0]; y = br.isoval(isoline, x) }
   let d = "M"+nXSc(x*SMS)+" "+nYSc(y)
-  let strt = bu.binarySearch(isoline, e=>((e[0]<xr[0])?-1:1))
-  let end = bu.binarySearch(isoline, e=>((e[0]<xr[1])?-1:1))
+  let strt = bu.searchby(isoline, e=>((e[0]<xr[0])?-1:1))
+  let end = bu.searchby(isoline, e=>((e[0]<xr[1])?-1:1))
   for (let i = strt[1]; i <= end[1]; i++) {
     d += " L"+nXSc(isoline[i][0]*SMS)+" "+nYSc(isoline[i][1])
   }
@@ -3364,79 +3364,74 @@ function updateLanes(ir) {
   }
 }
 
-/* Determines whether a given line segment intersects the given
- * bounding box or not. Follows the algorithm in
- * https://noonat.github.io/intersect/#axis-aligned-bounding-boxes. The
- * bbox should include the center and the half sizes as such:
-
- * bbox = [x_mid, y_mid, w_half, h_half] */
+/* Determine whether a given line segment intersects the given bounding box.
+Follows the algorithm in
+https://noonat.github.io/intersect/#axis-aligned-bounding-boxes
+The bbox parameter should include the center and the half sizes like so:
+  [x_mid, y_mid, w_half, h_half] */
 function lineInBBox( line, bbox ) {
 //  console.log("Intersecting "+JSON.stringify(line.map(e=>[bu.dayify(e[0]), e[1]]))+" with "+JSON.stringify([bu.dayify(bbox[0]-bbox[2]), bbox[1]-bbox[3], bu.dayify(bbox[0]+bbox[2]), bbox[1]+bbox[3]]))
-  let delta = [line[1][0] - line[0][0], line[1][1] - line[0][1]]
+  let delta = [line[1][0] - line[0][0], 
+               line[1][1] - line[0][1]]
   const scaleX = 1.0 / delta[0]
   const scaleY = 1.0 / delta[1]
   const signX = Math.sign(scaleX)
   const signY = Math.sign(scaleY)
   const nearTimeX = (bbox[0] - signX * bbox[2] - line[0][0]) * scaleX
   const nearTimeY = (bbox[1] - signY * bbox[3] - line[0][1]) * scaleY
-  const farTimeX = (bbox[0] + signX * bbox[2] - line[0][0]) * scaleX
-  const farTimeY = (bbox[1] + signY * bbox[3] - line[0][1]) * scaleY    
+  const farTimeX  = (bbox[0] + signX * bbox[2] - line[0][0]) * scaleX
+  const farTimeY  = (bbox[1] + signY * bbox[3] - line[0][1]) * scaleY    
   if (nearTimeX > farTimeY || nearTimeY > farTimeX) return false
-  const nearTime = nearTimeX > nearTimeY ? nearTimeX : nearTimeY;
-  const farTime = farTimeX < farTimeY ? farTimeX : farTimeY;
+  const nearTime = nearTimeX > nearTimeY ? nearTimeX : nearTimeY
+  const farTime = farTimeX < farTimeY ? farTimeX : farTimeY
   if (nearTime > 1 || farTime < 0) return false
   return true
 }
   
-function isolineVisible( iso, bbox ) {
-  // TODO: Limit intersection search to only isolines that are in the
-  // xrange for efficiency
-  let left = bbox[0]-bbox[2], right = bbox[0]+bbox[2]
-  let l = bu.binarySearch(iso, e=>(e[0] < left)?-1:1)
-  let r = bu.binarySearch(iso, e=>(e[0] < right)?-1:1)
-  if (l[0] == null) l[0] = l[1] // 
+function isovisible(iso, bbox) {
+  if (iso.length === 0) return false
+  // TODO: For efficiency, limit intersection search to isolines in xrange
+  const left  = bbox[0] - bbox[2]
+  const right = bbox[0] + bbox[2]
+  let l = bu.searchby(iso, e => e[0] < left  ? -1 : 1)
+  let r = bu.searchby(iso, e => e[0] < right ? -1 : 1)
+  if (l[0] == null) l[0] = l[1]
   if (r[1] == null) r[1] = r[0]
   for (let i = l[0]; i < r[1]; i++) {
-    let res = lineInBBox( [iso[i], iso[i+1]], bbox)
-    if (res) return true
+    if (lineInBBox([iso[i], iso[i+1]], bbox)) return true
   }
   return false
 }
   
-let glarr, gllimit = -1
-/* Computes the maximum visible DTD isoline, searching up to the
- * specific limit (default 365). The implementation uses binary search
- * on the isolines between 0 and the specified limit, checking whether
- * a given isoline intersetcs the visible graph or not. Since isolines
- * never intersect each other, this should be guaranteed to work
- * unless the maximum DTD isoline is greater than the specified
- * limit. In that case, limit is returned. */
-function maxVisibleDTD(limit = 365) {
-  let l = 0, u = limit
-  let liso = getiso(l), uiso = getiso(u)
+/* Compute the maximum visible DTD isoline, searching up to the specified
+ * limit. Does binary search on the isolines between 0 and limit, checking
+ * whether a given isoline intersects the visible graph or not. Since isolines
+ * never intersect each other, this should be guaranteed to work unless the
+ * maximum DTD isoline is greater than limit in which case limit is returned. */
+let glarr, gllimit = -1 // should be more efficient to not recompute these
+function maxVisibleDTD(limit) {
   const xr = [nXSc.invert(0)/SMS         , nXSc.invert(plotbox.width)/SMS]
   const yr = [nYSc.invert(plotbox.height), nYSc.invert(0)]
   const bbox = [(xr[0]+xr[1])/2, (yr[0]+yr[1])/2,
                 (xr[1]-xr[0])/2, (yr[1]-yr[0])/2]
 
   if (limit != gllimit) {
-    // For efficiency, we only compute the search array when there is
-    // a change
+    // For efficiency, only compute the search array when there's a change
+    // Eek, looks like it's possible for limit to not be an integer!?
     //console.log(`DEBUG limit=${limit} vs gllimit=${gllimit}`)
-    //looks like it's possible for limit to not be an integer!
     gllimit = limit
-    glarr = Array(round(limit)).fill().map((x,i)=>i)
+    glarr = Array(ceil(limit)).fill().map((x,i)=>i) // sticking in ceil for now
   }
 
-  // If the upper limit is visible, nothing to do, affirmative
-  if (isolineVisible( uiso, bbox )) return u
-
-  // Otherwise, proceed with binary search
-  let cmpfn = e=>(isolineVisible(getiso(e), bbox)?-1:1)
-  let maxdtd = bu.binarySearch(glarr, cmpfn)
-  return maxdtd[0] 
+  // If upper limit is visible, nothing to do, otherwise proceed with the search
+  if (isovisible(getiso(limit), bbox)) return limit
+  const maxdtd = bu.searchby(glarr, e => isovisible(getiso(e), bbox) ? -1 : 1)
+  return maxdtd[0] === null ? maxdtd[1] : maxdtd[0]
+  // Is it weird that the function to search by is something that itself does
+  // a search? Probably Uluc is just a couple levels ahead of me but at some 
+  // point I'll want to get my head around that! --dreev
 }
-  
+
 function updateGuidelines(ir) {
   if (processing) return
 
