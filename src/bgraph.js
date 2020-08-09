@@ -1628,6 +1628,7 @@ function computePlotLimits(adjustZoom = true) {
   }
 
   var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10}
+  if (!opts.roadEditor) p.xmin = 0.02
   enlargeExtent(ne, p)
 
   goal.xMin = bu.daysnap(ne.xMin)
@@ -3268,18 +3269,15 @@ function updateCenterline(ir) {        // AKA the razor road in the case of YBHP
   const adj  = opts.roadEditor ? 0 : goal.yaw*cw/2            // path element...
   const ybhp = (goal.ybhp && !opts.roadEditor)
   const dash = (opts.oldRoadLine.dash)+","+(opts.oldRoadLine.dash)
-  const sw   = ybhp ? 1.001 : cw // stroke-width
-  const sda  = ybhp ? null : dash // stroke-dasharray
-  const scol = ybhp ? bu.Cols.RAZR0 : bu.Cols.ORNG // stroke color
+  const sw   = 1.001 // stroke-width
+  const sda  = null // stroke-dasharray
+  const scol = bu.Cols.RAZR0 // stroke color
 
   // fx,fy: Start of the current line segment
   // ex,ey: End of the current line segment
   let fx = nXSc(ir[0].sta[0]*SMS), fy = nYSc(ir[0].sta[1])
   let ex = nXSc(ir[0].end[0]*SMS), ey = nYSc(ir[0].end[1])
-  // Adjust start of road so dashes are stationary wrt time
-  const newx = (-nXSc(iroad[0].sta[0]*SMS)) % (2*opts.oldRoadLine.dash)
-  if (ex !== fx) fy = (fy + (-newx-fx)*(ey-fy)/(ex-fx))
-  if (fx < 0 || newx > 0) fx = -newx
+
   let rd = "M"+r1(fx)+" "+(r1(fy)+adj)
   for (const segment of ir) {
     ex = nXSc(segment.end[0]*SMS)
