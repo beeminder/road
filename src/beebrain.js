@@ -447,9 +447,14 @@ function computeRosy() {
   const yvec = bu.zip([yveclo, yvechi]).map(e => (e[0]+e[1])/2)
   const xvec = data.map(e => e[0])
   rosydata = bu.zip([xvec, yvec])
+  // rosydata format is as follows:
+  // [ptx, pty, popup text, pt type, prevx, prevy, v(original)]
+  // It is essentially the same as normal datapoints. Previous
+  // point coordinates are needed to draw connecting lines.
   rosydata = rosydata.map(e => 
-    [e[0],e[1],"rosy data", DPTYPE.RAWPAST, null, null, e[1]])
+    [e[0],e[1],"rosy data", DPTYPE.RAWPAST, e[0],e[1], e[1]])
   for (let i = 1; i < rosydata.length-1; i++) {
+    // These elements store the preceding point to facilitate drawing with d3
     rosydata[i][4] = rosydata[i-1][0]
     rosydata[i][5] = rosydata[i-1][1]
   }
