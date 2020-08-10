@@ -236,10 +236,10 @@ def flog(s):
     f.write(s)
     f.flush()
 
+# Convenience version of flog that adds the prefix and a newline
 def flon(s): flog(f'$PRE {s}\n')
 
-def nowstamp():
-  return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+def nowstamp(): return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
 def exitonerr(err, usage=True):
   usage = '''\
@@ -271,8 +271,7 @@ def extract_slug(p):
 
 # Take a full path and return whether it's a swap file or something else we want
 # to ignore if it changes, to not trigger unnecessary re-runs thru the suite.
-def ignorable(p):
-  return re.match(r"^\..*\.swp$", os.path.basename(p))
+def ignorable(p): return re.match(r"^\..*\.swp$", os.path.basename(p))
 
 # Scrolling related functions --------------------------------------------------
 
@@ -414,8 +413,8 @@ def refresh_topline():
 
   w.refresh()
 
-# Take a number of seconds and show it as milliseconds like "123ms"
-# (or seconds if it's 10s or more)
+# Take a number of seconds and show it as milliseconds like "123ms", or seconds
+# if it's 10s or more (should conceivably handle the >60s case too)
 def showtm(x):
   if x >= 10: return str(int(x))+"s"
   return str(int(1000*x))+"ms"
@@ -427,7 +426,7 @@ def refresh_status():
   w.addnstr(1, 1, cm.status, cm.ww-2)
   wwx = cm.ww - 14
   ndots = int(cm.progress/100*wwx)
-  if ndots > wwx: # never happens anymore; SCHDEL 
+  if ndots > wwx: # never happens anymore? totally happened
     flon(f'NEVER HAPPENS: prog={cm.progress} ndots={ndots} wwx={wwx}')
     sys.exit(1)
   _addstr(w, 0, 10, "(".ljust(ndots, 'o').ljust(wwx)+")")
@@ -502,6 +501,12 @@ def sort_goallist():
     cm.goals[freeind], cm.goals[i] = cm.goals[i], cm.goals[freeind]
     freeind += 1
   return
+
+# Last-modified time (unixtime) of the bbfile given the slug
+def mtime(bb):
+  bbfile = os.path.abspath(cm.bbdir)+'/'+bb+'.bb'
+  if (not os.path.isfile(bbfile)): return 0
+  return os.path.getmtime(bbfile)
 
 # Rescans the bb file directory to get an updated file list
 def update_goallist():
@@ -930,7 +935,11 @@ def jobTask():
       if (resp.req.reqid == cm.lastreq): cm.jobsdone = True
       if (cm.state != ST.IDLE):
         cm.curgoal += 1
-        setprogress(100*cm.curgoal/len(cm.goals))
+        if (cm.curgoal > len(cm.goals)): 
+          flog(f'DEBUG: {cm.curgoal} out of {len(cm.goals)} goals?')
+          setprogress(100)
+        else:
+          setprogress(100*cm.curgoal/len(cm.goals))
     except (queue.Empty): pass
 
   prevstate = cm.state  
@@ -1035,7 +1044,8 @@ def jobTask():
     # explains that. when i'm not in the middle of a million other changes to
     # this file i can refactor this to just be 
     # slug = cm.goals[cm.curgoal] and look for other similar cases.
-    slug = os.path.splitext(cm.goals[cm.curgoal])[0]
+    #slug = os.path.splitext(cm.goals[cm.curgoal])[0] #SCHDEL
+    slug = cm.goals[cm.curgoal]
     req = JobRequest("jsref")
     jobDispatch(req, slug, cm.bbdir, cm.jsreff, True)
     cm.state = ST.WAIT
@@ -1125,12 +1135,9 @@ def monitor(stdscr, bbdir, graph, force, watchdirs):
     traceback.print_exc()
     print("\n")
     pass
-  flon('broke out of main loop, doing worker_stop()')
-  worker_stop()
-  flon('worker_thread.join()?')
-  worker_thread.join()
-  flon('curses.curs_set(True)?')
-  curses.curs_set(True)
+  flon('broke out of main loop, doing worker_stop()'); worker_stop()
+  flon('worker_thread.join()?');                       worker_thread.join()
+  flon('curses.curs_set(True)?');                      curses.curs_set(True)
   flon('end of monitor function')
 
 # Main entry point for Automon. Parse command line arguments, set appropriate
