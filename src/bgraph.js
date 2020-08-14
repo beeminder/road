@@ -2505,8 +2505,8 @@ function animHor( enable ) {
 function animYBR(enable) {
   if (opts.roadEditor) return
   // var e = gOldRoad.select(".oldlanes")
-  // var styles =[["fill-opacity", 1.0, 0.5],
-  //              ["fill", "#ffff00", bu.Cols.DYEL]]
+  var styles =[["fill-opacity", 1.0, 0.5],
+               ["fill", "#ffff00", bu.Cols.DYEL]]
   // if (enable) startAnim(e, 500, [], styles, "ybr")
   // else stopAnim(e, 300, [], styles, "ybr")
 
@@ -3308,13 +3308,8 @@ function updateCenterline(rd, gelt, cls, scol, sw, delta, usedash) {
   for (const segment of rd) {
     ex = nXSc(segment.end[0]*SMS)
     ey = nYSc(segment.end[1]+delta)
-    if (ex > plotbox.width) {
-      fx = nXSc(segment.sta[0]*SMS)
-      fy = nYSc(segment.sta[1]+delta)
-      ey = fy + (plotbox.width-fx)*(ey-fy)/(ex-fx)
-      ex = plotbox.width
-    }
     d += " L"+r1(ex)+" "+(r1(ey)+adj)
+    if (ex > plotbox.width) break
   }
 
   if (roadelt.empty()) {
@@ -3370,6 +3365,33 @@ function isovisible(iso, bbox) {
   }
   return false
 }
+
+// Returns true if two isolines overlap within the specified x range in bbox
+function isocompare(isoa, isob, bbox) {
+  if (isoa.length === 0 || isob.length === 0 ) return false
+  // TODO: For efficiency, limit intersection search to isolines in xrange
+  const left  = bbox[0] - bbox[2]
+  const right = bbox[0] + bbox[2]
+  // Fail if isolines differ on the boundaries. TODO: This duplicates
+  // the boundary search below. Combine.
+  if (br.isoval(isoa, left) != br.isoval(isob, left)
+      || br.isoval(isoa, right) != br.isoval(isob, right)) return false
+
+  let la = bu.searchby(isoa, e => e[0] < left  ? -1 : 1)
+  let ra = bu.searchby(isoa, e => e[0] < right ? -1 : 1)
+  let lb = bu.searchby(isob, e => e[0] < left  ? -1 : 1)
+  let rb = bu.searchby(isob, e => e[0] < right ? -1 : 1)
+  if (la[0] == null) la[0] = la[1]
+  if (ra[1] == null) ra[1] = ra[0]
+  if (lb[0] == null) lb[0] = lb[1]
+  if (rb[1] == null) rb[1] = rb[0]
+  // Evaluate the alternate isoline on inflection points
+  for (let i = la[1]; i < ra[0]; i++)
+    if (br.isoval(isob, isoa[i][0]) != isoa[i][1]) return false
+  for (let i = lb[1]; i < rb[0]; i++)
+    if (br.isoval(isoa, isob[i][0]) != isob[i][1]) return false
+  return true
+}
   
 /* Compute the maximum visible DTD isoline, searching up to the specified
  * limit. Does binary search on the isolines between 0 and limit, checking
@@ -3378,6 +3400,7 @@ function isovisible(iso, bbox) {
  * maximum DTD isoline is greater than limit in which case limit is returned. */
 let glarr, gllimit = -1 // should be more efficient to not recompute these
 function maxVisibleDTD(limit) {
+  const isolimit = getiso(limit)
   const xr = [nXSc.invert(0)/SMS         , nXSc.invert(plotbox.width)/SMS]
   const yr = [nYSc.invert(plotbox.height), nYSc.invert(0)]
   const bbox = [(xr[0]+xr[1])/2, (yr[0]+yr[1])/2,
@@ -3392,7 +3415,14 @@ function maxVisibleDTD(limit) {
   }
 
   // If upper limit is visible, nothing to do, otherwise proceed with the search
-  if (isovisible(getiso(limit), bbox)) return limit
+  if (isovisible(isolimit, bbox)) {
+    // TODO: Find the minimum isoline that overlaps with the limit
+    // within the visible range
+    const maxdtd
+          = bu.searchby(glarr, e => isocompare(isolimit, getiso(e), bbox) ? 1 : -1)
+    return (maxdtd[1]==null)?maxdtd[0]:maxdtd[1]
+  }
+  
   const maxdtd = bu.searchby(glarr, e => isovisible(getiso(e), bbox) ? -1 : 1)
   return maxdtd[0] === null ? maxdtd[1] : maxdtd[0]
   // Is it weird that the function to search by is something that itself does
