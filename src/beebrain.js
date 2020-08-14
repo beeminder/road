@@ -977,6 +977,7 @@ function vetParams() {
 // It's razrmatr that Beebody wants and razrroad that bgraph wants, since we're
 // also displaying the critical edge of laney roads as a thin red line now.
 // Of course all this cruft will go away when the YBHP transition is complete!)
+// ULUC TODO: Is razrline still necessary, sinc it will end up being the same as the road with lnw=0?
 function genRazr() {
   //const lnf = goal.lnf
   const yaw = goal.yaw
