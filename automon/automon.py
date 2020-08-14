@@ -196,6 +196,7 @@ class CMonitor:
     
     self.bbdir = None      # Directory for bb files
     self.graph = False     # Whether to generate graphs or not
+    self.logging = False   # Whether to generate a log file with statistics or not
     self.state = ST.INIT   # Current jobTask state
     
     self.jobsdone = False  # Various events and flags for the state machine...
@@ -213,6 +214,7 @@ class CMonitor:
 
     self.last_time = 0     # Execution time logs...
     self.total_time = 0
+    self.max_time = 0
     self.total_count = 0
     
     self.req_alert = False # Alert task state: alert has been requested
@@ -246,6 +248,7 @@ def exitonerr(err, usage=True):
 Usage: automon.py <options> bbdir [other directories to monitor for changes]
 Supported options:
   -g or --graph : Enable graph comparisons
+  -l or --log   : Enable logging
   -f or --force : Force regeneration of reference outputs'''
   #-w or --watch : Monitor directory for changes (multiple directories ok)'''
   #print("========= Automon: Test Suite Monitoring/Comparison Daemon =========")
@@ -403,14 +406,17 @@ def refresh_menu():
 def refresh_topline():
   w = cm.twin
   w.clear()
-  if (cm.graph): _addstr(w, 0, 1, "[Graph]", curses.A_REVERSE)
-  else:          _addstr(w, 0, 1, "[Graph]")
+  if (cm.graph):   _addstr(w, 0, 1, "[Graph]", curses.A_REVERSE)
+  else:            _addstr(w, 0, 1, "[Graph]")
 
-  if (cm.jsref): _addstr(w, 0, 10, "[References]", curses.A_REVERSE)
-  else:          _addstr(w, 0, 10, "[References]")
+  if (cm.logging): _addstr(w, 0, 10, "[Log]", curses.A_REVERSE)
+  else:            _addstr(w, 0, 10, "[Log]")
 
-  if (cm.paused): _addstr(w, 0, 23, "[Paused]", curses.A_REVERSE)
-  else:           _addstr(w, 0, 23, "[Paused]")
+  if (cm.jsref): _addstr(w, 0, 17, "[References]", curses.A_REVERSE)
+  else:          _addstr(w, 0, 17, "[References]")
+
+  if (cm.paused): _addstr(w, 0, 31, "[Paused]", curses.A_REVERSE)
+  else:           _addstr(w, 0, 31, "[Paused]")
 
   w.refresh()
 
@@ -432,12 +438,13 @@ def refresh_status():
     sys.exit(1)
   _addstr(w, 0, 10, "(".ljust(ndots, 'o').ljust(wwx)+")")
   if (cm.total_count != 0):
+    _addstr(w, 2, cm.ww-43,
+            " Max: "+showtm(cm.max_time)+" ",
+            curses.A_BOLD)
     _addstr(w, 2, cm.ww-29,
-            #" Avg: "+str(int(1000*cm.total_time/cm.total_count))+"ms ", #SCHDEL
             " Avg: "+showtm(cm.total_time/cm.total_count)+" ",
             curses.A_BOLD)
     _addstr(w, 2, cm.ww-15, 
-            #" Last: "+str(int(1000*cm.last_time))+"ms ", #SCHDEL
             " Last: "+showtm(cm.last_time)+" ",
             curses.A_BOLD)
   w.refresh()
@@ -591,7 +598,7 @@ def graph_compare(slug, out, ref):
   try: 
     try:
       resp = subprocess.check_output(
-        ['compare', '-metric', 'AE', imgref, imgout, 
+        ['compare', '-metric', 'AE', "-fuzz", "1%", imgref, imgout, 
          '-compose', 'src', imgdiff], stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
       if (e.returncode == 1):
@@ -776,10 +783,12 @@ def setstatus(msg): qstatus.put(msg)
 def setprogress(percent): cm.progress = percent
 # TODO: resetAverage and updateAverage are not thread safe, fix!
 def resetAverage(): 
+  cm.max_time = 0
   cm.total_time = 0
   cm.total_count = 0
   cm.last_time = 0
 def updateAverage(time): 
+  if (time > cm.max_time): cm.max_time = time
   cm.total_time += time
   cm.total_count += 1
   cm.last_time = time
@@ -1069,13 +1078,14 @@ def jobTask():
   if (prevstate != cm.state): refresh_status()
   
 # Entry point for the monitoring loop
-def monitor(stdscr, bbdir, graph, force, watchdirs):
+def monitor(stdscr, bbdir, graph, logging, force, watchdirs):
   # Precompute various input and output path strings
   cm.bbdir = os.path.abspath(bbdir)
   cm.jsreff = os.path.abspath(cm.bbdir+"/jsref")
   cm.jsoutf = os.path.abspath(cm.bbdir+"/jsout")
 
   cm.graph = graph
+  cm.logging = logging
   
   # Clear screen and initialize various fields
   cm.sscr = stdscr
@@ -1138,14 +1148,16 @@ def monitor(stdscr, bbdir, graph, force, watchdirs):
 def main(argv):
   flog('-'*80 + '\n')
   flon(f'Automon BEGIN {nowstamp()}')
-  try: opts, args = getopt.getopt(argv, "hgf", ["help", "graph", "force"])
+  try: opts, args = getopt.getopt(argv, "hglf", ["help", "graph", "log", "force"])
   except getopt.GetoptError as err: exitonerr(str(err))
     
   graph = False
+  logging = False
   force = False
   for opt, arg in opts:
     if   opt in ('-h', '--help'): exitonerr('')
     elif opt in ('-g', '--graph'): graph = True
+    elif opt in ('-l', '--log'):   logging = True
     elif opt in ('-f', '--force'): force = True
     else: exitonerr(f'Unrecognized option: {opt}')
 
@@ -1157,7 +1169,7 @@ def main(argv):
     if (not os.path.isdir(d) or not os.path.exists(d)): 
       exitonerr(f'{d} is not a directory')
   
-  curses.wrapper(monitor, bbdir, graph, force, watchdirs)
+  curses.wrapper(monitor, bbdir, graph, logging, force, watchdirs)
   flon(f'Automon END   {nowstamp()}')
   flog('-'*80 + '\n')
 
