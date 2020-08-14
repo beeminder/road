@@ -108,7 +108,7 @@ let defaults = {
   watermark:    { height:170, fntsize:150, color:"#000000" }, // was #f0f0f0
   guidelines:   { width:2, weekwidth:4 },
   maxfluxline:  4, // width
-  razrline:     1, 
+  razrline:     2, 
   /** Visual parameters for text boxes shown during dragging */ 
   textBox:      { margin: 3 },
   /** Visual parameters for odometer resets */ 
@@ -155,6 +155,8 @@ let defaults = {
   /** Indicates whether slopes for segments beyond the currently dragged
       element should be kept constant during editing */
   keepSlopes:   true,
+  /** Indicates whether guidelines should be shown in the interactive editor */
+  showGuidelines: true,
   /** Indicates whether intervals between the knots for segments beyond the
       currently dragged element should be kept constant during editing */
   keepIntervals: false,
@@ -209,7 +211,7 @@ const mobiledefaults = {
   watermark:   { height: 150, fntsize: 100, color: "#000000" }, // was #f0f0f0
   guidelines:  { width: 2, weekwidth: 4 },
   maxfluxline: 4, // width
-  razrline:    1,
+  razrline:    2,
   textBox:     { margin: 3 },
 }
 
@@ -404,7 +406,7 @@ let svg, defs, graphs, buttonarea, stathead, focus, focusclip, plot,
     ySc, nYSc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel,
     xScB, xAxisB, xAxisObjB, yScB, 
     gPB, gYBHP, gYBHPlines, gPink, gPinkPat, gGrid, gOResets, gPastText, 
-    gOldRoad, gOldCenter, gOldGuides, gOldMaxflux, gOldRazr, gOldBullseye, 
+    gGuides, gMaxflux, gRazr, gOldBullseye, 
     gKnots, gSteppy, gSteppyPts, gRosy, gRosyPts, gMovingAv,
     gAura, gDerails, gAllpts, gDpts, gHollow, gFlat, 
     gBullseye, gRoads, gDots, gWatermark, gHashtags, gHorizon, gHorizonText,
@@ -795,15 +797,13 @@ function createGraph() {
   gPB          = plot.append('g').attr('id', 'pastboxgrp')     // z = 01->01
   gYBHP        = plot.append('g').attr('id', 'ybhpgrp')        // z = 03->02
   gWatermark   = plot.append('g').attr('id', 'wmarkgrp')       // z = 05->04
-  gOldGuides   = plot.append('g').attr('id', 'oldguidegrp')    // z = 02->05
-  gOldMaxflux  = plot.append('g').attr('id', 'oldmaxfluxgrp')  // z =   ->05.5
-  gOldRazr     = plot.append('g').attr('id', 'oldrazrgrp')
+  gGuides      = plot.append('g').attr('id', 'guidegrp')       // z = 02->05
+  gMaxflux     = plot.append('g').attr('id', 'maxfluxgrp')     // z =   ->05.5
+  gRazr        = plot.append('g').attr('id', 'razrgrp')
   gYBHPlines   = plot.append('g').attr('id', 'ybhplinesgrp')   // z =   ->06
   gAura        = plot.append('g').attr('id', 'auragrp')        // z = 04->03
-  gOldRoad     = plot.append('g').attr('id', 'oldroadgrp')     // z = 06->07
   gPink        = plot.append('g').attr('id', 'pinkgrp')        // z = 07->08
   gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp') // z = 08->09
-  gOldCenter   = plot.append('g').attr('id', 'oldcentergrp')   // z = 09->10
   gGrid        = plot.append('g').attr('id', 'grid')           // z = 10->11
   gOResets     = plot.append('g').attr('id', 'oresetgrp')      // z = 11->12
   gKnots       = plot.append('g').attr('id', 'knotgrp')        // z = 12->13
@@ -1628,7 +1628,11 @@ function computePlotLimits(adjustZoom = true) {
   }
 
   var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10}
-  if (!opts.roadEditor) p.xmin = 0.02
+  if (!opts.roadEditor) {
+    // The editor needs more of the time range visible for editing purposes
+    p.xmin = 0.02
+    p.xmax = 0.02
+  }
   enlargeExtent(ne, p)
 
   goal.xMin = bu.daysnap(ne.xMin)
@@ -1973,6 +1977,7 @@ function updateDragPositions(kind, updateKnots) {
   updateDataPoints()
   updateMovingAv()
   updateYBHP()
+  updateGuidelines()
 }
 
 // --------------- Functions related to selection of components ----------------
@@ -2499,13 +2504,13 @@ function animHor( enable ) {
 
 function animYBR(enable) {
   if (opts.roadEditor) return
-  var e = gOldRoad.select(".oldlanes")
-  var styles =[["fill-opacity", 1.0, 0.5],
-               ["fill", "#ffff00", bu.Cols.DYEL]]
-  if (enable) startAnim(e, 500, [], styles, "ybr")
-  else stopAnim(e, 300, [], styles, "ybr")
+  // var e = gOldRoad.select(".oldlanes")
+  // var styles =[["fill-opacity", 1.0, 0.5],
+  //              ["fill", "#ffff00", bu.Cols.DYEL]]
+  // if (enable) startAnim(e, 500, [], styles, "ybr")
+  // else stopAnim(e, 300, [], styles, "ybr")
 
-  e = gOldCenter.select(".oldroads")
+  var e = gRazr.select(".razr")
   if (goal.ybhp) {
     styles =[["stroke-width", opts.oldRoadLine.width*scf*2, 
                               opts.oldRoadLine.width*scf]]
@@ -2522,7 +2527,7 @@ function animYBR(enable) {
 
 function animGuides(enable) {
   if (opts.roadEditor) return
-  const e = gOldGuides.selectAll(".oldguides")
+  const e = gGuides.selectAll(".guides")
   const a =[["stroke-width", opts.guidelines.width*scf*2.5,
              d => (d<0 ? opts.guidelines.weekwidth*scf
                        : opts.guidelines.width*scf)],
@@ -3263,104 +3268,67 @@ function updatePinkRegion() {                         // AKA nozone AKA oinkzone
   }
 }
 
-// post-YBHP we should be able to merge this into updateYBHP
-function updateCenterline(ir) {        // AKA the razor road in the case of YBHP
-  const cw   = r3(opts.oldRoadLine.width*scf)                 // Construct the
-  const adj  = opts.roadEditor ? 0 : goal.yaw*cw/2            // path element...
+// This stands separate from updateYBHP because we need to use it for
+// the "old", unedited road as well. This now supports a delta
+// argument for the maxflux line, and a dash argument for the editor
+// version. If scol == null, then the element is deleted to cleanup
+// leftovers from earlier draws
+function updateCenterline(rd, gelt, cls, scol, sw, delta, usedash) {
+  if (processing) return
+  
+  const roadelt = gelt.select("."+cls)
+  if (scol == null) {
+    roadelt.remove()
+    return
+  }
+
+  const cw   = r3(opts.oldRoadLine.width*scf)
+  const adj  = 0
   const ybhp = (goal.ybhp && !opts.roadEditor)
-  const dash = (opts.oldRoadLine.dash)+","+(opts.oldRoadLine.dash)
-  const sw   = 1.001 // stroke-width
-  const sda  = null // stroke-dasharray
-  const scol = bu.Cols.RAZR0 // stroke color
+  const dash = (opts.oldRoadLine.dash)+","+ceil(opts.oldRoadLine.dash/2)
+  const sda  = usedash?dash:null // stroke-dasharray
 
   // fx,fy: Start of the current line segment
   // ex,ey: End of the current line segment
-  let fx = nXSc(ir[0].sta[0]*SMS), fy = nYSc(ir[0].sta[1])
-  let ex = nXSc(ir[0].end[0]*SMS), ey = nYSc(ir[0].end[1])
+  let fx = nXSc(rd[0].sta[0]*SMS), fy = nYSc(rd[0].sta[1]+delta)
+  let ex = nXSc(rd[0].end[0]*SMS), ey = nYSc(rd[0].end[1]+delta)
+  if (rd[0].sta[0] < goal.tini) {
+    fx  = nXSc(goal.tini*SMS)
+    fy  = nYSc(goal.vini+delta)
+  }
 
-  let rd = "M"+r1(fx)+" "+(r1(fy)+adj)
-  for (const segment of ir) {
+  if (usedash) {
+    // Adjust start of road so dashes are stationary wrt time
+    const newx = (-nXSc(goal.tini*SMS)) % ceil(1.5*opts.oldRoadLine.dash)
+    if (ex !== fx) fy = (fy + (-newx-fx)*(ey-fy)/(ex-fx))
+    if (fx < 0 || newx > 0) fx = -newx
+  }
+  
+  let d = "M"+r1(fx)+" "+(r1(fy)+adj)
+  for (const segment of rd) {
     ex = nXSc(segment.end[0]*SMS)
-    ey = nYSc(segment.end[1])
+    ey = nYSc(segment.end[1]+delta)
     if (ex > plotbox.width) {
       fx = nXSc(segment.sta[0]*SMS)
-      fy = nYSc(segment.sta[1])
+      fy = nYSc(segment.sta[1]+delta)
       ey = fy + (plotbox.width-fx)*(ey-fy)/(ex-fx)
       ex = plotbox.width
     }
-    rd += " L"+r1(ex)+" "+(r1(ey)+adj)
+    d += " L"+r1(ex)+" "+(r1(ey)+adj)
   }
 
-  const roadelt = gOldCenter.select(".oldroads")
   if (roadelt.empty()) {
-    gOldCenter.append("svg:path").attr("class",             "oldroads")
-                                 .attr("d",                 rd)
+    gelt.append("svg:path").attr("class",             cls)
+                                 .attr("d",                 d)
                                  .attr("pointer-events",    "none")
                                  .style("stroke-dasharray", sda)
                                  .style("fill",             "none")
                                  .style("stroke-width",     sw)
                                  .style("stroke",           scol) 
   } else {
-    roadelt.attr("d", rd).style("stroke-dasharray", sda)
-                         .style("stroke-width",     sw)
-                         .style("stroke",           scol)
-  }
-}
-
-function updateLanes(ir) {
-  let laneelt = gOldRoad.select(".oldlanes")
-  if (opts.roadEditor || ir == null || goal.ybhp) { laneelt.remove(); return }
-
-  const minpx = 3*scf // minimum visual width for YBR
-  const thin = abs(nYSc.invert(minpx)-nYSc.invert(0))
-  let lw = goal.lnw == 0 ? thin : goal.lnw
-  if (abs(nYSc(lw)-nYSc(0)) < minpx) lw = thin
-
-  let d, i
-  let fx = nXSc(ir[0].sta[0]*SMS)
-  let fy = nYSc(ir[0].sta[1]+lw)
-  let ex = nXSc(ir[0].end[0]*SMS)
-  let ey = nYSc(ir[0].end[1]+lw)
-    
-  // Go forward to draw the top side of YBR
-  d = "M"+r1(fx)+" "+r1(fy)
-  for (i = 0; i < ir.length; i++) {
-    ex = nXSc(ir[i].end[0]*SMS)
-    ey = nYSc(ir[i].end[1]+lw)
-    if (ex > plotbox.width) {
-      fx = nXSc(ir[i].sta[0]*SMS)
-      fy = nYSc(ir[i].sta[1]+lw);
-      ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx))
-      ex = plotbox.width
-    }
-    d += " L"+r1(ex)+" "+r1(ey)
-  }
-  // Go down and backward for the bottom side of the YBR
-  ey += (nYSc(0) - nYSc(2*lw))
-  d += " L"+r1(ex)+" "+r1(ey)
-  for (i = ir.length-1; i >= 0; i--) {
-    fx = nXSc(ir[i].sta[0]*SMS)
-    fy = nYSc(ir[i].sta[1]-lw)
-    if (fx < 0) {
-      ex = nXSc(ir[i].end[0]*SMS)
-      ey = nYSc(ir[i].end[1]-lw)
-      fy = (fy + (0-fx)*(ey-fy)/(ex-fx))
-      fx = 0
-    }
-    d += " L"+r1(fx)+" "+r1(fy)
-  }
-  d += " Z"
-  // **** Draw the YBR ****
-  if (laneelt.empty()) {
-    gOldRoad.append("svg:path").attr("class","oldlanes")
-                               .attr("pointer-events", "none")
-                             //.attr("shape-rendering", "crispEdges")
-                               .attr("d", d)
-                               .style("fill", bu.Cols.DYEL)
-                               .style("fill-opacity", 0.5)
-                               .style("stroke", "none")
-  } else {
-    laneelt.attr("d", d)
+    roadelt.attr("d", d).style("stroke-dasharray", sda)
+                        .style("stroke-width",     sw)
+                        .style("stroke",           scol)
   }
 }
 
@@ -3432,73 +3400,14 @@ function maxVisibleDTD(limit) {
   // point I'll want to get my head around that! --dreev
 }
 
-function updateGuidelines(ir) {
+function updateGuidelines() {
   if (processing) return
 
-  let guideelt = gOldGuides.selectAll(".oldguides")
-  if (opts.roadEditor || ir == null) { guideelt.remove(); return }
-  // Uluc: The following is an optimization which skips generating
-  // isolines when the goal is being loaded for the first time
-  // (ie. zoomAll)
+  let guideelt = gGuides.selectAll(".guides")
+  if (opts.roadEditor && !opts.showGuidelines) {
+    guideelt.remove(); return
+  }
   
-  // #DIELANES BEGIN
-  if (!goal.ybhp) {
-    const yrange = [nYSc.invert(plotbox.height), nYSc.invert(0)]
-    let delta = 1
-    const yr = abs(yrange[1] - yrange[0])
-
-    let fx = nXSc(ir[0].sta[0]*SMS) // fx,fy: start of the current segment
-    let fy = nYSc(ir[0].sta[1])
-    let ex = nXSc(ir[0].end[0]*SMS) // ex,ey: end of the current segment
-    let ey = nYSc(ir[0].end[1])
-
-    let rd2 = "M"+r1(fx)+" "+r1(fy)
-    for (let i = 0; i < ir.length; i++) {
-      ex = nXSc(ir[i].end[0]*SMS)
-      ey = nYSc(ir[i].end[1])
-      if (ex > plotbox.width) {
-        fx = nXSc(ir[i].sta[0]*SMS)
-        fy = nYSc(ir[i].sta[1])
-        if (ex != fx) ey = (fy + (plotbox.width-fx)*(ey-fy)/(ex-fx))
-        ex = plotbox.width
-      }
-      rd2 += " L"+r1(ex)+" "+r1(ey)
-    }
-  
-    // **** Update guidelines ****
-    let oneshift
-    let bc = goal.maxflux ? [goal.yaw*goal.maxflux,0] : br.bufcap(road, goal)
-    bc[0] = nYSc(bc[0])-nYSc(0)
-    if (goal.lnw > 0 && yr / goal.lnw <= 32)            delta = goal.lnw
-    else if (goal.lnw > 0 && yr / (6*goal.lnw) <= 32)   delta = 6 * goal.lnw
-    else                                                delta = yr / 32
-    oneshift = goal.yaw * delta
-    const numlines = min(365, floor(abs((yrange[1] - yrange[0])/oneshift)))
-
-    // Create dummy array as d3 data for guidelines
-    let arr = new Array(ceil(numlines)).fill(0)
-    // Add a final data entry for the thick guideline
-    arr.push(-1)
-    const shift = nYSc(ir[0].sta[1]+oneshift) - nYSc(ir[0].sta[1])
-    guideelt = guideelt.data(arr)
-    guideelt.exit().remove()
-    guideelt.enter().append("svg:path")
-      .attr("class", "oldguides")
-      .attr("d", rd2)
-      .attr("transform", (d,i) => "translate(0,"+(d<0? bc[0] : (i+1)*shift)+")")
-      .attr("pointer-events", "none")
-      .style("fill", "none")
-      .attr("stroke-width", (d,i) => r3(d<0 ? opts.guidelines.weekwidth*scf
-                                            : opts.guidelines.width*scf))
-      .attr("stroke", (d,i) => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL))
-    guideelt.attr("d", rd2)
-      .attr("transform", (d,i)=> "translate(0,"+(d<0 ? bc[0] : (i+1)*shift)+")")
-      .attr("stroke-width", (d,i) => r3(d<0 ? opts.guidelines.weekwidth*scf
-                                            : opts.guidelines.width*scf))
-      .attr("stroke", (d,i) => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL))
-  } else {
-  // #DIELANES END
-
   let skip = 1 // Show only one per this many guidelines
   
   // Create an index array as d3 data for guidelines
@@ -3531,26 +3440,10 @@ function updateGuidelines(ir) {
   // glarr should have been generated by the call to maxVisibleDTD() above
   let arr = glarr.slice(0, numlines+1).map(d => (d+1)*skip-1)
 
-  // // get the last isoline and make sure it's near the far-yaw edge of the plot
-  // let lastiso = getiso(numlines*skip-1)
-  // lastiso = lastiso.filter(tv => tv[0] > xrange[0] && tv[0] < xrange[1])
-  // // find the most extreme y-value of the last isoline so we can see if it falls
-  // // short of the plotbox
-  // if (lastiso.length > 0) {
-  //   const yextreme = goal.yaw*max(...lastiso.map(tv => goal.yaw*tv[1]))
-  //   //console.log(
-  //   //  `DEBUG yextreme=${yextreme} -> ${nYSc(yextreme)} (${plotbox.height})`)
-  //   goal.shadeit = goal.yaw > 0 ? nYSc(yextreme) > 0 + 16 
-  //                               : nYSc(yextreme) < plotbox.height - 16
-  // } else {
-  //   // TODO: is it ever actually possible to filter away all of segments?
-  //   goal.shadeit = false
-  // }
-    
   guideelt = guideelt.data(arr)
   guideelt.exit().remove()
   guideelt.enter().append("svg:path")
-    .attr("class",           "oldguides")
+    .attr("class",           "guides")
     .attr("d",               buildPath)
     .attr("transform",       null)
     .attr("pointer-events",  "none")
@@ -3562,127 +3455,22 @@ function updateGuidelines(ir) {
      .attr("transform",       null)
      .attr("stroke",          bu.Cols.LYEL)
      .attr("stroke-width",    opts.guidelines.width*scf)
-} // #DIELANES
-}
-
-// unDRY alert: we're just mimicking what updateCenterline does for the razor
-// road but shifted by maxflux.
-function updateMaxfluxLine(ir) {
-  if (processing) return;
-
-  if (!goal.ybhp || goal.maxflux == 0) return
-  let guideelt = gOldMaxflux.selectAll(".oldmaxflux")
-  if (opts.roadEditor || ir == null) { guideelt.remove(); return }
-  
-  const sw    = r3(opts.maxfluxline*scf) // stroke-width
-  const scol  = bu.Cols.BIGG             // stroke color
-  const delta = goal.yaw * goal.maxflux  // maxflux line is YBR shifted by this
-  
-  let fx = nXSc(ir[0].sta[0]*SMS) // fx,fy: start of current segment
-  let fy = nYSc(ir[0].sta[1]+delta)
-  let ex = nXSc(ir[0].end[0]*SMS) // ex,ey: end of current segment
-  let ey = nYSc(ir[0].end[1]+delta)
-  let rd = "M"+r1(fx)+" "+r1(fy)
-  for (const segment of ir) {
-    ex = nXSc(segment.end[0]*SMS)
-    ey = nYSc((segment.end[1]+delta))
-    if (ex > plotbox.width) {
-      fx = nXSc(segment.sta[0]*SMS)
-      fy = nYSc((segment.sta[1]+delta))
-      ey = fy + (plotbox.width-fx)*(ey-fy)/(ex-fx)
-      ex = plotbox.width
-    }
-    rd += " L"+r1(ex)+" "+r1(ey)
-  }
-  
-  const roadelt = gOldMaxflux.select(".oldmaxflux")
-  if (roadelt.empty()) {
-    gOldMaxflux.append("svg:path").attr("class",          "oldmaxflux")
-                                  .attr("d",              rd)
-                                  .attr("pointer-events", "none")
-                                  .style("fill",          "none")
-                                  .style("stroke-width",  sw)
-                                  .style("stroke",        scol) 
-  } else {
-    roadelt.attr("d", rd)         .style("stroke-width",  sw)
-                                  .style("stroke",        scol)
-  }
-}
-
-function updateRazrLine(rz) {
-  if (goal.razrroad.length === 0) return // TODO: should be safe to kill this
-
-  let razrelt = gOldRazr.selectAll(".oldrazr")
-  if (opts.roadEditor || rz == null) { razrelt.remove(); return }
-  
-  const sw    = r3(opts.razrline*scf) // stroke-width
-  const scol  = bu.Cols.REDDOT        // stroke color
-  
-  let fx = nXSc(rz[0].sta[0]*SMS) // fx,fy: start of current segment
-  let fy = nYSc(rz[0].sta[1])
-  let ex = nXSc(rz[0].end[0]*SMS) // ex,ey: end of current segment
-  let ey = nYSc(rz[0].end[1])
-  let rd = "M"+r1(fx)+" "+r1(fy)
-  for (const segment of rz) {
-    ex = nXSc(segment.end[0]*SMS)
-    ey = nYSc((segment.end[1]))
-    if (ex > plotbox.width) {
-      fx = nXSc(segment.sta[0]*SMS)
-      fy = nYSc((segment.sta[1]))
-      ey = fy + (plotbox.width-fx)*(ey-fy)/(ex-fx)
-      ex = plotbox.width
-    }
-    rd += " L"+r1(ex)+" "+r1(ey)
-  }
-  
-  const roadelt = gOldRazr.select(".oldrazr")
-  if (roadelt.empty()) {
-    gOldRazr.append("svg:path").attr("class",          "oldrazr")
-                                  .attr("d",              rd)
-                                  .attr("pointer-events", "none")
-                                  .style("fill",          "none")
-                                  .style("stroke-width",  sw)
-                                  .style("stroke",        scol) 
-  } else {
-    roadelt.attr("d", rd)         .style("stroke-width",  sw)
-                                  .style("stroke",        scol)
-  }
 }
 
 // Creates or updates the unedited road
 function updateOldRoad() {
   if (opts.divGraph == null || road.length == 0) return
-  // Find road segments intersecting current x-axis range
-  const xrange = [nXSc.invert(            0).getTime()/SMS,
-                  nXSc.invert(plotbox.width).getTime()/SMS]
-  const rdfilt = (r =>    (r.sta[0] > xrange[0] && r.sta[0] < xrange[1])
-                       || (r.end[0] > xrange[0] && r.end[0] < xrange[1]))
-  let ir = iroad.filter(rdfilt)
-  if (ir.length == 0) ir = [iroad[br.findSeg(iroad, xrange[0])]]
 
-  updateCenterline(ir)
-  
-  // Construct and filter a trimmed road matrix iroad2 for YBR & guidelines
-  const iroad2 = iroad.slice(1,-1)
-  let ir2 = iroad2.filter(rdfilt)
-  if (ir2.length == 0) {
-    // If no segments, look for a segment that traverses current x-axis range
-    const seg = br.findSeg(iroad2, xrange[0])
-    ir2 = seg < 0 ? null : [iroad2[seg]]
-  }
-
-  updateLanes(ir2)
-  updateGuidelines(ir2)
-  updateMaxfluxLine(ir2)
-
-  let rr = goal.razrroad.slice(1,-1)
-  rr = rr.filter(rdfilt)  // doing the same thing as ir2 above
-  if (rr.length == 0) {
-    const seg = br.findSeg(goal.razrroad, xrange[0]) // findSeg returns an index
-    rr = seg < 0 ? null : [goal.razrroad[seg]]
-  }
-
-  updateRazrLine(rr)
+  // Razor line differs between the editor (dashed) and the graph (solid)
+  if (opts.roadEditor)
+    updateCenterline(iroad, gRazr, "razr", bu.Cols.RAZR0,
+                     r3(opts.razrline*scf), 0, true)
+  else
+    updateCenterline(iroad, gRazr, "razr", bu.Cols.REDDOT,
+                     r3(opts.razrline*scf), 0, false)
+  // Generate the maxflux line if maxflux!=0. Otherwise, remove existing one
+  updateCenterline(iroad, gMaxflux, "maxflux", (goal.maxflux != 0)?bu.Cols.BIGG:null,
+                   r3(opts.maxfluxline*scf), goal.yaw*goal.maxflux,false)
 }
 
 function updateContextOldRoad() {
@@ -3702,7 +3490,7 @@ function updateContextOldRoad() {
       .attr("d", d)
       .style("stroke-dasharray",
              (goal.ybhp&&!opts.roadEditor)?null:(opts.oldRoadLine.ctxdash)+","
-             +(opts.oldRoadLine.ctxdash))
+             +ceil(opts.oldRoadLine.ctxdash/2))
       .style("fill", "none")
       .style("stroke-width",opts.oldRoadLine.ctxwidth)
       .style("stroke", goal.ybhp && !opts.roadEditor ? bu.Cols.RAZR0
@@ -3711,7 +3499,7 @@ function updateContextOldRoad() {
     roadelt.attr("d", d)
       .style("stroke-dasharray",
              (goal.ybhp&&!opts.roadEditor)?null:(opts.oldRoadLine.ctxdash)+","
-             +(opts.oldRoadLine.ctxdash)) 
+             +ceil(opts.oldRoadLine.ctxdash/2)) 
       .style("stroke", goal.ybhp && !opts.roadEditor ? bu.Cols.RAZR0
                                                      : bu.Cols.ORNG) 
   }
@@ -4112,13 +3900,13 @@ function updateRosy() {
   }
 
   // *** Plot rosy lines ***
-  var rosyelt = gRosy.selectAll(".rosy");
-  var rosydelt = gRosyPts.selectAll(".rd");
+  var rosyelt = gRosy.selectAll(".rosy")
+  var rosydelt = gRosyPts.selectAll(".rd")
   if (opts.showData || !opts.roadEditor) {
     if (goal.rosy) {
       var pts = (bbr.flad != null)
-          ?bbr.rosydata.slice(0,bbr.rosydata.length-1):bbr.rosydata;
-      var npts = pts.filter(df), i;
+          ?bbr.rosydata.slice(0,bbr.rosydata.length-1):bbr.rosydata
+      var npts = pts.filter(df), i
       if (bbr.rosydata.length == 0) {
         // no points are in range, find enclosing two
         var ind = -1;
@@ -4127,10 +3915,10 @@ function updateRosy() {
             ind = i; break;
           }
         }
-        if (ind > 0) npts = bbr.rosydata.slice(ind, ind+2);
+        if (ind > 0) npts = bbr.rosydata.slice(ind, ind+2)
       }
       if (npts.length != 0) {
-        var d = "M"+r1(nXSc(npts[0][4]*SMS))+" "+r1(nYSc(npts[0][5]))
+        let d = "M"+r1(nXSc(npts[0][4]*SMS))+" "+r1(nYSc(npts[0][5]))
         for (i = 0; i < npts.length; i++) {
           d += " L"+r1(nXSc(npts[i][0]*SMS))+" "+ r1(nYSc(npts[i][1]))
         }
@@ -4140,7 +3928,7 @@ function updateRosy() {
             .attr("d", d)
             .style("fill", "none")
             .attr("stroke-width",r3(4*scf))
-            .style("stroke", bu.Cols.ROSE);
+            .style("stroke", bu.Cols.ROSE)
         } else {
           rosyelt.attr("d", d)
             .attr("stroke-width", r3(4*scf))
@@ -4986,6 +4774,7 @@ function updateGraphData(force = false) {
   updatePastBox()
   updateYBHP()
   updatePinkRegion()
+  updateGuidelines()
   updateOldRoad()
   updateOldBullseye()
   updateBullseye()
