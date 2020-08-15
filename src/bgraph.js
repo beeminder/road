@@ -794,36 +794,36 @@ function createGraph() {
     .attr('text-anchor', 'middle')
   
   // Order here determines z-order: [remember how 'twas while experimenting]
-  gPB          = plot.append('g').attr('id', 'pastboxgrp')     // z = 01->01
-  gYBHP        = plot.append('g').attr('id', 'ybhpgrp')        // z = 03->02
-  gWatermark   = plot.append('g').attr('id', 'wmarkgrp')       // z = 05->04
-  gGuides      = plot.append('g').attr('id', 'guidegrp')       // z = 02->05
-  gMaxflux     = plot.append('g').attr('id', 'maxfluxgrp')     // z =   ->05.5
-  gRazr        = plot.append('g').attr('id', 'razrgrp')
-  gYBHPlines   = plot.append('g').attr('id', 'ybhplinesgrp')   // z =   ->06
-  gAura        = plot.append('g').attr('id', 'auragrp')        // z = 04->03
-  gPink        = plot.append('g').attr('id', 'pinkgrp')        // z = 07->08
-  gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp') // z = 08->09
-  gGrid        = plot.append('g').attr('id', 'grid')           // z = 10->11
-  gOResets     = plot.append('g').attr('id', 'oresetgrp')      // z = 11->12
-  gKnots       = plot.append('g').attr('id', 'knotgrp')        // z = 12->13
-  gSteppy      = plot.append('g').attr('id', 'steppygrp')      // z = 13->14
-  gRosy        = plot.append('g').attr('id', 'rosygrp')        // z = 14->15
-  gRosyPts     = plot.append('g').attr('id', 'rosyptsgrp')     // z = 15->16
-  gDerails     = plot.append('g').attr('id', 'derailsgrp')     // z = 16->17
-  gAllpts      = plot.append('g').attr('id', 'allptsgrp')      // z = 17->18
-  gMovingAv    = plot.append('g').attr('id', 'movingavgrp')    // z = 18->19
-  gSteppyPts   = plot.append('g').attr('id', 'steppyptsgrp')   // z = 19->20
-  gDpts        = plot.append('g').attr('id', 'datapointgrp')   // z = 20->21
-  gHollow      = plot.append('g').attr('id', 'hollowgrp')      // z = 21->22
-  gFlat        = plot.append('g').attr('id', 'flatlinegrp')    // z = 22->23
-  gHashtags    = plot.append('g').attr('id', 'hashtaggrp')     // z = 23->24
-  gBullseye    = plot.append('g').attr('id', 'bullseyegrp')    // z = 24->25
-  gRoads       = plot.append('g').attr('id', 'roadgrp')        // z = 25->26
-  gDots        = plot.append('g').attr('id', 'dotgrp')         // z = 26->27
-  gHorizon     = plot.append('g').attr('id', 'horgrp')         // z = 27->28
-  gHorizonText = plot.append('g').attr('id', 'hortxtgrp')      // z = 28->29
-  gPastText    = plot.append('g').attr('id', 'pasttxtgrp')     // z = 29->30
+  gPB          = plot.append('g').attr('id', 'pastboxgrp')     // z = 01
+  gYBHP        = plot.append('g').attr('id', 'ybhpgrp')        // z = 02
+  gWatermark   = plot.append('g').attr('id', 'wmarkgrp')       // z = 03
+  gGuides      = plot.append('g').attr('id', 'guidegrp')       // z = 04
+  gMaxflux     = plot.append('g').attr('id', 'maxfluxgrp')     // z = 05
+  gYBHPlines   = plot.append('g').attr('id', 'ybhplinesgrp')   // z = 07
+  gRazr        = plot.append('g').attr('id', 'razrgrp')        // z = 06
+  gAura        = plot.append('g').attr('id', 'auragrp')        // z = 08
+  gPink        = plot.append('g').attr('id', 'pinkgrp')        // z = 09
+  gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp') // z = 10
+  gGrid        = plot.append('g').attr('id', 'grid')           // z = 11
+  gOResets     = plot.append('g').attr('id', 'oresetgrp')      // z = 12
+  gKnots       = plot.append('g').attr('id', 'knotgrp')        // z = 13
+  gSteppy      = plot.append('g').attr('id', 'steppygrp')      // z = 14
+  gRosy        = plot.append('g').attr('id', 'rosygrp')        // z = 15
+  gRosyPts     = plot.append('g').attr('id', 'rosyptsgrp')     // z = 16
+  gDerails     = plot.append('g').attr('id', 'derailsgrp')     // z = 17
+  gAllpts      = plot.append('g').attr('id', 'allptsgrp')      // z = 18
+  gMovingAv    = plot.append('g').attr('id', 'movingavgrp')    // z = 19
+  gSteppyPts   = plot.append('g').attr('id', 'steppyptsgrp')   // z = 20
+  gDpts        = plot.append('g').attr('id', 'datapointgrp')   // z = 21
+  gHollow      = plot.append('g').attr('id', 'hollowgrp')      // z = 22
+  gFlat        = plot.append('g').attr('id', 'flatlinegrp')    // z = 23
+  gHashtags    = plot.append('g').attr('id', 'hashtaggrp')     // z = 24
+  gBullseye    = plot.append('g').attr('id', 'bullseyegrp')    // z = 25
+  gRoads       = plot.append('g').attr('id', 'roadgrp')        // z = 26
+  gDots        = plot.append('g').attr('id', 'dotgrp')         // z = 27
+  gHorizon     = plot.append('g').attr('id', 'horgrp')         // z = 28
+  gHorizonText = plot.append('g').attr('id', 'hortxtgrp')      // z = 29
+  gPastText    = plot.append('g').attr('id', 'pasttxtgrp')     // z = 30
 
   zoomin = focusclip.append("svg:use")
     .attr("class","zoomin")
