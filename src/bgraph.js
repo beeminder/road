@@ -3307,6 +3307,8 @@ function updateCenterline(rd, gelt, cls, scol, sw, delta, usedash) {
   let d = "M"+r1(fx)+" "+(r1(fy)+adj)
   for (const segment of rd) {
     ex = nXSc(segment.end[0]*SMS)
+    if (ex < goal.tini) continue
+    if (ex > goal.tfin) break
     ey = nYSc(segment.end[1]+delta)
     d += " L"+r1(ex)+" "+(r1(ey)+adj)
     if (ex > plotbox.width) break
