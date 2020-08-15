@@ -389,7 +389,7 @@ self.dtdarray = ( rd, goal ) => {
     ppr = self.ppr(rd, goal, 0, i, true)
     dtd = ((xn-xcur)/SID)
     if (!isFinite(ppr)) {
-      if (ycur > yn)
+      if (goal.dir*(ycur - yn) > 0)
         seg = [[xcur, ycur, 0, yn, dtd]]
       else
         seg = [[xcur, ycur, 0, yn-2*(yn-ycur), dtd]]
@@ -399,7 +399,7 @@ self.dtdarray = ( rd, goal ) => {
     var last = arr[arr.length-1]
     for (var j = 0; j < last.length; j++) {
       if (!isFinite(ppr)) {
-        if (ycur > yn)
+        if (goal.dir*(ycur - yn) > 0)
           seg.push([xcur,last[j][1], last[j][2],last[j][3], last[j][4]])
         else
           seg.push([xcur,last[j][1]-2*(yn-ycur), last[j][2]+(xn-xcur),
