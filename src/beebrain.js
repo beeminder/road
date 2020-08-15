@@ -1407,7 +1407,12 @@ this.reloadRoad = function() {
   //console.debug("id="+curid+", reloadRoad()")
 
   const error = procParams()
-    
+
+  // Adjust tini and tfin in case the road is edited beyond those boundaries
+  // TODO: Test for edge cases, where tini and tfin are computed differently?
+  goal.tfin = roads[roads.length-1].sta[0]
+  goal.tini = roads[0].end[0]
+  
   if (error != "") return error
     
   sumSet(roads, goal)
