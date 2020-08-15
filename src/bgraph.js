@@ -3687,6 +3687,8 @@ function updateRoads() {
     .attr("y1", function(d) { return nYSc(d.sta[1]) })
     .attr("x2", function(d) { return nXSc(d.end[0]*SMS) })
     .attr("y2", function(d) { return nYSc(d.end[1]) })
+    .attr("stroke-dasharray",
+          function(d,i) { return (i==0||i==road.length-1)?"3,3":"none"})
     .style("stroke",lineColor)
   roadelt.enter()
     .append("svg:line")
@@ -3698,6 +3700,8 @@ function updateRoads() {
     .attr("x2",   function(d)   { return nXSc(d.end[0]*SMS) })
     .attr("y2",   function(d)   { return nYSc(d.end[1]) })
     .style("stroke",lineColor)
+    .attr("stroke-dasharray",
+          function(d,i) { return (i==0||i==road.length-1)?"3,3":"none"})
     .attr("stroke-width",opts.roadLine.width)
     .on('wheel', function(d) { 
       // Redispatch a copy of the event to the zoom area
