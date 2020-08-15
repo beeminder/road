@@ -2700,10 +2700,11 @@ function updateBullseye() {
     bullseyeelt.remove();
     return;
   }
+  let tfinnew = bu.daysnap(road[road.length-1].sta[0])
   //var bx = nXSc(road[road.length-1].sta[0]*SMS)-(opts.bullsEye.size/2);
   //var by = nYSc(road[road.length-1].sta[1])-(opts.bullsEye.size/2);
-  var bx = nXSc(goal.tfin*SMS)-(opts.bullsEye.size/2);
-  var by = nYSc(br.rdf(road, goal.tfin))-(opts.bullsEye.size/2);
+  var bx = nXSc(tfinnew*SMS)-(opts.bullsEye.size/2);
+  var by = nYSc(br.rdf(road, tfinnew))-(opts.bullsEye.size/2);
   if (bullseyeelt.empty()) {
     gBullseye.append("svg:image")
       .attr("class","bullseye")
@@ -3043,7 +3044,10 @@ function updateYBHP() {
   // Finally, xrange, a list like [xmin, xmax], gives the x-axis range to
   // apply it to. If xrange=null, use [-infinity, infinity].
 
-  const xrfull   = [goal.tini, goal.tfin]       // x-axis range tini-tfin
+  let newtini = opts.roadEditor?bu.daysnap(road[0].end[0]):goal.tini
+  let newtfin = opts.roadEditor?bu.daysnap(road[road.length-1].sta[0]):goal.tfin
+      
+  const xrfull   = [newtini, newtfin]       // x-axis range tini-tfin
   const xrakr    = [goal.asof, goal.asof+7*SID] // now to akrasia horiz.
   const bgreen   = bu.Cols.RAZR3
   const bblue    = bu.Cols.RAZR2
@@ -3288,13 +3292,18 @@ function updateCenterline(rd, gelt, cls, scol, sw, delta, usedash) {
   const dash = (opts.oldRoadLine.dash)+","+ceil(opts.oldRoadLine.dash/2)
   const sda  = usedash?dash:null // stroke-dasharray
 
+  let newtini = opts.roadEditor?bu.daysnap(rd[0].end[0]):goal.tini
+  let newtfin = opts.roadEditor?bu.daysnap(rd[rd.length-1].sta[0]):goal.tfin
+
   // fx,fy: Start of the current line segment
   // ex,ey: End of the current line segment
   let fx = nXSc(rd[0].sta[0]*SMS), fy = nYSc(rd[0].sta[1]+delta)
   let ex = nXSc(rd[0].end[0]*SMS), ey = nYSc(rd[0].end[1]+delta)
-  if (rd[0].sta[0] < goal.tini) {
-    fx  = nXSc(goal.tini*SMS)
-    fy  = nYSc(goal.vini+delta)
+  if (rd[0].sta[0] < newtini) {
+    fx  = nXSc(newtini*SMS)
+    // Using vini instead of the rdf below does not work for some
+    // goals where vini ends up not on the road itself
+    fy  = nYSc(br.rdf(rd, newtini)+delta)
   }
 
   if (usedash) {
@@ -3303,12 +3312,15 @@ function updateCenterline(rd, gelt, cls, scol, sw, delta, usedash) {
     if (ex !== fx) fy = (fy + (-newx-fx)*(ey-fy)/(ex-fx))
     if (fx < 0 || newx > 0) fx = -newx
   }
-  
+
   let d = "M"+r1(fx)+" "+(r1(fy)+adj)
   for (const segment of rd) {
+    // Some goals have non-daysnapped road matrix entries, which
+    // breaks the tfin check. This hopefully overcomes that problem
+    let segx = bu.daysnap(segment.end[0])
     ex = nXSc(segment.end[0]*SMS)
-    if (ex < goal.tini) continue
-    if (ex > goal.tfin) break
+    if (segx < newtini) continue
+    if (segx > newtfin) break
     ey = nYSc(segment.end[1]+delta)
     d += " L"+r1(ex)+" "+(r1(ey)+adj)
     if (ex > plotbox.width) break
@@ -3440,6 +3452,9 @@ function updateGuidelines() {
     guideelt.remove(); return
   }
   
+  let newtini = opts.roadEditor?bu.daysnap(road[0].end[0]):goal.tini
+  let newtfin = opts.roadEditor?bu.daysnap(road[road.length-1].sta[0]):goal.tfin
+      
   let skip = 1 // Show only one per this many guidelines
   
   // Create an index array as d3 data for guidelines
@@ -3449,8 +3464,8 @@ function updateGuidelines() {
   const xrange = [nXSc.invert(            0)/SMS,
                   nXSc.invert(plotbox.width)/SMS]
   const buildPath = ((d,i) =>
-                     getisopath(d, [max(goal.tini, xrange[0]),
-                                    min(goal.tfin, xrange[1])]))
+                     getisopath(d, [max(newtini, xrange[0]),
+                                    min(newtfin, xrange[1])]))
   
   const lnw = isolnwborder(xrange) // estimate intra-isoline delta
   const lnw_px = abs(nYSc(0) - nYSc(lnw))
