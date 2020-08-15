@@ -1409,9 +1409,9 @@ this.reloadRoad = function() {
   const error = procParams()
 
   // Adjust tini and tfin in case the road is edited beyond those boundaries
-  // TODO: Test for edge cases, where tini and tfin are computed differently?
-  goal.tfin = roads[roads.length-1].sta[0]
-  goal.tini = roads[0].end[0]
+  // BUG: Enabling the code below universally screws up fullroad
+  //goal.tini = bu.daysnap(roads[0].end[0])
+  //goal.tfin = bu.daysnap(roads[roads.length-1].sta[0])
   
   if (error != "") return error
     
