@@ -354,7 +354,7 @@ def refresh_dialog():
   cm.dwin.addnstr(1, int(15-len(cm.dmsg)/2), cm.dmsg, 30)
   cm.dwin.addstr(3, 4, "Yes (y)")
   cm.dwin.addstr(3, 20, "No (n)")
-  cm.dwin.refresh()
+  cm.dwin.noutrefresh()
   
 def remove_dialog():
   if (not cm.dwin): return
@@ -375,12 +375,12 @@ def resize_windows():
       # Update the top window
       if (cm.twin): cm.twin.resize(1,cm.ww)
       else: cm.twin = curses.newwin(1,cm.ww,0,0)
-      cm.twin.refresh()
+      cm.twin.noutrefresh()
 
       # Update the left window and its scroll data
       if (cm.lwin): cm.lwin.resize(cm.wh-5,lw)
       else: cm.lwin = curses.newwin(cm.wh-5,lw,1,0)
-      cm.lwin.refresh()
+      cm.lwin.noutrefresh()
       cm.lw = lw; cm.lh = cm.wh-5
 
       # Update left and right scroll data based on the new height
@@ -392,7 +392,7 @@ def resize_windows():
       # Update the right window and its scroll data
       if (cm.rwin): cm.rwin.resize(cm.wh-5, cm.ww-lw); cm.rwin.mvwin(1, lw)
       else: cm.rwin = curses.newwin(cm.wh-5, cm.ww-lw, 1, lw)
-      cm.rwin.refresh()
+      cm.rwin.noutrefresh()
       cm.rw = cm.ww-lw
       cm.rs.maxlines = cm.wh-7
       cm.rs.page = cm.rs.bottom // int(cm.rs.maxlines/2)
@@ -400,15 +400,15 @@ def resize_windows():
       # Update status and menu windows
       if (cm.swin): cm.swin.resize(3, cm.ww); cm.swin.mvwin(cm.wh-4, 0)
       else: cm.swin = curses.newwin(3, cm.ww, cm.wh-4, 0)
-      cm.swin.refresh()
+      cm.swin.noutrefresh()
 
       if (cm.mwin): cm.mwin.resize(1, cm.ww); cm.mwin.mvwin(cm.wh-1, 0)
       else: cm.mwin = curses.newwin(1, cm.ww, cm.wh-1, 0)
-      cm.mwin.refresh()
+      cm.mwin.noutrefresh()
 
       if (cm.dwin):
         cm.dwin.mvwin(int(cm.wh/2-5), int(cm.ww/2-15))
-        cm.dwin.refresh()
+        cm.dwin.noutrefresh()
 
     except:
       # Exception may mean resized windows ended up outside a resized screen
@@ -429,7 +429,7 @@ def refresh_menu():
       x += len(mi[1])
       _addstr(w, 0, x+1, "  ")
       x += 2
-  w.refresh()
+  w.noutrefresh()
 
 def refresh_topline():
   w = cm.twin
@@ -446,7 +446,7 @@ def refresh_topline():
   if (cm.paused): _addstr(w, 0, 31, "[Paused]", curses.A_REVERSE)
   else:           _addstr(w, 0, 31, "[Paused]")
 
-  w.refresh()
+  w.noutrefresh()
 
 # Take a number of seconds and show it as milliseconds like "123ms", or seconds
 # if it's 10s or more (should conceivably handle the >60s case too)
@@ -475,7 +475,7 @@ def refresh_status():
     _addstr(w, 2, cm.ww-15, 
             " Last: "+showtm(cm.last_time)+" ",
             curses.A_BOLD)
-  w.refresh()
+  w.noutrefresh()
 
 def refresh_windows():
   w = cm.lwin
@@ -497,7 +497,7 @@ def refresh_windows():
     if (item.grdiff and item.grdiff > 0):
       _addstr(w, i+1, cm.lw-2, "X", curses.A_REVERSE)
       
-  w.refresh()
+  w.noutrefresh()
 
   w = cm.rwin
   w.clear(); w.box()
@@ -519,7 +519,7 @@ def refresh_windows():
       _addstr(w, i+1, 1, item)
     w.vline(1+int((cm.lh-2)*cm.rs.top/((cm.rs.page+1)*(cm.rs.maxlines//2))), 
             cm.ww-cm.lw-2, curses.ACS_BOARD, (cm.lh-2)//(cm.rs.page+1))
-  w.refresh()
+  w.noutrefresh()
 
 def refresh_all():
   refresh_topline()
@@ -851,13 +851,18 @@ def uiTask():
   # Check if a yes/no dialog is active, if so, process keys accordingly
   if (cm.dwin):
     if   c == ord('y'): return True
-    elif c == ord('n'): remove_dialog()
-    elif c == curses.KEY_RESIZE: resize_windows()
-    else: return False
+    elif c == ord('n'):
+      remove_dialog()
+      refresh_all()
+      return False
+    elif c == curses.KEY_RESIZE:
+      resize_windows()
+      return False
+    else:
+      return False
     
   if   c == ord('q'):
     create_dialog("Quit? Really?")
-    #return True
 
   elif c == ord(' '): refresh_all() # not sure this is of any value
   elif c == curses.KEY_ENTER or c == 10 or c == 13:
@@ -1179,6 +1184,7 @@ def monitor(stdscr, bbdir, graph, logging, force, watchdirs):
       jobTask()
       displayTask()
       alertTask()
+      curses.doupdate()
       #flon('sleep 1s (originally 0.01)')
       time.sleep(.01) # TODO: originally 0.01, 1 or more for debugging
 
