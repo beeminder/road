@@ -1405,14 +1405,8 @@ function getStrParam (p, n, d) { return n in p ? p[n]         : d }
  * associated goal stats and internal details.*/
 this.reloadRoad = function() {
   //console.debug("id="+curid+", reloadRoad()")
-
   const error = procParams()
 
-  // Adjust tini and tfin in case the road is edited beyond those boundaries
-  // BUG: Enabling the code below universally screws up fullroad
-  //goal.tini = bu.daysnap(roads[0].end[0])
-  //goal.tfin = bu.daysnap(roads[roads.length-1].sta[0])
-  
   if (error != "") return error
     
   sumSet(roads, goal)
@@ -1525,6 +1519,13 @@ this.setRoadObj = function(newroad) {
   }
   roads = newroad
   self.roads = roads
+
+  // Update the internal road object in bb format so procParams can proceed
+  goal.road = []
+  for (let i = 1; i < roads.length; i++)
+    goal.road.push([roads[i].sta[0], roads[i].sta[1], roads[i].slope])
+  self.goal = goal
+
   self.reloadRoad()
 }
   
