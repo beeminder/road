@@ -1997,6 +1997,7 @@ function updateDragPositions(kind, updateKnots) {
   updateMovingAv()
   updateYBHP()
   updateGuidelines()
+  updatePinkRegion()
   updateMaxFluxline()
 }
 
@@ -3262,10 +3263,10 @@ function updateYBHP() {
 
 function updatePinkRegion() {                         // AKA nozone AKA oinkzone
   if (processing) return;
-
   if (opts.divGraph == null || road.length == 0) return
 
   const pinkelt = gPink.select(".pinkregion")
+  const valid = isRoadValid(road)
   let rd = iroad
   // For non-editor graphs, use the most recent road
   if (!opts.roadEditor) rd = road
@@ -3275,8 +3276,13 @@ function updatePinkRegion() {                         // AKA nozone AKA oinkzone
   let yedge
   if (goal.yaw > 0) yedge = goal.yMin - 5*(goal.yMax - goal.yMin)
   else              yedge = goal.yMax + 5*(goal.yMax - goal.yMin)
-  const color = goal.ybhp ? "url(#pinkzonepat"+curid+")" : bu.Cols.PINK
+  const color = "url(#pinkzonepat"+curid+")"
 
+  const pr = d3.select(" #pinkzonepat"+curid+" rect")
+  const pl = d3.select(" #pinkzonepat"+curid+" line")
+  pr.attr("fill", (valid||!opts.roadEditor)?bu.Cols.PINK:"#ffbbbb")
+  pl.style("stroke", (valid||!opts.roadEditor)?"#aaaaaa":"#666666")
+  
   // Compute road indices for left and right boundaries
   const itoday = br.findSeg(rd, now)
   const ihor   = br.findSeg(rd, hor)
