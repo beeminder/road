@@ -26,10 +26,10 @@
     var gr = bs.getGraphObj()
 
     const anim = [
-      [2000, ()=>gr.msg("Welcome to Beeminder!")],
+      [2000, ()=>gr.msg("Welcome to Beeminder")],
       [0, ()=>gr.msg(null)],
 
-      [0, ()=>gr.msg("This is your Yellow Brick Road (YBR). Stay on or above it!")],
+      [0, ()=>gr.msg("Keep your datapoints above the bright red line!")],
       [3000, ()=>gr.animYBR(true)],
       [0, ()=>gr.animYBR(false)],
       [0, ()=>gr.msg(null)],
@@ -50,7 +50,7 @@
       [0, ()=>gr.animData(false)],
       [0, ()=>gr.msg(null)],
 
-      [0, ()=>gr.msg("If you don't keep up, you'll go off your YBR!")],
+      [0, ()=>gr.msg("If you don't keep up, you'll derail")],
       [300, bs.nextDay],[300, bs.nextDay],
       [300, bs.nextDay],[300, bs.nextDay],
       [0, ()=>gr.msg(null)],
@@ -65,7 +65,7 @@
       [0, ()=>gr.animBux(false)],
       [0, ()=>gr.msg(null)],
 
-      [2000, ()=>gr.msg("If you go off the YBR, that's called derailing")],
+      [2000, ()=>gr.msg("This is what derailing looks like")],
       [300, bs.nextDay],
       [300, bs.nextDay],
       [300, bs.nextDay],[300, bs.nextDay],
@@ -99,7 +99,7 @@
       [0, ()=>gr.animHor(false)],
       [0, ()=>gr.msg(null)],
 
-      [1000, ()=>gr.msg("You can only change the YBR beyond that horizon")],
+      [1000, ()=>gr.msg("You can only change the Yellow Brick Road beyond that horizon")],
       [1000, ()=>bs.newRate(0.5)],
       [1000, ()=>bs.newRate(0.0)],
       [1000, ()=>bs.newRate(0.5)],
