@@ -2490,17 +2490,19 @@ function animAura(enable) {
   var e = gAura.selectAll(".aura")
   var ep = gAura.selectAll(".aurapast")
   
-  var s =[["stroke",  "#CACAEE", bu.Cols.LPURP],
-          ["fill",    "#CACAEE", bu.Cols.LPURP]]
-  var sp =[["stroke", "#CACAEE", bu.Cols.LPURP],
-           ["fill",   "#CACAEE", bu.Cols.LPURP]]
+  var s =[["stroke",  "#9e559e", bu.Cols.LPURP],
+          ["fill",    "#9e559e", bu.Cols.LPURP]]
+  var sp =[["stroke", "#9e559e", bu.Cols.LPURP],
+           ["fill",   "#9e559e", bu.Cols.LPURP]]
+  var a =[["transform",  "translate(0,5)",  "translate(0,0)"]]
+  var ap =[["transform", "translate(0,5)",  "translate(0,0)"]]
   if (enable) {
-    startAnim(e,  500, [], s,  "aura")
-    startAnim(ep, 500, [], sp, "aurap")
+    startAnim(e,  500, a, s,  "aura")
+    startAnim(ep, 500, ap, sp, "aurap")
   }
   else {
-    stopAnim(e,  300, [], s,  "aura")
-    stopAnim(ep, 300, [], sp, "aurap")
+    stopAnim(e,  300, a, s,  "aura")
+    stopAnim(ep, 300, ap, sp, "aurap")
   }
 }
 
@@ -2600,6 +2602,15 @@ function animMav(enable) {
   var a =[["stroke-width", 6*scf, 3*scf]]
   if (enable) startAnim(e, 500, a, [], "mav")
   else        stopAnim(e,  300, a, [], "mav")
+}
+
+function animYBHPlines(enable) {
+  if (opts.roadEditor) return
+  var e = gYBHPlines.selectAll("#r11, #r22, #r66")
+  console.log(e)
+  var a =[["stroke-width", 4*scf, 1.5*scf]]
+  if (enable) startAnim(e, 500, a, [], "ybl")
+  else        stopAnim(e,  300, a, [], "ybl")
 }
 
 // -------------------- Functions to update SVG components ---------------------
@@ -3160,7 +3171,7 @@ function updateYBHP() {
       gYBHP.select("."+clsname).remove()
     }
     ybhpelt = ybhpgrp.select("."+clsname)
-    const id = "("+reg[0]+")-("+reg[1]+")"
+    const id = "r"+reg[0]+reg[1]
 
     // Adjustment to y coordinates by half the stroke width
     const adj = goal.yaw*reg[4]/2
@@ -5439,6 +5450,10 @@ this.animRosy = animRosy
     @method
     @param {Boolean} enable Enables/disables animation */
 this.animMav = animMav
+/** Animates YBHP lines at 1, 2 and 6 days
+    @method
+    @param {Boolean} enable Enables/disables animation */
+this.animYBHPlines = animYBHPlines
 /** Animates the aura element in the graph
     @method
     @param {Boolean} enable Enables/disables animation */
