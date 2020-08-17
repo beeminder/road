@@ -426,7 +426,8 @@ let mobileOrTablet = onMobileOrTablet()
 let dataf, alldataf
 let horindex = null // Road segment index including the horizon
 let iroad = []  // Initial road 
-
+let igoal = {}  // Initial goal object
+  
 // Beebrain state objects
 let bbr, goal = {}, road = []
 let data = [], alldata = [], dtd = [], iso = []
@@ -804,6 +805,7 @@ function createGraph() {
   gAura        = plot.append('g').attr('id', 'auragrp')        // z = 08
   gPink        = plot.append('g').attr('id', 'pinkgrp')        // z = 09
   gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp') // z = 10
+  gBullseye    = plot.append('g').attr('id', 'bullseyegrp')    // z = 25
   gGrid        = plot.append('g').attr('id', 'grid')           // z = 11
   gOResets     = plot.append('g').attr('id', 'oresetgrp')      // z = 12
   gKnots       = plot.append('g').attr('id', 'knotgrp')        // z = 13
@@ -818,7 +820,6 @@ function createGraph() {
   gHollow      = plot.append('g').attr('id', 'hollowgrp')      // z = 22
   gFlat        = plot.append('g').attr('id', 'flatlinegrp')    // z = 23
   gHashtags    = plot.append('g').attr('id', 'hashtaggrp')     // z = 24
-  gBullseye    = plot.append('g').attr('id', 'bullseyegrp')    // z = 25
   gRoads       = plot.append('g').attr('id', 'roadgrp')        // z = 26
   gDots        = plot.append('g').attr('id', 'dotgrp')         // z = 27
   gHorizon     = plot.append('g').attr('id', 'horgrp')         // z = 28
@@ -1031,7 +1032,19 @@ function createTable() {
 }
 
 function roadChanged() {
-  if (!settingRoad) bbr.reloadRoad()
+
+  // If it were the case that tini was simply the first entry in the
+  // road, update it for the edited road
+  if (igoal.tini == iroad[0].end[0]) {
+    goal.tini = road[0].end[0]
+    goal.vini = road[0].end[1]
+  }
+  
+  if (!settingRoad)
+    // Explicitly set the road object for beebrain to force it to
+    // recompute goal parameters
+    bbr.setRoadObj(road)
+  
   computePlotLimits(true)
   horindex = br.findSeg(road, goal.horizon)
   reloadBrush()
@@ -1264,11 +1277,14 @@ function adjustYScale() {
     var re = roadExtentPartial(road,xtimes[0],xtimes[1],false)
     re.yMin -= margin
     re.yMax += margin
-    // Compute Y axis extent of the initial road in range
-    var ore = roadExtentPartial(iroad,xtimes[0],xtimes[1],false)
-    ore.yMin -= margin
-    ore.yMax += margin
-    var ae = mergeExtents(re, ore)
+    let ae
+    if (opts.roadEditor) {
+      // Compute Y axis extent of the initial road in range
+      var ore = roadExtentPartial(iroad,xtimes[0],xtimes[1],false)
+      ore.yMin -= margin
+      ore.yMax += margin
+      ae = mergeExtents(re, ore)
+    } else ae = re
     
     // Compute Y axis extent of datapoints in range
     var de = dataExtentPartial((goal.plotall&&!opts.roadEditor)
@@ -1614,9 +1630,12 @@ function computePlotLimits(adjustZoom = true) {
   var now = goal.asof
   var maxx = bu.daysnap(min(now+opts.maxFutureDays*SID, 
                                  road[road.length-1].sta[0]))
-  var cur = roadExtentPartial(road, road[0].end[0], maxx, false)
-  var old = roadExtentPartial(iroad,road[0].end[0],maxx,false)
-  var ne = mergeExtents(cur, old)
+  let cur = roadExtentPartial(road, road[0].end[0], maxx, false)
+  let ne
+  if (opts.roadEditor) {
+    let old = roadExtentPartial(iroad,road[0].end[0],maxx,false)
+    ne = mergeExtents(cur, old)
+  } else ne = cur
 
   var d = dataExtentPartial(goal.plotall&&!opts.roadEditor ? alldata : data, 
                             road[0].end[0], data[data.length-1][0], false)
@@ -1626,7 +1645,6 @@ function computePlotLimits(adjustZoom = true) {
     var df = dataExtentPartial(bbr.fuda, road[0].end[0], maxx, false)
     if (df != null) ne = mergeExtents(ne, df)
   }
-
   var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10}
   if (!opts.roadEditor) {
     // The editor needs more of the time range visible for editing purposes
@@ -1725,6 +1743,7 @@ function loadGoal(json, timing = true) {
   
   road    = bbr.roads
   iroad   = br.copyRoad(road)
+  igoal   = bu.deepcopy(goal)
   data    = bbr.data
   alldata = bbr.alldata
 
@@ -1978,6 +1997,7 @@ function updateDragPositions(kind, updateKnots) {
   updateMovingAv()
   updateYBHP()
   updateGuidelines()
+  updateMaxFluxline()
 }
 
 // --------------- Functions related to selection of components ----------------
@@ -2696,15 +2716,10 @@ function updateContextToday() {
 function updateBullseye() {
   if (opts.divGraph == null || road.length == 0) return;
   var bullseyeelt = gBullseye.select(".bullseye");
-  if (!opts.roadEditor) {
-    bullseyeelt.remove();
-    return;
-  }
-  let tfinnew = bu.daysnap(road[road.length-1].sta[0])
   //var bx = nXSc(road[road.length-1].sta[0]*SMS)-(opts.bullsEye.size/2);
   //var by = nYSc(road[road.length-1].sta[1])-(opts.bullsEye.size/2);
-  var bx = nXSc(tfinnew*SMS)-(opts.bullsEye.size/2);
-  var by = nYSc(br.rdf(road, tfinnew))-(opts.bullsEye.size/2);
+  var bx = nXSc(goal.tfin*SMS)-(opts.bullsEye.size/2);
+  var by = nYSc(br.rdf(road, goal.tfin))-(opts.bullsEye.size/2);
   if (bullseyeelt.empty()) {
     gBullseye.append("svg:image")
       .attr("class","bullseye")
@@ -2746,12 +2761,16 @@ function updateContextBullseye() {
 // Creates or updates the Bullseye at the goal date
 function updateOldBullseye() {
   if (opts.divGraph == null || road.length == 0) return;
-  var png = (opts.roadEditor)?PNG.beyey:PNG.beye
   var bullseyeelt = gOldBullseye.select(".oldbullseye");
+  if (!opts.roadEditor) {
+    bullseyeelt.remove();
+    return;
+  }
+  var png = (opts.roadEditor)?PNG.beyey:PNG.beye
   //var bx = nXSc(iroad[iroad.length-1].sta[0]*SMS)-(opts.bullsEye.size/2);
   //var by = nYSc(iroad[iroad.length-1].sta[1])-(opts.bullsEye.size/2);
-  var bx = nXSc(goal.tfin*SMS)-(opts.bullsEye.size/2);
-  var by = nYSc(br.rdf(iroad, goal.tfin))-(opts.bullsEye.size/2);
+  var bx = nXSc(igoal.tfin*SMS)-(opts.bullsEye.size/2);
+  var by = nYSc(br.rdf(iroad, igoal.tfin))-(opts.bullsEye.size/2);
   if (bullseyeelt.empty()) {
     gOldBullseye.append("svg:image")
       .attr("class","oldbullseye")
@@ -3030,10 +3049,10 @@ function updateYBHP() {
   let regions
   
   // Count all previously generated ybhp path elements on the current svg graph
-  // so we can remove unused ones automatically
-  const ybhpall = d3.selectAll("#svg"+curid+" #ybhpgrp path")
-  const prevcnt = ybhpall.size()
-
+  // so we can remove unused ones automatically 
+  const ybhpreg = d3.selectAll("#svg"+curid+" #ybhpgrp path")
+  const ybhplines = d3.selectAll("#svg"+curid+" #ybhplinesgrp path")
+  const prevcnt = ybhpreg.size()+ybhplines.size()
   // NOTE: Currently must have a region covering the wrong side of the road,
   // even if it's white, to cover incorrect sections of isolines and other
   // regions.  OH HEY THIS IS FIXED NOW YAY #SCHDEL
@@ -3044,10 +3063,7 @@ function updateYBHP() {
   // Finally, xrange, a list like [xmin, xmax], gives the x-axis range to
   // apply it to. If xrange=null, use [-infinity, infinity].
 
-  let newtini = opts.roadEditor?bu.daysnap(road[0].end[0]):goal.tini
-  let newtfin = opts.roadEditor?bu.daysnap(road[road.length-1].sta[0]):goal.tfin
-      
-  const xrfull   = [newtini, newtfin]       // x-axis range tini-tfin
+  const xrfull   = [goal.tini, goal.tfin]       // x-axis range tini-tfin
   const xrakr    = [goal.asof, goal.asof+7*SID] // now to akrasia horiz.
   const bgreen   = bu.Cols.RAZR3
   const bblue    = bu.Cols.RAZR2
@@ -3058,40 +3074,35 @@ function updateYBHP() {
   const gfo      = 1   // fill-opacity for guiding lines -- may not matter
   const rfo      = 0.72 // fill-opacity for regions
 
-  if (!goal.ybhp) {
-    regions = [ [0, -1, opts.halfPlaneCol.fill, "none", 0, 1, null] ]
-  } else {
-    if (goal.maxflux > 0) { // slightly unDRY here
-      regions = [
-        //[ 2, -1, gsideyel,  "none",    0, rfo, xrfull], // whole good half-plane
-        [ 0,  2, lyellow,   "none",    0, rfo, xrfull], // YBR equivalent
-        [ 0, -2, "#fff5f5", "none",    0,   1, xrakr],  // nozone/oinkzone
-      ]
-    } else { // slightly unDRY here
-      regions = [
+  if (goal.maxflux > 0) { // slightly unDRY here
+    regions = [
+      //[ 2, -1, gsideyel,  "none",    0, rfo, xrfull], // whole good half-plane
+      [ 0,  2, lyellow,   "none",    0, rfo, xrfull], // YBR equivalent
+      //[ 0, -2, "#fff5f5", "none",    0,   1, xrakr],  // nozone/oinkzone
+    ]
+  } else { // slightly unDRY here
+    regions = [
       //  d,  D, fcolor,    scolor,    w,  op, xrange
       //------------------------------------------------------------------------
       //[ 2, -1, gsideyel,  "none",    0, rfo, xrfull], // whole good half-plane
       //[ 6, -1, "#b2e5b2", "none",    0, rfo, xrfull], // safe/gray region
-        [ 6,  6, "none",    bgreen,  gsw, gfo, xrfull], // 1-week isoline
+      [ 6,  6, "none",    bgreen,  gsw, gfo, xrfull], // 1-week isoline
       //[ 2,  6, "#cceecc", "none",    0, rfo, xrfull], // green region
-        [ 2,  2, "none",    bblue,   gsw, gfo, xrfull], // blue isoline
+      [ 2,  2, "none",    bblue,   gsw, gfo, xrfull], // blue isoline
       //[ 1,  2, "#e5e5ff", "none",    0, rfo, xrfull], // blue region
-        [ 1,  1, "none",    borange, gsw, gfo, xrfull], // orange isoline
+      [ 1,  1, "none",    borange, gsw, gfo, xrfull], // orange isoline
       //[ 0,  1, "#fff1d8", "none",    0, rfo, xrfull], // orange region
-        [ 0,  2, lyellow,   "none",    0, rfo, xrfull], // YBR equivalent
+      [ 0,  2, lyellow,   "none",    0, rfo, xrfull], // YBR equivalent
       //[365, -1, lyellow,  "none",    0, .5, xrfull], // infinitly safe region
       // bright red critical line currently in updateCenterline because we
       // can't define dashed lines here; so the following doesn't work:
       //[ 0,  0, "#ff0000", "none",    1, gfo, xrfull], // brightline
       //[ 0, -2, "#ffe5e5", "none",    0, rfo, null],   // whole bad half-plane
       //  [ 0, -2, "#fff5f5", "none",    0,   1, xrakr],  // nozone/oinkzone
-      ]
-    }
-    // Add the "infinity" region as a shaded color
-    regions.unshift([(goal.tfin-goal.tini)/SID, -1, lyellow, "none", 0, rfo, xrfull])
-      
+    ]
   }
+  // Add the "infinity" region as a shaded color
+  regions.unshift([(goal.tfin-goal.tini)/SID, -1, lyellow, "none", 0, rfo, xrfull])
 
   var debuglines = -1 // Use -1 to disable, 0 or more to debug
   if (debuglines >= 0) {
@@ -3124,17 +3135,31 @@ function updateYBHP() {
   for (var ri = 0; ri < max(prevcnt, regions.length); ri++) {
     // SVG elements for regions are given unique class names
     const clsname = "halfplane"+ri
-    let ybhpelt, ybhpgrp
     const reg = regions[ri]
-    if (reg[0] != reg[1]) ybhpgrp = gYBHP
-    else ybhpgrp = gYBHPlines
-    ybhpelt = ybhpgrp.select("."+clsname)
-    
-    // Force removal of leftover regions if requested or stale detected
+
+    // Force removal of leftover regions or lines if requested or stale detected
     if (reg == undefined || (reg[2] == null && reg[3] == null)) {
-      ybhpelt.remove()
+      gYBHP.select("."+clsname).remove()
+      gYBHPlines.select("."+clsname).remove()
       continue
     }
+
+    let ybhpelt, ybhpgrp
+    if (reg[0] != reg[1]) {
+      // Regions are drawn on their own container
+      ybhpgrp = gYBHP
+      // Remove any previously created lines with this name to prevent
+      // leftovers from earlier graph instances
+      gYBHPlines.select("."+clsname).remove()
+    } else {
+      // Lines are drawn on their own container
+      ybhpgrp = gYBHPlines
+      // Remove any previously created regions with this name to prevent
+      // leftovers from earlier graph instances
+      gYBHP.select("."+clsname).remove()
+    }
+    ybhpelt = ybhpgrp.select("."+clsname)
+    const id = "("+reg[0]+")-("+reg[1]+")"
 
     // Adjustment to y coordinates by half the stroke width
     const adj = goal.yaw*reg[4]/2
@@ -3217,6 +3242,7 @@ function updateYBHP() {
 
     if (ybhpelt.empty()) { // create a new element if an existing one not found
       ybhpgrp.append("svg:path").attr("class",          clsname)
+                                .attr("id",             id)
                                 .attr("d",              d)
                                 .attr("pointer-events", "none")
                                 .attr("fill",           reg[2])
@@ -3225,6 +3251,7 @@ function updateYBHP() {
                                 .attr("stroke-width",   reg[4])
     } else { // update previously created element
       ybhpelt.attr("d",            d)
+             .attr("id",             id)
              .attr("fill",         reg[2])
              .attr("fill-opacity", reg[5])
              .attr("stroke",       reg[3])
@@ -3239,7 +3266,10 @@ function updatePinkRegion() {                         // AKA nozone AKA oinkzone
   if (opts.divGraph == null || road.length == 0) return
 
   const pinkelt = gPink.select(".pinkregion")
-  const ir = iroad
+  let rd = iroad
+  // For non-editor graphs, use the most recent road
+  if (!opts.roadEditor) rd = road
+  
   const now = goal.asof
   const hor = goal.horizon
   let yedge
@@ -3248,14 +3278,14 @@ function updatePinkRegion() {                         // AKA nozone AKA oinkzone
   const color = goal.ybhp ? "url(#pinkzonepat"+curid+")" : bu.Cols.PINK
 
   // Compute road indices for left and right boundaries
-  const itoday = br.findSeg(ir, now)
-  const ihor   = br.findSeg(ir, hor)
-  let d = "M"+nXSc(now*SMS)+" "+nYSc(br.rdf(ir, now))
+  const itoday = br.findSeg(rd, now)
+  const ihor   = br.findSeg(rd, hor)
+  let d = "M"+nXSc(now*SMS)+" "+nYSc(br.rdf(rd, now))
   for (let i = itoday; i < ihor; i++) {
-    d += " L"+nXSc(ir[i].end[0]*SMS)
-         +" "+nYSc(ir[i].end[1])
+    d += " L"+nXSc(rd[i].end[0]*SMS)
+         +" "+nYSc(rd[i].end[1])
   }
-  d += " L"+nXSc(hor*SMS)+" "+nYSc(br.rdf(ir, hor))
+  d += " L"+nXSc(hor*SMS)+" "+nYSc(br.rdf(rd, hor))
   d += " L"+nXSc(hor*SMS)+" "+nYSc(yedge)
   d += " L"+nXSc(now*SMS)+" "+nYSc(yedge)
   d += " Z"
@@ -3292,18 +3322,15 @@ function updateCenterline(rd, gelt, cls, scol, sw, delta, usedash) {
   const dash = (opts.oldRoadLine.dash)+","+ceil(opts.oldRoadLine.dash/2)
   const sda  = usedash?dash:null // stroke-dasharray
 
-  let newtini = opts.roadEditor?bu.daysnap(rd[0].end[0]):goal.tini
-  let newtfin = opts.roadEditor?bu.daysnap(rd[rd.length-1].sta[0]):goal.tfin
-
   // fx,fy: Start of the current line segment
   // ex,ey: End of the current line segment
   let fx = nXSc(rd[0].sta[0]*SMS), fy = nYSc(rd[0].sta[1]+delta)
   let ex = nXSc(rd[0].end[0]*SMS), ey = nYSc(rd[0].end[1]+delta)
-  if (rd[0].sta[0] < newtini) {
-    fx  = nXSc(newtini*SMS)
+  if (rd[0].sta[0] < goal.tini) {
+    fx  = nXSc(goal.tini*SMS)
     // Using vini instead of the rdf below does not work for some
     // goals where vini ends up not on the road itself
-    fy  = nYSc(br.rdf(rd, newtini)+delta)
+    fy  = nYSc(br.rdf(rd, goal.tini)+delta)
   }
 
   if (usedash) {
@@ -3319,8 +3346,8 @@ function updateCenterline(rd, gelt, cls, scol, sw, delta, usedash) {
     // breaks the tfin check. This hopefully overcomes that problem
     let segx = bu.daysnap(segment.end[0])
     ex = nXSc(segment.end[0]*SMS)
-    if (segx < newtini) continue
-    if (segx > newtfin) break
+    if (segx < goal.tini) continue
+    if (segx > goal.tfin) break
     ey = nYSc(segment.end[1]+delta)
     d += " L"+r1(ex)+" "+(r1(ey)+adj)
     if (ex > plotbox.width) break
@@ -3452,9 +3479,6 @@ function updateGuidelines() {
     guideelt.remove(); return
   }
   
-  let newtini = opts.roadEditor?bu.daysnap(road[0].end[0]):goal.tini
-  let newtfin = opts.roadEditor?bu.daysnap(road[road.length-1].sta[0]):goal.tfin
-      
   let skip = 1 // Show only one per this many guidelines
   
   // Create an index array as d3 data for guidelines
@@ -3464,8 +3488,8 @@ function updateGuidelines() {
   const xrange = [nXSc.invert(            0)/SMS,
                   nXSc.invert(plotbox.width)/SMS]
   const buildPath = ((d,i) =>
-                     getisopath(d, [max(newtini, xrange[0]),
-                                    min(newtfin, xrange[1])]))
+                     getisopath(d, [max(goal.tini, xrange[0]),
+                                    min(goal.tfin, xrange[1])]))
   
   const lnw = isolnwborder(xrange) // estimate intra-isoline delta
   const lnw_px = abs(nYSc(0) - nYSc(lnw))
@@ -3492,6 +3516,7 @@ function updateGuidelines() {
   guideelt.enter().append("svg:path")
     .attr("class",           "guides")
     .attr("d",               buildPath)
+    .attr("id",              (d)=>("g"+d))
     .attr("transform",       null)
     .attr("pointer-events",  "none")
     .attr("fill",            "none")
@@ -3499,37 +3524,48 @@ function updateGuidelines() {
     .attr("stroke",          bu.Cols.LYEL)
   guideelt
      .attr("d",               buildPath)
+     .attr("id",              (d)=>("g"+d))
      .attr("transform",       null)
      .attr("stroke",          bu.Cols.LYEL)
      .attr("stroke-width",    opts.guidelines.width*scf)
 }
 
-// Creates or updates the unedited road
-function updateOldRoad() {
+function updateRazrRoad() {
+  if (processing) return
   if (opts.divGraph == null || road.length == 0) return
 
-  // Razor line differs between the editor (dashed) and the graph (solid)
+  // Razor line differs between the editor (dashed) and the graph
+  // (solid). Also, the road editor shows the initial road as the
+  // razor road
   if (opts.roadEditor)
     updateCenterline(iroad, gRazr, "razr", bu.Cols.RAZR0,
                      r3(opts.razrline*scf), 0, true)
   else
-    updateCenterline(iroad, gRazr, "razr", bu.Cols.REDDOT,
+    updateCenterline(road, gRazr, "razr", bu.Cols.REDDOT,
                      r3(opts.razrline*scf), 0, false)
-  // Generate the maxflux line if maxflux!=0. Otherwise, remove existing one
-  updateCenterline(iroad, gMaxflux, "maxflux", (goal.maxflux != 0)?bu.Cols.BIGG:null,
-                   r3(opts.maxfluxline*scf), goal.yaw*goal.maxflux,false)
 }
 
+function updateMaxFluxline() {
+  if (processing) return
+  if (opts.divGraph == null || road.length == 0) return
+
+  // Generate the maxflux line if maxflux!=0. Otherwise, remove existing one
+  updateCenterline(road, gMaxflux, "maxflux", (goal.maxflux != 0)?bu.Cols.BIGG:null,
+                   r3(opts.maxfluxline*scf), goal.yaw*goal.maxflux,false)
+}
+  
 function updateContextOldRoad() {
   if (opts.divGraph == null || road.length == 0) return
   // Create, update, and delete road lines on the brush graph
   var roadelt = ctxplot.selectAll(".ctxoldroads")
-  var ir = iroad
-  var d = "M"+r1(xScB(ir[0].sta[0]*SMS))+" "
-             +r1(yScB(ir[0].sta[1]))
-  for (let i = 0; i < ir.length; i++) {
-    d += " L"+r1(xScB(ir[i].end[0]*SMS))+" "
-             +r1(yScB(ir[i].end[1]))
+  var rd = iroad
+  // For non-editor graphs, use the most recent road
+  if (!opts.roadEditor) rd = road
+  var d = "M"+r1(xScB(rd[0].sta[0]*SMS))+" "
+             +r1(yScB(rd[0].sta[1]))
+  for (let i = 0; i < rd.length; i++) {
+    d += " L"+r1(xScB(rd[i].end[0]*SMS))+" "
+             +r1(yScB(rd[i].end[1]))
   }
   if (roadelt.empty()) {
     ctxplot.append("svg:path")
@@ -4826,7 +4862,8 @@ function updateGraphData(force = false) {
   updateYBHP()
   updatePinkRegion()
   updateGuidelines()
-  updateOldRoad()
+  updateRazrRoad()
+  updateMaxFluxline()
   updateOldBullseye()
   updateBullseye()
   updateKnots()
@@ -5260,16 +5297,20 @@ this.getRoadObj = () => br.copyRoad(road)
 
 this.getGoalObj = () => (goal)
 
-var settingRoad = false;
+/** Flag to indicate whether we are within a call to
+ * setRoadObj(). Prevents repeated calls to beebrain.reloadRoad()
+ * since beebrain.setRoadObj() already calls reloadRoad()*/
+var settingRoad = false
+
 /** Sets the road matrix (in the internal format) for the
     goal. Primarily used to synchronize two separate graph
     instances on the same HTML page. Should only be called with
     the return value of {@link bgraph#getRoadObj}.
     @param {object} newroad Road object returned by {@link bgraph#getRoadObj}
-    @param {Boolean} [resetinitial=true] Whether to set the internal "initial road" as well
+    @param {Boolean} [resetinitial=false] Whether to set the internal "initial road" as well
     @see bgraph#getRoadObj
 */
-this.setRoadObj = ( newroad, resetinitial = true ) => {
+this.setRoadObj = ( newroad, resetinitial = false ) => {
   if (settingRoad) return
   if (newroad.length == 0) {
     // TODO: More extensive sanity checking
@@ -5279,8 +5320,12 @@ this.setRoadObj = ( newroad, resetinitial = true ) => {
   settingRoad = true
   // Create a fresh copy to be safe
   pushUndoState()
+
   road = br.copyRoad(newroad)
   if (resetinitial) {
+    // Warning: If the initial road is reset, tini might not be
+    // updated since its update in roadChanged() relies on the
+    // previous tini and the first road element being the same
     iroad = br.copyRoad(newroad)
     clearUndoBuffer()
   }
