@@ -186,6 +186,8 @@ class CMonitor:
     self.rs = ScrollData() # Right window scrolling
     self.swin = None       # Status window
     self.mwin = None       # Menu window
+    self.dwin = None       # Dialog window for confirmation
+    self.dmsg = None       # Dialog window message
 
     self.goals = []        # List of goals to be processed
     self.problems = []     # List of problem goals
@@ -338,6 +340,28 @@ def _addstr(w,y,x,s,a=curses.A_NORMAL):
                                         +", x:"+str(x)+", str="+s + f' {cgs}')
     pass
 
+
+def create_dialog(msg):
+  if (cm.dwin): return
+  cm.dwin = curses.newwin(5, 30, int(cm.wh/2-5), int(cm.ww/2-15))
+  cm.dmsg = msg
+  refresh_dialog()
+  
+def refresh_dialog():
+  if (not cm.dwin): return
+  cm.dwin.clear()
+  cm.dwin.box()
+  cm.dwin.addnstr(1, int(15-len(cm.dmsg)/2), cm.dmsg, 30)
+  cm.dwin.addstr(3, 4, "Yes (y)")
+  cm.dwin.addstr(3, 20, "No (n)")
+  cm.dwin.refresh()
+  
+def remove_dialog():
+  if (not cm.dwin): return
+  del cm.dwin
+  cm.dwin = None
+  
+  
 def resize_windows():
   success = False
   # Try until successful. Sometimes there are race conditions with resize that
@@ -381,6 +405,11 @@ def resize_windows():
       if (cm.mwin): cm.mwin.resize(1, cm.ww); cm.mwin.mvwin(cm.wh-1, 0)
       else: cm.mwin = curses.newwin(1, cm.ww, cm.wh-1, 0)
       cm.mwin.refresh()
+
+      if (cm.dwin):
+        cm.dwin.mvwin(int(cm.wh/2-5), int(cm.ww/2-15))
+        cm.dwin.refresh()
+
     except:
       # Exception may mean resized windows ended up outside a resized screen
       success = False
@@ -497,6 +526,7 @@ def refresh_all():
   refresh_windows()
   refresh_status()
   refresh_menu()
+  refresh_dialog()
 
 # Sorts the goal list based on a particular prioritization. Currently,
 # this just shifts all goals with errors to the beginning of the list
@@ -818,7 +848,17 @@ def uiTask():
   c = cm.lwin.getch()
   cg = cm.curgoal
   cgs = None if not cm.goals or cg < 0 or cg >= len(cm.goals) else cm.goals[cg]
-  if   c == ord('q'): return True
+  # Check if a yes/no dialog is active, if so, process keys accordingly
+  if (cm.dwin):
+    if   c == ord('y'): return True
+    elif c == ord('n'): remove_dialog()
+    elif c == curses.KEY_RESIZE: resize_windows()
+    else: return False
+    
+  if   c == ord('q'):
+    create_dialog("Quit? Really?")
+    #return True
+
   elif c == ord(' '): refresh_all() # not sure this is of any value
   elif c == curses.KEY_ENTER or c == 10 or c == 13:
     # ENTER displays graph diff for the currently selected problem
@@ -893,7 +933,9 @@ def uiTask():
   elif c == curses.KEY_RESIZE: resize_windows()
   return False
 
-def displayTask(): pass # manages the left and right windows
+def displayTask():
+  refresh_dialog()
+  pass # manages the left and right windows
 
 def alert():     cm.req_alert = True
 def alertoff():  cm.req_alert = False; cm.alerted = False
