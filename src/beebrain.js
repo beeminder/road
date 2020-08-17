@@ -1121,13 +1121,23 @@ function procParams() {
   goal.rfin = goal.road[rl-1][2]
   // tfin, vfin, rfin are set in procRoad
   
-  if (!bu.orderedq(goal.road.map(e => e[0]))) {
+  // Error checking to ensure the road rows are in chronological order
+  const tlist = goal.road.map(e => e[0])
+  if (goal.tini > tlist[0]) {
+    return "Road dial error\\n(There are segments of your yellow brick road\\n"
+      +"that are somehow dated before your road start date!)"
+  } 
+  // The above check is superfluous for now because fillroad() actually cleans
+  // up the road matrix by throwing away road rows that violate that. See the 
+  // notes in the comments of fillroad() in broad.js.
+  if (!bu.orderedq(tlist)) {
     return "Road dial error\\n(Your goal date, goal "
       +(goal.kyoom?"total":"value")+", and rate are inconsistent!\\n"
       +"Is your rate positive when you meant negative?\\n"
       +"Or is your goal "+(goal.kyoom?"total":"value")+" such that the implied"
       +" goal date is in the past?)"
   }
+
   
   if (goal.ybhp && goal.abslnw === null) goal.abslnw = 0
   //if (goal.ybhp) goal.abslnw = 0  // fuck abslnw? no, better to fail loudly

@@ -726,6 +726,16 @@ self.fillroad = (rd, g) => {
   for (let i = 1; i < rd.length; i++)
     rd[i] = nextrow(rd[i-1], rd[i])
   rd.forEach(e => (e[2] = (null==e[2])?e[2]:e[2]*g.siru))
+
+  // Remove rows that have timestamps before tini. This is temporary until
+  // we clean up the goals in the database where this is an issue. After that
+  // we should just fail loudly when we get a bb file that has any road rows
+  // with dates that are earlier than tini. Huge violation of the
+  // anti-robustness principle [blog.beeminder.com/postel] to let Beebody send
+  // broken road matrices and clean them up here in Beebrain!
+  while (rd !== undefined && rd[0] !== undefined && rd[0][0] < g.tini) 
+    rd.shift()
+
   return rd
 }
 

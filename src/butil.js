@@ -616,9 +616,8 @@ self.deldups = (a, idfun=(x=>x)) => {
 /** Whether list l is sorted in increasing order.
     @param {Number[]} l Input list*/
 self.orderedq = (l) => {
-  for (let i = 0; i < l.length-1; i++)
-    if (l[i] > l[i+1]) return false;
-  return true;
+  for (let i = 0; i < l.length-1; i++) if (l[i] > l[i+1]) return false
+  return true
 }
 
 /** Whether all elements in a list are zero
