@@ -3302,8 +3302,10 @@ function updateCenterline(rd, gelt, cls, scol, sw, delta, usedash) {
   if (rd[0].sta[0] < newtini) {
     fx  = nXSc(newtini*SMS)
     // Using vini instead of the rdf below does not work for some
-    // goals where vini ends up not on the road itself
+    // goals where vini ends up not on the road itself -- uluc
+    // But let's do stricter error-checking so we can count on rdf(tini)==vini!
     fy  = nYSc(br.rdf(rd, newtini)+delta)
+    //fy  = nYSc(goal.vini+delta)
   }
 
   if (usedash) {
