@@ -267,8 +267,8 @@ const SID = 86400
 
       params.quantum = 1
       
-      params.ybhp - true
-      params.abslnw = 0
+      //params.ybhp - true
+      //params.abslnw = 0
 
       params.asof = bu.dayify(now)
 

@@ -79,7 +79,7 @@ let gid = 1 // Global counter giving unique IDs for multiple beebrain instances
 // In-params and out-params are documented at doc.bmndr.com/beebrain
 
 // NOTES / IDEAS:
-// o Death to auto-widening and noisy width! Recommend abslnw=stdflux in the UI.
+// o Recommend stdflux for user-specified maxflux in the UI.
 // o Gaps in the Road: If you derail and don't immediately rerail, the YBR
 //   should show a gap when you weren't beeminding. The road matrix could
 //   indicate this with a row like {t, null, null} which means no road should be
@@ -117,7 +117,6 @@ vmin     : null,   //   control zooming/panning; they default to the entire
 vmax     : null,   //   plot -- initial datapoint to past the akrasia horizon
 kyoom    : false,  // Cumulative; plot values as the sum of those entered so far
 odom     : false,  // Treat zeros as accidental odom resets
-abslnw   : null,   // Override road width algorithm with a fixed lane width
 maxflux  : 0,      // User-specified max daily fluctuation                      
 noisy    : false,  // Compute road width based on data, not just road rate
 monotone : false,  // Whether the data is necessarily monotone (used in limsum) 
@@ -194,6 +193,7 @@ rfin     : null,    // Subsumed by fullroad ################################ DEP
 
 const pig = [ // In Params to ignore; complain about anything not here or in pin
 //'rerails', 
+'abslnw',
 'tagtime', 
 'timezone',
 'backroad', 
@@ -913,7 +913,6 @@ const pchk = [
 ['vmax', bu.norn, "isn't numeric or null"],
 ['kyoom', bu.torf, "isn't boolean"],
 ['odom', bu.torf, "isn't boolean"],
-['abslnw', bu.norn, "isn't numeric or null"],
 ['noisy', bu.torf, "isn't boolean"],
 ['integery', bu.torf, "isn't boolean"],
 ['monotone', bu.torf, "isn't boolean"],
@@ -961,8 +960,6 @@ function vetParams() {
   }
   if (goal.kyoom && goal.odom)
     return "The odometer setting doesn't make sense for an auto-summing goal!"
-  if (goal.ybhp && goal.abslnw > 0)
-    return "Yellow Brick Half-Plane goals must have zero absolute lane width"
 
   return ""
 }
@@ -1137,20 +1134,13 @@ function procParams() {
       +"Or is your goal "+(goal.kyoom?"total":"value")+" such that the implied"
       +" goal date is in the past?)"
   }
-
-  
-  if (goal.ybhp && goal.abslnw === null) goal.abslnw = 0
-  //if (goal.ybhp) goal.abslnw = 0  // fuck abslnw? no, better to fail loudly
-
+ 
   // rdf function is implemented in broad.js
   // rtf function is implemented in broad.js
 
   goal.stdflux = br.noisyWidth(roads, data.filter(d => d[0]>=goal.tini))
-  goal.nw = goal.noisy && goal.abslnw == null ? 
-            br.autowiden(roads, goal, data, goal.stdflux) : 0
-  
-  goal.lnf = goal.abslnw != null ? 
-             (x => goal.abslnw) : br.genLaneFunc(roads, goal)
+  goal.nw = 0         // DIELANES
+  goal.lnf = (x => 0) // DIELANES
   
   flatline()
 
