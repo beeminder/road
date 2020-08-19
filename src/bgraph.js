@@ -404,12 +404,13 @@ let svg, defs, graphs, buttonarea, stathead, focus, focusclip, plot,
     context, ctxclip, ctxplot, 
     xSc, nXSc, xAxis, xAxisT, xGrid, xAxisObj, xAxisObjT, xGridObj,
     ySc, nYSc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel,
-    xScB, xAxisB, xAxisObjB, yScB, 
-    gPB, gYBHP, gYBHPlines, gPink, gPinkPat, gGrid, gOResets, gPastText, 
+    xScB, xAxisB, xAxisObjB, yScB,
+    gPB, gYBHP, gYBHPlines, gPink, gPinkPat, gTapePat, gGrid, gOResets, gPastText, 
     gGuides, gMaxflux, gRazr, gOldBullseye, 
     gKnots, gSteppy, gSteppyPts, gRosy, gRosyPts, gMovingAv,
     gAura, gDerails, gAllpts, gDpts, gHollow, gFlat, 
     gBullseye, gRoads, gDots, gWatermark, gHashtags, gHorizon, gHorizonText,
+    gRedTape,
     zoomarea, axisZoom, zoomin, zoomout,  
     brushObj, brush, focusrect, topLeft,
     scf = 1, oldscf = 0,
@@ -664,6 +665,25 @@ function createGraph() {
                          .style("stroke",       "#aaaaaa")
                          .style("stroke-width", 1)
   
+  gTapePat = defs.append("pattern").attr("id",              "tapepat"+curid)
+                                   .attr("x",                0)
+                                   .attr("y",                0)
+                                   .attr("width",            20)
+                                   .attr("height",           20)
+                                   .attr("patternTransform", "rotate(45)")
+                                   .attr("patternUnits",     "userSpaceOnUse")
+  gTapePat.append("rect").attr("x",                0)
+                         .attr("y",                0)
+                         .attr("width",            20)
+                         .attr("height",           20)
+                         .attr("fill", "#ffffff")
+  gTapePat.append("line").attr("x1",            0)
+                         .attr("y1",            0)
+                         .attr("x2",            20)
+                         .attr("y2",            0)
+                         .style("stroke",       "#ff5555")
+                         .style("stroke-width", 25)
+
   var buttongrp = defs.append("g").attr("id", "removebutton")
   buttongrp.append("circle").attr("cx",   14)
                             .attr("cy",   14)
@@ -826,6 +846,19 @@ function createGraph() {
   gHorizonText = plot.append('g').attr('id', 'hortxtgrp')      // z = 29
   gPastText    = plot.append('g').attr('id', 'pasttxtgrp')     // z = 30
 
+  gRedTape = plot.append('g').attr('visibility', 'hidden')
+  // wwidth and height will be set by resizeGraph later
+  gRedTape.append('rect').attr('x', 0).attr('y', 0)
+    .attr('stroke-width', 20).attr('stroke', "url(#tapepat"+curid+")")
+    .attr('fill', 'none')
+  // x coordinate will be set by resizeGraph later
+  gRedTape.append('text').attr('y', 45)
+    .attr('paint-order', 'stroke')
+    .attr('stroke-width', '2px').attr('stroke', '#a00000')
+    .attr('font-size', "35px").attr('text-anchor', 'middle')
+    .attr('fill', '#ff0000')
+    .text("road can't get easier!")
+
   zoomin = focusclip.append("svg:use")
     .attr("class","zoomin")
     .attr("xlink:href", "#zoominbtn")
@@ -963,7 +996,11 @@ function resizeGraph() {
     xGridObj.attr("transform", "translate(0,"+(plotbox.height)+")").call(xGrid)
     xAxisObjT.attr("transform", "translate("+plotbox.x+","+(plotpad.top)+")")
       .call(xAxisT.scale(nXSc))
+  } else {
+    gRedTape.select('rect').attr('width', plotbox.width).attr('height', plotbox.height)
+    gRedTape.select('text').attr('x', plotbox.width/2)
   }
+    
   ySc.range( [0, plotbox.height])
   nYSc.range([0, plotbox.height])
   yAxisObj.attr("transform", "translate("+plotpad.left+","+plotpad.top+")")
@@ -3727,8 +3764,8 @@ function updateKnots() {
 
 function updateRoads() {
   if (opts.divGraph == null || road.length == 0) return;
-  var lineColor = isRoadValid( road )?
-        opts.roadLineCol.valid:opts.roadLineCol.invalid;
+  //let valid = isRoadValid( road )
+  //var lineColor = valid?opts.roadLineCol.valid:opts.roadLineCol.invalid;
 
   // Create, update and delete road lines
   var roadelt = gRoads.selectAll(".roads").data(road);
@@ -3744,7 +3781,7 @@ function updateRoads() {
     .attr("y2", function(d) { return nYSc(d.end[1]) })
     .attr("stroke-dasharray",
           function(d,i) { return (i==0||i==road.length-1)?"3,3":"none"})
-    .style("stroke",lineColor)
+    .style("stroke",opts.roadLineCol.invalid)
   roadelt.enter()
     .append("svg:line")
     .attr("class","roads")
@@ -3754,7 +3791,7 @@ function updateRoads() {
     .attr("y1",   function(d)   { return nYSc(d.sta[1]) })
     .attr("x2",   function(d)   { return nXSc(d.end[0]*SMS) })
     .attr("y2",   function(d)   { return nYSc(d.end[1]) })
-    .style("stroke",lineColor)
+    .style("stroke", opts.roadLineCol.invalid)
     .attr("stroke-dasharray",
           function(d,i) { return (i==0||i==road.length-1)?"3,3":"none"})
     .attr("stroke-width",opts.roadLine.width)
@@ -3808,15 +3845,20 @@ function updateRoadData() {
 
 function updateRoadValidity() {
   if (opts.divGraph == null || road.length == 0) return
-  var lineColor = isRoadValid( road )?
-        opts.roadLineCol.valid:opts.roadLineCol.invalid
+  if (!opts.roadEditor) return
+  
+  let valid = isRoadValid( road )
+  //var lineColor = valid?opts.roadLineCol.valid:opts.roadLineCol.invalid
 
+  if (!valid) gRedTape.attr('visibility', 'visible')
+  else gRedTape.attr('visibility', 'hidden')
+  
   // Create, update and delete road lines
-  var roadelt = gRoads.selectAll(".roads")
-  roadelt.style("stroke",lineColor)
+  //var roadelt = gRoads.selectAll(".roads")
+  //roadelt.style("stroke",lineColor)
 
-  roadelt = ctxplot.selectAll(".ctxroads")
-  roadelt.style("stroke",lineColor)
+  //roadelt = ctxplot.selectAll(".ctxroads")
+  //roadelt.style("stroke",lineColor)
 }
 
 function updateContextRoads() {
