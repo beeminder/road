@@ -259,7 +259,7 @@ self.aok = (rd, g, t, v) => {
 //  lanage*yaw <= -2: emergency day or derailed (red dot)
 self.lanage = (rd, goal, t, v, l = null) => {
   const ln = goal.lnf(t)
-  if (l === null) l = goal.noisy ? max(ln, goal.nw) : ln
+  if (l === null) l = ln
   const d = v - self.rdf(rd, t)
   if (bu.chop(l) === 0)
     return rnd(bu.chop(d) === 0.0 ? goal.yaw : sign(d)*666)
@@ -334,7 +334,7 @@ self.dtd = (rd, goal, t, v) => {
       vpess += self.ppr(rd, goal, t+x*SID)
     }
   }
-  if (goal.noisy && self.gdelt(rd,goal,t,v) >= 0) x = max(2, x)
+  //if (goal.noisy && self.gdelt(rd,goal,t,v) >= 0) x = max(2, x) #SCHDEL
   return x
 }
   
@@ -1016,9 +1016,7 @@ self.interpData = (d, xv) => {
 /**  The value of the relevant/critical edge of the YBR in n days */
 self.lim = (rd, g, n) => {
   var t = g.tcur+n*SID
-  return self.rdf(rd, t)
-    - sign(g.yaw)
-    * (g.noisy ? max(g.nw, g.lnf(t)) : g.lnf(t))
+  return self.rdf(rd, t) - sign(g.yaw) * g.lnf(t)
 }
 
 /** The bare min needed from vcur to the critical edge of the YBR in n days */
