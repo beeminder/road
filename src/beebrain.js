@@ -118,7 +118,6 @@ vmax     : null,   //   plot -- initial datapoint to past the akrasia horizon
 kyoom    : false,  // Cumulative; plot values as the sum of those entered so far
 odom     : false,  // Treat zeros as accidental odom resets
 maxflux  : 0,      // User-specified max daily fluctuation                      
-noisy    : false,  // Compute road width based on data, not just road rate
 monotone : false,  // Whether the data is necessarily monotone (used in limsum) 
 aggday   : null,   // sum/last/first/min/max/mean/median/mode/trimmean/jolly
 plotall  : true,   // Plot all the points instead of just the aggregated point
@@ -193,6 +192,7 @@ rfin     : null,    // Subsumed by fullroad ################################ DEP
 
 const pig = [ // In Params to ignore; complain about anything not here or in pin
 //'rerails', 
+'noisy',
 'abslnw',
 'tagtime', 
 'timezone',
@@ -913,7 +913,6 @@ const pchk = [
 ['vmax', bu.norn, "isn't numeric or null"],
 ['kyoom', bu.torf, "isn't boolean"],
 ['odom', bu.torf, "isn't boolean"],
-['noisy', bu.torf, "isn't boolean"],
 ['integery', bu.torf, "isn't boolean"],
 ['monotone', bu.torf, "isn't boolean"],
 ['aggday', v => v in br.AGGR, "isn't one of max, sum, last, mean, etc"],

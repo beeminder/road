@@ -5444,13 +5444,12 @@ this.xlinkLoaded = () => xlinkloaded
     @property {Boolean} dir Which direction you'll go (usually same as yaw)
     @property {Boolean} kyoom Cumulative; plot vals as sum of those entered so far
     @property {Boolean} odom Treat zeros as accidental odom resets
-    @property {Boolean} noisy Compute road width based on data, not just road rate -- deprecated
     @property {Boolean} integery Whether vals are necessarily integers -- deprecated
     @property {Boolean} monotone Whether data is necessarily monotone
     @property {String} aggday Aggregation function for the day's official value
 */
 const goalProps
-      = ['yaw','dir','kyoom','odom','noisy','integery','monotone','aggday']
+      = ['yaw','dir','kyoom','odom','integery','monotone','aggday']
 /** Returns properties for the currently loaded goal
     @returns {GoalProperties} 
     @see {@link bgraph#getVisualConfig}
