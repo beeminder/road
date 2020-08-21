@@ -137,7 +137,6 @@ usr      : null,   // Username (synonym for first half of yoog) ############ DEP
 graph    : null,   // Graph name (synonym for second half of yoog) ######### DEP
 goal     : null,   // Synonym for vfin ##################################### DEP
 rate     : null,   // Synonym for rfin ##################################### DEP
-integery : false,  // Whether vals are necessarily integers ################ DEP
 }
 
 const pout = { // Out Params: Beebrain output fields
@@ -189,15 +188,16 @@ rfin     : null,    // Subsumed by fullroad ################################ DEP
 }
 
 const pig = [ // In Params to ignore; complain about anything not here or in pin
-//'rerails', 
-'noisy',
-'abslnw',
-'tagtime', 
-'timezone',
-'backroad', 
-'edgy',
-'offred',
-//'offparis',
+//'rerails',  // Idea for something to be passed to Beebrain
+'integery', // Replaced by 'quantum'; fully killed as of 2020-08-21
+'noisy',    // Pre-YBHP; fully killed as of 2020-08-20
+'abslnw',   // Pre-YBHP; fully killed as of 2020-08-19
+'tagtime',  // Used in the very early days
+'timezone', // Might make sense to send this to Beebrain in the future
+'backroad', // Related to the permacolor idea; see doc.bmndr.com/permacolor
+'edgy',     // Ancient; killed as one of the prereqs for YBHP
+'offred',   // Used for the transition to the red-yesterday derail condition
+//'offparis', // Temporary thing related to red-yesterday
 ]
 
 /** Enum object to identify different types of datapoints
@@ -911,7 +911,6 @@ const pchk = [
 ['vmax', bu.norn, "isn't numeric or null"],
 ['kyoom', bu.torf, "isn't boolean"],
 ['odom', bu.torf, "isn't boolean"],
-['integery', bu.torf, "isn't boolean"],
 ['monotone', bu.torf, "isn't boolean"],
 ['aggday', v => v in br.AGGR, "isn't one of max, sum, last, mean, etc"],
 ['plotall', bu.torf, "isn't boolean"],
