@@ -78,37 +78,37 @@ const SID = 86400
       return {yaw:1, dir:1, kyoom:true,
               odom: false, movingav:false, 
               steppy:true, rosy: false, aura: false, aggday: "sum",
-              integery:false, monotone:true}
+              monotone:true}
     }
     function newLoseWeight() {
       return {yaw: -1, dir: -1, kyoom: false,
               odom: false, movingav: true,
               steppy: false, rosy: true, aura: true, aggday: "min",
-              plotall:false, integery:false, monotone:false }
+              plotall:false, monotone:false }
     }
     function newUseOdometer() {
       return {yaw:1, dir: 1, kyoom: false,
               odom: true, movingav: false,
               steppy: true, rosy: false, aura: false, aggday: "last",
-              integery:false, monotone:true }
+              monotone:true }
     }
     function newDoLess() {
       return {yaw: -1, dir: 1, kyoom: true,
               odom: false, movingav: false,
               steppy: true, rosy: false, aura: false, aggday: "sum",
-              integery:false, monotone:true }
+              monotone:true }
     }
     function newGainWeight() {
       return {yaw: 1, dir: 1, kyoom: false,
               odom: false, movingav: true, 
               steppy: false, rosy: true, aura: true, aggday: "max",
-              plotall:false, integery:false, monotone:false }
+              plotall:false, monotone:false }
     }
     function newWhittleDown() {
       return {dir: -1, yaw: -1, kyoom: false,
               odom: false, movingav: false,
               steppy: true, rosy: false, aura: false, aggday: "min",
-              plotall:false, integery:true, monotone:false }
+              plotall:false, monotone:false }
     }
     const typefn = {
       hustler: newDoMore, 
@@ -226,7 +226,7 @@ const SID = 86400
     }
 
     const goalProps
-          = ['yaw','dir','kyoom','odom','noisy','integery','monotone','aggday']
+          = ['yaw','dir','kyoom','odom','noisy','monotone','aggday']
     function setGoalConfig( opts ) {
       saveState()
       goalProps.map(e=>{
