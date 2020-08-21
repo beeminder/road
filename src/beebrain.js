@@ -135,10 +135,8 @@ imgsz    : 760,    // Image size; width in pixels of the graph image
 yoog     : 'U/G',  // Username/graphname, eg, "alice/weight"                
 usr      : null,   // Username (synonym for first half of yoog) ############ DEP
 graph    : null,   // Graph name (synonym for second half of yoog) ######### DEP
-//gldt     : null,   // Synonym for tfin ################################### DEP
 goal     : null,   // Synonym for vfin ##################################### DEP
 rate     : null,   // Synonym for rfin ##################################### DEP
-//offred   : true, // Yesterday-is-red criteria for derails ################ DEP
 integery : false,  // Whether vals are necessarily integers ################ DEP
 }
 
@@ -1203,9 +1201,9 @@ function procParams() {
 function sumSet(rd, goal) {
   const y = goal.yaw, d = goal.dir, 
         l = goal.lane, w = goal.lnw, dlt = goal.delta, 
-        q = goal.integery && goal.quantum === null ? 1 : 
-            max(1e-5, goal.quantum) // TODO: just trust Beebody
-        //q = goal.quantum
+        //q = goal.integery && goal.quantum === null ? 1 : 
+        //  max(1e-5, goal.quantum) // #SCHDEL: just trust Beebody
+        q = goal.quantum === null ? (goal.integery?1:1e-5) : goal.quantum
 
   const MOAR = (y>0 && d>0), 
         PHAT = (y<0 && d<0),
