@@ -93,7 +93,7 @@ let gid = 1 // Global counter giving unique IDs for multiple beebrain instances
 //   permacolor)
 
 const pin = { // In Params: Graph settings and their defaults
-quantum  : null,   // Precision/granularity for conservarounding baremin etc
+quantum  : 1e-5,   // Precision/granularity for conservarounding baremin etc
 timey    : false,  // Whether numbers should be shown in HH:MM format
 ybhp     : true,   // Yellow Brick Half-Plane! For transition to New World Order
 ppr      : true,   // Whether PPRs are turned on (ignored if not WEEN/RASH)
@@ -1203,7 +1203,9 @@ function sumSet(rd, goal) {
         l = goal.lane, w = goal.lnw, dlt = goal.delta, 
         //q = goal.integery && goal.quantum === null ? 1 : 
         //  max(1e-5, goal.quantum) // #SCHDEL: just trust Beebody
-        q = goal.quantum === null ? (goal.integery?1:1e-5) : goal.quantum
+        //q = goal.quantum === null ? (goal.integery?1:1e-5) : goal.quantum
+        //q = goal.quantum === null ? 1e-5 : goal.quantum
+        q = goal.quantum
 
   const MOAR = (y>0 && d>0), 
         PHAT = (y<0 && d<0),
