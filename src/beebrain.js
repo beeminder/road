@@ -143,7 +143,6 @@ sadbrink : false,   // Whether we were red yesterday & so will instaderail today
 safebump : null,    // Value needed to get one additional safe day
 dueby    : [],      // Table of daystamps, deltas, and abs amts needed by day
 fullroad : [],      // Road matrix w/ nulls filled in, [tfin,vfin,rfin] appended
-razrmatr : [],      // Adjusted road matrix for the YBHP transition ######## DEP
 pinkzone : [],      // Subset of the road matrix defining the verboten zone
 tluz     : null,    // Timestamp of derailment ("lose") if no more data is added
 tcur     : null,    // (tcur,vcur) gives the most recent datapoint, including
@@ -152,11 +151,9 @@ vprev    : null,    // Agged value yesterday
 rcur     : null,    // Rate at time tcur; if kink, take the limit from the left
 ravg     : null,    // Overall road rate from (tini,vini) to (tfin,vfin)
 tdat     : null,    // Timestamp of last actually entered datapoint
-lnw      : 0,       // Lane width at time tcur ############################# DEP
 stdflux  : 0,       // Recommended maxflux .9 quantile of rate-adjusted deltas
-delta    : 0,       // How far from centerline: vcur - rdf(tcur)
-lane     : 666,     // Lane we're in; below=-2,bottom=-1,top=1,above=2,etc # DEP
-color    : 'black', // One of {"green", "blue", "orange", "red"} ########### DEP
+delta    : 0,       // How far from razor road: vcur - rdf(tcur)
+lane     : 666,     // Lane number for backward compatibility
 cntdn    : 0,       // Countdown: # of days from tcur till we reach the goal
 numpts   : 0,       // Number of real datapoints entered, before munging
 mean     : 0,       // Mean of datapoints
@@ -164,15 +161,17 @@ meandelt : 0,       // Mean of the deltas of the datapoints
 proctm   : 0,       // Unixtime when Beebrain was called (specifically genStats)
 statsum  : '',      // Human-readable graph stats summary (not used by Beebody)
 ratesum  : '',      // Text saying what the rate of the YBR is
-limsum   : '',      // Text saying your bare min or hard cap ############### DEP
-deltasum : '',      // Text saying where you are wrt the centerline
+deltasum : '',      // Text saying where you are wrt the razor road
 graphsum : '',      // Text at the top of the graph image; see stathead
+progsum  : '',      // Text summarizing percent progress
+rah      : 0,       // Y-value of the razor road at the akrasia horizon
+safebuf  : null,    // Number of days of safety buffer
+error    : '',      // Empty string if no errors
+limsum   : '',      // Text saying your bare min or hard cap ############### DEP
 headsum  : '',      // Text in the heading of the graph page ############### DEP
 titlesum : '',      // Title text for graph thumbnail ###################### DEP
-progsum  : '',      // Text summarizing percent progress
-rah      : 0,       // Y-value of the centerline of YBR at the akrasia horiz
-error    : '',      // Empty string if no errors
-safebuf  : null,    // Number of days of safety buffer (redundant with tluz?)
+lnw      : 0,       // Lane width at time tcur ############################# DEP
+color    : 'black', // One of {"green", "blue", "orange", "red"} ########### DEP
 loser    : false,   // Whether you're irredeemably off the road ############ DEP
 gldt     : null,    // {gldt, goal, rate} are synonyms for ################# DEP
 goal     : null,    //   for the last row of fullroad ###################### DEP
@@ -957,38 +956,39 @@ function vetParams() {
   return ""
 }
 
-// DIELANES
 // Generate razrroad for YBHP migration by shifting each segment by the lane
 // width in the negative yaw direction, ie, towards the bad side of the road.
 // This yields a razrroad that coincides with the critical edge of the old-style
-// laney road.
-// (For dumb crufty reasons we're generating both the road matrix version as
-// razrmatr and the version with Uluc's new road data structure as razrroad.
-// It's razrmatr that Beebody wants and razrroad that bgraph wants, since we're
-// also displaying the critical edge of laney roads as a thin red line now.
-// Of course all this cruft will go away when the YBHP transition is complete!)
-// ULUC TODO: Is razrline still necessary, sinc it will end up being the same as the road with lnw=0?
+// laney road. Sort of. At least the critical edge as drawn on the graph, which
+// isn't the real critical edge since road width depended on the rate. See
+// https://github.com/beeminder/road/issues/96#issuecomment-629482046 for the
+// very gory details. #DIELANES
+// We're holding on to this in case we want to convert any historical roads in
+// archived goals. The current decision is to not do that. Rather, we just
+// interpret the historical centerline as being the razor road. It's hard to
+// improve on that and hardly matters anyway since it's only about historical
+// roads but it's possible we could want to use the current rate as a proxy for
+// lane width and shift historical roads towards the bad side by that amount,
+// which is what this function does.
 function genRazr() {
   const yaw = goal.yaw
   const t1 = seg => seg.sta[0]
   const t2 = seg => seg.end[0]
   const v1 = seg => seg.sta[1]
   const v2 = seg => seg.end[1]
-  const offset = bu.conservaround(0, 1e-14, 1)
+  const offset = bu.conservaround(0 /* lane width or current rate */, 1e-14, 1)
 
   // Iterate over road segments, s, where segments go from
-  // {t1,       v1}       to {t2,       v2}       or 
+  // {t1,       v1      } to {t2,       v2      } or 
   // {s.sta[0], s.sta[1]} to {s.end[0], s.end[1]}
-  goal.razrroad = roads.slice().map(s => { // s for road segment
-    // Previous things we tried: (SCHDEL)
-    // (1) lnf of the midpoint of the segment, lnf((t1+t2)/2)
-    //const offset = lnf((t1(s)+t2(s))/2)
-    // (2) min of lnf(t1) and lnf(t2)
-    //const offset = min(lnf(t1(s)), lnf(t2(s)))
-    // (3) max of current lnw and amount needed to ensure not redyest
-    //const yest = goal.asof - SID
-    //const bdelt = -yaw*(goal.dtf(yest) - br.rdf(roads, yest)) // bad delta
-    //const offset = yest < goal.tini ? goal.lnw : max(goal.lnw, bdelt)
+  goal.razrroad = roads.slice().map(s => {
+    // Previous things we tried:
+    // (1) lnf of the midpoint of the segment:     offset = lnf((t1(s)+t2(s))/2)
+    // (2) min of lnf(t1) and lnf(t2):      offset = min(lnf(t1(s)), lnf(t2(s)))
+    // (3) max of current lnw and amount needed to ensure not redyest:
+    //     yest = goal.asof - SID
+    //     bdelt = -yaw*(goal.dtf(yest) - br.rdf(roads, yest)) // bad delta
+    //     offset = yest < goal.tini ? goal.lnw : max(goal.lnw, bdelt)
     // (4) just use current lnw for chrissakes
     return {
       sta:   [t1(s), v1(s) - yaw*offset],
@@ -998,17 +998,16 @@ function genRazr() {
     }
   })
 
-  // beebody style road matrix is a list of end-of-segment values, and
-  // each segment means "start where previous segment left off, and
-  // then connect that to these new coordinates". But for the very first
-  // segment we draw, we need to know where to start, so we add the 
-  // tini/vini row, but that is kind of an exception, because we don't
-  // draw that segment, we just use it to know where to start the first
-  // segment. but the road structure that we create in razrroad for bgraph
-  // to use, each segment has a start and an end.
-  // When we map over that road struct to turn it into a road matrix style
-  // data, we need the initial dummy row to give us tini/vini, but we don't 
-  // need the final dummy row.
+  // Beebody style road matrix is a list of end-of-segment values, and each
+  // segment means "start where previous segment left off, and then connect that
+  // to these new coordinates". But for the very first segment we draw, we need
+  // to know where to start, so we add the tini/vini row, but that is kind of an
+  // exception, because we don't draw that segment, we just use it to know where
+  // to start the first segment. But the road structure that we create in
+  // razrroad for bgraph to use, each segment has a start and an end. When we
+  // map over that road struct to turn it into a road matrix style data, we need
+  // the initial dummy row to give us tini/vini, but we don't  need the final
+  // dummy row.
   goal.razrmatr = goal.razrroad.slice(0,-1).map(s => {
     if (s.auto === 0) return [null,     s.end[1], s.slope*goal.siru]
     if (s.auto === 1) return [s.end[0], null,     s.slope*goal.siru]
@@ -1102,7 +1101,7 @@ function procParams() {
   if (goal.tfin < goal.tluz)  goal.tluz = bu.BDUSK
       
   setDefaultRange()
-  genRazr()
+  //genRazr()
   //console.log(`rdf(tfin)=${br.rdf(roads, goal.tfin)}`)
   return ""
 }

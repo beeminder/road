@@ -224,9 +224,9 @@ self.fixRoadArray = (rd, autop=self.RP.VALUE, usematrix=false,
   }
 }
 
-/**Good delta: Return the delta from the given point to the centerline of the
-   road but with the sign such that being on the good side of the road gives a
-   positive delta and being on the wrong side gives a negative delta. */
+/**Good delta: Return the delta from the given point to the razor road but with
+   the sign such that being on the good side of the road gives a positive delta
+   and being on the wrong side gives a negative delta. */
 self.gdelt = (rd, g, t, v) => bu.chop(g.yaw*(v - self.rdf(rd, t)))
 
 /** Whether the given point is on or on the good side of the razor road */
@@ -409,7 +409,7 @@ self.isoline_generate = (rd, dtdarr, goal, v) => {
 
 /**Ensure correctness of the isoline for do-more goals such that the isoline is
    not allowed to go against 'dir' for dtd days after a road kink. This ensures
-   that the first intersection with the centerline is taken as the dtd value. */
+   that the first intersection with the razor road is taken as the dtd value. */
 self.isoline_monotonicity = (iso, rd, dtdarr, goal, v) => {
   if (goal.yaw * goal.dir < 0) return iso
   
@@ -603,23 +603,23 @@ self.isoval = ( line, x ) => {
   else return line[s][1]+(x-line[s][0])*dy/dx
 }
 
-/** Days To Centerline: Count the integer days till you cross the
-    centerline/tfin if nothing reported */
-self.dtc = (rd, goal, t, v) => {
-  var x = 0
-  while(self.gdelt(rd, goal, t+x*SID, v) >= 0 && t+x*SID <= goal.tfin)
-    x += 1 // dpl
+/** Days To Derail: Count the integer days till you cross the razor road or hit
+    tfin (whichever comes first) if nothing reported. Not currently used. */
+self.dtd_walk = (rd, goal, t, v) => {
+  let x = 0
+  while(self.gdelt(rd, goal, t+x*SID, v) >= 0 && t+x*SID <= goal.tfin) x += 1
   return x
 }
 
-/** What delta from the razor road yields n days of safety buffer? */
+/** What delta from the razor road yields n days of safety buffer? 
+    Not currently used. */
 self.bufcap = (rd, g, n=7) => {
   const t = g.tcur
   const v = self.rdf(rd, t)
   const r = abs(self.rtf(rd, t))
   let d = 0
   let i = 0
-  while(self.dtc(rd, g, t, v+d) < n && i <= 70) { 
+  while(self.dtd_walk(rd, g, t, v+d) < n && i <= 70) {
     d += g.yaw*r*SID
     i += 1
   }
