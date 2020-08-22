@@ -288,7 +288,7 @@ const SID = 86400
       params.timezone = "America/Los_Angeles"
       params.imgsz = 696
       params.yaxis = (params.kyoom)?"current cumulative total":"current value"
-      params.ybhp = true
+      //params.ybhp = true
       
       Object.keys(newparams).forEach(e=>{params[e] = newparams[e]})
 

@@ -229,58 +229,11 @@ self.fixRoadArray = (rd, autop=self.RP.VALUE, usematrix=false,
    positive delta and being on the wrong side gives a negative delta. */
 self.gdelt = (rd, g, t, v) => bu.chop(g.yaw*(v - self.rdf(rd, t)))
 
-// For debugging non-dayfloored timestamps. #SCHDEL
-//self.badtime = (s, t) => {
-//  const d = new Date(t*1000)
-//  console.log(`DEBUG: ${s} t=${d.toISOString()}`)
-//}
-
 /** Whether the given point is on or on the good side of the razor road */
 self.aok = (rd, g, t, v) => {
   //console.log(`DEBUG: ${JSON.stringify(rd)}`)
   return g.yaw * (v - self.rdf(rd, t)) >= v*-1e-15 // DRY: isoside()'s tolerance
 }
-
-// #DIELANES (code only used in non-ybhp case and can die post-ybhp)
-// The bottom lane is -1, top lane is 1, below the road is -2, above is +2, etc.
-// Implementation notes:
-// This includes the noisy width but it does not adjust the noisy
-// width based on t. So this gives the correct lane number for
-// noisy graphs when called with (tcur,vcur) but not necessarily
-// for other values of t. The dtd function handles this slightly
-// more robustly. Unless we deal with the noisy width better we
-// might want to remove the {t,v} parameter and have this only
-// work for (tcur,vcur).
-// How to use lanage:
-//  lanage*yaw >= -1: on the road or on the good side of it (orange/blue/green)
-//  lanage*yaw >   1: good side of the road (green dot)
-//  lanage*yaw ==  1: right lane (blue dot)
-//  lanage*yaw == -1: wrong lane (orange dot)
-//  lanage*yaw <= -2: emergency day or derailed (red dot)
-self.lanage = (rd, goal, t, v, l = null) => {
-  const ln = goal.lnf(t)
-  if (l === null) l = ln
-  const d = v - self.rdf(rd, t)
-  if (bu.chop(l) === 0)
-    return rnd(bu.chop(d) === 0.0 ? goal.yaw : sign(d)*666)
-  const x = bu.ichop(d/l)
-  let fracp = x % 1
-  let intp = x - fracp // differs from floor() for negative numbers, eg -.5 -> 0
-  if (fracp > .99999999) {
-    intp += 1
-    fracp = 0
-  }
-  if (bu.chop(fracp) === 0) {
-    if (goal.yaw > 0 && intp >= 0) return rnd(intp+1)
-    if (goal.yaw < 0 && intp <= 0) return rnd(intp-1)
-    return rnd(sign(x)*ceil(abs(x)))
-  }
-  return rnd(sign(x)*ceil(abs(x)))
-}
-
-// #DIELANES
-/** Whether the given point is on the road if the road has lane width l */
-self.aokold = (rd, g, t, v, l) => self.lanage(rd, g, t, v, l) * g.yaw >= -1.0
 
 /** Pessimistic Presumptive Report (PPR). If this is being computed for *today*
     then return 0 when PPRs are actually turned off (g.ppr==false). If it's
@@ -316,25 +269,12 @@ self.ppr = (rd, g, t, i=null, pastppr=false) => {
 self.dtd = (rd, goal, t, v) => {
   if (self.redyest(rd, goal, t)) return 0 // TODO: need iso here
 
-  var fnw = self.gdelt(rd, goal, t,v) >= 0 ? 0.0 : goal.nw // future noisy width
-  var elnf = x => max(goal.lnf(x), fnw) // effective lane width function
-
   let x = 0 // the number of steps
   let vpess = v + self.ppr(rd, goal, t+x*SID) // value as we walk fwd w/ PPRs
-  if (goal.ybhp) {
-    while (self.aok(rd, goal, t+x*SID, vpess) && t+x*SID <= max(goal.tfin, t)) {
-      x += 1 // walk forward until we're off the YBR
-      vpess += self.ppr(rd, goal, t+x*SID)
-    }
-  } else {
-    //#DIELANES
-    while (self.aokold(rd, goal, t+x*SID, vpess, elnf(t+x*SID)) 
-           && t+x*SID <= max(goal.tfin, t)) {
-      x += 1 // walk forward until we're off the YBR
-      vpess += self.ppr(rd, goal, t+x*SID)
-    }
+  while (self.aok(rd, goal, t+x*SID, vpess) && t+x*SID <= max(goal.tfin, t)) {
+    x += 1 // walk forward until we're off the YBR
+    vpess += self.ppr(rd, goal, t+x*SID)
   }
-  //if (goal.noisy && self.gdelt(rd,goal,t,v) >= 0) x = max(2, x) #SCHDEL
   return x
 }
   
@@ -672,15 +612,14 @@ self.dtc = (rd, goal, t, v) => {
   return x
 }
 
-/** What delta from the centerline yields n days of safety buffer
- * till centerline? */
+/** What delta from the razor road yields n days of safety buffer? */
 self.bufcap = (rd, g, n=7) => {
-  var t = g.tcur, v = self.rdf(rd, t), r = self.rtf(rd, t), d, i
-  if (r === 0) r = g.lnw
-  r = abs(r)
-  d = 0
-  i = 0
-  while(self.dtc(rd, g, t,v+d) < n && i <= 70) { 
+  const t = g.tcur
+  const v = self.rdf(rd, t)
+  const r = abs(self.rtf(rd, t))
+  let d = 0
+  let i = 0
+  while(self.dtc(rd, g, t, v+d) < n && i <= 70) { 
     d += g.yaw*r*SID
     i += 1
   }
@@ -754,42 +693,6 @@ self.fillroadall = (rd, g) => {
 
 /** Computes the slope of the supplied road array at the given timestamp */
 self.rtf = (rd, t) => (rd[self.findSeg( rd, t )].slope)
-
-// Return pure function mapping timestamp to the width of the YBR at that time.
-// This does not incorporate noisyWidth -- this is the minimum width given the 
-// rate of the road. If noisy this has to be maxed with noisyWidth.
-// Mostly the lane width at a given time is the daily absolute rate of the road
-// at that time, but there's an exception for flat spots (until YBHP!):
-// * The lane width for a flat spot is the rate of the previous or next non-flat
-//   segment, whichever's bigger. 
-self.genLaneFunc = function(rd, goal) {
-  var r0 = bu.deldups(rd, e=>e.end[0])
-  var t = r0.map(elt => elt.end[0])
-  var r = r0.map(elt => abs(elt.slope)*SID)
-  // pretend flat spots have the previous or next non-flat rate
-  var rb = r.slice(), i
-  for (i = 1; i < rb.length; i++) 
-    if (abs(rb[i]) < 1e-7 || !isFinite(rb[i])) rb[i] = rb[i-1]
-  var rr = r.reverse()
-  var rf = rr.slice()
-  for (i = 1; i < rf.length; i++) 
-    if (abs(rf[i]) < 1e-7 || !isFinite(rf[i])) rf[i] = rf[i-1]
-  rf = rf.reverse()
-  r = bu.zip([rb,rf]).map(e => bu.argmax(abs, [e[0],e[1]]) )
-  t.pop()
-  r.splice(0,1)
-  var rtf0 = self.stepify(bu.zip([t,r]))
-  return x =>
-    //const isvert = self.vertseg(rd, x)
-    //const rtoday = self.rdf(rd, x)
-    //const ryest  = self.rdf(rd, x-SID)
-    //const rate   = rtf0(x)
-    //return max(abs(isvert ? 0 : rtoday - ryest), rate) 
-    //return
-    max(abs(self.vertseg(rd,x) ? 0 : self.rdf(rd, x) - self.rdf(rd, x-SID)), 
-        rtf0(x))
-  //return x=>self.lnfraw(rd, goal, x)
-}
 
 // Transform datapoints as follows: every time there's a decrease
 // in value from one element to the next where the second value is
@@ -869,44 +772,22 @@ self.isoside = (g, isoline, t, v) => {
 self.dotcolor = (rd, g, t, v, iso=null) => {
   if (t < g.tini) return bu.Cols.BLCK // dots before tini have no color!
 
-  if (g.ybhp && iso != null) {
+  if (iso != null) {
     if (self.isoside(g, iso[0], t, v) < 0) return bu.Cols.REDDOT
     if (self.isoside(g, iso[1], t, v) < 0) return bu.Cols.ORNDOT
     if (self.isoside(g, iso[2], t, v) < 0) return bu.Cols.BLUDOT
     if (self.isoside(g, iso[3], t, v) < 0) return bu.Cols.GRNDOT
     //if (self.isoside(g, iso[7], t, v) < 0) return bu.Cols.GRNDOT
     else                                   return bu.Cols.GRNDOT
-  } else if (g.ybhp) { // if called without iso
+  } else { // if called without iso
     return self.aok(rd, g, t, v) ? bu.Cols.BLCK : bu.Cols.REDDOT
-  } else { //#DIELANES
-    const l = self.lanage(rd, g, t, v)
-    if (g.yaw===0 && abs(l) > 1.0)       return bu.Cols.GRNDOT
-    if (g.yaw===0 && (l===0 || l===1.0)) return bu.Cols.BLUDOT
-    if (g.yaw===0 && l===-1.0)           return bu.Cols.ORNDOT
-    if (l*g.yaw >=   2.0)                return bu.Cols.GRNDOT
-    if (l*g.yaw ===  1.0)                return bu.Cols.BLUDOT
-    if (l*g.yaw === -1.0)                return bu.Cols.ORNDOT
-    if (l*g.yaw <=  -2.0)                return bu.Cols.REDDOT
-    else                                 return bu.Cols.BLCK
   }
 }
 
 // This was previously called isLoser
 self.redyest = (rd, g, t, iso=null) => {
-  //const dcy = self.dotcolor(rd, g, t-SID, g.dtf(t-SID), iso)
-  //const dct = self.dotcolor(rd, g, t, g.dtf(t), iso)
-  const x = self.dotcolor(rd, g, t-SID, g.dtf(t-SID), iso) === bu.Cols.REDDOT 
-  //console.log(
-  //  `DEBUG iso=${JSON.stringify(iso)} dotcolory=${dcy} dotcolort=${dct} redyest=${x}`)
-  return x
+  return self.dotcolor(rd, g, t-SID, g.dtf(t-SID), iso) === bu.Cols.REDDOT 
 }
-
-//self.isLoserold = (rd, g, t) =>                                        #SCHDEL
-//  self.dotcolor(rd, g, t-SID, g.dtf(t-SID)) === bu.Cols.REDDOT
-
-// We used to do the following version for offred==false                 #SCHDEL
-//    self.dotcolor(rd,g,t-SID, g.dtf(t-SID), iso) === bu.Cols.REDDOT
-//    && self.dotcolor(rd,g,t,v, iso) === bu.Cols.REDDOT 
 
 /**For noisy graphs, compute lane width (or half aura width) based on data.
    Specifically, get the list of daily deltas between all the points, but
@@ -1013,17 +894,11 @@ self.interpData = (d, xv) => {
   return od
 }
 
-/**  The value of the relevant/critical edge of the YBR in n days */
-self.lim = (rd, g, n) => {
-  var t = g.tcur+n*SID
-  return self.rdf(rd, t) - sign(g.yaw) * g.lnf(t)
-}
+/**  The value of the YBR in n days */
+self.lim = (rd, g, n) => { return self.rdf(rd, g.tcur+n*SID) }
 
 /** The bare min needed from vcur to the critical edge of the YBR in n days */
-self.limd = (rd, g, n) => {
-  //return bu.conservaround(self.lim(rd, g, n) - g.vcur, g.integery?1:0, g.yaw)
-  return self.lim(rd, g, n) - g.vcur
-}
+self.limd = (rd, g, n) => { return self.lim(rd, g, n) - g.vcur }
 
 return self
 

@@ -95,7 +95,6 @@ let gid = 1 // Global counter giving unique IDs for multiple beebrain instances
 const pin = { // In Params: Graph settings and their defaults
 quantum  : 1e-5,   // Precision/granularity for conservarounding baremin etc
 timey    : false,  // Whether numbers should be shown in HH:MM format
-ybhp     : true,   // Yellow Brick Half-Plane! For transition to New World Order
 ppr      : true,   // Whether PPRs are turned on (ignored if not WEEN/RASH)
 deadline : 0,      // Time of deadline given as seconds before or after midnight
 sadlhole : true,   // Allow the do-less loophole where you can eke back onto YBR
@@ -144,8 +143,7 @@ sadbrink : false,   // Whether we were red yesterday & so will instaderail today
 safebump : null,    // Value needed to get one additional safe day
 dueby    : [],      // Table of daystamps, deltas, and abs amts needed by day
 fullroad : [],      // Road matrix w/ nulls filled in, [tfin,vfin,rfin] appended
-//razrroad : [],      // Adjusted road data struct for the YBHP transition
-razrmatr : [],      // Adjusted road matrix for the YBHP transition
+razrmatr : [],      // Adjusted road matrix for the YBHP transition ######## DEP
 pinkzone : [],      // Subset of the road matrix defining the verboten zone
 tluz     : null,    // Timestamp of derailment ("lose") if no more data is added
 tcur     : null,    // (tcur,vcur) gives the most recent datapoint, including
@@ -154,7 +152,7 @@ vprev    : null,    // Agged value yesterday
 rcur     : null,    // Rate at time tcur; if kink, take the limit from the left
 ravg     : null,    // Overall road rate from (tini,vini) to (tfin,vfin)
 tdat     : null,    // Timestamp of last actually entered datapoint
-lnw      : 0,       // Lane width at time tcur
+lnw      : 0,       // Lane width at time tcur ############################# DEP
 stdflux  : 0,       // Recommended maxflux .9 quantile of rate-adjusted deltas
 delta    : 0,       // How far from centerline: vcur - rdf(tcur)
 lane     : 666,     // Lane we're in; below=-2,bottom=-1,top=1,above=2,etc # DEP
@@ -189,6 +187,7 @@ rfin     : null,    // Subsumed by fullroad ################################ DEP
 
 const pig = [ // In Params to ignore; complain about anything not here or in pin
 //'rerails',  // Idea for something to be passed to Beebrain
+'ybhp',     // Lanes delenda est!
 'integery', // Replaced by 'quantum'; fully killed as of 2020-08-21
 'noisy',    // Pre-YBHP; fully killed as of 2020-08-20
 'abslnw',   // Pre-YBHP; fully killed as of 2020-08-19
@@ -315,7 +314,6 @@ function initGlobals() {
   derailval = {}
   
   goal = {}
-  goal.nw = 0
   goal.siru = null
   oresets = []
   derails = []
@@ -431,7 +429,7 @@ function inertiaRev(dat, dlt, sgn) {
 function computeRosy() {
   if (!goal.rosy || data.length == 0) return
   // Pre-compute rosy datapoints
-  const delta = max(goal.lnw, goal.stdflux)
+  const delta = max(0, goal.stdflux)
   let lo, hi
   if (goal.dir > 0) {
     lo = inertia(   data, delta, -1)
@@ -844,18 +842,18 @@ function setDefaultRange() {
     mind = min(mind, pprv) // Make room for the 
     maxd = max(maxd, pprv) // ghosty PPR datapoint.
   }
-  const padding = max(goal.lnw/3, (maxd-mind)*PRAF*2)
+  const padding = max(0, (maxd-mind)*PRAF*2)
   let minmin = mind - padding
   let maxmax = maxd + padding
   if (goal.monotone && goal.dir>0) {          // Monotone up so no extra padding
     minmin = bu.arrMin([minmin, a, b])        // below (the low) vini.
-    maxmax = bu.arrMax([maxmax, a+goal.lnw, b+goal.lnw])
-  } else if (goal.monotone && goal.dir<0) {         // Monotone down so no extra
-    minmin = bu.arrMin([minmin, a-goal.lnw, b-goal.lnw])   // padding above (the
-    maxmax = bu.arrMax([maxmax, a, b])                     // high) vini.
+    maxmax = bu.arrMax([maxmax, a, b])
+  } else if (goal.monotone && goal.dir<0) {   // Monotone down so no extra
+    minmin = bu.arrMin([minmin, a, b])        // padding above (the
+    maxmax = bu.arrMax([maxmax, a, b])        // high) vini.
   } else {
-    minmin = bu.arrMin([minmin, a-goal.lnw, b-goal.lnw])
-    maxmax = bu.arrMax([maxmax, a+goal.lnw, b+goal.lnw])
+    minmin = bu.arrMin([minmin, a, b])
+    maxmax = bu.arrMax([maxmax, a, b])
   }
   if (goal.plotall && goal.tmin<=goal.tini && goal.tini<=goal.tmax
       && goal.tini in allvals) {      
@@ -891,7 +889,6 @@ function showrow(row) {
 }
 
 const pchk = [
-['ybhp', v => v!==false, "can't be false! LANEY ZOMBIE! Tell support!"],
 ['deadline', v => (6-24)*3600 <= v && v <= 6*3600,
  "outside 6am earlybird to 6am nightowl"],
 ['asof', v => v!=null, "can't be null! Tell support!"],
@@ -972,14 +969,12 @@ function vetParams() {
 // Of course all this cruft will go away when the YBHP transition is complete!)
 // ULUC TODO: Is razrline still necessary, sinc it will end up being the same as the road with lnw=0?
 function genRazr() {
-  //const lnf = goal.lnf
   const yaw = goal.yaw
   const t1 = seg => seg.sta[0]
   const t2 = seg => seg.end[0]
   const v1 = seg => seg.sta[1]
   const v2 = seg => seg.end[1]
-  const offset = bu.conservaround(goal.lnw, 1e-14, 1)
-  //console.log(`DEBUG: ${offset}`)
+  const offset = bu.conservaround(0, 1e-14, 1)
 
   // Iterate over road segments, s, where segments go from
   // {t1,       v1}       to {t2,       v2}       or 
@@ -1022,91 +1017,11 @@ function genRazr() {
   })
 }
 
-
-/* SCHDEL: debugging scratch pad
-
-// TODO: This wants refactored and cleaned up. If we're going to do the exact
-// same thing to the dummy segments (iniroad and finroad) as we do to the
-// the road with the dummies sliced off (midroad) then we don't need to slice
-// them off at all. Just convert the whole thing! Ie, have the map above loop
-// through all of "roads". And if we want to set aside iniroad and finroad
-// and do *no* conversion to them, then we can just do the following instead
-// of going to all the trouble of constructing all the fields:
-//goal.razrroad = [roads[0]].concat(midroad, [roads[-1]])
-
-let s = roads[0]  // first segment, which is kind of a dummy segment i guess?
- const iniroad = [{
-   sta:   [t1(s), v1(s)],
-   end:   [t2(s), v2(s)],
-   slope: s.slope,
-   auto:  s.auto,
- }]
- s = roads[roads.length-1] // last segment also dummy segment? am fuzzy on this
- const finroad = [{
-   sta:   [t1(s), v1(s)],
-   end:   [t2(s), v2(s)],
-   slope: s.slope,
-   auto:  s.auto,
- }]
- goal.razrroad = iniroad.concat(midroad, finroad)
-
-// um, seems like this should be dropping both initial and final segment but
-// apparently not because this is the version that actually generates the
-// road matrix correctly with both tini/vini and tfin/vfin:
-
-lnf
-x => max(abs(self.vertseg(rd,x) ? 0 : self.rdf(rd, x) - self.rdf(rd, x-SID)), 
-         rtf0(x))
-
-{"sta":[-1591660800,0],"slope":0,"auto":2,"end":[1564099200,0]},
-{"sta":[1564099200,0],"end":[1564185600,0],"slope":0,"auto":1},
-{"sta":[1564185600,0],"end":[1895702400,1644.4285714285713],"slope":0.00000496031746031746,"auto":1},
-{"sta":[1895702400,1644.4285714285713],"end":[5051462400,1644.4285714285713],"slope":0,"auto":1}
-*/
-
-/* SCHDEL: uluc's original code for calculating razrroad
-  const oldroad = goal.road.map(e => [e[0], e[1], e[2]])
-  // Compute safebuffer with ybhp=true and abslnw=0
-  // Requires recomputation of a bunch of previously computed values.
-  let newgoal = {}, newsafe, safediff
-  //bu.extend(newgoal, goal, true)
-  //newgoal = JSON.parse(JSON.stringify(goal)) // very safe deep copy?
-  newgoal = {...goal} // this may just be a shallow copy?
-  
-  newgoal.ybhp = true
-  newgoal.abslnw = 0
-  newgoal.stdflux = br.noisyWidth(roads, data.filter(d => d[0]>=goal.tini))
-  newgoal.nw = newgoal.noisy && newgoal.abslnw == null ?
-    br.autowiden(roads, newgoal, data, newgoal.stdflux) : 0
-  
-  newgoal.lnf = newgoal.abslnw != null ? 
-    (x => newgoal.abslnw) : br.genLaneFunc(roads, newgoal)
-  newgoal.lnw = max(newgoal.nw, newgoal.lnf(newgoal.tcur))
-  newsafe = br.dtd(roads, newgoal, newgoal.tcur, newgoal.vcur)
-  safediff = goal.safebuf - newsafe
-  
-  let newroad = 
-             oldroad.map(e => [(e[0] ? e[0]+0*SID*safediff : null), e[1], e[2]])
-  //if (newroad[0][0] == null) // Uluc: I think this is not needed/incorrect
-  if (safediff != 0)
-    newroad.unshift([newgoal.tini+SID*safediff, newgoal.vini, null])
-  // Remove the last element [tfin,vfin], which was added by us
-  newroad.pop()
-  return newroad 
-}
-*/
-
 /** Process goal parameters */
 function procParams() {
 
   goal.dtf = br.stepify(data) // map timestamps to most recent datapoint value
   
-  //SCHDEL
-  // remember original road (kludgery here) including tini/vini/tvrfin
-  //goal.razrorig = bu.deepcopy(goal.road) // probably unnecessary to deepcopy?
-  //goal.razrorig = [[goal.tini, goal.vini, null]].concat(
-  //  goal.razrorig, [[goal.tfin, goal.vfin, goal.rfin]])
-
   goal.road = br.fillroad(goal.road, goal)
   const rl = goal.road.length
   goal.tfin = goal.road[rl-1][0]
@@ -1135,8 +1050,6 @@ function procParams() {
   // rtf function is implemented in broad.js
 
   goal.stdflux = br.noisyWidth(roads, data.filter(d => d[0]>=goal.tini))
-  goal.nw = 0         // DIELANES
-  goal.lnf = (x => 0) // DIELANES
   
   flatline()
 
@@ -1158,9 +1071,7 @@ function procParams() {
   goal.vcur = data[dl-1][1]
   goal.vprev= data[max(dl-2,0)][1] // default to vcur if < 2 datapts
 
-  goal.lnw = goal.ybhp ? 0 : max(goal.nw, goal.lnf(goal.tcur))
   goal.safebuf = br.dtd(roads, goal, goal.tcur, goal.vcur)
-  // originally called genRazr() here #SCHDEL
   goal.tluz = goal.tcur+goal.safebuf*SID
   goal.delta = bu.chop(goal.vcur - br.rdf(roads, goal.tcur))
   goal.rah = br.rdf(roads, goal.tcur+bu.AKH)
@@ -1178,9 +1089,8 @@ function procParams() {
   goal.rcur = br.rtf(roads, goal.tcur)*goal.siru  
   goal.ravg = br.tvr(goal.tini, goal.vini, goal.tfin,goal.vfin, null)*goal.siru
   goal.cntdn = ceil((goal.tfin-goal.tcur)/SID)
-  goal.lane = goal.ybhp ?  // backward-compatible version for YBHP
-    goal.yaw * (goal.safebuf - (goal.safebuf <= 1 ? 2 : 1)) :
-    bu.clip(br.lanage(roads, goal, goal.tcur, goal.vcur), -32768, 32767)
+  // The "lane" out-param for backward-compatibility:
+  goal.lane = goal.yaw * (goal.safebuf - (goal.safebuf <= 1 ? 2 : 1))
   goal.color = (goal.safebuf < 1 ? "red"    :
                 goal.safebuf < 2 ? "orange" :
                 goal.safebuf < 3 ? "blue"   : "green")
@@ -1199,11 +1109,7 @@ function procParams() {
 
 function sumSet(rd, goal) {
   const y = goal.yaw, d = goal.dir, 
-        l = goal.lane, w = goal.lnw, dlt = goal.delta, 
-        //q = goal.integery && goal.quantum === null ? 1 : 
-        //  max(1e-5, goal.quantum) // #SCHDEL: just trust Beebody
-        //q = goal.quantum === null ? (goal.integery?1:1e-5) : goal.quantum
-        //q = goal.quantum === null ? 1e-5 : goal.quantum
+        l = goal.lane, dlt = goal.delta, 
         q = goal.quantum
 
   const MOAR = (y>0 && d>0), 
@@ -1266,18 +1172,6 @@ function sumSet(rd, goal) {
 
   goal.deltasum = shn(abs(dlt),0) + " " + goal.gunits
     + (dlt<0 ? " below" : " above")+" the bright line"
-/* SCHDEL DIELANES
-  let s
-  if (w == 0)                  s=""
-  else if (y>0 && l>=-1&&l<=1) s=" and "+shn(w-dlt)+" to go till top edge"
-  else if (y>0 && l>=2)        s=" and "+shn(dlt-w,0)+" above the top edge"
-  else if (y>0 && l<=-2)       s=" and "+shn(-w-dlt)+" to go till bottom edge"
-  else if (y<0 && l>=-1&&l<=1) s=" and "+shn(w-dlt,0)+" below top edge"
-  else if (y<0 && l<=-2)       s=" and "+shn(-w-dlt,0)+" below bottom edge"
-  else if (y<0 && l>1)         s=" and "+shn(dlt-w,-y)+" above top edge"
-  else                         s=""
-  goal.deltasum += s
-*/
 
   const c = goal.safebuf // countdown to derailment, in days
   const cd = bu.splur(c, "day")
@@ -1298,79 +1192,8 @@ function sumSet(rd, goal) {
   else if (c>999) goal.safeblurb = "more than 999 days of safety buffer"
   else            goal.safeblurb = "~"+cd+" of safety buffer"
 
-/* SCHDEL DIELANES
-  let lanesum
-  if (goal.loser) {
-    goal.headsum = "Officially off the yellow brick road"
-    lanesum      = "officially off the road"
-  } else if (w==0 && false) { // TODO: lnw==0 doesn't mean flat road WTF
-    goal.headsum = "Coasting on a currently flat yellow brick road"
-    lanesum      = "currently on a flat road"
-  } else if (MOAR && l==1) {
-    goal.headsum = "Right on track in the top lane of the yellow brick road"
-    lanesum      = "in the top lane: perfect!"
-  } else if (MOAR &&  l==2) {
-    goal.headsum = "Sitting pretty just above the yellow brick road"
-    lanesum      = "above the road: awesome!"
-  } else if (MOAR &&  l==3) {
-    goal.headsum = "Well above the yellow brick road with "+goal.safeblurb
-    lanesum      = "well above the road: "+goal.safeblurb+"!"
-  } else if (MOAR &&  l>3) {
-    goal.headsum = "Way above the yellow brick road with "+goal.safeblurb
-    lanesum      = "way above the road: "+goal.safeblurb+"!"
-  } else if (MOAR &&  l==-1) {
-    goal.headsum = "On track but in the wrong lane of the yellow brick road "
-      +"and in danger of derailing tomorrow"  
-    lanesum      = "in the wrong lane: could derail tomorrow!"
-  } else if (MOAR &&  l<=-2) {
-    goal.headsum = "Below the yellow brick road and will derail if still here"
-      +" at the end of the day"
-    lanesum = "below the road: will derail at end of day!"
-  } else if (PHAT &&  l==-1) {
-    goal.headsum = "Right on track in the right lane of the yellow brick road"
-    lanesum      = "in the right lane: perfect!"
-  } else if (PHAT &&  l==-2) {
-    goal.headsum = "Sitting pretty just below the yellow brick road"
-    lanesum      = "below the road: awesome!"
-  } else if (PHAT &&  l==-3) {
-    goal.headsum = "Well below the yellow brick road with "+goal.safeblurb
-    lanesum      = "well below the road: "+goal.safeblurb+"!"
-  } else if (PHAT &&  l<-3) {
-    goal.headsum = "Way below the yellow brick road with "+goal.safeblurb
-    lanesum      = "way below the road: "+goal.safeblurb+"!"
-  } else if (PHAT &&  l==1) {
-    goal.headsum = "On track but in the wrong lane of the yellow brick road "
-      +"and in danger of derailing tomorrow"
-    lanesum      = "in the wrong lane: could derail tomorrow!"
-  } else if (PHAT &&  l>=2) {
-    goal.headsum = "Above the yellow brick road and will derail if still here"
-      +" at the end of the day"
-    lanesum      = "above the road: will derail at end of day!"
-  } else if (l==0) {
-    goal.headsum = "Precisely on the centerline of the yellow brick road"
-    lanesum      = "precisely on the centerline: beautiful!"
-  } else if (l==1) {
-    goal.headsum = "In the top lane of the yellow brick road"
-    lanesum      = "in the top lane"
-  } else if (l==-1) {
-    goal.headsum = "In the bottom lane of the yellow brick road"
-    lanesum      = "in the bottom lane"
-  } else if (l>1) {
-    goal.headsum = "Above the yellow brick road"
-    lanesum      = "above the road"
-  } else if (l<-1) {
-    goal.headsum = "Below the yellow brick road"
-    lanesum      = "below the road"
-  }
-*/
-  goal.titlesum
-    //SCHDEL
-    //= bu.toTitleCase(goal.color)
-    //+ ". "
-    //+ "bmndr.com/"+goal.yoog+" is " 
-    //+ lanesum
-    //+ ((y*d>0)?" (safe to stay flat for ~"+cd+")":"")
-    = bu.toTitleCase(goal.color) + ": bmndr.com/"+goal.yoog+" is safe for ~"+cd
+  goal.titlesum = 
+    bu.toTitleCase(goal.color) + ": bmndr.com/"+goal.yoog+" is safe for ~"+cd
     + (c===0 ? " (beemergency!)" : "")
   goal.headsum = goal.titlesum
 
@@ -1434,16 +1257,11 @@ this.reloadRoad = function() {
     goal.auraf = br.smooth(fdata)
   } else goal.auraf = (e => 0)
 
-  if (goal.ybhp) {
-    goal.dtdarray = br.dtdarray( roads, goal )
-
-    goal.isolines = []
-    for (let i = 0; i < 4; i++)
-      goal.isolines[i] = br.isoline(roads, goal.dtdarray, goal, i)
-  } else {
-    goal.dtdarray = null
-    goal.isolines = null
-  }
+  goal.dtdarray = br.dtdarray( roads, goal )
+  
+  goal.isolines = []
+  for (let i = 0; i < 4; i++)
+    goal.isolines[i] = br.isoline(roads, goal.dtdarray, goal, i)
   
   return ""
 }
