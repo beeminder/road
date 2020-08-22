@@ -3343,7 +3343,8 @@ function updatePinkRegion() {                         // AKA nozone AKA oinkzone
 // the "old", unedited road as well. This now supports a delta
 // argument for the maxflux line, and a dash argument for the editor
 // version. If scol == null, then the element is deleted to cleanup
-// leftovers from earlier draws
+// leftovers from earlier draws.
+// TODO: rename this to updateRazrRoad or updateYBR
 function updateCenterline(rd, gelt, cls, scol, sw, delta, usedash) {
   if (processing) return
   
