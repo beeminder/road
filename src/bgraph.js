@@ -494,7 +494,6 @@ function resetGoal() {
   goal.xMin = goal.asof;  goal.xMax = goal.horizon
   goal.tmin = goal.asof;  goal.tmax = goal.horizon
   goal.yMin = -1;    goal.yMax = 1
-  //goal.ybhp = false // not sure if this is needed here
 
   road = []; iroad = []; data = [], alldata = []
 }
@@ -1305,8 +1304,7 @@ function adjustYScale() {
     let vb = goal.vmax  + PRAF*(goal.vmax-goal.vmin)
     yrange = [vb, va]
   } else {
-    var margin = goal.lnw
-    if (margin == 0) margin = abs(PRAF*(goal.vmax-goal.vmin))
+    var margin = abs(PRAF*(goal.vmax-goal.vmin))
 
     // Compute range in unixtime
     var xtimes = xrange.map(d => floor(d.getTime()/SMS))
@@ -2571,16 +2569,8 @@ function animYBR(enable) {
   // else stopAnim(e, 300, [], styles, "ybr")
 
   var e = gRazr.select(".razr")
-  if (goal.ybhp) {
-    styles =[["stroke-width", opts.oldRoadLine.width*scf*2, 
-                              opts.oldRoadLine.width*scf]]
-  } else {
-    styles =[["stroke-dasharray",
-              (opts.oldRoadLine.dash*1.3)+","+(opts.oldRoadLine.dash*0.7),
-              (opts.oldRoadLine.dash)+","+(opts.oldRoadLine.dash)],
-             ["stroke-width", opts.oldRoadLine.width*scf*2, 
-                              opts.oldRoadLine.width*scf]]
-  }
+  styles =[["stroke-width", opts.oldRoadLine.width*scf*2, 
+                            opts.oldRoadLine.width*scf]]
   if (enable) startAnim(e, 500, [], styles, "ybrc")
   else stopAnim(e, 300, [], styles, "ybrc")
 }
@@ -2902,7 +2892,6 @@ function updateWatermark() {
       .style('font-weight', "bolder")
       .style('fill', opts.watermark.color)
       .text(goal.waterbuf);
-    //if (!goal.ybhp) wbufelt.style('stroke', 'none')
     bbox = wbufelt.node().getBBox();
     if (bbox.width > plotbox.width/2.2) {
       newsize = (fs*(plotbox.width/2.2)
@@ -2928,7 +2917,6 @@ function updateWatermark() {
       .style('font-weight', "bolder")
       .style('fill', opts.watermark.color)
       .text(goal.waterbux);
-    //if (!goal.ybhp) wbuxelt.style('stroke', 'none')
     bbox = wbuxelt.node().getBBox();
     if (bbox.width > plotbox.width/2.2) {
       newsize = (fs*(plotbox.width/2.2)/bbox.width)
@@ -2946,8 +2934,8 @@ function updateAura() {
   var el = gAura.selectAll(".aura")
   var el2 = gAura.selectAll(".aurapast")
   if (goal.aura && opts.showData) {
-    var aurdn = min(-goal.lnw/2.0, -goal.stdflux)
-    var aurup = max(goal.lnw/2.0,  goal.stdflux)
+    var aurdn = min(0, -goal.stdflux)
+    var aurup = max(0,  goal.stdflux)
     var fudge = PRAF*(goal.tmax-goal.tmin);
     var xr = [nXSc.invert(0).getTime()/SMS, 
               nXSc.invert(plotbox.width).getTime()/SMS]
@@ -3087,19 +3075,14 @@ function updateContextHorizon() {
 }
 
 function updateYBHP() {
-  if (processing) return;
+  if (processing) return
 
   if (opts.divGraph == null || road.length == 0) return
-  if (!opts.roadEditor && !goal.ybhp) {
-    gYBHP.selectAll("*").remove()
-    gYBHPlines.selectAll("*").remove()
-    return
-  }
   let regions
   
   // Count all previously generated ybhp path elements on the current svg graph
   // so we can remove unused ones automatically 
-  const ybhpreg = d3.selectAll("#svg"+curid+" #ybhpgrp path")
+  const ybhpreg   = d3.selectAll("#svg"+curid+" #ybhpgrp path")
   const ybhplines = d3.selectAll("#svg"+curid+" #ybhplinesgrp path")
   const prevcnt = ybhpreg.size()+ybhplines.size()
   // NOTE: Currently must have a region covering the wrong side of the road,
@@ -3372,7 +3355,7 @@ function updateCenterline(rd, gelt, cls, scol, sw, delta, usedash) {
 
   const cw   = r3(opts.oldRoadLine.width*scf)
   const adj  = 0
-  const ybhp = (goal.ybhp && !opts.roadEditor)
+  //const sg   = (!opts.roadEditor)
   const dash = (opts.oldRoadLine.dash)+","+ceil(opts.oldRoadLine.dash/2)
   const sda  = usedash?dash:null // stroke-dasharray
 
@@ -3553,11 +3536,11 @@ function updateGuidelines() {
 
   let numlines = maxVisibleDTD(numdays)
 
-  if      (lnw_px>8 || numlines<6*7)        skip = 1    // All lines until 6 weeks
-  else if (7*lnw_px>8 || numlines<6*28)     skip = 7    // Weekly lines until 6 months
-  else if (28*lnw_px>12 || numlines<2*12*28) skip = 28   // Monthly lines until 2 years
-  else if (4*28*lnw_px>12 || numlines<6*12*28) skip = 4*28 // 4m lines until 6 years
-  else                                       skip = 12*28 // Yearly lines afterwards
+  if      (lnw_px>8 || numlines<6*7)        skip = 1   // All lines till 6 weeks
+  else if (7*lnw_px>8 || numlines<6*28)     skip = 7    // Weekly lines till 6mo
+  else if (28*lnw_px>12 || numlines<2*12*28) skip = 28  // Monthly lines till 2y
+  else if (4*28*lnw_px>12 || numlines<6*12*28) skip = 4*28  // 4m lines till 6 y
+  else                                   skip = 12*28 // Yearly lines afterwards
 
   numlines = ceil( numlines/skip )
   //console.log(
@@ -3628,19 +3611,19 @@ function updateContextOldRoad() {
       .attr("class","ctxoldroads")
       .attr("d", d)
       .style("stroke-dasharray",
-             (goal.ybhp&&!opts.roadEditor)?null:(opts.oldRoadLine.ctxdash)+","
+             (!opts.roadEditor)?null:(opts.oldRoadLine.ctxdash)+","
              +ceil(opts.oldRoadLine.ctxdash/2))
       .style("fill", "none")
       .style("stroke-width",opts.oldRoadLine.ctxwidth)
-      .style("stroke", goal.ybhp && !opts.roadEditor ? bu.Cols.RAZR0
-                                                     : bu.Cols.ORNG)
+      .style("stroke", !opts.roadEditor ? bu.Cols.RAZR0
+                                        : bu.Cols.ORNG) // TODO: don't need this
   } else {
     roadelt.attr("d", d)
       .style("stroke-dasharray",
-             (goal.ybhp&&!opts.roadEditor)?null:(opts.oldRoadLine.ctxdash)+","
-             +ceil(opts.oldRoadLine.ctxdash/2)) 
-      .style("stroke", goal.ybhp && !opts.roadEditor ? bu.Cols.RAZR0
-                                                     : bu.Cols.ORNG) 
+             (!opts.roadEditor)?null:(opts.oldRoadLine.ctxdash)+","
+             +ceil(opts.oldRoadLine.ctxdash/2))
+      .style("stroke", !opts.roadEditor ? bu.Cols.RAZR0
+                                        : bu.Cols.ORNG) // TODO: don't need this
   }
 }
 
