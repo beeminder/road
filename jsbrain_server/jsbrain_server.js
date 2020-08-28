@@ -58,6 +58,13 @@ if (cluster.isMaster) {
   for (var i = 0; i < cpuCount; i += 1)
     cluster.fork();
 
+  // Whenever a worker dies, create a new one.
+  cluster.on('exit', (worker, code, signal) => {
+    console.log('Renderer worker %d died (%s). restarting...',
+      worker.process.pid, signal || code);
+    cluster.fork();
+  });
+
 } else {
 
   var reqcnt = 0  // Keep track of request id for each worker thread

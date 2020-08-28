@@ -329,6 +329,13 @@ async function create( id ) {
         = await puppeteer.launch({ /*headless:false,*/
                                    args: ['--no-sandbox', 
                                           '--allow-file-access-from-files'] })
+  console.log(`Started Puppeteer with pid ${browser.process().pid}`);
+
+  browser.on('disconnected', async () => { 
+      console.error("Browser disconnected.");
+      process.exit(1);
+  });
+
   return new Renderer(browser, id)
 }
 
