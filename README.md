@@ -1,5 +1,6 @@
 # Beebrain and the Beeminder Road Editor
 
+
 This repository includes Javascript packages implementing all Beebrain functionality, as well as an interactive editor for Beeminder's Yellow Brick Roads.
 
 Description of original Beebrain: 
@@ -158,3 +159,7 @@ Emacs environment:
 5. Same with the redirect URI, add it to the .env file
 6. Open the Glitch console and do `mkdir .data` and `cd .data`
 7. Create an empty SQLite file for the session store: `touch database.sqlite`
+
+## Credits
+
+[Uluç Saranlı](http://www.ceng.metu.edu.tr/~saranli/)

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Beeminder Client-Side Graphs and Road Editor</title>
+  <title>Beeminder Visual Road Editor (Prototype)</title>
   <meta name="description" content="Beeminder Client-Side Graphs and Road Editor">
   <link id="favicon" rel="icon" href="https://beeminder.com/favicon.ico" type="image/x-icon">
   <meta charset="utf-8">
@@ -25,7 +25,7 @@
 <body>
 <div class="container">
   
-<h1>Beeminder Client-Side Graphs and Road Editor</h1>
+<h1>Beeminder Visual Road Editor (Prototype)</h1>
 
 <form name="graphType">
   <input type="radio" name="typeButton" value="graph" onclick="handleRadio(this)" checked>
@@ -40,22 +40,23 @@
 
 <div id="diveditor">
   <ul>
-    <li>Drag dots, vertical lines or roads to edit, double-click to
-    add new node, Ctrl-Z to undo, Ctrl-y to redo</li>
+    <li>Drag dots, vertical lines, or the road to edit, double-click to add new node</li>
   </ul>
 
 <table>
   <tr>
     <td valign="top"><div id="roadgraph" style="width:696px; height:453px"></div>
-      <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>Show datapoints&nbsp;
-      <input id="showalldata" type="checkbox" onclick="if (this.checked) editor.maxDataDays(-1); else editor.maxDataDays(100);" checked>Show All data&nbsp;
-      <input id="showcontext" type="checkbox" onclick="editor.showContext(this.checked);" checked>Show context graph<br>
-      <input id="keepslopes" type="checkbox" onclick="editor.keepSlopes(this.checked);" checked>Keep slopes fixed&nbsp;
-      <input id="keepintervals" onclick="editor.keepIntervals(this.checked);" type="checkbox">Keep intervals fixed<br>
+      <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked> Show datapoints&nbsp;
+      <input id="showalldata" type="checkbox" onclick="if (this.checked) editor.maxDataDays(-1); else editor.maxDataDays(100);" checked> Show All data&nbsp;
+      <input id="showcontext" type="checkbox" onclick="editor.showContext(this.checked);" checked> Show context graph<br>
+      <input id="keepslopes" type="checkbox" onclick="editor.keepSlopes(this.checked);" checked> Fixed slopes&nbsp;
+      <input id="keepintervals" onclick="editor.keepIntervals(this.checked);" type="checkbox"> Fixed intervals<br>
       <button class="btn btn-secondary" id="resetzoom" onclick="editor.zoomDefault();">Reset Zoom</button>
-      <button class="btn btn-secondary" id="undo" onclick="editor.undo();">Undo (0)</button>
-      <button class="btn btn-secondary" id="redo" onclick="editor.redo();">Redo (0)</button>
-      <button class="btn btn-secondary" id="savesvg" onclick="editor.saveGraph(document.getElementById('download'));">Generate SVG</button><a id="download">Right click to download</a><br/><br/>
+      <button class="btn btn-secondary" id="undo" onclick="editor.undo();" 
+              title="Ctrl-Z">Undo (0)</button>
+      <button class="btn btn-secondary" id="redo" onclick="editor.redo();"
+              title="Ctrl-Y">Redo (0)</button>
+      <button class="btn btn-secondary" id="savesvg" onclick="editor.saveGraph(document.getElementById('download'));">Generate static image</button> <a id="download" target="_blank">[Right-click for SVG]</a><br/><br/>
 
       Reduce safety buffer to: 
       <input type = "number" value="0" min="0" id="ratchetdays"> days
@@ -70,7 +71,7 @@
       <button class="btn btn-secondary" id="overwritebreak" onclick="scheduleBreak(false);">Overwrite</button>
       <br/><br/>
 
-      Commit to:
+      Road Dial:
       <input type = "number" id="endslope" step="any" style="width:10em">
       <select id="slopetype" selected="604800" onchange="updateCommitFields();">
         <option value="86400">per day</option>
@@ -98,9 +99,9 @@
 <table>
   <tr>
     <td valign="top"><div id="roadgraph2" style="width:696px; height:453px"></div>
-      <input id="showalldata2" type="checkbox" onclick="if (this.checked) graph.maxDataDays(-1); else graph.maxDataDays(100);"  checked>Show All data<br/>
+      <input id="showalldata2" type="checkbox" onclick="if (this.checked) graph.maxDataDays(-1); else graph.maxDataDays(100);"  checked> Show All data<br/>
       <button class="btn btn-secondary" id="resetzoom2" onclick="graph.zoomDefault();">Reset Zoom</button>
-      <button class="btn btn-secondary" id="savesvg2" onclick="graph.saveGraph(document.getElementById('download2'));">Generate SVG</button><a id="download2">Right click to download</a><br/><br/>
+      <button class="btn btn-secondary" id="savesvg2" onclick="graph.saveGraph(document.getElementById('download2'));">Generate static image</button> <a id="download2" target="_blank">[Right-click for SVG]</a><br/><br/>
     </td>
     <td valign="top">
       <div id="roadtable2"></div>
@@ -111,21 +112,6 @@
 </div>
   
 <script src="/src/client.js"></script>
-
-<h3>Credits</h3>
-
-<p>
-<a href="http://www.ceng.metu.edu.tr/~saranli/">Uluc Saranli</a>
-(known in Beeminderland for 
-<a href="http://blog.beeminder.com/beedroid/">Beedroid</a>)
-wrote this.  
-<a href="https://glitch.com/#!/project/road">See the code</a>
-on
-<a href="https://glitch.com">Glitch</a>
-or ask 
-<a href="http://dreev.es">dreeves</a>
-for a link to live-edit it with us.
-</p>
 
     </div>
 
