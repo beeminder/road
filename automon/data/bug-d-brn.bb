@@ -14,7 +14,7 @@
 ["20170615",null,1]
 ],
 "runits":"w",
-"exprd":false,"kyoom":true,"odom":false,"abslnw":0,
+"kyoom":true,"odom":false,"abslnw":0,
 "edgy":false,"noisy":false,"yaw":-1,"dir":1,"steppy":true,"rosy":false,
 "movingav":false,"aura":false,"stathead":false,
 "yaxis":"cumulative total hours","deadline":0,"aggday":"sum","tagtime":false,
