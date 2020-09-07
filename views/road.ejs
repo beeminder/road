@@ -39,82 +39,86 @@
 </form>
 
 <div id="diveditor">
-  <ul>
-    <li>Drag dots, vertical lines, or the road to edit, double-click to add new node</li>
-  </ul>
+Drag the bright red line (AKA yellow brick road) or double-click for new segments!
 
 <table>
-  <tr>
-    <td valign="top"><div id="roadgraph" style="width:696px; height:453px"></div>
-      <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked> Show datapoints&nbsp;
-      <input id="showalldata" type="checkbox" onclick="if (this.checked) editor.maxDataDays(-1); else editor.maxDataDays(100);" checked> Show All data&nbsp;
-      <input id="showcontext" type="checkbox" onclick="editor.showContext(this.checked);" checked> Show context graph<br>
-      <input id="keepslopes" type="checkbox" onclick="editor.keepSlopes(this.checked);" checked> Fixed slopes&nbsp;
-      <input id="keepintervals" onclick="editor.keepIntervals(this.checked);" type="checkbox"> Fixed intervals<br>
-      <button class="btn btn-secondary" id="resetzoom" onclick="editor.zoomDefault();">Reset Zoom</button>
-      <button class="btn btn-secondary" id="undo" onclick="editor.undo();" 
-              title="Ctrl-Z">Undo (0)</button>
-      <button class="btn btn-secondary" id="redo" onclick="editor.redo();"
-              title="Ctrl-Y">Redo (0)</button>
-      <button class="btn btn-secondary" id="savesvg" onclick="editor.saveGraph(document.getElementById('download'));">Generate static image</button> <a id="download" target="_blank">[Right-click for SVG]</a><br/><br/>
+<tr>
+<td valign="top"><div id="roadgraph" style="width:696px; height:453px"></div>
 
-      Reduce safety buffer to: 
-      <input type = "number" value="0" min="0" id="ratchetdays"> days
-      <button class="btn btn-secondary" id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">Ratchet</button><br/><br/>
+<input style="display:none;" id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>
+<!-- Show datapoints&nbsp; -->
+<input style="display:none;" id="showalldata" type="checkbox" onclick="if (this.checked) editor.maxDataDays(-1); else editor.maxDataDays(100);" checked> 
+<!-- Show All data&nbsp; -->
+<input style="display:none;" id="showcontext" type="checkbox" onclick="editor.showContext(this.checked);" checked> 
+<!-- Show context graph<br> -->
 
-      Take a break starting
-      <input type = "text" id="breakstart" style="width:10em">
-      for
-      <input type = "number" value="1" min="1" id="breakdays" style="width:4em">
-      days
-      <button class="btn btn-secondary" id="insertbreak" onclick="scheduleBreak(true);">Insert</button>
-      <button class="btn btn-secondary" id="overwritebreak" onclick="scheduleBreak(false);">Overwrite</button>
-      <br/><br/>
+<p>
+Road-dragging behavior: &nbsp; &nbsp;
+<input id="keepslopes" type="checkbox" onclick="editor.keepSlopes(this.checked);" checked> Fixed slopes&nbsp;
+<input id="keepintervals" onclick="editor.keepIntervals(this.checked);" type="checkbox"> Fixed intervals<br>
+</p>
 
-      Road Dial:
-      <input type = "number" id="endslope" step="any" style="width:10em">
-      <select id="slopetype" selected="604800" onchange="updateCommitFields();">
-        <option value="86400">per day</option>
-        <option value="604800">per week</option>
-        <option value="2629800">per month</option>
-        <option value="31557600">per year</option>
-      </select> 
-      <button class="btn btn-secondary" id="commit" onclick="commitTo();">UPDATE</button>
-      <br/><br/>
+<button class="btn btn-secondary" id="resetzoom" onclick="editor.zoomDefault();">Reset Zoom</button>
+<button class="btn btn-secondary" id="undo" onclick="editor.undo();" title="Ctrl-Z">Undo (0)</button>
+<button class="btn btn-secondary" id="redo" onclick="editor.redo();" title="Ctrl-Y">Redo (0)</button>
+<button class="btn btn-secondary" id="savesvg" onclick="editor.saveGraph(document.getElementById('download'));">Generate static image</button>
+<a id="download" target="_blank">[Right-click for SVG]</a><br/><br/>
+    
+Visual versions of Ratcheting, Take-A-Break, and the Road Dial...<br/><br/>
+<ul>
+<li>Reduce safety buffer to: 
+<input type="number" value="0" min="0" id="ratchetdays" style="width:4em"> days
+&nbsp;
+<button class="btn btn-secondary" id="retroratchet" onclick="var val = document.getElementById(&quot;ratchetdays&quot;).value; if (!isNaN(val)) editor.retroRatchet(Number(val));">Ratchet</button><br/><br/></li>
 
-      <button class="btn btn-primary" id="roadsubmit" onclick="handleRoadSubmit();">Submit</button>&nbsp;<span id="submitmsg"></span><br/><br/>
+<li>Take a break starting
+<input type = "text" id="breakstart" style="width:8em">
+for
+<input type = "number" value="1" min="1" id="breakdays" style="width:4em">
+days
+&nbsp;
+<button class="btn btn-secondary" id="insertbreak" onclick="scheduleBreak(true);">Insert</button>
+<button class="btn btn-secondary" id="overwritebreak" onclick="scheduleBreak(false);">Overwrite</button><br/><br/></li>
 
-    </td>
-    <td valign="top">
-      <div id="roadtable"></div>
-      <br/>
+<li>Road Dial:
+<input type = "number" id="endslope" step="any" style="width:4em">
+<select id="slopetype" selected="604800" onchange="updateCommitFields();">
+  <option value="86400">per day</option>
+  <option value="604800">per week</option>
+  <option value="2629800">per month</option>
+  <option value="31557600">per year</option>
+</select> 
+&nbsp;
+<button class="btn btn-secondary" id="commit" onclick="commitTo();">Dial-it-in</button><br/><br/></li>
+</ul>
 
-    </td>
-  </tr>
+<button class="btn btn-primary" id="roadsubmit" onclick="handleRoadSubmit();">Submit</button>&nbsp;<span id="submitmsg"></span><br/><br/>
+
+</td>
+<td valign="top">
+<div id="roadtable"></div><br/>
+</td>
+</tr>
 </table>  
 </div>
 
 <div id="divgraph">
 
 <table>
-  <tr>
-    <td valign="top"><div id="roadgraph2" style="width:696px; height:453px"></div>
-      <input id="showalldata2" type="checkbox" onclick="if (this.checked) graph.maxDataDays(-1); else graph.maxDataDays(100);"  checked> Show All data<br/>
-      <button class="btn btn-secondary" id="resetzoom2" onclick="graph.zoomDefault();">Reset Zoom</button>
-      <button class="btn btn-secondary" id="savesvg2" onclick="graph.saveGraph(document.getElementById('download2'));">Generate static image</button> <a id="download2" target="_blank">[Right-click for SVG]</a><br/><br/>
-    </td>
-    <td valign="top">
-      <div id="roadtable2"></div>
-      <br/>
-    </td>
-  </tr>
+<tr>
+<td valign="top"><div id="roadgraph2" style="width:696px; height:453px"></div>
+<input style="display:none;" id="showalldata2" type="checkbox" onclick="if (this.checked) graph.maxDataDays(-1); else graph.maxDataDays(100);"  checked> <!-- Show All data --><br/>
+<button class="btn btn-secondary" id="resetzoom2" onclick="graph.zoomDefault();">Reset Zoom</button>
+<button class="btn btn-secondary" id="savesvg2" onclick="graph.saveGraph(document.getElementById('download2'));">Generate static image</button> <a id="download2" target="_blank">[Right-click for SVG]</a><br/><br/>
+</td>
+<td valign="top"><div id="roadtable2"></div><br/></td>
+</tr>
 </table>
 </div>
   
 <script src="/src/client.js"></script>
 
-    </div>
+</div>
 
 </body>
 </html>
-
