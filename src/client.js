@@ -36,19 +36,19 @@ function roadChanged() {
   }
   
   // Update state of the Submit button depending on road validity
-  var newRoad = editor.getRoad();
+  var newRoad = editor.getRoad()
   if (!newRoad) {
-    submitBtn.disabled = true;
-    submitMsg.innerHTML = "(disabled: graph with errors!)";      
+    submitBtn.disabled = true
+    submitMsg.innerHTML = "Ill-defined yellow brick road!"
   } else if (!newRoad.valid) {
     submitBtn.disabled = true;
-    submitMsg.innerHTML = "(disabled: new road is easier!)";      
+    submitMsg.innerHTML = "Road can't be easier within the akrasia horizon!"
   } else if (newRoad.loser) {
-    submitBtn.disabled = true;
-    submitMsg.innerHTML = "(disabled: new road causes derailment!)";
+    submitBtn.disabled = true
+    submitMsg.innerHTML = "Submitting this road would insta-derail you!"
   } else {
-    submitBtn.disabled = false;
-    submitMsg.innerHTML = "";
+    submitBtn.disabled = false
+    submitMsg.innerHTML = ""
   }
 
   // Update break date picker limits

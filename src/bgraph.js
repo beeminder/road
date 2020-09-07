@@ -856,7 +856,7 @@ function createGraph() {
     .attr('stroke-width', '2px').attr('stroke', '#a00000')
     .attr('font-size', "35px").attr('text-anchor', 'middle')
     .attr('fill', '#ff0000')
-    .text("road can't get easier!")
+    .text("Error") // originally "road can't get easier"
 
   zoomin = focusclip.append("svg:use")
     .attr("class","zoomin")
