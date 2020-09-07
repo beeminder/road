@@ -12,15 +12,15 @@
     "cluster": "^0.7.7",
     "connect-session-sequelize": "^7.0.1",
     "d3": "^6.1.1",
-    "ejs": "^3.1.4",
+    "ejs": "^3.1.5",
     "express": "^4.17.1",
     "express-session": "^1.17.1",
     "jsdoc": "^3.6.5",
     "moment": "^2.27.0",
     "octicons": "^8.5.0",
     "request": "^2.88.2",
-    "sequelize": "^5.21.5",
-    "sqlite3": "^4.1.1"
+    "sequelize": "^6.3.5",
+    "sqlite3": "^5.0.0"
   },
   "engines": {
     "node": "12"

@@ -146,7 +146,7 @@ self.copyRoad = (rd) => {
 self.findSeg = (rd, t, dir=0) => {
   const st = i => rd[i].sta[0]                 // start time of ith road segment
   const et = i => rd[i].end[0]                  // end time of ith road segment
-  const isin = (t,i) => st(i) <= t && t < et(i)  // segment i contains t
+  const isin = (t,i) => st(i) <= t && t < et(i)  // whether segment i contains t
 
   if (!rd || !rd.length || t < st(0) || t > et(rd.length-1)) return -1
 
