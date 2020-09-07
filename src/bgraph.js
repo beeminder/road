@@ -5194,7 +5194,7 @@ this.commitTo = ( newSlope ) => {
   if (road[road.length-2].slope == newSlope) return
 
   // Find out if there are any segments beyond the horizon
-  var horseg = br.findSeg( road, goal.horizon );
+  var horseg = br.findSeg(road, goal.horizon)
   if (road[horseg].sta[0] == goal.horizon || horseg < road.length-2) {
     // There are knots beyond the horizon. Only adjust the last segment
     pushUndoState()

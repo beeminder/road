@@ -134,28 +134,35 @@ self.copyRoad = (rd) => {
   return nr
 }
 
-/** Finds index for the road segment containing the supplied x
- * value. The dir argument determines which side of streaks of
- * vertical segments is returned if the point coincides with suh a
- * vertical segment. dir>0 and dir<0 return the segment after and
- * before the vertical streak coincident with the point being
- * searched, respectively.  */
-self.findSeg = (rd, x, dir=0) => {
-  if (rd.length === 0 || rd.length === undefined) return -1
-  const nums = rd.length-1
-  let s = 0
-  let e = nums
-  let m
-  if (x < rd[0].sta[0] || x > rd[nums].end[0]) return -1
-  while (e-s > 1) { // Uses binary search
-    m = floor((s+e)/2)
-    if (rd[m].sta[0] <= x) s = m
-    else e = m
-  }
-  if (x >= rd[e].sta[0] && x < rd[e].end[0]) s = e
-  if (dir < 0) while(s > 0      && rd[s-1].sta[0] === x) s--
-  if (dir > 0) while(s < nums-1 && rd[s+1].sta[0] === x) s++
-  return s
+/* Find the index of the road segment containing the given t-value. Note that
+   there could be a vertical segment (or even multiple ones) exactly at the
+   given t-value and in that case we return the first non-vertical segment to
+   the left of them if dir=-1 or to the right of them if dir=+1. Since we've
+   added flat dummy segments before tini and after tfin, we're guaranteed to
+   find a non-vertical segment in either direction from any given t-value. If
+   dir=0 and the t-value coincides with any vertical segments, we return one of
+   them arbitrarily. If there's no vertical segment but we're asking for the
+   road segment at a boundary/kink, we return the road segment to the right.  */
+self.findSeg = (rd, t, dir=0) => {
+  const st = i => rd[i].sta[0]                 // start time of ith road segment
+  const et = i => rd[i].end[0]                  // end time of ith road segment
+  const isin = (t,i) => st(i) <= t && t < et(i)  // segment i contains t
+
+  if (!rd || !rd.length || t < st(0) || t > et(rd.length-1)) return -1
+
+  let a = 0            // initially the index of the leftmost road segment
+  let b = rd.length-1  // initially the index of the rightmost road segment
+  let m                // midpoint of the search range for binary search
+  while (b-a > 1) {
+    m = floor((a+b)/2)
+    if (st(m) <= t) a = m // m is good or too far left (so throw away left half)
+    else            b = m // m is too far right (so throw away right half)
+  }   // at this point a & b are consecutive and at least one of them contains t
+  m = isin(t, b) ? b : a // if both a & b contain t, pick b (bias right)
+  // TODO: find a test bb file where doing this scooching actually matters:
+  if (dir < 0) while(m > 0           && st(m-1) === t) m-- // scooch to first or
+  if (dir > 0) while(m < rd.length-1 && st(m+1) === t) m++ // to last vert segmt
+  return m
 }
 
 /** Computes the slope of the supplied road segment */
@@ -692,7 +699,7 @@ self.fillroadall = (rd, g) => {
 }
 
 /** Computes the slope of the supplied road array at the given timestamp */
-self.rtf = (rd, t) => (rd[self.findSeg( rd, t )].slope)
+self.rtf = (rd, t) => (rd[self.findSeg(rd, t)].slope)
 
 // Transform datapoints as follows: every time there's a decrease
 // in value from one element to the next where the second value is
