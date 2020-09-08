@@ -33,6 +33,10 @@ RUN addgroup -S pptruser && adduser -S -g pptruser pptruser \
     && chown -R pptruser:pptruser /home/pptruser \
     && chown -R pptruser:pptruser /app
 
+# Install convert
+RUN apk add --no-cache \
+	imagemagick
+
 # Install npm
 RUN apk add --no-cache \
 	python3 \
@@ -43,6 +47,7 @@ RUN apk add --no-cache \
 COPY package.json /tmp/package.json
 COPY package-lock.json /tmp/package-lock.json
 RUN cd /tmp && npm update
+
 RUN mkdir -p /app/jsbrain_server && cp -a /tmp/node_modules /app/jsbrain_server
 
 # Copy the repository into the image at /app
