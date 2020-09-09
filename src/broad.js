@@ -142,7 +142,14 @@ self.copyRoad = (rd) => {
    find a non-vertical segment in either direction from any given t-value. If
    dir=0 and the t-value coincides with any vertical segments, we return one of
    them arbitrarily. If there's no vertical segment but we're asking for the
-   road segment at a boundary/kink, we return the road segment to the right.  */
+   road segment at a boundary/kink, we return the road segment to the right.  
+   To clarify the cases:
+   1. t is within exactly one segemnt: easy, return that segment
+   2. t is on a boundary between 2 segments: return 2nd one (regardless of dir)
+   3. t on a vert segmt & dir=-1: return the non-vertical segment to the left
+   4. t on a vert segmt & dir=+1: return the non-vertical segment to the right
+   5. t on a vert segmt & dir=0: return the vertical segment (if there are
+      multiple vertical segments all at t, return one arbitrarily) */
 self.findSeg = (rd, t, dir=0) => {
   const st = i => rd[i].sta[0]                 // start time of ith road segment
   const et = i => rd[i].end[0]                  // end time of ith road segment
@@ -160,8 +167,8 @@ self.findSeg = (rd, t, dir=0) => {
   }   // at this point a & b are consecutive and at least one of them contains t
   m = isin(t, b) ? b : a // if both a & b contain t, pick b (bias right)
   // TODO: find a test bb file where doing this scooching actually matters:
-  if (dir < 0) while(m > 0           && st(m-1) === t) m-- // scooch to first or
-  if (dir > 0) while(m < rd.length-1 && st(m+1) === t) m++ // to last vert segmt
+  if (dir < 0) while(m > 0           && st(m-1) === t) m--
+  if (dir > 0) while(m < rd.length-1 && st(m+1) === t) m++
   return m
 }
 
