@@ -317,32 +317,32 @@ self.clip = (x, a, b) => {
   return x
 }
   
-/** Take a sorted array sarr and a distance function df and do a binary search
-to return a pair of bounding indexes into the array, [i, j], such that sarr[i]
-and sarr[j] are as close as possible to what we're searching for.
-  (The distance function takes an element of the array and returns a negative
+/* Take a sorted array sarr and a distance function df and do a binary search to
+   return a pair of bounding indexes into the array, [i, j], such that sarr[i]
+   and sarr[j] are as close as possible to what we're searching for.
+   (The distance function takes an element of the array and returns a negative
    number if it's too small, a positive number if it's too big, and 0 if it's
    just right.)
-In the common case we're returning a pair of consecutive indices that an ideal
-value would be sorted between. Special cases:
-* If everything in the array is too big, return [null, 0], and if everything in
-the array is too small, return [n-1, null], where n is the array length. 
-* If there are any just-right elements in the array then we return the start and
-end indexes of that range of elements -- the ones the distance function maps to 
-zero.
-
-Note for the future: Maybe it would be cleaner to specify an optional error
-direction and then return a single thing. There's always a range of indices we
-could return -- either the indices of all the just-right elements if there are
-any, or two consecutive indexes pointing to elements that are too small and too
-big, respectively. If the specified error direction is -1 it means we want to
-err on the low side and return the first thing in the range. If the error
-direction is +1 it means we want to err high and return the last thing in the 
-range. I think that makes sense because we never want an actual range of
-indices, we just want the right element of the array. 
-(Also we might not need to specify an error direction if we constructed the 
-distance function appropriately? Let me yank myself out of this rabbit hole by
-the ears now. The current version works Just Fine!) */
+   In the common case we're returning a pair of consecutive indices that an
+   ideal value would be sorted between. Special cases:
+   * If everything in the array is too big, return [null, 0], and if everything
+     in the array is too small, return [n-1, null], where n is the array length.
+   * If there are any just-right elements in the array then we return the start
+     and end indexes of that range of elements -- the ones the distance function
+    maps to zero.
+   
+   Note for the future: Maybe it would be cleaner to specify an optional error
+   direction and then return a single thing. There's always a range of indices
+   we could return -- either the indices of all the just-right elements if there
+   are any, or two consecutive indexes pointing to elements that are too small
+   and too big, respectively. If the specified error direction is -1 it means we
+   want to err on the low side and return the first thing in the range. If the
+   error direction is +1 it means we want to err high and return the last thing
+   in the range. I think that makes sense because we never want an actual range
+   of indices, we just want the right element of the array. 
+   (Also we might not need to specify an error direction if we constructed the
+   distance function appropriately? Let me yank myself out of this rabbit hole
+   by the ears now. The current version works Just Fine!) */
 self.searchby = (sarr, df) => {
   const n = sarr.length
   if (n===0) return null // none of this works with an empty array

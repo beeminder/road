@@ -1516,7 +1516,7 @@ function pushUndoState(fromredo = false) {
   }
 }
 
-// Determine whether given road is valid (i.e. clear of the pink region)
+// Determine whether given road is valid (ie, clear of the pinkzone)
 // TODO: Must rethink this check, probably a general segment intersection
 // algorithm will be best
 function isRoadValid(rd) {
@@ -1525,9 +1525,8 @@ function isRoadValid(rd) {
   
   var now = goal.asof
   var hor = goal.horizon
-  // Check left/right boundaries of the pink region. This should
-  // handle the case when there are no road inflections within the
-  // horizon
+  // Check left/right boundaries of the pinkzone. This should handle the case
+  // when there are no kinks within the horizon.
   if (goal.yaw*br.rdf(rd, now) < goal.yaw*br.rdf(ir, now) - EPS) return false
   if (goal.yaw*br.rdf(rd, hor) < goal.yaw*br.rdf(ir, hor) - EPS) return false
   // Iterate through and check current road points in the pink range

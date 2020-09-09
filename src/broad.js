@@ -136,17 +136,13 @@ self.copyRoad = (rd) => {
 
 /* Find the index of the road segment containing the given t-value. Note that
    there could be a vertical segment (or even multiple ones) exactly at the
-   given t-value and in that case we return the first non-vertical segment to
-   the left of them if dir=-1 or to the right of them if dir=+1. Since we've
-   added flat dummy segments before tini and after tfin, we're guaranteed to
-   find a non-vertical segment in either direction from any given t-value. If
-   dir=0 and the t-value coincides with any vertical segments, we return one of
-   them arbitrarily. If there's no vertical segment but we're asking for the
-   road segment at a boundary/kink, we return the road segment to the right.  
-   To clarify the cases:
-   1. t is within exactly one segemnt: easy, return that segment
+   given t-value. In that case the dir parameter says how to disambiguate. Since
+   we've added a flat dummy segment after tfin (and before tini), we're
+   guaranteed to find a non-vertical segment for any t-value.
+   Cases:
+   1. t is within exactly one segemnt: easy, return (the index of) that segment
    2. t is on a boundary between 2 segments: return 2nd one (regardless of dir)
-   3. t on a vert segmt & dir=-1: return the non-vertical segment to the left
+   3. t is on a vertical segment & dir=-1: return the first vertical segment
    4. t on a vert segmt & dir=+1: return the non-vertical segment to the right
    5. t on a vert segmt & dir=0: return the vertical segment (if there are
       multiple vertical segments all at t, return one arbitrarily) */
