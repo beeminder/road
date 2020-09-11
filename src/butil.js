@@ -346,14 +346,14 @@ self.clip = (x, a, b) => {
 self.searchby = (sarr, df) => {
   const n = sarr.length
   if (n===0) return null // none of this works with an empty array
-  let li = 0
-  let ui = n-1
-  let mi
-  let lv = df(sarr[li])
-  if (lv > 0) return [null, 0]    // smallest element too big
-  let uv = df(sarr[ui])
-  if (uv < 0) return [n-1, null]  // biggest element too small
-  let mv
+  let li = 0    // initially the index of the leftmost element of sarr
+  let ui = n-1  // initially the index of the rightmost element of sarr
+  let mi        // midpoint of the search range for binary search
+  let lv = df(sarr[li])          // value of the lower bound of the search range
+  if (lv > 0) return [null, 0]   // smallest element too big
+  let uv = df(sarr[ui])          // value of the upper bound of the search range
+  if (uv < 0) return [n-1, null] // biggest element too small
+  let mv                         // value of the midpoint of the search range
   
   while (lv != 0 && uv != 0 && ui-li > 1) { // binary search to find the bounds
     mi = floor((li+ui)/2)
