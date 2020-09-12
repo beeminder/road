@@ -778,18 +778,27 @@ self.isoside = (g, isoline, t, v) => {
   return (v - isoval)*g.yaw >= TOL ? +1 : -1 // note tolerance!
 }
 
-// Determine the color for datapoint {t, v}
+// Given a road, a goal, a datapoint {t,v}, and an array of isolines, return the
+// color that the datapoint should be plotted as. That depends on the isolines
+// as follows: 
+// * The 0th isoline is the bright red line so if you're on the wrong
+//   side of that, you're red. 
+// * Otherwise, if you're on the wrong side of the 1st isoline, you're orange.
+// * Wrong side of the 2nd isoline, blue. 
+// * Being just on the wrong side of the nth isoline means you have n safe days
+//   and being exactly on it or just better is n+1 safe days. 
+// * So being (on or) on the right side of the 6th isoline means you're immune
+//   to the akrasia horizon.
 self.dotcolor = (rd, g, t, v, iso=null) => {
   if (t < g.tini)   return bu.Cols.BLCK // dots before tini have no color!
   if (iso === null) return self.aok(rd, g, t, v) ? bu.Cols.BLCK : bu.Cols.REDDOT
   if (!iso || !iso.length || iso.length < 7) return bu.Cols.ERRDOT
 
-  if (self.isoside(g, iso[0], t, v) < 0) { return bu.Cols.REDDOT }
-  if (self.isoside(g, iso[1], t, v) < 0) { return bu.Cols.ORNDOT }
-  if (self.isoside(g, iso[2], t, v) < 0) { return bu.Cols.BLUDOT }
-  if (self.isoside(g, iso[3], t, v) < 0) { return bu.Cols.GRNDOT }
-  //if (self.isoside(g, iso[6], t, v) < 0) { return bu.Cols.GRNDOT } // 6 or 7?
-  return bu.Cols.GRNDOT // this should be the color for 7+ days safe
+  return self.isoside(g, iso[0], t, v) < 0 ? bu.Cols.REDDOT : // 0 safe days
+         self.isoside(g, iso[1], t, v) < 0 ? bu.Cols.ORNDOT : // 1 safe day
+         self.isoside(g, iso[2], t, v) < 0 ? bu.Cols.BLUDOT : // 2 safe days
+         self.isoside(g, iso[6], t, v) < 0 ? bu.Cols.GRNDOT : // 3-6 safe days
+                                             bu.Cols.GRNDOT   // 7+ safe days
 }
 
 // This was previously called isLoser

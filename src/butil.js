@@ -61,7 +61,7 @@ self.MAXTIME = 60000
     @type {String}*/
 self.BBURL = "http://brain.beeminder.com/"
 
-/** Beeminder colors for datapoints 
+/** Beeminder colors (pro tip: paste this into Slack for swatches)
     @enum {string} */
 // Handy: https://material.io/design/color/#tools-for-picking-colors
 //        http://tutorials.jenkov.com/svg/fill-patterns.html
@@ -85,8 +85,7 @@ self.Cols = {
   ORNDOT: "#ffa500", // Orange dots for 1 safe day
   BLUDOT: "#3f3fff", // Blue dots for 2 safe days
   GRNDOT: "#00aa00", // Green dots for 3+ safe days
-  GRADOT: "#228B22", // Gray(son) dots for 7+ safe days (grayer = #87907D)
-  // we're trying forest green for the "gray" dots now...
+  GRADOT: "#228B22", // Forest green Grayson dots for 7+ safe days
   ERRDOT: "#00FFFF", // Garish cyan dots to only show if something's fubar
   RAZR0:  "#ff0000", // Bright red line for razor road; faded = #FF5436
   RAZR1:  "#ffa500", // Orange line;                    faded = #FEB642
@@ -100,9 +99,6 @@ self.AKH   = 7*SID
 /** ~2038, rails's ENDOFDAYS+1 (was 2^31-2weeks) 
     @type {Number} */
 self.BDUSK = 2147317201
-/** Unary function that always returns zero 
-    @param {} x */
-// self.ZFUN = (_) => 0 // not used
 
 /** Number of seconds in a year, month, etc 
     @enum {Number} */
