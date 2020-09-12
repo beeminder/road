@@ -750,6 +750,7 @@ self.stepify = (d, dflt=0) =>
 // Return which side of a given isoline a given datapoint is: -1 for wrong and
 // +1 for correct side.
 self.isoside = (g, isoline, t, v) => {
+  if (!isoline || !isoline.length) return 0
   const TOL = v*-1e-15
   // We multiply that tolerance times v to be a bit more robust. In the extreme
   // case, imagine the values are already so tiny that they're about equal to
@@ -757,41 +758,38 @@ self.isoside = (g, isoline, t, v) => {
   // too forgiving.
 
   //console.log(`ISOSIDE: (${t},${v}) ${JSON.stringify(isoline)}`)
-  if (t <= isoline[0][0])   return (v - isoline[  0][1])*g.yaw >= TOL ? +1 : -1
-  // Perform binary search to locate segment
-  var n = isoline.length, s = 0, e = n-1, m
-  if (t >= isoline[n-1][0]) return (v - isoline[n-1][1])*g.yaw >= TOL ? +1 : -1
+  const n = isoline.length
+  let s = 0, e = n-1, m    // start, end, midpoint for binary search
+  if (t <= isoline[s][0]) return (v - isoline[s][1])*g.yaw >= TOL ? +1 : -1
+  if (t >= isoline[e][0]) return (v - isoline[e][1])*g.yaw >= TOL ? +1 : -1
   while (e-s > 1) {
     m = floor((s+e)/2)
     if (isoline[m][0] <= t) s = m
     else e = m
   }
-  // Compute isoline value for the given time
-  if (isoline[s+1][0] == isoline[s][0]) {
-    console.log("Warning: isoside ended up with infinite slope!")
+  if (isoline[s+1][0] === isoline[s][0]) {
+    console.log("Warning: isoline ended up with infinite slope!")
     return 0
   }
-  var slope =   (isoline[s+1][1]-isoline[s][1]) 
-              / (isoline[s+1][0]-isoline[s][0])
-  var isoval = isoline[s][1] + slope*(t - isoline[s][0])
+  const slope =   (isoline[s+1][1]-isoline[s][1]) 
+                / (isoline[s+1][0]-isoline[s][0])
+  const isoval = isoline[s][1] + slope*(t - isoline[s][0])
   //console.log(`DEBUG v=${v} isoval=${isoval}`)
   return (v - isoval)*g.yaw >= TOL ? +1 : -1 // note tolerance!
 }
 
 // Determine the color for datapoint {t, v}
 self.dotcolor = (rd, g, t, v, iso=null) => {
-  if (t < g.tini) return bu.Cols.BLCK // dots before tini have no color!
+  if (t < g.tini)   return bu.Cols.BLCK // dots before tini have no color!
+  if (iso === null) return self.aok(rd, g, t, v) ? bu.Cols.BLCK : bu.Cols.REDDOT
+  if (!iso || !iso.length || iso.length < 7) return bu.Cols.ERRDOT
 
-  if (iso != null) {
-    if (self.isoside(g, iso[0], t, v) < 0) return bu.Cols.REDDOT
-    if (self.isoside(g, iso[1], t, v) < 0) return bu.Cols.ORNDOT
-    if (self.isoside(g, iso[2], t, v) < 0) return bu.Cols.BLUDOT
-    if (self.isoside(g, iso[3], t, v) < 0) return bu.Cols.GRNDOT
-    //if (self.isoside(g, iso[7], t, v) < 0) return bu.Cols.GRNDOT
-    else                                   return bu.Cols.GRNDOT
-  } else { // if called without iso
-    return self.aok(rd, g, t, v) ? bu.Cols.BLCK : bu.Cols.REDDOT
-  }
+  if (self.isoside(g, iso[0], t, v) < 0) { return bu.Cols.REDDOT }
+  if (self.isoside(g, iso[1], t, v) < 0) { return bu.Cols.ORNDOT }
+  if (self.isoside(g, iso[2], t, v) < 0) { return bu.Cols.BLUDOT }
+  if (self.isoside(g, iso[3], t, v) < 0) { return bu.Cols.GRNDOT }
+  //if (self.isoside(g, iso[6], t, v) < 0) { return bu.Cols.GRNDOT } // 6 or 7?
+  return bu.Cols.GRNDOT // this should be the color for 7+ days safe
 }
 
 // This was previously called isLoser

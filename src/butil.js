@@ -85,7 +85,9 @@ self.Cols = {
   ORNDOT: "#ffa500", // Orange dots for 1 safe day
   BLUDOT: "#3f3fff", // Blue dots for 2 safe days
   GRNDOT: "#00aa00", // Green dots for 3+ safe days
-  GRADOT: "#7E9671", // Gray(son) dots for 7+ safe days (grayer = #87907D)
+  GRADOT: "#228B22", // Gray(son) dots for 7+ safe days (grayer = #87907D)
+  // we're trying forest green for the "gray" dots now...
+  ERRDOT: "#00FFFF", // Garish cyan dots to only show if something's fubar
   RAZR0:  "#ff0000", // Bright red line for razor road; faded = #FF5436
   RAZR1:  "#ffa500", // Orange line;                    faded = #FEB642
   RAZR2:  "#3f3fff", // Blue line;                      faded = #8C7AFF
