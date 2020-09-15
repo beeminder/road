@@ -690,13 +690,13 @@ self.fillroad = (rd, g) => {
 
 /** Version of fillroad that assumes tini/vini is the first row of road */
 self.fillroadall = (rd, g) => {
-  var tini = rd[0][0], vini = rd[0][1]
+  const tini = rd[0][0]
+  const vini = rd[0][1]
   rd.splice(0,1)
-  rd.forEach( e => (e[2] = (null==e[2])?e[2]:e[2]/g.siru))
+  rd.forEach(e => (e[2] = null === e[2] ? e[2] : e[2]/g.siru))
   rd[0] = nextrow([tini, vini, 0, 0], rd[0])
-  for (let i = 1; i < rd.length; i++)
-    rd[i] = nextrow(rd[i-1], rd[i])
-  rd.forEach( e => (e[2] = (null==e[2])?e[2]:e[2]*g.siru))
+  for (let i = 1; i < rd.length; i++) rd[i] = nextrow(rd[i-1], rd[i])
+  rd.forEach(e => (e[2] = null === e[2] ? e[2] : e[2]*g.siru))
   rd.unshift([tini, vini, 0, 2])
   return rd
 }
@@ -704,29 +704,31 @@ self.fillroadall = (rd, g) => {
 /** Computes the slope of the supplied road array at the given timestamp */
 self.rtf = (rd, t) => (rd[self.findSeg(rd, t)].slope)
 
-// Transform datapoints as follows: every time there's a decrease
-// in value from one element to the next where the second value is
-// zero, say V followed by 0, add V to every element afterwards.
-// This is what you want if you're reporting odometer readings (eg,
-// your page number in a book can be thought of that way) and the
-// odometer gets accidentally reset (or you start a new book but want
-// to track total pages read over a set of books). This should be done
-// before kyoomify and will have no effect on data that has actually
-// been kyoomified since kyoomification leaves no nonmonotonicities.
-self.odomify = ( d ) => {
-  var ln = d.length
-  if (ln === 0) return
-  var curadd = 0
-  var prev = d[0][1]
-  for (let i=1; i<ln; i++) {
-    if (d[i][1] === 0) {curadd += prev}
+// Transform datapoints as follows: every time there's a decrease in value from
+// one element to the next where the second value is zero, say V followed by 0,
+// add V to every element afterwards. This is what you want if you're reporting
+// odometer readings (eg, your page number in a book can be thought of that way)
+// and the odometer gets accidentally reset (or you start a new book but want to
+// track total pages read over a set of books). This should be done before
+// kyoomify and will have no effect on data that has actually been kyoomified
+// since kyoomification leaves no nonmonotonicities.
+self.odomify = (d) => {
+  if (!d || !d.length || d.length === 0) return
+  let curadd = 0
+  let prev = d[0][1]
+  for (let i = 1; i < d.length; i++) {
+    if (d[i][1] === 0) curadd += prev
     prev = d[i][1]
     d[i][1] += curadd
   }
 }
 
-// Utility function for stepify
-self.stepFunc = ( d, x, dflt=0 ) => {
+// Utility function for stepify. Takes a list of datapoints sorted by x-value
+// and a given x value and finds the greatest x-value in d that's less than or
+// equal to x. It returns the y-value corresponding to the found x-value.
+// (It's like Mathematica's Interpolation[] with interpolation order 0.)
+// If the given x is strictly less than d[0][0], return the given default.
+self.stepFunc = (d, x, dflt=0) => {
   if (x < d[0][0]) return dflt
   // TODO: Test the below binary search with duplicate timestamps
   var numpts = d.length, s = 0, e = numpts-1, m
@@ -739,16 +741,15 @@ self.stepFunc = ( d, x, dflt=0 ) => {
   return d[s][1]
 }
 
-// Take a list of datapoints sorted by x-value and returns a pure
-// function that interpolates a step function from the data,
-// always mapping to the most recent value. Cf
-// http://stackoverflow.com/q/6853787
+// Take a list of datapoints sorted by x-value and return a pure function that
+// interpolates a step function from the data, always mapping to the most
+// recent value.
 self.stepify = (d, dflt=0) =>
   d === null ? x => dflt : x => self.stepFunc(d, x, dflt)
 
 
 // Return which side of a given isoline a given datapoint is: -1 for wrong and
-// +1 for correct side.
+// +1 for correct side. Being exactly on an isoline counts as the good side.
 self.isoside = (g, isoline, t, v) => {
   if (!isoline || !isoline.length) return 0
   const TOL = v*-1e-15
