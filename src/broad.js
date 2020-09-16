@@ -793,7 +793,7 @@ self.isoside = (g, isoline, t, v) => {
 self.dotcolor = (rd, g, t, v, iso=null) => {
   if (t < g.tini)   return bu.Cols.BLCK // dots before tini have no color!
   if (iso === null) return self.aok(rd, g, t, v) ? bu.Cols.BLCK : bu.Cols.REDDOT
-  if (!iso || !iso.length || iso.length < 7) return bu.Cols.ERRDOT
+  if (!iso || !iso.length || iso.length < 1) return bu.Cols.ERRDOT
 
   return self.isoside(g, iso[0], t, v) < 0 ? bu.Cols.REDDOT : // 0 safe days
          self.isoside(g, iso[1], t, v) < 0 ? bu.Cols.ORNDOT : // 1 safe day
