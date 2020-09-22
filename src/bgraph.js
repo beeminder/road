@@ -108,6 +108,7 @@ let defaults = {
   watermark:    { height:170, fntsize:150, color:"#000000" }, // was #f0f0f0
   guidelines:   { width:2, weekwidth:4 },
   maxfluxline:  4, // width
+  stdfluxline:  2, // width
   razrline:     2, 
   /** Visual parameters for text boxes shown during dragging */ 
   textBox:      { margin: 3 },
@@ -211,6 +212,7 @@ const mobiledefaults = {
   watermark:   { height: 150, fntsize: 100, color: "#000000" }, // was #f0f0f0
   guidelines:  { width: 2, weekwidth: 4 },
   maxfluxline: 4, // width
+  stdfluxline: 2, // width
   razrline:    2,
   textBox:     { margin: 3 },
 }
@@ -356,6 +358,7 @@ let config = (obj, options) => {
     @property {object} watermark Visual parameters for watermarks e.g. { height:170, fntsize:130 }
     @property {object} guidelines Visual parameters for guidelines e.g. { width:2, weekwidth:4 }
     @property {object} maxfluxline Visual parameter for maxfluxline (width)
+    @property {object} stdfluxline Visual parameter for stdfluxline (width)
 
     @property {object} textBox Visual parameters for text boxes shown during dragging e.g. { margin: 3 }
     @property {object} odomReset Visual parameters for odometer resets e.g. { width: 0.5, dash: 8 }
@@ -406,7 +409,7 @@ let svg, defs, graphs, buttonarea, stathead, focus, focusclip, plot,
     ySc, nYSc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel,
     xScB, xAxisB, xAxisObjB, yScB,
     gPB, gYBHP, gYBHPlines, gPink, gPinkPat, gTapePat, gGrid, gOResets, gPastText, 
-    gGuides, gMaxflux, gRazr, gOldBullseye, 
+    gGuides, gMaxflux, gStdflux, gRazr, gOldBullseye, 
     gKnots, gSteppy, gSteppyPts, gRosy, gRosyPts, gMovingAv,
     gAura, gDerails, gAllpts, gDpts, gHollow, gFlat, 
     gBullseye, gRoads, gDots, gWatermark, gHashtags, gHorizon, gHorizonText,
@@ -813,37 +816,39 @@ function createGraph() {
     .style("font-size", "80%")
     .attr('text-anchor', 'middle')
   
-  // Order here determines z-order: [remember how 'twas while experimenting]
+  // Order here determines z-order... 
+  // (The commented z-values are to remember previous order for experimenting)
   gPB          = plot.append('g').attr('id', 'pastboxgrp')     // z = 01
   gYBHP        = plot.append('g').attr('id', 'ybhpgrp')        // z = 02
   gWatermark   = plot.append('g').attr('id', 'wmarkgrp')       // z = 03
   gGuides      = plot.append('g').attr('id', 'guidegrp')       // z = 04
   gMaxflux     = plot.append('g').attr('id', 'maxfluxgrp')     // z = 05
+  gStdflux     = plot.append('g').attr('id', 'stdfluxgrp')     // z = 06
   gYBHPlines   = plot.append('g').attr('id', 'ybhplinesgrp')   // z = 07
-  gRazr        = plot.append('g').attr('id', 'razrgrp')        // z = 06
-  gAura        = plot.append('g').attr('id', 'auragrp')        // z = 08
-  gPink        = plot.append('g').attr('id', 'pinkgrp')        // z = 09
-  gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp') // z = 10
-  gBullseye    = plot.append('g').attr('id', 'bullseyegrp')    // z = 25
-  gGrid        = plot.append('g').attr('id', 'grid')           // z = 11
-  gOResets     = plot.append('g').attr('id', 'oresetgrp')      // z = 12
-  gKnots       = plot.append('g').attr('id', 'knotgrp')        // z = 13
-  gSteppy      = plot.append('g').attr('id', 'steppygrp')      // z = 14
-  gRosy        = plot.append('g').attr('id', 'rosygrp')        // z = 15
-  gRosyPts     = plot.append('g').attr('id', 'rosyptsgrp')     // z = 16
-  gDerails     = plot.append('g').attr('id', 'derailsgrp')     // z = 17
-  gAllpts      = plot.append('g').attr('id', 'allptsgrp')      // z = 18
-  gMovingAv    = plot.append('g').attr('id', 'movingavgrp')    // z = 19
-  gSteppyPts   = plot.append('g').attr('id', 'steppyptsgrp')   // z = 20
-  gDpts        = plot.append('g').attr('id', 'datapointgrp')   // z = 21
-  gHollow      = plot.append('g').attr('id', 'hollowgrp')      // z = 22
-  gFlat        = plot.append('g').attr('id', 'flatlinegrp')    // z = 23
-  gHashtags    = plot.append('g').attr('id', 'hashtaggrp')     // z = 24
-  gRoads       = plot.append('g').attr('id', 'roadgrp')        // z = 26
-  gDots        = plot.append('g').attr('id', 'dotgrp')         // z = 27
-  gHorizon     = plot.append('g').attr('id', 'horgrp')         // z = 28
-  gHorizonText = plot.append('g').attr('id', 'hortxtgrp')      // z = 29
-  gPastText    = plot.append('g').attr('id', 'pasttxtgrp')     // z = 30
+  gRazr        = plot.append('g').attr('id', 'razrgrp')        // z = 08
+  gAura        = plot.append('g').attr('id', 'auragrp')        // z = 09
+  gPink        = plot.append('g').attr('id', 'pinkgrp')        // z = 10
+  gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp') // z = 11
+  gBullseye    = plot.append('g').attr('id', 'bullseyegrp')    // z = 12
+  gGrid        = plot.append('g').attr('id', 'grid')           // z = 13
+  gOResets     = plot.append('g').attr('id', 'oresetgrp')      // z = 14
+  gKnots       = plot.append('g').attr('id', 'knotgrp')        // z = 15
+  gSteppy      = plot.append('g').attr('id', 'steppygrp')      // z = 16
+  gRosy        = plot.append('g').attr('id', 'rosygrp')        // z = 17
+  gRosyPts     = plot.append('g').attr('id', 'rosyptsgrp')     // z = 18
+  gDerails     = plot.append('g').attr('id', 'derailsgrp')     // z = 19
+  gAllpts      = plot.append('g').attr('id', 'allptsgrp')      // z = 20
+  gMovingAv    = plot.append('g').attr('id', 'movingavgrp')    // z = 21
+  gSteppyPts   = plot.append('g').attr('id', 'steppyptsgrp')   // z = 22
+  gDpts        = plot.append('g').attr('id', 'datapointgrp')   // z = 23
+  gHollow      = plot.append('g').attr('id', 'hollowgrp')      // z = 24
+  gFlat        = plot.append('g').attr('id', 'flatlinegrp')    // z = 25
+  gHashtags    = plot.append('g').attr('id', 'hashtaggrp')     // z = 26
+  gRoads       = plot.append('g').attr('id', 'roadgrp')        // z = 27
+  gDots        = plot.append('g').attr('id', 'dotgrp')         // z = 28
+  gHorizon     = plot.append('g').attr('id', 'horgrp')         // z = 29
+  gHorizonText = plot.append('g').attr('id', 'hortxtgrp')      // z = 30
+  gPastText    = plot.append('g').attr('id', 'pasttxtgrp')     // z = 31
 
   gRedTape = plot.append('g').attr('visibility', 'hidden')
   // wwidth and height will be set by resizeGraph later
@@ -2033,6 +2038,7 @@ function updateDragPositions(kind, updateKnots) {
   updateGuidelines()
   updatePinkRegion()
   updateMaxFluxline()
+  updateStdFluxline()
 }
 
 // --------------- Functions related to selection of components ----------------
@@ -3338,11 +3344,10 @@ function updatePinkRegion() {                         // AKA nozone AKA oinkzone
   }
 }
 
-// This stands separate from updateYBHP because we need to use it for
-// the "old", unedited road as well. This now supports a delta
-// argument for the maxflux line, and a dash argument for the editor
-// version. If scol == null, then the element is deleted to cleanup
-// leftovers from earlier draws.
+// This stands separate from updateYBHP because we need to use it for the "old",
+// unedited road as well. This now supports a delta argument for the maxflux
+// line, and a dash argument for the editor version. If scol == null, then the
+// element is deleted to clean up leftovers from earlier draws.
 // TODO: rename this to updateRazrRoad or updateYBR
 function updateCenterline(rd, gelt, cls, scol, sw, delta, usedash) {
   if (processing) return
@@ -3589,9 +3594,21 @@ function updateMaxFluxline() {
   if (opts.divGraph == null || road.length == 0) return
 
   // Generate the maxflux line if maxflux!=0. Otherwise, remove existing one
-  updateCenterline(road, gMaxflux, "maxflux", (goal.maxflux != 0)?bu.Cols.BIGG:null,
-                   r3(opts.maxfluxline*scf), goal.yaw*goal.maxflux,false)
+  updateCenterline(road, gMaxflux, "maxflux", 
+                   goal.maxflux != 0 ? bu.Cols.BIGG : null,
+                   r3(opts.maxfluxline*scf), goal.yaw*goal.maxflux, false)
 }
+
+function updateStdFluxline() {
+  if (processing) return
+  if (opts.divGraph == null || road.length == 0) return
+
+  // Generate the maxflux line if maxflux!=0. Otherwise, remove existing one
+  updateCenterline(road, gStdflux, "stdflux", 
+                   goal.maxflux != 0 ? bu.Cols.BIGG : null,
+                   r3(opts.stdfluxline*scf), goal.yaw*goal.stdflux, true)
+}
+
   
 function updateContextOldRoad() {
   if (opts.divGraph == null || road.length == 0) return
@@ -4908,6 +4925,7 @@ function updateGraphData(force = false) {
   updateGuidelines()
   updateRazrRoad()
   updateMaxFluxline()
+  updateStdFluxline()
   updateOldBullseye()
   updateBullseye()
   updateKnots()

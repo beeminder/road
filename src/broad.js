@@ -807,21 +807,27 @@ self.redyest = (rd, g, t, iso=null) => {
   return self.dotcolor(rd, g, t-SID, g.dtf(t-SID), iso) === bu.Cols.REDDOT 
 }
 
-/**For noisy graphs, compute lane width (or half aura width) based on data.
-   Specifically, get the list of daily deltas between all the points, but
+/**Previously known as noisyWidth before Yellow Brick Half-Plane for computing
+   the road width for goals like weight loss with noisy data. Now it computes
+   the so-called 90% Variance show in the Statistics tab. We also use stdflux to
+   determine the width of the polynomial fit trend aka blue-green aura aka
+   turquoise swath (it's twice stdflux, ie, stdflux in each direction).
+   Specifically, we get the list of daily deltas between all the points, but
    adjust each delta by the road rate (eg, if the delta is equal to the delta
    of the road itself, that's an adjusted delta of 0). Return the 90% quantile
-   of those adjusted deltas. Post-YBHP this'll just be for computing stdflux. */
-self.noisyWidth = (rd, d) => {
-  if (d.length <= 1) return 0
-  var p = bu.partition(d,2,1), el, ad = []
-  var t,v,u,w
+   of those adjusted deltas. */
+self.stdflux = (rd, d) => {
+  if (!d || !d.length || d.length <= 1) return 0
+  const p = bu.partition(d, 2, 1)
+  let ad = []
+  let t, v, u, w
   for (let i = 0; i < p.length; i++) {
     t = p[i][0][0]
     v = p[i][0][1]
     u = p[i][1][0]
     w = p[i][1][1]
-    ad.push(abs(w-v-self.rdf(rd,u)+self.rdf(rd,t))/(u-t)*SID)
+    ad.push(abs(w-v-self.rdf(rd,u)
+                   +self.rdf(rd,t))/(u-t)*SID)
   }
   return bu.chop(ad.length===1 ? ad[0] : bu.quantile(ad, .90))
 }

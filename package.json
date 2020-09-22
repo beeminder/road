@@ -1,6 +1,6 @@
 {
   "name": "beebrain",
-  "version": "2020.09.16",
+  "version": "2020.09.22",
   "description": "Beeminder Visual Road Editor (Prototype)",
   "main": "server.js",
   "scripts": {

@@ -226,7 +226,7 @@ const SID = 86400
     }
 
     const goalProps
-          = ['yaw','dir','kyoom','odom','noisy','monotone','aggday']
+          = ['yaw','dir','kyoom','odom','monotone','aggday']
     function setGoalConfig( opts ) {
       saveState()
       goalProps.map(e=>{

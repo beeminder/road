@@ -1048,7 +1048,7 @@ function procParams() {
   // rdf function is implemented in broad.js
   // rtf function is implemented in broad.js
 
-  goal.stdflux = br.noisyWidth(roads, data.filter(d => d[0]>=goal.tini))
+  goal.stdflux = br.stdflux(roads, data.filter(d => d[0]>=goal.tini))
   
   flatline()
 

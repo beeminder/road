@@ -15,7 +15,7 @@
  *  id         : beebrain instance ID 
  *  getStats() : return stats object for beebrain output
  *
- * Copyright © 2017 Uluc Saranli
+ * Copyright 2017-2020 Uluc Saranli
  */
 ;((function (root, factory) {
   'use strict'
@@ -106,7 +106,7 @@
       var b = "<span style=\"color:black\">"
       var e = "</span>"
       var v = (s=>((goal[s]?(b+s+e+","):"")))
-      var str = v("kyoom")+v("odom")+v("noisy")+v("steppy")+v("rosy")
+      var str = v("kyoom")+v("odom")+v("steppy")+v("rosy")
           +v("aura")+v("plotall")+v("movingav")+v("hidey")+v("stathead")
       return str.slice(0,str.length-1)
     }
