@@ -4096,40 +4096,39 @@ function updateRosy() {
 }
 
 function updateSteppy() {
-  if (processing) return;
-
-  var l = [nXSc.invert(0).getTime()/SMS,
-           nXSc.invert(plotbox.width).getTime()/SMS];
-  var df = function(d) {
-    return ((d[0] >= l[0] && d[0] <= l[1]) || (d[4] >= l[0] && d[4] <= l[1]));
+  if (processing) return
+  const xmin = nXSc.invert(            0).getTime()/SMS
+  const xmax = nXSc.invert(plotbox.width).getTime()/SMS
+  const df = function(d) {
+    return d[0] >= xmin && d[0] <= xmax ||
+           d[4] >= xmin && d[4] <= xmax
   }
   // *** Plot steppy lines ***
-  var stpelt = gSteppy.selectAll(".steppy");
-  var stpdelt = gSteppyPts.selectAll(".std");
+  let stpelt  = gSteppy.selectAll(".steppy")
+  let stpdelt = gSteppyPts.selectAll(".std")
   if (opts.showData || !opts.roadEditor) {
-    if (!opts.roadEditor && goal.steppy && dataf.length != 0) {
-      var npts = dataf.filter(df), i;
-      if (npts.length == 0) {
+    if (!opts.roadEditor && goal.steppy && dataf.length !== 0) {
+      const npts = dataf.filter(df)
+      let i
+      if (npts.length === 0) {
         // no points are in range, find enclosing two
-        var ind = -1;
+        let ind = -1
         for (i = 0; i < dataf.length-1; i++) {
-          if (dataf[i][0]<=l[0]&&dataf[i+1][0]>=l[1]) {
-            ind = i; break;
-          }
+          if (dataf[i][0]   <= xmin && 
+              dataf[i+1][0] >= xmax) { ind = i; break }
         }
-        if (ind > 0) npts = dataf.slice(ind, ind+2);
+        if (ind > 0) npts = dataf.slice(ind, ind+2)
       }
-      if (npts.length != 0) {
-        var d
-        if (   dataf[0][0] > l[0] 
-            && dataf[0][0] < l[1] && dataf[0][0] in bbr.allvals) {
-          // Handle the initial point
-          var vals = bbr.allvals[dataf[0][0]].map(e=>e[0])
-          var vpre = (goal.dir<0)?bu.arrMax(vals):bu.arrMin(vals)
-          d = "M"+r1(nXSc(dataf[0][0]*SMS))+" "+r1(nYSc(vpre))
+      if (npts.length !== 0) {
+        let d
+        if (dataf[0][0] > xmin && 
+            dataf[0][0] < xmax && 
+            dataf[0][0] in bbr.allvals) {
+          const vpre = bbr.allvals[dataf[0][0]][0][0] // initial datapoint
+          d =  "M"+r1(nXSc(dataf[0][0]*SMS))+" "+r1(nYSc(vpre))
           d += "L"+r1(nXSc(npts[0][4]*SMS))+" "+r1(nYSc(npts[0][5]))
         } else {
-          d = "M"+r1(nXSc(npts[0][4]*SMS))+" "+r1(nYSc(npts[0][5]))
+          d =  "M"+r1(nXSc(npts[0][4]*SMS))+" "+r1(nYSc(npts[0][5]))
         }
         for (i = 0; i < npts.length; i++) {
           d += " L"+r1(nXSc(npts[i][0]*SMS))+" "+ r1(nYSc(npts[i][5]))
@@ -4143,14 +4142,13 @@ function updateSteppy() {
             .attr("stroke-width", r3(4*scf))
             .style("stroke", bu.Cols.PURP)
         } else {
-          stpelt.attr("d", d)
-            .attr("stroke-width", r3(4*scf))
+          stpelt.attr("d", d).attr("stroke-width", r3(4*scf))
         }
         // Need additional vertical steppy for do-less flatlined datapoints
-        var stppprelt = gSteppy.selectAll(".steppyppr");
-        if (bbr.flad != null) {
+        let stppprelt = gSteppy.selectAll(".steppyppr")
+        if (bbr.flad !== null) {
           if (goal.yaw*goal.dir < 0 && goal.asof !== goal.tdat) {
-            var fy = bbr.flad[1] + br.ppr(road, goal, goal.asof)
+            const fy = bbr.flad[1] + br.ppr(road, goal, goal.asof)
             d = "M"+r1(nXSc(npts[npts.length-1][0]*SMS))+" "
                    +r1(nYSc(npts[npts.length-1][1]))
             d+=" L"+r1(nXSc(npts[npts.length-1][0]*SMS))+" "+r1(nYSc(fy))
@@ -4167,17 +4165,18 @@ function updateSteppy() {
           } else stppprelt.remove()
         } else stppprelt.remove()
         
-      } else stpelt.remove();
-      updateDotGroup(gSteppyPts, bbr.flad?npts.slice(0,npts.length-1):npts,
-                     "std",r3((opts.dataPoint.size+2)*scf),
-                     null, null, bu.Cols.PURP)
+      } else stpelt.remove()
+        updateDotGroup(gSteppyPts, 
+                       bbr.flad ? npts.slice(0, npts.length-1) : npts,
+                       "std", r3((opts.dataPoint.size+2)*scf),
+                       null, null, bu.Cols.PURP)
     } else {
-      stpelt.remove();
-      stpdelt.remove();
+      stpelt.remove()
+      stpdelt.remove()
     }
   } else {
-    stpelt.remove();
-    stpdelt.remove();
+    stpelt.remove()
+    stpdelt.remove()
   }
 }
 
