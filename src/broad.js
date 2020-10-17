@@ -799,7 +799,7 @@ self.dotcolor = (rd, g, t, v, iso=null) => {
          self.isoside(g, iso[1], t, v) < 0 ? bu.Cols.ORNDOT : // 1 safe day
          self.isoside(g, iso[2], t, v) < 0 ? bu.Cols.BLUDOT : // 2 safe days
          self.isoside(g, iso[6], t, v) < 0 ? bu.Cols.GRNDOT : // 3-6 safe days
-                                             bu.Cols.GRNDOT   // 7+ safe days
+                                             bu.Cols.GRADOT   // 7+ safe days
 }
 
 // This was previously called isLoser
