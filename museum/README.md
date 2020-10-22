@@ -1,4 +1,13 @@
-See http://doc.eth.pad/beebrain for Beebrain documentation.
+# Beebrain Museum
+
+Most of the Python implementation is in blib.py.
+Most of the Mathematica implementation is in beemlib.m
+
+The rest of this file is utterly out of date!
+
+## Old stuff from when Pybrain was in production
+
+See http://doc.bmndr.com/beebrain for Beebrain documentation.
 
 The core of Beebrain is beebrain.py which takes a .bb file (containing
 json-encoded goal parameters and data) and writes a .json file with goal stats
