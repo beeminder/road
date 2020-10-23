@@ -57,7 +57,7 @@ o floaty (default true) for whether it makes sense to give deltas and bare mins
 o mono (default false) for whether the data is necessarily strictly monotone.
 *)
 
-(* In-params and out-params are documented at http://eth.pad/beebrain *)
+(* In-params and out-params are documented at http://doc.bmndr.com/beebrain *)
 
 (* In-params: Graph settings and their defaults. *)
 pin = ReleaseHold[Hold@{ (* for specifying param names as bare words *)

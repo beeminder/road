@@ -66,7 +66,7 @@ Features related to the road table:
 1. omg i'm a genius: forget these "keep slopes/intervals fixed" checkboxes, which i'm finding super unintuitive for some reason, and instead drag either the nodes (it would let you drag either vertically or horizontally, but just one or the other) or the edges. i think that makes it super intuitive that if you don't want to mess up the slopes then you drag the segment itself. the vertical lines can be just for display, not clickable<br>
 *Uluc: I don't quite agree with this. There is utility in being able to move a "knot" (as I call them) without changing the slope of the preceding segment. Also, if I start dragging a road segment itself, there is ambiguity as to whether I will modify the dates or values associated with either the previous or the next knot. I quite like the current set of possibilities and I think feedback from actual use cases and as many active users as possible would be needed to make a good decision here.*
 
-1. We have https://expost.eth.pad/dial from years ago, may or may not still be anything of value there
+1. We have https://doc.bmndr.com/dial from years ago, may or may not still be anything of value there
 
 1. Use `asof` instead of the latest datapoint for today
 

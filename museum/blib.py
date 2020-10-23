@@ -17,13 +17,13 @@ YBHP AKA BEEBRAIN DEATHLIST:
 4. die sadreset ---------------------------------------------------------- DONE!
 5. die inferred tini/vini ------------------------------------------------ DONE!
 6. die weightloss leniency ----------------------------------------------- DONE!
-7. die noisyWidth and auto-widening [eth.pad/manwide] ------ done for new goals!
+7. die noisyWidth and auto-widening [blog.bmndr.com/manwide] done for new goals!
 8. die exponential roads ------------------------------------------------- DONE!
 9. die lanes: Yellow Brick Half Plane (YBHP) ----------------------------- 
 
 OTHER POSSIBLE PREREQS BEFORE PORTING ALL THIS TO JAVASCRIPT:
 1. True Pauses
-2. Universal PPR -- eth.pad/ppr
+2. Universal PPR -- doc.bmndr.com/ppr
 3. Pass in a "backroad" parameter that's a version of the road that's never 
    allowed to change retroactively. The first thing to do with that is to use it
    to color historical datapoints with their original color (aka permacolor)
@@ -1305,7 +1305,7 @@ def flatline():
       newcolor = dotcolor((x,vlast))
       if prevcolor==newcolor==REDDOT: break # done iff 2 reds in a row
       prevcolor = newcolor
-      x += SID # or see eth.pad/ppr
+      x += SID # or see doc.bmndr.com/ppr
     x = min(x, asof, tfin)
   if x not in aggval:
     flad = (x, vlast)
@@ -2013,7 +2013,7 @@ def smooth2(data):
 # http://stackoverflow.com/questions/8672005/correct-usage-of-fmin-l-bfgs-b-for
 # http://stackoverflow.com/questions/12935098/how-to-plot-line-polygonal-chain
 # http://en.wikipedia.org/wiki/Local_regression
-# http://eth.pad/abe
+# http://doc.bmndr.com/abe
 # https://gist.github.com/diogojc/1519756
 
 # From 

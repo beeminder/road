@@ -794,7 +794,7 @@ original version of flatline() ************************************************/
       // done iff 2 reds in a row
       if (prevcolor===newcolor && prevcolor===bu.Cols.REDDOT) break
       prevcolor = newcolor
-      x += SID // or see eth.pad/ppr
+      x += SID // or see doc.bmndr.com/ppr
     }
     // the following looks particularly unnecessary
     x = min(x, now, goal.tfin)
