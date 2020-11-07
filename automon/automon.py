@@ -604,6 +604,8 @@ def jsbrain_make(job):
     # could maybe call that instead of doing the GET request to localhost?
     # but maybe it makes more sense to do it this way; just thinking out loud!
     payload = {"slug": job.slug, "inpath": job.inpath, "outpath": job.outpath}
+    #payload = {"slug": job.slug, "inpath": job.inpath, "outpath": job.outpath,
+    #           "svgo": "1"}
     if (not job.graph): payload["nograph"] = "1"
     resp = requests.get("http://localhost:8777/", payload)
     rj = resp.json()
