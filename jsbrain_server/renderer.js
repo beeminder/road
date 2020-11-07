@@ -4,8 +4,9 @@ const uuidv4 = require('uuid/v4')
 const fs = require('fs')
 const gm = require('gm').subClass({imageMagick: true})
 const puppeteer = require('puppeteer')
+const svgo = require('svgo')
 
-const pageTimeout = 10 // Seconds to wait until giving up on generate.html
+const pageTimeout = 40 // Seconds to wait until giving up on generate.html
 
 class Renderer {
   
@@ -13,6 +14,48 @@ class Renderer {
     this.browser = browser
     this.id = id
     this.pages = []
+    this.svgo = new svgo({
+      plugins: [{cleanupAttrs: true},
+                {removeDoctype: true},
+                {removeXMLProcInst: true},
+                {removeComments: true},
+                {removeMetadata: true},
+                {removeTitle: true},
+                {removeDesc: true},
+                {removeUselessDefs: true},
+                {removeEditorsNSData: true},
+                {removeEmptyAttrs: true},
+                {removeHiddenElems: true},
+                {removeEmptyText: true},
+                {removeEmptyContainers: true},
+                {removeViewBox: true},
+                {cleanupEnableBackground: true},
+                {convertStyleToAttrs: true},
+                {convertColors: true},
+                {convertPathData: true},
+                {convertTransform: true},
+                {removeUnknownsAndDefaults: true},
+                {removeNonInheritableGroupAttrs: true},
+                {removeUselessStrokeAndFill: true},
+                {removeUnusedNS: true},
+                {cleanupIDs: true},
+                {cleanupNumericValues: true},
+                {moveElemsAttrsToGroup: false},
+                {moveGroupAttrsToElems: false},
+                {collapseGroups: false},
+                {removeRasterImages: false},
+                {mergePaths: true},
+                {convertShapeToPath: false},
+                {sortAttrs: false},
+                {removeDimensions: false},
+                {removeAttrs: {attrs: 'pointer-events'}},
+                {removeAttributesBySelector:
+                 { selectors: 
+                   [
+                     {selector: ".focus g", attributes: "id"},
+                     {selector: ".focus path", attributes: "id"}
+                   ]}}]
+    });
   }
 
   // This method overrides stdout and captures the output of
@@ -103,7 +146,7 @@ class Renderer {
       instance. Creates a new tab, renders the graph and json, outputs
       the graph in PNG and SVG forms as well as the JSON output and
       closes the tab afterwards */
-  async render(inpath, outpath, slug, rid, nograph) {
+  async render(inpath, outpath, slug, rid, nograph, svgo) {
     let page = null
     let pagelog = {msg:""}
     let pageinfo = null
@@ -217,7 +260,17 @@ class Renderer {
           // Extract and write the SVG file
           const svgHandle = await page.$('svg')
           svg = await page.evaluate(svg => svg.outerHTML, svgHandle)
+          if (svgo) {
+            time_id = tag+` SVG optimization (${slug})`
+            console.time(time_id)
+            let svgoptim = await this.svgo.optimize(svg, {})
+            if (time_id != null) msgbuf += this.timeEndMsg(time_id)
+            time_id = null
+            if (svgoptim.data) svg = svgoptim.data
+          }
+
           svg = '<?xml version="1.0" standalone="no"?>\n'+svg
+          
           // write to the temp SVG file and rename
           fs.writeFileSync(svgftmp, svg);  
           if (fs.existsSync(svgftmp)) fs.renameSync(svgftmp, svgf )
@@ -232,6 +285,16 @@ class Renderer {
                     width:Math.round(b.width-2), height:Math.round(b.height)};})
           //console.info("Zoom area bounding box is "+JSON.stringify(zi))
         
+          if (svgo) {
+            // If optimization was requested, replace the page contents
+            // with the new SVG to have the PNG output match the new SVG
+            time_id = tag+` SVG replacement (${slug})`
+            console.time(time_id)
+            await page.evaluate((svg,svgnew) => {svg.parentNode.innerHTML = svgnew},
+                                svgHandle, svg);
+            if (time_id != null) msgbuf += this.timeEndMsg(time_id)
+            time_id = null
+          }
           // Take a screenshot to generate PNG files
           time_id = tag+` Screenshot (${slug})`
           console.time(time_id)
@@ -326,7 +389,7 @@ class Renderer {
 
 async function create( id ) {
   const browser 
-        = await puppeteer.launch({ /*headless:false,*/
+        = await puppeteer.launch({ /* headless:false, */
                                    args: ['--no-sandbox', 
                                           '--allow-file-access-from-files'] })
   console.log(`Started Puppeteer with pid ${browser.process().pid}`);
