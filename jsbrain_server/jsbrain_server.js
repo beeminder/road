@@ -112,9 +112,9 @@ if (cluster.isMaster) {
     if (nograph == undefined || nograph == "false" || nograph == "0")
       nograph = false
     else nograph = true
-    if (svgo == undefined || svgo == "false" || svgo == "0")
-      svgo = false
-    else svgo = true
+    if (svgo == "1") svgo = 1      // Generate optimized SVG only
+    else if (svgo == "2") svgo = 2 // generate optimized SVG and its PNG as well
+    else svgo = 0
 
     if (!outpath) outpath = inpath
     if (!slug) slug = user+"+"+goal

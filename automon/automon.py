@@ -198,6 +198,7 @@ class CMonitor:
     
     self.bbdir = None      # Directory for bb files
     self.graph = False     # Whether to generate graphs or not
+    self.svgo = False      # Whether to generate optimized SVGs or not
     self.logging = False   # Whether to generate a log file with statistics or not
     self.state = ST.INIT   # Current jobTask state
     
@@ -249,9 +250,10 @@ def exitonerr(err, usage=True):
   usage = '''\
 Usage: automon.py <options> bbdir [other directories to monitor for changes]
 Supported options:
-  -g or --graph : Enable graph comparisons
-  -l or --log   : Enable logging
-  -f or --force : Force regeneration of reference outputs'''
+  -g or --graph    : Enable graph comparisons
+  -o or --optimize : Enable SVG optimizations
+  -l or --log      : Enable logging
+  -f or --force    : Force regeneration of reference outputs'''
   #-w or --watch : Monitor directory for changes (multiple directories ok)'''
   #print("========= Automon: Test Suite Monitoring/Comparison Daemon =========")
   if (err): print("Error: "+err)
@@ -604,9 +606,8 @@ def jsbrain_make(job):
     # could maybe call that instead of doing the GET request to localhost?
     # but maybe it makes more sense to do it this way; just thinking out loud!
     payload = {"slug": job.slug, "inpath": job.inpath, "outpath": job.outpath}
-    #payload = {"slug": job.slug, "inpath": job.inpath, "outpath": job.outpath,
-    #           "svgo": "1"}
     if (not job.graph): payload["nograph"] = "1"
+    if (cm.svgo): payload["svgo"] = "2"
     resp = requests.get("http://localhost:8777/", payload)
     rj = resp.json()
     if (rj['error']):
@@ -1137,13 +1138,14 @@ def jobTask():
   if (prevstate != cm.state): refresh_status()
   
 # Entry point for the monitoring loop
-def monitor(stdscr, bbdir, graph, logging, force, watchdirs):
+def monitor(stdscr, bbdir, graph, svgo, logging, force, watchdirs):
   # Precompute various input and output path strings
   cm.bbdir = os.path.abspath(bbdir)
   cm.jsreff = os.path.abspath(cm.bbdir+"/jsref")
   cm.jsoutf = os.path.abspath(cm.bbdir+"/jsout")
 
   cm.graph = graph
+  cm.svgo = svgo
   cm.logging = logging
   
   # Clear screen and initialize various fields
@@ -1205,17 +1207,19 @@ def monitor(stdscr, bbdir, graph, logging, force, watchdirs):
 def main(argv):
   flog('-'*80 + '\n')
   flon(f'Automon BEGIN {nowstamp()}')
-  try: opts, args = getopt.getopt(argv, "hglf", ["help", "graph", "log", "force"])
+  try: opts, args = getopt.getopt(argv, "hgolf", ["help", "graph", "optimize", "log", "force"])
   except getopt.GetoptError as err: exitonerr(str(err))
     
   graph = False
+  svgo = False
   logging = False
   force = False
   for opt, arg in opts:
     if   opt in ('-h', '--help'): exitonerr('')
-    elif opt in ('-g', '--graph'): graph = True
-    elif opt in ('-l', '--log'):   logging = True
-    elif opt in ('-f', '--force'): force = True
+    elif opt in ('-g', '--graph'):    graph = True
+    elif opt in ('-o', '--optimize'): svgo = True
+    elif opt in ('-l', '--log'):      logging = True
+    elif opt in ('-f', '--force'):    force = True
     else: exitonerr(f'Unrecognized option: {opt}')
 
   if (len(args) == 0): exitonerr("Must provide a directory of .bb files")
@@ -1226,7 +1230,7 @@ def main(argv):
     if (not os.path.isdir(d) or not os.path.exists(d)): 
       exitonerr(f'{d} is not a directory')
   
-  curses.wrapper(monitor, bbdir, graph, logging, force, watchdirs)
+  curses.wrapper(monitor, bbdir, graph, svgo, logging, force, watchdirs)
   flon(f'Automon END   {nowstamp()}')
   flog('-'*80 + '\n')
 

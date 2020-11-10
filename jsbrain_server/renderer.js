@@ -260,7 +260,7 @@ class Renderer {
           // Extract and write the SVG file
           const svgHandle = await page.$('svg')
           svg = await page.evaluate(svg => svg.outerHTML, svgHandle)
-          if (svgo) {
+          if (svgo > 0) {
             time_id = tag+` SVG optimization (${slug})`
             console.time(time_id)
             let svgoptim = await this.svgo.optimize(svg, {})
@@ -285,7 +285,7 @@ class Renderer {
                     width:Math.round(b.width-2), height:Math.round(b.height)};})
           //console.info("Zoom area bounding box is "+JSON.stringify(zi))
         
-          if (svgo) {
+          if (svgo > 1) {
             // If optimization was requested, replace the page contents
             // with the new SVG to have the PNG output match the new SVG
             time_id = tag+` SVG replacement (${slug})`
