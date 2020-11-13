@@ -626,12 +626,12 @@ self.nonzero = (a) => {
   return false
 }
 
-/** Sum of differences of pairs, eg, [1,2,6,9] -> 2-1 + 9-6 = 1+3
- * = 4
- @param {Number[]} a Input list*/
+/** Sum of differences of pairs, eg, [1,2,6,9] -> 2-1 + 9-6 = 1+3 = 4
+    If there's an odd number of elements then the last one is ignored.
+    @param {Number[]} a Input list*/
 self.clocky = (a) => {
-  var s = 0, l = a.length, i
-  for (i = 1; i < l; i+=2) s += a[i]-a[i-1]
+  let s = 0
+  for (let i = 1; i < a.length; i += 2) s += a[i]-a[i-1]
   return s
 }
 

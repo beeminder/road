@@ -74,7 +74,7 @@ sum      : (x) => bu.sum(x),
 jolly    : (x) => x.length > 0 ? 1 : 0,
 binary   : (x) => x.length > 0 ? 1 : 0,
 nonzero  : bu.nonzero,
-triangle : (x) => bu.sum(x)*(bu.sum(x)+1)/2,
+triangle : (x) => bu.sum(x)*(bu.sum(x)+1)/2, // HT DRMcIver
 square   : (x) => pow(bu.sum(x),2),
 clocky   : bu.clocky, // sum of pair diff.
 count    : (x) => x.length, // number of datapoints

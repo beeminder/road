@@ -19,10 +19,11 @@ YBHP AKA BEEBRAIN DEATHLIST:
 6. die weightloss leniency ----------------------------------------------- DONE!
 7. die noisyWidth and auto-widening [blog.bmndr.com/manwide] done for new goals!
 8. die exponential roads ------------------------------------------------- DONE!
-9. die lanes: Yellow Brick Half Plane (YBHP) ----------------------------- 
+9. die lanes: Yellow Brick Half Plane (YBHP) -- [done after move to Javascript!]
 
 OTHER POSSIBLE PREREQS BEFORE PORTING ALL THIS TO JAVASCRIPT:
-1. True Pauses
+[narrator voice: we moved to Javascript without any of this]
+1. True Pauses 
 2. Universal PPR -- doc.bmndr.com/ppr
 3. Pass in a "backroad" parameter that's a version of the road that's never 
    allowed to change retroactively. The first thing to do with that is to use it
@@ -79,6 +80,10 @@ def clocky(l):
   if len(l) % 2 != 0: l = l[:-1] # ignore last entry if unpaired
   return sum([end-start for [start,end] in partition(l,2,2)])
 
+################################################################################
+# BOOKMARK: dreev has copied all notes and stuff to jsbrain up to this point
+################################################################################
+
 AGGR = { # Map possible aggday settings to lambdas that aggregate thusly
 'last'     : lambda x: x[-1],
 'first'    : lambda x: x[0],
@@ -101,10 +106,8 @@ AGGR = { # Map possible aggday settings to lambdas that aggregate thusly
 'kyshoc'   : lambda x: min(2600, np.sum(x)), # ad hoc, guineapigging
 'skatesum' : lambda x: min(rfin, np.sum(x)), # only count the daily min
 #tareable' : 
-# start with the first datapoint and see if the 2nd one is within 60 seconds of
-# it. 
-# for every datapoint, find all the subsequent datapoints within 60 seconds of
-# it.
+# start with first datapoint and see if the 2nd one is w/in 60 seconds of it.
+# for every datapoint, find all the subsequent datapoints w/in 60 seconds of it.
 }
 
 AKH    = 7*SID  # Akrasia Horizon, in seconds
