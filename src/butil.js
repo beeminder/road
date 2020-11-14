@@ -96,7 +96,7 @@ self.Cols = {
 /** Akrasia horizon, in seconds 
     @type {Number} */
 self.AKH   = 7*SID
-/** ~2038, rails's ENDOFDAYS+1 (was 2^31-2weeks) 
+/** ~2038, specifically Rails's ENDOFDAYS+1 (was 2^31-2weeks) 
     @type {Number} */
 self.BDUSK = 2147317201
 
