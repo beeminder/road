@@ -1,12 +1,12 @@
 /**
  * Javascript implementation of Beebrain, provided as a UMD module.
  * Provides a {@link beebrain} class, which can be used to construct independent
- * Beebrain objects each with their own internal state.<br/>
+ * Beebrain objects each with their own internal state. <br/>
 
- @module beebrain
- @requires moment
- @requires butil
- @requires broad
+@module beebrain
+@requires moment
+@requires butil
+@requires broad
 
 Beebrain -- doc.bmndr.com/beebrain
 Originally written in Mathematica by dreeves, 2008-2010.
@@ -14,9 +14,9 @@ Ported to Python by Uluc Saranli around 2011.12.20.
 Maintained and evolved by dreeves, 2012-2018.
 Ported to Javascript in 2018-2019 by Uluc Saranli.
 
- * <br/>Copyright 2017-2020 Uluc Saranli and Daniel Reeves
+Copyright 2008-2020 Uluc Saranli and Daniel Reeves
 
- */
+*/
 
 
 /* Notes for maxflux line [this is done now; #SCHDEL on these notes]:
@@ -67,13 +67,13 @@ const floor = Math.floor
 const ceil  = Math.ceil
 const sign  = Math.sign
 
-const DIY = 365.25
-const SID = 86400
+const DIY = 365.25 // this is what physicists use, eg, to define a light year
+const SID = 86400 // seconds in a day (not used: DIM=DIY/12, WIM=DIY/12/7)
 
 // -----------------------------------------------------------------------------
 // ---------------------- BEEBRAIN CONSTANTS AND GLOBALS -----------------------
 
-let gid = 1 // Global counter giving unique IDs for multiple beebrain instances
+let gid = 1 // Global counter giving unique IDs for multiple Beebrain instances
 
 // -----------------------------------------------------------------------------
 // In-params and out-params are documented at doc.bmndr.com/beebrain
