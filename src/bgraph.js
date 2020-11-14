@@ -69,6 +69,8 @@ let defaults = {
   divGraph:     null,
   /** Binds the road table to a div element */
   divTable:     null,    
+  /** Binds the datapoint table to a div element */
+  divPoints:    null,    
   /** Binds the goal JSON output to a div element */
   divJSON:      null,    
   /** Size of the SVG element to hold the graph */
@@ -295,6 +297,7 @@ let config = (obj, options) => {
   
   if (opts.headless) {                        // Override options for svg output
     opts.divTable      = null
+    opts.divPoints     = null
     opts.scrollZoom    = false
     opts.roadEditor    = false
     opts.showContext   = false
@@ -302,6 +305,8 @@ let config = (obj, options) => {
   } else {
     opts.divTable = 
       opts.divTable && opts.divTable.nodeName ? opts.divTable : null
+    opts.divPoints = 
+      opts.divPoints && opts.divPoints.nodeName ? opts.divPoints : null
   }
   
   return opts
@@ -434,7 +439,7 @@ let igoal = {}  // Initial goal object
   
 // Beebrain state objects
 let bbr, goal = {}, road = []
-let data = [], alldata = [], dtd = [], iso = []
+let data = [], idata = [], alldata = [], dtd = [], iso = []
 
 function getiso( val ) {
   if (iso[val] == undefined) iso[val] = br.isoline(road, dtd, goal, val)
@@ -496,9 +501,10 @@ function resetGoal() {
   goal.horizon = goal.asof+bu.AKH
   goal.xMin = goal.asof;  goal.xMax = goal.horizon
   goal.tmin = goal.asof;  goal.tmax = goal.horizon
+
   goal.yMin = -1;    goal.yMax = 1
 
-  road = []; iroad = []; data = [], alldata = []
+  igoal = bu.deepcopy(goal); road = []; iroad = []; data = [], alldata = []
 }
 resetGoal()
 
@@ -1341,7 +1347,6 @@ function adjustYScale() {
     }
     yrange = [ae.yMax, ae.yMin]
   }
-  
   // Modify the scale object for the entire Y range to focus on
   // the desired range
   var newtr = d3.zoomIdentity
@@ -1749,7 +1754,7 @@ function loadGoal(json, timing = true) {
   let suffix = (json.params.yoog) ? " ("+json.params.yoog+")" : ""
   if (timing) { console.time(stats_timeid+suffix) }
   bbr = new bb(json)
-  goal = bbr.goal
+  goal  = bbr.goal
   if (opts.divJSON) {
     if (opts.headless)
       opts.divJSON.innerText = JSON.stringify(bbr.getStats())
@@ -1782,8 +1787,9 @@ function loadGoal(json, timing = true) {
   
   road    = bbr.roads
   iroad   = br.copyRoad(road)
-  igoal   = bu.deepcopy(goal)
   data    = bbr.data
+  idata   = json.data
+  igoal   = bu.deepcopy(goal)
   alldata = bbr.alldata
 
   // Extract limited data
@@ -1945,7 +1951,7 @@ function removeKnot(kind, fromtable) {
 
   var oldslope = road[kind].slope
   road.splice(kind, 1)
-  if (opts.keepSlopes) road[kind].slope = oldslope
+  if (opts.keepSlopes && !isNaN(oldslope)) road[kind].slope = oldslope
   br.fixRoadArray(road, opts.keepSlopes ? br.RP.VALUE : br.RP.SLOPE, fromtable)
 
   roadChanged()
@@ -2804,6 +2810,7 @@ function updateContextBullseye() {
 
 // Creates or updates the Bullseye at the goal date
 function updateOldBullseye() {
+  if (processing) return
   if (opts.divGraph == null || road.length == 0) return;
   var bullseyeelt = gOldBullseye.select(".oldbullseye");
   if (!opts.roadEditor) {
@@ -3971,19 +3978,19 @@ function dpStrokeWidth( pt ) {
   return (((pt[3] == bbr.DPTYPE.AGGPAST)?1:0.5)*scf)+"px"
 }
 
-var dotTimer = null, dotText = null;
+var dotTimer = null, dotText = null
 function showDotText(d) {
-  var ptx = nXSc(bu.daysnap(d[0])*SMS);
-  var pty = nYSc(d[1]);
-  var txt = moment.unix(d[0]).utc().format("YYYY-MM-DD")
-    +", "+((d[6] != null)?bu.shn(d[6]):bu.shn(d[1]));
-  if (dotText != null) rmTextBox(dotText);
-  var info = [];
-  if (d[2] !== "") info.push("\""+d[2]+"\"");
-  if (d[6] !== null && d[1] !== d[6]) info.push("total:"+d[1]);
-  var col = br.dotcolor(road, goal, d[0], d[1], iso);
-  dotText = createTextBox(ptx, pty-(15+18*info.length), txt, 
-                          col, info );
+  var ptx = nXSc(bu.daysnap(d[0])*SMS)
+  var pty = nYSc(d[1])
+  var txt = ((d[7]!=null)?"#"+d[7]+": ":"")          // datapoint index
+      +moment.unix(d[0]).utc().format("YYYY-MM-DD")  // datapoint time
+    +", "+((d[6] != null)?bu.shn(d[6]):bu.shn(d[1])) // datapoint original value
+  if (dotText != null) rmTextBox(dotText)
+  var info = []
+  if (d[2] !== "") info.push("\""+d[2]+"\"")
+  if (d[6] !== null && d[1] !== d[6]) info.push("total:"+d[1])
+  var col = br.dotcolor(road, goal, d[0], d[1], iso)
+  dotText = createTextBox(ptx, pty-(15+18*info.length), txt, col, info )
 };
 function removeDotText() { rmTextBox(dotText) }
 
@@ -4012,7 +4019,7 @@ function updateDotGroup(grp,d,cls,r,
     .attr("fill", f)
     .style("fill-opacity", fop)
     .style("pointer-events", function() {
-      return (opts.roadEditor&&hov)?"none":(opts.headless?null:"all");})
+      return (opts.roadEditor&&!hov)?"none":(opts.headless?null:"all");})
   if (!opts.headless) {
     dots
       .on('wheel', function(d) { 
@@ -4122,7 +4129,7 @@ function updateSteppy() {
         if (dataf[0][0] > xmin && 
             dataf[0][0] < xmax && 
             dataf[0][0] in bbr.allvals) {
-          const vpre = bbr.allvals[dataf[0][0]][0][0] // initial datapoint
+          const vpre = bbr.allvals[dataf[0][0]][0][1] // initial datapoint
           d =  "M"+r1(nXSc(dataf[0][0]*SMS))+" "+r1(nYSc(vpre))
           d += "L"+r1(nXSc(npts[0][4]*SMS))+" "+r1(nYSc(npts[0][5]))
         } else {

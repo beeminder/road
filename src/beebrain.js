@@ -475,21 +475,23 @@ function hashextract(s) {
 function recommitted(s) { return s.startsWith("RECOMMITTED") }
 
 // Convenience function to extract values from datapoints
-function dval(d) { return d[0] }
+function dval(d) { return d[1] }
 
 // Compute [informative comment, originalv (or null)] for aggregated points
 function aggpt(vl, v) { // v is the aggregated value
   const kyoomy = goal.kyoom && goal.aggday === "sum"
-  if (vl.length === 1) return [vl[0][1], vl[0][2]]
+  if (vl.length === 1) return [vl[0][2], vl[0][3], vl[0][4]]
   else {
     let i
     // check if agg'd value is also an explicit datapoint for today
     if (kyoomy) i = bu.accumulate(vl.map(dval)).indexOf(v)
     else        i = vl.map(dval).indexOf(v)
     // if not, aggregated point stands alone
-    if (i < 0) return [goal.aggday, null]
+    if (i < 0) return [goal.aggday, null, null]
     // if found, append (aggday) to comment and record original value
-    else return [vl[i][1]+" ("+goal.aggday+")", vl[i][2]]
+    else {
+      return [vl[i][1]+" ("+goal.aggday+")", vl[i][3], vl[i][4]]
+    }
   } // first change; second change
 }
 
@@ -550,7 +552,6 @@ function procData() {
     oresets = data.filter(e => e[1]==0).map(e => e[0])
     br.odomify(data)
   }
-  
   const nonfuda = data.filter(e => e[0]<=goal.asof)
   if (goal.plotall) goal.numpts = nonfuda.length
   
@@ -562,7 +563,7 @@ function procData() {
   br.rfin = goal.rfin
   let newpts = []
   let ct = data[0][0] // Current time
-  let vl = []  // Value list: All values [val, cmt, originalv] for time ct 
+  let vl = []  // Value list: All values [t, v, c, ind, originalv] for time ct 
         
   let pre = 0 // Current cumulative sum
   let prevpt
@@ -571,7 +572,7 @@ function procData() {
   for (i = 0; i <= data.length; i++) {
     if (i < data.length && data[i][0] == ct) {
       // Record all points for the current timestamp in vl
-      vl.push([data[i][1], data[i][2], data[i][4]])
+      vl.push(data[i].slice())
     }
     
     if (i >= data.length || data[i][0] != ct) {
@@ -587,22 +588,23 @@ function procData() {
       newpts.push([ct, pre+ad, ptinf[0], // this is the processed datapoint
                    ct <= goal.asof ? DPTYPE.AGGPAST : DPTYPE.AGGFUTURE, 
                    prevpt[0], prevpt[1], // this is the previous point
-                   ptinf[1]])            // v(original)
+                   ptinf[2],             // v(original)
+                   ptinf[1]])            // index of original point if coincident
       
       // Update allvals and aggval associative arrays
       // allvals[timestamp] has entries [vtotal, comment, vorig]
       if (goal.kyoom) {
         if (goal.aggday === "sum") {
           allvals[ct] = 
-            bu.accumulate(vlv).map((e,j) => [e+pre, vl[j][1], vl[j][2]])
-        } else allvals[ct] = vl.map(e => [e[0]+pre, e[1], e[2]])
+            bu.accumulate(vlv).map((e,j) => [ct, e+pre, vl[j][2], vl[j][3], vl[j][4]])
+        } else allvals[ct] = vl.map(e => [ct, e[1]+pre, e[2], e[3], e[4]])
         aggval[ct] = pre+ad
         pre += ad
       } else {
         allvals[ct] = vl
         aggval[ct] = ad
       }
-      const vw = allvals[ct].map(e => e[0])
+      const vw = allvals[ct].map(e => e[1])
 
       // What we actually want for derailval is not this "worstval" but the 
       // agg'd value up to and including the recommit datapoint (see the
@@ -611,7 +613,7 @@ function procData() {
       
       if (i < data.length) {
         ct = data[i][0]
-        vl = [[data[i][1],data[i][2],data[i][4]]]
+        vl = [data[i].slice()]
       }
     }
   }
@@ -621,9 +623,9 @@ function procData() {
   let allpts = []
   for (let t in allvals) {
     allpts = allpts.concat(allvals[t].map(d => 
-      [Number(t), d[0], d[1], 
+      [Number(t), d[1], d[2], 
        Number(t) <= goal.asof ? DPTYPE.AGGPAST : DPTYPE.AGGFUTURE,
-       null, null, d[2]]))
+       null, null, d[4], d[3]]))
   }
   alldata = allpts
 
@@ -657,7 +659,7 @@ function procData() {
   // pts)
   hollow = data.filter(e => {
     if (!(e[0] in allvals)) return false
-    return (e[0]<goal.asof && !allvals[e[0]].map(e => e[0]).includes(e[1]))
+    return (e[0]<goal.asof && !allvals[e[0]].map(e => e[1]).includes(e[1]))
   })
   
   return ""
@@ -857,8 +859,8 @@ function setDefaultRange() {
   if (goal.plotall && goal.tmin<=goal.tini && goal.tini<=goal.tmax
       && goal.tini in allvals) {      
     // At tini, leave room for all non-agg'd datapoints
-    minmin = min(minmin, bu.arrMin(allvals[goal.tini].map(e => e[0])))
-    maxmax = max(maxmax, bu.arrMax(allvals[goal.tini].map(e => e[0])))
+    minmin = min(minmin, bu.arrMin(allvals[goal.tini].map(e => e[1])))
+    maxmax = max(maxmax, bu.arrMax(allvals[goal.tini].map(e => e[1])))
   }
   if (goal.vmin == null && goal.vmax == null) {
     goal.vmin = minmin
@@ -1276,6 +1278,8 @@ function genStats(p, d, tm=null) {
     legacyIn(p)                              // Which is kind of silly because
     initGlobals()                            // legacyIn and initGlobals take no
     goal.proctm = tm                         // time so could just get time here
+    // stampIn() returns the data array in the following format
+    // [t, v, c, index, v(original)] 
     data = stampIn(p, d)
 
     // make sure all supplied params are recognized
@@ -1293,7 +1297,7 @@ function genStats(p, d, tm=null) {
     // maybe just default to aggday=last; no such thing as aggday=null
     if (!('aggday' in p)) p.aggday = goal.kyoom ? "sum" : "last"
     
-    goal.siru = bu.SECS[p.runits]
+    goal.siru = bu.SECS[goal.runits]
     goal.horizon = goal.asof+bu.AKH
     // Save initial waterbuf value for comparison in bgraph.js
     goal.waterbuf0 = goal.waterbuf
