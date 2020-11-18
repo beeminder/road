@@ -924,6 +924,17 @@ self.lim = (rd, g, n) => { return self.rdf(rd, g.tcur+n*SID) }
 /** The bare min needed from vcur to the critical edge of the YBR in n days */
 self.limd = (rd, g, n) => { return self.lim(rd, g, n) - g.vcur }
 
+/** Computes and returns a dueby array with n elements */
+self.dueby = (rd, g, n) => {
+  let db = [...Array(n).keys()]
+      .map(i => [bu.dayify(g.tcur+i*SID),
+                 self.limd(rd, g, i),
+                 self.lim(rd, g, i)])
+  const tmpdueby = bu.zip(db)
+  return bu.zip([tmpdueby[0], bu.monotonize(tmpdueby[1],g.dir),
+                 bu.monotonize(tmpdueby[2],g.dir)])
+}
+  
 return self
 
 })); // END MAIN ---------------------------------------------------------------

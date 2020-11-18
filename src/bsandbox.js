@@ -56,7 +56,7 @@ const SID = 86400
    @param {object} div object on the DOM to create a {@link module:bgraph} instance on
    @param {bool} debug flag turns logging on or off. Default is false.
   */
-  bsandbox = function( div, debug = true ) {
+  bsandbox = function( div, divdueby = null, debug = true ) {
     // set log level for this instance of bsandbox. 
     var logger = (debug && typeof console != 'undefined') ? console : {
           info: function(){},
@@ -301,6 +301,7 @@ const SID = 86400
       while (goal.div.firstChild) goal.div.removeChild(goal.div.firstChild);
       goal.gdiv = d3.select(goal.div)
       var opts = {divGraph: goal.gdiv.node(),
+                  divDueby: divdueby,
                   roadEditor:false,
                   svgSize: { width: 696, height: 453 },
                   focusRect: { x:0, y:0, width:690, height: 453 },

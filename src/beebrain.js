@@ -1077,14 +1077,7 @@ function procParams() {
   goal.delta = bu.chop(goal.vcur - br.rdf(roads, goal.tcur))
   goal.rah = br.rdf(roads, goal.tcur+bu.AKH)
   
-  goal.dueby = [...Array(7).keys()]
-    .map(i => [bu.dayify(goal.tcur+i*SID),
-               br.limd(roads, goal, i),
-               br.lim(roads, goal, i)])
-  const tmpdueby = bu.zip(goal.dueby)
-  goal.dueby = bu.zip([tmpdueby[0], bu.monotonize(tmpdueby[1],goal.dir),
-                                    bu.monotonize(tmpdueby[2],goal.dir)])
-  
+  goal.dueby = br.dueby(roads, goal, 7)
   goal.safebump = br.lim(roads, goal, goal.safebuf)
   
   goal.rcur = br.rtf(roads, goal.tcur)*goal.siru  

@@ -53,24 +53,24 @@ new node, Ctrl-z to undo, Ctrl-y to redo</li>
 <div id="roadgraph" style="width:700px; height:450px"></div>
 
 <div class="gopts">
+<button id="zoomall" onclick="editor.zoomAll();">View All</button>
+<button id="zoomdflt" onclick="editor.zoomDefault();">Default Zoom</button>
+<button id="undo" onclick="editor.undo();">Undo (0)</button>
+<button id="redo" onclick="editor.redo();">Redo (0)</button><br/><br/>
 <form action="">
   <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>
   Show datapoints
   <input id="showalldata" type="checkbox" onclick="if (this.checked) editor.maxDataDays(-1); 
                                                    else editor.maxDataDays(100);" checked>
-  Show all datapoints
+  Show all datapoints<br/>
   <input id="showcontext" type="checkbox" onclick="editor.showContext(this.checked);" checked>
-  Show context graph<br>
+  Show context graph<br/>
   <input id="keepslopes" type="checkbox" onclick="editor.keepSlopes(this.checked);" checked>
-  Keep slopes fixed&nbsp;
+  Keep slopes fixed
   <input id="keepintervals" onclick="editor.keepIntervals(this.checked);" type="checkbox">
-  Keep intervals fixed
+  Keep intervals fixed<br/>
 </form>
 
-<button id="zoomall" onclick="editor.zoomAll();">View All</button>
-<button id="zoomdflt" onclick="editor.zoomDefault();">Default Zoom</button>
-<button id="undo" onclick="editor.undo();">Undo (0)</button>
-<button id="redo" onclick="editor.redo();">Redo (0)</button>
 </div>
 
 <div class="ratchet">
@@ -117,12 +117,16 @@ new node, Ctrl-z to undo, Ctrl-y to redo</li>
     <button id="commit" onclick="commitTo();">UPDATE</button>
   </div>
 
-  <input id="autoscroll" type="checkbox" onclick="editor.tableAutoScroll(this.checked);">
-  Auto-scroll table<br>
-  <input id="updateondrag" type="checkbox" onclick="editor.tableUpdateOnDrag(this.checked);">
-  Update table on drag<br>
   <input id="reversetable" type="checkbox" onclick="editor.reverseTable(this.checked);">
-  Reverse table order<br/>
+  Reverse table order&nbsp;
+  <input id="autoscroll" type="checkbox" onclick="editor.tableAutoScroll(this.checked);">
+  Auto-scroll table&nbsp;
+  <input id="updateondrag" type="checkbox" onclick="editor.tableUpdateOnDrag(this.checked);">
+  Update table on drag<br/>
+
+
+    <div style="font-size:120%; font-weight: bold; margin-top:10px">Amounts Due By Day</div>
+    <div style="display: inline-block; border:1px solid black;" id="duebytable"></div>
 
 </td>
 </tr>
@@ -149,6 +153,9 @@ new node, Ctrl-z to undo, Ctrl-y to redo</li>
   <br/>
   <input id="reversetable2" type="checkbox"  onclick="graph.reverseTable(this.checked);">
   Reverse table order<br/>
+  
+    <div style="font-size:120%; font-weight: bold; margin-top:10px">Amounts Due By Day</div>
+    <div style="display: inline-block; border:1px solid black;" id="duebytable2"></div>
 </td>
 </tr>
 </table>
@@ -223,6 +230,7 @@ new node, Ctrl-z to undo, Ctrl-y to redo</li>
 
   var editor = new bgraph({divGraph: document.getElementById('roadgraph'),
                           divTable: document.getElementById('roadtable'),
+                          divDueby: document.getElementById('duebytable'),
                           roadEditor:true,
                           maxFutureDays: 365,
                           showFocusRect: false,
@@ -240,6 +248,7 @@ new node, Ctrl-z to undo, Ctrl-y to redo</li>
 
   var graph = new bgraph({divGraph: document.getElementById('roadgraph2'),
                           divTable: document.getElementById('roadtable2'),
+                          divDueby: document.getElementById('duebytable2'),
                           roadEditor:false,
                           maxFutureDays: 365,
                           showFocusRect: false,

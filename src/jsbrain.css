@@ -46,6 +46,7 @@ svg text::selection { background: none; }
 .brush rect.focusrect { stroke: #7070ff;
                         pointer-events: none;   }
 
+/* Road matrix table styles */
 /*.rtable, .rtablestart, .rtablegoal { display: table; } */
 .roadhdr    { display:        table-header-group; }
 .roadbody   { display:        table-row-group;
@@ -80,10 +81,10 @@ svg text::selection { background: none; }
                font-size:        90%;              }
 
 .rtablebody, 
-.rtablestart { padding:          1px 0px 4px 0px;
-               border:           1px solid transparent;
-               border-collapse:  separate;
-               border-spacing:   8px 1px;                }
+.rtablestart {  padding:          1px 0px 4px 0px;
+           border:           1px solid transparent;
+           border-collapse:  separate;
+           border-spacing:   8px 1px;                }
 .rtablegoal {  border-collapse:  separate;
                background-color: #eeffee;
                padding:          0px 0px 5px 0px;
@@ -99,6 +100,18 @@ div.rowid    { min-width: 35px; }
 
 .floating { float:    left;
             position: absolute; }
+
+/* Dueby table styles */
+.dbhdrrow,.dbrow { display: table-row; }
+
+.dbhdrcell,
+.dbcell { display:          table-cell;
+          border:           1px;
+          padding:          5px 2px 2px 2px;
+          text-align:       left;
+          font-size:        90%;
+          white-space:      nowrap;           }
+
 
 .ratchet, .break { background-color: #f1f1f1;
                    border:           1px solid #d0d0d0;

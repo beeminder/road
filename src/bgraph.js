@@ -71,6 +71,8 @@ let defaults = {
   divTable:     null,    
   /** Binds the datapoint table to a div element */
   divPoints:    null,    
+  /** Binds the dueby table to a div element */
+  divDueby:    null,    
   /** Binds the goal JSON output to a div element */
   divJSON:      null,    
   /** Size of the SVG element to hold the graph */
@@ -177,6 +179,9 @@ let defaults = {
       induce some lagginess, particularly on Firefox due to more components
       being updated during dragging. */
   tableUpdateOnDrag: false,
+  /** Chooses whether the dueby table should be dynamically updated
+      during the dragging of road knots, dots, and segments. */
+  duebyUpdateOnDrag: true,
   /** Chooses whether the road matrix table should include checkboxes for
       choosing the field to be automatically computed */
   tableCheckboxes: false,
@@ -298,6 +303,7 @@ let config = (obj, options) => {
   if (opts.headless) {                        // Override options for svg output
     opts.divTable      = null
     opts.divPoints     = null
+    opts.divDueby      = null
     opts.scrollZoom    = false
     opts.roadEditor    = false
     opts.showContext   = false
@@ -1044,6 +1050,58 @@ function resizeGraph() {
 
 /** Creates all road matrix table components if a table DIV is provided. Called
  * once when the bgraph object is created. */
+var dbbody
+const dbcolors = [ bu.Cols.ORNG, bu.Cols.BLUDOT, bu.Cols.GRNDOT,
+                   bu.Cols.BLCK, bu.Cols.BLCK, bu.Cols.BLCK, bu.Cols.BLCK]
+function duebylabel(i) {
+  // TODO: Must take deadline and the current time into account, also
+  // implementing YESTERDAY when necessary
+  if (i == 0) return "Today"
+  if (i == 1) return "Tomorrow"
+  var mm = moment.unix(goal.asof+i*SID).utc()
+  return mm.format("ddd (Do)")
+}
+  
+/** Creates the skeleton for the dueby table and populates it with
+ * rows. Cells are created later in updateDueBy using d3 */
+function createDueBy() {
+  var div = opts.divDueby
+  if (div === null) return
+  // First, remove all children from the div
+  while (div.firstChild) div.removeChild(div.firstChild)
+
+  var divelt = d3.select(div)
+  dbbody = divelt.append("div").attr("class", "dbbody") /* Dueby table body */
+  var dbcolumns;
+  dbcolumns = ['DAY', 'DELTA', 'TOTAL'];
+  dbbody.append("div").attr('class', 'dbhdrrow')
+    .selectAll("span.dbhdrcell").data(dbcolumns)
+    .enter().append('span').attr('class', 'dbhdrcell')
+    .text((c)=>c);
+  dbbody
+    .selectAll(".dbrow")
+    .data([1,2,3,4,5,6,7])
+    .join(enter => enter.append("div").attr('class', 'dbrow'))
+}
+
+function updateDueBy() {
+  if (processing) return
+  if (opts.divDueby === null) return
+
+  const mark = "&#10004;"
+  let db = br.dueby(road, goal, 7)
+  
+  dbbody
+    .selectAll(".dbrow")
+    .selectAll(".dbcell")
+    .data((row, i) => {const col = dbcolors[i], del = db[i][1]; return [[duebylabel(i),col], [(del > 0 || goal.dir < 0)?bu.shn(del):mark,col], [bu.shn(db[i][2]),col]]})
+    .join(enter=>enter.append("span").attr('class', 'dbcell'), update=>update)
+    .html(d=>d[0])
+    .style('color', d=>d[1])
+}
+
+/** Creates all road matrix table components if a table DIV is provided. Called
+ * once when the bgraph object is created. */
 function createTable() {
   var div = opts.divTable
   if (div === null) return
@@ -1099,6 +1157,7 @@ function roadChanged() {
   updateGraphData(true)
   updateContextData()
   updateTable()
+  updateDueBy()
   if (typeof opts.onRoadChange === 'function') opts.onRoadChange.call()
 }
 
@@ -1818,6 +1877,7 @@ function loadGoal(json, timing = true) {
   zoomDefault()
 
   updateTable()
+  updateDueBy()
   updateContextData()
 
   // This next call ensures that stathead and other new graph
@@ -2033,6 +2093,7 @@ function updateDragPositions(kind, updateKnots) {
   }
 
   if (opts.tableUpdateOnDrag) updateTableValues()
+  if (opts.duebyUpdateOnDrag) updateDueBy()
   updateRoadData()
   updateRoadValidity()
   updateWatermark()
@@ -4957,6 +5018,7 @@ function updateGraphData(force = false) {
 
 createGraph()
 createTable()
+createDueBy()
 //zoomAll()
 
 /** bgraph object ID for the current instance */

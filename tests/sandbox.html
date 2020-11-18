@@ -2,18 +2,19 @@
 <html>
 <head>
   <title>Beeminder Sandbox</title>
-    <meta charset="utf-8">
-    <link rel="stylesheet" href="../src/pikaday.css">
-    <link rel="stylesheet" href="../src/jsbrain.css">
-    <script src = "https://d3js.org/d3.v5.js"></script>
-    <script src = "../src/moment.js"></script>
-    <script src = "../src/pikaday.js"></script>
-    <script src = "../src/polyfit.js"></script>
-    <script src = "../src/butil.js"></script>
-    <script src = "../src/broad.js"></script>
-    <script src = "../src/beebrain.js"></script>
-    <script src = "../src/bgraph.js"></script>
-    <script src = "../src/bsandbox.js"></script>
+  <meta http-equiv=Content-Type content="text/html;charset=utf-8">
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="../src/pikaday.css">
+  <link rel="stylesheet" href="../src/jsbrain.css">
+  <script src = "https://d3js.org/d3.v5.js"></script>
+  <script src = "../src/moment.js"></script>
+  <script src = "../src/pikaday.js"></script>
+  <script src = "../src/polyfit.js"></script>
+  <script src = "../src/butil.js"></script>
+  <script src = "../src/broad.js"></script>
+  <script src = "../src/beebrain.js"></script>
+  <script src = "../src/bgraph.js"></script>
+  <script src = "../src/bsandbox.js"></script>
 </head>
 
 <body>
@@ -200,10 +201,11 @@
     after the 7-day akrasia horizon but since you have that much
     safety buffer, you're golden!)
     </div>
+    <div style="font-size:120%; font-weight: bold; margin-top:10px">Amounts Due By Day</div>
+    <div style="display: inline-block; border:1px solid black;" id="dueby"></div>
   </td>
   </tr>
   </table>
-  
   <script>
     const visualProps
       = ['plotall','steppy','rosy','movingav','aura','hidey','stathead','hashtags']
@@ -215,6 +217,7 @@
     vini = document.getElementById("value")
     buffer = document.getElementById("buffer")
     gdiv = document.getElementById("sandbox")
+    dbdiv = document.getElementById("dueby")
     runits = document.getElementById("rateunit")
     dataval = document.getElementById("dataval")
     datacmt = document.getElementById("datacmt")
@@ -282,7 +285,7 @@
     }
     setDefaults()
     
-    bs = new bsandbox(gdiv)
+    bs = new bsandbox(gdiv,dbdiv)
     bs.newGoal(gtype.options[gtype.selectedIndex].value,
               runits.options[runits.selectedIndex].value,
               rfin.value, vini.value, buffer.checked);
