@@ -1049,17 +1049,17 @@ function resizeGraph() {
 }
 
 /** Creates all road matrix table components if a table DIV is provided. Called
- * once when the bgraph object is created. */
+ * once when the bgraph object is created. i is the table index, and "now" is nowstamp UTC unixtime/SID */
 var dbbody
-const dbcolors = [ bu.Cols.ORNG, bu.Cols.BLUDOT, bu.Cols.GRNDOT,
-                   bu.Cols.BLCK, bu.Cols.BLCK, bu.Cols.BLCK, bu.Cols.BLCK]
-function duebylabel(i) {
-  // TODO: Must take deadline and the current time into account, also
-  // implementing YESTERDAY when necessary
-  if (i == 0) return "Today"
-  if (i == 1) return "Tomorrow"
-  var mm = moment.unix(goal.asof+i*SID).utc()
-  return mm.format("ddd (Do)")
+function duebylabel(i, now) {
+  const mm = moment.unix(goal.asof+i*SID).utc()
+  const ds = bu.dayparse(mm.format("YYYYMMDD")) / SID
+  if (ds == now-1) return ["Yesterday", bu.Cols.REDDOT]
+  if (ds == now) return ["Today", bu.Cols.ORNG]
+  if (ds == now+1) return ["Tomorrow", bu.Cols.BLUDOT]
+  const dstr = mm.format("ddd (Do)")
+  if (ds == now+2) return [dstr, bu.Cols.GRNDOT]
+  return [dstr, bu.Cols.BLCK]
 }
   
 /** Creates the skeleton for the dueby table and populates it with
@@ -1088,13 +1088,34 @@ function updateDueBy() {
   if (processing) return
   if (opts.divDueby === null) return
 
+  // Generate a moment date object with the current time, in the
+  // user's timezone if supplied
+  var d
+  if (goal.hasOwnProperty('timezone')) {
+    // Use supplied timezone if moment-timezone is loaded
+    if (moment.hasOwnProperty('tz'))  d = moment().tz(goal.timezone)
+    else {
+      console.log("bgraph: Warning: moment-timezone is not loaded, using local time")
+      d = moment() // Use local time if moment-timezone is not loaded
+    }
+  } else d = moment()
+  // Adjust the current time if goal.asof is different than the
+  // current date to support the sandbox and example goals with past
+  // asof
+  if (goal.asof != bu.daysnap(moment.utc() / 1000))
+    d = moment.unix(goal.asof).hour(d.hour()).minutes(d.minutes()).seconds(d.seconds())
+  // Adjust time with the deadline and compute the daystamp for "now"
+  d.subtract(goal.deadline, 's')
+  d.hours(0).minutes(0).seconds(0).milliseconds(0)
+  const nowstamp = bu.dayparse(d.format("YYYYMMDD")) / SID
+  
   const mark = "&#10004;"
   let db = br.dueby(road, goal, 7)
   
   dbbody
     .selectAll(".dbrow")
     .selectAll(".dbcell")
-    .data((row, i) => {const col = dbcolors[i], del = db[i][1]; return [[duebylabel(i),col], [(del > 0 || goal.dir < 0)?bu.shn(del):mark,col], [bu.shn(db[i][2]),col]]})
+    .data((row, i) => {const inf = duebylabel(i,nowstamp), del = db[i][1]; return [inf, [(del > 0 || goal.dir < 0)?bu.shn(del):mark,inf[1]], [bu.shn(db[i][2]),inf[1]]]})
     .join(enter=>enter.append("span").attr('class', 'dbcell'), update=>update)
     .html(d=>d[0])
     .style('color', d=>d[1])
