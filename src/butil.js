@@ -654,19 +654,23 @@ self.median = (a) => {
   return m
 }
 
-/** Mode of values in list a
+/** Mode (commonest) of values in list a. Breaks ties in favor of whatever 
+    appears first in the lsit. (Mathematica-brain gave the median of the list of
+    commonest elements but literally no one cares about aggday=mode anyway.)
     @param {Number[]} a Input list*/
 self.mode = (a) => {
-  var md = [], count = [], i, num, maxi = 0, al = a.length
-  
-  for (i = 0; i < al; i += 1) {
-    num = a[i]
-    count[num] = (count[num] || 0) + 1
-    if (count[num] > maxi) maxi = count[num]
+  if (!a || !a.length) return NaN
+  let tally = {} // hash mapping each element of a to how many times it appears
+  let maxtally = 1
+  let maxitem = a[0]
+  for (const i in a) {
+    tally[a[i]] = (tally[a[i]] || 0) + 1
+    if (tally[a[i]] > maxtally) {
+      maxtally = tally[a[i]]
+      maxitem = a[i]
+    }
   }
-  
-  for (i in count) if (count[i] === maxi) md.push(Number(i))
-  return md
+  return maxitem
 }
 
 /** Whether min <= x <= max.

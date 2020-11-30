@@ -81,7 +81,11 @@ def clocky(l):
   return sum([end-start for [start,end] in partition(l,2,2)])
 
 ################################################################################
-# BOOKMARK: dreev has copied all notes and stuff to jsbrain up to this point
+################################################################################
+#                                                                              #
+#  BOOKMARK: dreev has copied all notes and stuff to jsbrain up to this point  #
+#                                                                              #
+################################################################################
 ################################################################################
 
 AGGR = { # Map possible aggday settings to lambdas that aggregate thusly

@@ -1156,7 +1156,7 @@ def monitor(stdscr, bbdir, graph, svgo, logging, force, watchdirs):
   # Create and render windows
   resize_windows()
 
-  curses.curs_set(False)
+  curses.curs_set(False) # iterm on macos doesn't like this
   cm.lwin.keypad(True)
   cm.lwin.nodelay(True)
   
