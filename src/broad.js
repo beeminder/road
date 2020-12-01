@@ -56,6 +56,7 @@ const SID = 86400
 var self = {}
 
 self.rfin = 0 // Hack to implement skatesum
+self.rcur = 0 // Hack to implement skatesum
 
 /** Collection of functiont to perform datapoint aggregation
     @enum {function} */
@@ -79,8 +80,8 @@ square   : (x) => pow(bu.sum(x),2),
 clocky   : bu.clocky, // sum of pair diff.
 count    : (x) => x.length, // number of datapoints
 kyshoc   : (x) => min(2600, bu.sum(x)), // ad hoc, guineapigging
-//TODO: FIXHACK?: Introduced internal state for rfin for skatesum
-skatesum : (x) => min(self.rfin, bu.sum(x)), // only count daily min
+//TODO: FIXHACK?: Introduced internal state for rfin or rcur for skatesum
+skatesum : (x) => min(self.rfin, bu.sum(x)), // cap at daily rate
 cap1     : (x) => min(1, bu.sum(x)), // for zedmango
 }
 
@@ -276,14 +277,14 @@ self.ppr = (rd, g, t, i=null, pastppr=false) => {
 
 /** Return number of days to derail for the current road.
     TODO: There are some issues with computing tcur, vcur */
-self.dtd = (rd, goal, t, v) => {
-  if (self.redyest(rd, goal, t)) return 0 // TODO: need iso here
+self.dtd = (rd, gol, t, v) => {
+  if (self.redyest(rd, gol, t)) return 0 // TODO: need iso here
 
   let x = 0 // the number of steps
-  let vpess = v + self.ppr(rd, goal, t+x*SID) // value as we walk fwd w/ PPRs
-  while (self.aok(rd, goal, t+x*SID, vpess) && t+x*SID <= max(goal.tfin, t)) {
+  let vpess = v + self.ppr(rd, gol, t+x*SID) // value as we walk fwd w/ PPRs
+  while (self.aok(rd, gol, t+x*SID, vpess) && t+x*SID <= max(gol.tfin, t)) {
     x += 1 // walk forward until we're off the YBR
-    vpess += self.ppr(rd, goal, t+x*SID)
+    vpess += self.ppr(rd, gol, t+x*SID)
   }
   return x
 }
@@ -325,10 +326,10 @@ used later to compute isolines for the dtd function, which are curves
 along which the dtd function is constant. This is used to compute and
 visualize colored regions on graphs as well as guidelines.
 */
-self.dtdarray = ( rd, goal ) => {
+self.dtdarray = ( rd, gol ) => {
   var rdl = rd.length
   var xcur = rd[rdl-1].sta[0], ycur = rd[rdl-1].sta[1], xn, yn
-  var ppr = self.ppr(rd, goal, 0, rdl-1), sl, dtd
+  var ppr = self.ppr(rd, gol, 0, rdl-1), sl, dtd
   var arr = [], seg
   arr = [[[xcur, ycur, 0, ycur-ppr, 1]]]
   for (var i = rdl-2; i >= 0; i--) {
@@ -336,10 +337,10 @@ self.dtdarray = ( rd, goal ) => {
     ycur = rd[i].sta[1]
     xn = rd[i].end[0]
     yn = rd[i].end[1]
-    ppr = self.ppr(rd, goal, 0, i, true)
+    ppr = self.ppr(rd, gol, 0, i, true)
     dtd = ((xn-xcur)/SID)
     if (!isFinite(ppr)) {
-      if (goal.dir*(ycur - yn) > 0)
+      if (gol.dir*(ycur - yn) > 0)
         seg = [[xcur, ycur, 0, yn, dtd]]
       else
         seg = [[xcur, ycur, 0, yn-2*(yn-ycur), dtd]]
@@ -349,7 +350,7 @@ self.dtdarray = ( rd, goal ) => {
     var last = arr[arr.length-1]
     for (var j = 0; j < last.length; j++) {
       if (!isFinite(ppr)) {
-        if (goal.dir*(ycur - yn) > 0)
+        if (gol.dir*(ycur - yn) > 0)
           seg.push([xcur,last[j][1], last[j][2],last[j][3], last[j][4]])
         else
           seg.push([xcur,last[j][1]-2*(yn-ycur), last[j][2]+(xn-xcur),
@@ -367,7 +368,7 @@ self.dtdarray = ( rd, goal ) => {
 /**Generate and return an initial version of the isoline by processing the
    supplied dtdarray. The resulting isoline is correct for doless and rash
    goals, but will need further processing for goal with dir*yaw>0. */
-self.isoline_generate = (rd, dtdarr, goal, v) => {
+self.isoline_generate = (rd, dtdarr, gol, v) => {
   var n = dtdarr[0], nn, iso
   var s = 0, ns, j, k, st, en, sl
 
@@ -420,8 +421,8 @@ self.isoline_generate = (rd, dtdarr, goal, v) => {
 /**Ensure correctness of the isoline for do-more goals such that the isoline is
    not allowed to go against 'dir' for dtd days after a road kink. This ensures
    that the first intersection with the razor road is taken as the dtd value. */
-self.isoline_monotonicity = (iso, rd, dtdarr, goal, v) => {
-  if (goal.yaw * goal.dir < 0) return iso
+self.isoline_monotonicity = (iso, rd, dtdarr, gol, v) => {
+  if (gol.yaw * gol.dir < 0) return iso
   
   let isoout = []
   let downstreak = false
@@ -434,12 +435,12 @@ self.isoline_monotonicity = (iso, rd, dtdarr, goal, v) => {
   // j iterates over unfiltered isoline segments
   for (j = 0; j < iso.length-1; j++) {
     // If an upslope is detected, finish downstreak
-    if ((iso[j+1][1] - iso[j][1]) * goal.dir > 0) downstreak = false
+    if ((iso[j+1][1] - iso[j][1]) * gol.dir > 0) downstreak = false
     
     addpt(isoout, iso[j])
     
     // Check if new downstreak to initiate new flat region (when dtd != 0)
-    if (v != 0 && (iso[j+1][1] - iso[j][1]) * goal.dir < 0 && !downstreak) {
+    if (v != 0 && (iso[j+1][1] - iso[j][1]) * gol.dir < 0 && !downstreak) {
       
       downstreak = true
       // Extend horizontally by at least dtd days or till we find positive slope
@@ -452,7 +453,7 @@ self.isoline_monotonicity = (iso, rd, dtdarr, goal, v) => {
           newx = iso[j][0]+v*SID
           addpt(isoout, [newx, iso[j][1]])
           
-        } else if ((iso[k+1][1] - iso[k][1]) * goal.dir >= 0) {
+        } else if ((iso[k+1][1] - iso[k][1]) * gol.dir >= 0) {
           // Found a positive slope, finish flat region by extending until 
           // intersection with the positive slope unless the next segment ends
           // before that.
@@ -483,7 +484,7 @@ self.isoline_monotonicity = (iso, rd, dtdarr, goal, v) => {
 }
 
 /** Eliminate backward line segments introduced by the monotonicty pass. */
-self.isoline_nobackward = (iso, rd, dtdarr, goal, v) => {
+self.isoline_nobackward = (iso, rd, dtdarr, gol, v) => {
   var isoout = [iso[0].slice()], lastpt, slope, j
   for (j = 1; j < iso.length; j++) {
     lastpt = isoout[isoout.length-1]
@@ -501,7 +502,7 @@ self.isoline_nobackward = (iso, rd, dtdarr, goal, v) => {
 }
 
 /* Eliminates segments on the wrong side of the road */
-self.isoline_clip = ( iso, rd, dtdarr, goal, v ) => {
+self.isoline_clip = ( iso, rd, dtdarr, gol, v ) => {
   var isoout = []
 
   function lineval(s, e, x) {
@@ -529,7 +530,7 @@ self.isoline_clip = ( iso, rd, dtdarr, goal, v ) => {
   // Clip a single point to the right side of the road. Assume points on
   // vertical segments are clipped wrt to the closest boundary to the wrong (side=-1)
   // or good (side=1) side of the road.
-  function clippt(rd, goal, pt, side = -1) {
+  function clippt(rd, gol, pt, side = -1) {
     var newpt = pt.slice()
     // Find the road segment [sta, end[ containing the pt
     var seg = self.findSeg(rd, pt[0])
@@ -537,10 +538,10 @@ self.isoline_clip = ( iso, rd, dtdarr, goal, v ) => {
     // If there are preceding vertical segments, take the boundary value based
     // on road yaw.
     while(--seg >= 0 && rd[seg].sta[0] == pt[0]) {
-      if (-side*goal.yaw > 0) rdy = min(rdy, rd[seg].sta[1])
+      if (-side*gol.yaw > 0) rdy = min(rdy, rd[seg].sta[1])
       else              rdy = max(rdy, rd[seg].sta[1])
     }
-    if ((newpt[1] - rdy) * goal.yaw < 0) newpt[1] = rdy
+    if ((newpt[1] - rdy) * gol.yaw < 0) newpt[1] = rdy
     return newpt
   }
 
@@ -551,7 +552,7 @@ self.isoline_clip = ( iso, rd, dtdarr, goal, v ) => {
   // the right side of the road
   if (iso[1][0] != iso[0][0]) side = 1
   else side = -1
-  isoout.push(clippt(rd, goal, iso[0], side))
+  isoout.push(clippt(rd, gol, iso[0], side))
   while (!done) {
     if (rdind > rd.length-1 || isoind > iso.length-2) break
 
@@ -565,7 +566,7 @@ self.isoline_clip = ( iso, rd, dtdarr, goal, v ) => {
       // points, add the road inflection point to avoid leaky isolines
       // on the wrong side of the road.
       if ((lineval(iso[isoind], iso[isoind+1],
-                   rd[rdind].end[0]) - rd[rdind].end[1]) * goal.yaw < 0)
+                   rd[rdind].end[0]) - rd[rdind].end[1]) * gol.yaw < 0)
         isoout.push([rd[rdind].end[0], rd[rdind].end[1]])
       rdind++
     } else {
@@ -575,7 +576,7 @@ self.isoline_clip = ( iso, rd, dtdarr, goal, v ) => {
       // the leaky isoline issue
       if (isoind < iso.length-1 && iso[isoind][0] != iso[isoind+1][0]) side = 1
       else side = -1
-      isoout.push(clippt(rd, goal, iso[isoind], side))
+      isoout.push(clippt(rd, gol, iso[isoind], side))
     }
   }
   return isoout
@@ -586,11 +587,11 @@ self.isoline_clip = ( iso, rd, dtdarr, goal, v ) => {
  * guidelines. Coordinate points stggart from the beginning of the road and 
  * proceed forward.
 */
-self.isoline = ( rd, dtdarr, goal, v, retall=false ) => {
-  let iso1 = self.isoline_generate( rd, dtdarr, goal, v)
-  let iso2 = self.isoline_monotonicity( iso1, rd, dtdarr, goal, v)
-  let iso3 = self.isoline_nobackward( iso2, rd, dtdarr, goal, v)
-  let iso4 = self.isoline_clip( iso3, rd, dtdarr, goal, v)
+self.isoline = ( rd, dtdarr, gol, v, retall=false ) => {
+  let iso1 = self.isoline_generate( rd, dtdarr, gol, v)
+  let iso2 = self.isoline_monotonicity( iso1, rd, dtdarr, gol, v)
+  let iso3 = self.isoline_nobackward( iso2, rd, dtdarr, gol, v)
+  let iso4 = self.isoline_clip( iso3, rd, dtdarr, gol, v)
 
   if (retall) return [iso1, iso2, iso3, iso4]
   else return iso4
@@ -615,9 +616,9 @@ self.isoval = ( line, x ) => {
 
 /** Days To Derail: Count the integer days till you cross the razor road or hit
     tfin (whichever comes first) if nothing reported. Not currently used. */
-self.dtd_walk = (rd, goal, t, v) => {
+self.dtd_walk = (rd, gol, t, v) => {
   let x = 0
-  while(self.gdelt(rd, goal, t+x*SID, v) >= 0 && t+x*SID <= goal.tfin) x += 1
+  while(self.gdelt(rd, gol, t+x*SID, v) >= 0 && t+x*SID <= gol.tfin) x += 1
   return x
 }
 

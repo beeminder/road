@@ -209,7 +209,7 @@ const DPTYPE = {
 const ErrType = { NOBBFILE:0, BADBBFILE:1  }
 
 /** Enum object to identify error types */
-const ErrMsgs = [ "Could not find goal file.", "Bad goal file." ]
+const ErrMsgs = [ "Could not find goal (.bb) file.", "Bad .bb file." ]
 
 /** Type of the last error */
 const LastError = null
@@ -232,43 +232,42 @@ let curid = gid
 gid++
 
 bbin = bu.extend({}, bbin) // Make new copy of the input to prevent overwriting
-  
+
 // Private variables holding goal, road, and datapoint info
-let roads = []
-let goal = {}       // Holds loaded goal parameters
-let alldata = []    // Holds the entire set of datapoints
-let data = []       // Holds past aggregated data
-let rosydata = []   // Holds rosy data
-let fuda = []       // Holds all future data
+let roads = []      // Beebrain-style road data structure w/ sta/end/slope/auto
+let gol = {}        // Goal parameters passed to Beebrain
+let alldata = []    // Entire set of datapoints passed to Beebrain
+let data = []       // Past aggregated data
+let rosydata = []   // Derived data corresponding to the rosy line
+let fuda = []       // Future data
 let undoBuffer = [] // Array of previous roads for undo
 let redoBuffer = [] // Array of future roads for redo
 let oresets = []    // Odometer resets
 let derails = []    // Derailments
 let hollow = []     // Hollow points
-let allvals = {}    // Dictionary holding values for each timestamp
-let aggval = {}     // Dictionary holding aggregated value for each timestamp
+let allvals = {}    // Hash mapping timestamps to list of datapoint values
+let aggval = {}     // Hash mapping timestamps to aggday'd value for that day
 let derailval = {}  // Map timestamp to value as of RECOMMIT datapoint that day
-let hashhash = {}   // Maps timestamp to sets of hashtags to display on graph
+let hashhash = {}   // Map timestamp to sets of hashtags to display on graph
 let hashtags = []   // Array of timestamp string pairs for hashtag lists
  
-// Initialize goal with sane values
-goal.yaw = +1; goal.dir = +1
-goal.tcur = 0; goal.vcur = 0; goal.vprev = 0;
+// Initialize gol with sane values
+gol.yaw = +1; gol.dir = +1
+gol.tcur = 0; gol.vcur = 0; gol.vprev = 0
 const now = moment.utc()
 now.hour(0); now.minute(0); now.second(0); now.millisecond(0)
-goal.asof = now.unix()
-goal.horizon = goal.asof+bu.AKH
-goal.xMin =    goal.asof;  goal.xMax = goal.horizon
-goal.yMin =    -1;         goal.yMax = 1
+gol.asof = now.unix()
+gol.horizon = gol.asof+bu.AKH
+gol.xMin =    gol.asof;  gol.xMax = gol.horizon
+gol.yMin =    -1;        gol.yMax = 1
 
 /**Convert legacy parameters to modern counterparts for backward compatibility.
    @param {Object} p Goal parameters from the bb file */
 function legacyIn(p) {
-  //if (p.gldt!==undefined && p.tfin===undefined) p.tfin = p.gldt
-  if ('goal' in p && !('vfin' in p))  p.vfin = p.goal
-  if ('rate' in p && !('rfin' in p))  p.rfin = p.rate
-  if ('usr'  in p && 'graph' in p && !('yoog' in p)) 
-    p.yoog = p.usr + "/" + p.graph
+  //if (p.gldt!==undefined && p.tfin===undefined)      p.tfin = p.gldt   #SCHDEL
+  if ('goal' in p && !('vfin' in p))                 p.vfin = p.goal
+  if ('rate' in p && !('rfin' in p))                 p.rfin = p.rate
+  if ('usr'  in p && 'graph' in p && !('yoog' in p)) p.yoog = p.usr+"/"+p.graph
 }
   
 // Helper function for legacyOut
@@ -284,9 +283,9 @@ function legacyOut(p) {
   p.fullroad = p.fullroad.map( r=>rowfix(r) )
   p['road']     = p['fullroad']
   if (p['error']) {
-    p['gldt'] = bu.dayify(goal.tfin)
-    p['goal'] = goal.vfin
-    p['rate'] = goal.rfin*goal.siru
+    p['gldt'] = bu.dayify(gol.tfin)
+    p['goal'] = gol.vfin
+    p['rate'] = gol.rfin*gol.siru
   } else {
     const len = p['fullroad'].length
     if (len > 0) {
@@ -295,11 +294,11 @@ function legacyOut(p) {
       p['rate'] = p['fullroad'][len-1][2]
     }
   }
-  p['tini'] = bu.dayify(goal.tini)
-  p['vini'] = goal.vini
-  p['tfin'] = bu.dayify(goal.tfin)
-  p['vfin'] = goal.vfin
-  p['rfin'] = goal.rfin
+  p['tini'] = bu.dayify(gol.tini)
+  p['vini'] = gol.vini
+  p['tfin'] = bu.dayify(gol.tfin)
+  p['vfin'] = gol.vfin
+  p['rfin'] = gol.rfin
 }
 
 /** Initialize various global variables before use */
@@ -312,15 +311,15 @@ function initGlobals() {
   aggval = {}
   derailval = {}
   
-  goal = {}
-  goal.siru = null
+  gol = {}
+  gol.siru = null
   oresets = []
   derails = []
   hashhash = {}
   
-  // All the in and out params are also global, via the goal hash
-  for (const key in pout) goal[key] = pout[key]
-  for (const key in pin)  goal[key] = pin[key]
+  // All the in and out params are also global, via the gol hash
+  for (const key in pout) gol[key] = pout[key]
+  for (const key in pin)  gol[key] = pin[key]
 }
 
 function parserow(row) {
@@ -370,8 +369,8 @@ function ema(d, x) {
   // The Hacker's Diet recommends 0.1; Uluc had .0864
   // http://forum.beeminder.com/t/control-exp-moving-av/2938/7 suggests 0.25
   let KEXP = .25/SID 
-  if (goal.yoog==='meta/derev')   KEXP = .03/SID   // .015 for meta/derev
-  if (goal.yoog==='meta/dpledge') KEXP = .03/SID   // .1 jagged
+  if (gol.yoog==='meta/derev')   KEXP = .03/SID   // .015 for meta/derev
+  if (gol.yoog==='meta/dpledge') KEXP = .03/SID   // .1 jagged
   let xp = d[0][0]
   let yp = d[0][1]
   let prev = yp, dt, i, ii, A, B
@@ -426,11 +425,11 @@ function inertiaRev(dat, dlt, sgn) {
 
 /** Pre-compute rosy datapoints */
 function computeRosy() {
-  if (!goal.rosy || data.length == 0) return
+  if (!gol.rosy || data.length == 0) return
   // Pre-compute rosy datapoints
-  const delta = max(0, goal.stdflux)
+  const delta = max(0, gol.stdflux)
   let lo, hi
-  if (goal.dir > 0) {
+  if (gol.dir > 0) {
     lo = inertia(   data, delta, -1)
     hi = inertiaRev(data, delta, +1)
   } else {
@@ -479,7 +478,7 @@ function dval(d) { return d[1] }
 
 // Compute [informative comment, originalv (or null)] for aggregated points
 function aggpt(vl, v) { // v is the aggregated value
-  const kyoomy = goal.kyoom && goal.aggday === "sum"
+  const kyoomy = gol.kyoom && gol.aggday === "sum"
   if (vl.length === 1) return [vl[0][2], vl[0][3], vl[0][4]]
   else {
     let i
@@ -487,10 +486,10 @@ function aggpt(vl, v) { // v is the aggregated value
     if (kyoomy) i = bu.accumulate(vl.map(dval)).indexOf(v)
     else        i = vl.map(dval).indexOf(v)
     // if not, aggregated point stands alone
-    if (i < 0) return [goal.aggday, null, null]
+    if (i < 0) return [gol.aggday, null, null]
     // if found, append (aggday) to comment and record original value
     else {
-      return [vl[i][1]+" ("+goal.aggday+")", vl[i][3], vl[i][4]]
+      return [vl[i][1]+" ("+gol.aggday+")", vl[i][3], vl[i][4]]
     }
   } // first change; second change
 }
@@ -521,7 +520,7 @@ function procData() {
       return "Invalid datapoint: "+d[0]+" "+d[1]+' "'+d[3] 
 
     // Extract and record hashtags
-    if (goal.hashtags) {
+    if (gol.hashtags) {
       const hset = hashextract(d[2])
       if (hset.size == 0) continue
       if (!(d[0] in hashhash)) hashhash[d[0]] = new Set()
@@ -530,7 +529,7 @@ function procData() {
   }
 
   // Precompute list of [t, hashtext] pairs for efficient display
-  if (goal.hashtags) {
+  if (gol.hashtags) {
     hashtags = []
     const keys = Object.keys(hashhash)
     for (const key in hashhash)
@@ -548,19 +547,19 @@ function procData() {
   }
     
   // Identify, record and process odometer reset for odom goals
-  if (goal.odom) {
+  if (gol.odom) {
     oresets = data.filter(e => e[1]==0).map(e => e[0])
     br.odomify(data)
   }
-  const nonfuda = data.filter(e => e[0]<=goal.asof)
-  if (goal.plotall) goal.numpts = nonfuda.length
+  const nonfuda = data.filter(e => e[0]<=gol.asof)
+  if (gol.plotall) gol.numpts = nonfuda.length
   
   allvals = {}
   aggval = {}
 
   // Aggregate datapoints and handle kyoom
-  // HACK: aggday=skatesum requires knowledge of rfin
-  br.rfin = goal.rfin
+  // HACK: aggday=skatesum requires knowledge of rfin or rcur
+  br.rfin = gol.rfin
   let newpts = []
   let ct = data[0][0] // Current time
   let vl = []  // Value list: All values [t, v, c, ind, originalv] for time ct 
@@ -578,7 +577,7 @@ function procData() {
     if (i >= data.length || data[i][0] != ct) {
       // Done recording all data for today
       let vlv = vl.map(dval)              // Extract all values for today
-      let ad  = br.AGGR[goal.aggday](vlv) // Compute aggregated value
+      let ad  = br.AGGR[gol.aggday](vlv)  // Compute aggregated value
       // Find previous point to record its info in the aggregated point
       if (newpts.length > 0) prevpt = newpts[newpts.length-1]
       else prevpt = [ct, ad+pre]
@@ -586,15 +585,15 @@ function procData() {
       let ptinf = aggpt(vl, ad)
       // Create new datapoint
       newpts.push([ct, pre+ad, ptinf[0], // this is the processed datapoint
-                   ct <= goal.asof ? DPTYPE.AGGPAST : DPTYPE.AGGFUTURE, 
+                   ct <= gol.asof ? DPTYPE.AGGPAST : DPTYPE.AGGFUTURE, 
                    prevpt[0], prevpt[1], // this is the previous point
                    ptinf[2],             // v(original)
                    ptinf[1]])            // index of original point if coincident
       
       // Update allvals and aggval associative arrays
       // allvals[timestamp] has entries [vtotal, comment, vorig]
-      if (goal.kyoom) {
-        if (goal.aggday === "sum") {
+      if (gol.kyoom) {
+        if (gol.aggday === "sum") {
           allvals[ct] = 
             bu.accumulate(vlv).map((e,j) => [ct, e+pre, vl[j][2], vl[j][3], vl[j][4]])
         } else allvals[ct] = vl.map(e => [ct, e[1]+pre, e[2], e[3], e[4]])
@@ -609,7 +608,7 @@ function procData() {
       // What we actually want for derailval is not this "worstval" but the 
       // agg'd value up to and including the recommit datapoint (see the
       // recommitted() function) and nothing after that:
-      derailval[ct] = goal.yaw < 0 ? bu.arrMax(vw) : bu.arrMin(vw)
+      derailval[ct] = gol.yaw < 0 ? bu.arrMax(vw) : bu.arrMin(vw)
       
       if (i < data.length) {
         ct = data[i][0]
@@ -624,26 +623,26 @@ function procData() {
   for (let t in allvals) {
     allpts = allpts.concat(allvals[t].map(d => 
       [Number(t), d[1], d[2], 
-       Number(t) <= goal.asof ? DPTYPE.AGGPAST : DPTYPE.AGGFUTURE,
+       Number(t) <= gol.asof ? DPTYPE.AGGPAST : DPTYPE.AGGFUTURE,
        null, null, d[4], d[3]]))
   }
   alldata = allpts
 
-  fuda = newpts.filter(e => e[0]>goal.asof)
-  data = newpts.filter(e => e[0]<=goal.asof)
+  fuda = newpts.filter(e => e[0]>gol.asof)
+  data = newpts.filter(e => e[0]<=gol.asof)
   if (data.length == 0) return "All datapoints are in the future!"
 
-  if (!goal.plotall) goal.numpts = data.length
+  if (!gol.plotall) gol.numpts = data.length
   
   // Compute data mean after filling in gaps
   const gfd = br.gapFill(data)
   const gfdv = gfd.map(e => (e[1]))
-  if (data.length > 0) goal.mean = bu.mean(gfdv)
+  if (data.length > 0) gol.mean = bu.mean(gfdv)
   if (data.length > 1)
-    goal.meandelt = bu.mean(bu.partition(gfdv,2,1).map(e => e[1] - e[0]))
+    gol.meandelt = bu.mean(bu.partition(gfdv,2,1).map(e => e[1] - e[0]))
   
   // time of last entered datapoint pre-flatline (so ignoring future data)
-  goal.tdat = data[data.length-1][0]
+  gol.tdat = data[data.length-1][0]
   
   // Adjust derailment markers to indicate worst value for that day
   for (i = 0; i < derails.length; i++) {
@@ -659,7 +658,7 @@ function procData() {
   // pts)
   hollow = data.filter(e => {
     if (!(e[0] in allvals)) return false
-    return (e[0]<goal.asof && !allvals[e[0]].map(e => e[1]).includes(e[1]))
+    return (e[0]<gol.asof && !allvals[e[0]].map(e => e[1]).includes(e[1]))
   })
   
   return ""
@@ -683,8 +682,8 @@ function procRoad(json) {
   const rdData = json
   const nk = rdData.length
   let firstsegment
-  let tini = goal.tini
-  let vini = goal.vini
+  let tini = gol.tini
+  let vini = gol.vini
   // Handle cases where first road matrix row starts earlier than (tini,vini)
   if (rdData[0][0] != null && rdData[0][0] < tini) {
     tini = rdData[0][0]
@@ -710,7 +709,7 @@ function procRoad(json) {
     
     if (rddate == null) {
       segment.end = [0, Number(rdvalue)]
-      segment.slope = Number(rdslope)/(goal.siru)
+      segment.slope = Number(rdslope)/(gol.siru)
       if (segment.slope != 0) {
         segment.end[0] = segment.sta[0] 
                          + (segment.end[1] - segment.sta[1])/segment.slope
@@ -726,7 +725,7 @@ function procRoad(json) {
       segment.auto = br.RP.DATE
     } else if (rdvalue == null) {
       segment.end = [rddate, 0]
-      segment.slope = Number(rdslope)/(goal.siru)
+      segment.slope = Number(rdslope)/(gol.siru)
       segment.end[1] = 
         segment.sta[1]
         +segment.slope*(segment.end[0]-segment.sta[0])
@@ -742,12 +741,12 @@ function procRoad(json) {
     }
   }
   // Extract computed values for tfin, vfin and rfin
-  const goalseg = roads[roads.length-1]
+  const golseg = roads[roads.length-1]
   
   // A final segment is added, ending 100 days after tfin
   const finalsegment = {
-    sta: goalseg.end.slice(),
-    end: goalseg.end.slice(),
+    sta: golseg.end.slice(),
+    end: golseg.end.slice(),
     slope: 0, auto: br.RP.VALUE }
   finalsegment.end[0] = bu.daysnap(finalsegment.end[0]+100*SID*DIY) // 100y?
   roads.push(finalsegment)
@@ -769,37 +768,37 @@ function flatline() {
   const prevpt = data[data.length-1]
   const tlast  = prevpt[0]
   const vlast  = prevpt[1]
-  if (goal.yaw * goal.dir < 0 && tlast <= goal.tfin) {
-    const tflat = min(goal.asof, goal.tfin)
+  if (gol.yaw * gol.dir < 0 && tlast <= gol.tfin) {
+    const tflat = min(gol.asof, gol.tfin)
     if (!(tflat in aggval)) {
       flad = [tflat, vlast, "PPR", DPTYPE.FLATLINE, tlast, vlast, null]
       data.push(flad)
     }
   }
 original version of flatline() ************************************************/
-  const now = goal.asof
+  const now = gol.asof
   const numpts = data.length
   const tlast = data[numpts-1][0]
   const vlast = data[numpts-1][1]
   
-  if (tlast > goal.tfin) return
+  if (tlast > gol.tfin) return
   
   let x = tlast // x = the time we're flatlining to
-  if (goal.yaw * goal.dir < 0) 
-    x = min(now, goal.tfin) // WEEN/RASH: flatline all the way
+  if (gol.yaw * gol.dir < 0) 
+    x = min(now, gol.tfin) // WEEN/RASH: flatline all the way
   else { // for MOAR/PHAT, stop flatlining if 2 red days in a row
     let prevcolor = null
     let newcolor
-    while (x <= min(now, goal.tfin)) { // walk forward from tlast
-      // goal.isolines not defined yet so makes no sense calling dotcolor() TODO
-      newcolor = br.dotcolor(roads, goal, x, vlast, goal.isolines)
+    while (x <= min(now, gol.tfin)) { // walk forward from tlast
+      // gol.isolines not defined yet so makes no sense calling dotcolor() TODO
+      newcolor = br.dotcolor(roads, gol, x, vlast, gol.isolines)
       // done iff 2 reds in a row
       if (prevcolor===newcolor && prevcolor===bu.Cols.REDDOT) break
       prevcolor = newcolor
       x += SID // or see doc.bmndr.com/ppr
     }
     // the following looks particularly unnecessary
-    x = min(x, now, goal.tfin)
+    x = min(x, now, gol.tfin)
     for (let i = 0; i < numpts; i++) if (x == data[i][0]) return
   }
 
@@ -813,66 +812,68 @@ original version of flatline() ************************************************/
 /** Set any of {tmin, tmax, vmin, vmax} that don't have explicit values.
  * Duplicates Pybrain's setRange() behavior. */
 function setDefaultRange() {
-  if (goal.tmin == null) goal.tmin = min(goal.tini, goal.asof)
-  if (goal.tmax == null) {
+  if (gol.tmin == null) gol.tmin = min(gol.tini, gol.asof)
+  if (gol.tmax == null) {
     // Make more room beyond the askrasia horizon if lots of data
-    const years = floor((goal.tcur - goal.tmin) / (DIY*SID))
-    goal.tmax = bu.daysnap((1+years/2)*2*bu.AKH + goal.tcur)
+    const years = floor((gol.tcur - gol.tmin) / (DIY*SID))
+    gol.tmax = bu.daysnap((1+years/2)*2*bu.AKH + gol.tcur)
   }
-  if (goal.vmin != null && goal.vmax != null) {
+  if (gol.vmin != null && gol.vmax != null) {
     // both provided explicitly
-    if (goal.vmin == goal.vmax) {
-      goal.vmin -= 1; goal.vmax += 1    // scooch away from each other
-    } else if (goal.vmin >  goal.vmax) {
-      const tmp = goal.vmin
-      goal.vmin = goal.vmax; goal.vmax = tmp //swap them
+    if (gol.vmin == gol.vmax) {
+      gol.vmin -= 1; gol.vmax += 1    // scooch away from each other
+    } else if (gol.vmin >  gol.vmax) {
+      // TODO: [gol.vmin, gol.vmax] = [gol.vmax, gol.vmin]
+      const tmp = gol.vmin
+      gol.vmin = gol.vmax; gol.vmax = tmp // swap them
     }
     return
   }
   
   const PRAF = 0.015
-  const a = br.rdf(roads, goal.tmin)
-  const b = br.rdf(roads, goal.tmax)
-  const d0 = data.filter(e => e[0] <= goal.tmax && e[0] >= goal.tmin)
+  const a = br.rdf(roads, gol.tmin)
+  const b = br.rdf(roads, gol.tmax)
+  const d0 = data.filter(e => e[0] <= gol.tmax && e[0] >= gol.tmin)
                  .map(e => e[1])
   let mind = bu.arrMin(d0)
   let maxd = bu.arrMax(d0)
   // Make room for the ghosty PPR datapoint
-  if (flad != null && flad[0] <= goal.tmax && flad[0] >= goal.tmin) {
-    const pprv = flad[1] + br.ppr(roads, goal, goal.asof)
+  if (flad != null && flad[0] <= gol.tmax && flad[0] >= gol.tmin) {
+    const pprv = flad[1] + br.ppr(roads, gol, gol.asof)
     mind = min(mind, pprv) // Make room for the 
     maxd = max(maxd, pprv) // ghosty PPR datapoint.
   }
   const padding = max(0, (maxd-mind)*PRAF*2)
   let minmin = mind - padding
   let maxmax = maxd + padding
-  if (goal.monotone && goal.dir>0) {          // Monotone up so no extra padding
+  if (gol.monotone && gol.dir>0) {            // Monotone up so no extra padding
     minmin = bu.arrMin([minmin, a, b])        // below (the low) vini.
     maxmax = bu.arrMax([maxmax, a, b])
-  } else if (goal.monotone && goal.dir<0) {   // Monotone down so no extra
+  } else if (gol.monotone && gol.dir<0) {     // Monotone down so no extra
     minmin = bu.arrMin([minmin, a, b])        // padding above (the
     maxmax = bu.arrMax([maxmax, a, b])        // high) vini.
   } else {
     minmin = bu.arrMin([minmin, a, b])
     maxmax = bu.arrMax([maxmax, a, b])
   }
-  if (goal.plotall && goal.tmin<=goal.tini && goal.tini<=goal.tmax
-      && goal.tini in allvals) {      
+  if (gol.plotall && gol.tmin<=gol.tini && gol.tini<=gol.tmax
+      && gol.tini in allvals) {      
     // At tini, leave room for all non-agg'd datapoints
-    minmin = min(minmin, bu.arrMin(allvals[goal.tini].map(e => e[1])))
-    maxmax = max(maxmax, bu.arrMax(allvals[goal.tini].map(e => e[1])))
+    minmin = min(minmin, bu.arrMin(allvals[gol.tini].map(e => e[1])))
+    maxmax = max(maxmax, bu.arrMax(allvals[gol.tini].map(e => e[1])))
   }
-  if (goal.vmin == null && goal.vmax == null) {
-    goal.vmin = minmin
-    goal.vmax = maxmax
-    if (goal.vmin == goal.vmax) {
-      goal.vmin -= 1; goal.vmax += 1
-    } else if (goal.vmin > goal.vmax) {
-      const tmp = goal.vmin
-      goal.vmin = goal.vmax; goal.vmax = goal.vmin
+  if (gol.vmin == null && gol.vmax == null) {
+    gol.vmin = minmin
+    gol.vmax = maxmax
+    if (gol.vmin == gol.vmax) {
+      gol.vmin -= 1; gol.vmax += 1
+    } else if (gol.vmin > gol.vmax) {
+      // TODO: [gol.vmin, gol.vmax] = [gol.vmax, gol.vmin]
+      const tmp = gol.vmin
+      gol.vmin = gol.vmax; gol.vmax = gol.vmin
     }
-  } else if (goal.vmin==null) goal.vmin= minmin<goal.vmax ? minmin : goal.vmax-1
-  else if   (goal.vmax==null) goal.vmax= maxmax>goal.vmin ? maxmax : goal.vmin+1
+  } else if (gol.vmin==null) gol.vmin = minmin < gol.vmax ? minmin : gol.vmax-1
+  else if   (gol.vmax==null) gol.vmax = maxmax > gol.vmin ? maxmax : gol.vmin+1
 }
 
 // Sanity check a row of the road matrix; exactly one-out-of-three is null
@@ -933,10 +934,10 @@ function vetParams() {
   
   for (i = 0; i < pchk.length; i++) {
     const l = pchk[i]
-    if (!(l[1](goal[l[0]]))) return `'${l[0]}' ${l[2]}: ${s(goal[l[0]])}`
+    if (!(l[1](gol[l[0]]))) return `'${l[0]}' ${l[2]}: ${s(gol[l[0]])}`
   }
   
-  const rd = goal.road
+  const rd = gol.road
   for (i = 0; i < rd.length; i++)
     if (!validrow(rd[i]))
       return "Invalid road matrix row: "+showrow(rd[i])
@@ -952,7 +953,7 @@ function vetParams() {
     }
     return "Road matrix duplicate row error! Tell support!" //seems unreachable
   }
-  if (goal.kyoom && goal.odom)
+  if (gol.kyoom && gol.odom)
     return "The odometer setting doesn't make sense for an auto-summing goal!"
 
   return ""
@@ -973,7 +974,7 @@ function vetParams() {
 // lane width and shift historical roads towards the bad side by that amount,
 // which is what this function does.
 function genRazr() {
-  const yaw = goal.yaw
+  const yaw = gol.yaw
   const t1 = seg => seg.sta[0]
   const t2 = seg => seg.end[0]
   const v1 = seg => seg.sta[1]
@@ -983,14 +984,14 @@ function genRazr() {
   // Iterate over road segments, s, where segments go from
   // {t1,       v1      } to {t2,       v2      } or 
   // {s.sta[0], s.sta[1]} to {s.end[0], s.end[1]}
-  goal.razrroad = roads.slice().map(s => {
+  gol.razrroad = roads.slice().map(s => {
     // Previous things we tried:
     // (1) lnf of the midpoint of the segment:     offset = lnf((t1(s)+t2(s))/2)
     // (2) min of lnf(t1) and lnf(t2):      offset = min(lnf(t1(s)), lnf(t2(s)))
     // (3) max of current lnw and amount needed to ensure not redyest:
-    //     yest = goal.asof - SID
-    //     bdelt = -yaw*(goal.dtf(yest) - br.rdf(roads, yest)) // bad delta
-    //     offset = yest < goal.tini ? goal.lnw : max(goal.lnw, bdelt)
+    //     yest = gol.asof - SID
+    //     bdelt = -yaw*(gol.dtf(yest) - br.rdf(roads, yest)) // bad delta
+    //     offset = yest < gol.tini ? gol.lnw : max(gol.lnw, bdelt)
     // (4) just use current lnw for chrissakes
     return {
       sta:   [t1(s), v1(s) - yaw*offset],
@@ -1010,9 +1011,9 @@ function genRazr() {
   // map over that road struct to turn it into a road matrix style data, we need
   // the initial dummy row to give us tini/vini, but we don't  need the final
   // dummy row.
-  goal.razrmatr = goal.razrroad.slice(0,-1).map(s => {
-    if (s.auto === 0) return [null,     s.end[1], s.slope*goal.siru]
-    if (s.auto === 1) return [s.end[0], null,     s.slope*goal.siru]
+  gol.razrmatr = gol.razrroad.slice(0,-1).map(s => {
+    if (s.auto === 0) return [null,     s.end[1], s.slope*gol.siru]
+    if (s.auto === 1) return [s.end[0], null,     s.slope*gol.siru]
     if (s.auto === 2) return [s.end[0], s.end[1], null   ]
     return "ERROR"
   })
@@ -1021,18 +1022,18 @@ function genRazr() {
 /** Process goal parameters */
 function procParams() {
 
-  goal.dtf = br.stepify(data) // map timestamps to most recent datapoint value
+  gol.dtf = br.stepify(data) // map timestamps to most recent datapoint value
   
-  goal.road = br.fillroad(goal.road, goal)
-  const rl = goal.road.length
-  goal.tfin = goal.road[rl-1][0]
-  goal.vfin = goal.road[rl-1][1]
-  goal.rfin = goal.road[rl-1][2]
+  gol.road = br.fillroad(gol.road, gol)
+  const rl = gol.road.length
+  gol.tfin = gol.road[rl-1][0]
+  gol.vfin = gol.road[rl-1][1]
+  gol.rfin = gol.road[rl-1][2]
   // tfin, vfin, rfin are set in procRoad
   
   // Error checking to ensure the road rows are in chronological order
-  const tlist = goal.road.map(e => e[0])
-  if (goal.tini > tlist[0]) {
+  const tlist = gol.road.map(e => e[0])
+  if (gol.tini > tlist[0]) {
     return "Road dial error\\n(There are segments of your yellow brick road\\n"
       +"that are somehow dated before your road start date!)"
   } 
@@ -1041,22 +1042,22 @@ function procParams() {
   // notes in the comments of fillroad() in broad.js.
   if (!bu.orderedq(tlist)) {
     return "Road dial error\\n(Your goal date, goal "
-      +(goal.kyoom?"total":"value")+", and rate are inconsistent!\\n"
+      +(gol.kyoom?"total":"value")+", and rate are inconsistent!\\n"
       +"Is your rate positive when you meant negative?\\n"
-      +"Or is your goal "+(goal.kyoom?"total":"value")+" such that the implied"
+      +"Or is your goal "+(gol.kyoom?"total":"value")+" such that the implied"
       +" goal date is in the past?)"
   }
  
   // rdf function is implemented in broad.js
   // rtf function is implemented in broad.js
 
-  goal.stdflux = br.stdflux(roads, data.filter(d => d[0]>=goal.tini))
+  gol.stdflux = br.stdflux(roads, data.filter(d => d[0]>=gol.tini))
   
   flatline()
 
   const dl = data.length
   
-  if (goal.movingav) {
+  if (gol.movingav) {
     // Filter data and produce moving average
     if (!(dl <= 1 || data[dl-1][0]-data[0][0] <= 0)) { 
     
@@ -1064,47 +1065,47 @@ function procParams() {
       const newx = griddle(data[0][0], data[dl-1][0],
                            (data[dl-1][0]-data[0][0])*4/SID)
       JSON.stringify(newx)
-      goal.filtpts = newx.map(d => [d, ema(data, d)])
-    } else goal.filtpts = []
-  } else goal.filtpts = []
+      gol.filtpts = newx.map(d => [d, ema(data, d)])
+    } else gol.filtpts = []
+  } else gol.filtpts = []
   
-  goal.tcur = data[dl-1][0]
-  goal.vcur = data[dl-1][1]
-  goal.vprev= data[max(dl-2,0)][1] // default to vcur if < 2 datapts
+  gol.tcur = data[dl-1][0]
+  gol.vcur = data[dl-1][1]
+  gol.vprev= data[max(dl-2,0)][1] // default to vcur if < 2 datapts
 
-  goal.safebuf = br.dtd(roads, goal, goal.tcur, goal.vcur)
-  goal.tluz = goal.tcur+goal.safebuf*SID
-  goal.delta = bu.chop(goal.vcur - br.rdf(roads, goal.tcur))
-  goal.rah = br.rdf(roads, goal.tcur+bu.AKH)
+  gol.safebuf = br.dtd(roads, gol, gol.tcur, gol.vcur)
+  gol.tluz = gol.tcur+gol.safebuf*SID
+  gol.delta = bu.chop(gol.vcur - br.rdf(roads, gol.tcur))
+  gol.rah = br.rdf(roads, gol.tcur+bu.AKH)
   
-  goal.dueby = br.dueby(roads, goal, 7)
-  goal.safebump = br.lim(roads, goal, goal.safebuf)
+  gol.dueby = br.dueby(roads, gol, 7)
+  gol.safebump = br.lim(roads, gol, gol.safebuf)
   
-  goal.rcur = br.rtf(roads, goal.tcur)*goal.siru  
-  goal.ravg = br.tvr(goal.tini, goal.vini, goal.tfin,goal.vfin, null)*goal.siru
-  goal.cntdn = ceil((goal.tfin-goal.tcur)/SID)
+  gol.rcur = br.rtf(roads, gol.tcur)*gol.siru  
+  gol.ravg = br.tvr(gol.tini, gol.vini, gol.tfin,gol.vfin, null)*gol.siru
+  gol.cntdn = ceil((gol.tfin-gol.tcur)/SID)
   // The "lane" out-param for backward-compatibility:
-  goal.lane = goal.yaw * (goal.safebuf - (goal.safebuf <= 1 ? 2 : 1))
-  goal.color = (goal.safebuf < 1 ? "red"    :
-                goal.safebuf < 2 ? "orange" :
-                goal.safebuf < 3 ? "blue"   : "green")
-  goal.loser = br.redyest(roads, goal, goal.tcur) // TODO: need iso here
-  goal.sadbrink = (goal.tcur-SID > goal.tini)
-    && (br.dotcolor(roads, goal, goal.tcur-SID,
-                    goal.dtf(goal.tcur-SID, goal.isolines))==bu.Cols.REDDOT)
-  if (goal.safebuf <= 0) goal.tluz = goal.tcur
-  if (goal.tfin < goal.tluz)  goal.tluz = bu.BDUSK
+  gol.lane = gol.yaw * (gol.safebuf - (gol.safebuf <= 1 ? 2 : 1))
+  gol.color = (gol.safebuf < 1 ? "red"    :
+               gol.safebuf < 2 ? "orange" :
+               gol.safebuf < 3 ? "blue"   : "green")
+  gol.loser = br.redyest(roads, gol, gol.tcur) // TODO: need iso here
+  gol.sadbrink = (gol.tcur-SID > gol.tini)
+    && (br.dotcolor(roads, gol, gol.tcur-SID,
+                    gol.dtf(gol.tcur-SID, gol.isolines))==bu.Cols.REDDOT)
+  if (gol.safebuf <= 0) gol.tluz = gol.tcur
+  if (gol.tfin < gol.tluz)  gol.tluz = bu.BDUSK
       
   setDefaultRange()
   //genRazr()
-  //console.log(`rdf(tfin)=${br.rdf(roads, goal.tfin)}`)
+  //console.log(`rdf(tfin)=${br.rdf(roads, gol.tfin)}`)
   return ""
 }
 
-function sumSet(rd, goal) {
-  const y = goal.yaw, d = goal.dir, 
-        l = goal.lane, dlt = goal.delta, 
-        q = goal.quantum
+function sumSet(rd, gol) {
+  const y = gol.yaw, d = gol.dir, 
+        l = gol.lane, dlt = gol.delta, 
+        q = gol.quantum
 
   const MOAR = (y>0 && d>0), 
         PHAT = (y<0 && d<0),
@@ -1116,97 +1117,97 @@ function sumSet(rd, goal) {
   const shns = ((x, e=y, t=4, d=2) => (x>=0 ? "+" : "") + shn(x, e, t, d))
 
 
-  if (goal.error != "") {
-    goal.statsum = " error:    "+goal.error+"\\n"
+  if (gol.error != "") {
+    gol.statsum = " error:    "+gol.error+"\\n"
     return
   }
-  const rz = (bu.zip(goal.road))[2]
+  const rz = (bu.zip(gol.road))[2]
   let minr = bu.arrMin(rz)
   let maxr = bu.arrMax(rz)
   if (abs(minr) > abs(maxr)) { const tmp = minr; minr = maxr; maxr = tmp }
   const smin = bu.shn(minr,      4,2)
   const smax = bu.shn(maxr,      4,2)
-  const savg = bu.shn(goal.ravg, 4,2)
-  const scur = bu.shn(goal.rcur, 4,2)
-  goal.ratesum = 
+  const savg = bu.shn(gol.ravg, 4,2)
+  const scur = bu.shn(gol.rcur, 4,2)
+  gol.ratesum = 
     (minr === maxr ? smin : "between "+smin+" and "+smax) +
-    " per " + bu.UNAM[goal.runits] + 
+    " per " + bu.UNAM[gol.runits] + 
     (minr !== maxr ? " (current: " + scur + ", average: " + savg + ")" : "")
 
   // What we actually want is timesum and togosum (aka, progtsum & progvsum) 
   // which will be displayed with labels TO GO and TIME LEFT in the stats box
   // and will have both the absolute amounts remaining as well as the 
   // percents done as calculated here.
-  const pt = bu.shn(bu.cvx(bu.daysnap(goal.tcur),
-                           goal.tini, bu.daysnap(goal.tfin), 0,100, false), 1,1)
-  let pv = bu.cvx(goal.vcur, goal.vini,goal.vfin, 0,100, false)
-  pv = bu.shn(goal.vini < goal.vfin ? pv : 100 - pv, 1,1)
+  const pt = bu.shn(bu.cvx(bu.daysnap(gol.tcur),
+                           gol.tini, bu.daysnap(gol.tfin), 0,100, false), 1,1)
+  let pv = bu.cvx(gol.vcur, gol.vini,gol.vfin, 0,100, false)
+  pv = bu.shn(gol.vini < gol.vfin ? pv : 100 - pv, 1,1)
 
-  if (pt == pv) goal.progsum = pt+"% done"
-  else          goal.progsum = pt+"% done by time -- "+pv+"% by value"
+  if (pt == pv) gol.progsum = pt+"% done"
+  else          gol.progsum = pt+"% done by time -- "+pv+"% by value"
 
   let x, ybrStr
-  if (goal.cntdn < 7) {
-    x = sign(goal.rfin) * (goal.vfin - goal.vcur)
+  if (gol.cntdn < 7) {
+    x = sign(gol.rfin) * (gol.vfin - gol.vcur)
     ybrStr = "To go to goal: "+shn(x,0,2,1)+"."
   } else {
-    x = br.rdf(roads, goal.tcur+goal.siru) - br.rdf(roads, goal.tcur)
+    x = br.rdf(roads, gol.tcur+gol.siru) - br.rdf(roads, gol.tcur)
     ybrStr = "Yellow Brick Rd = "+(x>=0 ? "+" : "")+bu.shn(x, 2, 1, 0)
-                           +" / "+bu.UNAM[goal.runits]+"."
+                           +" / "+bu.UNAM[gol.runits]+"."
   }
 
   const ugprefix = false // debug mode: prefix yoog to graph title
-  goal.graphsum = 
-    (ugprefix ? goal.yoog : "")
-    + shn(goal.vcur,0,3,1)+" on "+bu.shd(goal.tcur)+" ("
-    + bu.splur(goal.numpts, "datapoint")+" in "
-    + bu.splur(1+floor((goal.tcur-goal.tini)/SID),"day")+") "
-    + "targeting "+shn(goal.vfin,0,3,1)+" on "+bu.shd(goal.tfin)+" ("
-    + bu.splur(goal.cntdn, "more day")+"). "+ybrStr
+  gol.graphsum = 
+    (ugprefix ? gol.yoog : "")
+    + shn(gol.vcur,0,3,1)+" on "+bu.shd(gol.tcur)+" ("
+    + bu.splur(gol.numpts, "datapoint")+" in "
+    + bu.splur(1+floor((gol.tcur-gol.tini)/SID),"day")+") "
+    + "targeting "+shn(gol.vfin,0,3,1)+" on "+bu.shd(gol.tfin)+" ("
+    + bu.splur(gol.cntdn, "more day")+"). "+ybrStr
 
-  goal.deltasum = shn(abs(dlt),0) + " " + goal.gunits
+  gol.deltasum = shn(abs(dlt),0) + " " + gol.gunits
     + (dlt<0 ? " below" : " above")+" the bright line"
 
-  const c = goal.safebuf // countdown to derailment, in days
+  const c = gol.safebuf // countdown to derailment, in days
   const cd = bu.splur(c, "day")
-  const lim  = br.lim (roads, goal, MOAR || PHAT ? c : 0)
-  const limd = br.limd(roads, goal, MOAR || PHAT ? c : 0)
-  if (goal.kyoom) {
-    if (MOAR) goal.limsum = shns(limd)+" in "+cd
-    if (PHAT) goal.limsum = shns(limd)+" in "+cd
-    if (WEEN) goal.limsum = shns(limd)+" today" 
-    if (RASH) goal.limsum = shns(limd)+" today"
+  const lim  = br.lim (roads, gol, MOAR || PHAT ? c : 0)
+  const limd = br.limd(roads, gol, MOAR || PHAT ? c : 0)
+  if (gol.kyoom) {
+    if (MOAR) gol.limsum = shns(limd)+" in "+cd
+    if (PHAT) gol.limsum = shns(limd)+" in "+cd
+    if (WEEN) gol.limsum = shns(limd)+" today" 
+    if (RASH) gol.limsum = shns(limd)+" today"
   } else {
-    if (MOAR) goal.limsum= shns(limd)+" in "+cd+" ("+shn(lim)+")"
-    if (PHAT) goal.limsum= shns(limd)+" in "+cd+" ("+shn(lim)+")"
-    if (WEEN) goal.limsum= shns(limd)+" today ("    +shn(lim)+")"    
-    if (RASH) goal.limsum= shns(limd)+" today ("    +shn(lim)+")"
+    if (MOAR) gol.limsum= shns(limd)+" in "+cd+" ("+shn(lim)+")"
+    if (PHAT) gol.limsum= shns(limd)+" in "+cd+" ("+shn(lim)+")"
+    if (WEEN) gol.limsum= shns(limd)+" today ("    +shn(lim)+")"    
+    if (RASH) gol.limsum= shns(limd)+" today ("    +shn(lim)+")"
   }
-  if (y*d<0)      goal.safeblurb = "unknown days of safety buffer"
-  else if (c>999) goal.safeblurb = "more than 999 days of safety buffer"
-  else            goal.safeblurb = "~"+cd+" of safety buffer"
+  if (y*d<0)      gol.safeblurb = "unknown days of safety buffer"
+  else if (c>999) gol.safeblurb = "more than 999 days of safety buffer"
+  else            gol.safeblurb = "~"+cd+" of safety buffer"
 
-  goal.titlesum = 
-    bu.toTitleCase(goal.color) + ": bmndr.com/"+goal.yoog+" is safe for ~"+cd
+  gol.titlesum = 
+    bu.toTitleCase(gol.color) + ": bmndr.com/"+gol.yoog+" is safe for ~"+cd
     + (c===0 ? " (beemergency!)" : "")
-  goal.headsum = goal.titlesum
+  gol.headsum = gol.titlesum
 
-  goal.statsum =
-    " progress: "+bu.shd(goal.tini)+"  "
-    +(data == null ? "?" : bu.shn(goal.vini, 4, 2, 0))+"\\n"
-    +"           "+bu.shd(goal.tcur)+"  "+bu.shn(goal.vcur, 4, 2, 0)
-    +"   ["+goal.progsum+"]\\n"
-    +"           "+bu.shd(goal.tfin)+"  "+bu.shn(goal.vfin, 4, 2, 0)+"\\n"
-    +" rate:     "+goal.ratesum+"\\n"
+  gol.statsum =
+    " progress: "+bu.shd(gol.tini)+"  "
+    +(data == null ? "?" : bu.shn(gol.vini, 4, 2, 0))+"\\n"
+    +"           "+bu.shd(gol.tcur)+"  "+bu.shn(gol.vcur, 4, 2, 0)
+    +"   ["+gol.progsum+"]\\n"
+    +"           "+bu.shd(gol.tfin)+"  "+bu.shn(gol.vfin, 4, 2, 0)+"\\n"
+    +" rate:     "+gol.ratesum+"\\n"
     +" lane:     " +((abs(l) == 666)?"n/a":l)+"\\n"
-    +" safebuf:  "+goal.safebuf+"\\n"
-    +" delta:    "+goal.deltasum+"\\n"
+    +" safebuf:  "+gol.safebuf+"\\n"
+    +" delta:    "+gol.deltasum+"\\n"
     +" "
-  if      (y==0) goal.statsum += "limit:    "
-  else if (y<0)  goal.statsum += "hard cap: "
-  else           goal.statsum += "bare min: "
-  goal.statsum += goal.limsum+"\\n"
-  //goal.statsum = encodeURI(goal.statsum) // TODO
+  if      (y==0) gol.statsum += "limit:    "
+  else if (y<0)  gol.statsum += "hard cap: "
+  else           gol.statsum += "bare min: "
+  gol.statsum += gol.limsum+"\\n"
+  //gol.statsum = encodeURI(gol.statsum) // TODO
 }
 
 // Fetch value with key n from hash p, defaulting to d -- NOT USED 
@@ -1224,38 +1225,38 @@ this.reloadRoad = function() {
 
   if (error != "") return error
     
-  sumSet(roads, goal)
+  sumSet(roads, gol)
 
   // TODO: This seems to compute these entities based on old data, particularly
   // when this function is called from bgraph as a result of an edited road.
-  goal.fullroad = goal.road.slice()
-  goal.fullroad.unshift( [goal.tini, goal.vini, 0, 0] )
-  if (goal.error == "") {
-    goal.pinkzone = [[goal.asof,br.rdf(roads, goal.asof),0]]
-    goal.road.forEach(
+  gol.fullroad = gol.road.slice()
+  gol.fullroad.unshift( [gol.tini, gol.vini, 0, 0] )
+  if (gol.error == "") {
+    gol.pinkzone = [[gol.asof,br.rdf(roads, gol.asof),0]]
+    gol.road.forEach(
       function(r) {
-        if (r[0] > goal.asof && r[0] < goal.asof+bu.AKH) {
-          goal.pinkzone.push([r[0], r[1], null])
+        if (r[0] > gol.asof && r[0] < gol.asof+bu.AKH) {
+          gol.pinkzone.push([r[0], r[1], null])
         }
       }
     )
-    goal.pinkzone.push([goal.asof+bu.AKH, br.rdf(roads, goal.asof+bu.AKH),
+    gol.pinkzone.push([gol.asof+bu.AKH, br.rdf(roads, gol.asof+bu.AKH),
                         null])
-    goal.pinkzone = br.fillroadall(goal.pinkzone, goal)
+    gol.pinkzone = br.fillroadall(gol.pinkzone, gol)
   }
     
   // Generate the aura function now that the flatlined datapoint's also computed
-  if (goal.aura) {
-    const adata = data.filter(e => e[0]>=goal.tmin)
+  if (gol.aura) {
+    const adata = data.filter(e => e[0]>=gol.tmin)
     const fdata = br.gapFill(adata)
-    goal.auraf = br.smooth(fdata)
-  } else goal.auraf = (e => 0)
+    gol.auraf = br.smooth(fdata)
+  } else gol.auraf = (e => 0)
 
-  goal.dtdarray = br.dtdarray( roads, goal )
+  gol.dtdarray = br.dtdarray( roads, gol )
   
-  goal.isolines = []
+  gol.isolines = []
   for (let i = 0; i < 4; i++)
-    goal.isolines[i] = br.isoline(roads, goal.dtdarray, goal, i)
+    gol.isolines[i] = br.isoline(roads, gol.dtdarray, gol, i)
   
   return ""
 }
@@ -1270,7 +1271,7 @@ function genStats(p, d, tm=null) {
     if (tm == null) tm = moment.utc().unix() // Start the clock immediately!
     legacyIn(p)                              // Which is kind of silly because
     initGlobals()                            // legacyIn and initGlobals take no
-    goal.proctm = tm                         // time so could just get time here
+    gol.proctm = tm                         // time so could just get time here
     // stampIn() returns the data array in the following format
     // [t, v, c, index, v(original)] 
     data = stampIn(p, d)
@@ -1280,38 +1281,38 @@ function genStats(p, d, tm=null) {
     for (const k in p) {
       if (k in p) {
         if (!(k in pin) && !pig.includes(k)) lup.push(`${k}=${p[k]}`)
-        else goal[k] = p[k]
+        else gol[k] = p[k]
       }
     }
-    if (lup.length > 0) goal.error += 
+    if (lup.length > 0) gol.error += 
       `Unknown param${lup.length===1 ? "" : "s"}: ${lup.join(', ')}`
 
     // Process & extract various params that are independent of road & data
     // maybe just default to aggday=last; no such thing as aggday=null
-    if (!('aggday' in p)) p.aggday = goal.kyoom ? "sum" : "last"
+    if (!('aggday' in p)) p.aggday = gol.kyoom ? "sum" : "last"
     
-    goal.siru = bu.SECS[goal.runits]
-    goal.horizon = goal.asof+bu.AKH
+    gol.siru = bu.SECS[gol.runits]
+    gol.horizon = gol.asof+bu.AKH
     // Save initial waterbuf value for comparison in bgraph.js
-    goal.waterbuf0 = goal.waterbuf
+    gol.waterbuf0 = gol.waterbuf
     
     // Append final segment to the road array. These values will be
     // reextracted after filling in road in procParams
-    if (bu.listy(goal.road)) goal.road.push([goal.tfin, goal.vfin, goal.rfin])
-    if (goal.error == "") goal.error = vetParams()
-    if (goal.error == "") goal.error = procData()
+    if (bu.listy(gol.road)) gol.road.push([gol.tfin, gol.vfin, gol.rfin])
+    if (gol.error == "") gol.error = vetParams()
+    if (gol.error == "") gol.error = procData()
     
     // Extract road info into our internal format consisting of road segments:
     // [ [startt, startv], [endt, endv], slope, autofield ]
-    if (goal.error == "") goal.error = procRoad(p.road)
-    if (goal.error == "") goal.error = self.reloadRoad() // does procParams here
+    if (gol.error == "") gol.error = procRoad(p.road)
+    if (gol.error == "") gol.error = self.reloadRoad() // does procParams here
 
     computeRosy()
       
   } finally {
     // Generate beebrain stats (use getStats tp retrieve)
     stats = Object.assign({}, pout)
-    for (const prop in stats) stats[prop] = goal[prop]
+    for (const prop in stats) stats[prop] = gol[prop]
     stampOut(stats)
     legacyOut(stats)
   }
@@ -1333,17 +1334,17 @@ this.setRoadObj = function(newroad) {
   self.roads = roads
 
   // Update the internal road object in bb format so procParams can proceed
-  goal.road = []
+  gol.road = []
   for (let i = 1; i < roads.length; i++)
-    goal.road.push([roads[i].sta[0], roads[i].sta[1], roads[i].slope])
-  self.goal = goal
+    gol.road.push([roads[i].sta[0], roads[i].sta[1], roads[i].slope])
+  self.gol = gol // TODO: gol or goal here?
 
   self.reloadRoad()
 }
   
 genStats( bbin.params, bbin.data )
-goal.graphurl = bu.BBURL
-goal.thumburl = bu.BBURL
+gol.graphurl = bu.BBURL
+gol.thumburl = bu.BBURL
   
 // -----------------------------------------------------------------------------
 // -------------------------- BEEBRAIN OBJECT EXPORTS --------------------------
@@ -1365,7 +1366,7 @@ to be identical to the starting point for the next
 segment.  */
 this.roads = roads
 /** Holds current goal's information */
-this.goal = goal
+this.gol = gol
 /** Holds current goal's aggregated datapoints */
 this.data = data
 /** Holds current goal's preprocessed rosy datapoints */

@@ -276,8 +276,8 @@ const PNG = { beye:  "https://s3.amazonaws.com/bmndr/road/bullseye.png",
 const ErrType = { NOBBFILE: 0, BADBBFILE: 1, BBERROR: 2 }
 
 /** Enum object to identify error types */
-const ErrMsgs = [ "Could not find goal file.", 
-                  "Bad goal file.", 
+const ErrMsgs = [ "Could not find goal (.bb) file.", 
+                  "Bad .bb file.", 
                   "Beeminder error" ]
 
 /** This atrocity attempts to determine whether the page was loaded from a 
@@ -419,7 +419,8 @@ let svg, defs, graphs, buttonarea, stathead, focus, focusclip, plot,
     xSc, nXSc, xAxis, xAxisT, xGrid, xAxisObj, xAxisObjT, xGridObj,
     ySc, nYSc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel,
     xScB, xAxisB, xAxisObjB, yScB,
-    gPB, gYBHP, gYBHPlines, gPink, gPinkPat, gTapePat, gGrid, gOResets, gPastText, 
+    gPB, gYBHP, gYBHPlines, gPink, gPinkPat, gTapePat, gGrid, gOResets,
+    gPastText,
     gGuides, gMaxflux, gStdflux, gRazr, gOldBullseye, 
     gKnots, gSteppy, gSteppyPts, gRosy, gRosyPts, gMovingAv,
     gAura, gDerails, gAllpts, gDpts, gHollow, gFlat, 
@@ -444,11 +445,11 @@ let iroad = []  // Initial road
 let igoal = {}  // Initial goal object
   
 // Beebrain state objects
-let bbr, goal = {}, road = []
+let bbr, gol = {}, road = []
 let data = [], idata = [], alldata = [], dtd = [], iso = []
 
 function getiso( val ) {
-  if (iso[val] == undefined) iso[val] = br.isoline(road, dtd, goal, val)
+  if (iso[val] == undefined) iso[val] = br.isoline(road, dtd, gol, val)
   return iso[val]
 }
 
@@ -474,14 +475,14 @@ function getisopath( val, xr ) {
 // regions.
 function isolnwborder(xr) {
   let lnw = 0
-  const numdays = min(opts.maxFutureDays, ceil((goal.tfin-goal.tini)/SID))
+  const numdays = min(opts.maxFutureDays, ceil((gol.tfin-gol.tini)/SID))
   const center = getiso(0)
   const oneday = getiso(numdays)
 //TODO: switch to this version
-//const edge = goal.yaw*goal.dir > 0 ? 0 : 1 // left edge for MOAR/PHAT
+//const edge = gol.yaw*gol.dir > 0 ? 0 : 1 // left edge for MOAR/PHAT
 //return abs(br.isoval(center, xr[edge])-br.isoval(oneday, xr[edge])) / numdays
 
-  if (goal.yaw*goal.dir > 0) {
+  if (gol.yaw*gol.dir > 0) {
     lnw = abs(br.isoval(center, xr[0])-br.isoval(oneday, xr[0])) / numdays
   } else {
     lnw = abs(br.isoval(center, xr[1])-br.isoval(oneday, xr[1])) / numdays
@@ -498,19 +499,18 @@ function r3(x) { return round(x*1000)/1000 }
 /** Resets the internal goal object, clearing out previous data. */
 function resetGoal() {
   // Initialize goal with sane values
-  goal = {}
-  goal.yaw = +1; goal.dir = +1
-  goal.tcur = 0; goal.vcur = 0
+  gol = {}
+  gol.yaw = +1; gol.dir = +1
+  gol.tcur = 0; gol.vcur = 0
   const now = moment.utc()
   now.hour(0); now.minute(0); now.second(0); now.millisecond(0)
-  goal.asof = now.unix()
-  goal.horizon = goal.asof+bu.AKH
-  goal.xMin = goal.asof;  goal.xMax = goal.horizon
-  goal.tmin = goal.asof;  goal.tmax = goal.horizon
+  gol.asof = now.unix()
+  gol.horizon = gol.asof+bu.AKH
+  gol.xMin = gol.asof;  gol.xMax = gol.horizon
+  gol.tmin = gol.asof;  gol.tmax = gol.horizon
+  gol.yMin = -1;        gol.yMax = 1
 
-  goal.yMin = -1;    goal.yMax = 1
-
-  igoal = bu.deepcopy(goal); road = []; iroad = []; data = [], alldata = []
+  igoal = bu.deepcopy(gol); road = []; iroad = []; data = []; alldata = []
 }
 resetGoal()
 
@@ -519,11 +519,11 @@ resetGoal()
 function computeBoxes() {
   plotpad    = bu.extend({}, opts.focusPad)
   contextpad = bu.extend({}, opts.ctxPad)
-  if (goal.stathead && !opts.roadEditor) plotpad.top += 15
+  if (gol.stathead && !opts.roadEditor) plotpad.top += 15
   plotpad.left  += yaxisw
-  plotpad.right += yaxisw+(goal.hidey?8:0) // Extra padding if yaxis text hidden
+  plotpad.right += yaxisw+(gol.hidey?8:0) // Extra padding if yaxis text hidden
   contextpad.left += yaxisw
-  contextpad.right += yaxisw+(goal.hidey?8:0)
+  contextpad.right += yaxisw+(gol.hidey?8:0)
   plotbox = {
     x:      opts.focusRect.x      + plotpad.left,
     y:      opts.focusRect.y      + plotpad.top,
@@ -1052,7 +1052,7 @@ function resizeGraph() {
  * once when the bgraph object is created. i is the table index, and "now" is nowstamp UTC unixtime/SID */
 var dbbody
 function duebylabel(i, now) {
-  const mm = moment.unix(goal.asof+i*SID).utc()
+  const mm = moment.unix(gol.asof+i*SID).utc()
   const ds = bu.dayparse(mm.format("YYYYMMDD")) / SID
   if (ds == now-1) return ["Yesterday", bu.Cols.REDDOT]
   if (ds == now) return ["Today", bu.Cols.ORNG]
@@ -1091,31 +1091,31 @@ function updateDueBy() {
   // Generate a moment date object with the current time, in the
   // user's timezone if supplied
   var d
-  if (goal.hasOwnProperty('timezone')) {
+  if (gol.hasOwnProperty('timezone')) {
     // Use supplied timezone if moment-timezone is loaded
-    if (moment.hasOwnProperty('tz'))  d = moment().tz(goal.timezone)
+    if (moment.hasOwnProperty('tz'))  d = moment().tz(gol.timezone)
     else {
       console.log("bgraph: Warning: moment-timezone is not loaded, using local time")
       d = moment() // Use local time if moment-timezone is not loaded
     }
   } else d = moment()
-  // Adjust the current time if goal.asof is different than the
+  // Adjust the current time if gol.asof is different than the
   // current date to support the sandbox and example goals with past
   // asof
-  if (goal.asof != bu.daysnap(moment.utc() / 1000))
-    d = moment.unix(goal.asof).hour(d.hour()).minutes(d.minutes()).seconds(d.seconds())
+  if (gol.asof != bu.daysnap(moment.utc() / 1000))
+    d = moment.unix(gol.asof).hour(d.hour()).minutes(d.minutes()).seconds(d.seconds())
   // Adjust time with the deadline and compute the daystamp for "now"
-  d.subtract(goal.deadline, 's')
+  d.subtract(gol.deadline, 's')
   d.hours(0).minutes(0).seconds(0).milliseconds(0)
   const nowstamp = bu.dayparse(d.format("YYYYMMDD")) / SID
   
   const mark = "&#10004;"
-  let db = br.dueby(road, goal, 7)
+  let db = br.dueby(road, gol, 7)
   
   dbbody
     .selectAll(".dbrow")
     .selectAll(".dbcell")
-    .data((row, i) => {const inf = duebylabel(i,nowstamp), del = db[i][1]; return [inf, [(del > 0 || goal.dir < 0)?bu.shn(del):mark,inf[1]], [bu.shn(db[i][2]),inf[1]]]})
+    .data((row, i) => {const inf = duebylabel(i,nowstamp), del = db[i][1]; return [inf, [(del > 0 || gol.dir < 0)?bu.shn(del):mark,inf[1]], [bu.shn(db[i][2]),inf[1]]]})
     .join(enter=>enter.append("span").attr('class', 'dbcell'), update=>update)
     .html(d=>d[0])
     .style('color', d=>d[1])
@@ -1162,17 +1162,17 @@ function roadChanged() {
   // If it were the case that tini was simply the first entry in the
   // road, update it for the edited road
   if (igoal.tini == iroad[0].end[0]) {
-    goal.tini = road[0].end[0]
-    goal.vini = road[0].end[1]
+    gol.tini = road[0].end[0]
+    gol.vini = road[0].end[1]
   }
   
   if (!settingRoad)
-    // Explicitly set the road object for beebrain to force it to
-    // recompute goal parameters
+    // Explicitly set the road object for beebrain to force it to recompute
+    // goal parameters
     bbr.setRoadObj(road)
   
   computePlotLimits(true)
-  horindex = br.findSeg(road, goal.horizon)
+  horindex = br.findSeg(road, gol.horizon)
   reloadBrush()
   updateRoadData()
   updateGraphData(true)
@@ -1364,8 +1364,8 @@ function handleYAxisWidth() {
   // Checking for the "hidden" state ensures that getBBox() is not
   // called for invisible components in the DOM.
   if (opts.divGraph != null && !hidden) {
-    yAxisLabel.text(goal.yaxis)
-    if (goal.hidey && !opts.roadEditor) {
+    yAxisLabel.text(gol.yaxis)
+    if (gol.hidey && !opts.roadEditor) {
       yAxisObj.selectAll( "text").remove()
       yAxisObjR.selectAll("text").remove()
     }
@@ -1391,11 +1391,11 @@ function adjustYScale() {
   let yrange
   if (opts.headless) {
     // Headless graphs should match previous pybrain range
-    let va = goal.vmin  - PRAF*(goal.vmax-goal.vmin)
-    let vb = goal.vmax  + PRAF*(goal.vmax-goal.vmin)
+    let va = gol.vmin  - PRAF*(gol.vmax-gol.vmin)
+    let vb = gol.vmax  + PRAF*(gol.vmax-gol.vmin)
     yrange = [vb, va]
   } else {
-    var margin = abs(PRAF*(goal.vmax-goal.vmin))
+    var margin = abs(PRAF*(gol.vmax-gol.vmin))
 
     // Compute range in unixtime
     var xtimes = xrange.map(d => floor(d.getTime()/SMS))
@@ -1413,7 +1413,7 @@ function adjustYScale() {
     } else ae = re
     
     // Compute Y axis extent of datapoints in range
-    var de = dataExtentPartial((goal.plotall&&!opts.roadEditor)
+    var de = dataExtentPartial((gol.plotall&&!opts.roadEditor)
                                 ? alldata : data,
                                 xtimes[0],xtimes[1],false)
     if (de != null) ae = mergeExtents(ae, de)
@@ -1437,8 +1437,8 @@ function adjustYScale() {
   yAxisObjR.call(yAxisR.scale(nYSc))
 
   // Resize brush if dynamic y limits are beyond graph limits
-  if (yrange[0] > goal.yMax) goal.yMax = yrange[0]
-  if (yrange[1] < goal.yMin) goal.yMin = yrange[1]
+  if (yrange[0] > gol.yMax) gol.yMax = yrange[0]
+  if (yrange[1] < gol.yMin) gol.yMin = yrange[1]
   resizeContext()
 
   // Rescale the focus rectange to show area being focused.
@@ -1452,10 +1452,10 @@ function adjustYScale() {
 /** Update context graph X and Y axis scales to consider newest graph ranges */
 function resizeContext() {
   if (opts.divGraph == null) return
-  xScB.domain([new Date(min(goal.tmin, goal.xMin)*SMS), 
-               new Date(max(goal.tmax, goal.xMax)*SMS)])
+  xScB.domain([new Date(min(gol.tmin, gol.xMin)*SMS), 
+               new Date(max(gol.tmax, gol.xMax)*SMS)])
   xAxisObjB.call(xAxisB.scale(xScB))
-  yScB.domain([goal.yMin, goal.yMax])
+  yScB.domain([gol.yMin, gol.yMax])
 }
 
 /** Update brush rectangle and brush box in the context graph to cover the
@@ -1528,8 +1528,8 @@ function brushed() {
 function zoomDefault() {
   if (opts.divGraph == null) return
   //console.debug("id="+curid+", zoomDefault()")
-  var ta = goal.tmin - PRAF*(goal.tmax-goal.tmin)
-  var tb = goal.tmax + PRAF*(goal.tmax-goal.tmin)
+  var ta = gol.tmin - PRAF*(gol.tmax-gol.tmin)
+  var tb = gol.tmax + PRAF*(gol.tmax-gol.tmin)
   var newdom = [new Date(ta*SMS),new Date(tb*SMS)]
   nXSc.domain(newdom)
   var s = newdom.map(xScB)
@@ -1548,16 +1548,16 @@ function zoomAll( ) {
   if (opts.divGraph == null) return
   computePlotLimits(false)
   // Redefine the unzoomed X and Y scales in case graph range was redefined
-  xSc.domain([new Date(min(goal.tmin, goal.xMin)*SMS), 
-              new Date(max(goal.tmax, goal.xMax)*SMS)])
+  xSc.domain([new Date(min(gol.tmin, gol.xMin)*SMS), 
+              new Date(max(gol.tmax, gol.xMax)*SMS)])
   computeXTicks()
-  ySc.domain([goal.yMin, goal.yMax])
+  ySc.domain([gol.yMin, gol.yMax])
   nXSc = xSc
   nYSc = ySc
   resizeContext()
   zoomarea.call(axisZoom.transform, d3.zoomIdentity)
   // Relocate zoom buttons based on road yaw
-  if (goal.dir > 0) {
+  if (gol.dir > 0) {
     zoomin.attr( "transform", zoombtntr.botin)
     zoomout.attr("transform", zoombtntr.botout)
   } else {
@@ -1613,25 +1613,25 @@ function isRoadValid(rd) {
   var ir = iroad
   const EPS = 0.000001 // dang floating point comparisons
   
-  var now = goal.asof
-  var hor = goal.horizon
+  var now = gol.asof
+  var hor = gol.horizon
   // Check left/right boundaries of the pinkzone. This should handle the case
   // when there are no kinks within the horizon.
-  if (goal.yaw*br.rdf(rd, now) < goal.yaw*br.rdf(ir, now) - EPS) return false
-  if (goal.yaw*br.rdf(rd, hor) < goal.yaw*br.rdf(ir, hor) - EPS) return false
+  if (gol.yaw*br.rdf(rd, now) < gol.yaw*br.rdf(ir, now) - EPS) return false
+  if (gol.yaw*br.rdf(rd, hor) < gol.yaw*br.rdf(ir, hor) - EPS) return false
   // Iterate through and check current road points in the pink range
   var rd_i1 = br.findSeg(rd, now, -1)
   var rd_i2 = br.findSeg(rd, hor, 1)
   for (let i = rd_i1; i < rd_i2; i++) {
-    if (goal.yaw*br.rdf(rd, rd[i].end[0]) < 
-        goal.yaw*br.rdf(ir, rd[i].end[0]) - EPS) return false
+    if (gol.yaw*br.rdf(rd, rd[i].end[0]) < 
+        gol.yaw*br.rdf(ir, rd[i].end[0]) - EPS) return false
   }
   // Iterate through and check old road points in the pink range
   var ir_i1 = br.findSeg(ir, now, -1)
   var ir_i2 = br.findSeg(ir, hor, 1)
   for (let i = ir_i1; i < ir_i2; i++) {
-    if (goal.yaw*br.rdf(rd, ir[i].end[0]) < 
-        goal.yaw*br.rdf(ir, ir[i].end[0]) - EPS) return false
+    if (gol.yaw*br.rdf(rd, ir[i].end[0]) < 
+        gol.yaw*br.rdf(ir, ir[i].end[0]) - EPS) return false
   }
   return true
 }
@@ -1691,7 +1691,7 @@ function dataExtentPartial(data, xmin, xmax, extend = false) {
   extent.yMin = bu.arrMin(nd.map(d=>d[1]))
   extent.yMax = bu.arrMax(nd.map(d=>d[1]))     
   if (bbr.flad != null && bbr.flad[0] <= xmax && bbr.flad[0] >= xmin) {
-    const pprv = bbr.flad[1] + br.ppr(road, goal, goal.asof)
+    const pprv = bbr.flad[1] + br.ppr(road, gol, gol.asof)
     extent.yMin = min(extent.yMin, pprv) // Make room for the
     extent.yMax = max(extent.yMax, pprv) // ghosty PPR datapoint.
   }
@@ -1730,28 +1730,28 @@ function deaddow(t) {
 
 // Set watermark (waterbuf) to number of safe days if not given explicitly
 function setWatermark() {
-  if (goal.waterbuf0 != null) return
+  if (gol.waterbuf0 != null) return
   
-  goal.safebuf = br.dtd(road, goal, goal.tcur, goal.vcur)
-  goal.tluz = goal.tcur+goal.safebuf*SID
-  if (goal.tfin < goal.tluz) goal.tluz = bu.BDUSK
-  goal.loser = br.redyest(road, goal, goal.tcur) // TODO: needs iso here
+  gol.safebuf = br.dtd(road, gol, gol.tcur, gol.vcur)
+  gol.tluz = gol.tcur+gol.safebuf*SID
+  if (gol.tfin < gol.tluz) gol.tluz = bu.BDUSK
+  gol.loser = br.redyest(road, gol, gol.tcur) // TODO: needs iso here
 
-  if  (goal.asof >= goal.tfin && !goal.loser) {
-    goal.waterbuf = ":)"
+  if  (gol.asof >= gol.tfin && !gol.loser) {
+    gol.waterbuf = ":)"
     return
   }
 
-  if      (goal.safebuf > 999) { goal.waterbuf = "inf" } 
-  else if (goal.safebuf >= 7)  { goal.waterbuf = goal.safebuf+"d" } 
-  else if (goal.safebuf <= 0)  { goal.waterbuf = deadtod(goal.deadline)+"!" }
-  else                         { goal.waterbuf = deaddow(goal.tluz) }
+  if      (gol.safebuf > 999) { gol.waterbuf = "inf" } 
+  else if (gol.safebuf >= 7)  { gol.waterbuf = gol.safebuf+"d" } 
+  else if (gol.safebuf <= 0)  { gol.waterbuf = deadtod(gol.deadline)+"!" }
+  else                        { gol.waterbuf = deaddow(gol.tluz) }
 }
 
 function computePlotLimits(adjustZoom = true) {
   if (road.length == 0) return
 
-  var now = goal.asof
+  var now = gol.asof
   var maxx = bu.daysnap(min(now+opts.maxFutureDays*SID, 
                                  road[road.length-1].sta[0]))
   let cur = roadExtentPartial(road, road[0].end[0], maxx, false)
@@ -1761,7 +1761,7 @@ function computePlotLimits(adjustZoom = true) {
     ne = mergeExtents(cur, old)
   } else ne = cur
 
-  var d = dataExtentPartial(goal.plotall&&!opts.roadEditor ? alldata : data, 
+  var d = dataExtentPartial(gol.plotall&&!opts.roadEditor ? alldata : data, 
                             road[0].end[0], data[data.length-1][0], false)
 
   if (d != null) ne = mergeExtents(ne, d)
@@ -1777,20 +1777,20 @@ function computePlotLimits(adjustZoom = true) {
   }
   enlargeExtent(ne, p)
 
-  goal.xMin = bu.daysnap(ne.xMin)
-  goal.xMax = bu.daysnap(ne.xMax)
-  goal.yMin = ne.yMin
-  goal.yMax = ne.yMax
+  gol.xMin = bu.daysnap(ne.xMin)
+  gol.xMax = bu.daysnap(ne.xMax)
+  gol.yMin = ne.yMin
+  gol.yMax = ne.yMax
 
   if (adjustZoom && opts.divGraph != null) {
     var xrange = [nXSc.invert(0), 
                   nXSc.invert(plotbox.width)]
     var yrange = [nYSc.invert(0), 
                   nYSc.invert(plotbox.height)]
-    xSc.domain([new Date(min(goal.tmin, goal.xMin)*SMS), 
-                new Date(max(goal.tmax, goal.xMax)*SMS)])
+    xSc.domain([new Date(min(gol.tmin, gol.xMin)*SMS), 
+                new Date(max(gol.tmax, gol.xMax)*SMS)])
     computeXTicks()
-    ySc.domain([goal.yMin, goal.yMax])
+    ySc.domain([gol.yMin, gol.yMax])
     var newtr = d3.zoomIdentity.scale(plotbox.width/(xSc(xrange[1]) 
                                                    - xSc(xrange[0])))
         .translate(-xSc(xrange[0]), 0)
@@ -1834,7 +1834,7 @@ function loadGoal(json, timing = true) {
   let suffix = (json.params.yoog) ? " ("+json.params.yoog+")" : ""
   if (timing) { console.time(stats_timeid+suffix) }
   bbr = new bb(json)
-  goal  = bbr.goal
+  gol = bbr.gol
   if (opts.divJSON) {
     if (opts.headless)
       opts.divJSON.innerText = JSON.stringify(bbr.getStats())
@@ -1843,12 +1843,12 @@ function loadGoal(json, timing = true) {
   }
   if (timing) { console.timeEnd(stats_timeid+suffix) }
 
-  if (goal.error != "") {
-    console.log("Beebrain error: "+ bbr.goal.error)
+  if (gol.error != "") {
+    console.log("Beebrain error: "+ bbr.gol.error)
     lastError = ErrType.BBERROR
-    var errors = bbr.goal.error.split("\\n")
+    var errors = bbr.gol.error.split("\\n")
     showOverlay( 
-      (["The following errors prevented us from generating "+bbr.goal.yoog,
+      (["The following errors prevented us from generating "+bbr.gol.yoog,
         "(We've pinged Beeminder support to come help fix things up here!)",
         ""]).concat(errors), sh/30, null)
     resetGoal()
@@ -1869,7 +1869,7 @@ function loadGoal(json, timing = true) {
   iroad   = br.copyRoad(road)
   data    = bbr.data
   idata   = json.data
-  igoal   = bu.deepcopy(goal)
+  igoal   = bu.deepcopy(gol)
   alldata = bbr.alldata
 
   // Extract limited data
@@ -1878,14 +1878,14 @@ function loadGoal(json, timing = true) {
     alldataf = alldata.slice()
   } else {
     dataf = data.filter(function(e){
-      return e[0]>(goal.asof-opts.maxDataDays*SID)})
+      return e[0]>(gol.asof-opts.maxDataDays*SID)})
     alldataf = alldata.filter(function(e){
-      return e[0]>(goal.asof-opts.maxDataDays*SID)})
+      return e[0]>(gol.asof-opts.maxDataDays*SID)})
   }
 
   if (opts.divGraph) {
-    if (!opts.roadEditor && goal.stathead)
-      stathead.text(goal.graphsum)
+    if (!opts.roadEditor && gol.stathead)
+      stathead.text(gol.graphsum)
     else
       stathead.text("")
   }
@@ -1939,13 +1939,13 @@ function setSafeDays( days ) {
     return
   }
   //console.debug("setSafeDays()");
-  var curdtd = br.dtd(road, goal, goal.tcur, goal.vcur)
-  var now = goal.asof
+  var curdtd = br.dtd(road, gol, gol.tcur, gol.vcur)
+  var now = gol.asof
   if (days < 0) days = 0
   // Look into the future to see the road value to ratchet to
   var daydiff = curdtd - (days - 1) - 1
   if (daydiff <= 0) return
-  var futureDate = goal.asof + daydiff*SID
+  var futureDate = gol.asof + daydiff*SID
   var ratchetValue = br.rdf(road, futureDate)
 
   // Find or add two new dots at asof
@@ -2110,7 +2110,7 @@ function updateDragPositions(kind, updateKnots) {
     }
     el.select("[name=enddate" +ii+"]").text(bu.dayify(rd[ii].end[0], '-'))
     el.select("[name=endvalue"+ii+"]").text(bu.shn(rd[ii].end[1]))
-    el.select("[name=slope"   +ii+"]").text(bu.shn(rd[ii].slope*goal.siru))
+    el.select("[name=slope"   +ii+"]").text(bu.shn(rd[ii].slope*gol.siru))
   }
 
   if (opts.tableUpdateOnDrag) updateTableValues()
@@ -2300,7 +2300,7 @@ function knotDeleted(d) {
 function changeKnotDate(kind, newDate, fromtable = true) {
   pushUndoState()
 
-  var knotmin = (kind == 0) ? goal.xMin-10*SID*DIY 
+  var knotmin = (kind == 0) ? gol.xMin-10*SID*DIY 
                             : (road[kind].sta[0]) + 0.01
   var knotmax = (kind == road.length-1) ? road[kind].end[0]+0.01
                                         : road[kind+1].end[0]+0.01
@@ -2360,13 +2360,13 @@ function dotDragStarted(d, id) {
     var seg = road[kind]
     createDragInfo( d.sta, [(seg.sta[0]+seg.end[0])/2,
                             (seg.sta[1]+seg.end[1])/2,
-                            seg.slope*goal.siru] )
+                            seg.slope*gol.siru] )
   } else createDragInfo(d.sta)
   dottext.grp.raise()
 };
 function dotDragged(d, id) {
   unselect()
-  var now = goal.asof
+  var now = gol.asof
   var y = nYSc.invert(d3.event.y)
   var kind = id
   var rd = road
@@ -2382,7 +2382,7 @@ function dotDragged(d, id) {
   if (kind != 0) {
     updateDragInfo( d.sta, [(seg.sta[0]+seg.end[0])/2,
                             (seg.sta[1]+seg.end[1])/2,
-                            seg.slope*goal.siru])
+                            seg.slope*gol.siru])
   } else updateDragInfo(d.sta)
 };
 function dotDragEnded(d,id){
@@ -2466,13 +2466,13 @@ function roadDragStarted(d, id) {
   if (slopex > nXSc.invert(plotbox.width)/SMS - 10)
     slopex = nXSc.invert(plotbox.width)/SMS - 10
   createDragInfo(d.end, [slopex, d.sta[1]+d.slope*(slopex-d.sta[0]),
-                         d.slope*goal.siru])
+                         d.slope*gol.siru])
   slopetext.grp.raise()
 };
 function roadDragged(d, id) {
   //console.debug("roadDragged()")
   unselect()
-  var now = goal.asof
+  var now = gol.asof
   var x = bu.daysnap(nXSc.invert(d3.event.x)/SMS)
   var y = nYSc.invert(d3.event.y)
   var kind = id
@@ -2492,7 +2492,7 @@ function roadDragged(d, id) {
   if (slopex > nXSc.invert(plotbox.width)/SMS - 10) 
     slopex = nXSc.invert(plotbox.width)/SMS - 10
   updateDragInfo(d.end, [slopex, d.sta[1]+d.slope*(slopex-d.sta[0]),
-                         d.slope*goal.siru])
+                         d.slope*gol.siru])
 }
 function roadDragEnded(d, id) {
   //console.debug("roadDragEnded()")
@@ -2510,7 +2510,7 @@ function changeRoadSlope(kind, newSlope, fromtable = false) {
   if (kind == road.length-1) return
   pushUndoState()
 
-  road[kind].slope = newSlope/(goal.siru)
+  road[kind].slope = newSlope/(gol.siru)
   if (!fromtable) {
     if (!opts.keepSlopes) {
       road[kind].end[1] = road[kind].sta[1]+road[kind].slope*(road[kind].end[0] 
@@ -2746,17 +2746,17 @@ function updatePastBox() {
   if (pastelt.empty()) {
     gPB.insert("svg:rect", ":first-child")
       .attr("class","past")
-      .attr("x", nXSc(goal.xMin))
-      .attr("y", nYSc(goal.yMax+3*(goal.yMax-goal.yMin)))
-      .attr("width", nXSc(goal.asof*SMS) - nXSc(goal.xMin))
-      .attr("height",7*abs(nYSc(goal.yMin) - nYSc(goal.yMax)))
+      .attr("x", nXSc(gol.xMin))
+      .attr("y", nYSc(gol.yMax+3*(gol.yMax-gol.yMin)))
+      .attr("width", nXSc(gol.asof*SMS) - nXSc(gol.xMin))
+      .attr("height",7*abs(nYSc(gol.yMin) - nYSc(gol.yMax)))
       .attr("fill", opts.pastBoxCol.fill)
       .attr("fill-opacity", opts.pastBoxCol.opacity)
   } else {
-    pastelt.attr("x", nXSc(goal.xMin))
-           .attr("y", nYSc(goal.yMax + 3*(goal.yMax-goal.yMin)))
-           .attr("width", nXSc(goal.asof*SMS) - nXSc(goal.xMin))
-      .attr("height",7*abs(nYSc(goal.yMin) - nYSc(goal.yMax)))
+    pastelt.attr("x", nXSc(gol.xMin))
+           .attr("y", nYSc(gol.yMax + 3*(gol.yMax-gol.yMin)))
+           .attr("width", nXSc(gol.asof*SMS) - nXSc(gol.xMin))
+      .attr("height",7*abs(nYSc(gol.yMin) - nYSc(gol.yMax)))
   }
 }
 
@@ -2772,19 +2772,19 @@ function updatePastText() {
   }
   if (todayelt.empty()) {
     gGrid.append("svg:line").attr("class",         "pastline")
-                            .attr("x1",            nXSc(goal.asof*SMS))
+                            .attr("x1",            nXSc(gol.asof*SMS))
                             .attr("y1",            0)
-                            .attr("x2",            nXSc(goal.asof*SMS))
+                            .attr("x2",            nXSc(gol.asof*SMS))
                             .attr("y2",            plotbox.height)
                             .style("stroke",       bu.Cols.AKRA) 
                             .style("stroke-width", r3(opts.today.width))
   } else {
-    todayelt.attr("x1", nXSc(goal.asof*SMS))
+    todayelt.attr("x1", nXSc(gol.asof*SMS))
             .attr("y1", 0)
-            .attr("x2", nXSc(goal.asof*SMS))
+            .attr("x2", nXSc(gol.asof*SMS))
             .attr("y2", plotbox.height)
   }
-  var textx = nXSc(goal.asof*SMS)-8
+  var textx = nXSc(gol.asof*SMS)-8
   var texty = plotbox.height/2
   if (pasttextelt.empty()) {
     gPastText.append("svg:text")
@@ -2793,12 +2793,12 @@ function updatePastText() {
       .attr("transform", "rotate(-90,"+textx+","+texty+")")
       .attr("fill", bu.Cols.AKRA) 
       .style("font-size", opts.horizon.font+"px") 
-      .text("Today"+" ("+moment.unix(goal.asof).utc().format("ddd")+")")
+      .text("Today"+" ("+moment.unix(gol.asof).utc().format("ddd")+")")
   } else {
     pasttextelt
       .attr("x", textx).attr("y", texty)
       .attr("transform", "rotate(-90,"+textx+","+texty+")")
-      .text("Today"+" ("+moment.unix(goal.asof).utc().format("ddd")+")")
+      .text("Today"+" ("+moment.unix(gol.asof).utc().format("ddd")+")")
   }
 }
 
@@ -2813,19 +2813,19 @@ function updateContextToday() {
   }
   if (todayelt.empty()) {
     ctxplot.append("svg:line").attr("class",         "ctxtoday")
-                              .attr("x1",            xScB(goal.asof*SMS))
+                              .attr("x1",            xScB(gol.asof*SMS))
                               .attr("y1",            0)
-                              .attr("x2",            xScB(goal.asof*SMS))
+                              .attr("x2",            xScB(gol.asof*SMS))
                               .attr("y2",            brushbox.height)
                               .style("stroke",       "rgb(0,0,200)") 
                               .style("stroke-width", r3(opts.horizon.ctxwidth))
   } else {
-    todayelt.attr("x1", xScB(goal.asof*SMS))
+    todayelt.attr("x1", xScB(gol.asof*SMS))
             .attr("y1", 0)
-            .attr("x2", xScB(goal.asof*SMS))
+            .attr("x2", xScB(gol.asof*SMS))
             .attr("y2", brushbox.height)
   }
-  var textx = xScB(goal.asof*SMS)-5
+  var textx = xScB(gol.asof*SMS)-5
   var texty = brushbox.height/2
 
   if (pasttextelt.empty()) {
@@ -2850,8 +2850,8 @@ function updateBullseye() {
   var bullseyeelt = gBullseye.select(".bullseye");
   //var bx = nXSc(road[road.length-1].sta[0]*SMS)-(opts.bullsEye.size/2);
   //var by = nYSc(road[road.length-1].sta[1])-(opts.bullsEye.size/2);
-  var bx = nXSc(goal.tfin*SMS)-(opts.bullsEye.size/2);
-  var by = nYSc(br.rdf(road, goal.tfin))-(opts.bullsEye.size/2);
+  var bx = nXSc(gol.tfin*SMS)-(opts.bullsEye.size/2);
+  var by = nYSc(br.rdf(road, gol.tfin))-(opts.bullsEye.size/2);
   if (bullseyeelt.empty()) {
     gBullseye.append("svg:image")
       .attr("class","bullseye")
@@ -2875,8 +2875,8 @@ function updateContextBullseye() {
   }
   //var bx = xScB(road[road.length-1].sta[0]*SMS)-(opts.bullsEye.ctxsize/2)
   //var by = yScB(road[road.length-1].sta[1])-(opts.bullsEye.ctxsize/2)
-  var bx = xScB(goal.tfin*SMS)-(opts.bullsEye.ctxsize/2);
-  var by = yScB(br.rdf(road, goal.tfin))-(opts.bullsEye.ctxsize/2);
+  var bx = xScB(gol.tfin*SMS)-(opts.bullsEye.ctxsize/2);
+  var by = yScB(br.rdf(road, gol.tfin))-(opts.bullsEye.ctxsize/2);
   if (bullseyeelt.empty()) {
     ctxplot.append("svg:image")
       .attr("class","ctxbullseye")
@@ -2951,14 +2951,14 @@ function updateWatermark() {
   var offg, offb, g = null, b = null, x, y, bbox, newsize, newh;
 
   setWatermark();
-  if      (goal.loser)              g = PNG.sklb
-  if      (goal.waterbuf === 'inf') g = PNG.infb
-  else if (goal.waterbuf === ':)')  g = PNG.smlb
+  if      (gol.loser)              g = PNG.sklb
+  if      (gol.waterbuf === 'inf') g = PNG.infb
+  else if (gol.waterbuf === ':)')  g = PNG.smlb
 
-  if      (goal.dir>0 && goal.yaw<0) { offg = bbr; offb = tl  }
-  else if (goal.dir<0 && goal.yaw>0) { offg = tr;  offb = bbl }
-  else if (goal.dir<0 && goal.yaw<0) { offg = bbl; offb = tr  }
-  else                               { offg = tl;  offb = bbr }
+  if      (gol.dir>0 && gol.yaw<0) { offg = bbr; offb = tl  }
+  else if (gol.dir<0 && gol.yaw>0) { offg = tr;  offb = bbl }
+  else if (gol.dir<0 && gol.yaw<0) { offg = bbl; offb = tr  }
+  else                             { offg = tl;  offb = bbr }
 
   xlinkloaded = false
   var wbufelt = gWatermark.select(".waterbuf");
@@ -2985,7 +2985,7 @@ function updateWatermark() {
       .style('font-size', fs+"px")
       .style('font-weight', "bolder")
       .style('fill', opts.watermark.color)
-      .text(goal.waterbuf);
+      .text(gol.waterbuf);
     bbox = wbufelt.node().getBBox();
     if (bbox.width > plotbox.width/2.2) {
       newsize = (fs*(plotbox.width/2.2)
@@ -3010,7 +3010,7 @@ function updateWatermark() {
       .style('font-size', fs+"px")
       .style('font-weight', "bolder")
       .style('fill', opts.watermark.color)
-      .text(goal.waterbux);
+      .text(gol.waterbux);
     bbox = wbuxelt.node().getBBox();
     if (bbox.width > plotbox.width/2.2) {
       newsize = (fs*(plotbox.width/2.2)/bbox.width)
@@ -3024,28 +3024,28 @@ function updateWatermark() {
 }
 
 function updateAura() {
-  if (processing) return;
-  var el = gAura.selectAll(".aura")
+  if (processing) return
+  var el  = gAura.selectAll(".aura")
   var el2 = gAura.selectAll(".aurapast")
-  if (goal.aura && opts.showData) {
-    var aurdn = min(0, -goal.stdflux)
-    var aurup = max(0,  goal.stdflux)
-    var fudge = PRAF*(goal.tmax-goal.tmin);
-    var xr = [nXSc.invert(0).getTime()/SMS, 
+  if (gol.aura && opts.showData) {
+    var aurdn = min(0, -gol.stdflux)
+    var aurup = max(0,  gol.stdflux)
+    var fudge = PRAF*(gol.tmax-gol.tmin)
+    var xr = [nXSc.invert(            0).getTime()/SMS, 
               nXSc.invert(plotbox.width).getTime()/SMS]
-    var xvec,i
-    xvec = griddle(max(xr[0], goal.tmin),
-                   bu.arrMin([xr[1], goal.asof+bu.AKH, goal.tmax+fudge]),
+    var xvec, i
+    xvec = griddle(max(xr[0], gol.tmin),
+                   bu.arrMin([xr[1], gol.asof+bu.AKH, gol.tmax+fudge]),
                    plotbox.width/8)
     // Generate a path string for the aura
     var 
-      d = "M"+r1(nXSc(xvec[0]*SMS))+" "+r1(nYSc(goal.auraf(xvec[0])+aurup))
+      d = "M"+r1(nXSc(xvec[0]*SMS))+" "+r1(nYSc(gol.auraf(xvec[0])+aurup))
     for (i = 1; i < xvec.length; i++)
       d += 
-        " L"+r1(nXSc(xvec[i]*SMS))+" "+r1(nYSc(goal.auraf(xvec[i])+aurup))
+        " L"+r1(nXSc(xvec[i]*SMS))+" "+r1(nYSc(gol.auraf(xvec[i])+aurup))
     for (i = xvec.length-1; i >= 0; i--)
       d += 
-        " L"+r1(nXSc(xvec[i]*SMS))+" "+r1(nYSc(goal.auraf(xvec[i])+aurdn))
+        " L"+r1(nXSc(xvec[i]*SMS))+" "+r1(nYSc(gol.auraf(xvec[i])+aurdn))
     d += " Z"
     if (el.empty()) {
       gAura.append("svg:path")
@@ -3055,15 +3055,15 @@ function updateAura() {
     } else {
       el.attr("d", d);
     }
-    if (xr[0] < goal.tmin) {
-      xvec = griddle(xr[0], goal.tmin, plotbox.width/8);
-      d = "M"+r1(nXSc(xvec[0]*SMS))+" "+r1(nYSc(goal.auraf(xvec[0])+aurup))
+    if (xr[0] < gol.tmin) {
+      xvec = griddle(xr[0], gol.tmin, plotbox.width/8);
+      d = "M"+r1(nXSc(xvec[0]*SMS))+" "+r1(nYSc(gol.auraf(xvec[0])+aurup))
       for (i = 1; i < xvec.length; i++)
         d += " L"+r1(nXSc(xvec[i]*SMS))+" "
-                 +r1(nYSc(goal.auraf(xvec[i])+aurup))
+                 +r1(nYSc(gol.auraf(xvec[i])+aurup))
       for (i = xvec.length-1; i >= 0; i--)
         d += " L"+r1(nXSc(xvec[i]*SMS))+" "
-                 +r1(nYSc(goal.auraf(xvec[i])+aurdn))
+                 +r1(nYSc(gol.auraf(xvec[i])+aurdn))
       d += " Z";
       if (el2.empty()) {
         gAura.append("svg:path")
@@ -3092,9 +3092,9 @@ function updateHorizon() {
   if (horizonelt.empty()) {
     gHorizon.append("svg:line")
       .attr("class","horizon")
-      .attr("x1", nXSc(goal.horizon*SMS))
+      .attr("x1", nXSc(gol.horizon*SMS))
       .attr("y1",0)
-      .attr("x2", nXSc(goal.horizon*SMS))
+      .attr("x2", nXSc(gol.horizon*SMS))
       .attr("y2",plotbox.height)
       .style("stroke", bu.Cols.AKRA) 
       .style("stroke-dasharray", 
@@ -3102,13 +3102,13 @@ function updateHorizon() {
       .attr("stroke-width", r3(o.width*scf))
   } else {
     horizonelt
-      .attr("x1", nXSc(goal.horizon*SMS))
+      .attr("x1", nXSc(gol.horizon*SMS))
       .attr("y1",0)
-      .attr("x2", nXSc(goal.horizon*SMS))
+      .attr("x2", nXSc(gol.horizon*SMS))
       .attr("y2",plotbox.height)
       .attr("stroke-width", r3(o.width*scf))
   }
-  var textx = nXSc(goal.horizon*SMS)+(14);
+  var textx = nXSc(gol.horizon*SMS)+(14);
   var texty = plotbox.height/2;
   var horizontextelt = gHorizonText.select(".horizontext");
   if (horizontextelt.empty()) {
@@ -3127,32 +3127,30 @@ function updateHorizon() {
 }
 
 function updateContextHorizon() {
-  if (opts.divGraph == null || road.length == 0) return;
-  const horizonelt = ctxplot.select(".ctxhorizon");
+  if (opts.divGraph == null || road.length == 0) return
+  const horizonelt = ctxplot.select(".ctxhorizon")
   const o = opts.horizon
   if (horizonelt.empty()) {
     ctxplot.append("svg:line")
       .attr("class","ctxhorizon")
-      .attr("x1", xScB(goal.horizon*SMS))
-      .attr("y1",yScB(goal.yMin-5*(goal.yMax-goal.yMin)))
-      .attr("x2", xScB(goal.horizon*SMS))
-      .attr("y2",yScB(goal.yMax+5*(goal.yMax-goal.yMin)))
+      .attr("x1", xScB(gol.horizon*SMS))
+      .attr("y1", yScB(gol.yMin-5*(gol.yMax-gol.yMin)))
+      .attr("x2", xScB(gol.horizon*SMS))
+      .attr("y2", yScB(gol.yMax+5*(gol.yMax-gol.yMin)))
       .style("stroke", bu.Cols.AKRA) 
-      .style("stroke-dasharray", (o.ctxdash)+","
-             +(o.ctxdash)) 
+      .style("stroke-dasharray", (o.ctxdash)+","+(o.ctxdash)) 
       .style("stroke-width", r3(o.ctxwidth))
   } else {
-    horizonelt
-      .attr("x1", xScB(goal.horizon*SMS))
-      .attr("y1",yScB(goal.yMin-5*(goal.yMax-goal.yMin)))
-      .attr("x2", xScB(goal.horizon*SMS))
-      .attr("y2",yScB(goal.yMax+5*(goal.yMax-goal.yMin)));
+    horizonelt.attr("x1", xScB(gol.horizon*SMS))
+              .attr("y1", yScB(gol.yMin-5*(gol.yMax-gol.yMin)))
+              .attr("x2", xScB(gol.horizon*SMS))
+              .attr("y2", yScB(gol.yMax+5*(gol.yMax-gol.yMin)))
   }
 
-  var textx = xScB(goal.horizon*SMS)+12;
-  var texty = brushbox.height/2;
+  var textx = xScB(gol.horizon*SMS)+12
+  var texty = brushbox.height/2
 
-  var hortextelt = ctxplot.select(".ctxhortext");
+  var hortextelt = ctxplot.select(".ctxhortext")
   if (hortextelt.empty()) {
     ctxplot.append("svg:text")
       .attr("class","ctxhortext")
@@ -3160,11 +3158,11 @@ function updateContextHorizon() {
       .attr("transform", "rotate(-90,"+textx+","+texty+")")
       .attr("fill", bu.Cols.AKRA) 
       .style("font-size", (o.ctxfont)+"px") 
-      .text("Horizon");
+      .text("Horizon")
   } else {
-    hortextelt
-      .attr("x", textx).attr("y", texty)
-      .attr("transform", "rotate(-90,"+textx+","+texty+")");
+    hortextelt.attr("x", textx)
+              .attr("y", texty)
+              .attr("transform", "rotate(-90,"+textx+","+texty+")")
   }
 }
 
@@ -3189,18 +3187,18 @@ function updateYBHP() {
   // Finally, xrange, a list like [xmin, xmax], gives the x-axis range to
   // apply it to. If xrange=null, use [-infinity, infinity].
 
-  const xrfull   = [goal.tini, goal.tfin]       // x-axis range tini-tfin
-  const xrakr    = [goal.asof, goal.asof+7*SID] // now to akrasia horiz.
+  const xrfull   = [gol.tini, gol.tfin]       // x-axis range tini-tfin
+  const xrakr    = [gol.asof, gol.asof+7*SID] // now to akrasia horiz.
   const bgreen   = bu.Cols.RAZR3
   const bblue    = bu.Cols.RAZR2
   const borange  = bu.Cols.RAZR1
   const lyellow  = "#ffff88" // light yellow same as LYEL for classic YBR
-  //const gsideyel = goal.shadeit ? lyellow : "none" // good side maybe shaded
+  //const gsideyel = gol.shadeit ? lyellow : "none" // good side maybe shaded
   const gsw      = .99 // stroke width for guiding lines
   const gfo      = 1   // fill-opacity for guiding lines -- may not matter
   const rfo      = 0.72 // fill-opacity for regions
 
-  if (goal.maxflux > 0) { // slightly unDRY here
+  if (gol.maxflux > 0) { // slightly unDRY here
     regions = [
       //[ 2, -1, gsideyel,  "none",    0, rfo, xrfull], // whole good half-plane
       [ 0,  2, lyellow,   "none",    0, rfo, xrfull], // YBR equivalent
@@ -3228,7 +3226,7 @@ function updateYBHP() {
     ]
   }
   // Add the "infinity" region as a shaded color
-  regions.unshift([(goal.tfin-goal.tini)/SID, -1, lyellow, "none", 0, rfo, xrfull])
+  regions.unshift([(gol.tfin-gol.tini)/SID, -1, lyellow, "none", 0, rfo,xrfull])
 
   var debuglines = -1 // Use -1 to disable, 0 or more to debug
   if (debuglines >= 0) {
@@ -3244,7 +3242,7 @@ function updateYBHP() {
       //[ 2,  2, "none", bblue,  1.5,   1, xrfull], // blue line
       //[ 1,  1, "none", borang, 1.5,   1, xrfull], // orange line
     ]
-    const tmp = br.isoline(road, dtd, goal, debuglines, true)
+    const tmp = br.isoline(road, dtd, gol, debuglines, true)
     const adj = abs(nYSc.invert(2.5)-nYSc.invert(0))
     //console.log(JSON.stringify(tmp[3].map(e=>[bu.dayify(e[0]), e[1]])))
     iso[6] = tmp[0]
@@ -3288,7 +3286,7 @@ function updateYBHP() {
     const id = "r"+reg[0]+reg[1]
 
     // Adjustment to y coordinates by half the stroke width
-    const adj = goal.yaw*reg[4]/2
+    const adj = gol.yaw*reg[4]/2
 
     let xr = reg[6]
     if (xr == null) xr = [-Infinity, Infinity]
@@ -3310,12 +3308,12 @@ function updateYBHP() {
 
     // Determine good side of the road for boundaries at infinity
     let yedge, yedgeb
-    if (goal.yaw < 0) {
-      yedge  = goal.yMin - 0.1*(goal.yMax - goal.yMin)
-      yedgeb = goal.yMax + 0.1*(goal.yMax - goal.yMin)
+    if (gol.yaw < 0) {
+      yedge  = gol.yMin - 0.1*(gol.yMax - gol.yMin)
+      yedgeb = gol.yMax + 0.1*(gol.yMax - gol.yMin)
     } else {
-      yedge  = goal.yMax + 0.1*(goal.yMax - goal.yMin)
-      yedgeb = goal.yMin - 0.1*(goal.yMax - goal.yMin)
+      yedge  = gol.yMax + 0.1*(gol.yMax - gol.yMin)
+      yedgeb = gol.yMin - 0.1*(gol.yMax - gol.yMin)
     }
 
     // Construct a path element for the starting DTD value. This will be the
@@ -3396,11 +3394,11 @@ function updatePinkRegion() {                         // AKA nozone AKA oinkzone
   // For non-editor graphs, use the most recent road
   if (!opts.roadEditor) rd = road
   
-  const now = goal.asof
-  const hor = goal.horizon
+  const now = gol.asof
+  const hor = gol.horizon
   let yedge
-  if (goal.yaw > 0) yedge = goal.yMin - 5*(goal.yMax - goal.yMin)
-  else              yedge = goal.yMax + 5*(goal.yMax - goal.yMin)
+  if (gol.yaw > 0) yedge = gol.yMin - 5*(gol.yMax - gol.yMin)
+  else             yedge = gol.yMax + 5*(gol.yMax - gol.yMin)
   const color = "url(#pinkzonepat"+curid+")"
 
   const pr = d3.select(" #pinkzonepat"+curid+" rect")
@@ -3420,8 +3418,8 @@ function updatePinkRegion() {                         // AKA nozone AKA oinkzone
   d += " L"+nXSc(hor*SMS)+" "+nYSc(yedge)
   d += " L"+nXSc(now*SMS)+" "+nYSc(yedge)
   d += " Z"
-  gPinkPat.attr("patternTransform", goal.dir > 0 ? "rotate(135)" : "rotate(45)")
-          .attr("x", -goal.dir*nXSc(now*SMS))
+  gPinkPat.attr("patternTransform", gol.dir > 0 ? "rotate(135)" : "rotate(45)")
+          .attr("x", -gol.dir*nXSc(now*SMS))
   
   if (pinkelt.empty()) {
     gPink.append("svg:path").attr("class",        "pinkregion")
@@ -3457,18 +3455,18 @@ function updateCenterline(rd, gelt, cls, scol, sw, delta, usedash) {
   // ex,ey: End of the current line segment
   let fx = nXSc(rd[0].sta[0]*SMS), fy = nYSc(rd[0].sta[1]+delta)
   let ex = nXSc(rd[0].end[0]*SMS), ey = nYSc(rd[0].end[1]+delta)
-  if (rd[0].sta[0] < goal.tini) {
-    fx  = nXSc(goal.tini*SMS)
+  if (rd[0].sta[0] < gol.tini) {
+    fx  = nXSc(gol.tini*SMS)
     // Using vini instead of the rdf below does not work for some
     // goals where vini ends up not on the road itself -- uluc
     // But let's do stricter error-checking so we can count on rdf(tini)==vini!
-    fy  = nYSc(br.rdf(rd, goal.tini)+delta)
-    //fy  = nYSc(goal.vini+delta)
+    fy  = nYSc(br.rdf(rd, gol.tini)+delta)
+    //fy  = nYSc(gol.vini+delta)
   }
 
   if (usedash) {
     // Adjust start of road so dashes are stationary wrt time
-    const newx = (-nXSc(goal.tini*SMS)) % ceil(1.5*opts.oldRoadLine.dash)
+    const newx = (-nXSc(gol.tini*SMS)) % ceil(1.5*opts.oldRoadLine.dash)
     if (ex !== fx) fy = (fy + (-newx-fx)*(ey-fy)/(ex-fx))
     if (fx < 0 || newx > 0) fx = -newx
   }
@@ -3479,8 +3477,8 @@ function updateCenterline(rd, gelt, cls, scol, sw, delta, usedash) {
     // breaks the tfin check. This hopefully overcomes that problem
     let segx = bu.daysnap(segment.end[0])
     ex = nXSc(segment.end[0]*SMS)
-    if (segx < goal.tini) continue
-    if (segx > goal.tfin) break
+    if (segx < gol.tini) continue
+    if (segx > gol.tfin) break
     ey = nYSc(segment.end[1]+delta)
     d += " L"+r1(ex)+" "+(r1(ey)+adj)
     if (ex > plotbox.width) break
@@ -3621,12 +3619,12 @@ function updateGuidelines() {
   const xrange = [nXSc.invert(            0)/SMS,
                   nXSc.invert(plotbox.width)/SMS]
   const buildPath = ((d,i) =>
-                     getisopath(d, [max(goal.tini, xrange[0]),
-                                    min(goal.tfin, xrange[1])]))
+                     getisopath(d, [max(gol.tini, xrange[0]),
+                                    min(gol.tfin, xrange[1])]))
   
   const lnw = isolnwborder(xrange) // estimate intra-isoline delta
   const lnw_px = abs(nYSc(0) - nYSc(lnw))
-  const numdays = (goal.tfin-goal.tini)/SID
+  const numdays = (gol.tfin-gol.tini)/SID
 
   let numlines = maxVisibleDTD(numdays)
 
@@ -3684,8 +3682,8 @@ function updateMaxFluxline() {
 
   // Generate the maxflux line if maxflux!=0. Otherwise, remove existing one
   updateCenterline(road, gMaxflux, "maxflux", 
-                   goal.maxflux != 0 ? bu.Cols.BIGG : null,
-                   r3(opts.maxfluxline*scf), goal.yaw*goal.maxflux, false)
+                   gol.maxflux != 0 ? bu.Cols.BIGG : null,
+                   r3(opts.maxfluxline*scf), gol.yaw*gol.maxflux, false)
 }
 
 function updateStdFluxline() {
@@ -3694,8 +3692,8 @@ function updateStdFluxline() {
 
   // Generate the maxflux line if maxflux!=0. Otherwise, remove existing one
   updateCenterline(road, gStdflux, "stdflux", 
-                   goal.maxflux != 0 ? bu.Cols.BIGG : null,
-                   r3(opts.stdfluxline*scf), goal.yaw*goal.stdflux, true)
+                   gol.maxflux != 0 ? bu.Cols.BIGG : null,
+                   r3(opts.stdfluxline*scf), gol.yaw*gol.stdflux, true)
 }
 
   
@@ -3924,10 +3922,10 @@ function updateRoadData() {
   // the beebrain object since its road object will be set to the newly edited
   // road later, once dragging is finished. If this is the first time the goal
   // is being loaded, we can rely on the beebrain object's computation.
-  dtd = processing ? goal.dtdarray : br.dtdarray(road, goal)
+  dtd = processing ? gol.dtdarray : br.dtdarray(road, gol)
   iso = []
   // Precompute first few isolines for dotcolor etc to rely on (was 5 not 7)
-  for (let i = 0; i < 7; i++) iso[i] = br.isoline( road, dtd, goal, i)
+  for (let i = 0; i < 7; i++) iso[i] = br.isoline( road, dtd, gol, i)
 }
 
 function updateRoadValidity() {
@@ -4051,7 +4049,7 @@ function updateContextDots() {
 }
 
 function dpFill( pt ) {
-  return br.dotcolor(road, goal, pt[0], pt[1], iso)
+  return br.dotcolor(road, gol, pt[0], pt[1], iso)
 }
 function dpFillOp( pt ) {
   return (pt[3] == bbr.DPTYPE.AGGPAST)?1:0.3
@@ -4071,7 +4069,7 @@ function showDotText(d) {
   var info = []
   if (d[2] !== "") info.push("\""+d[2]+"\"")
   if (d[6] !== null && d[1] !== d[6]) info.push("total:"+d[1])
-  var col = br.dotcolor(road, goal, d[0], d[1], iso)
+  var col = br.dotcolor(road, gol, d[0], d[1], iso)
   dotText = createTextBox(ptx, pty-(15+18*info.length), txt, col, info )
 };
 function removeDotText() { rmTextBox(dotText) }
@@ -4138,7 +4136,7 @@ function updateRosy() {
   var rosyelt = gRosy.selectAll(".rosy")
   var rosydelt = gRosyPts.selectAll(".rd")
   if (opts.showData || !opts.roadEditor) {
-    if (goal.rosy) {
+    if (gol.rosy) {
       var pts = (bbr.flad != null)
           ?bbr.rosydata.slice(0,bbr.rosydata.length-1):bbr.rosydata
       var npts = pts.filter(df), i
@@ -4194,7 +4192,7 @@ function updateSteppy() {
   let stpelt  = gSteppy.selectAll(".steppy")
   let stpdelt = gSteppyPts.selectAll(".std")
   if (opts.showData || !opts.roadEditor) {
-    if (!opts.roadEditor && goal.steppy && dataf.length !== 0) {
+    if (!opts.roadEditor && gol.steppy && dataf.length !== 0) {
       const npts = dataf.filter(df)
       let i
       if (npts.length === 0) {
@@ -4234,8 +4232,8 @@ function updateSteppy() {
         // Need additional vertical steppy for do-less flatlined datapoints
         let stppprelt = gSteppy.selectAll(".steppyppr")
         if (bbr.flad !== null) {
-          if (goal.yaw*goal.dir < 0 && goal.asof !== goal.tdat) {
-            const fy = bbr.flad[1] + br.ppr(road, goal, goal.asof)
+          if (gol.yaw*gol.dir < 0 && gol.asof !== gol.tdat) {
+            const fy = bbr.flad[1] + br.ppr(road, gol, gol.asof)
             d = "M"+r1(nXSc(npts[npts.length-1][0]*SMS))+" "
                    +r1(nYSc(npts[npts.length-1][1]))
             d+=" L"+r1(nXSc(npts[npts.length-1][0]*SMS))+" "+r1(nYSc(fy))
@@ -4281,7 +4279,7 @@ function updateDerails() {
   // *** Plot derailments ***
   if (opts.showData || !opts.roadEditor) {
     var drpts = bbr.derails.filter(ddf)
-    var arrow = (goal.yaw>0)?"#downarrow":"#uparrow"
+    var arrow = (gol.yaw>0)?"#downarrow":"#uparrow"
     drelt = gDerails.selectAll(".derails").data(drpts)
     drelt.exit().remove()
     drelt
@@ -4317,15 +4315,15 @@ function updateDataPoints() {
   var adf = function(d) {
     return (d[0] >= l[0] && d[0] <= l[1])
   }
-  var now = goal.asof;
-  var dpelt;
+  var now = gol.asof
+  var dpelt
   if (opts.showData || !opts.roadEditor) {
-    var pts = (bbr.flad != null)?dataf.slice(0,dataf.length-1):dataf;
+    var pts = bbr.flad != null ? dataf.slice(0, dataf.length-1) : dataf
     
     // *** Plot datapoints ***
     // Filter data to only include visible points
     pts = pts.filter(df);
-    if (goal.plotall && !opts.roadEditor) {
+    if (gol.plotall && !opts.roadEditor) {
       updateDotGroup(gAllpts, alldataf.filter(adf), "ap", 
                      r3(0.7*(opts.dataPoint.size)*scf),
                      null, null, dpFill, true, dpFillOp)
@@ -4351,13 +4349,13 @@ function updateDataPoints() {
     // *** Plot flatlined datapoint ***
     var fladelt = gFlat.selectAll(".fladp");
     if (bbr.flad != null) {
-      const ppr = br.ppr(road, goal, goal.asof)
+      const ppr = br.ppr(road, gol, gol.asof)
       const flady = bbr.flad[1] + ppr
       const fop = ppr == 0 ? 1.0 : 0.5 // ghosty iff there's a PPR
       if (fladelt.empty()) {
         gFlat.append("svg:use")
           .attr("class","fladp").attr("xlink:href", "#rightarrow")
-          .attr("fill", br.dotcolor(road,goal,bbr.flad[0],flady, iso))
+          .attr("fill", br.dotcolor(road,gol,bbr.flad[0],flady, iso))
           .attr("fill-opacity", fop)
           .attr("transform", "translate("+(nXSc((bbr.flad[0])*SMS))+","
                 +nYSc(flady)+"),scale("+(opts.dataPoint.fsize*scf/24)+")")
@@ -4373,7 +4371,7 @@ function updateDataPoints() {
             dotTimer = null;});
       } else {
         fladelt
-          .attr("fill", br.dotcolor(road,goal,bbr.flad[0],flady, iso))
+          .attr("fill", br.dotcolor(road,gol,bbr.flad[0],flady, iso))
           .attr("fill-opacity", fop)
           .attr("transform", 
                 "translate("+(nXSc((bbr.flad[0])*SMS))+","
@@ -4429,14 +4427,14 @@ function updateMovingAv() {
   if (processing) return;
   
   var el = gMovingAv.selectAll(".movingav");
-  if (!opts.roadEditor && goal.movingav && opts.showData) {
+  if (!opts.roadEditor && gol.movingav && opts.showData) {
     var l = [nXSc.invert(0).getTime()/SMS, 
              nXSc.invert(plotbox.width).getTime()/SMS];
     var rdfilt = function(r) {
       return ((r.sta[0] > l[0] && r.sta[0] < l[1])
               || (r.end[0] > l[0] && r.end[0] < l[1]));
     };
-    var pts = goal.filtpts.filter(function(e){
+    var pts = gol.filtpts.filter(function(e){
       return (e[0] > l[0]-2*SID && e[0] < l[1]+2*SID);});
     if (pts.length > 0){
       var d = "M"+r1(nXSc(pts[0][0]*SMS))+" "+r1(nYSc(pts[0][1]))
@@ -4502,9 +4500,9 @@ function createStartTable() {
 }
 
 // Create the table header and body to show the goal node
-var ghead, gbody;
+var ghead, gbody
 function createGoalTable() {
-  var goalcolumns;
+  var goalcolumns
   if (opts.tableCheckboxes)
     goalcolumns = ['', '', 'Goal Date', '', 'Value', '', 'Daily Slope'];
   else
@@ -4521,27 +4519,25 @@ function createGoalTable() {
 function updateTableTitles() {
   if (opts.divTable == null) return;
   var ratetext = "Daily Slope";
-  if (goal.runits === 'h') ratetext = "Hourly Slope";
-  if (goal.runits === 'd') ratetext = "Daily Slope";
-  if (goal.runits === 'w') ratetext = "Weekly Slope";
-  if (goal.runits === 'm') ratetext = "Monthly Slope";
-  if (goal.runits === 'y') ratetext = "Yearly Slope";
+  if (gol.runits === 'h') ratetext = "Hourly Slope";
+  if (gol.runits === 'd') ratetext = "Daily Slope";
+  if (gol.runits === 'w') ratetext = "Weekly Slope";
+  if (gol.runits === 'm') ratetext = "Monthly Slope";
+  if (gol.runits === 'y') ratetext = "Yearly Slope";
 
-  var roadcolumns, goalcolumns;
+  var roadcolumns, goalcolumns
   if (opts.tableCheckboxes) {
-    roadcolumns = ['', '', 'End Date', '', 'Value', '',
-                   ratetext, ''];
-    goalcolumns = ['', '', 'Goal Date', '', 'Value', '',
-                   ratetext, ''];
+    roadcolumns = ['', '', 'End Date',  '', 'Value', '', ratetext, '']
+    goalcolumns = ['', '', 'Goal Date', '', 'Value', '', ratetext, '']
   } else {
-    roadcolumns = ['', '', 'End Date', 'Value', ratetext, ''];
-    goalcolumns = ['', '', 'Goal Date', 'Value', ratetext, ''];
+    roadcolumns = ['', '', 'End Date',  'Value', ratetext, '']
+    goalcolumns = ['', '', 'Goal Date', 'Value', ratetext, '']
   }
-  sttail.selectAll("span.roadhdrcell").data(roadcolumns).text((c)=>c);
-  thead.selectAll("span.roadhdrcell").data(roadcolumns).text((c)=>c);
-  ghead.selectAll("span.roadhdrcell").data(goalcolumns).text((c)=>c);
+  sttail.selectAll("span.roadhdrcell").data(roadcolumns).text((c)=>c)
+  thead.selectAll("span.roadhdrcell").data(roadcolumns).text((c)=>c)
+  ghead.selectAll("span.roadhdrcell").data(goalcolumns).text((c)=>c)
 
-  updateTableWidths();
+  updateTableWidths()
 }
 
 var focusField = null;
@@ -4569,7 +4565,7 @@ function tableFocusIn( d, i ){
       datePicker.destroy();
       datePicker = null;
     }
-    var knotmin = (kind == 0) ? goal.xMin-10*SID*DIY : (road[kind].sta[0])
+    var knotmin = (kind == 0) ? gol.xMin-10*SID*DIY : (road[kind].sta[0])
     var knotmax = (kind == road.length-1) ? road[kind].end[0]
                                           : (road[kind+1].end[0])
     // Switch all dates to local time to babysit Pikaday
@@ -4877,7 +4873,7 @@ function updateRowValues( elt, s, e, rev ) {
           {order: 4, value: bu.shn(row.end[1]), name: "endvalue"+(ri), 
            auto: (row.auto==br.RP.VALUE), i:ri},
           {order: 6, value: isNaN(row.slope)
-           ?"duplicate":bu.shn(row.slope*goal.siru), name: "slope"+(ri), 
+           ?"duplicate":bu.shn(row.slope*gol.siru), name: "slope"+(ri), 
            auto: (row.auto==br.RP.SLOPE), i:ri}]
       });
    cells.enter().append("div").attr('class', 'roadcell')
@@ -5029,7 +5025,7 @@ function updateGraphData(force = false) {
   updateAura()
   // Record current dot color so it can be retrieved from the SVG
   // for the thumbnail border
-  zoomarea.attr('color', br.dotcolor(road, goal, goal.tcur, goal.vcur, iso))
+  zoomarea.attr('color', br.dotcolor(road, gol, gol.tcur, gol.vcur, iso))
 
   // Store the latest scale factor for comparison. Used to
   // eliminate unnecessary attribute setting for updateDotGroup
@@ -5092,8 +5088,8 @@ this.maxDataDays = ( days ) => {
       alldataf = alldata.slice()
       dataf = data.slice()
     } else {
-      alldataf = alldata.filter((e)=>(e[0]>(goal.asof-opts.maxDataDays*SID)))
-      dataf = data.filter((e)=>(e[0]>(goal.asof-opts.maxDataDays*SID)))
+      alldataf = alldata.filter((e)=>(e[0]>(gol.asof-opts.maxDataDays*SID)))
+      dataf = data.filter((e)=>(e[0]>(gol.asof-opts.maxDataDays*SID)))
     }
     if (alldata.length != 0) {
       updateDataPoints()
@@ -5298,12 +5294,12 @@ this.commitTo = ( newSlope ) => {
   if (road[road.length-2].slope == newSlope) return
 
   // Find out if there are any segments beyond the horizon
-  var horseg = br.findSeg(road, goal.horizon)
-  if (road[horseg].sta[0] == goal.horizon || horseg < road.length-2) {
+  var horseg = br.findSeg(road, gol.horizon)
+  if (road[horseg].sta[0] == gol.horizon || horseg < road.length-2) {
     // There are knots beyond the horizon. Only adjust the last segment
     pushUndoState()
   } else {
-    addNewDot(goal.horizon)
+    addNewDot(gol.horizon)
   }
   road[road.length-2].slope = newSlope
   br.fixRoadArray( road, br.RP.VALUE, false )
@@ -5329,10 +5325,10 @@ this.getRoad = () => {
     return null
   }
   r.valid = isRoadValid(road)
-  r.loser = br.redyest(road, goal, goal.tcur) // TODO: needs iso here
-  r.asof = goal.asof
-  r.horizon = goal.horizon
-  r.siru = goal.siru
+  r.loser = br.redyest(road, gol, gol.tcur) // TODO: needs iso here
+  r.asof = gol.asof
+  r.horizon = gol.horizon
+  r.siru = gol.siru
   //r.tini = dt(road[0].end[0])
   //r.vini = road[0].end[1]
   r.road = []
@@ -5341,7 +5337,7 @@ this.getRoad = () => {
     if (seg.sta[0] == seg.end[0] && seg.sta[1] == seg.end[1])
       continue
     kd = moment.unix(seg.end[0]).utc()
-    rd = [kd.format("YYYYMMDD"), seg.end[1], seg.slope*goal.siru]
+    rd = [kd.format("YYYYMMDD"), seg.end[1], seg.slope*gol.siru]
     if (seg.auto == br.RP.DATE) rd[2] = null // Exception here since roadall does not support null dates
     if (seg.auto == br.RP.VALUE) rd[1] = null
     if (seg.auto == br.RP.SLOPE) rd[2] = null
@@ -5444,7 +5440,7 @@ this.show = () => {
 */
 this.getRoadObj = () => br.copyRoad(road)
 
-this.getGoalObj = () => (goal)
+this.getGoalObj = () => (gol)
 
 /** Flag to indicate whether we are within a call to
  * setRoadObj(). Prevents repeated calls to beebrain.reloadRoad()
@@ -5487,15 +5483,15 @@ this.setRoadObj = ( newroad, resetinitial = false ) => {
     @returns {Boolean} 
 */
 this.isLoser = () => {
-  if (goal && road.length != 0)
-    return br.redyest(road, goal, goal.tcur) // TODO: needs iso here
+  if (gol && road.length != 0)
+    return br.redyest(road, gol, gol.tcur) // TODO: needs iso here
   else return false
 }
 /** Returns current goal state
     @returns {object} Current goal state as [t, v, r, rdf(t)] or null if no goal
 */
 this.curState =
-  () => (goal?[goal.tcur, goal.vcur, goal.rcur, br.rdf(road, goal.tcur)]:null)
+  () => (gol ? [gol.tcur, gol.vcur, gol.rcur, br.rdf(road, gol.tcur)] : null)
 
 /** @typedef GoalVisuals
     @global
@@ -5517,7 +5513,7 @@ const visualProps
 */
 this.getVisualConfig = ( ) =>{
   var out = {}
-  visualProps.map(e=>{ out[e] = goal[e] })
+  visualProps.map(e=>{ out[e] = gol[e] })
   return out
 }
 
@@ -5543,7 +5539,7 @@ const goalProps
  */
 this.getGoalConfig = ( ) => {
   let out = {}
-  goalProps.map(e => { out[e] = goal[e] })
+  goalProps.map(e => { out[e] = gol[e] })
   return out
 }
 
