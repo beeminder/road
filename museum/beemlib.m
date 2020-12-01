@@ -315,13 +315,6 @@ tm[d_List] := tm @@ d
 tm[d_String] := Check[AbsoluteTime[d], prn["ERRORtm: ",d,"\n"]; Exit[1]]
 tm[d_] := d  (* if it's a number or Null, leave it *)
 
-(* SCHDEL: before changing to default to noon: [SCHDEL = scheduled for deletion]
-tm[] := AbsoluteTime[]
-tm[d_List] := AbsoluteTime[d]
-tm[d_String] := Check[AbsoluteTime[d], prn["ERRORtm: ",d,"\n"]; Exit[1]]
-tm[d_] := d 
-*)
-
 (* Singular or Plural:  Pluralize the given noun properly, if n is not 1. 
    Provide the plural version if nonstandard.
    Eg: splur[3, "boy"] -> "3 boys", splur[3, "man", "men"] -> "3 men" *)
@@ -366,16 +359,6 @@ dayfloor[{y_, m_, d_}]  := {y, m, Floor@d}
 dayfloor[t_List]        := dayfloor@Take[t, 3]
 dayfloor[t_]            := AbsoluteTime@dayfloor@DateList@t
 dayfloor[Null]          =  Null;
-
-(* SCHDEL: dayfloor[t_List]        := DateList@AbsoluteTime@Take[t, 3] *)
-(* SCHDEL: the version before changing the tm function:
-dayfloor[{y_}]        := DateList@tm@{y}
-dayfloor[{y_,m_}]     := DateList@tm@{y, m}
-dayfloor[{y_,m_,d_}]  := {y, m, Floor@d}
-dayfloor[t_List]      := DateList@tm@Take[t, 3]
-dayfloor[t_]          := tm@dayfloor@DateList@t
-dayfloor[Null]        =  Null;
-*)
 
 (* Plus 1 Year *)
 p1y[t_] := (*dayfloor@*)tm[DateList[t]+{1,0,0,0,0,0}]
@@ -429,20 +412,6 @@ lanage[{t_,v_}] := lanage[{t,v}, If[noisy, Max[nw, lnf[t]], lnf[t]]]
 (* Whether the given point is on the road if the road has lane width l. *)
 aok[{t_,v_}, l_] := lanage[{t,v}, l] * yaw >= -1
 
-(* SCHDEL: Chop[gdelt[{t,v}] + l] >= 0 *)
-
-(* SCHDEL: original lanage function with no l param:
-Module[{d = v - rdf[t], l, x},
-  l = If[noisy, Max[nw, lnf[t]], lnf[t]];
-  If[l==0, Return@If[Chop[d]==0, yaw, Sign[d]*666]]; 
-  x = ichop@N[d/l];
-  If[IntegerQ[x],
-    If[yaw>0 && x >= 0,  Return[x+1]];
-    If[yaw<0 && x <= 0,  Return[x-1]]];
-  Sign[x]*Ceiling@Abs[x]]
-*)
-
-
 (* Rate as a string, shown as a percentage if exprd is true. *)
 shr[r_] := shn[If[exprd,100,1]*r,2,4]<>If[exprd,"%",""]
 
@@ -453,7 +422,6 @@ sh1s = shns[Chop[#], 2,4]&;
 (* The value of the relevant/critical edge of the YBR in n days. *)
 lim[n_] := With[{t = tz+SID*n}, 
                 rdf[t] - Sign[yaw]*If[noisy, Max[nw,lnf[t]], lnf[t]]]
-(* SCHDEL: Which[yaw>0, -lnw, yaw<0, lnw, True, 0] *)
 
 (******************************************************************************)
 (******************** TRANSLATING INTO AND OUT OF BEEBRAIN ********************)
@@ -731,15 +699,6 @@ dotcolor[{t_,v_}] := With[{l = lanage[{t,v}]}, Which[
   l*yaw == -1,              ORNDOT,
   l*yaw <= -2 && t<tz,      YELDOT,
   l*yaw <= -2,              REDDOT]]
-
-(* SCHDEL:
-  y<0 && a<=0    || y>0 && b>=0    || y==0 && (b>0||a<0),                GRNDOT,
-  y<0&&a>0&&d<=0 || y>0&&d>=0&&b<0 || y==0&&If[u,d>=0&&b<=0,a>=0&&d<=0], BLUDOT,
-  y<0&&d>0&&b<=0 || y>0&&a>=0&&d<0 || y==0&&If[u,a>=0&&d<=0,d>=0&&b<=0], ORNDOT,
-  (y<0 && b>0    || y>0 && a<0) && t<tz,                                 YELDOT,
-  y<0  && b>0    || y>0 && a<0,                                          REDDOT,
-  True, (* should never happen but make it bright green just in case *)  Green]]
-*)
 
 (* Whether we're officially off the road (off both yesterday and today). 
    Note that this depends on the global lnw being set. *)
@@ -1325,7 +1284,7 @@ sumSet[] := Module[{minr,maxr, safeblurb, ybrStr, pingStr},
   ratesum = cat[
     If[minr==maxr, shr@minr, cat["between ",shr@minr," and ",shr@maxr]],
     " per ",unam[runits],
-    If[minr!=maxr, cat[" (",   (* SCHDEL: "global: ",shr@rate, *)
+    If[minr!=maxr, cat[" (",
                        "current: ",shr@zrate,
                        ", average: ",shr@avgrt,")"], ""]];
 
@@ -1814,7 +1773,7 @@ genRateFunc1[] := (1/siru*If[exprd, rdf[#], 1] *
   stepify2[DeleteDuplicates[road[[All,{1,3}]]]][#]&)
 *)
 
-(* Original lane width function. SCHDEL. *)
+(* Original lane width function. *)
 (* For noisy graphs, compute the lane width based on the data and YBR rate.
    If there's only one datapoint (t,v) on a flat road then lane = 5% of v.
    If one datapoint and road not flat then use the daily rate as the lane width.
@@ -1836,11 +1795,6 @@ laneWidth0[{{t1_,v1_}, {t2_,v2_}}] := Max[
                       avgrt>0 && v1>rdf[t1] && v2<rdf[t2]),    
     Abs[v2-rdf[t2]]
   , 0]]
-*)
-
-(*
-UPOCH = 2208967200; (* unix time 0 is this in mma's absolutetime SCHDEL c *) 
-UPOCH = 2208988800; (* unix time 0 is this in mma's absolutetime SCHDEL e *)
 *)
 
 (* Hacked up, ad hoc version of road = linInterp...
