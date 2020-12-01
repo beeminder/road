@@ -818,14 +818,11 @@ function setDefaultRange() {
     const years = floor((gol.tcur - gol.tmin) / (DIY*SID))
     gol.tmax = bu.daysnap((1+years/2)*2*bu.AKH + gol.tcur)
   }
-  if (gol.vmin != null && gol.vmax != null) {
-    // both provided explicitly
+  if (gol.vmin != null && gol.vmax != null) {     // both provided explicitly
     if (gol.vmin == gol.vmax) {
-      gol.vmin -= 1; gol.vmax += 1    // scooch away from each other
-    } else if (gol.vmin >  gol.vmax) {
-      // TODO: [gol.vmin, gol.vmax] = [gol.vmax, gol.vmin]
-      const tmp = gol.vmin
-      gol.vmin = gol.vmax; gol.vmax = tmp // swap them
+      gol.vmin -= 1; gol.vmax += 1                // scooch away from each other
+    } else if (gol.vmin > gol.vmax) {
+      [gol.vmin, gol.vmax] = [gol.vmax, gol.vmin] // swap them
     }
     return
   }
@@ -862,15 +859,13 @@ function setDefaultRange() {
     minmin = min(minmin, bu.arrMin(allvals[gol.tini].map(e => e[1])))
     maxmax = max(maxmax, bu.arrMax(allvals[gol.tini].map(e => e[1])))
   }
-  if (gol.vmin == null && gol.vmax == null) {
+  if (gol.vmin == null && gol.vmax == null) {     // neither provided explicitly
     gol.vmin = minmin
     gol.vmax = maxmax
     if (gol.vmin == gol.vmax) {
-      gol.vmin -= 1; gol.vmax += 1
+      gol.vmin -= 1; gol.vmax += 1                // scooch away from each other
     } else if (gol.vmin > gol.vmax) {
-      // TODO: [gol.vmin, gol.vmax] = [gol.vmax, gol.vmin]
-      const tmp = gol.vmin
-      gol.vmin = gol.vmax; gol.vmax = gol.vmin
+      [gol.vmin, gol.vmax] = [gol.vmax, gol.vmin] // swap them
     }
   } else if (gol.vmin==null) gol.vmin = minmin < gol.vmax ? minmin : gol.vmax-1
   else if   (gol.vmax==null) gol.vmax = maxmax > gol.vmin ? maxmax : gol.vmin+1
@@ -1337,7 +1332,7 @@ this.setRoadObj = function(newroad) {
   gol.road = []
   for (let i = 1; i < roads.length; i++)
     gol.road.push([roads[i].sta[0], roads[i].sta[1], roads[i].slope])
-  self.gol = gol // TODO: gol or goal here?
+  self.gol = gol
 
   self.reloadRoad()
 }
