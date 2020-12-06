@@ -281,7 +281,7 @@ const ErrMsgs = [ "Could not find goal (.bb) file.",
                   "Beeminder error" ]
 
 /** This atrocity attempts to determine whether the page was loaded from a 
-    mobile device */
+    mobile device. It might be from 2019 and in want of updating. */
 const onMobileOrTablet = () => {
   if (typeof navigator == 'undefined' && typeof window == 'undefined') 
     return false
@@ -398,7 +398,7 @@ let config = (obj, options) => {
 let bgraph = function(options) { // BEGIN bgraph object constructor ------------
 
 //console.debug("beebrain constructor ("+gid+"): ")
-let self = this
+let self = this // what OOP magic is this? can we just use "this" on next line?
 let opts = config(self, options)
 let curid = gid
 gid++
@@ -1048,8 +1048,9 @@ function resizeGraph() {
   adjustYScale()
 }
 
-/** Creates all road matrix table components if a table DIV is provided. Called
- * once when the bgraph object is created. i is the table index, and "now" is nowstamp UTC unixtime/SID */
+/**Create all road matrix table components if a table DIV is provided. Called
+ * once when the bgraph object is created. Takes the table index, i, and the
+ * "now" time as a nowstamp: unixtime in days. */
 var dbbody
 function duebylabel(i, now) {
   const mm = moment.unix(gol.asof+i*SID).utc()

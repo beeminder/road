@@ -638,10 +638,10 @@ self.clocky = (a) => {
 /** Arithmetic mean of values in list a
     @param {Number[]} a Input list*/
 self.mean = (a) => {
-  var s = 0,l = a.length,i
+  var s = 0, l = a.length, i
   if (l == 0) return 0
-  for( i = 0; i < l; i++ ){ s += a[i]}
-  return s/a.length
+  for(i = 0; i < l; i++) s += a[i]
+  return s / a.length
 }
 
 /** Median of values in list a
@@ -671,6 +671,13 @@ self.mode = (a) => {
     }
   }
   return maxitem
+}
+
+// Trimmed mean. Takes a list of numbers, a, and a fraction to trim.
+self.trimmean = (a, trim) => {
+  const n = Math.floor(a.length * trim)
+  const ta = a.sort((a,b) => a-b).slice(n, a.length - n) // trimmed array
+  return ta.reduce((a,b) => a+b) / ta.length
 }
 
 /** Whether min <= x <= max.
