@@ -508,7 +508,6 @@ function aggpt(vl, v) { // v is the aggregated value
     filtering based on visibility in graph
 */
 function procData() { 
-
   if (data == null || data.length == 0) return "No datapoints"
   const numpts = data.length
   let i, d
@@ -558,14 +557,16 @@ function procData() {
   aggval = {}
 
   // Aggregate datapoints and handle kyoom
-  // HACK: aggday=skatesum requires knowledge of rfin or rcur
-  br.rfin = gol.rfin
   let newpts = []
   let ct = data[0][0] // Current time
   let vl = []  // Value list: All values [t, v, c, ind, originalv] for time ct 
         
   let pre = 0 // Current cumulative sum
   let prevpt
+
+  // HACK: aggday=skatesum needs to know rcur which we won't know until we do
+  // procParams. We do know rfin so we're making do with that for now...
+  br.rsk8 = gol.rfin * SID / gol.siru // convert rfin to daily rate
 
   // Process all datapoints
   for (i = 0; i <= data.length; i++) {
@@ -588,14 +589,15 @@ function procData() {
                    ct <= gol.asof ? DPTYPE.AGGPAST : DPTYPE.AGGFUTURE, 
                    prevpt[0], prevpt[1], // this is the previous point
                    ptinf[2],             // v(original)
-                   ptinf[1]])            // index of original point if coincident
+                   ptinf[1]])            // index of original pt if coincident
       
       // Update allvals and aggval associative arrays
       // allvals[timestamp] has entries [vtotal, comment, vorig]
       if (gol.kyoom) {
         if (gol.aggday === "sum") {
           allvals[ct] = 
-            bu.accumulate(vlv).map((e,j) => [ct, e+pre, vl[j][2], vl[j][3], vl[j][4]])
+            bu.accumulate(vlv).map((e,j) => 
+                                      [ct, e+pre, vl[j][2], vl[j][3], vl[j][4]])
         } else allvals[ct] = vl.map(e => [ct, e[1]+pre, e[2], e[3], e[4]])
         aggval[ct] = pre+ad
         pre += ad
@@ -690,17 +692,17 @@ function procRoad(json) {
     if (rdData[0][1] != null) vini = rdData[0][1]
   }
   // First segment starts from [tini-100days, vini], ends at [tini, vini]
-  firstsegment = {
-    sta: [tini, Number(vini)],
-    slope: 0, auto: br.RP.SLOPE }
+  firstsegment = { sta: [tini, Number(vini)],
+                   slope: 0, 
+                   auto: br.RP.SLOPE }
   firstsegment.end = firstsegment.sta.slice()
   firstsegment.sta[0] = bu.daysnap(firstsegment.sta[0]-100*SID*DIY) // 100y?
   roads.push(firstsegment)
   for (let i = 0; i < nk; i++) {
     // Each segment i starts from the end of the previous segment and continues
     // until road[i], filling in empty fields in the road matrix
-    let segment = {}
-    segment.sta = roads[roads.length-1].end.slice()
+    let seg = {}
+    seg.sta = roads[roads.length-1].end.slice()
     let rddate = null, rdvalue = null, rdslope = null
     
     rddate  = rdData[i][0]
@@ -708,46 +710,40 @@ function procRoad(json) {
     rdslope = rdData[i][2]
     
     if (rddate == null) {
-      segment.end = [0, Number(rdvalue)]
-      segment.slope = Number(rdslope)/(gol.siru)
-      if (segment.slope != 0) {
-        segment.end[0] = segment.sta[0] 
-                         + (segment.end[1] - segment.sta[1])/segment.slope
+      seg.end = [0, Number(rdvalue)]
+      seg.slope = Number(rdslope) / gol.siru
+      if (seg.slope != 0) {
+        seg.end[0] = seg.sta[0] + (seg.end[1] - seg.sta[1]) / seg.slope
       } else {
         // Hack to handle tfin=null and inconsistent values
-        segment.end[0] = BDUSK
-        segment.end[1] = segment.sta[1]
+        seg.end[0] = BDUSK
+        seg.end[1] = seg.sta[1]
       }
-      segment.end[0] = min(BDUSK, segment.end[0])
+      seg.end[0] = min(BDUSK, seg.end[0])
       // Readjust the end value in case we clipped the date to BDUSK
-      segment.end[1] = 
-        segment.sta[1] + segment.slope*(segment.end[0]-segment.sta[0])
-      segment.auto = br.RP.DATE
+      seg.end[1] = seg.sta[1] + seg.slope*(seg.end[0]-seg.sta[0])
+      seg.auto = br.RP.DATE
     } else if (rdvalue == null) {
-      segment.end = [rddate, 0]
-      segment.slope = Number(rdslope)/(gol.siru)
-      segment.end[1] = 
-        segment.sta[1]
-        +segment.slope*(segment.end[0]-segment.sta[0])
-      segment.auto = br.RP.VALUE
+      seg.end = [rddate, 0]
+      seg.slope = Number(rdslope)/(gol.siru)
+      seg.end[1] = seg.sta[1] + seg.slope*(seg.end[0]-seg.sta[0])
+      seg.auto = br.RP.VALUE
     } else if (rdslope == null) {
-      segment.end = [rddate, Number(rdvalue)]
-      segment.slope = br.segSlope(segment)
-      segment.auto = br.RP.SLOPE
+      seg.end = [rddate, Number(rdvalue)]
+      seg.slope = br.segSlope(seg)
+      seg.auto = br.RP.SLOPE
     } 
     // Skip adding segment if it is earlier than the first segment
-    if (segment.end[0] >= segment.sta[0]) {
-      roads.push(segment)
-    }
+    if (seg.end[0] >= seg.sta[0]) roads.push(seg)
   }
   // Extract computed values for tfin, vfin and rfin
   const golseg = roads[roads.length-1]
   
   // A final segment is added, ending 100 days after tfin
-  const finalsegment = {
-    sta: golseg.end.slice(),
-    end: golseg.end.slice(),
-    slope: 0, auto: br.RP.VALUE }
+  const finalsegment = { sta: golseg.end.slice(),
+                         end: golseg.end.slice(),
+                         slope: 0, 
+                         auto: br.RP.VALUE }
   finalsegment.end[0] = bu.daysnap(finalsegment.end[0]+100*SID*DIY) // 100y?
   roads.push(finalsegment)
   
@@ -1076,8 +1072,8 @@ function procParams() {
   gol.dueby = br.dueby(roads, gol, 7)
   gol.safebump = br.lim(roads, gol, gol.safebuf)
   
-  gol.rcur = br.rtf(roads, gol.tcur)*gol.siru  
-  gol.ravg = br.tvr(gol.tini, gol.vini, gol.tfin,gol.vfin, null)*gol.siru
+  gol.rcur = br.rtf(roads, gol.tcur) * gol.siru
+  gol.ravg = br.tvr(gol.tini, gol.vini, gol.tfin,gol.vfin, null) * gol.siru
   gol.cntdn = ceil((gol.tfin-gol.tcur)/SID)
   // The "lane" out-param for backward-compatibility:
   gol.lane = gol.yaw * (gol.safebuf - (gol.safebuf <= 1 ? 2 : 1))
@@ -1291,8 +1287,8 @@ function genStats(p, d, tm=null) {
     // Save initial waterbuf value for comparison in bgraph.js
     gol.waterbuf0 = gol.waterbuf
     
-    // Append final segment to the road array. These values will be
-    // reextracted after filling in road in procParams
+    // Append final segment to the road array. These values will be re-extracted
+    // after filling in road in procParams.
     if (bu.listy(gol.road)) gol.road.push([gol.tfin, gol.vfin, gol.rfin])
     if (gol.error == "") gol.error = vetParams()
     if (gol.error == "") gol.error = procData()

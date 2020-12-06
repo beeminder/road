@@ -55,8 +55,7 @@ const SID = 86400
 
 var self = {}
 
-self.rfin = 0 // Hack to implement skatesum
-self.rcur = 0 // Hack to implement skatesum
+self.rsk8 = 0 // Hack for skatesum (should be current daily rate but isn't)
 
 /** Collection of functiont to perform datapoint aggregation
     @enum {function} */
@@ -77,11 +76,10 @@ binary   : (x) => x.length > 0 ? 1 : 0,
 nonzero  : bu.nonzero,
 triangle : (x) => bu.sum(x)*(bu.sum(x)+1)/2, // HT DRMcIver
 square   : (x) => pow(bu.sum(x),2),
-clocky   : bu.clocky, // sum of pair diff.
+clocky   : bu.clocky, // sum of differences of pairs
 count    : (x) => x.length, // number of datapoints
 kyshoc   : (x) => min(2600, bu.sum(x)), // ad hoc, guineapigging
-//TODO: FIXHACK?: Introduced internal state for rfin or rcur for skatesum
-skatesum : (x) => min(self.rfin, bu.sum(x)), // cap at daily rate
+skatesum : (x) => min(self.rsk8, bu.sum(x)), // cap at daily rate
 cap1     : (x) => min(1, bu.sum(x)), // for zedmango
 }
 
