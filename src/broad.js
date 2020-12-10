@@ -241,7 +241,8 @@ self.gdelt = (rd, g, t, v) => bu.chop(g.yaw*(v - self.rdf(rd, t)))
 /** Whether the given point is on or on the good side of the razor road */
 self.aok = (rd, g, t, v) => {
   //console.log(`DEBUG: ${JSON.stringify(rd)}`)
-  return g.yaw * (v - self.rdf(rd, t)) >= v*-1e-15 // DRY: isoside()'s tolerance
+  // DRY: this is check is basically the same code as isoside()
+  return g.yaw * (v - self.rdf(rd, t)) >= abs(v)*-1e-15
 }
 
 /** Pessimistic Presumptive Report (PPR). If this is being computed for *today*
@@ -751,11 +752,11 @@ self.stepify = (d, dflt=0) =>
 // +1 for correct side. Being exactly on an isoline counts as the good side.
 self.isoside = (g, isoline, t, v) => {
   if (!isoline || !isoline.length) return 0
-  const TOL = v*-1e-15
-  // We multiply that tolerance times v to be a bit more robust. In the extreme
-  // case, imagine the values are already so tiny that they're about equal to
-  // the tolerance. Then checking if v - isoval was greater than -v would be way
-  // too forgiving.
+  const TOL = abs(v)*-1e-15
+  // We multiply that tolerance times abs(v) to be a bit more robust. In the
+  // extreme case, imagine the values are already so tiny that they're about
+  // equal to the tolerance. Then checking if v - isoval was greater than -v
+  // would be way too forgiving.
 
   //console.log(`ISOSIDE: (${t},${v}) ${JSON.stringify(isoline)}`)
   const n = isoline.length
