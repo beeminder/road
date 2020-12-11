@@ -106,7 +106,6 @@ div.rowid    { min-width: 35px; }
 
 .dbhdrcell,
 .dbcell { display:          table-cell;
-          border:           1px;
           padding:          5px 2px 2px 2px;
           text-align:       left;
           font-size:        90%;

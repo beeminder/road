@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="../src/pikaday.css">
+    <link rel="stylesheet" href="../src/jsbrain.css">
+    <link rel="stylesheet" href="newdesign.css">
+    <script src = "https://d3js.org/d3.v5.js"></script>
+    <script src = "../src/moment.js"></script>
+    <script src = "../src/moment-timezone.js"></script>
+    <script src = "../src/pikaday.js"></script>
+    <script src = "../src/polyfit.js"></script>
+    <script src = "../src/butil.js"></script>
+    <script src = "../src/broad.js"></script>
+    <script src = "../src/beebrain.js"></script>
+    <script src = "../src/bgraph.js"></script>
+    <script src = "newdesign.js"></script>
+</head>
+
+<body>
+  <div id="header">
+    <div class="logo"></div>
+  </div>
+  Select your goal:
+  <select id="roadselect" class="roadselect" onchange="breakstart.value=&quot;&quot;;eload=true; gload = true;loadGoals(this.value);">
+    <option value="../automon/data/testroad0.bb">Test Road 0</option>
+    <option value="../automon/data/testroad1.bb">Test Road 1</option>
+    <option value="../automon/data/testroad2.bb">Test Road 2</option>
+    <option value="../automon/data/testroad3.bb">Test Road 3</option>
+    <option value="../automon/data/testroad4.bb">Test Road 4</option>
+    <option value="../automon/data/testroad5.bb">Test Road 5</option>
+    <option value="../automon/data/testroad6.bb">Test Road 6</option>
+    <option value="../automon/data/testroad7.bb">Test Road 7</option>
+  </select>
+  <!-- Tab links -->
+  <div class="tab">
+    <button class="tablinks active" onclick="openMainTab(event, 'graph');">Graph</button>
+    <button class="tablinks" onclick="openMainTab(event, 'editor')">Editor</button>
+  </div>
+  
+<!-- Tab content -->
+<div id="graph" class="tabcontent" style="display:block;">
+  <div id="roadgraph" style="width:696px; margin-right:20px; display:inline-block;vertical-align:top;"></div>
+  <div style="height:453px;display:inline-block;vertical-align:top;">
+    <div class="vtabtitle">Graph Tools</div>
+    <div class="vtab">
+      <button class="gtablinks" onclick="openGraphTab(event, 'settings')">Settings</button>
+      <button class="gtablinks" onclick="openGraphTab(event, 'road')">Road</button>
+      <button class="gtablinks" onclick="openGraphTab(event, 'stats')">Stats</button>
+      <button class="gtablinks active" onclick="openGraphTab(event, 'edit')">Edit</button>
+    </div>
+    <div id="edit" class="gtabcontent" style="display:block;">
+      Edit Edit Edit Edit Edit Edit Edit Edit Edit Edit Edit Edit Edit Edit Edit 
+    </div>
+    <div id="stats" class="gtabcontent">
+      <div class="tooltitle">Amounts Due By Day</div>
+      <div style="display:table; border:1px solid #bbb" id="gdueby"></div>
+      <div class="tooltitle">Goal Progress</div>
+      <div id="gprogress"></div>
+    </div>
+    <div id="road" class="gtabcontent">
+      <div class="tooltitle">Road Matrix</div>
+      <div id="graphroad"></div>
+    </div>
+    <div id="settings" class="gtabcontent">
+      Settings Settings Settings Settings Settings Settings Settings Settings Settings
+    </div>
+  </div>
+</div>
+
+<div id="editor" class="tabcontent">
+  <div id="roadeditor" style="width:696px; margin-right:20px; display:inline-block;vertical-align:top;"></div>
+  <div style="height:453px;display:inline-block;vertical-align:top;">
+    <div class="vtabtitle">Editor Tools</div>
+    <div class="vtab">
+      <button class="etablinks" onclick="openEditorTab(event, 'esettings')">Settings</button>
+      <button class="etablinks" onclick="openEditorTab(event, 'eroad')">Road</button>
+      <button class="etablinks" onclick="openEditorTab(event, 'estats')">Stats</button>
+      <button class="etablinks active" onclick="openEditorTab(event, 'eedit')">Edit</button>
+    </div>
+    <div id="eedit" class="etabcontent" style="display:block;">
+      <div class="tooltitle">View Settings</div>
+      <button id="zoomall" onclick="editor.zoomAll();">View All</button>
+      <button id="zoomdflt" onclick="editor.zoomDefault();">Default Zoom</button>
+
+      <div class="tooltitle">History</div>
+      <button id="undo" onclick="editor.undo();">Undo (0)</button>
+      <button id="redo" onclick="editor.redo();">Redo (0)</button><br/><br/>
+    </div>
+    <div id="estats" class="etabcontent">
+      <div class="tooltitle">Amounts Due By Day</div>
+      <div style="display:table; border:1px solid #bbb" id="edueby"></div>
+      <div class="tooltitle">Goal Progress</div>
+      <div id="eprogress"></div>
+    </div>
+    <div id="eroad" class="etabcontent">
+      <div class="tooltitle">Road Matrix</div>
+      <div id="editorroad"></div>
+    </div>
+    <div id="esettings" class="etabcontent">
+      Settings Settings Settings Settings Settings Settings Settings Settings Settings
+    </div>
+  </div>
+</div>
+
+<script>
+  initialize()
+</script>
+
+</body>
+</html>

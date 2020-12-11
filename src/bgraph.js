@@ -4884,7 +4884,7 @@ function updateRowValues( elt, s, e, rev ) {
 }
 
 function updateTableWidths() {
-  if (opts.divTable == null) return;
+  if (opts.divTable == null || hidden) return;
   // var wfn = function(d,i) {
   //   var sel = tbody.select(".roadrow").selectAll(".rowid, .roadcell"); 
   //   var nds = sel.nodes();
@@ -4908,12 +4908,16 @@ function updateTableWidths() {
   //   d3.select(opts.divTable)
   //     .style("width", (gbody.node().offsetWidth+30)+"px");
   // }
-  if (road.length > 3)
+  if (road.length > 3) {
+    if (!tbody.node().offsetParent) return
     d3.select(opts.divTable)
-    .style("width", (tbody.node().offsetWidth+35)+"px")
-  else
+      .style("width", (tbody.node().offsetWidth+35)+"px")
+    
+  } else {
+    if (!gbody.node().offsetParent) return
     d3.select(opts.divTable)
-    .style("width", (gbody.node().offsetWidth+35)+"px")
+      .style("width", (gbody.node().offsetWidth+35)+"px")
+  }
 }
 
 function updateTableValues() {
@@ -5468,6 +5472,11 @@ this.isLoser = () => {
     return br.redyest(road, gol, gol.tcur) // TODO: needs iso here
   else return false
 }
+
+this.getProgress = () => {
+  return [[bu.dayify(gol.tini,'-'), gol.vini], [bu.dayify(gol.tcur,'-'), gol.vcur], [bu.dayify(gol.tfin,'-'), gol.vfin]]
+}
+  
 /** Returns current goal state
     @returns {object} Current goal state as [t, v, r, rdf(t)] or null if no goal
 */

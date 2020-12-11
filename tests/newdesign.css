@@ -1,0 +1,106 @@
+#header {
+    background-color: #FFCB06;
+    padding: 8px 2%;
+    margin-bottom:10px;
+}
+
+.logo {
+    height: 59px;
+    width: 260px;
+    background: url(http://www.beeminder.com/assets/website_logo_mid_type-5c8c74372ac413631e10ab410409a5fc9224027a9f88a31bd54788c2c663aadf.png) no-repeat;
+    background-size: 205px;
+}
+
+/* Style the tab */
+.tab {
+    margin-top:10px;
+    overflow: hidden;
+    border: none;
+}
+
+.vtab {
+    transform:translate(-9);
+    overflow: hidden;
+    border: none;
+}
+
+.vtabtitle {
+    padding: 2px;
+    font-size:120%;
+    font-weight:bold;
+}
+
+.tooltitle {
+    border-bottom:1px solid black;
+    margin: 10px 0px 10px 0px;
+    font-weight:bold;
+}
+
+#graph .vtab {
+    transform-origin:0 0;
+    transform:rotate(-90deg) translate(-360px, 0px);
+}
+#editor .vtab {
+    transform-origin:0 0;
+    transform:rotate(-90deg) translate(-360px, 0px);
+}
+
+/* Style the buttons that are used to open the tab content */
+.tab button {
+    background-color: #f1f1f1;
+    float: left;
+    border: 1px solid #ccc;
+    border-bottom: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    transition: 0.3s;
+}
+.vtab button {
+    background-color: #f1f1f1;
+    float: left;
+    width:90px;
+    height:45px;
+    border: 1px solid #ccc;
+    border-bottom: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    transition: 0.3s;
+}
+
+/* Change background color of buttons on hover */
+.tab button:hover, .vtab button:hover {
+    background-color: #ddd;
+}
+
+/* Create an active/current tablink class */
+.tab button.active, .vtab button.active {
+    background-color: #ccc;
+}
+
+/* Style the tab content */
+.tabcontent {
+    display: none;
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+} 
+
+.etabcontent, .gtabcontent {
+    display: none;
+    margin-left:45px;
+    position:relative;
+    top:-45px;
+    max-width:600px;
+    height:90%;
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+} 
+
+.dbhdrcell { border-bottom:1px solid black; }
+
+.progrow { display: table-row; }
+.proghdr { display: table-cell; font-size: 80%; padding:4px;padding-right:15px; }
+.progcell { display: table-cell; }
+.progcont { width:100%; height:20px; border: 1px solid black; margin:5px;}
+.progbar { height:100%; background-color:yellow;}
