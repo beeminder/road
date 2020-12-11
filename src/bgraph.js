@@ -1089,34 +1089,15 @@ function updateDueBy() {
   if (processing) return
   if (opts.divDueby === null) return
 
-  // Generate a moment date object with the current time, in the
-  // user's timezone if supplied
-  var d
-  if (gol.hasOwnProperty('timezone')) {
-    // Use supplied timezone if moment-timezone is loaded
-    if (moment.hasOwnProperty('tz'))  d = moment().tz(gol.timezone)
-    else {
-      console.log("bgraph: Warning: moment-timezone is not loaded, using local time")
-      d = moment() // Use local time if moment-timezone is not loaded
-    }
-  } else d = moment()
-  // Adjust the current time if gol.asof is different than the
-  // current date to support the sandbox and example goals with past
-  // asof
-  if (gol.asof != bu.daysnap(moment.utc() / 1000))
-    d = moment.unix(gol.asof).hour(d.hour()).minutes(d.minutes()).seconds(d.seconds())
-  // Adjust time with the deadline and compute the daystamp for "now"
-  d.subtract(gol.deadline, 's')
-  d.hours(0).minutes(0).seconds(0).milliseconds(0)
-  const nowstamp = bu.dayparse(d.format("YYYYMMDD")) / SID
-  
+  const nowstamp = bu.nowstamp(gol.timezone, gol.deadline, gol.asof)
+  const nowday = bu.dayparse(nowstamp) / SID
   const mark = "&#10004;"
   let db = br.dueby(road, gol, 7)
   
   dbbody
     .selectAll(".dbrow")
     .selectAll(".dbcell")
-    .data((row, i) => {const inf = duebylabel(i,nowstamp), del = db[i][1]; return [inf, [(del > 0 || gol.dir < 0)?bu.shn(del):mark,inf[1]], [bu.shn(db[i][2]),inf[1]]]})
+    .data((row, i) => {const inf = duebylabel(i,nowday), del = db[i][1]; return [inf, [(del > 0 || gol.dir < 0)?bu.shn(del):mark,inf[1]], [bu.shn(db[i][2]),inf[1]]]})
     .join(enter=>enter.append("span").attr('class', 'dbcell'), update=>update)
     .html(d=>d[0])
     .style('color', d=>d[1])
@@ -2728,7 +2709,6 @@ function animMav(enable) {
 function animYBHPlines(enable) {
   if (opts.roadEditor) return
   var e = gYBHPlines.selectAll("#r11, #r22, #r66")
-  console.log(e)
   var a =[["stroke-width", 4*scf, 1.5*scf]]
   if (enable) startAnim(e, 500, a, [], "ybl")
   else        stopAnim(e,  300, a, [], "ybl")

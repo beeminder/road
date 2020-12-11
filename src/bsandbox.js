@@ -187,7 +187,7 @@ const SID = 86400
 //                             Number(goal.bb.data[goal.bb.data.length-1][1] + ppr),
 //                             `PPR (#${goal.bb.data.length})`])
 //        console.log(goal.bb.data)
-//      }
+      //      }
       goal.bb.params.asof = newasof
       reloadGoal()
     }
@@ -250,17 +250,20 @@ const SID = 86400
         logger.error("bsandbox.newGoal: Invalid goal parameters!")
         return
       }
-
+ 
       goal.gtype = gtype
       goal.rfin = rfin
       goal.vini = vini
       goal.runits = runits
       goal.buffer = buffer
-      var now = bu.daysnap(moment.now()/1000)
-      var nextweek = bu.daysnap(moment.now()/1000 + 7*SID)
-      var nextyear = bu.daysnap(moment.now()/1000 + DIY*SID)
 
-      var params = typefn[gtype]()
+      let params = typefn[gtype]()
+      params.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+      params.deadline = 0
+      params.asof = bu.dayify(moment.tz(params.timezone)/ 1000)
+      const now = bu.nowstamp(params.timezone, params.deadline, bu.dayparse(params.asof))
+      const nextweek = bu.daysnap(moment.now()/1000 + 7*SID)
+      const nextyear = bu.daysnap(moment.now()/1000 + DIY*SID)
       var data = {}
 
       params.stathead = false
@@ -269,8 +272,6 @@ const SID = 86400
       
       //params.ybhp - true
       //params.abslnw = 0
-
-      params.asof = bu.dayify(now)
 
       params.tfin = bu.dayify(nextyear)
       params.rfin = Number(rfin)
@@ -282,10 +283,8 @@ const SID = 86400
       params.road = [[buffer?bu.dayify(nextweek):params.asof, null, 0]]
 
       // Some other defaults
-      params.deadline = 0
       params.waterbux = "$"+pledges[0]
       params.yoog = "test/sandbox"
-      params.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
       params.imgsz = 696
       params.yaxis = (params.kyoom)?"current cumulative total":"current value"
       //params.ybhp = true
@@ -331,6 +330,7 @@ const SID = 86400
     /** Advances the sandbox goal to the next day. Increments asof by 1 day. 
         @method */
     this.nextDay = nextDay
+    this.refresh = reloadGoal
     /** Enters a new datapoint to the sandbox goal on the current day
         @method 
         @param {Number} v Datapoint value

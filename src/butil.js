@@ -847,7 +847,35 @@ self.dayify = (t, sep = '') => {
   var d = mm.date()
   return '' + y + sep + (m < 10 ? '0' : '') + m + sep + (d < 10 ? '0' : '') + d
 }
-
+  
+/** adjasof: Indicates whether the date object for "now" should be
+ * adjusted for the asof value to support the sandbox etc. */
+self.nowstamp = (tz, deadline, asof) => {
+  let d
+  if (tz) {
+    // Use supplied timezone if moment-timezone is loaded
+    if (moment.hasOwnProperty('tz'))  d = moment().tz(tz)
+    else {
+      console.log("butil.nowstamp: moment-timezone is not loaded, using local time")
+      d = moment() // Use local time if moment-timezone is not loaded
+    }
+  } else {
+    console.log("butil.nowstamp: no timezone specified, using local time")
+    d = moment()
+  }
+  // Set date of the time object to that of asof to support the
+  // sandbox and example goals with past asof
+  if (asof) {
+    const tasof = moment.unix(asof).utc()
+    const tdiff = (moment(d).utc() - tasof)/1000
+    // Hack to ensure "Yesterday" appears in the dueby table when the
+    // current time is past the deadline on the next day
+    if (tdiff < 0 || tdiff > 2*SID)
+      d.year(tasof.year()).month(tasof.month()).date(tasof.date())
+  }
+  d.subtract(deadline, 's')
+  return d.format("YYYYMMDD")
+}
 /** Converts a number to an integer string.
     @param {Number} x Input number */
 self.sint = (x) => round(x).toString()
