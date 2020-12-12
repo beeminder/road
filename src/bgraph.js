@@ -3417,7 +3417,7 @@ function updatePinkRegion() {                         // AKA nozone AKA oinkzone
 // line, and a dash argument for the editor version. If scol == null, then the
 // element is deleted to clean up leftovers from earlier draws.
 // TODO: rename this to updateRazrRoad or updateYBR
-function updateCenterline(rd, gelt, cls, scol, sw, delta, usedash) {
+function updateCenterline(rd, g, gelt, cls, scol, sw, delta, usedash) {
   if (processing) return
   
   const roadelt = gelt.select("."+cls)
@@ -3436,18 +3436,18 @@ function updateCenterline(rd, gelt, cls, scol, sw, delta, usedash) {
   // ex,ey: End of the current line segment
   let fx = nXSc(rd[0].sta[0]*SMS), fy = nYSc(rd[0].sta[1]+delta)
   let ex = nXSc(rd[0].end[0]*SMS), ey = nYSc(rd[0].end[1]+delta)
-  if (rd[0].sta[0] < gol.tini) {
-    fx  = nXSc(gol.tini*SMS)
+  if (rd[0].sta[0] < g.tini) {
+    fx  = nXSc(g.tini*SMS)
     // Using vini instead of the rdf below does not work for some
     // goals where vini ends up not on the road itself -- uluc
     // But let's do stricter error-checking so we can count on rdf(tini)==vini!
-    fy  = nYSc(br.rdf(rd, gol.tini)+delta)
-    //fy  = nYSc(gol.vini+delta)
+    fy  = nYSc(br.rdf(rd, g.tini)+delta)
+    //fy  = nYSc(g.vini+delta)
   }
 
   if (usedash) {
     // Adjust start of road so dashes are stationary wrt time
-    const newx = (-nXSc(gol.tini*SMS)) % ceil(1.5*opts.oldRoadLine.dash)
+    const newx = (-nXSc(g.tini*SMS)) % ceil(1.5*opts.oldRoadLine.dash)
     if (ex !== fx) fy = (fy + (-newx-fx)*(ey-fy)/(ex-fx))
     if (fx < 0 || newx > 0) fx = -newx
   }
@@ -3458,13 +3458,12 @@ function updateCenterline(rd, gelt, cls, scol, sw, delta, usedash) {
     // breaks the tfin check. This hopefully overcomes that problem
     let segx = bu.daysnap(segment.end[0])
     ex = nXSc(segment.end[0]*SMS)
-    if (segx < gol.tini) continue
-    if (segx > gol.tfin) break
+    if (segx < g.tini) continue
+    if (segx > g.tfin) break
     ey = nYSc(segment.end[1]+delta)
     d += " L"+r1(ex)+" "+(r1(ey)+adj)
     if (ex > plotbox.width) break
   }
-
   if (roadelt.empty()) {
     gelt.append("svg:path").attr("class",             cls)
                                  .attr("d",                 d)
@@ -3650,10 +3649,10 @@ function updateRazrRoad() {
   // (solid). Also, the road editor shows the initial road as the
   // razor road
   if (opts.roadEditor)
-    updateCenterline(iroad, gRazr, "razr", bu.Cols.RAZR0,
+    updateCenterline(iroad, igoal, gRazr, "razr", bu.Cols.RAZR0,
                      r3(opts.razrline*scf), 0, true)
   else
-    updateCenterline(road, gRazr, "razr", bu.Cols.REDDOT,
+    updateCenterline(road, gol, gRazr, "razr", bu.Cols.REDDOT,
                      r3(opts.razrline*scf), 0, false)
 }
 
@@ -3662,7 +3661,7 @@ function updateMaxFluxline() {
   if (opts.divGraph == null || road.length == 0) return
 
   // Generate the maxflux line if maxflux!=0. Otherwise, remove existing one
-  updateCenterline(road, gMaxflux, "maxflux", 
+  updateCenterline(road, gol, gMaxflux, "maxflux", 
                    gol.maxflux != 0 ? bu.Cols.BIGG : null,
                    r3(opts.maxfluxline*scf), gol.yaw*gol.maxflux, false)
 }
@@ -3672,7 +3671,7 @@ function updateStdFluxline() {
   if (opts.divGraph == null || road.length == 0) return
 
   // Generate the maxflux line if maxflux!=0. Otherwise, remove existing one
-  updateCenterline(road, gStdflux, "stdflux", 
+  updateCenterline(road, gol, gStdflux, "stdflux", 
                    gol.maxflux != 0 ? bu.Cols.BIGG : null,
                    r3(opts.stdfluxline*scf), gol.yaw*gol.stdflux, true)
 }
