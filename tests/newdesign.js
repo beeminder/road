@@ -33,9 +33,10 @@ function openMainTab(evt, tabName) {
   }
 } 
 
-let divGraph, divGraphRoad, divGraohDueBy, divGraphProgress
-let divEditor, divEditortable, divEditorDueBy, divEditorProgress
-let undoBtn, redoBtn
+let divGraph, divGraphRoad, divGraphDueBy, divGraphData, divGraphProgress
+let divEditor, divEditortable, divEditorDueBy, divEditorData, divEditorProgress
+let editorTab, undoBtn, redoBtn
+let endSlope, slopeType
 
 var graph, editor, gload = true, eload = true
 function openGraphTab(evt, tabName) {
@@ -44,6 +45,10 @@ function openGraphTab(evt, tabName) {
 
 function openEditorTab(evt, tabName) {
   openTab(evt, tabName, "etabcontent", "etablinks")
+} 
+
+function openSandboxTab(evt, tabName) {
+  openTab(evt, tabName, "stabcontent", "stablinks")
 } 
 
 async function loadGoals(goal) {
@@ -75,7 +80,9 @@ function updateProgress(div, progress) {
   let enddate = butil.dayparse(progress[2][0], '-')
 
   let progdate = Math.round(100*(nowdate-startdate)/(enddate-startdate))
+  progdate = Math.min(100, Math.max(0,progdate))
   let progval = Math.round(100*(progress[1][1]-progress[0][1])/(progress[2][1]-progress[0][1]))
+  progval = Math.min(100, Math.max(0,progval))
   
   let p1 = d3.select(div).append('div').attr('class', 'progcont')
   p1.append('div').attr('class', 'progbar').style('width', progdate+'%')
@@ -83,6 +90,21 @@ function updateProgress(div, progress) {
   let p2 = d3.select(div).append('div').attr('class', 'progcont')
   p2.append('div').attr('class', 'progbar').style('width', progval+'%')
 
+}
+
+function updateCommitFields() {
+  var sirunew = parseInt(slopeType.value);
+  var road = editor.getRoad();
+  var siru = road.siru;
+  var rd = road.road;
+  endSlope.value = rd[rd.length-1][2]*(sirunew/siru);
+}
+
+function commitTo() {
+  if (isNaN(endSlope.value)) return;
+  var siru = parseInt(slopeType.value);
+  var slope = parseInt(endSlope.value);
+  editor.commitTo(slope / siru);
 }
 
 function graphChanged() {
@@ -95,11 +117,12 @@ function editorChanged() {
   if (eload || gload) return
   
   var bufStates = editor.undoBufferState();
-  console.log(bufStates)
   if (bufStates.undo === 0)  {
+    d3.select(editorTab).style('color', 'black').text("Editor")
     undoBtn.disabled = true;
     undoBtn.innerHTML = "Undo (0)";
   } else {
+    d3.select(editorTab).style('color', 'red').text("Editor ("+bufStates.undo+")")
     undoBtn.disabled = false;
     undoBtn.innerHTML = "Undo ("+bufStates.undo+")";
   }
@@ -111,23 +134,42 @@ function editorChanged() {
     redoBtn.innerHTML = "Redo ("+bufStates.redo+")";
   }
   updateProgress(eprogress, editor.getProgress())
+
+  var road = editor.getRoad();
+  slopeType.value = road.siru;
+  updateCommitFields();
+
+}
+
+function documentKeyDown(e) {
+  var evtobj = window.event? window.event : e;
+  if (evtobj.keyCode == 89 && evtobj.ctrlKey) editor.redo();
+  if (evtobj.keyCode == 90 && evtobj.ctrlKey) editor.undo();
 }
 
 function initialize() {
+  let roadSelect = document.getElementById('roadselect')
+  
   divGraph = document.getElementById('roadgraph')
   divGraphRoad = document.getElementById('graphroad')
   divGraphDueBy = document.getElementById('gdueby')
+  divGraphData = document.getElementById('graphdata')
   divGraphProgress = document.getElementById('gprogress')
   divEditor = document.getElementById('roadeditor')
   divEditorRoad = document.getElementById('editorroad')
   divEditorDueBy = document.getElementById('edueby')
+  divEditorData = document.getElementById('editordata')
   divEditorProgress = document.getElementById('edprogress')
-  undoBtn = document.getElementById("undo");
-  redoBtn = document.getElementById("redo");
+  editorTab = document.getElementById("editortab")
+  undoBtn = document.getElementById("undo")
+  redoBtn = document.getElementById("redo")
+  endSlope = document.getElementById("endslope")
+  slopeType = document.getElementById("slopetype");
 
   graph = new bgraph({divGraph: divGraph,
                       divTable: divGraphRoad,
                       divDueby: divGraphDueBy,
+                      divData: divGraphData,
                       svgSize: { width: 696, height: 453 },
                       focusRect: { x:0, y:0, width:696, height: 453 },
                       ctxRect: { x:0, y:453, width:696, height: 32 },
@@ -140,6 +182,7 @@ function initialize() {
   editor = new bgraph({divGraph: divEditor,
                        divTable: divEditorRoad,
                        divDueby: divEditorDueBy,
+                       divData: divEditorData,
                        svgSize: { width: 696, height: 553 },
                        focusRect: { x:0, y:0, width:696, height: 453 },
                        ctxRect: { x:0, y:453, width:696, height: 100 },
@@ -149,6 +192,9 @@ function initialize() {
                        showFocusRect: false,
                        showContext: true,
                        onRoadChange: editorChanged})
-  loadGoals('../../privatesuite/data/ybhp-rash.bb')
+  console.log(roadSelect.value)
+  loadGoals(roadSelect.value)
   editor.hide()
+        
+  document.onkeydown = documentKeyDown;
 }
