@@ -194,6 +194,7 @@ let defaults = {
   onRoadChange: null,
   /** Number of entries visible on the data table */
   dataTableSize: 11,
+  dataAutoScroll: true,
   /** Callback function that gets invoked when an error is encountered in
       loading, processing, drawing, or editing the road */
   onError:      null,
@@ -1053,14 +1054,37 @@ function resizeGraph() {
   adjustYScale()
 }
 
-var databody, dataslider, dsliderbusy = false, datarange, dataindex = 0
+var databody, dataslider, dsliderbusy = false
+var datarange, dataindex = 0, dataselected=-1
+function selectDataIndex(ind) {
+  dataselected = ind
+  let midpt = Math.floor(opts.dataTableSize/2)
+  let tbindex = Math.max(0, Math.min(ind-midpt, rawdata.length-opts.dataTableSize))
+  dataslider.node().value = tbindex
+  dataindex = tbindex
+  updateDataTable()
+}
+function unselectDataIndex() {
+  dataselected = -1
+  updateDataTable()
+}
 function dsliderupdate(val) {
   dsliderbusy = true
   dataindex = parseInt(val)
   updateDataTable()
   dsliderbusy = false
 }
-  
+function dsliderscroll() {
+  if (d3.event.deltaY < 0) {
+    if (dataindex == 0) return
+    dataindex -= 1
+  } else {
+    if (dataindex >= rawdata.length-opts.dataTableSize) return
+    dataindex += 1
+  }
+  dataslider.node().value = dataindex
+  updateDataTable()
+}
 /** Creates the skeleton for the data table and populates it with
  * rows. Cells are created later in updateDueBy using d3 */
 function createDataTable() {
@@ -1071,6 +1095,8 @@ function createDataTable() {
 
   var divelt = d3.select(div)
   divelt.style("margin-right", "30px")
+    .on("wheel.scroll", dsliderscroll, {passive:false})
+
   databody = divelt.append("div").attr("class", "dbody") /* Data table body */
   var datacolumns;
   datarange = Array(Math.min(rawdata.length, opts.dataTableSize)).fill().map((x,i)=>(i+dataindex))
@@ -1110,6 +1136,7 @@ function updateDataTable() {
   let elts = databody.selectAll(".drow").data(datarange)
   elts.enter().append("div").attr('class', 'drow')
   elts.exit().remove()
+  elts.style("box-shadow", (d) => (d==dataselected)?"0 0 0 4px yellow":null)
 
   databody
     .selectAll(".drow")
@@ -4169,11 +4196,14 @@ function updateDotGroup(grp,d,cls,r,
         d3.event.preventDefault()
       }, {passive:false})
       .on("mouseenter",function(d) {
+        if (opts.divData != null && opts.dataAutoScroll && d[7]!=null)
+          selectDataIndex(d[7])
         if (dotTimer != null) window.clearTimeout(dotTimer);
         dotTimer = window.setTimeout(function() {
           showDotText(d); dotTimer = null;
         }, 500);})
       .on("mouseout",function() { 
+        unselectDataIndex()
         if (dotText != null) {
           removeDotText();
           dotText = null;
