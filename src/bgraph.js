@@ -73,6 +73,8 @@ let defaults = {
   divPoints:    null,    
   /** Binds the dueby table to a div element */
   divDueby:    null,    
+  /** Binds the data table to a div element */
+  divData:    null,    
   /** Binds the goal JSON output to a div element */
   divJSON:      null,    
   /** Size of the SVG element to hold the graph */
@@ -190,6 +192,8 @@ let defaults = {
       state. This is also useful to update the state of undo/redo and submit
       buttons based on how many edits have been done on the original road. */
   onRoadChange: null,
+  /** Number of entries visible on the data table */
+  dataTableSize: 11,
   /** Callback function that gets invoked when an error is encountered in
       loading, processing, drawing, or editing the road */
   onError:      null,
@@ -304,6 +308,7 @@ let config = (obj, options) => {
     opts.divTable      = null
     opts.divPoints     = null
     opts.divDueby      = null
+    opts.divData       = null
     opts.scrollZoom    = false
     opts.roadEditor    = false
     opts.showContext   = false
@@ -446,7 +451,7 @@ let igoal = {}  // Initial goal object
   
 // Beebrain state objects
 let bbr, gol = {}, road = []
-let data = [], idata = [], alldata = [], dtd = [], iso = []
+let data = [], rawdata = [], alldata = [], dtd = [], iso = []
 
 function getiso( val ) {
   if (iso[val] == undefined) iso[val] = br.isoline(road, dtd, gol, val)
@@ -1048,9 +1053,82 @@ function resizeGraph() {
   adjustYScale()
 }
 
-/**Create all road matrix table components if a table DIV is provided. Called
- * once when the bgraph object is created. Takes the table index, i, and the
- * "now" time as a nowstamp: unixtime in days. */
+var databody, dataslider, dsliderbusy = false, datarange, dataindex = 0
+function dsliderupdate(val) {
+  dsliderbusy = true
+  dataindex = parseInt(val)
+  updateDataTable()
+  dsliderbusy = false
+}
+  
+/** Creates the skeleton for the data table and populates it with
+ * rows. Cells are created later in updateDueBy using d3 */
+function createDataTable() {
+  var div = opts.divData
+  if (div === null) return
+  // First, remove all children from the div
+  while (div.firstChild) div.removeChild(div.firstChild)
+
+  var divelt = d3.select(div)
+  divelt.style("margin-right", "30px")
+  databody = divelt.append("div").attr("class", "dbody") /* Data table body */
+  var datacolumns;
+  datarange = Array(Math.min(rawdata.length, opts.dataTableSize)).fill().map((x,i)=>(i+dataindex))
+  datacolumns = ['#', 'DATE', 'VALUE', 'COMMENT'];
+  databody.append("div").attr('class', 'dhdrrow')
+    .selectAll("span.dhdrcell").data(datacolumns)
+    .enter().append('span').attr('class', 'dhdrcell')
+    .style("text-align", (d,i)=>( (i == 0)?"right":null))
+    .text((c)=>c);
+  databody
+    .selectAll(".drow")
+    .data(datarange)
+    .join(enter => enter.append("div").attr('class', 'drow'))
+  dataslider = divelt.append("input").attr("type", "range").attr("class","dslider")
+    .attr("min",0).attr("max",15).attr("value",7).attr("step",1)
+    .on("input",function(){dsliderupdate(this.value)})
+    .on("change",function(){dsliderupdate(this.value)})
+}
+
+let dtablebusy = false
+function updateDataTable() {
+  if (dtablebusy) return
+  dtablebusy = true
+  if (processing) return
+  if (opts.divData === null) return
+
+  if (!dsliderbusy) {
+    if (rawdata.length <= opts.dataTableSize) dataslider.style("visibility", "hidden")
+    else {
+      dataslider.style("visibility", "visible")
+        .attr("max", rawdata.length-opts.dataTableSize)
+        .attr("value", 0)
+    }
+  }
+  
+  datarange = Array(Math.min(rawdata.length, opts.dataTableSize)).fill().map((x,i)=>(i+dataindex))
+  let elts = databody.selectAll(".drow").data(datarange)
+  elts.enter().append("div").attr('class', 'drow')
+  elts.exit().remove()
+
+  databody
+    .selectAll(".drow")
+    .selectAll(".dcell")
+    .data((row, i) => {
+      if (row >= rawdata.length) return [null, null, null]
+      let date = bu.dayify(bu.dayparse(rawdata[row][0]), '-')
+      return [row, date, rawdata[row][1], rawdata[row][2]]
+    })
+    .join(enter=>enter.append("span").attr('class', 'dcell')
+          .style("border", (d,i)=>( (i == 0)?"0":null))
+          .style("text-align", (d,i)=>( (i == 0)?"right":null))
+          .style("min-width", (d,i)=>( (i == 3)?"200px":null))
+          .style("max-width", (d,i)=>( (i == 3)?"200px":null)),
+          update=>update)
+    .text(d=>{return d})
+  dtablebusy = false
+}
+
 var dbbody
 function duebylabel(i, now) {
   const mm = moment.unix(gol.asof+i*SID).utc()
@@ -1850,7 +1928,7 @@ function loadGoal(json, timing = true) {
   road    = bbr.roads
   iroad   = br.copyRoad(road)
   data    = bbr.data
-  idata   = json.data
+  rawdata   = json.data
   igoal   = bu.deepcopy(gol)
   alldata = bbr.alldata
 
@@ -1881,6 +1959,7 @@ function loadGoal(json, timing = true) {
 
   updateTable()
   updateDueBy()
+  updateDataTable()
   updateContextData()
 
   // This next call ensures that stathead and other new graph
@@ -5020,6 +5099,7 @@ function updateGraphData(force = false) {
 createGraph()
 createTable()
 createDueBy()
+createDataTable()
 //zoomAll()
 
 /** bgraph object ID for the current instance */
@@ -5133,6 +5213,12 @@ this.undo = () => {
   if (!opts.roadEditor) return
   document.activeElement.blur()
   undoLastEdit()
+}
+
+/** Undoes all edits */
+this.undoAll = () => {
+  if (!opts.roadEditor) return
+  while (undoBuffer.length != 0) undoLastEdit()
 }
 
 /** Redoes the last edit that was undone */

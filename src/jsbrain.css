@@ -111,6 +111,39 @@ div.rowid    { min-width: 35px; }
           font-size:        90%;
           white-space:      nowrap;           }
 
+/* Data table styles */
+.dbody {display:inline-block;
+        vertical-align:top;
+        border-collapse:separate;
+        border-spacing:5px;
+       }
+
+.dhdrrow,.drow { display: table-row; }
+
+.dhdrcell,
+.dcell { display:          table-cell;
+         overflow:hidden;
+         border:1px solid black;
+         padding:          5px 2px 2px 2px;
+         text-align:       left;
+         font-size:        90%;
+         white-space:      nowrap;           }
+.dhdrcell { border:0;}
+
+.dslider {
+    transform-origin:10px 10px;
+    transform:rotate(90deg);
+    margin-top:30px;
+    position:absolute;
+    width:330px;
+    color: black;
+    appearance: none;
+    border-radius: 20px;
+    background: #ccc;
+    outline: none;
+}
+
+
 
 .ratchet, .break { background-color: #f1f1f1;
                    border:           1px solid #d0d0d0;
