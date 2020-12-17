@@ -39,8 +39,8 @@
 // -----------------------------------------------------------------------------
 // --------------------------- CONVENIENCE CONSTANTS ---------------------------
 
-const DIY = 365.25
-const SID = 86400
+  const DIY = 365.25
+  const SID = 86400
 
   // -------------------------------------------------------------
   // ------------------- FACTORY GLOBALS ---------------------
@@ -56,7 +56,7 @@ const SID = 86400
    @param {object} div object on the DOM to create a {@link module:bgraph} instance on
    @param {bool} debug flag turns logging on or off. Default is false.
   */
-  bsandbox = function( div, divdueby = null, debug = true ) {
+  bsandbox = function( optsin, debug = true ) {
     // set log level for this instance of bsandbox. 
     var logger = (debug && typeof console != 'undefined') ? console : {
           info: function(){},
@@ -67,10 +67,15 @@ const SID = 86400
         }
     logger.debug("beebrain constructor ("+gid+"): ");
     var self = this,
+        opts = bu.extend({}, optsin),
         curid = gid
     gid++
     
-    var goal = {div: div}
+    bu.extend(opts, {roadEditor:false,
+                     maxFutureDays: 365,
+                     showFocusRect: false,
+                     showContext: false})
+    var goal = {div: opts.divGraph}
 
     var pledges = [0, 5, 10, 30, 90, 270, 810, 2430]
     
@@ -126,6 +131,10 @@ const SID = 86400
       goal.bb = restore.bb
       goal.derails = restore.derails
       if (reload) reloadGoal()
+    }
+    function redo(reload=true) {
+    }
+    function undoAll(reload=true) {
     }
     function saveState() {
       undoBuffer.push(JSON.parse(JSON.stringify({bb:goal.bb, derails:goal.derails})))
@@ -200,6 +209,7 @@ const SID = 86400
       reloadGoal()
     }
     
+    // Rate should be in value/seconds
     function newRate( r ) {
       if (!bu.nummy(r)) return
       saveState()
@@ -212,7 +222,8 @@ const SID = 86400
       if (roadlast < nextweek) {
         road.push([bu.dayify(nextweek), null, goal.bb.params.rfin])
       }
-      goal.bb.params.rfin = Number(r)
+      
+      goal.bb.params.rfin = Number(r)*bu.SECS[goal.bb.params.runits]
       reloadGoal()
     }
 
@@ -235,8 +246,7 @@ const SID = 86400
       reloadGoal( false )
     }
 
-    function newGoal( gtype, runits, rfin, vini, buffer,
-                      newparams = [], graphopts = {} ) {
+    function newGoal( gtype, runits, rfin, vini, buffer, newparams = [] ) {
       logger.log(`newGoal(${gtype}, ${runits}, ${rfin}, ${vini}, ${buffer})`)
       if (!typefn.hasOwnProperty(gtype)) {
         logger.error("bsandbox.newGoal: Invalid goal type!")
@@ -299,19 +309,23 @@ const SID = 86400
       // Delete div contents
       while (goal.div.firstChild) goal.div.removeChild(goal.div.firstChild);
       goal.gdiv = d3.select(goal.div)
-      var opts = {divGraph: goal.gdiv.node(),
-                  divDueby: divdueby,
-                  roadEditor:false,
-                  svgSize: { width: 696, height: 453 },
-                  focusRect: { x:0, y:0, width:690, height: 453 },
-                  ctxRect: { x:0, y:453, width:690, height: 40 },
-                  maxFutureDays: 365,
-                  showFocusRect: false,
-                  showContext: false}
-      bu.extend(opts, graphopts)
       goal.graph = new bgraph(opts);
       clearUndoBuffer()
       reloadGoal()
+    }
+
+    function loadGoalJSON( bbin, newparams = [] ) {
+      logger.log(`loadGoalJSON(${bbin})`)
+
+      goal.bb = bu.deepcopy(bbin)
+      goal.derails = []
+      
+      // Delete div contents
+      while (goal.div.firstChild) goal.div.removeChild(goal.div.firstChild);
+      goal.gdiv = d3.select(goal.div)
+      goal.graph = new bgraph(opts);
+      clearUndoBuffer()
+      reGraph()
     }
 
     /** bsandbox object ID for the current instance */
@@ -327,6 +341,7 @@ const SID = 86400
         @param {Boolean} buffer Whether to have an initial week-long buffer or not
     */
     this.newGoal = newGoal
+    this.loadGoalJSON = loadGoalJSON
     /** Advances the sandbox goal to the next day. Increments asof by 1 day. 
         @method */
     this.nextDay = nextDay
@@ -345,6 +360,8 @@ const SID = 86400
     this.setGoalConfig = setGoalConfig
     this.getGoalConfig = function() {return goal.graph.getGoalConfig()}
     this.undo = undo
+    this.redo = redo
+    this.undoAll = undoAll
     this.saveBB = function(linkelt) {
       var source = JSON.stringify(goal.bb)
         //convert svg source to URI data scheme.
@@ -352,6 +369,8 @@ const SID = 86400
         //set url value to a element's href attribute.
         linkelt.href = url
     }
+    this.show = function(){goal.graph.show()}
+    this.hide = function(){goal.graph.hide()}
     self.getGraphObj = function() {return goal.graph}
   }
 

@@ -19,6 +19,8 @@ function openTab(evt, tabName, contid, linkid) {
   if (evt) evt.currentTarget.className += " active";
 } 
 
+var graph, editor, sandbox, sandboxgr, gload = true, eload = true, sload = true
+let curTab = "graph"
 function openMainTab(evt, tabName) {
   openTab(evt, tabName, "tabcontent", "tablinks")
   // The following is necessary because Y axis width handling does not
@@ -27,18 +29,24 @@ function openMainTab(evt, tabName) {
   if (tabName == "graph") {
     graph.show()
     editor.hide()
+    sandboxgr.hide()
   } else if (tabName == "editor") {
     graph.hide()
     editor.show()
+    sandboxgr.hide()
+  } else if (tabName == "sandbox") {
+    graph.hide()
+    editor.hide()
+    sandboxgr.show()
   }
+  curTab = tabName
 } 
 
 let divGraph, divGraphRoad, divGraphDueBy, divGraphData, divGraphProgress
 let divEditor, divEditortable, divEditorDueBy, divEditorData, divEditorProgress
 let editorTab, undoBtn, redoBtn
-let endSlope, slopeType
+let endSlope, endSlopeSandbox, slopeType, slopeTypeSandbox, submitButton
 
-var graph, editor, gload = true, eload = true
 function openGraphTab(evt, tabName) {
   openTab(evt, tabName, "gtabcontent", "gtablinks")
 } 
@@ -51,9 +59,17 @@ function openSandboxTab(evt, tabName) {
   openTab(evt, tabName, "stabcontent", "stablinks")
 } 
 
-async function loadGoals(goal) {
-  await graph.loadGoal( goal )
-  await editor.loadGoal( goal )
+async function loadGoals(url) {
+  let resp = await butil.loadJSON( url )
+
+  await graph.loadGoalJSON( resp )
+  await editor.loadGoalJSON( resp )
+  await sandbox.loadGoalJSON( resp, [],
+                              {onRoadChange: sandboxChanged,
+                               svgSize: { width: 696, height: 453 },
+                               focusRect: { x:0, y:0, width:696, height: 453 },
+                               ctxRect: { x:0, y:453, width:696, height: 32 }})
+  sandboxgr = sandbox.getGraphObj()
 }
 
 function updateProgress(div, progress) {
@@ -92,19 +108,40 @@ function updateProgress(div, progress) {
 
 }
 
-function updateCommitFields() {
-  var sirunew = parseInt(slopeType.value);
-  var road = editor.getRoad();
-  var siru = road.siru;
-  var rd = road.road;
-  endSlope.value = rd[rd.length-1][2]*(sirunew/siru);
+function updateCommitFields(issandbox = false) {
+  if (!issandbox) {
+    var sirunew = parseInt(slopeType.value);
+    var road = editor.getRoad();
+    var siru = road.siru;
+    var rd = road.road;
+    endSlope.value = rd[rd.length-1][2]*(sirunew/siru);
+  } else {
+    var sirunew = parseInt(slopeTypeSandbox.value);
+    var road = sandbox.getGraphObj().getRoad();
+    var siru = road.siru;
+    var rd = road.road;
+    endSlopeSandbox.value = butil.shn(rd[rd.length-1][2]*(sirunew/siru));
+  }    
 }
 
-function commitTo() {
-  if (isNaN(endSlope.value)) return;
-  var siru = parseInt(slopeType.value);
-  var slope = parseInt(endSlope.value);
-  editor.commitTo(slope / siru);
+function commitTo(issandbox = false) {
+  if (!issandbox) {
+    if (isNaN(endSlope.value)) return;
+    var siru = parseInt(slopeType.value);
+    var slope = parseInt(endSlope.value);
+    editor.commitTo(slope / siru);
+  } else {
+    if (isNaN(endSlopeSandbox.value)) return;
+    var siru = parseInt(slopeTypeSandbox.value);
+    var slope = parseInt(endSlopeSandbox.value);
+    sandbox.newRate(slope / siru);
+  }    
+}
+
+function sandboxChanged() {
+  sload = false
+  updateCommitFields(true);
+  if (sandboxgr) updateProgress(sprogress, sandboxgr.getProgress())
 }
 
 function graphChanged() {
@@ -119,10 +156,12 @@ function editorChanged() {
   var bufStates = editor.undoBufferState();
   if (bufStates.undo === 0)  {
     d3.select(editorTab).style('color', 'black').text("Editor")
-    undoBtn.disabled = true;
-    undoBtn.innerHTML = "Undo (0)";
+    submitButton.disabled=true
+    undoBtn.disabled = true
+    undoBtn.innerHTML = "Undo (0)"
   } else {
     d3.select(editorTab).style('color', 'red').text("Editor ("+bufStates.undo+")")
+    submitButton.disabled=false
     undoBtn.disabled = false;
     undoBtn.innerHTML = "Undo ("+bufStates.undo+")";
   }
@@ -137,14 +176,19 @@ function editorChanged() {
 
   var road = editor.getRoad();
   slopeType.value = road.siru;
-  updateCommitFields();
-
+  updateCommitFields(false);
 }
 
 function documentKeyDown(e) {
   var evtobj = window.event? window.event : e;
-  if (evtobj.keyCode == 89 && evtobj.ctrlKey) editor.redo();
-  if (evtobj.keyCode == 90 && evtobj.ctrlKey) editor.undo();
+  console.log(curTab)
+  if (curTab == "editor") {
+    if (evtobj.keyCode == 89 && evtobj.ctrlKey) editor.redo()
+    if (evtobj.keyCode == 90 && evtobj.ctrlKey) editor.undo()
+  } else if (curTab == "sandbox") {
+    if (evtobj.keyCode == 89 && evtobj.ctrlKey) sandbox.redo()
+    if (evtobj.keyCode == 90 && evtobj.ctrlKey) sandbox.undo()
+  }
 }
 
 function initialize() {
@@ -160,11 +204,19 @@ function initialize() {
   divEditorDueBy = document.getElementById('edueby')
   divEditorData = document.getElementById('editordata')
   divEditorProgress = document.getElementById('edprogress')
+  divSandbox = document.getElementById('roadsandbox')
+  divSandboxRoad = document.getElementById('sandboxroad')
+  divSandboxDueBy = document.getElementById('sdueby')
+  divSandboxData = document.getElementById('sandboxdata')
+  divSandboxProgress = document.getElementById('sprogress')
   editorTab = document.getElementById("editortab")
-  undoBtn = document.getElementById("undo")
-  redoBtn = document.getElementById("redo")
+  undoBtn = document.getElementById("eundo")
+  redoBtn = document.getElementById("eredo")
   endSlope = document.getElementById("endslope")
+  endSlopeSandbox = document.getElementById("sendslope")
   slopeType = document.getElementById("slopetype");
+  slopeTypeSandbox = document.getElementById("sslopetype");
+  submitButton = document.getElementById("submit");
 
   graph = new bgraph({divGraph: divGraph,
                       divTable: divGraphRoad,
@@ -192,8 +244,20 @@ function initialize() {
                        showFocusRect: false,
                        showContext: true,
                        onRoadChange: editorChanged})
-  console.log(roadSelect.value)
-  loadGoals(roadSelect.value)
+  editor.showData(document.getElementById("showdata").checked);
+  editor.keepSlopes(document.getElementById("keepslopes").checked);
+
+  sandbox = new bsandbox( {divGraph: divSandbox,
+                       divTable: divSandboxRoad,
+                       divDueby: divSandboxDueBy,
+                       divData: divSandboxData,
+                       svgSize: { width: 696, height: 553 },
+                       focusRect: { x:0, y:0, width:696, height: 453 },
+                       ctxRect: { x:0, y:453, width:696, height: 100 },
+                       tableHeight:212,
+                       onRoadChange: sandboxChanged}, false )
+
+  loadGoals( roadSelect.value )
   editor.hide()
         
   document.onkeydown = documentKeyDown;

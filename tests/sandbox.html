@@ -288,7 +288,11 @@
     }
     setDefaults()
     
-    bs = new bsandbox(gdiv,dbdiv)
+    bs = new bsandbox({divGraph: gdiv,
+                       divDueby: dbdiv,
+                       svgSize: { width: 696, height: 453 },
+                       focusRect: { x:0, y:0, width:696, height: 453 },
+                       ctxRect: { x:0, y:453, width:696, height: 100 }})
     bs.newGoal(gtype.options[gtype.selectedIndex].value,
               runits.options[runits.selectedIndex].value,
               rfin.value, vini.value, buffer.checked);

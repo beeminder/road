@@ -31,7 +31,7 @@
 }
 
 .tooltitle {
-    border-bottom:1px solid black;
+    border-bottom:2px solid #bbb;
     margin: 10px 0px 10px 0px;
     font-weight:bold;
 }
@@ -53,7 +53,7 @@ button, select {
     color:black;
     background-color: #ddd;
     padding: 10px 16px;
-    transition: 0.3s;
+    transition: 0.2s;
     cursor: pointer;
     outline: none;
     border: 1px solid #ccc;
@@ -76,6 +76,9 @@ button:hover {
 
 button.active {
     background-color: #FFD949;
+}
+button:disabled {
+    color: #999;
 }
 
 /* Style the buttons that are used to open the tab content */
