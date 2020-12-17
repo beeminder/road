@@ -1056,14 +1056,18 @@ function resizeGraph() {
 
 var databody, dataslider, dsliderbusy = false
 var datarange, dataindex = 0, dataselected=-1
+function updateDataSliderValue() {
+  dataslider.node().value = dataindex
+}
+  
 function selectDataIndex(ind) {
   // Make sure the data table is visible before selection
   if (!databody.node().offsetParent) return
   dataselected = ind
   let midpt = Math.floor(opts.dataTableSize/2)
   let tbindex = Math.max(0, Math.min(ind-midpt, rawdata.length-opts.dataTableSize))
-  dataslider.node().value = tbindex
   dataindex = tbindex
+  updateDataSliderValue()
   updateDataTable()
 }
 function unselectDataIndex() {
@@ -1084,7 +1088,7 @@ function dsliderscroll() {
     if (dataindex >= rawdata.length-opts.dataTableSize) return
     dataindex += 1
   }
-  dataslider.node().value = dataindex
+  updateDataSliderValue()
   updateDataTable()
 }
 /** Creates the skeleton for the data table and populates it with
@@ -1156,6 +1160,11 @@ function updateDataTable() {
           update=>update)
     .text(d=>{return d})
   dtablebusy = false
+}
+function resetDataTable() {
+  dataindex = 0
+  updateDataSliderValue()
+  updateDataTable()
 }
 
 var dbbody
@@ -1988,7 +1997,7 @@ function loadGoal(json, timing = true) {
 
   updateTable()
   updateDueBy()
-  updateDataTable()
+  resetDataTable()
   updateContextData()
 
   // This next call ensures that stathead and other new graph
