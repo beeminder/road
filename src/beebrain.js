@@ -231,7 +231,7 @@ let self = this
 let curid = gid
 gid++
 
-bbin = bu.extend({}, bbin) // Make new copy of the input to prevent overwriting
+bbin = bu.deepcopy(bbin) // Make new copy of the input to prevent overwriting
 
 // Private variables holding goal, road, and datapoint info
 let roads = []      // Beebrain-style road data structure w/ sta/end/slope/auto
@@ -1311,7 +1311,7 @@ function genStats(p, d, tm=null) {
 
 /**Returns an object with pre-computed goal statistics, summaries and other
    details. */
-this.getStats = function() { return bu.extend({}, stats) }
+this.getStats = function() { return bu.deepcopy(stats) }
 
 /**Set a new road object for Beebrain. Should be followed by a call to 
    {@link beebrain#reloadRoad reloadRoad()} to perform a recomputation of goal
