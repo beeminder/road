@@ -42,8 +42,12 @@ function openMainTab(evt, tabName) {
   curTab = tabName
 } 
 
-let divGraph, divGraphRoad, divGraphDueBy, divGraphData, divGraphProgress
-let divEditor, divEditortable, divEditorDueBy, divEditorData, divEditorProgress
+let divGraph,divGraphRoad,divGraphDueBy,divGraphData
+let divGraphProgress,divGraphSummary
+let divEditor,divEditorTable,divEditorDueBy,divEditorData
+let divEditorProgress,divEditorSummary
+let divSandbox,divSandboxTable,divSandboxDueBy,divSandboxData
+let divSandboxProgress,divSandboxSummary
 let editorTab, undoBtn, redoBtn
 let endSlope, endSlopeSandbox, slopeType, slopeTypeSandbox, submitButton
 
@@ -108,6 +112,27 @@ function updateProgress(div, progress) {
 
 }
 
+const cols = {"red":butil.Cols.REDDOT, "green":butil.Cols.GRNDOT, "blue":butil.Cols.BLUDOT, "orange":butil.Cols.ORNDOT}
+
+function updateSummary( graph, div ) {
+  let goal = graph.getGoalObj()
+  let doommod = "due in"
+  while (div.firstChild) div.removeChild(div.firstChild)
+  let divObj = d3.select(div)
+  matches = goal.limsum.match(/(.*) in ([^\(]*).*/)
+  if (!matches) {
+    matches = goal.limsum.match(/(.*) (today)/)
+    doommod = "due"
+  }
+  divObj.append('div').attr('class','yoog').text(goal.yoog+":")
+  divObj.append('div').attr('class','baremin').text(matches[1])
+  divObj.append('div').attr('class','doom-modifier').text(doommod)
+  divObj.append('div').attr('class','doom').text(matches[2]).style('background-color', cols[goal.color])
+  divObj.append('div').attr('class','pledgepre').text("or pay")
+  divObj.append('div').attr('class','pledge').text(goal.waterbux)
+  
+}
+
 function updateCommitFields(issandbox = false) {
   if (!issandbox) {
     var sirunew = parseInt(slopeType.value);
@@ -141,12 +166,14 @@ function commitTo(issandbox = false) {
 function sandboxChanged() {
   sload = false
   updateCommitFields(true);
-  if (sandboxgr) updateProgress(sprogress, sandboxgr.getProgress())
+  updateProgress(divSandboxProgress, sandbox.getGraphObj().getProgress())
+  updateSummary(sandbox.getGraphObj(), divSandboxSummary)
 }
 
 function graphChanged() {
   gload = false
-  updateProgress(gprogress, graph.getProgress())
+  updateProgress(divGraphProgress, graph.getProgress())
+  updateSummary(graph, divGraphSummary)
 }
 
 function editorChanged() {
@@ -172,16 +199,16 @@ function editorChanged() {
     redoBtn.disabled = false;
     redoBtn.innerHTML = "Redo ("+bufStates.redo+")";
   }
-  updateProgress(eprogress, editor.getProgress())
+  updateProgress(divEditorProgress, editor.getProgress())
 
   var road = editor.getRoad();
   slopeType.value = road.siru;
   updateCommitFields(false);
+  updateSummary(editor, divEditorSummary)
 }
 
 function documentKeyDown(e) {
   var evtobj = window.event? window.event : e;
-  console.log(curTab)
   if (curTab == "editor") {
     if (evtobj.keyCode == 89 && evtobj.ctrlKey) editor.redo()
     if (evtobj.keyCode == 90 && evtobj.ctrlKey) editor.undo()
@@ -199,16 +226,19 @@ function initialize() {
   divGraphDueBy = document.getElementById('gdueby')
   divGraphData = document.getElementById('graphdata')
   divGraphProgress = document.getElementById('gprogress')
+  divGraphSummary = document.getElementById('gsummary')
   divEditor = document.getElementById('roadeditor')
   divEditorRoad = document.getElementById('editorroad')
   divEditorDueBy = document.getElementById('edueby')
   divEditorData = document.getElementById('editordata')
-  divEditorProgress = document.getElementById('edprogress')
+  divEditorProgress = document.getElementById('eprogress')
+  divEditorSummary = document.getElementById('esummary')
   divSandbox = document.getElementById('roadsandbox')
   divSandboxRoad = document.getElementById('sandboxroad')
   divSandboxDueBy = document.getElementById('sdueby')
   divSandboxData = document.getElementById('sandboxdata')
   divSandboxProgress = document.getElementById('sprogress')
+  divSandboxSummary = document.getElementById('ssummary')
   editorTab = document.getElementById("editortab")
   undoBtn = document.getElementById("eundo")
   redoBtn = document.getElementById("eredo")

@@ -127,3 +127,19 @@ button:disabled {
 .progcont { width:100%; height:20px; border: 1px solid black; margin:5px;}
 .progbar { height:100%; background-color:yellow;}
 
+.summary {
+    margin:10px 0 5px 50px;
+}
+.yoog,.baremin,.doom-modifier,.doom,.pledgepre,.pledge {
+    display:inline-block;
+    font-size:24px;
+    margin:0 5px 0 5px;
+}
+.baremin,.doom, .pledge {
+    padding:5px 10px;
+    background-color: #3b3b3b;
+    color:#ffcb06;
+}
+.doom {
+    color:white;
+}
