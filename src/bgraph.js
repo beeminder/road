@@ -1057,6 +1057,8 @@ function resizeGraph() {
 var databody, dataslider, dsliderbusy = false
 var datarange, dataindex = 0, dataselected=-1
 function selectDataIndex(ind) {
+  // Make sure the data table is visible before selection
+  if (!databody.node().offsetParent) return
   dataselected = ind
   let midpt = Math.floor(opts.dataTableSize/2)
   let tbindex = Math.max(0, Math.min(ind-midpt, rawdata.length-opts.dataTableSize))
@@ -1955,7 +1957,7 @@ function loadGoal(json, timing = true) {
   road    = bbr.roads
   iroad   = br.copyRoad(road)
   data    = bbr.data
-  rawdata   = json.data
+  rawdata   = bu.deepcopy(json.data)
   igoal   = bu.deepcopy(gol)
   alldata = bbr.alldata
 
@@ -1992,7 +1994,8 @@ function loadGoal(json, timing = true) {
   // This next call ensures that stathead and other new graph
   // properties are properly reflected in the new graph dimensions
   resizeGraph()
-  
+    
+  if (typeof opts.onRoadChange === 'function') opts.onRoadChange.call()
   if (timing) { console.timeEnd(graph_timeid+suffix) }
 }
 
