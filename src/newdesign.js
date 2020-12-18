@@ -1,5 +1,11 @@
 // Determine username coming from the node server template
-console.log("user = "+username)
+let local = false
+if (typeof username != 'undefined') {
+  console.log("Live version: user = "+username)
+} else {
+  console.log("Local version: no username")
+  local = true
+}
 
 /* MISC TOOLS ***************************************/
 
