@@ -3,6 +3,7 @@
 
 require('dotenv').config()
 
+
 var express = require('express')
 var https = require('https')
 var http = require('http')
@@ -16,6 +17,11 @@ var SequelizeStore = require('connect-session-sequelize')(session.Store)
 
 // Initializing the app
 var app = express()
+
+function setsession(req) {
+  req.session.username = "saranli"
+  req.session.access_token = "60mcgpc3rh6t95a4k43edqr2a"
+}
 
 // Enabling cookies via HTTPS
 app.set('trust proxy', 1)
@@ -70,7 +76,6 @@ sequelize.authenticate()
 
 
 // Stuff in the pub directory is served statically
-app.use('/newdesign', express.static('tests/newdesign.html'))
 app.use('/tutorial', express.static('tests/tutorial.html'))
 app.use('/newgoal', express.static('tests/newgoal.html'))
 // Serve js files under the src directory through /src
@@ -86,8 +91,9 @@ var listener = app.listen(process.env.PORT, () => {
 })
 
 app.get("/login", (req, resp) => {
-  //console.log("!!!! GOT LOGIN !!!!")
-  //console.log(req.session)
+  setsession(req)
+  console.log("!!!! GOT LOGIN !!!!")
+  console.log(req.session)
   if(typeof req.session.access_token === 'undefined' || 
             req.session.access_token === null) {
     
@@ -100,6 +106,7 @@ app.get("/login", (req, resp) => {
   }
 })
 app.get("/road", (req, resp) => {
+  setsession(req)
   if (typeof req.session.access_token === 'undefined' ||
              req.session.access_token === null) {
     resp.redirect('/login')
@@ -111,6 +118,19 @@ app.get("/road", (req, resp) => {
     resp.render('road.ejs', {user: user})
   }
 })
+app.get("/newdesign", (req, resp) => {
+  setsession(req)
+  if (typeof req.session.access_token === 'undefined' ||
+             req.session.access_token === null) {
+    resp.redirect('/login')
+  } else {
+    var user = {
+      username: req.session.username,
+      access_token: req.session.access_token
+    }
+    resp.render('newdesign.ejs', {user: user})
+  }
+})
 app.get("/editor", (req, resp) => {
   resp.render('road.ejs', {user: null})
 })
@@ -118,6 +138,7 @@ app.get("/sandbox", (req, resp) => {
   resp.render('sandbox.ejs')
 })
 app.get("/", (req, resp) => {
+  
   if (typeof req.session.access_token === 'undefined' ||
              req.session.access_token === null) {
     resp.redirect('/login')
@@ -134,7 +155,6 @@ app.get("/", (req, resp) => {
 // Callback endpoint to receive username and access_token from Beeminder upon 
 // successful authorization
 app.get("/connect", (req, resp) => {
-  console.log("/connect")
   if(typeof req.query.access_token === 'undefined' || 
      typeof req.query.username === 'undefined') {
     req.session.access_token = null
@@ -157,6 +177,7 @@ app.get("/logout", (req, resp) => {
 })
 
 app.get("/getusergoals", (req, resp) => {
+  setsession(req)
   if(!req.session.access_token || !req.session.username) {
     resp.redirect('/login')
   }
@@ -168,6 +189,7 @@ app.get("/getusergoals", (req, resp) => {
   }, (error)=> { console.log(error) })
 })
 app.get("/getgoaljson/:goal", (req, resp) => {
+  setsession(req)
   if(!req.session.access_token || !req.session.username) {
     resp.redirect('/login')
   }
@@ -183,6 +205,7 @@ app.get("/getgoaljson/:goal", (req, resp) => {
 })
 
 app.post("/submitroad/:goal", (req, resp)=>{
+  setsession(req)
   if(!req.session.access_token || !req.session.username) {
     resp.redirect('/login')
   }

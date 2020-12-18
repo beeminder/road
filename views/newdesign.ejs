@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="../src/pikaday.css">
+    <link rel="stylesheet" href="../src/jsbrain.css">
+    <link rel="stylesheet" href="../src/newdesign.css">
+    <script src = "https://d3js.org/d3.v5.js"></script>
+    <script src = "../src/moment.js"></script>
+    <script src = "../src/moment-timezone.js"></script>
+    <script src = "../src/pikaday.js"></script>
+    <script src = "../src/polyfit.js"></script>
+    <script src = "../src/butil.js"></script>
+    <script src = "../src/broad.js"></script>
+    <script src = "../src/beebrain.js"></script>
+    <script src = "../src/bgraph.js"></script>
+    <script src = "../src/bsandbox.js"></script>
+    <script> const username = <%- (user != null)?"\""+user.username+"\"":"null" %></script>
+</head>
+
+<body>
+  <div id="header">
+    <div class="logo"></div>
+  </div>
+  <div style="box-shadow: 0 0 6px #ccc; padding:10px; ">
+    Select your goal:
+    <select id="roadselect" class="roadselect" onchange="eload=true;gload = true;loadGoals(this.value);">
+      <option value="../automon/data/testroad0.bb">Test 0</option>
+      <option value="../../privatesuite/data/afcuttin+gmailzero.bb">Test 1</option>
+      <option value="../../privatesuite/data/b+coffee2.bb">Test 2</option>
+      <option value="../automon/data/testroad2.bb">Test 3</option>
+      <option value="../../privatesuite/data/bug-d-bump.bb">Test 4</option>
+      <option value="../../privatesuite/data/bug-d-mass.bb">Test 5</option>
+      <option value="../automon/data/testroad5.bb">Test 6</option>
+      <option value="../../privatesuite/data/bugroad3.bb">Test 7</option>
+    </select>
+  </div>
+  <!-- Tab links -->
+  <div class="tab">
+    <button id="graphtab" class="tablinks active" onclick="openMainTab(event, 'graph');">Graph</button>
+    <button id="editortab" class="tablinks" onclick="openMainTab(event, 'editor')">Editor</button>
+    <button id="sandboxtab" class="tablinks" onclick="openMainTab(event, 'sandbox')">Sandbox</button>
+  </div>
+  
+<!-- Tab content -->
+<div id="graph" class="tabcontent" style="display:block;">
+  <div id="gsummary" class="summary"></div>
+  <div style="margin-right:20px; display:inline-block;vertical-align:top;">
+    <div style="margin:10px;margin-left:50px;">
+      <button id="zoomall" onclick="graph.zoomAll();">View All</button>
+      <button id="zoomdflt" onclick="graph.zoomDefault();">Reset Zoom</button>
+    </div>
+    <div id="roadgraph" style="min-height:500px;width:696px; margin-right:20px; display:inline-block;vertical-align:top;"></div>
+  </div>
+
+  <div class="vtabcontainer">
+    <div class="vtabtitle">Graph Tools</div>
+    <div class="vtab">
+      <button class="gtablinks" onclick="openGraphTab(event, 'settings')">Settings</button>
+      <button class="gtablinks" onclick="openGraphTab(event, 'road')">Road</button>
+      <button class="gtablinks" onclick="openGraphTab(event, 'stats')">Stats</button>
+      <button class="gtablinks active" onclick="openGraphTab(event, 'data')">Data</button>
+    </div>
+    <div id="data" class="gtabcontent" style="display:block;">
+      <div class="tooltitle">Past data</div>
+      <div id="graphdata">
+        <input class="data-range" type="range" step="0.5" value="5" min="1" max="10">
+      </div>
+    </div>
+    <div id="stats" class="gtabcontent">
+      <div class="tooltitle">Amounts Due By Day</div>
+      <div style="display:table; border:1px solid #bbb" id="gdueby"></div>
+      <div class="tooltitle">Goal Progress</div>
+      <div id="gprogress"></div>
+    </div>
+    <div id="road" class="gtabcontent">
+      <div class="tooltitle">Road Matrix</div>
+      <div id="graphroad"></div>
+    </div>
+    <div id="settings" class="gtabcontent">
+      Settings will go here
+    </div>
+  </div>
+</div>
+
+<div id="editor" class="tabcontent">
+  <div id="esummary" class="summary"></div>
+  <div style="margin-right:20px; display:inline-block;vertical-align:top;">
+    <div style="margin:10px;margin-left:50px;">
+      <button id="zoomall" onclick="editor.zoomAll();">View All</button>
+      <button id="zoomdflt" onclick="editor.zoomDefault();">Reset Zoom</button>
+      <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>
+      <label>Show data</label>
+      <button id="submit" onclick="" style="float:right;margin-right:50px;">Submit Changes</button>
+    </div>
+    <div id="roadeditor" style="min-height:500px;width:696px; margin-right:20px; display:inline-block;vertical-align:top;"></div>
+  </div>
+  
+  <div style="height:453px;display:inline-block;vertical-align:top;">
+    <div class="vtabtitle">Editor Tools</div>
+    <div class="vtab">
+      <button class="etablinks" onclick="openEditorTab(event, 'esettings')">Settings</button>
+      <button class="etablinks" onclick="openEditorTab(event, 'eroad')">Road</button>
+      <button class="etablinks" onclick="openEditorTab(event, 'estats')">Stats</button>
+      <button class="etablinks" onclick="openEditorTab(event, 'edata')">Data</button>
+      <button class="etablinks active" onclick="openEditorTab(event, 'eedit')">Edit</button>
+    </div>
+    <div id="eedit" class="etabcontent" style="display:block;">
+      <div class="tooltitle">Editor settings</div>
+      <input id="keepslopes" type="checkbox" onclick="editor.keepSlopes(this.checked)" checked>
+      <label>Propagate changes forward</label>
+      <div class="tooltitle">Road dial</div>
+      <div>
+        Goal rate:<br/>
+        <input type = "number" id="endslope" step="any" style="margin-bottom:10px;height:30px;width:10em;"><br/>
+        <select id="slopetype" selected="604800" onchange="updateCommitFields(false)">
+          <option value="86400">per day</option>
+          <option value="604800">per week</option>
+          <option value="2629800">per month</option>
+          <option value="31557600">per year</option>
+        </select> 
+        <button id="commit" onclick="commitTo(false)">UPDATE</button>
+      </div>
+      <div class="tooltitle">History</div>
+      <button id="eundo" onclick="editor.undo();">Undo (0)</button>
+      <button id="eredo" onclick="editor.redo();">Redo (0)</button>
+      <button id="ereset" onclick="editor.undoAll();">Reset</button><br/><br/>
+    </div>
+    <div id="edata" class="etabcontent">
+      <div class="tooltitle">Past data</div>
+      <div id="editordata">
+      </div>
+    </div>
+    <div id="estats" class="etabcontent">
+      <div class="tooltitle">Amounts Due By Day</div>
+      <div style="display:table; border:1px solid #bbb" id="edueby"></div>
+      <div class="tooltitle">Goal Progress</div>
+      <div id="eprogress"></div>
+    </div>
+    <div id="eroad" class="etabcontent">
+      <div class="tooltitle">Road Matrix</div>
+      <div id="editorroad"></div>
+    </div>
+    <div id="esettings" class="etabcontent">
+      Settings will go here
+    </div>
+  </div>
+</div>
+
+<div id="sandbox" class="tabcontent">
+  <div id="ssummary" class="summary"></div>
+  <div style="margin-right:20px; display:inline-block;vertical-align:top;">
+    <div style="margin:10px;margin-left:50px;">
+      <button id="zoomall" onclick="sandboxgr.zoomAll();">View All</button>
+      <button id="zoomdflt" onclick="sandboxgr.zoomDefault();">Reset Zoom</button>
+      <button id="snextday" onclick="sandbox.nextDay();" style="float:right;margin-right:50px;">Next Day</button>
+      <button id="srefresh" onclick="sandbox.refresh();" style="float:right;margin-right:5px;">Refresh</button>
+    </div>
+    <div id="roadsandbox" style="white-space:normal;min-height:500px;width:696px; margin-right:20px; display:inline-block;vertical-align:top;">
+      When completed, you will be able to play with your gaol here, experimenting with adding data, advancing time, etc.
+    </div>
+  </div>
+  
+  <div style="height:453px;display:inline-block;vertical-align:top;">
+    <div class="vtabtitle">Sandbox Tools</div>
+    <div class="vtab">
+      <button class="stablinks" onclick="openSandboxTab(event, 'ssettings')">Settings</button>
+      <button class="stablinks" onclick="openSandboxTab(event, 'sroad')">Road</button>
+      <button class="stablinks" onclick="openSandboxTab(event, 'sstats')">Stats</button>
+      <button class="stablinks" onclick="openSandboxTab(event, 'sdata')">Data</button>
+      <button class="stablinks active" onclick="openSandboxTab(event, 'sedit')">Edit</button>
+    </div>
+    <div id="sedit" class="stabcontent" style="display:block;">
+      <div class="tooltitle">Road dial</div>
+      Goal rate:<br/>
+      <input type = "number" id="sendslope" step="any" style="margin-bottom:10px;height:30px;width:10em;"><br/>
+      <select id="sslopetype" selected="604800" onchange="updateCommitFields(true)">
+        <option value="86400">per day</option>
+        <option value="604800">per week</option>
+        <option value="2629800">per month</option>
+        <option value="31557600">per year</option>
+      </select> 
+      <button id="commit" onclick="commitTo(true)">UPDATE</button>
+      <div class="tooltitle">New data</div>
+      Value:
+      <input id="sdataval" type="number"  style="margin-bottom:10px;height:30px;width:5em;margin:4px;"></input>
+      Comment:
+      <input id="sdatacmt" type="text"  style="margin:4px;margin-bottom:10px;height:30px;"></input>
+      <button onclick="sandbox.newData(sdataval.value, sdatacmt.value);" style="margin:4px;">Add</button>
+      <div class="tooltitle">History</div>
+      <button id="sundo" onclick="sandbox.undo();">Undo (0)</button>
+      <button id="sredo" onclick="sandbox.redo();">Redo (0)</button>
+      <button id="sreset" onclick="sandbox.undoAll();">Reset</button><br/><br/>
+    </div>
+    <div id="sdata" class="stabcontent">
+      <div class="tooltitle">Past data</div>
+      <div id="sandboxdata">
+      </div>
+    </div>
+    <div id="sstats" class="stabcontent">
+      <div class="tooltitle">Amounts Due By Day</div>
+      <div style="display:table; border:1px solid #bbb" id="sdueby"></div>
+      <div class="tooltitle">Goal Progress</div>
+      <div id="sprogress"></div>
+    </div>
+    <div id="sroad" class="stabcontent">
+      Road matrix
+    </div>
+    <div id="ssettings" class="stabcontent">
+      Sandbox settings
+    </div>
+  </div>
+</div>
+
+<script src = "../src/newdesign.js"></script>
+<script>
+  initialize()
+</script>
+
+</body>
+</html>

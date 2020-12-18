@@ -59,6 +59,8 @@ function openMainTab(evt, tabName) {
   curMainTab = tabName
 } 
 
+let roadSelect
+
 // DOM components for the graph tab
 let divGraph,divGraphRoad,divGraphDueBy,divGraphData
 let divGraphProgress,divGraphSummary
@@ -93,8 +95,12 @@ function openSandboxTab(evt, tabName) {
 
 // Loads a goal from the specified URL for all tabs
 async function loadGoals(url) {
-  let resp = await butil.loadJSON( url )
-
+  let resp
+  if (local) {
+    resp = await butil.loadJSON( url )
+  } else {
+    resp = await butil.loadJSON( "/getgoaljson/"+url )
+  }
   await graph.loadGoalJSON( resp )
   await editor.loadGoalJSON( resp )
   await sandbox.loadGoalJSON( resp )
@@ -267,8 +273,52 @@ function documentKeyDown(e) {
   }
 }
 
+function prepareGoalSelect(goals) {
+  // Clean up existing options
+  for(let i = roadSelect.options.length - 1 ; i >= 0 ; i--) roadSelect.remove(i);
+
+  // Populate the dropdown list with goals
+  var c = document.createDocumentFragment();
+  goals.forEach(function(slug,index){
+    var opt = document.createElement("option");
+    opt.text = slug;
+    opt.value = slug;
+    roadSelect.add(opt);
+  });
+  roadSelect.value = goals[0];
+  loadGoals(roadSelect.value)
+}
+
+// Helper Functions. Something about function hoisting?
+function loadJSON( url, callback ) {   
+
+  var xobj = new XMLHttpRequest();
+  xobj.overrideMimeType("application/json");
+  xobj.onreadystatechange = function () {
+    if (xobj.readyState == 4 && xobj.status == "200") {
+      //if (xobj.readyState == 4) {
+      callback(JSON.parse(xobj.responseText));
+    }
+  }
+  xobj.open('GET', url, true);
+  xobj.send(null);  
+}
+
+function postJSON( url, data, callback ){
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", url, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState == 4 && xhr.status == "200") {
+      callback(JSON.parse(xhr.responseText));
+    }
+  };
+  console.log("posting data to "+url);
+  xhr.send(JSON.stringify(data));
+}
+
 function initialize() {
-  let roadSelect = document.getElementById('roadselect')
+  roadSelect = document.getElementById('roadselect')
   
   // Locate and save graph DOM elements
   divGraph = document.getElementById('roadgraph')
@@ -347,8 +397,12 @@ function initialize() {
                        tableHeight:212,
                        onRoadChange: sandboxChanged}, false )
 
-  loadGoals( roadSelect.value )
+  //loadGoals( roadSelect.value )
   editor.hide()
-        
+  
+  // If no usernames are configured, just use a deffault list of sample goals
+  if (!local)  loadJSON('/getusergoals', prepareGoalSelect);
+  else prepareGoalSelect(['testroad0.bb','testroad1.bb','testroad2.bb','testroad3.bb'])
+
   document.onkeydown = documentKeyDown;
 }
