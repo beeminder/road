@@ -19,8 +19,6 @@ var SequelizeStore = require('connect-session-sequelize')(session.Store)
 var app = express()
 
 function setsession(req) {
-  req.session.username = "saranli"
-  req.session.access_token = "60mcgpc3rh6t95a4k43edqr2a"
 }
 
 // Enabling cookies via HTTPS
