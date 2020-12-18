@@ -1057,6 +1057,7 @@ function resizeGraph() {
 var databody, dataslider, dsliderbusy = false
 var datarange, dataindex = 0, dataselected=-1
 function updateDataSliderValue() {
+  if (!dataslider) return
   dataslider.node().value = dataindex
 }
   
@@ -1162,6 +1163,7 @@ function updateDataTable() {
   dtablebusy = false
 }
 function resetDataTable() {
+  if (opts.divData === null) return
   dataindex = 0
   updateDataSliderValue()
   updateDataTable()
