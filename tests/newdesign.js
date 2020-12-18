@@ -49,6 +49,7 @@ let divEditorProgress,divEditorSummary
 let divSandbox,divSandboxTable,divSandboxDueBy,divSandboxData
 let divSandboxProgress,divSandboxSummary
 let editorTab, undoBtn, redoBtn
+let sandboxTab, undoBtnSandbox, redoBtnSandbox
 let endSlope, endSlopeSandbox, slopeType, slopeTypeSandbox, submitButton
 
 function openGraphTab(evt, tabName) {
@@ -165,6 +166,22 @@ function commitTo(issandbox = false) {
 
 function sandboxChanged() {
   sload = false
+
+  var bufStates = sandbox.undoBufferState();
+  if (bufStates.undo === 0)  {
+    undoBtnSandbox.disabled = true
+    undoBtnSandbox.innerHTML = "Undo (0)"
+  } else {
+    undoBtnSandbox.disabled = false;
+    undoBtnSandbox.innerHTML = "Undo ("+bufStates.undo+")";
+  }
+  if (bufStates.redo === 0)  {
+    redoBtnSandbox.disabled = true;
+    redoBtnSandbox.innerHTML = "Redo (0)";
+  } else {
+    redoBtnSandbox.disabled = false;
+    redoBtnSandbox.innerHTML = "Redo ("+bufStates.redo+")";
+  }
   updateCommitFields(true);
   updateProgress(divSandboxProgress, sandbox.getGraphObj().getProgress())
   updateSummary(sandbox.getGraphObj(), divSandboxSummary)
@@ -242,6 +259,9 @@ function initialize() {
   editorTab = document.getElementById("editortab")
   undoBtn = document.getElementById("eundo")
   redoBtn = document.getElementById("eredo")
+  sandboxTab = document.getElementById("sandboxtab")
+  undoBtnSandbox = document.getElementById("sundo")
+  redoBtnSandbox = document.getElementById("sredo")
   endSlope = document.getElementById("endslope")
   endSlopeSandbox = document.getElementById("sendslope")
   slopeType = document.getElementById("slopetype");

@@ -124,17 +124,22 @@
       inboxer: newWhittleDown
     }
 
-    var undoBuffer = []
+    var undoBuffer = [], redoBuffer = []
     function undo(reload=true) {
       if (undoBuffer.length == 0) return
+      redoBuffer.push(JSON.parse(JSON.stringify({bb:goal.bb, derails:goal.derails})))
       var restore = undoBuffer.pop()
       goal.bb = restore.bb
       goal.derails = restore.derails
       if (reload) reloadGoal()
     }
     function redo(reload=true) {
-    }
-    function undoAll(reload=true) {
+      if (redoBuffer.length == 0) return
+      saveState()
+      var restore = redoBuffer.pop()
+      goal.bb = restore.bb
+      goal.derails = restore.derails
+      if (reload) reloadGoal()
     }
     function saveState() {
       undoBuffer.push(JSON.parse(JSON.stringify({bb:goal.bb, derails:goal.derails})))
@@ -361,7 +366,10 @@
     this.getGoalConfig = function() {return goal.graph.getGoalConfig()}
     this.undo = undo
     this.redo = redo
-    this.undoAll = undoAll
+    /** Undoes all edits */
+    this.undoAll = (reload=true) => {
+      while (undoBuffer.length != 0) undo(reload)
+    }
     this.saveBB = function(linkelt) {
       var source = JSON.stringify(goal.bb)
         //convert svg source to URI data scheme.
@@ -372,6 +380,9 @@
     this.show = function(){goal.graph.show()}
     this.hide = function(){goal.graph.hide()}
     self.getGraphObj = function() {return goal.graph}
+    this.undoBufferState = () => {
+      return({undo: undoBuffer.length, redo: redoBuffer.length})
+    }
   }
 
   return bsandbox
