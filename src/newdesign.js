@@ -1,3 +1,6 @@
+// Determine username coming from the node server template
+console.log("user = "+username)
+
 /* MISC TOOLS ***************************************/
 
 // Maps graph colors to fot colors
