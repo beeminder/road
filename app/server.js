@@ -251,6 +251,7 @@ function beemGetUser(user, callback, error_callback = ()=>{}) {
       data = data + chunk
     }).on('end', () => {
       var userd = JSON.parse(data)
+      //console.log(userd)
       if(userd) { //???? what's an error look like here?
         callback(userd.goals)
       } else {

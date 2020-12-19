@@ -38,15 +38,15 @@
 
 #graph .vtab {
     transform-origin:0 0;
-    transform:rotate(-90deg) translate(-360px, 0px);
+    transform:rotate(-90deg) translate(-270px, 0px);
 }
 #editor .vtab {
     transform-origin:0 0;
-    transform:rotate(-90deg) translate(-450px, 0px);
+    transform:rotate(-90deg) translate(-360px, 0px);
 }
 #sandbox .vtab {
     transform-origin:0 0;
-    transform:rotate(-90deg) translate(-450px, 0px);
+    transform:rotate(-90deg) translate(-360px, 0px);
 }
 
 button, select {

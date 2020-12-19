@@ -56,7 +56,6 @@
   <div class="vtabcontainer">
     <div class="vtabtitle">Graph Tools</div>
     <div class="vtab">
-      <button class="gtablinks" onclick="openGraphTab(event, 'settings')">Settings</button>
       <button class="gtablinks" onclick="openGraphTab(event, 'road')">Road</button>
       <button class="gtablinks" onclick="openGraphTab(event, 'stats')">Stats</button>
       <button class="gtablinks active" onclick="openGraphTab(event, 'data')">Data</button>
@@ -77,9 +76,6 @@
       <div class="tooltitle">Road Matrix</div>
       <div id="graphroad"></div>
     </div>
-    <div id="settings" class="gtabcontent">
-      Settings will go here
-    </div>
   </div>
 </div>
 
@@ -91,6 +87,10 @@
       <button id="zoomdflt" onclick="editor.zoomDefault();">Reset Zoom</button>
       <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>
       <label>Show data</label>
+
+      <input style="margin-left:70px" id="keepslopes" type="checkbox"
+             onclick="editor.keepSlopes(this.checked)" checked>
+      <label>Propagate changes forward</label>
     </div>
     <div id="roadeditor" style="width:696px; margin-right:20px; display:inline-block;vertical-align:top;"></div>
     <br/>
@@ -100,16 +100,12 @@
   <div style="height:453px;display:inline-block;vertical-align:top;">
     <div class="vtabtitle">Editor Tools</div>
     <div class="vtab">
-      <button class="etablinks" onclick="openEditorTab(event, 'esettings')">Settings</button>
       <button class="etablinks" onclick="openEditorTab(event, 'eroad')">Road</button>
       <button class="etablinks" onclick="openEditorTab(event, 'estats')">Stats</button>
       <button class="etablinks" onclick="openEditorTab(event, 'edata')">Data</button>
       <button class="etablinks active" onclick="openEditorTab(event, 'eedit')">Edit</button>
     </div>
     <div id="eedit" class="etabcontent" style="display:block;">
-      <div class="tooltitle">Editor settings</div>
-      <input id="keepslopes" type="checkbox" onclick="editor.keepSlopes(this.checked)" checked>
-      <label>Propagate changes forward</label>
       <div class="tooltitle">Road dial</div>
       <div>
         Goal rate:<br/>
@@ -142,9 +138,6 @@
       <div class="tooltitle">Road Matrix</div>
       <div id="editorroad"></div>
     </div>
-    <div id="esettings" class="etabcontent">
-      Settings will go here
-    </div>
   </div>
 </div>
 
@@ -164,7 +157,6 @@
   <div style="height:453px;display:inline-block;vertical-align:top;">
     <div class="vtabtitle">Sandbox Tools</div>
     <div class="vtab">
-      <button class="stablinks" onclick="openSandboxTab(event, 'ssettings')">Settings</button>
       <button class="stablinks" onclick="openSandboxTab(event, 'sroad')">Road</button>
       <button class="stablinks" onclick="openSandboxTab(event, 'sstats')">Stats</button>
       <button class="stablinks" onclick="openSandboxTab(event, 'sdata')">Data</button>
@@ -204,10 +196,8 @@
       <div id="sprogress"></div>
     </div>
     <div id="sroad" class="stabcontent">
-      Road matrix
-    </div>
-    <div id="ssettings" class="stabcontent">
-      Sandbox settings
+      <div class="tooltitle">Road Matrix</div>
+      <div id="sandboxroad"></div>
     </div>
   </div>
 </div>

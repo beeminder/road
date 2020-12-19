@@ -302,11 +302,19 @@ function documentKeyDown(e) {
 function prepareGoalSelect(goals) {
   // Clean up existing options
   for(let i = roadSelect.options.length - 1 ; i >= 0 ; i--) roadSelect.remove(i);
-
   // Populate the dropdown list with goals
-  var c = document.createDocumentFragment();
+  let c = document.createDocumentFragment(), opt
+
+  if (goals == null) {
+    opt = document.createElement("option");
+    opt.text = "load failed!";
+    opt.value = "load failed!";
+    roadSelect.add(opt);
+    return
+  }
+  
   goals.forEach(function(slug,index){
-    var opt = document.createElement("option");
+    opt = document.createElement("option");
     opt.text = slug;
     opt.value = slug;
     roadSelect.add(opt);
@@ -318,12 +326,14 @@ function prepareGoalSelect(goals) {
 // Helper Functions. Something about function hoisting?
 function loadJSON( url, callback ) {   
 
-  var xobj = new XMLHttpRequest();
+  let xobj = new XMLHttpRequest();
   xobj.overrideMimeType("application/json");
   xobj.onreadystatechange = function () {
     if (xobj.readyState == 4 && xobj.status == "200") {
       //if (xobj.readyState == 4) {
-      callback(JSON.parse(xobj.responseText));
+      if (xobj.responseText == "") callback(null)
+      else
+        callback(JSON.parse(xobj.responseText))
     }
   }
   xobj.open('GET', url, true);
@@ -331,7 +341,7 @@ function loadJSON( url, callback ) {
 }
 
 function postJSON( url, data, callback ){
-  var xhr = new XMLHttpRequest();
+  let xhr = new XMLHttpRequest();
   xhr.open("POST", url, true);
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.onreadystatechange = function () {
@@ -344,8 +354,8 @@ function postJSON( url, data, callback ){
 }
 
 function handleRoadSubmit() {
-  var currentGoal = roadSelect.value;
-  var newRoad = editor.getRoad();
+  let currentGoal = roadSelect.value;
+  let newRoad = editor.getRoad();
   if (!newRoad) {
     window.alert("Road is null! Graph with errors?");
     return;
@@ -467,8 +477,8 @@ function initialize() {
     loadJSON('/getusergoals', prepareGoalSelect)
     for(let i = roadSelect.options.length - 1 ; i >= 0 ; i--) roadSelect.remove(i);
     // Populate the dropdown list with goals
-    var c = document.createDocumentFragment();
-    var opt = document.createElement("option");
+    let c = document.createDocumentFragment();
+    let opt = document.createElement("option");
     opt.text = "Loading...";
     opt.value = "";
     roadSelect.add(opt);
