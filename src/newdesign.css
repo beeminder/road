@@ -108,7 +108,8 @@ button:disabled {
     margin-left:45px;
     position:relative;
     top:-45px;
-    max-width:600px;
+    min-width:550px;
+    max-width:650px;
     min-height:450px;
     height:90%;
     padding: 6px 12px;
