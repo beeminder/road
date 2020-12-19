@@ -78,6 +78,7 @@
     var goal = {div: opts.divGraph}
 
     var pledges = [0, 5, 10, 30, 90, 270, 810, 2430]
+    goal.graph = new bgraph(opts);
     
     function newDoMore() {
       return {yaw:1, dir:1, kyoom:true,

@@ -5546,6 +5546,10 @@ this.show = () => {
   updateGraphData(true)
 }
 
+this.loading = (flag) => {
+  if (flag) showOverlay(['loading...'], sh/10)
+  else removeOverlay()
+}
 /** Returns the road matrix object (in the internal format) for the
     goal. Primarily used to synchronize two separate graph
     instances on the same HTML page. 

@@ -91,9 +91,10 @@
       <button id="zoomdflt" onclick="editor.zoomDefault();">Reset Zoom</button>
       <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>
       <label>Show data</label>
-      <button id="submit" onclick="" style="float:right;margin-right:50px;">Submit Changes</button>
     </div>
-    <div id="roadeditor" style="min-height:500px;width:696px; margin-right:20px; display:inline-block;vertical-align:top;"></div>
+    <div id="roadeditor" style="width:696px; margin-right:20px; display:inline-block;vertical-align:top;"></div>
+    <br/>
+    <button id="submit" style="margin:10px;margin-left:50px;" onclick="handleRoadSubmit();">Submit Changes</button><span id="submitmsg"></span>
   </div>
   
   <div style="height:453px;display:inline-block;vertical-align:top;">
@@ -157,7 +158,6 @@
       <button id="srefresh" onclick="sandbox.refresh();" style="float:right;margin-right:5px;">Refresh</button>
     </div>
     <div id="roadsandbox" style="white-space:normal;min-height:500px;width:696px; margin-right:20px; display:inline-block;vertical-align:top;">
-      When completed, you will be able to play with your gaol here, experimenting with adding data, advancing time, etc.
     </div>
   </div>
   

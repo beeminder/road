@@ -50,11 +50,17 @@ function openMainTab(evt, tabName) {
   // work when the graph is not visible, so we have to call show()
   // after the tab becomes visible
   if (tabName == "graph") {
-    graph.show(); editor.hide(); sandboxgr.hide()
+    if (graph) graph.show()
+    if (editor) editor.hide()
+    if (sandboxgr) sandboxgr.hide()
   } else if (tabName == "editor") {
-    graph.hide(); editor.show(); sandboxgr.hide()
+    if (graph) graph.hide()
+    if (editor) editor.show()
+    if (sandboxgr) sandboxgr.hide()
   } else if (tabName == "sandbox") {
-    graph.hide(); editor.hide(); sandboxgr.show()
+    if (graph) graph.hide()
+    if (editor) editor.hide()
+    if (sandboxgr) sandboxgr.show()
   }
   curMainTab = tabName
 } 
@@ -69,7 +75,7 @@ let divGraphProgress,divGraphSummary
 let divEditor,divEditorTable,divEditorDueBy,divEditorData
 let divEditorProgress,divEditorSummary
 let editorTab, undoBtn, redoBtn
-let endSlope, slopeType, submitButton
+let endSlope, slopeType, submitButton, submitMsg
 
 // DOM components for the sandboxtab
 let divSandbox,divSandboxTable,divSandboxDueBy,divSandboxData
@@ -96,11 +102,17 @@ function openSandboxTab(evt, tabName) {
 // Loads a goal from the specified URL for all tabs
 async function loadGoals(url) {
   let resp
+  if (graph) graph.loading(true)
+  if (editor) editor.loading(true)
+  if (sandboxgr) sandboxgr.loading(true)
   if (local) {
     resp = await butil.loadJSON( url )
   } else {
     resp = await butil.loadJSON( "/getgoaljson/"+url )
   }
+  if (graph) graph.loading(false)
+  if (editor) editor.loading(false)
+  if (sandboxgr) sandboxgr.loading(false)
   await graph.loadGoalJSON( resp )
   await editor.loadGoalJSON( resp )
   await sandbox.loadGoalJSON( resp )
@@ -255,8 +267,22 @@ function editorChanged() {
   }
   updateProgress(divEditorProgress, editor)
 
-  let road = editor.getRoad();
-  slopeType.value = road.siru;
+  let newRoad = editor.getRoad()
+  // Update state of the Submit button depending on road validity
+  if (!newRoad) {
+    submitButton.disabled = true
+    submitMsg.innerHTML = "Ill-defined yellow brick road!"
+  } else if (!newRoad.valid) {
+    submitButton.disabled = true;
+    submitMsg.innerHTML = "Road can't be easier within the akrasia horizon!"
+  } else if (newRoad.loser) {
+    submitButton.disabled = true
+    submitMsg.innerHTML = "Submitting this road would insta-derail you!"
+  } else {
+    submitMsg.innerHTML = ""
+  }
+
+  slopeType.value = newRoad.siru;
   updateCommitFields(false);
   updateSummary(divEditorSummary, editor)
 }
@@ -317,6 +343,38 @@ function postJSON( url, data, callback ){
   xhr.send(JSON.stringify(data));
 }
 
+function handleRoadSubmit() {
+  console.log("Road submit")
+  var currentGoal = roadSelect.value;
+  var newRoad = editor.getRoad();
+  if (!newRoad) {
+    window.alert("Road is null! Graph with errors?");
+    return;
+  }
+  if (!newRoad.valid) {
+    window.alert(
+      "New road intersects pink region (i.e., violates the akrasia horizon)!");
+    return;
+  }
+  if (newRoad.loser) {
+    window.alert("New road causes derailment!");
+    return;
+  }
+  if (username) {
+    postJSON("/submitroad/"+currentGoal, newRoad, function(resp) {
+      
+      if (resp.error) {
+        submitMsg.innerHTML = "ERROR! \""
+          +resp.error+"\". Email support@beeminder.com for more help!";
+      } else {
+        submitMsg.innerHTML = "(successfully submitted road!)";
+        loadGoals(currentGoal)
+      }
+    })
+  } else {
+    window.alert('new road matrix:\n'+JSON.stringify(editor.getRoad()))
+  }
+}
 function initialize() {
   roadSelect = document.getElementById('roadselect')
   
@@ -341,6 +399,7 @@ function initialize() {
   endSlope = document.getElementById("endslope")
   slopeType = document.getElementById("slopetype");
   submitButton = document.getElementById("submit");
+  submitMsg = document.getElementById("submitmsg");
 
   // Locate and save sandbox DOM elements
   divSandbox = document.getElementById('roadsandbox')
@@ -374,14 +433,14 @@ function initialize() {
                        divTable: divEditorRoad,
                        divDueby: divEditorDueBy,
                        divData: divEditorData,
-                       svgSize: { width: 696, height: 553 },
+                       svgSize: { width: 696, height: 453 },
                        focusRect: { x:0, y:0, width:696, height: 453 },
-                       ctxRect: { x:0, y:453, width:696, height: 100 },
+                       ctxRect: { x:0, y:453, width:696, height: 32 },
                        roadEditor:true,
                        tableHeight:212,
                        maxFutureDays: 365,
                        showFocusRect: false,
-                       showContext: true,
+                       showContext: false,
                        onRoadChange: editorChanged})
   editor.showData(document.getElementById("showdata").checked);
   editor.keepSlopes(document.getElementById("keepslopes").checked);
@@ -391,18 +450,27 @@ function initialize() {
                        divTable: divSandboxRoad,
                        divDueby: divSandboxDueBy,
                        divData: divSandboxData,
-                       svgSize: { width: 696, height: 553 },
+                       svgSize: { width: 696, height: 453 },
                        focusRect: { x:0, y:0, width:696, height: 453 },
-                       ctxRect: { x:0, y:453, width:696, height: 100 },
+                       ctxRect: { x:0, y:453, width:696, height: 32 },
                        tableHeight:212,
+                       showContext: false,
                        onRoadChange: sandboxChanged}, false )
 
   //loadGoals( roadSelect.value )
   editor.hide()
   
   // If no usernames are configured, just use a deffault list of sample goals
-  if (!local)  loadJSON('/getusergoals', prepareGoalSelect);
-  else prepareGoalSelect(['testroad0.bb','testroad1.bb','testroad2.bb','testroad3.bb'])
+  if (!local) {
+    loadJSON('/getusergoals', prepareGoalSelect)
+    for(let i = roadSelect.options.length - 1 ; i >= 0 ; i--) roadSelect.remove(i);
+    // Populate the dropdown list with goals
+    var c = document.createDocumentFragment();
+    var opt = document.createElement("option");
+    opt.text = "Loading...";
+    opt.value = "";
+    roadSelect.add(opt);
+  } else prepareGoalSelect(['testroad0.bb','testroad1.bb','testroad2.bb','testroad3.bb'])
 
   document.onkeydown = documentKeyDown;
 }

@@ -90,8 +90,8 @@ var listener = app.listen(process.env.PORT, () => {
 
 app.get("/login", (req, resp) => {
   setsession(req)
-  console.log("!!!! GOT LOGIN !!!!")
-  console.log(req.session)
+  //console.log("!!!! GOT LOGIN !!!!")
+  //console.log(req.session)
   if(typeof req.session.access_token === 'undefined' || 
             req.session.access_token === null) {
     
@@ -207,7 +207,7 @@ app.post("/submitroad/:goal", (req, resp)=>{
   if(!req.session.access_token || !req.session.username) {
     resp.redirect('/login')
   }
-  console.log(req.body)
+  //console.log(req.body)
   beemSubmitRoad({
     usr: req.session.username,
     gol: req.params.goal,
@@ -225,7 +225,6 @@ app.post("/submitroad/:goal", (req, resp)=>{
 
 // helper functions
 function beemSubmitRoad(params, callback) {
-  console.log("beemSubmitRoad")
   var options = {
     url: 'https://www.beeminder.com/api/v1/users/'+params.usr+'/goals/'+params.gol+'.json',
     method: 'PUT',
@@ -235,7 +234,7 @@ function beemSubmitRoad(params, callback) {
       roadall: params.roadall
     }
   }
-  console.log(options)
+  //console.log(options)
   request.put(options, callback)
 }
 
