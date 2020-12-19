@@ -344,7 +344,6 @@ function postJSON( url, data, callback ){
 }
 
 function handleRoadSubmit() {
-  console.log("Road submit")
   var currentGoal = roadSelect.value;
   var newRoad = editor.getRoad();
   if (!newRoad) {
@@ -361,7 +360,10 @@ function handleRoadSubmit() {
     return;
   }
   if (username) {
+    submitButton.disabled = true
+    submitButton.innerHTML = "Submitting..."
     postJSON("/submitroad/"+currentGoal, newRoad, function(resp) {
+      submitButton.innerHTML = "Submit Changes"
       
       if (resp.error) {
         submitMsg.innerHTML = "ERROR! \""
