@@ -369,7 +369,7 @@ function handleRoadSubmit() {
     window.alert("New road causes derailment!");
     return;
   }
-  if (username) {
+  if (!local) {
     submitButton.disabled = true
     submitButton.innerHTML = "Submitting..."
     postJSON("/submitroad/"+currentGoal, newRoad, function(resp) {
@@ -482,7 +482,8 @@ function initialize() {
     opt.text = "Loading...";
     opt.value = "";
     roadSelect.add(opt);
-  } else prepareGoalSelect(['testroad0.bb','testroad1.bb','testroad2.bb','testroad3.bb'])
+  } else
+    loadGoals(roadSelect.value)
 
   document.onkeydown = documentKeyDown;
 }
