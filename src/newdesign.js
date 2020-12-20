@@ -445,14 +445,14 @@ function initialize() {
                        divTable: divEditorRoad,
                        divDueby: divEditorDueBy,
                        divData: divEditorData,
-                       svgSize: { width: 696, height: 453 },
+                       svgSize: { width: 696, height: 521 },
                        focusRect: { x:0, y:0, width:696, height: 453 },
-                       ctxRect: { x:0, y:453, width:696, height: 32 },
+                       ctxRect: { x:0, y:453, width:696, height: 100 },
                        roadEditor:true,
                        tableHeight:212,
                        maxFutureDays: 365,
-                       showFocusRect: false,
-                       showContext: false,
+                       showFocusRect: true,
+                       showContext: true,
                        onRoadChange: editorChanged})
   editor.showData(document.getElementById("showdata").checked);
   editor.keepSlopes(document.getElementById("keepslopes").checked);
