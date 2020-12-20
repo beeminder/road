@@ -445,7 +445,7 @@ function initialize() {
                        divTable: divEditorRoad,
                        divDueby: divEditorDueBy,
                        divData: divEditorData,
-                       svgSize: { width: 696, height: 521 },
+                       svgSize: { width: 696, height: 553 },
                        focusRect: { x:0, y:0, width:696, height: 453 },
                        ctxRect: { x:0, y:453, width:696, height: 100 },
                        roadEditor:true,
