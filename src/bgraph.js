@@ -175,7 +175,7 @@ let defaults = {
       elements, the corresponding table row is scrolled to be visible in the
       table. This is particularly useful when tableHeight is explicitly
       specified and is nonzero. */ 
-  tableAutoScroll: true,
+  tableAutoScroll: false,
   /** Chooses whether the road matrix table should be dynamically updated
       during the dragging of road knots, dots, and segments. Enabling this may
       induce some lagginess, particularly on Firefox due to more components
