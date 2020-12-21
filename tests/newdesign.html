@@ -46,11 +46,11 @@ t>
 <div id="graph" class="tabcontent" style="display:block;">
   <div id="gsummary" class="summary"></div>
   <div style="margin-right:20px; display:inline-block;vertical-align:top;">
+    <div id="roadgraph" style="width:696px; margin-right:20px; display:inline-block;vertical-align:top;"></div>
     <div style="margin:10px;margin-left:50px;">
       <button id="zoomall" onclick="graph.zoomAll();">View All</button>
       <button id="zoomdflt" onclick="graph.zoomDefault();">Reset Zoom</button>
     </div>
-    <div id="roadgraph" style="min-height:500px;width:696px; margin-right:20px; display:inline-block;vertical-align:top;"></div>
   </div>
 
   <div class="vtabcontainer">
@@ -83,18 +83,23 @@ t>
   <div id="esummary" class="summary"></div>
   <div style="margin-right:20px; display:inline-block;vertical-align:top;">
     <div style="margin:10px;margin-left:50px;">
+      <button id="eundo" onclick="editor.undo();">Undo (0)</button>
+      <button id="eredo" onclick="editor.redo();">Redo (0)</button>
+      <button style="margin-left:10px;" id="submit" onclick="handleRoadSubmit();">Submit</button>
+      <span id="submitmsg">This is where submit msg goes</span>
+    </div>
+    <div id="roadeditor" style="width:696px; margin-right:20px; display:inline-block;vertical-align:top;"></div>
+    <br/>
+    <div style="margin:10px;margin-left:50px;">
       <button id="zoomall" onclick="editor.zoomAll();">View All</button>
       <button id="zoomdflt" onclick="editor.zoomDefault();">Reset Zoom</button>
       <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>
       <label>Show data</label>
-
-      <input style="margin-left:70px" id="keepslopes" type="checkbox"
+      <input style="margin-left:50px" id="keepslopes" type="checkbox"
              onclick="editor.keepSlopes(this.checked)" checked>
       <label>Propagate changes forward</label>
     </div>
-    <div id="roadeditor" style="width:696px; margin-right:20px; display:inline-block;vertical-align:top;"></div>
-    <br/>
-    <button id="submit" style="margin:10px;margin-left:50px;" onclick="handleRoadSubmit();">Submit Changes</button><span id="submitmsg"></span>
+
   </div>
   
   <div style="height:453px;display:inline-block;vertical-align:top;">
@@ -119,9 +124,7 @@ t>
         <button id="commit" onclick="commitTo(false)">UPDATE</button>
       </div>
       <div class="tooltitle">History</div>
-      <button id="eundo" onclick="editor.undo();">Undo (0)</button>
-      <button id="eredo" onclick="editor.redo();">Redo (0)</button>
-      <button id="ereset" onclick="editor.undoAll();">Reset</button><br/><br/>
+      <button id="ereset" onclick="editor.undoAll();">Reset</button>
     </div>
     <div id="edata" class="etabcontent">
       <div class="tooltitle">Past data</div>
@@ -145,12 +148,16 @@ t>
   <div id="ssummary" class="summary"></div>
   <div style="margin-right:20px; display:inline-block;vertical-align:top;">
     <div style="margin:10px;margin-left:50px;">
-      <button id="zoomall" onclick="sandboxgr.zoomAll();">View All</button>
-      <button id="zoomdflt" onclick="sandboxgr.zoomDefault();">Reset Zoom</button>
+      <button id="sundo" onclick="sandbox.undo();">Undo (0)</button>
+      <button id="sredo" onclick="sandbox.redo();">Redo (0)</button>
       <button id="snextday" onclick="sandbox.nextDay();" style="float:right;margin-right:50px;">Next Day</button>
       <button id="srefresh" onclick="sandbox.refresh();" style="float:right;margin-right:5px;">Refresh</button>
     </div>
-    <div id="roadsandbox" style="white-space:normal;min-height:500px;width:696px; margin-right:20px; display:inline-block;vertical-align:top;">
+    <div id="roadsandbox" style="white-space:normal;width:696px; margin-right:20px; display:inline-block;vertical-align:top;">
+    </div>
+    <div style="margin:10px;margin-left:50px;">
+      <button id="zoomall" onclick="sandboxgr.zoomAll();">View All</button>
+      <button id="zoomdflt" onclick="sandboxgr.zoomDefault();">Reset Zoom</button>
     </div>
   </div>
   
@@ -180,8 +187,6 @@ t>
       <input id="sdatacmt" type="text"  style="margin:4px;margin-bottom:10px;height:30px;"></input>
       <button onclick="sandbox.newData(sdataval.value, sdatacmt.value);" style="margin:4px;">Add</button>
       <div class="tooltitle">History</div>
-      <button id="sundo" onclick="sandbox.undo();">Undo (0)</button>
-      <button id="sredo" onclick="sandbox.redo();">Redo (0)</button>
       <button id="sreset" onclick="sandbox.undoAll();">Reset</button><br/><br/>
     </div>
     <div id="sdata" class="stabcontent">

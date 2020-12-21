@@ -242,20 +242,31 @@ function graphChanged() {
   updateSummary(divGraphSummary, graph)
 }
 
+// Asks for confirmation before leaving page
+function editorBeforeUnload(e) {
+  e.preventDefault()
+  e.returnValue = ''
+}
+
 function editorChanged() {
   eload = false
   if (eload || gload) return
   
   let bufStates = editor.undoBufferState();
+  
   if (bufStates.undo === 0)  {
+    window.removeEventListener('beforeunload', editorBeforeUnload);
     d3.select(editorTab).style('color', 'black').text("Editor")
     submitButton.disabled=true
     undoBtn.disabled = true
+    resetBtn.disabled = true
     undoBtn.innerHTML = "Undo (0)"
   } else {
+    window.addEventListener('beforeunload', editorBeforeUnload);
     d3.select(editorTab).style('color', 'red').text("Editor ("+bufStates.undo+")")
     submitButton.disabled=false
-    undoBtn.disabled = false;
+    undoBtn.disabled = false
+    resetBtn.disabled = false
     undoBtn.innerHTML = "Undo ("+bufStates.undo+")";
   }
   if (bufStates.redo === 0)  {
@@ -274,10 +285,10 @@ function editorChanged() {
     submitMsg.innerHTML = "Ill-defined yellow brick road!"
   } else if (!newRoad.valid) {
     submitButton.disabled = true;
-    submitMsg.innerHTML = "Road can't be easier within the akrasia horizon!"
+    submitMsg.innerHTML = "Road can't be easier within the horizon!"
   } else if (newRoad.loser) {
     submitButton.disabled = true
-    submitMsg.innerHTML = "Submitting this road would insta-derail you!"
+    submitMsg.innerHTML = "Submitting this road would insta-derail!"
   } else {
     submitMsg.innerHTML = ""
   }
@@ -384,6 +395,8 @@ function handleRoadSubmit() {
       }
     })
   } else {
+    submitMsg.innerHTML = "<a id=\"download\">Right-click to download SVG</a>";
+    editor.saveGraph(document.getElementById('download'));
     window.alert('new road matrix:\n'+JSON.stringify(editor.getRoad()))
   }
 }
@@ -408,6 +421,7 @@ function initialize() {
   editorTab = document.getElementById("editortab")
   undoBtn = document.getElementById("eundo")
   redoBtn = document.getElementById("eredo")
+  resetBtn = document.getElementById("ereset")
   endSlope = document.getElementById("endslope")
   slopeType = document.getElementById("slopetype");
   submitButton = document.getElementById("submit");
@@ -423,6 +437,7 @@ function initialize() {
   sandboxTab = document.getElementById("sandboxtab")
   undoBtnSandbox = document.getElementById("sundo")
   redoBtnSandbox = document.getElementById("sredo")
+  resetBtnSandbox = document.getElementById("sreset")
   endSlopeSandbox = document.getElementById("sendslope")
   slopeTypeSandbox = document.getElementById("sslopetype");
 

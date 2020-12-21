@@ -146,5 +146,6 @@ button:disabled {
 }
 
 #submitmsg {
-    font-size:120%
+    margin-left:5px;
+    font-size:120%;
 }

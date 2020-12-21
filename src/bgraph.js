@@ -4776,6 +4776,7 @@ function tableSlopeChanged( row, value ) {
 function autoScroll( elt ) {
   if (opts.tableAutoScroll && selection == null && opts.tableHeight !== 0) {
     var topPos = elt.node().offsetTop;
+    console.log(topPos)
     if (opts.divTable != null) {
       tcont.node().scrollTop = topPos-opts.tableHeight/2;
     }
@@ -5262,7 +5263,10 @@ this.undo = () => {
 /** Undoes all edits */
 this.undoAll = () => {
   if (!opts.roadEditor) return
-  while (undoBuffer.length != 0) undoLastEdit()
+  road = undoBuffer.shift()
+  clearUndoBuffer()
+  bbr.setRoadObj(road) // Since popped version is a copy, must inform beebrain
+  roadChanged()
 }
 
 /** Redoes the last edit that was undone */

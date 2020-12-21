@@ -370,6 +370,7 @@
     /** Undoes all edits */
     this.undoAll = (reload=true) => {
       while (undoBuffer.length != 0) undo(reload)
+      redoBuffer = []
     }
     this.saveBB = function(linkelt) {
       var source = JSON.stringify(goal.bb)
