@@ -4769,7 +4769,6 @@ function tableSlopeChanged( row, value ) {
 function autoScroll( elt ) {
   if (opts.tableAutoScroll && selection == null && opts.tableHeight !== 0) {
     let rect = elt.node().parentNode.getBoundingClientRect()
-    console.log(elt.style('border-spacing'))
     if (rect.height == 0) return // Table is most likely invisible
     let eltdata = elt.data()
     var topPos = (eltdata[0].i-1)*(rect.height+1)//+1 is border-spacing of the table
