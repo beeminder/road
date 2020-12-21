@@ -175,7 +175,7 @@ let defaults = {
       elements, the corresponding table row is scrolled to be visible in the
       table. This is particularly useful when tableHeight is explicitly
       specified and is nonzero. */ 
-  tableAutoScroll: false,
+  tableAutoScroll: true,
   /** Chooses whether the road matrix table should be dynamically updated
       during the dragging of road knots, dots, and segments. Enabling this may
       induce some lagginess, particularly on Firefox due to more components
@@ -186,7 +186,7 @@ let defaults = {
   duebyUpdateOnDrag: true,
   /** Chooses whether the road matrix table should include checkboxes for
       choosing the field to be automatically computed */
-  tableCheckboxes: false,
+  tableCheckboxes: true,
   /** Callback function that gets invoked when the road is edited by the user.
       Various interface functions can then be used to retrieve the new road
       state. This is also useful to update the state of undo/redo and submit
@@ -1231,9 +1231,9 @@ function createTable() {
     div.removeChild(div.firstChild)
   }
   var divelt = d3.select(div)
-  var startelt = divelt.append("div").attr("class", "rtablestart")
-  var bodyelt  = divelt.append("div").attr("class", "rtablebody")
-  var goalelt  = divelt.append("div").attr("class", "rtablegoal")
+  var startelt = divelt.append("div").attr("class", "rtbstart")
+  var bodyelt  = divelt.append("div").attr("class", "rtbmain")
+  var goalelt  = divelt.append("div").attr("class", "rtbgoal")
   if (opts.tableHeight != 0) {
     bodyelt.style("max-height", opts.tableHeight+"px")
            .style("overflow-y", "auto")
@@ -4564,13 +4564,8 @@ function updateMovingAv() {
 // Create the table header and body to show road segments
 var tcont, thead, tbody;
 function createRoadTable() {
-  var roadcolumns;
-  if (opts.tableCheckboxes)
-    roadcolumns = ['', '', 'End Date', '', 'Value', '',
-                   'Daily Slope', ''];
-  else
-    roadcolumns = ['', '', 'End Date', 'Value', 'Daily Slope', ''];
-  tcont = d3.select(opts.divTable).select(".rtablebody");
+  // The main road table doe not have a header
+  tcont = d3.select(opts.divTable).select(".rtbmain");
   thead = d3.select(opts.divTable).select(".rtable");
   tbody = thead.append('div').attr('class', 'roadbody');
 }
@@ -4579,22 +4574,20 @@ function createRoadTable() {
 var sthead, stbody, sttail;
 function createStartTable() {
   var startcolumns, tailcolumns;
-  if (opts.tableCheckboxes)
-    startcolumns = ['', '', 'Start Date', '', 'Value', ''];
-  else
-    startcolumns = ['', '', 'Start Date', 'Value', ''];
-
-  sthead = d3.select(opts.divTable).select(".rtablestart");
+  if (opts.roadEditor) {
+    startcolumns = ['', 'Start Date', 'Value', '', '']
+    tailcolumns = ['', 'End Date', 'Value', 'Daily Slope', '']
+  } else {
+    startcolumns = ['', 'Start Date', 'Value', '']
+    tailcolumns = ['', 'End Date', 'Value', 'Daily Slope']
+  }    
+  sthead = d3.select(opts.divTable).select(".rtbstart")
   sthead.append("div").attr('class', 'roadhdr')
     .append("div").attr('class', 'roadhdrrow')
     .selectAll("span.roadhdrcell").data(startcolumns)
     .enter().append('span').attr('class', 'roadhdrcell')
     .text((c)=>c);
   stbody = sthead.append('div').attr('class', 'roadbody'); 
-  if (opts.tableCheckboxes)
-    tailcolumns = ['', '', 'End Date', '', 'Value', '', 'Daily Slope'];
-  else
-    tailcolumns = ['', '', 'End Date', 'Value', 'Daily Slope'];
   sttail = sthead.append("div").attr('class', 'roadhdr');
   sttail.append("div").attr('class', 'roadhdrrow')
     .selectAll("span.roadhdrcell").data(tailcolumns)
@@ -4606,11 +4599,11 @@ function createStartTable() {
 var ghead, gbody
 function createGoalTable() {
   var goalcolumns
-  if (opts.tableCheckboxes)
-    goalcolumns = ['', '', 'Goal Date', '', 'Value', '', 'Daily Slope'];
-  else
-    goalcolumns = ['', '', 'Goal Date', 'Value', 'Daily Slope'];
-  ghead = d3.select(opts.divTable).select(".rtablegoal");
+  if (opts.roadEditor)
+    goalcolumns = ['', 'Goal Date', 'Value', 'Daily Slope', '', '']
+  else goalcolumns = ['', 'Goal Date', 'Value', 'Daily Slope']
+
+  ghead = d3.select(opts.divTable).select(".rtbgoal");
   ghead.append("div").attr('class', 'roadhdr')
     .append("div").attr('class', 'roadhdrrow')
     .selectAll("span.roadhdrcell").data(goalcolumns)
@@ -4629,13 +4622,13 @@ function updateTableTitles() {
   if (gol.runits === 'y') ratetext = "Yearly Slope";
 
   var roadcolumns, goalcolumns
-  if (opts.tableCheckboxes) {
-    roadcolumns = ['', '', 'End Date',  '', 'Value', '', ratetext, '']
-    goalcolumns = ['', '', 'Goal Date', '', 'Value', '', ratetext, '']
+  if (opts.roadEditor) {
+    roadcolumns = ['', 'End Date',  'Value', ratetext, '', '']
+    goalcolumns = ['', 'Goal Date', 'Value', ratetext, '', '']
   } else {
-    roadcolumns = ['', '', 'End Date',  'Value', ratetext, '']
-    goalcolumns = ['', '', 'Goal Date', 'Value', ratetext, '']
-  }
+    roadcolumns = ['End Date',  'Value', ratetext]
+    goalcolumns = ['', 'Goal Date', 'Value', ratetext]
+  }    
   sttail.selectAll("span.roadhdrcell").data(roadcolumns).text((c)=>c)
   thead.selectAll("span.roadhdrcell").data(roadcolumns).text((c)=>c)
   ghead.selectAll("span.roadhdrcell").data(goalcolumns).text((c)=>c)
@@ -4775,9 +4768,13 @@ function tableSlopeChanged( row, value ) {
 
 function autoScroll( elt ) {
   if (opts.tableAutoScroll && selection == null && opts.tableHeight !== 0) {
-    var topPos = elt.node().offsetTop;
+    let rect = elt.node().parentNode.getBoundingClientRect()
+    console.log(elt.style('border-spacing'))
+    if (rect.height == 0) return // Table is most likely invisible
+    let eltdata = elt.data()
+    var topPos = (eltdata[0].i-1)*(rect.height+1)//+1 is border-spacing of the table
     if (opts.divTable != null) {
-      tcont.node().scrollTop = topPos-opts.tableHeight/2;
+      tcont.node().scrollTop = topPos-opts.tableHeight/2
     }
   }
 }
@@ -4886,7 +4883,7 @@ function updateTableButtons() {
   if (opts.divTable == null) return
   // Update buttons on all rows at once, including the start node.
   var allrows = d3.select(opts.divTable)
-        .selectAll(".rtablestart .roadrow, .rtable .roadrow, .rtablegoal .roadrow")
+        .selectAll(".rtbstart .roadrow, .rtable .roadrow, .rtbgoal .roadrow")
   var btncells = allrows.selectAll(".roadbtn")
         .data(function(row, i) {
           // The table row order is reversed, which means that the
@@ -4895,26 +4892,12 @@ function updateTableButtons() {
           var kind
           if (opts.reverseTable) kind = road.length-2-i
           else kind = i
-          if (opts.tableCheckboxes) 
-            return [
-              {order: -1, row:kind, name: "btndel"+kind, evt: ()=>removeKnot(kind,false), 
-               type: 'button', txt: 'del', auto: false},
-              {order: 3, row:kind, name: "btndate"+kind, evt: ()=>disableDate(kind),
-               type: 'checkbox', txt: 'r', auto: (row.auto==br.RP.DATE)},
-              {order: 5, row:kind, name: "btnvalue"+kind, evt: ()=>disableValue(kind), 
-               type: 'checkbox', txt: 'r', auto: (row.auto==br.RP.VALUE)},
-              {order: 7, row:kind, name: "btnslope"+kind, evt: ()=>disableSlope(kind),
-               type: 'checkbox', txt: 'r', auto: (row.auto==br.RP.SLOPE)},
-              {order: 8, row:kind, name: "btnadd"+kind, evt: ()=>addNewKnot(kind+1), 
-               type: 'button', txt: 'ins', auto: false},
-            ];
-          else
-            return [
-              {order: -1, row:kind, name: "btndel"+kind, evt: ()=>removeKnot(kind,false), 
-               type: 'button', txt: 'del', auto: false},
-              {order: 8, row:kind, name: "btnadd"+kind, evt: ()=>addNewKnot(kind+1),
-               type: 'button', txt: 'ins', auto: false},
-            ];
+          return [
+            {order: 8, row:kind, name: "btndel"+kind, evt: ()=>removeKnot(kind,false), 
+             type: 'button', txt: 'del', auto: false},
+            {order: 9, row:kind, name: "btnadd"+kind, evt: ()=>addNewKnot(kind+1),
+             type: 'button', txt: 'ins', auto: false},
+          ];
         })
   
   var newbtncells = btncells.enter().append("input")
@@ -4930,7 +4913,7 @@ function updateTableButtons() {
   
   btncells.exit().remove()
   btncells = allrows.selectAll(
-    ".rtablestart .roadbtn, .rtable .roadbtn, .rtablegoal .roadbtn")
+    ".rtbstart .roadbtn, .rtable .roadbtn, .rtbgoal .roadbtn")
   btncells
     .attr('id', (d)=>d.row)
     .attr('name', (d)=>d.name)
@@ -4945,7 +4928,7 @@ function updateTableButtons() {
     .sort((a,b)=>d3.ascending(a.order,b.order))
 
   if (!opts.roadEditor) {
-    allrows.selectAll(".roadbtn").style('visibility', "collapse")
+    allrows.selectAll(".roadbtn").style('display', "none")
       .attr("value","")
   }
 }
@@ -5058,10 +5041,10 @@ function updateTableValues() {
 
   if (road.length <=3) {
     sttail.style("visibility", "collapse")
-    d3.select(opts.divTable).select(".rtablebody").style("display", "none")
+    d3.select(opts.divTable).select(".rtbmain").style("display", "none")
   } else {
     sttail.style("visibility", null)
-    d3.select(opts.divTable).select(".rtablebody").style("display", null)
+    d3.select(opts.divTable).select(".rtbmain").style("display", null)
   }
 
   updateTableWidths()
@@ -5216,13 +5199,13 @@ this.reverseTable = ( flag ) => {
   if (arguments.length > 0) {
     opts.reverseTable = flag
     if (opts.reverseTable) {
-      d3.select(opts.divTable).select(".rtablegoal").raise()
-      d3.select(opts.divTable).select(".rtablebody").raise()
-      d3.select(opts.divTable).select(".rtablestart").raise()
+      d3.select(opts.divTable).select(".rtbgoal").raise()
+      d3.select(opts.divTable).select(".rtbmain").raise()
+      d3.select(opts.divTable).select(".rtbstart").raise()
     } else {
-      d3.select(opts.divTable).select(".rtablestart").raise()
-      d3.select(opts.divTable).select(".rtablebody").raise()
-      d3.select(opts.divTable).select(".rtablegoal").raise()
+      d3.select(opts.divTable).select(".rtbstart").raise()
+      d3.select(opts.divTable).select(".rtbmain").raise()
+      d3.select(opts.divTable).select(".rtbgoal").raise()
     }
     updateTable()
   }

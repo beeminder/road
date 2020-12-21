@@ -80,20 +80,20 @@ svg text::selection { background: none; }
                background-color: white;
                font-size:        90%;              }
 
-.rtablebody, 
-.rtablestart {  padding:          1px 0px 4px 0px;
-           border:           1px solid transparent;
-           border-collapse:  separate;
-           border-spacing:   8px 1px;                }
-.rtablegoal {  border-collapse:  separate;
-               background-color: #eeffee;
-               padding:          0px 0px 5px 0px;
-               margin:           8px 0px 4px 0px;
-               border:           1px solid black;
-               border-collapse:  separate;
-               border-spacing:   8px 1px;                }
+.rtbmain, 
+.rtbstart {  padding:          1px 0px 4px 0px;
+             border:           1px solid transparent;
+             border-collapse:  separate;
+             border-spacing:   8px 1px;                }
+.rtbgoal {  border-collapse:  separate;
+            background-color: #eeffee;
+            padding:          0px 0px 5px 0px;
+            margin:           8px 0px 4px 0px;
+            border:           1px solid black;
+            border-collapse:  separate;
+            border-spacing:   8px 1px;                }
 
-.rtablegoal .rowid { visibility: hidden; }
+.rtbgoal .rowid { visibility: hidden; }
 
 div.roadcell { min-width: 95px; }
 div.rowid    { min-width: 35px; }
