@@ -223,6 +223,27 @@ app.post("/submitroad/:goal", (req, resp)=>{
   })
 })
 
+app.post("/submitpoint/:goal", (req, resp)=>{
+  setsession(req)
+  if(!req.session.access_token || !req.session.username) {
+    resp.redirect('/login')
+  }
+  beemSubmitPoint({
+    usr: req.session.username,
+    gol: req.params.goal,
+    access_token: req.session.access_token,
+    daystamp: req.body.daystamp,
+    timestamp: req.body.timestamp,
+    value: req.body.value,
+    comment: req.body.comment
+  }, function(error, response, body) {
+    if (error) {
+      return console.error('submit point failed:', error);
+    }
+    resp.send(body)
+  })
+})
+
 // helper functions
 function beemSubmitRoad(params, callback) {
   var options = {
@@ -234,8 +255,25 @@ function beemSubmitRoad(params, callback) {
       roadall: params.roadall
     }
   }
-  //console.log(options)
+  console.log(options)
   request.put(options, callback)
+}
+
+function beemSubmitPoint(params, callback) {
+  let r = Math.random().toString(36).substring(7)
+  var options = {
+    url: 'https://www.beeminder.com/api/v1/users/'+params.usr+'/goals/'+params.gol+'/datapoints.json',
+    method: 'POST',
+    json: true,
+    form: {
+      access_token: params.access_token,
+      daystamp: params.daystamp,
+      comment: params.comment,
+      value: params.value,
+      requestid: r
+    }
+  }
+  request.post(options, callback)
 }
 
 function beemGetUser(user, callback, error_callback = ()=>{}) {
@@ -251,7 +289,6 @@ function beemGetUser(user, callback, error_callback = ()=>{}) {
       data = data + chunk
     }).on('end', () => {
       var userd = JSON.parse(data)
-      //console.log(userd)
       if(userd) { //???? what's an error look like here?
         callback(userd.goals)
       } else {
