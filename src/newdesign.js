@@ -70,6 +70,7 @@ let roadSelect
 // DOM components for the graph tab
 let divGraph,divGraphRoad,divGraphDueBy,divGraphData
 let divGraphProgress,divGraphSummary
+let dataDate, dataValue, dataComment, dataAdd
 
 // DOM components for the editor tab
 let divEditor,divEditorTable,divEditorDueBy,divEditorData
@@ -82,6 +83,9 @@ let divSandbox,divSandboxTable,divSandboxDueBy,divSandboxData
 let divSandboxProgress,divSandboxSummary
 let sandboxTab, undoBtnSandbox, redoBtnSandbox
 let endSlopeSandbox, slopeTypeSandbox
+
+// Variables for data submission
+let datePicker
 
 // Handles sub-tab button events for the graph
 function openGraphTab(evt, tabName) {
@@ -240,6 +244,9 @@ function graphChanged() {
   gload = false
   updateProgress(divGraphProgress, graph)
   updateSummary(divGraphSummary, graph)
+  dataDate.value = ""
+  setEntryToday()
+  dataAdd.disabled = false
 }
 
 // Asks for confirmation before leaving page
@@ -360,7 +367,6 @@ function postJSON( url, data, callback ){
       callback(JSON.parse(xhr.responseText));
     }
   };
-  console.log("posting data to "+url);
   xhr.send(JSON.stringify(data));
 }
 
@@ -400,6 +406,40 @@ function handleRoadSubmit() {
     window.alert('new road matrix:\n'+JSON.stringify(editor.getRoad()))
   }
 }
+
+function handleDataSubmit() {
+  let currentGoal = roadSelect.value;
+  let date = butil.dayify(butil.dayparse(dataDate.value,'-'))
+  let value = dataValue.value
+  let comment = dataComment.value
+  let params = {"daystamp":date, "value":value, "comment":comment}
+  if (isNaN(value) || value == "") {
+    window.alert("Invalid value entry");
+    return;
+  }
+  if (!local) {
+    dataAdd.disabled = true
+    dataAdd.innerHTML = "ADDING..."
+    postJSON("/submitpoint/"+currentGoal, params, function(resp) {
+      dataAdd.innerHTML = "ADD PROGRESS"
+      
+      if (resp.error) {
+        console.log("ERROR! \""+resp.error)
+      } else {
+        loadGoals(currentGoal)
+      }
+    })
+  } else {
+    submitMsg.innerHTML = "<a id=\"download\">Right-click to download SVG</a>";
+    window.alert('new datapoint: \n'+JSON.stringify(params))
+  }
+}
+
+function setEntryToday() {
+  var today=moment().format("YYYY-MM-DD")
+  if (!dataDate.value.trim()) datePicker.setDate(today)
+}
+
 function initialize() {
   roadSelect = document.getElementById('roadselect')
   
@@ -500,5 +540,13 @@ function initialize() {
   } else
     loadGoals(roadSelect.value)
 
+  dataDate = document.getElementById('datadate')
+  dataValue = document.getElementById('datavalue')
+  dataComment = document.getElementById('datacmt')
+  dataAdd = document.getElementById('dataadd')
+
+  datePicker = new Pikaday({field: dataDate})
+  setEntryToday()
+  
   document.onkeydown = documentKeyDown;
 }

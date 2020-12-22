@@ -58,9 +58,22 @@
     <div class="vtab">
       <button class="gtablinks" onclick="openGraphTab(event, 'road')">Road</button>
       <button class="gtablinks" onclick="openGraphTab(event, 'stats')">Stats</button>
-      <button class="gtablinks active" onclick="openGraphTab(event, 'data')">Data</button>
+      <button class="gtablinks" onclick="openGraphTab(event, 'data')">Data</button>
+      <button class="gtablinks active" onclick="openGraphTab(event, 'entry')">Entry</button>
     </div>
-    <div id="data" class="gtabcontent" style="display:block;">
+    <div id="entry" class="gtabcontent" style="display:block;">
+      <div class="tooltitle">Enter data</div>
+      <div style="width:280px;padding:10px 20px; box-shadow:0 0 6px #ccc;">
+        Date:<br/>
+        <input id="datadate" type="text" class="dateentry" contenteditable="true"></input><br/>
+        Value:<br/>
+        <input id="datavalue" type="number" class="valueentry" contenteditable="true"></input><br/>
+        Optional comment:<br/>
+        <input id="datacmt" type="text" class="cmtentry" contenteditable="true"></input><br/>
+        <button style="width:256px;" id="dataadd" onclick="handleDataSubmit()">ADD PROGRESS</button>
+      </div>
+    </div>
+    <div id="data" class="gtabcontent">
       <div class="tooltitle">Past data</div>
       <div id="graphdata">
         <input class="data-range" type="range" step="0.5" value="5" min="1" max="10">
