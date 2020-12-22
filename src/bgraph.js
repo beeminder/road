@@ -2237,9 +2237,9 @@ var selection  = null
 var selectType = null
 var selectelt  = null
 
-function selectKnot(kind) {
+function selectKnot(kind, scroll = true) {
   if (opts.divGraph == null) return
-  highlightDate( kind, true )
+  highlightDate( kind, true, scroll )
   selection = kind
   selectType = br.RP.DATE
   d3.select("[name=knot"+kind+"]").attr("stroke-width", r3(opts.roadKnot.width))
@@ -2260,9 +2260,9 @@ function unselectKnot(kind) {
   d3.select("[name=knot"+kind+"]").attr("stroke",       opts.roadKnotCol.dflt)
                                   .attr("stroke-width", r3(opts.roadKnot.width))
 }
-function selectDot(kind) {
+function selectDot(kind, scroll=true) {
   if (opts.divGraph == null) return
-  highlightValue(kind, true)
+  highlightValue(kind, true, scroll)
   selection = kind
   selectType = br.RP.VALUE
   d3.select("[name=dot"+kind+"]").attr("r", r3(opts.roadDot.size))
@@ -2281,9 +2281,9 @@ function unselectDot(kind) {
   d3.select("[name=dot"+kind+"]").attr("fill", opts.roadDotCol.editable)
                                  .attr("r",    r3(opts.roadDot.size))
 }
-function selectRoad(kind) {
+function selectRoad(kind, scroll = true) {
   if (opts.divGraph == null) return
-  highlightSlope(kind, true)
+  highlightSlope(kind, true, scroll)
   selection = kind
   selectType = br.RP.SLOPE
   d3.select("[name=road"+kind+"]")
@@ -4656,7 +4656,7 @@ function tableFocusIn( d, i ){
   var kind = Number(focusField.node().parentNode.id);
   if (selection != null) clearSelection();
   if (i == 0) {
-    selectKnot(kind);
+    selectKnot(kind, false);
     if (datePicker != null) {
       datePicker.destroy();
       datePicker = null;
@@ -4693,9 +4693,9 @@ function tableFocusIn( d, i ){
       .style('top', (bbox.bottom+3-tlbox.top)+"px");
     floating.node().appendChild(datePicker.el, this)
   } else if (i == 1) {
-    selectDot(kind)
+    selectDot(kind, false)
   } else if (i == 2) {
-    selectRoad(kind)
+    selectRoad(kind, false)
   }
 }
 
@@ -4778,18 +4778,18 @@ function autoScroll( elt ) {
   }
 }
 /** Highlights the date for the ith knot if state=true. Normal color otherwise*/
-function highlightDate(i, state) {
+function highlightDate(i, state, scroll = true) {
   if (opts.divTable == null) return;
-  var color = (state)
-        ?opts.roadTableCol.bgHighlight:
-        (road[i].auto==0?opts.roadTableCol.bgDisabled:opts.roadTableCol.bg);
-  var elt = d3.select(opts.divTable)
-        .select('.roadrow [name=enddate'+i+']');
+  let color = (state)
+      ?opts.roadTableCol.bgHighlight:
+      (road[i].auto==0?opts.roadTableCol.bgDisabled:opts.roadTableCol.bg);
+  let elt = d3.select(opts.divTable)
+      .select('.roadrow [name=enddate'+i+']');
   if (elt.empty()) return;
   elt.style('background-color', color);
-  autoScroll(elt);
+  if (scroll && state) autoScroll(elt);
 }
-function highlightValue(i, state) {
+function highlightValue(i, state, scroll = true) {
   if (opts.divTable == null) return;
   var color = (state)
         ?opts.roadTableCol.bgHighlight:
@@ -4798,9 +4798,9 @@ function highlightValue(i, state) {
         .select('.roadrow [name=endvalue'+i+']');
   if (elt.empty()) return;
   elt.style('background-color', color);
-  autoScroll(elt);
+  if (scroll && state) autoScroll(elt);
 }
-function highlightSlope(i, state) {
+function highlightSlope(i, state, scroll = true) {
   if (opts.divTable == null) return;
   var color = (state)
         ?opts.roadTableCol.bgHighlight:
@@ -4809,7 +4809,7 @@ function highlightSlope(i, state) {
         .select('.roadrow [name=slope'+i+']');
   if (elt.empty()) return;
   elt.style('background-color', color);  
-  autoScroll(elt);
+  if (scroll && state) autoScroll(elt);
 }
 function disableDate(i) {
   road[i].auto=br.RP.DATE;
