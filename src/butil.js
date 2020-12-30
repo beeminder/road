@@ -139,7 +139,7 @@ self.isArray = Array.isArray
    @param {boolean} owr Whether to overwrite existing properties of destination
 */
 self.extend = (to, fr, owr) => {
-  var prop, hasProp
+  let prop, hasProp
   for (prop in fr) {
     hasProp = to[prop] !== undefined
     if (hasProp && typeof fr[prop] === 'object' 
@@ -174,8 +174,8 @@ self.deepcopy = (x) => {
 */
 self.argmax = (f, dom) => {
   if (dom === null) return null
-  var newdom = dom.map(f)
-  var maxelt = self.arrMax(newdom)
+  let newdom = dom.map(f)
+  let maxelt = self.arrMax(newdom)
   return dom[newdom.findIndex(e => e === maxelt)]
 }
 
@@ -188,8 +188,8 @@ self.argmax = (f, dom) => {
     @param {Number} d Sublist separation
 */
 self.partition = (l, n, d) => {
-  var il = l.length
-  var ol = []
+  let il = l.length
+  let ol = []
   for (let i=0; i < il; i+=d) if (i+n <= il) ol.push(l.slice(i,i+n))
   return ol
 }
@@ -197,7 +197,7 @@ self.partition = (l, n, d) => {
 /** Returns a list containing the fraction and integer parts of a float
     @param {Number} f Input number */
 self.modf = (f) =>{
-  var fp = (f<0)?-f:f, fl = floor(fp)
+  let fp = (f<0)?-f:f, fl = floor(fp)
   return (f<0)?[-(fp-fl),-fl]:[(fp-fl),fl]
 }
 
@@ -212,12 +212,12 @@ self.modf = (f) =>{
       is sorted
 */
 self.quantile = (l, q, qt=1, issorted=false) => {
-  var y
+  let y
   if (issorted) y = l
   else y = l.slice().sort((a,b)=>(a-b))
   if (qt < 1 || qt > 9) return null // error
   
-  var abcd = [         // Parameters for the Hyndman and Fan algorithm
+  let abcd = [         // Parameters for the Hyndman and Fan algorithm
     [0,   0,   1, 0],  // R type 1: inv. emp. CDF (mathematica's default)
     [1/2, 0,   1, 0],  // R type 2: similar to type 1, averaged
     [1/2, 0,   0, 0],  // R type 3: nearest order statistic (SAS)
@@ -252,7 +252,7 @@ self.sum = (l) => (l.reduce((a,b)=>(a+b), 0))
  @param {Array} l Array of second arguments to the function
 */
 self.foldlist = (f, x, l) => {
-  var out = [x]
+  let out = [x]
   for (let i = 0; i < l.length; i++)
     out.push(f(out[i], l[i]))
   return out
@@ -262,9 +262,9 @@ self.foldlist = (f, x, l) => {
     left to right 
     @param {Number[]} l*/
 self.accumulate = (l) => {
-  var ne = l.length
+  let ne = l.length
   if (ne === 0) return l
-  var nl = [l[0]]
+  let nl = [l[0]]
   for (let i = 1; i < ne; i++) nl.push(nl[nl.length-1]+l[i])
   return nl
 }
@@ -276,7 +276,7 @@ self.accumulate = (l) => {
     @param {Number} [dir=1] Direction to monotonize: 1 or -1
 */
 self.monotonize = (l, dir=1) => {
-  var lo = l.slice(), i
+  let lo = l.slice(), i
   if (dir === 1) {
     for (i = 1; i < lo.length; i++) lo[i] = max(lo[i-1],lo[i])
   } else {
@@ -298,7 +298,7 @@ self.chop = (x, delta=1e-7) => (abs(x) < delta ? 0 : x)
     @param {Number} x Input number
     @param {Number} [delta=1e-7] Tolerance */
 self.ichop = (x, delta=1e-7) => {
-  var fp = x % 1, ip = x - fp
+  let fp = x % 1, ip = x - fp
   if (fp < 0) {fp += 1; ip -= 1;}
   if (fp > 0.5) fp = 1 - self.chop(1-fp)
   return floor(ip) + self.chop(fp, delta)
@@ -309,7 +309,7 @@ self.ichop = (x, delta=1e-7) => {
     @param {Number} a left boundary
     @param {Number} b right boundary */
 self.clip = (x, a, b) => {
-  if (a > b) { var tmp=a; a=b; b=tmp }
+  if (a > b) { let tmp=a; a=b; b=tmp }
   if (x < a) x = a
   if (x > b) x = b
   return x
@@ -564,7 +564,7 @@ self.conservaround = (x, r=1, e=0) => {
 self.linspace = (a, b, n) => {
   if (typeof n === "undefined") n = max(round(b-a)+1, 1)
   if (n < 2) return n===1 ? [a] : []
-  var i,ret = Array(n)
+  let i,ret = Array(n)
   n--
   for (i=n; i>=0; i--) ret[i] = (i*b+(n-i)*a)/n
   return ret
@@ -583,7 +583,7 @@ self.linspace = (a, b, n) => {
     @param {Number} d Right boundary of output
     @param {Boolean} [clipQ=true] When false, sort a,b and c,d first */
 self.cvx = (x, a,b, c,d, clipQ=true) => {
-  var tmp
+  let tmp
   if (self.chop(a-b) === 0) {
     if (x <= a) return min(c,d)
     else        return max(c,d)
@@ -621,7 +621,7 @@ self.orderedq = (l) => {
 /** Whether all elements in a list are zero
     @param {Number[]} a Input list*/
 self.nonzero = (a) => {
-  var l = a.length, i
+  let l = a.length, i
   for (i = 0; i < l; i++) if (a[i] !== 0) return true
   return false
 }
@@ -638,7 +638,7 @@ self.clocky = (a) => {
 /** Arithmetic mean of values in list a
     @param {Number[]} a Input list*/
 self.mean = (a) => {
-  var s = 0, l = a.length, i
+  let s = 0, l = a.length, i
   if (l == 0) return 0
   for(i = 0; i < l; i++) s += a[i]
   return s / a.length
@@ -647,7 +647,7 @@ self.mean = (a) => {
 /** Median of values in list a
     @param {Number[]} a Input list*/
 self.median = (a) => {
-  var m = 0, l = a.length
+  let m = 0, l = a.length
   a.sort((a,b)=>a-b)
   if (l % 2 === 0) m = (a[l/2-1] + a[l/2]) / 2
   else m = a[(l-1) / 2]
@@ -701,7 +701,7 @@ self.nearEq = (a, b, eps) => abs(a-b) < eps
  @param {moment} m Moment object
  @param {Number} days Number of days to add */
 self.addDays = (m, days) => {
-  var result = moment(m)
+  let result = moment(m)
   result.add(days, 'days')
   return result
 }
@@ -713,7 +713,7 @@ function isnum(x) { return x - parseFloat(x) + 1 >= 0 }
 
 // Take a Date object, set the time back to midnight, return new Date object
 function dayfloor(d) {
-  var x = new Date(d)
+  let x = new Date(d)
   x.setHours(0)
   x.setMinutes(0)
   x.setSeconds(0)
@@ -725,8 +725,8 @@ function dayfloor(d) {
 // matches that time of day
 function dateat(t=0) {
   if (isNaN(t)) { return null }
-  var now = new Date()
-  var d = new Date()
+  let now = new Date()
+  let d = new Date()
   d.setTime(dayfloor(d).getTime() + 1000*t)
   if (d < now) { d.setTime(d.getTime() + 1000*86400) }
   return d  
@@ -747,7 +747,7 @@ function dob(t=null) {
 // [Tested, works, at least for current and future timestamps]
 // Takes unixtime and returns time of day represented as seconds after midnight.
 function TODfromUnixtime(t) {
-  var offset = new Date().getTimezoneOffset()
+  let offset = new Date().getTimezoneOffset()
   return (t - offset*60) % 86400
 }
 */
@@ -755,7 +755,7 @@ function TODfromUnixtime(t) {
 /** Fixes the supplied unixtime to 00:00:00 on the same day (uses Moment)
     @param {Number} ut Unix time  */
 self.daysnap = (ut) => {
-  var d = moment.unix(ut).utc()
+  let d = moment.unix(ut).utc()
   d.hours(0)
   d.minutes(0)
   d.seconds(0)
@@ -766,7 +766,7 @@ self.daysnap = (ut) => {
 /** Scooches unixtime ut to 00:00:00 on the first of the month (uses Moment)
     @param {Number} ut Unix time  */
 self.monthsnap = (ut) => {
-  var d = moment.unix(ut).utc()
+  let d = moment.unix(ut).utc()
   d.date(1).hours(0).minutes(0).seconds(0).milliseconds(0)
   return d.unix()
 }
@@ -775,7 +775,7 @@ self.monthsnap = (ut) => {
     same year (uses moment)
     @param {Number} ut Unix time  */
 self.yearsnap = (ut) => {
-  var d = moment.unix(ut).utc()
+  let d = moment.unix(ut).utc()
   d.month(0).date(1).hours(0).minutes(0).seconds(0).milliseconds(0)
   return d.unix()
 }
@@ -783,11 +783,11 @@ self.yearsnap = (ut) => {
 /** Formats the supplied unix time as YYYY.MM.DD
     @param {Number} ut Unix time  */
 self.formatDate = (ut) => {
-  var mm = moment.unix(ut).utc()
-  var year = mm.year()
-  var month = (mm.month()+1)
+  let mm = moment.unix(ut).utc()
+  let year = mm.year()
+  let month = (mm.month()+1)
   month = month < 10 ? "0"+month.toString() : month.toString()
-  var day = mm.date()
+  let day = mm.date()
   day= day < 10 ? "0"+day.toString() : day.toString()
   return year+"."+month+"."+day
 }
@@ -795,12 +795,12 @@ self.formatDate = (ut) => {
 /** Formats the supplied unix time as YYYY.MM.DD HH.MM.SS
     @param {Number} ut Unix time  */
 self.formatDateTime = (ut) => {
-  var mm = moment.unix(ut).utc()
-  var hour = mm.hour()
+  let mm = moment.unix(ut).utc()
+  let hour = mm.hour()
   hour = hour < 10 ? "0"+hour.toString() : hour.toString()
-  var minute = mm.minute()
+  let minute = mm.minute()
   minute = minute < 10 ? "0"+minute.toString() : minute.toString()
-  var second = mm.second()
+  let second = mm.second()
   second = second < 10  ? "0"+second.toString() : second.toString()
   return self.formatDate(ut)+" "+hour+":"+minute+":"+second
 }
@@ -841,10 +841,10 @@ self.dayparse = (s, sep='') => {
 self.dayify = (t, sep = '') => {
   if (isNaN(t) || t < 0) { return "ERROR" }
   if (t == null) return null
-  var mm = moment.unix(t).utc()
-  var y = mm.year()
-  var m = mm.month() + 1
-  var d = mm.date()
+  let mm = moment.unix(t).utc()
+  let y = mm.year()
+  let m = mm.month() + 1
+  let d = mm.date()
   return '' + y + sep + (m < 10 ? '0' : '') + m + sep + (d < 10 ? '0' : '') + d
 }
   
@@ -887,7 +887,7 @@ self.sint = (x) => round(x).toString()
 self.loadJSON = (url) => {   
   return new Promise(function(resolve, reject) {
     if (url === "") resolve(null)
-    var xobj = new XMLHttpRequest()
+    let xobj = new XMLHttpRequest()
     xobj.overrideMimeType("application/json")
     xobj.onreadystatechange = function () {
       if (xobj.readyState == 4 
