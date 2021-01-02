@@ -3269,80 +3269,71 @@ function updateContextHorizon() {
 
 function updateYBHP() {
   if (processing) return
-
   if (opts.divGraph == null || road.length == 0) return
-  let regions
   
   // Count all previously generated ybhp path elements on the current svg graph
   // so we can remove unused ones automatically 
   const ybhpreg   = d3.selectAll("#svg"+curid+" #ybhpgrp path")
   const ybhplines = d3.selectAll("#svg"+curid+" #ybhplinesgrp path")
   const prevcnt = ybhpreg.size()+ybhplines.size()
-  // NOTE: Currently must have a region covering the wrong side of the road,
-  // even if it's white, to cover incorrect sections of isolines and other
-  // regions.  OH HEY THIS IS FIXED NOW YAY #SCHDEL
 
   // Region format: From d to D days to derailment (if d=D it's a region
-  // boundary, i.e., an isoline of the DTD function), use fill-color
-  // fcolor, stroke-color scolor, stroke-width w, and fill-opacity op.
-  // Finally, xrange, a list like [xmin, xmax], gives the x-axis range to
-  // apply it to. If xrange=null, use [-infinity, infinity].
+  // boundary, i.e., an isoline of the DTD function), use fill-color fcolor,
+  // stroke-color scolor, stroke-width w, and fill-opacity op.
+  // Finally, xrange, a list like [xmin, xmax], gives the x-axis range to apply
+  // it to. If xrange=null, use [-infinity, infinity].
 
-  const xrfull   = [gol.tini, gol.tfin]       // x-axis range tini-tfin
-  const xrakr    = [gol.asof, gol.asof+7*SID] // now to akrasia horiz.
-  const bgreen   = bu.Cols.RAZR3
+  const xrfull   = [gol.tini, gol.tfin]       // x-axis range tini to tfin
+  const xrakr    = [gol.asof, gol.asof+7*SID] // now to akrasia horizon
+  const bgreen   = bu.Cols.RAZR3 // bu.Cols.GRNDOT // was RAZR3
   const bblue    = bu.Cols.RAZR2
   const borange  = bu.Cols.RAZR1
   const lyellow  = "#ffff88" // light yellow same as LYEL for classic YBR
-  //const gsideyel = gol.shadeit ? lyellow : "none" // good side maybe shaded
-  const gsw      = .99 // stroke width for guiding lines
-  const gfo      = 1   // fill-opacity for guiding lines -- may not matter
+  const gsw      = .99  // stroke width for guiding lines
+  const gfo      = 1    // fill-opacity for guiding lines -- may not matter
   const rfo      = 0.72 // fill-opacity for regions
+  const inf      = (gol.tfin-gol.tini)/SID // num safe days counting as infinite
 
-  if (gol.maxflux > 0) { // slightly unDRY here
-    regions = [
-      //[ 2, -1, gsideyel,  "none",    0, rfo, xrfull], // whole good half-plane
-      [ 0,  2, lyellow,   "none",    0, rfo, xrfull], // YBR equivalent
-      //[ 0, -2, "#fff5f5", "none",    0,   1, xrakr],  // nozone/oinkzone
+  const regionsMaxflux = [
+  //[  d,  D, fcolor,    scolor,    w,  op, xrange]
+  //----------------------------------------------------------------------------
+    [  0,  2, lyellow,   "none",    0, rfo, xrfull], // mimic old lanes
+  //[  0, -2, "#fff5f5", "none",    0,   1, xrakr ], // nozone/oinkzone
+    [inf, -1, lyellow,   "none",    0, rfo, xrfull], // infinitely safe region
+  ]
+  const regionsNormal = [
+  //[  d,  D, fcolor,    scolor,    w,  op, xrange]
+  //----------------------------------------------------------------------------
+  //[  6, -1, "#b2e5b2", "none",    0, rfo, xrfull], // safe/gray region
+    [  6,  6, "none",    bgreen,  gsw, gfo, xrfull], // 1-week isoline
+  //[  2,  6, "#cceecc", "none",    0, rfo, xrfull], // green region (not used)
+    [  2,  2, "none",    bblue,   gsw, gfo, xrfull], // blue isoline
+  //[  1,  2, "#e5e5ff", "none",    0, rfo, xrfull], // blue region (not used)
+    [  1,  1, "none",    borange, gsw, gfo, xrfull], // orange isoline
+  //[  0,  1, "#fff1d8", "none",    0, rfo, xrfull], // orange region (not used)
+    [  0,  2, lyellow,   "none",    0, rfo, xrfull], // mimic old lanes
+  // Razor road currently in updateRedline because we can't define dashed lines
+  // here; so the following doesn't work:
+  //[  0,  0, "#ff0000", "none",    1, gfo, xrfull], // bright red line
+  //[  0, -2, "#ffe5e5", "none",    0, rfo,   null], // whole bad half-plane
+  //[  0, -2, "#fff5f5", "none",    0,   1, xrakr ], // nozone/oinkzone
+    [inf, -1, lyellow,   "none",    0, rfo, xrfull], // infinitely safe region
+  ]
+  let regions
+  if (false) { // change to true for debugging
+    const debuglines = 0
+    const regionsDebug = [
+    //[  d,  D, fcolor,    scolor,    w,  op, xrange]
+    //--------------------------------------------------------------------------
+      [  6,  6, "none",    bgreen,  1.5,   1, xrfull], // 1-week isoline
+      [  7,  7, "none",    bblue,   1.5,   1, xrfull], // extra isoline
+      [  8,  8, "none",    borange, 1.5,   1, xrfull], // extra isoline
+      [  9,  9, "none",    "red",   1.5,   1, xrfull], // extra isoline
+      [  0,  2, lyellow,   "none",    0, 0.5, xrfull], // YBR equivalent
+    //[  2,  2, "none",    bblue,   1.5,   1, xrfull], // blue line
+    //[  1,  1, "none",    borang,  1.5,   1, xrfull], // orange line
     ]
-  } else { // slightly unDRY here
-    regions = [
-      //  d,  D, fcolor,    scolor,    w,  op, xrange
-      //------------------------------------------------------------------------
-      //[ 2, -1, gsideyel,  "none",    0, rfo, xrfull], // whole good half-plane
-      //[ 6, -1, "#b2e5b2", "none",    0, rfo, xrfull], // safe/gray region
-      [ 6,  6, "none",    bgreen,  gsw, gfo, xrfull], // 1-week isoline
-      //[ 2,  6, "#cceecc", "none",    0, rfo, xrfull], // green region
-      [ 2,  2, "none",    bblue,   gsw, gfo, xrfull], // blue isoline
-      //[ 1,  2, "#e5e5ff", "none",    0, rfo, xrfull], // blue region
-      [ 1,  1, "none",    borange, gsw, gfo, xrfull], // orange isoline
-      //[ 0,  1, "#fff1d8", "none",    0, rfo, xrfull], // orange region
-      [ 0,  2, lyellow,   "none",    0, rfo, xrfull], // YBR equivalent
-      //[365, -1, lyellow,  "none",    0, .5, xrfull], // infinitly safe region
-      // bright red critical line currently in updateCenterline because we
-      // can't define dashed lines here; so the following doesn't work:
-      //[ 0,  0, "#ff0000", "none",    1, gfo, xrfull], // brightline
-      //[ 0, -2, "#ffe5e5", "none",    0, rfo, null],   // whole bad half-plane
-      //  [ 0, -2, "#fff5f5", "none",    0,   1, xrakr],  // nozone/oinkzone
-    ]
-  }
-  // Add the "infinity" region as a shaded color
-  regions.unshift([(gol.tfin-gol.tini)/SID, -1, lyellow, "none", 0, rfo,xrfull])
-
-  var debuglines = -1 // Use -1 to disable, 0 or more to debug
-  if (debuglines >= 0) {
-    // Debugging isolines
-    regions = [
-      //[ d,  D, fcolor, scolor,   w,  op, xrange]
-      //--------------------------------------------------------------------
-      [ 6,  6, "none",  bgreen,  1.5,   1, xrfull], // 1-week guiding line
-      [ 7,  7, "none",  bblue,   1.5,   1, xrfull], // 1-week guiding line
-      [ 8,  8, "none",  borange, 1.5,   1, xrfull], // 1-week guiding line
-      [ 9,  9, "none",  "red",   1.5,   1, xrfull], // 1-week guiding line
-      [ 0,  2, lyellow, "none",    0, 0.5, xrfull], // YBR equivalent
-      //[ 2,  2, "none", bblue,  1.5,   1, xrfull], // blue line
-      //[ 1,  1, "none", borang, 1.5,   1, xrfull], // orange line
-    ]
+    regions = regionsDebug // debugging isolines
     const tmp = br.isoline(road, dtd, gol, debuglines, true)
     const adj = abs(nYSc.invert(2.5)-nYSc.invert(0))
     //console.log(JSON.stringify(tmp[3].map(e=>[bu.dayify(e[0]), e[1]])))
@@ -3350,9 +3341,11 @@ function updateYBHP() {
     iso[7] = tmp[1]
     iso[8] = tmp[2]
     iso[9] = tmp[3]
-    iso[7] = iso[7].map(e => [e[0], e[1]+adj])
+    iso[7] = iso[7].map(e => [e[0], e[1]+1*adj])
     iso[8] = iso[8].map(e => [e[0], e[1]+2*adj])
     iso[9] = iso[9].map(e => [e[0], e[1]+3*adj])
+  } else {
+    regions = gol.maxflux > 0 ? regionsMaxflux : regionsNormal
   }
   
   // HT cpcallen who proposed changing this max to a min, though turns out
@@ -3536,8 +3529,7 @@ function updatePinkRegion() {                         // AKA nozone AKA oinkzone
 // unedited road as well. This now supports a delta argument for the maxflux
 // line, and a dash argument for the editor version. If scol == null, then the
 // element is deleted to clean up leftovers from earlier draws.
-// TODO: rename this to updateRazrRoad or updateYBR
-function updateCenterline(rd, g, gelt, cls, scol, sw, delta, usedash) {
+function updateRedline(rd, g, gelt, cls, scol, sw, delta, usedash) {
   if (processing) return
   
   const roadelt = gelt.select("."+cls)
@@ -3765,14 +3757,13 @@ function updateRazrRoad() {
   if (processing) return
   if (opts.divGraph == null || road.length == 0) return
 
-  // Razor line differs between the editor (dashed) and the graph
-  // (solid). Also, the road editor shows the initial road as the
-  // razor road
+  // Razor line differs between the editor (dashed) and the graph (solid). Also,
+  // the road editor shows the initial road as the razor road.
   if (opts.roadEditor)
-    updateCenterline(iroad, igoal, gRazr, "razr", bu.Cols.RAZR0,
+    updateRedline(iroad, igoal, gRazr, "razr", bu.Cols.RAZR0,
                      r3(opts.razrline*scf), 0, true)
   else
-    updateCenterline(road, gol, gRazr, "razr", bu.Cols.REDDOT,
+    updateRedline(road, gol, gRazr, "razr", bu.Cols.REDDOT,
                      r3(opts.razrline*scf), 0, false)
 }
 
@@ -3781,7 +3772,7 @@ function updateMaxFluxline() {
   if (opts.divGraph == null || road.length == 0) return
 
   // Generate the maxflux line if maxflux!=0. Otherwise, remove existing one
-  updateCenterline(road, gol, gMaxflux, "maxflux", 
+  updateRedline(road, gol, gMaxflux, "maxflux", 
                    gol.maxflux != 0 ? bu.Cols.BIGG : null,
                    r3(opts.maxfluxline*scf), gol.yaw*gol.maxflux, false)
 }
@@ -3791,7 +3782,7 @@ function updateStdFluxline() {
   if (opts.divGraph == null || road.length == 0) return
 
   // Generate the maxflux line if maxflux!=0. Otherwise, remove existing one
-  updateCenterline(road, gol, gStdflux, "stdflux", 
+  updateRedline(road, gol, gStdflux, "stdflux", 
                    gol.maxflux != 0 ? bu.Cols.BIGG : null,
                    r3(opts.stdfluxline*scf), gol.yaw*gol.stdflux, true)
 }

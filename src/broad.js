@@ -365,7 +365,7 @@ self.dtdarray = ( rd, gol ) => {
 }
 
 /**Generate and return an initial version of the isoline by processing the
-   supplied dtdarray. The resulting isoline is correct for doless and rash
+   supplied dtdarray. The resulting isoline is correct for do-less and rash
    goals, but will need further processing for goal with dir*yaw>0. */
 self.isoline_generate = (rd, dtdarr, gol, v) => {
   var n = dtdarr[0], nn, iso
@@ -587,10 +587,10 @@ self.isoline_clip = ( iso, rd, dtdarr, gol, v ) => {
  * proceed forward.
 */
 self.isoline = ( rd, dtdarr, gol, v, retall=false ) => {
-  let iso1 = self.isoline_generate( rd, dtdarr, gol, v)
+  let iso1 = self.isoline_generate(           rd, dtdarr, gol, v)
   let iso2 = self.isoline_monotonicity( iso1, rd, dtdarr, gol, v)
-  let iso3 = self.isoline_nobackward( iso2, rd, dtdarr, gol, v)
-  let iso4 = self.isoline_clip( iso3, rd, dtdarr, gol, v)
+  let iso3 = self.isoline_nobackward(   iso2, rd, dtdarr, gol, v)
+  let iso4 = self.isoline_clip(         iso3, rd, dtdarr, gol, v)
 
   if (retall) return [iso1, iso2, iso3, iso4]
   else return iso4
