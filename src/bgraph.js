@@ -104,7 +104,7 @@ let defaults = {
   /** Visual parameters for fixed lines for the original road */ 
   oldRoadLine:  { width: 3, ctxwidth: 2, dash: 32, ctxdash: 16 },
   /** Visual parameters for data points (past, flatlined and hollow) */ 
-  dataPoint:    { size: 5, fsize: 5, hsize: 2.5 }, 
+  dataPoint:    { size: 5, fsize: 5, hsize: 2.5, border:1 }, 
   /** Visual parameters for the akrasia horizon */ 
   horizon:      { width: 2, ctxwidth: 1, dash: 8, ctxdash: 6, 
                   font: 10, ctxfont: 9 },
@@ -129,7 +129,7 @@ let defaults = {
   roadTableCol: { bg:"#ffffff", bgHighlight: "#fffb55", 
                   text:"#000000", textDisabled: "#aaaaaa",
                   bgDisabled:"#f2f2f2"},
-  dataPointCol: { future: "#909090", stroke: "lightgray" },
+  dataPointCol: { future: "#909090", stroke: "#eeeeee" },
   halfPlaneCol: { fill: "#ffffe8" },
   pastBoxCol:   { fill: "#f8f8f8", opacity:0.5 },
   odomResetCol: { dflt: "#c2c2c2" }, 
@@ -250,9 +250,18 @@ const SVGStyle =
 + ".loading{text-anchor:middle;font-family:Dejavu Sans,sans-serif}"
 + ".zoomarea{fill:none}"
 + "circle.ap{stroke:none}"
-+ "circle.rd{stroke:none}"
-+ "circle.std{stroke:none}"
-+ "circle.dp{stroke:rgb(0,0,0)}"
++ "circle.rd{stroke:none;pointer-events:none;fill:"+bu.Cols.ROSE+"}"
++ "circle.std{stroke:none;pointer-events:none;fill:"+bu.Cols.PURP+"}"
++ "circle.hp{stroke:none;fill:"+bu.Cols.WITE+"}"
++ ".dp.gra,.ap.gra{fill:"+bu.Cols.GRADOT+"}"
++ ".dp.grn,.ap.grn{fill:"+bu.Cols.GRNDOT+"}"
++ ".dp.blu,.ap.blu{fill:"+bu.Cols.BLUDOT+"}"
++ ".dp.orn,.ap.orn{fill:"+bu.Cols.ORNDOT+"}"
++ ".dp.red,.ap.red{fill:"+bu.Cols.REDDOT+"}"
++ ".dp.blk,.ap.blk{fill:"+bu.Cols.BLCK+"}"
++ ".dp.fuda,.ap.fuda{fill-opacity:0.3}"
++ ".guides{pointer-events:none;fill:none;stroke:"+bu.Cols.LYEL+"}"
++ ".ybhp{pointer-events:none}"
 + ".overlay .textbox{fill:#ffffcc;fill-opacity:0.5;stroke:black;"
 + "stroke-width:1;pointer-events:none;rx:5;ry:5}"
 
@@ -649,8 +658,8 @@ function createGraph() {
   // Editor data :
   // Graph data  :
   // Graph hollow:
+  defs.insert('style').attr("id", "dynstyle"+curid).attr('type','text/css').text("")
   
-  defs.insert('style').attr("id", "data").attr('type','text/css').text("")
   defs.append("clipPath")
     .attr("id", "plotclip"+curid)
     .append("rect").attr("x", 0).attr("y", 0)
@@ -3473,10 +3482,9 @@ function updateYBHP() {
     }
 
     if (ybhpelt.empty()) { // create a new element if an existing one not found
-      ybhpgrp.append("svg:path").attr("class",          clsname)
+      ybhpgrp.append("svg:path").attr("class",          "ybhp "+clsname)
                                 .attr("id",             id)
                                 .attr("d",              d)
-                                .attr("pointer-events", "none")
                                 .attr("fill",           reg[2])
                                 .attr("fill-opacity",   reg[5])
                                 .attr("stroke",         reg[3])
@@ -3543,17 +3551,15 @@ function updatePinkRegion() {                         // AKA nozone AKA oinkzone
 // line, and a dash argument for the editor version. If scol == null, then the
 // element is deleted to clean up leftovers from earlier draws.
 // TODO: rename this to updateRazrRoad or updateYBR
-function updateCenterline(rd, g, gelt, cls, scol, sw, delta, usedash) {
+function updateCenterline(rd, g, gelt, cls, delta, usedash) {
   if (processing || opts.divGraph == null || road.length == 0) return
   
   const roadelt = gelt.select("."+cls)
-  if (scol == null) {
+  if (delta == null) {
     roadelt.remove()
     return
   }
 
-  const cw   = r3(opts.oldRoadLine.width*scf)
-  const adj  = 0
   //const sg   = (!opts.roadEditor)
   const dash = (opts.oldRoadLine.dash)+","+ceil(opts.oldRoadLine.dash/2)
   const sda  = usedash?dash:null // stroke-dasharray
@@ -3578,7 +3584,7 @@ function updateCenterline(rd, g, gelt, cls, scol, sw, delta, usedash) {
     if (fx < 0 || newx > 0) fx = -newx
   }
 
-  let d = "M"+r1(fx)+" "+(r1(fy)+adj)
+  let d = "M"+r1(fx)+" "+(r1(fy))
   for (const segment of rd) {
     // Some goals have non-daysnapped road matrix entries, which
     // breaks the tfin check. This hopefully overcomes that problem
@@ -3587,21 +3593,15 @@ function updateCenterline(rd, g, gelt, cls, scol, sw, delta, usedash) {
     if (segx < g.tini) continue
     if (segx > g.tfin) break
     ey = nYSc(segment.end[1]+delta)
-    d += " L"+r1(ex)+" "+(r1(ey)+adj)
+    d += " L"+r1(ex)+" "+(r1(ey))
     if (ex > plotbox.width) break
   }
   if (roadelt.empty()) {
     gelt.append("svg:path").attr("class",             cls)
                                  .attr("d",                 d)
-                                 .attr("pointer-events",    "none")
                                  .style("stroke-dasharray", sda)
-                                 .style("fill",             "none")
-                                 .style("stroke-width",     sw)
-                                 .style("stroke",           scol) 
   } else {
     roadelt.attr("d", d).style("stroke-dasharray", sda)
-                        .style("stroke-width",     sw)
-                        .style("stroke",           scol)
   }
 }
 
@@ -3755,16 +3755,10 @@ function updateGuidelines() {
     .attr("d",               buildPath)
     .attr("id",              (d)=>("g"+d))
     .attr("transform",       null)
-    .attr("pointer-events",  "none")
-    .attr("fill",            "none")
-    .attr("stroke-width",    opts.guidelines.width*scf)
-    .attr("stroke",          bu.Cols.LYEL)
   guideelt
      .attr("d",               buildPath)
      .attr("id",              (d)=>("g"+d))
      .attr("transform",       null)
-     .attr("stroke",          bu.Cols.LYEL)
-     .attr("stroke-width",    opts.guidelines.width*scf)
 }
 
 function updateRazrRoad() {
@@ -3774,29 +3768,23 @@ function updateRazrRoad() {
   // (solid). Also, the road editor shows the initial road as the
   // razor road
   if (opts.roadEditor)
-    updateCenterline(iroad, igoal, gRazr, "razr", bu.Cols.RAZR0,
-                     r3(opts.razrline*scf), 0, true)
+    updateCenterline(iroad, igoal, gRazr, "razr", 0, true)
   else
-    updateCenterline(road, gol, gRazr, "razr", bu.Cols.REDDOT,
-                     r3(opts.razrline*scf), 0, false)
+    updateCenterline(road, gol, gRazr, "razr", 0, false)
 }
 
 function updateMaxFluxline() {
   if (processing || opts.divGraph == null || road.length == 0) return
 
   // Generate the maxflux line if maxflux!=0. Otherwise, remove existing one
-  updateCenterline(road, gol, gMaxflux, "maxflux", 
-                   gol.maxflux != 0 ? bu.Cols.BIGG : null,
-                   r3(opts.maxfluxline*scf), gol.yaw*gol.maxflux, false)
+  updateCenterline(road, gol, gMaxflux, "maxflux", (gol.maxflux!=0)?gol.yaw*gol.maxflux:null, false)
 }
 
 function updateStdFluxline() {
   if (processing || opts.divGraph == null || road.length == 0) return
 
   // Generate the maxflux line if maxflux!=0. Otherwise, remove existing one
-  updateCenterline(road, gol, gStdflux, "stdflux", 
-                   gol.maxflux != 0 ? bu.Cols.BIGG : null,
-                   r3(opts.stdfluxline*scf), gol.yaw*gol.stdflux, true)
+  updateCenterline(road, gol, gStdflux, "stdflux", (gol.maxflux!=0)?gol.yaw*gol.stdflux:null, true)
 }
 
   
@@ -4153,6 +4141,21 @@ function updateContextDots() {
     .attr("cy", function(d) { return r1(yScB(d.sta[1])) })
 }
 
+let styleLookup = {}
+styleLookup[bu.Cols.GRADOT] = " gra",
+styleLookup[bu.Cols.GRNDOT] = " grn",
+styleLookup[bu.Cols.BLUDOT] = " blu",
+styleLookup[bu.Cols.ORNDOT] = " orn",
+styleLookup[bu.Cols.REDDOT] = " red",
+styleLookup[bu.Cols.BLCK]   = " blk"
+
+function dpStyle( pt ) {
+  let sty = ""
+  let col = br.dotcolor(road, gol, pt[0], pt[1], iso) 
+  if (pt[3] != bbr.DPTYPE.AGGPAST) sty += " fuda"
+  sty += styleLookup[col]
+  return  sty
+}
 function dpFill( pt ) {
   return br.dotcolor(road, gol, pt[0], pt[1], iso)
 }
@@ -4188,33 +4191,24 @@ function removeDotText() { rmTextBox(dotText) }
   // f: fill
   // hov: hover support (boolean)
   // fop: fill-opacity
-  // sc: secondary class
-function updateDotGroup(grp,d,cls,r,
-                        s=null,sw=null,f=null,hov=true,fop=null,sc="") {
-  var dpelt
+  // nc: new element class
+function updateDotGroup(grp,d,cls,nc=null,hov=true) {
+  let dpelt
+
+  if (nc == null) nc = cls // Temporary
+  
   dpelt = grp.selectAll("."+cls).data(d)
   dpelt.exit().remove()
   dpelt
     .attr("cx", function(d) { return r1(nXSc((d[0])*SMS)) })
     .attr("cy", function(d) { return r1(nYSc(d[1])) })
-  if (r != null && scf != oldscf) dpelt.attr("r", r3(r))
-  if (sw != null) dpelt.attr("stroke-width", sw)
-  if (cls != "rd" && cls != "std" && cls != "hpts") {
-    if (f != null) dpelt.attr("fill", f)
-    if (fop != null) dpelt.style("fill-opacity", fop)
-  }
+    .attr("class", nc)
+  
   var dots = dpelt.enter().append("svg:circle")
   
-  dots.attr("class",cls)
-    .attr("r", r3(r))
-    .attr("cx", function(d) { return r1(nXSc((d[0])*SMS)) })
-    .attr("cy", function(d) { return r1(nYSc(d[1])) })
-    .attr("stroke-width", sw)
-    .style("stroke", s)
-    .attr("fill", f)
-    .style("fill-opacity", fop)
-    .style("pointer-events", function() {
-      return (opts.roadEditor&&!hov)?"none":(opts.headless?null:"all");})
+    dots.attr("class", nc)
+      .attr("cx", function(d) { return r1(nXSc((d[0])*SMS)) })
+      .attr("cy", function(d) { return r1(nYSc(d[1])) })
   if (!opts.headless) {
     dots
       .on('wheel', function(d) { 
@@ -4242,7 +4236,7 @@ function updateDotGroup(grp,d,cls,r,
 }
 
 function updateRosy() {
-  if (processing || opts.divGraph == null) return;
+  if (processing || opts.divGraph == null || opts.roadEditor) return;
 
   var l = [nXSc.invert(0).getTime()/SMS, 
            nXSc.invert(plotbox.width).getTime()/SMS];
@@ -4285,9 +4279,8 @@ function updateRosy() {
             .attr("stroke-width", r3(4*scf))
         }
       } else rosyelt.remove();
-      updateDotGroup(gRosyPts, npts, "rd", 
-                     r3(opts.dataPoint.size*scf),
-                     null, null, bu.Cols.ROSE, true, null)
+      // Rosy dots
+      updateDotGroup(gRosyPts, npts, "rd", "rd", true)
     } else {
       rosyelt.remove()
       rosydelt.remove()
@@ -4369,10 +4362,9 @@ function updateSteppy() {
         } else stppprelt.remove()
         
       } else stpelt.remove()
-        updateDotGroup(gSteppyPts, 
-                       bbr.flad ? npts.slice(0, npts.length-1) : npts,
-                       "std", r3((opts.dataPoint.size+2)*scf),
-                       null, null, bu.Cols.PURP)
+      // Steppy points
+      updateDotGroup(gSteppyPts, bbr.flad ? npts.slice(0, npts.length-1) : npts,
+                     "std", "std", true)
     } else {
       stpelt.remove()
       stpdelt.remove()
@@ -4441,26 +4433,19 @@ function updateDataPoints() {
     // Filter data to only include visible points
     pts = pts.filter(df);
     if (gol.plotall && !opts.roadEditor) {
-      updateDotGroup(gAllpts, alldataf.filter(adf), "ap", 
-                     r3(0.7*(opts.dataPoint.size)*scf),
-                     null, null, dpFill, true, dpFillOp)
+      // All points
+      updateDotGroup(gAllpts, alldataf.filter(adf), "ap", d=>("ap"+dpStyle(d)), true)
       
     } else {
       var el = gAllpts.selectAll(".ap");
       el.remove();
     }
     if (opts.roadEditor)
-      updateDotGroup(gDpts, pts.concat(bbr.fuda), "dp", 
-                     r3(opts.dataPoint.size*scf), opts.dataPointCol.stroke,
-                     (opts.dataPoint.border*scf)+"px", dpFill, true, dpFillOp)
+      updateDotGroup(gDpts, pts.concat(bbr.fuda), "dp", d=>("dp"+dpStyle(d)), true)
     else {
-      updateDotGroup(gDpts, pts.concat(bbr.fuda), "dp", 
-                     r3(opts.dataPoint.size*scf),
-                     null, dpStrokeWidth, dpFill, true, dpFillOp)
+      updateDotGroup(gDpts, pts.concat(bbr.fuda), "dp", d=>("dp"+dpStyle(d)), true)
       // Compute and plot hollow datapoints
-      updateDotGroup(gHollow, bbr.hollow.filter(df), "hpts", 
-                     r3(opts.dataPoint.hsize*scf), null,
-                     null, bu.Cols.WITE, true, 1)
+      updateDotGroup(gHollow, bbr.hollow.filter(df), "hp", d=>("hp"+dpStyle(d)), true)
     }
       
     // *** Plot flatlined datapoint ***
@@ -5091,6 +5076,34 @@ function updateContextData() {
 }
 
 
+// Updates style info embedded in the SVG element for datapoints.
+// This is called once at the beginning and whenever scf changes
+function updateDynStyles() {
+  let s = "", svgid = "#svg"+curid+" "
+  let pe = "pointer-events:"+(opts.headless)?"none;":"all;"
+  
+  s += svgid+".rd {r:"+r3(opts.dataPoint.size*scf)+";} "
+  s += svgid+".std {r:"+r3((opts.dataPoint.size+2)*scf)+";} "
+  s += svgid+".ap {r:"+r3(0.7*(opts.dataPoint.size)*scf)+";"+pe+"} "
+  s += svgid+".hp {r:"+r3(opts.dataPoint.hsize*scf)+";"+pe+"} "
+  s += svgid+".guides {stroke-width:"+r3(opts.guidelines.width*scf)+";} "
+  s += svgid+".maxflux {fill:none;stroke:"+bu.Cols.BIGG+";stroke-width:"+r3(opts.maxfluxline*scf)+";} "
+  s += svgid+".stdflux {fill:none;stroke:"+bu.Cols.BIGG+";stroke-width:"+r3(opts.stdfluxline*scf)+";} "
+  
+  // Styles that depend on the road editor
+  if (opts.roadEditor) {
+    // Datapoints
+    s += svgid+".dp {r:"+r3(opts.dataPoint.size*scf)+";stroke:"
+      +opts.dataPointCol.stroke+";stroke-width:"+r3(opts.dataPoint.border*scf)+"px} "
+    s += svgid+".razr {fill:none;pointer-events:none;stroke-width:"+r3(opts.razrline*scf)+";stroke:"+bu.Cols.RAZR0+";} "
+  } else {
+    s += svgid+".dp {r:"+r3(opts.dataPoint.size*scf)+";stroke:rgb(0,0,0);stroke-width:"+r3(1*scf)+"px} "
+    s += svgid+".dp.fuda {stroke-width:"+r3(0.5*scf)+"px} "
+    s += svgid+".razr {fill:none;pointer-events:none;stroke-width:"+r3(opts.razrline*scf)+";stroke:"+bu.Cols.REDDOT+";} "
+  }
+  d3.select("style#dynstyle"+curid).text(s)
+}
+
 function updateGraphData(force = false) {
   if (opts.divGraph == null) return
   clearSelection()
@@ -5102,6 +5115,8 @@ function updateGraphData(force = false) {
   else 
     scf = bu.cvx(limits[1], limits[0], limits[0]+73*SID, 1,0.55)
 
+  if (scf != oldscf) updateDynStyles()
+  
   //updateRoadData()
   updateRoadValidity()
   updateWatermark()
