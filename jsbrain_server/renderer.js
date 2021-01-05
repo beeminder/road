@@ -16,6 +16,7 @@ class Renderer {
     this.pages = []
     this.svgo = new svgo({
       plugins: [{cleanupAttrs: true},
+                {inlineStyles: false},
                 {removeDoctype: true},
                 {removeXMLProcInst: true},
                 {removeComments: true},
@@ -47,6 +48,7 @@ class Renderer {
                 {mergePaths: true},
                 {convertShapeToPath: false},
                 {sortAttrs: false},
+                {sortDefsChildren: false},
                 {removeDimensions: false},
                 {removeAttrs: {attrs: 'pointer-events'}},
                 {removeAttributesBySelector:
