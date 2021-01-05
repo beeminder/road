@@ -262,6 +262,10 @@ const SVGStyle =
 + ".dp.fuda,.ap.fuda{fill-opacity:0.3}"
 + ".guides{pointer-events:none;fill:none;stroke:"+bu.Cols.LYEL+"}"
 + ".ybhp{pointer-events:none}"
++ ".rosy{fill:none;stroke:"+bu.Cols.ROSE+";pointer-events:none}"
++ ".steppy{fill:none;stroke:"+bu.Cols.PURP+";pointer-events:none}"
++ ".steppyppr{fill:none;stroke-opacity:0.8;stroke:"+bu.Cols.LPURP+";pointer-events:none}"
++ ".derails{fill:"+bu.Cols.REDDOT+";pointer-events:none}"
 + ".overlay .textbox{fill:#ffffcc;fill-opacity:0.5;stroke:black;"
 + "stroke-width:1;pointer-events:none;rx:5;ry:5}"
 
@@ -4271,13 +4275,9 @@ function updateRosy() {
           gRosy.append("svg:path")
             .attr("class","rosy")
             .attr("d", d)
-            .style("fill", "none")
-            .attr("stroke-width",r3(4*scf))
-            .style("stroke", bu.Cols.ROSE)
-        } else {
+        } else
           rosyelt.attr("d", d)
-            .attr("stroke-width", r3(4*scf))
-        }
+          
       } else rosyelt.remove();
       // Rosy dots
       updateDotGroup(gRosyPts, npts, "rd", "rd", true)
@@ -4334,12 +4334,9 @@ function updateSteppy() {
           gSteppy.append("svg:path")
             .attr("class","steppy")
             .attr("d", d)
-            .style("fill", "none")
-            .attr("stroke-width", r3(4*scf))
-            .style("stroke", bu.Cols.PURP)
-        } else {
-          stpelt.attr("d", d).attr("stroke-width", r3(4*scf))
-        }
+        } else
+          stpelt.attr("d", d)
+
         // Need additional vertical steppy for do-less flatlined datapoints
         let stppprelt = gSteppy.selectAll(".steppyppr")
         if (bbr.flad !== null) {
@@ -4351,13 +4348,8 @@ function updateSteppy() {
             if (stppprelt.empty()) {
               gSteppy.append("svg:path")
                 .attr("class","steppyppr").attr("d", d)
-                .style("fill", "none").style("stroke-opacity", 0.8)
-                .attr("stroke-width", r3(4*scf))
-                .style("stroke", bu.Cols.LPURP)
-            } else {
+            } else
               stppprelt.attr("d", d)
-                .attr("stroke-width",r3(4*scf))
-            }
           } else stppprelt.remove()
         } else stppprelt.remove()
         
@@ -4403,8 +4395,6 @@ function updateDerails() {
       .attr("transform", function(d){return "translate("+(nXSc((d[0])*SMS))+","
                                       +nYSc(d[1])+"),scale("
                                       +(opts.dataPoint.fsize*scf/24)+")"})
-      .attr("fill", bu.Cols.REDDOT)
-      .style("pointer-events", "none")
   } else {
     drelt = gDerails.selectAll(".derails")
     drelt.remove()
@@ -4444,7 +4434,7 @@ function updateDataPoints() {
       updateDotGroup(gDpts, pts.concat(bbr.fuda), "dp", d=>("dp"+dpStyle(d)), true)
     else {
       updateDotGroup(gDpts, pts.concat(bbr.fuda), "dp", d=>("dp"+dpStyle(d)), true)
-      // Compute and plot hollow datapoints
+      // hollow datapoints
       updateDotGroup(gHollow, bbr.hollow.filter(df), "hp", d=>("hp"+dpStyle(d)), true)
     }
       
@@ -5087,6 +5077,9 @@ function updateDynStyles() {
   s += svgid+".ap {r:"+r3(0.7*(opts.dataPoint.size)*scf)+";"+pe+"} "
   s += svgid+".hp {r:"+r3(opts.dataPoint.hsize*scf)+";"+pe+"} "
   s += svgid+".guides {stroke-width:"+r3(opts.guidelines.width*scf)+";} "
+  s += svgid+".rosy {stroke-width:"+r3(4*scf)+";} "
+  s += svgid+".steppy {stroke-width:"+r3(4*scf)+";} "
+  s += svgid+".steppyppr {stroke-width:"+r3(4*scf)+";} "
   s += svgid+".maxflux {fill:none;stroke:"+bu.Cols.BIGG+";stroke-width:"+r3(opts.maxfluxline*scf)+";} "
   s += svgid+".stdflux {fill:none;stroke:"+bu.Cols.BIGG+";stroke-width:"+r3(opts.stdfluxline*scf)+";} "
   
