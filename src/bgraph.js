@@ -464,11 +464,11 @@ function getisopath( val, xr ) {
   if (xr == null) xr = [-Infinity, Infinity]
   let x = isoline[0][0], y = isoline[0][1]
   if (x < xr[0]) { x = xr[0]; y = br.isoval(isoline, x) }
-  let d = "M"+nXSc(x*SMS)+" "+nYSc(y)
+  let d = "M"+r1(nXSc(x*SMS))+" "+r1(nYSc(y))
   let strt = bu.searchby(isoline, e=>((e[0]<xr[0])?-1:1))
   let end = bu.searchby(isoline, e=>((e[0]<xr[1])?-1:1))
   for (let i = strt[1]; i <= end[1]; i++) {
-    d += " L"+nXSc(isoline[i][0]*SMS)+" "+nYSc(isoline[i][1])
+    d += " L"+r1(nXSc(isoline[i][0]*SMS))+" "+r1(nYSc(isoline[i][1]))
   }
   return d
 }
@@ -641,6 +641,16 @@ function createGraph() {
   // Common SVG definitions, including clip paths
   defs = svg.append('defs')
   defs.insert('style').attr('type','text/css').text(SVGStyle)
+  // Dot types:
+  //               col r
+  // Rosy dots   : ROSE
+  // Steppy pts  : PURP
+  // All pts     : 
+  // Editor data :
+  // Graph data  :
+  // Graph hollow:
+  
+  defs.insert('style').attr("id", "data").attr('type','text/css').text("")
   defs.append("clipPath")
     .attr("id", "plotclip"+curid)
     .append("rect").attr("x", 0).attr("y", 0)
@@ -653,7 +663,6 @@ function createGraph() {
     .attr("id", "buttonareaclip"+curid)
     .append("rect").attr("x", plotbox.x).attr("y", 0)
     .attr("width", plotbox.width).attr("height", plotpad.top)
-  
   defs.append("path")
     .style("stroke", "none").attr("id", "rightarrow")
     .attr("d", "M 55,0 -35,45 -35,-45 z")
@@ -1925,9 +1934,10 @@ function loadGoal(json, timing = true) {
   if (!('params' in json) || !('data' in json)) {
     throw new Error("loadGoal: JSON input lacks params or data")
   }
-  
   clearUndoBuffer()
-  
+
+  // Disable various graph component updates until graph axes are in
+  // their final state and ranges
   processing = true
   
   // Create beebrain processor
@@ -1994,7 +2004,6 @@ function loadGoal(json, timing = true) {
   // Finally, wrap up with graph related initialization
   updateRoadData()
   zoomAll()
-  processing = false
   zoomDefault()
 
   updateTable()
@@ -2002,10 +2011,15 @@ function loadGoal(json, timing = true) {
   resetDataTable()
   updateContextData()
 
+  // Re-enable updates for graph components. Next call to resizeGraph will
+  // redraw all of these components
+  processing = false
+
   // This next call ensures that stathead and other new graph
   // properties are properly reflected in the new graph dimensions
   resizeGraph()
     
+  updateTableTitles()
   if (typeof opts.onRoadChange === 'function') opts.onRoadChange.call()
   if (timing) { console.timeEnd(graph_timeid+suffix) }
 }
@@ -2022,8 +2036,6 @@ async function loadGoalFromURL( url, callback = null ) {
       throw new Error("loadGoalFromURL: BB file has errors: "+resp.errstring)
     }
     loadGoal( resp )
-    if (typeof opts.onRoadChange === 'function') opts.onRoadChange.call()
-    updateTableTitles()
   } else {
     if (lastError != null) showOverlay( [ErrMsgs[lastError]])
     else showOverlay(["Could not load goal file."])
@@ -2838,7 +2850,7 @@ function animYBHPlines(enable) {
 
 // Create or update the shaded box to indicate past dates
 function updatePastBox() {
-  if (opts.divGraph == null || road.length == 0) return
+  if (processing || opts.divGraph == null || road.length == 0) return
   var pastelt = gPB.select(".past")
   if (!opts.roadEditor) {
     pastelt.remove()
@@ -2863,7 +2875,7 @@ function updatePastBox() {
 
 // Create or update the shaded box to indicate past dates
 function updatePastText() {
-  if (opts.divGraph == null || road.length == 0) return
+  if (processing || opts.divGraph == null || road.length == 0) return
   var todayelt    = gGrid.select(".pastline")
   var pasttextelt = gPastText.select(".pasttext")
   if (!opts.roadEditor) {
@@ -2904,7 +2916,7 @@ function updatePastText() {
 }
 
 function updateContextToday() {
-  if (opts.divGraph == null || road.length == 0) return
+  if (processing || opts.divGraph == null || road.length == 0) return
   var todayelt    = ctxplot.select(".ctxtoday")
   var pasttextelt = ctxplot.select(".ctxtodaytext")
   if (!opts.roadEditor) {
@@ -2947,7 +2959,7 @@ function updateContextToday() {
 
 // Creates or updates the Bullseye at the goal date
 function updateBullseye() {
-  if (opts.divGraph == null || road.length == 0) return;
+  if (processing || opts.divGraph == null || road.length == 0) return;
   var bullseyeelt = gBullseye.select(".bullseye");
   //var bx = nXSc(road[road.length-1].sta[0]*SMS)-(opts.bullsEye.size/2);
   //var by = nYSc(road[road.length-1].sta[1])-(opts.bullsEye.size/2);
@@ -2968,7 +2980,7 @@ function updateBullseye() {
 }
 
 function updateContextBullseye() {
-  if (opts.divGraph == null || road.length == 0) return;
+  if (processing || opts.divGraph == null || road.length == 0) return;
   var bullseyeelt = ctxplot.select(".ctxbullseye");
   if (!opts.roadEditor) {
     bullseyeelt.remove();
@@ -2993,8 +3005,7 @@ function updateContextBullseye() {
 
 // Creates or updates the Bullseye at the goal date
 function updateOldBullseye() {
-  if (processing) return
-  if (opts.divGraph == null || road.length == 0) return;
+  if (processing || opts.divGraph == null || road.length == 0) return;
   var bullseyeelt = gOldBullseye.select(".oldbullseye");
   if (!opts.roadEditor) {
     bullseyeelt.remove();
@@ -3020,7 +3031,7 @@ function updateOldBullseye() {
 }
 
 function updateContextOldBullseye() {
-  if (opts.divGraph == null || road.length == 0) return;
+  if (processing || opts.divGraph == null || road.length == 0) return;
   var png = (opts.roadEditor)?PNG.beyey:PNG.beye
   var bullseyeelt = ctxplot.select(".ctxoldbullseye");
   var bx = xScB(iroad[iroad.length-1].sta[0]*SMS)
@@ -3043,15 +3054,13 @@ function updateContextOldBullseye() {
 
 // Creates or updates the watermark with the number of safe days
 function updateWatermark() {
-  if (processing) return;
-  
-  if (opts.divGraph == null || road.length == 0 || hidden) return;
+  if (processing || opts.divGraph == null || road.length == 0 || hidden) return
 
-  var tl = [0,0], bbl = [0, plotbox.height/2];
-  var tr = [plotbox.width/2,0], bbr = [plotbox.width/2, plotbox.height/2];
-  var offg, offb, g = null, b = null, x, y, bbox, newsize, newh;
+  var tl = [0,0], bbl = [0, plotbox.height/2]
+  var tr = [plotbox.width/2,0], bbr = [plotbox.width/2, plotbox.height/2]
+  var offg, offb, g = null, b = null, x, y, bbox, newsize, newh
 
-  setWatermark();
+  setWatermark()
   if      (gol.loser)              g = PNG.sklb
   if      (gol.waterbuf === 'inf') g = PNG.infb
   else if (gol.waterbuf === ':)')  g = PNG.smlb
@@ -3125,7 +3134,7 @@ function updateWatermark() {
 }
 
 function updateAura() {
-  if (processing) return
+  if (processing || opts.divGraph == null || road.length == 0 || hidden) return
   var el  = gAura.selectAll(".aura")
   var el2 = gAura.selectAll(".aurapast")
   if (gol.aura && opts.showData) {
@@ -3186,7 +3195,7 @@ function updateAura() {
 
 // Create or update the Akrasia Horizon line
 function updateHorizon() {
-  if (opts.divGraph == null || road.length == 0) return;
+  if (processing || opts.divGraph == null || road.length == 0) return;
   const horizonelt = gHorizon.select(".horizon");
   const o = opts.horizon
   
@@ -3228,7 +3237,7 @@ function updateHorizon() {
 }
 
 function updateContextHorizon() {
-  if (opts.divGraph == null || road.length == 0) return
+  if (processing || opts.divGraph == null || road.length == 0) return
   const horizonelt = ctxplot.select(".ctxhorizon")
   const o = opts.horizon
   if (horizonelt.empty()) {
@@ -3268,8 +3277,7 @@ function updateContextHorizon() {
 }
 
 function updateYBHP() {
-  if (processing) return
-  if (opts.divGraph == null || road.length == 0) return
+  if (processing || opts.divGraph == null || road.length == 0) return
   
   // Count all previously generated ybhp path elements on the current svg graph
   // so we can remove unused ones automatically 
@@ -3417,26 +3425,26 @@ function updateYBHP() {
     let x = isostrt[0][0]
     let y = isostrt[0][1]
     if (x < xstrt) { x = xstrt; y = br.isoval(isostrt, x) }
-    let d = "M"+nXSc(x*SMS)+" "+(nYSc(y)+adj)
+    let d = "M"+r1(nXSc(x*SMS))+" "+r1(nYSc(y)+adj)
     for (let i = 1; i < isostrt.length; i++) {
       x = isostrt[i][0]; y = isostrt[i][1]
       if (x < xstrt) continue
       if (x > xend) { x = xend; y = br.isoval(isostrt, x) }
-      d += " L"+nXSc(x*SMS)+" "+(nYSc(y)+adj)
+      d += " L"+r1(nXSc(x*SMS))+" "+r1(nYSc(y)+adj)
       if (isostrt[i][0] > xend) break
     }
 
     if (rend == -1) {
       // Region on the good side of the road
-      d += " L"+nXSc(xend *SMS)+" "+(nYSc(br.isoval(isostrt, xend))+adj)
-      d += " L"+nXSc(xend *SMS)+" "+nYSc(yedge)
-      d += " L"+nXSc(xstrt*SMS)+" "+nYSc(yedge)
+      d += " L"+r1(nXSc(xend *SMS))+" "+r1(nYSc(br.isoval(isostrt, xend))+adj)
+      d += " L"+r1(nXSc(xend *SMS))+" "+r1(nYSc(yedge))
+      d += " L"+r1(nXSc(xstrt*SMS))+" "+r1(nYSc(yedge))
       d += " Z"
     } else if (rend == -2) {
       // Region on the bad side of the road
-      d += " L"+nXSc(xend *SMS)+" "+(nYSc(br.isoval(isostrt, xend))+adj)
-      d += " L"+nXSc(xend *SMS)+" "+nYSc(yedgeb)
-      d += " L"+nXSc(xstrt*SMS)+" "+nYSc(yedgeb)
+      d += " L"+nXSc(xend *SMS)+" "+r1(nYSc(br.isoval(isostrt, xend))+adj)
+      d += " L"+r1(nXSc(xend *SMS))+" "+r1(nYSc(yedgeb))
+      d += " L"+r1(nXSc(xstrt*SMS))+" "+r1(nYSc(yedgeb))
       d += " Z"
     } else if (rstrt != rend) {
       // End DTD value different than start value, so construct a return path
@@ -3446,13 +3454,13 @@ function updateYBHP() {
       let x = isoend[ln-1][0]
       let y = isoend[ln-1][1]
       if (x > xend) { x = xend; y = br.isoval(isoend, x) }
-      d += " L"+nXSc(x*SMS)+" "+(nYSc(y)+adj)
+      d += " L"+r1(nXSc(x*SMS))+" "+r1(nYSc(y)+adj)
       for (let i = ln-2; i >= 0; i--) {
         x = isoend[i][0]
         y = isoend[i][1]
         if (x > xend) continue
         if (x < xstrt) { x = xstrt; y = br.isoval(isoend, x) }
-        d += " L"+nXSc(x*SMS)+" "+(nYSc(y)+adj)
+        d += " L"+r1(nXSc(x*SMS))+" "+r1(nYSc(y)+adj)
         if (isoend[i][0] < xstrt) break
       }
       d += " Z"
@@ -3479,8 +3487,7 @@ function updateYBHP() {
 }
 
 function updatePinkRegion() {                         // AKA nozone AKA oinkzone
-  if (processing) return;
-  if (opts.divGraph == null || road.length == 0) return
+  if (processing || opts.divGraph == null || road.length == 0) return
 
   const pinkelt = gPink.select(".pinkregion")
   const valid = isRoadValid(road)
@@ -3530,7 +3537,7 @@ function updatePinkRegion() {                         // AKA nozone AKA oinkzone
 // line, and a dash argument for the editor version. If scol == null, then the
 // element is deleted to clean up leftovers from earlier draws.
 function updateRedline(rd, g, gelt, cls, scol, sw, delta, usedash) {
-  if (processing) return
+  if (processing || opts.divGraph == null || road.length == 0) return
   
   const roadelt = gelt.select("."+cls)
   if (scol == null) {
@@ -3695,7 +3702,7 @@ function maxVisibleDTD(limit) {
 }
 
 function updateGuidelines() {
-  if (processing) return
+  if (processing || opts.divGraph == null || road.length == 0) return
 
   let guideelt = gGuides.selectAll(".guides")
   if (opts.roadEditor && !opts.showGuidelines) {
@@ -3754,8 +3761,7 @@ function updateGuidelines() {
 }
 
 function updateRazrRoad() {
-  if (processing) return
-  if (opts.divGraph == null || road.length == 0) return
+  if (processing || opts.divGraph == null || road.length == 0) return
 
   // Razor line differs between the editor (dashed) and the graph (solid). Also,
   // the road editor shows the initial road as the razor road.
@@ -3768,8 +3774,7 @@ function updateRazrRoad() {
 }
 
 function updateMaxFluxline() {
-  if (processing) return
-  if (opts.divGraph == null || road.length == 0) return
+  if (processing || opts.divGraph == null || road.length == 0) return
 
   // Generate the maxflux line if maxflux!=0. Otherwise, remove existing one
   updateRedline(road, gol, gMaxflux, "maxflux", 
@@ -3778,8 +3783,7 @@ function updateMaxFluxline() {
 }
 
 function updateStdFluxline() {
-  if (processing) return
-  if (opts.divGraph == null || road.length == 0) return
+  if (processing || opts.divGraph == null || road.length == 0) return
 
   // Generate the maxflux line if maxflux!=0. Otherwise, remove existing one
   updateRedline(road, gol, gStdflux, "stdflux", 
@@ -3789,7 +3793,7 @@ function updateStdFluxline() {
 
   
 function updateContextOldRoad() {
-  if (opts.divGraph == null || road.length == 0) return
+  if (processing || opts.divGraph == null || road.length == 0) return
   // Create, update, and delete road lines on the brush graph
   var roadelt = ctxplot.selectAll(".ctxoldroads")
   var rd = iroad
@@ -3824,7 +3828,7 @@ function updateContextOldRoad() {
 
 // Creates or updates vertical lines for odometer resets
 function updateOdomResets() {
-  if (opts.divGraph == null || road.length == 0 || bbr.oresets.length == 0)
+  if (processing || opts.divGraph == null || road.length == 0 || bbr.oresets.length == 0)
     return
 
   // Create, update and delete vertical knot lines
@@ -3841,7 +3845,9 @@ function updateOdomResets() {
     .attr("id", function(d,i) { return i })
     .attr("name", function(d,i) { return "oreset"+i })
     .attr("x1", function(d){ return nXSc(d*SMS) })
+    .attr("y1", 0)
     .attr("x2", function(d){ return nXSc(d*SMS) })
+    .attr("y2", plotbox.height)
     .attr("stroke", "rgb(200,200,200)") 
       .style("stroke-dasharray", 
              (opts.odomReset.dash)+","+(opts.odomReset.dash)) 
@@ -3849,7 +3855,7 @@ function updateOdomResets() {
 }
 
 function updateKnots() {
-  if (opts.divGraph == null || road.length == 0) return
+  if (processing || opts.divGraph == null || road.length == 0) return
   // Create, update and delete vertical knot lines
   var knotelt = gKnots.selectAll(".knots").data(road)
   var knotrmelt = buttonarea.selectAll(".remove").data(road)
@@ -3941,7 +3947,7 @@ function updateKnots() {
 }
 
 function updateRoads() {
-  if (opts.divGraph == null || road.length == 0) return;
+  if (processing || opts.divGraph == null || road.length == 0) return;
   //let valid = isRoadValid( road )
   //var lineColor = valid?opts.roadLineCol.valid:opts.roadLineCol.invalid;
 
@@ -4020,7 +4026,7 @@ function updateRoadData() {
 }
 
 function updateRoadValidity() {
-  if (opts.divGraph == null || road.length == 0) return
+  if (processing || opts.divGraph == null || road.length == 0) return
   if (!opts.roadEditor) return
   
   let valid = isRoadValid( road )
@@ -4038,7 +4044,7 @@ function updateRoadValidity() {
 }
 
 function updateContextRoads() {
-  if (opts.divGraph == null || road.length == 0) return
+  if (processing || opts.divGraph == null || road.length == 0) return
   var lineColor = isRoadValid( road )?
         opts.roadLineCol.valid:opts.roadLineCol.invalid
 
@@ -4069,7 +4075,7 @@ function updateContextRoads() {
 }
 
 function updateDots() {
-  if (opts.divGraph == null || road.length == 0) return
+  if (processing || opts.divGraph == null) return
   // Create, update and delete inflection points
   var dotelt = gDots.selectAll(".dots").data(road)
   if (!opts.roadEditor) {
@@ -4119,7 +4125,7 @@ function updateDots() {
             dotDragEnded(d, Number(this.id))}))
 }
 function updateContextDots() {
-  if (opts.divGraph == null || road.length == 0) return;
+  if (processing || opts.divGraph == null) return;
   // Create, update and delete inflection points
   var dotelt = ctxplot.selectAll(".ctxdots").data(road);
   if (!opts.roadEditor) {
@@ -4143,7 +4149,7 @@ function dpFill( pt ) {
   return br.dotcolor(road, gol, pt[0], pt[1], iso)
 }
 function dpFillOp( pt ) {
-  return (pt[3] == bbr.DPTYPE.AGGPAST)?1:0.3
+  return (pt[3] == bbr.DPTYPE.AGGPAST)?null:0.3
 }
 function dpStrokeWidth( pt ) {
   return (((pt[3] == bbr.DPTYPE.AGGPAST)?1:0.5)*scf)+"px"
@@ -4165,8 +4171,18 @@ function showDotText(d) {
 };
 function removeDotText() { rmTextBox(dotText) }
 
+// grp: Container group for the datapoints
+  // d: data
+  // cls: Class name for selection and creation
+  // r: circle radius
+  // s: stroke
+  // sw: stroke-width
+  // f: fill
+  // hov: hover support (boolean)
+  // fop: fill-opacity
+  // sc: secondary class
 function updateDotGroup(grp,d,cls,r,
-                        s=null,sw=null,f=null,hov=true,fop=null) {
+                        s=null,sw=null,f=null,hov=true,fop=null,sc="") {
   var dpelt
   dpelt = grp.selectAll("."+cls).data(d)
   dpelt.exit().remove()
@@ -4218,7 +4234,7 @@ function updateDotGroup(grp,d,cls,r,
 }
 
 function updateRosy() {
-  if (processing) return;
+  if (processing || opts.divGraph == null) return;
 
   var l = [nXSc.invert(0).getTime()/SMS, 
            nXSc.invert(plotbox.width).getTime()/SMS];
@@ -4275,7 +4291,7 @@ function updateRosy() {
 }
 
 function updateSteppy() {
-  if (processing) return
+  if (processing || opts.divGraph == null) return
   const xmin = nXSc.invert(            0).getTime()/SMS
   const xmax = nXSc.invert(plotbox.width).getTime()/SMS
   const df = function(d) {
@@ -4360,7 +4376,7 @@ function updateSteppy() {
 }
 
 function updateDerails() {
-  if (processing) return
+  if (processing || opts.divGraph == null) return
 
   var l = [nXSc.invert(0).getTime()/SMS, 
            nXSc.invert(plotbox.width).getTime()/SMS]
@@ -4396,8 +4412,7 @@ function updateDerails() {
 }
 
 function updateDataPoints() {
-  if (processing) return;
-  if (opts.divGraph == null || road.length == 0) return
+  if (processing || opts.divGraph == null || road.length == 0) return
   //console.debug("id="+curid+", updateDataPoints()");
   var l = [nXSc.invert(0).getTime()/SMS, 
            nXSc.invert(plotbox.width).getTime()/SMS]
@@ -4485,7 +4500,7 @@ function updateDataPoints() {
 }
 
 function updateHashtags() {
-  if (processing) return;
+  if (processing || opts.divGraph == null) return
   
   var hashel
   if (!opts.roadEditor) {
@@ -4617,7 +4632,7 @@ function updateTableTitles() {
     roadcolumns = ['', 'End Date',  'Value', ratetext, '', '']
     goalcolumns = ['', 'Goal Date', 'Value', ratetext, '', '']
   } else {
-    roadcolumns = ['End Date',  'Value', ratetext]
+    roadcolumns = ['', 'End Date',  'Value', ratetext]
     goalcolumns = ['', 'Goal Date', 'Value', ratetext]
   }    
   sttail.selectAll("span.roadhdrcell").data(roadcolumns).text((c)=>c)
@@ -5066,6 +5081,7 @@ function updateContextData() {
     focusrect.attr("visibility", "hidden")
   }
 }
+
 
 function updateGraphData(force = false) {
   if (opts.divGraph == null) return

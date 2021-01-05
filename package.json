@@ -17,6 +17,7 @@
     "express-session": "^1.17.1",
     "jsdoc": "^3.6.6",
     "moment": "^2.29.1",
+    "moment-timezone": "^0.5.32",
     "octicons": "^8.5.0",
     "request": "^2.88.2",
     "sequelize": "^6.3.5",

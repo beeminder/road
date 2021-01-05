@@ -22,7 +22,11 @@
   <button id="next" onclick="next()" disabled>Next</button>
   
   <script>
-    bs = new bsandbox(document.getElementById("sandbox"))
+    bs = new bsandbox({divGraph: document.getElementById("sandbox"),
+                       divDueby: null,
+                       svgSize: { width: 696, height: 453 },
+                       focusRect: { x:0, y:0, width:696, height: 453 },
+                       ctxRect: { x:0, y:453, width:696, height: 100 }})
     bs.newGoal("hustler", "d", 1, 0, true)
     var gr = bs.getGraphObj()
 
