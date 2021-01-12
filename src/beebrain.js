@@ -458,9 +458,9 @@ function computeRosy() {
 let hashtagRE
 try {
   //hashtagRE = /(?:^|\s)(#\p{L}[\p{L}0-9_]+)(?=$|\s)/gu
-  hashtagRE = new RegExp("(?:^|\\s)(#\\p{L}[\\p{L}0-9_]+)(?=$|\\s)", "gu")
+  hashtagRE = new RegExp("(?:^|\\s)(#\\p{L}[\\p{L}0-9_]*)(?=$|\\s)", "gu")
 } catch { // Firefox can't handle the above in 2019 so...
-  hashtagRE = /(?:^|\s)(#[a-zA-Z]\w+)(?=$|\s)/g
+  hashtagRE = /(?:^|\s)(#[a-zA-Z]\w*)(?=$|\s)/g
 }
 function hashextract(s) {
   let set = new Set(), m
