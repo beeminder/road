@@ -5063,29 +5063,29 @@ function updateContextData() {
 // This is called once at the beginning and whenever scf changes
 function updateDynStyles() {
   let s = "", svgid = "#svg"+curid+" "
-  let pe = "pointer-events:"+(opts.headless)?"none;":"all;"
+  let pe = "pointer-events:"+((opts.headless)?"none;":"all;")
   
-  s += svgid+".rd {r:"+r3(opts.dataPoint.size*scf)+";} "
-  s += svgid+".std {r:"+r3((opts.dataPoint.size+2)*scf)+";} "
-  s += svgid+".ap {r:"+r3(0.7*(opts.dataPoint.size)*scf)+";"+pe+"} "
-  s += svgid+".hp {r:"+r3(opts.dataPoint.hsize*scf)+";"+pe+"} "
-  s += svgid+".guides {stroke-width:"+r3(opts.guidelines.width*scf)+";} "
-  s += svgid+".rosy {stroke-width:"+r3(4*scf)+";} "
-  s += svgid+".steppy {stroke-width:"+r3(4*scf)+";} "
-  s += svgid+".steppyppr {stroke-width:"+r3(4*scf)+";} "
-  s += svgid+".maxflux {fill:none;stroke:"+bu.Cols.BIGG+";stroke-width:"+r3(opts.maxfluxline*scf)+";} "
-  s += svgid+".stdflux {fill:none;stroke:"+bu.Cols.BIGG+";stroke-width:"+r3(opts.stdfluxline*scf)+";} "
+  s += svgid+".rd {r:"+r3(opts.dataPoint.size*scf)+"px} "
+  s += svgid+".std {r:"+r3((opts.dataPoint.size+2)*scf)+"px} "
+  s += svgid+".ap {r:"+r3(0.7*(opts.dataPoint.size)*scf)+"px;"+pe+"} "
+  s += svgid+".hp {r:"+r3(opts.dataPoint.hsize*scf)+"px;"+pe+"} "
+  s += svgid+".guides {stroke-width:"+r3(opts.guidelines.width*scf)+"px} "
+  s += svgid+".rosy {stroke-width:"+r3(4*scf)+"px} "
+  s += svgid+".steppy {stroke-width:"+r3(4*scf)+"px} "
+  s += svgid+".steppyppr {stroke-width:"+r3(4*scf)+"px} "
+  s += svgid+".maxflux {fill:none;stroke:"+bu.Cols.BIGG+";stroke-width:"+r3(opts.maxfluxline*scf)+"px} "
+  s += svgid+".stdflux {fill:none;stroke:"+bu.Cols.BIGG+";stroke-width:"+r3(opts.stdfluxline*scf)+"px} "
   
   // Styles that depend on the road editor
   if (opts.roadEditor) {
     // Datapoints
-    s += svgid+".dp {r:"+r3(opts.dataPoint.size*scf)+";stroke:"
+    s += svgid+".dp {r:"+r3(opts.dataPoint.size*scf)+"px;stroke:"
       +opts.dataPointCol.stroke+";stroke-width:"+r3(opts.dataPoint.border*scf)+"px} "
-    s += svgid+".razr {fill:none;pointer-events:none;stroke-width:"+r3(opts.razrline*scf)+";stroke:"+bu.Cols.RAZR0+";} "
+    s += svgid+".razr {fill:none;pointer-events:none;stroke-width:"+r3(opts.razrline*scf)+"px;stroke:"+bu.Cols.RAZR0+"} "
   } else {
-    s += svgid+".dp {r:"+r3(opts.dataPoint.size*scf)+";stroke:rgb(0,0,0);stroke-width:"+r3(1*scf)+"px} "
+    s += svgid+".dp {r:"+r3(opts.dataPoint.size*scf)+"px;stroke:rgb(0,0,0);stroke-width:"+r3(1*scf)+"px} "
     s += svgid+".dp.fuda {stroke-width:"+r3(0.5*scf)+"px} "
-    s += svgid+".razr {fill:none;pointer-events:none;stroke-width:"+r3(opts.razrline*scf)+";stroke:"+bu.Cols.REDDOT+";} "
+    s += svgid+".razr {fill:none;pointer-events:none;stroke-width:"+r3(opts.razrline*scf)+"px;stroke:"+bu.Cols.REDDOT+"} "
   }
   d3.select("style#dynstyle"+curid).text(s)
 }
