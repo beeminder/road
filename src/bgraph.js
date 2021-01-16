@@ -2022,11 +2022,11 @@ function loadGoal(json, timing = true) {
   updateTable()
   updateDueBy()
   resetDataTable()
-  updateContextData()
 
   // Re-enable updates for graph components. Next call to resizeGraph will
   // redraw all of these components
   processing = false
+  updateContextData()
 
   // This next call ensures that stathead and other new graph
   // properties are properly reflected in the new graph dimensions
