@@ -2,15 +2,16 @@
 
 const cluster = require('cluster')
 const os = require('os')
+const yargs = require('yargs')
 const bu = require('../src/butil.js')
 
 function compareJSON(stats, bbr) {
-  var valid = true, numeric = false, summary = false, str = ""
+  let valid = true, numeric = false, summary = false, str = ""
   if (stats['error'] != "") {
     str += "Processing error: "+stats['error']+"<br/>\n"
     return {valid: false, numeric: false, summary: false, result: str}
   }
-  for (var prop in bbr) {
+  for (let prop in bbr) {
     if (prop == "proctm" || prop == "thumburl" || prop == "graphurl") continue
     if (!stats.hasOwnProperty(prop)) {
       str += "Prp "+prop+" is missing from the output\n"
@@ -48,14 +49,14 @@ function compareJSON(stats, bbr) {
 if (cluster.isMaster) {
 
   // Count the machine's CPUs
-  var cpuCount = os.cpus().length;
+  let cpuCount = os.cpus().length;
 
   // Number of "parallel" renderer instances. Actual parallelism is
   // because chromium instances run as processes.
   cpuCount = 1;
 
   // Create a worker for each CPU
-  for (var i = 0; i < cpuCount; i += 1)
+  for (let i = 0; i < cpuCount; i += 1)
     cluster.fork();
 
   // Whenever a worker dies, create a new one.
@@ -67,9 +68,9 @@ if (cluster.isMaster) {
 
 } else {
 
-  var reqcnt = 0  // Keep track of request id for each worker thread
-  var pending = 0 // Number of goals currently being processed
-  var msgbuf = {} // Local buffer for message outputs 
+  let reqcnt = 0  // Keep track of request id for each worker thread
+  let pending = 0 // Number of goals currently being processed
+  let msgbuf = {} // Local buffer for message outputs 
   
   const port = process.env.PORT || 3000
 
@@ -85,7 +86,7 @@ if (cluster.isMaster) {
   const app = express()
   app.disable('x-powered-by')
 
-  var usage =
+  const usage =
       "Usage:<br/>"
     +"URL?slug=filebase&inpath=/path/to/dir OR<br/>"
     +"URL?user=username&goal=goalname&inpath=/path/to/dir<br/>"
@@ -93,14 +94,34 @@ if (cluster.isMaster) {
     +"An optional check against the pybrain output can be initiated with the \"pyjson\" parameter<br/>"
     +"Graph generation may be disabled with the \"nograph=1\" parameter<br/>"
     +"SVG optimization can be turned on with the  \"svgo=1\" parameter<br/>"
-  var noinpath = "Bad URL parameters: Missing \"inpath\"<br/><br/>"+usage
-  var nofile = `Bad URL parameters: One of "slug" or ("user","goal") must be supplied!<br/><br/>`+usage
-  var paramconflict = 'Bad URL parameters: "slug\" and ("user\","goal") cannot be used together!<br/><br/>'+usage
-  var unknown = "Unknown error!<br/><br/>"+usage
-  var pong = "pong"
+  const noinpath = "Bad URL parameters: Missing \"inpath\"<br/><br/>"+usage
+  const nofile = `Bad URL parameters: One of "slug" or ("user","goal") must be supplied!<br/><br/>`+usage
+  const paramconflict = 'Bad URL parameters: "slug\" and ("user\","goal") cannot be used together!<br/><br/>'+usage
+  const unknown = "Unknown error!<br/><br/>"+usage
+  const pong = "pong"
   
   // Render url.
   const proc_timeid = " Total processing"
+
+  const argv = yargs
+        .option('firefox', {
+          alias: 'f',
+          description: 'use headless firefox',
+          type: 'boolean'
+        })
+        .help()
+        .alias('help', 'h')
+        .argv
+  
+  let pproduct = "chrome"
+  if (argv.firefox) {
+    console.log("Starting puppeteer with headless FIREFOX.")
+    pproduct = "firefox"
+  } else {
+    console.log("Starting puppeteer with headless CHROME.")
+    pproduct = "chrome"
+  }
+  
   app.use(async (req, res, next) => {
     let hostname = os.hostname()
     let { ping, inpath, outpath, slug, user, goal, pyjson, nograph, svgo } = req.query
@@ -197,7 +218,7 @@ if (cluster.isMaster) {
   })
 
   // Create renderer and start server.
-  createRenderer(cluster.worker.id).then(createdRenderer => {
+  createRenderer(cluster.worker.id, pproduct).then(createdRenderer => {
     renderer = createdRenderer
     console.info(prefix+'Initialized renderer.')
     const bindip = process.env.JSBRAIN_SERVER_BIND || 'localhost'
