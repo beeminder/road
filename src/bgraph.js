@@ -3310,6 +3310,7 @@ function updateYBHP() {
   const bblue    = bu.Cols.RAZR2
   const borange  = bu.Cols.RAZR1
   const lyellow  = "#ffff88" // light yellow same as LYEL for classic YBR
+  const llyellow  = "#ffffdd" // lighter yellow same as LYEL for classic YBR
   const gsw      = .99  // stroke width for guiding lines
   const gfo      = 1    // fill-opacity for guiding lines -- may not matter
   const rfo      = 0.72 // fill-opacity for regions
@@ -3320,7 +3321,7 @@ function updateYBHP() {
   //----------------------------------------------------------------------------
     [  0,  2, lyellow,   "none",    0, rfo, xrfull], // mimic old lanes
   //[  0, -2, "#fff5f5", "none",    0,   1, xrakr ], // nozone/oinkzone
-    [inf, -1, lyellow,   "none",    0, rfo, xrfull], // infinitely safe region
+    [inf, -1, llyellow,   "none",    0, rfo, xrfull], // infinitely safe region
   ]
   const regionsNormal = [
   //[  d,  D, fcolor,    scolor,    w,  op, xrange]
@@ -3338,7 +3339,7 @@ function updateYBHP() {
   //[  0,  0, "#ff0000", "none",    1, gfo, xrfull], // bright red line
   //[  0, -2, "#ffe5e5", "none",    0, rfo,   null], // whole bad half-plane
   //[  0, -2, "#fff5f5", "none",    0,   1, xrakr ], // nozone/oinkzone
-    [inf, -1, lyellow,   "none",    0, rfo, xrfull], // infinitely safe region
+    [inf, -1, llyellow,   "none",    0, rfo, xrfull], // infinitely safe region
   ]
   let regions
   if (false) { // change to true for debugging
