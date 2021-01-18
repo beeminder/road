@@ -3715,6 +3715,7 @@ function maxVisibleDTD(limit) {
   if (isovisible(isolimit, bbox)) {
     // TODO: Find the minimum isoline that overlaps with the limit w/in the 
     // visible range.
+/* <<<<<<< HEAD */
     const maxdtd = 
       bu.searchby(glarr, e => isocompare(isolimit, getiso(e), bbox) ? 1 : -1)
     //return bu.clip(maxdtd[1], 0, glarr.length - 1)
@@ -3729,6 +3730,19 @@ function maxVisibleDTD(limit) {
   const maxdtd = bu.searchby(glarr, e => isovisible(getiso(e), bbox) ? -1 : 1)
   return maxdtd[0] === null ? maxdtd[1] : maxdtd[0]
   //return max(0, bu.searchLow(glarr, p => isovisible(getiso(p), bbox) ? -1: 1))
+/* =======
+    //const maxdtd = 
+    //  bu.searchby(glarr, e => isocompare(isolimit, getiso(e), bbox) ? 1 : -1)
+    //return maxdtd[1] == null ? maxdtd[0] : maxdtd[1]
+    const maxdtd =
+      bu.searchHigh(glarr, p => isocompare(isolimit, getiso(p), bbox) ? 1 : -1)
+    return min(maxdtd, glarr.length - 1)
+  }
+  
+  //const maxdtd = bu.searchby(glarr, e => isovisible(getiso(e), bbox) ? -1 : 1)
+  //return maxdtd[0] === null ? maxdtd[1] : maxdtd[0]
+  return max(0, bu.searchLow(glarr, p => isovisible(getiso(p), bbox) ? -1 : 1))
+>>>>>>> Mostly working without searchby */
   // Is it weird that the function to search by is something that itself does
   // a search? Probably Uluc is just a couple levels ahead of me but at some 
   // point I'll want to get my head around that! --dreev
