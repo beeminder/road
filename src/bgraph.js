@@ -3310,7 +3310,7 @@ function updateYBHP() {
   const bblue    = bu.Cols.RAZR2
   const borange  = bu.Cols.RAZR1
   const lyellow  = "#ffff88" // light yellow same as LYEL for classic YBR
-  const llyellow  = "#ffffdd" // lighter yellow same as LYEL for classic YBR
+  const llyellow  = "#ffffbd" // uluc had #ffffdd
   const gsw      = .99  // stroke width for guiding lines
   const gfo      = 1    // fill-opacity for guiding lines -- may not matter
   const rfo      = 0.72 // fill-opacity for regions
