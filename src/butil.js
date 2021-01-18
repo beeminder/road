@@ -289,59 +289,113 @@ self.monotonize = (l, dir=1) => {
     @param {Array[]} av Array of Arrays to zip */
 self.zip =  (av) => av[0].map((_,i) => av.map(a => a[i]))
 
-/** Return 0 when x is very close to 0.
-    @param {Number} x Input number
-    @param {Number} [delta=1e-7] Tolerance */
-self.chop = (x, delta=1e-7) => (abs(x) < delta ? 0 : x)
+// Return 0 when x is very close to 0.
+self.chop = (x, tol=1e-7) => (abs(x) < tol ? 0 : x)
 
-/** Return an integer when x is very close to an integer
-    @param {Number} x Input number
-    @param {Number} [delta=1e-7] Tolerance */
-self.ichop = (x, delta=1e-7) => {
+// Return an integer when x is very close to an integer.
+self.ichop = (x, tol=1e-7) => {
   let fp = x % 1, ip = x - fp
   if (fp < 0) {fp += 1; ip -= 1;}
   if (fp > 0.5) fp = 1 - self.chop(1-fp)
-  return floor(ip) + self.chop(fp, delta)
+  return floor(ip) + self.chop(fp, tol)
 }
 
-/** clip(x, a,b) = min(b,max(a,x)). Swaps a and b if a > b.
-    @param {Number} x Input number
-    @param {Number} a left boundary
-    @param {Number} b right boundary */
+// Clip x to be at least a and at most b: min(b,max(a,x)). Swaps a & b if a > b.
 self.clip = (x, a, b) => {
-  if (a > b) { let tmp=a; a=b; b=tmp }
-  if (x < a) x = a
-  if (x > b) x = b
+  if (a > b) [a, b] = [b, a]
+  if (x < a) return a
+  if (x > b) return b
   return x
 }
+
+
+// -----------------------------------------------------------------------------
+// The following pair of functions -- searchHigh and searchLow -- take a sorted
+// array and a distance function. A distance function is like an "is this the
+// element we're searching for and if not, which way did it go?" function. It
+// takes an element of a sorted array and returns a negative number if it's too
+// small, a positive number if it's too big, and zero if it's just right. Like
+// if you wanted to find the number 7 in an array of numbers you could use `x-7`
+// as a distance function.                                     L     H
+//   Sorted array:                                [-1,  3,  4, 7, 7, 7,  9,  9]
+//   Output of distance function on each element: [-8, -4, -3, 0, 0, 0, +2, +2]
+// So searchLow would return the index of the first 7 and searchHigh the last 7.
+// Or in case of no exact matches...                        L   H
+//   Sorted array:                                [-1,  3,  4,  9,  9]
+//   Output of distance function on each element: [-8, -4, -3, +2, +2]
+// In that case searchLow returns the (index of the) 4 and searchHigh the 9. In
+// other words, searchLow errs low, returning the biggest element less than the
+// target if the target isn't found. And searchHigh errs high, returning the
+// smallest element greater than the target if the target isn't found.
+// In the case that every element is too low...                     L   H
+//   Sorted array:                                [-2, -2, -1,  4,  6]
+//   Output of distance function on each element: [-9, -9, -8, -3, -1]
+// As you'd expect, searchLow returns the last index (length minus one) and 
+// searchHigh returns one more than that (the actual array length).
+// And if every element is too big...           L   H
+//   Sorted array:                                [ 8,  8,  9, 12, 13]
+//   Output of distance function on each element: [+1, +1, +2, +5, +6]
+// Then it's the opposite, with searchHigh giving the first index, 0, and
+// searchLow giving one less than that, -1.
+// HISTORICAL NOTE: 
+// We'd found ourselves implementing and reimplementing ad hoc binary searches
+// all over the Beebrain code. Sometimes they would inelegantly do O(n)
+// scooching to find the left and right bounds in the case of multiple matches.
+// So we made this nice general version.
+// -----------------------------------------------------------------------------
+
+// Take a sorted array (sa) and a distance function (df) and do a binary search,
+// returning the index of an element with distance zero, erring low per above.
+// Review of the cases:
+// 1. There exist elements of sa for which df is 0: return first such index
+// 2. No such elements: return the price-is-right index (highest w/o going over)
+// 3. Every element too small: return n-1 (the index of the last element)
+// 4. Every element is too big: return -1 (one less than the first element)
+// *This is like finding the infimum of the set of just-right elements.*
+self.searchLow = (sa, df) => {
+  if (!sa || !sa.length) return -1 // empty/non-array => every element too big
+
+  let li = -1         // initially left of the leftmost element of sa
+  let ui = sa.length  // initially right of the rightmost element of sa
+  let mi              // midpoint of the search range for binary search
   
-/* Take a sorted array sarr and a distance function df and do a binary search to
-   return a pair of bounding indexes into the array, [i, j], such that sarr[i]
-   and sarr[j] are as close as possible to what we're searching for.
-   (The distance function takes an element of the array and returns a negative
-   number if it's too small, a positive number if it's too big, and 0 if it's
-   just right.)
-   In the common case we're returning a pair of consecutive indices that an
-   ideal value would be sorted between. Special cases:
-   * If everything in the array is too big, return [null, 0], and if everything
-     in the array is too small, return [n-1, null], where n is the array length.
-   * If there are any just-right elements in the array then we return the start
-     and end indexes of that range of elements -- the ones the distance function
-    maps to zero.
-   
-   Note for the future: Maybe it would be cleaner to specify an optional error
-   direction and then return a single thing. There's always a range of indices
-   we could return -- either the indices of all the just-right elements if there
-   are any, or two consecutive indexes pointing to elements that are too small
-   and too big, respectively. If the specified error direction is -1 it means we
-   want to err on the low side and return the first thing in the range. If the
-   error direction is +1 it means we want to err high and return the last thing
-   in the range. I think that makes sense because we never want an actual range
-   of indices, we just want the right element of the array. 
-   (Also we might not need to specify an error direction if we constructed the
-   distance function appropriately? Let me yank myself out of this rabbit hole
-   by the ears now. The current version works Just Fine!) */
-self.searchby = (sarr, df) => {
+  while (ui-li > 1) {
+    mi = floor((li+ui)/2)
+    if (df(sa[mi]) < 0) li = mi
+    else                ui = mi
+  }
+  return ui === sa.length || df(sa[ui]) !== 0 ? li : ui
+}
+
+// Take a sorted array (sa) and a distance function (df) and do the same thing
+// as searchLow but erring high. Cases:
+// 1. There exist elements of sa for which df is 0: return last such index
+// 2. No such elements: return the least upper bound (lowest w/o going under)
+// 3. Every element is too small: return n (one more than the last element)
+// 4. Every element is too big: return 0 (the index of the first element)
+// *This is like finding the supremum of the set of just-right elements.*
+self.searchHigh = (sa, df) => {
+  if (!sa || !sa.length) return 0 // empty/non-array => every element too small
+
+  let li = -1         // initially left of the leftmost element of sa
+  let ui = sa.length  // initially right of the rightmost element of sa
+  let mi              // midpoint of the search range for binary search
+  
+  while (ui-li > 1) {
+    mi = floor((li+ui)/2)
+    if (df(sa[mi]) <= 0) li = mi
+    else                 ui = mi
+  }
+  return li === -1 || df(sa[li]) !== 0 ? ui : li
+}
+
+  
+// Now that we have searchHigh & searchLow we can probably refactor the code
+// that uses this searchby function to just use searchHigh/Low directly.
+// Also, if we do keep this, there's no need to return nulls -- we can just
+// return [lo, hi] and the code that uses this function can error-check the 
+// out-of-bounds indices just as easily as error-checking for nulls.
+self.searchby_old = (sarr, df) => {
   const n = sarr.length
   if (n===0) return null // none of this works with an empty array
   let li = 0    // initially the index of the leftmost element of sarr
@@ -374,6 +428,12 @@ self.searchby = (sarr, df) => {
   while (li > 0)   { if (df(sarr[li-1]) == 0) { li -= 1 } else break }
   while (ui < n-1) { if (df(sarr[ui+1]) == 0) { ui += 1 } else break }
   return [li, ui]
+
+  // TODO
+  const lo = self.searchLow(sarr, df)
+  const hi = self.searchHigh(sarr, df)
+  return [lo < 0            ? null : lo, 
+          hi >= sarr.length ? null : hi]
 }
 
 // Automon is pretty great but sometimes it would also be nice to have unit
@@ -570,32 +630,20 @@ self.linspace = (a, b, n) => {
   return ret
 }
 
-/** Convex combination: x rescaled to be in [c,d] as x ranges from
-    a to b.  clipQ indicates whether the output value should be
-    clipped to [c,d].  Unsorted inputs [a,b] and [c,d] are also
-    supported and work in the expected way except when clipQ = false,
-    in which case [a,b] and [c,d] are sorted prior to computing the
-    output. 
-    @param {Number} x Input in [a,b]
-    @param {Number} a Left boundary of input
-    @param {Number} b Right boundary of input
-    @param {Number} c Left boundary of output
-    @param {Number} d Right boundary of output
-    @param {Boolean} [clipQ=true] When false, sort a,b and c,d first */
+// Convex combination: x rescaled to be in [c,d] as x ranges from a to b.
+// Optional param clipQ indicates whether the output value should be clipped to
+// [c,d]. Unsorted inputs [a,b] and [c,d] are also supported and work in the 
+// expected way except when clipQ is false, in which case [a,b] and [c,d] are 
+// sorted prior to computing the output. 
 self.cvx = (x, a,b, c,d, clipQ=true) => {
-  let tmp
-  if (self.chop(a-b) === 0) {
-    if (x <= a) return min(c,d)
-    else        return max(c,d)
-  }
+  if (self.chop(a-b) === 0) return x <= a ? min(c, d) : max(c, d)
   if (self.chop(c-d) === 0) return c
-  if (clipQ)
-    return self.clip(c + (x-a)/(b-a)*(d-c), c>d ? d : c, c>d ? c : d)
-  else {
-    if (a > b) { tmp=a; a=b; b=tmp }
-    if (c > d) { tmp=c; c=d; d=tmp }
-    return c + (x-a)/(b-a)*(d-c)
-  }
+
+  if (clipQ) return self.clip(c + (x-a)/(b-a)*(d-c), min(c, d), max(c, d))
+    
+  if (a > b) [a, b] = [b, a]
+  if (c > d) [c, d] = [d, c]
+  return c + (x-a)/(b-a)*(d-c)
 }
 
 /**Delete Duplicates. The ID function maps elements to something that defines

@@ -475,12 +475,15 @@ function getiso( val ) {
 function getisopath( val, xr ) {
   const isoline = getiso(val)
   if (xr == null) xr = [-Infinity, Infinity]
-  let x = isoline[0][0], y = isoline[0][1]
+  let x = isoline[0][0]
+  let y = isoline[0][1]
   if (x < xr[0]) { x = xr[0]; y = br.isoval(isoline, x) }
   let d = "M"+r1(nXSc(x*SMS))+" "+r1(nYSc(y))
-  let strt = bu.searchby(isoline, e=>((e[0]<xr[0])?-1:1))
-  let end = bu.searchby(isoline, e=>((e[0]<xr[1])?-1:1))
-  for (let i = strt[1]; i <= end[1]; i++) {
+  //let strt = bu.searchby(isoline, e=>(e[0]<xr[0] ? -1 : 1))
+  //let end  = bu.searchby(isoline, e=>(e[0]<xr[1] ? -1 : 1))
+  const a = bu.searchHigh(isoline, p => p[0] < xr[0] ? -1 : 1)
+  const b = bu.searchHigh(isoline, p => p[0] < xr[1] ? -1 : 1)
+  for (let i = a; i <= b; i++) {
     d += " L"+r1(nXSc(isoline[i][0]*SMS))+" "+r1(nYSc(isoline[i][1]))
   }
   return d
@@ -3629,15 +3632,19 @@ function lineInBBox( line, bbox ) {
 }
   
 function isovisible(iso, bbox) {
-  if (iso.length === 0) return false
+  if (!iso || !iso.length) return false
   // TODO: For efficiency, limit intersection search to isolines in xrange
   const left  = bbox[0] - bbox[2]
   const right = bbox[0] + bbox[2]
-  let l = bu.searchby(iso, e => e[0] < left  ? -1 : 1)
-  let r = bu.searchby(iso, e => e[0] < right ? -1 : 1)
-  if (l[0] == null) l[0] = l[1]
-  if (r[1] == null) r[1] = r[0]
-  for (let i = l[0]; i < r[1]; i++) {
+  //let l = bu.searchby(iso, e => e[0] < left  ? -1 : 1)
+  //let r = bu.searchby(iso, e => e[0] < right ? -1 : 1)
+  //if (l[0] == null) l[0] = l[1]
+  //if (r[1] == null) r[1] = r[0]
+  let a = bu.searchLow(iso, p => p[0] < left  ? -1 : 1)
+  let b = bu.searchLow(iso, p => p[0] < right ? -1 : 1)
+  if (a < 0) a = 0
+  if (b > iso.length - 2) b = iso.length - 2
+  for (let i = a; i <= b; i++) {
     if (lineInBBox([iso[i], iso[i+1]], bbox)) return true
   }
   return false
@@ -3649,23 +3656,27 @@ function isocompare(isoa, isob, bbox) {
   // TODO: For efficiency, limit intersection search to isolines in xrange
   const left  = bbox[0] - bbox[2]
   const right = bbox[0] + bbox[2]
-  // Fail if isolines differ on the boundaries. TODO: This duplicates
-  // the boundary search below. Combine.
-  if (br.isoval(isoa, left) != br.isoval(isob, left)
+  // Fail if isolines differ on the boundaries. 
+  // TODO: This duplicates the boundary search below. Combine.
+  if (   br.isoval(isoa, left ) != br.isoval(isob, left )
       || br.isoval(isoa, right) != br.isoval(isob, right)) return false
 
-  let la = bu.searchby(isoa, e => e[0] < left  ? -1 : 1)
-  let ra = bu.searchby(isoa, e => e[0] < right ? -1 : 1)
-  let lb = bu.searchby(isob, e => e[0] < left  ? -1 : 1)
-  let rb = bu.searchby(isob, e => e[0] < right ? -1 : 1)
-  if (la[0] == null) la[0] = la[1]
-  if (ra[1] == null) ra[1] = ra[0]
-  if (lb[0] == null) lb[0] = lb[1]
-  if (rb[1] == null) rb[1] = rb[0]
+  //let la = bu.searchby(isoa, e => e[0] < left  ? -1 : 1)
+  //let ra = bu.searchby(isoa, e => e[0] < right ? -1 : 1)
+  //let lb = bu.searchby(isob, e => e[0] < left  ? -1 : 1)
+  //let rb = bu.searchby(isob, e => e[0] < right ? -1 : 1)
+  //if (la[0] == null) la[0] = la[1]
+  //if (ra[1] == null) ra[1] = ra[0]
+  //if (lb[0] == null) lb[0] = lb[1]
+  //if (rb[1] == null) rb[1] = rb[0]
+  let la = bu.searchHigh(isoa, p => p[0] < left  ? -1 : 1)
+  let ra = bu.searchLow( isoa, p => p[0] < right ? -1 : 1)
+  let lb = bu.searchHigh(isob, p => p[0] < left  ? -1 : 1)
+  let rb = bu.searchLow( isob, p => p[0] < right ? -1 : 1)
   // Evaluate the alternate isoline on inflection points
-  for (let i = la[1]; i < ra[0]; i++)
+  for (let i = la; i < ra; i++)
     if (br.isoval(isob, isoa[i][0]) != isoa[i][1]) return false
-  for (let i = lb[1]; i < rb[0]; i++)
+  for (let i = lb; i < rb; i++)
     if (br.isoval(isoa, isob[i][0]) != isob[i][1]) return false
   return true
 }
@@ -3693,15 +3704,19 @@ function maxVisibleDTD(limit) {
 
   // If upper limit is visible, nothing to do, otherwise proceed with the search
   if (isovisible(isolimit, bbox)) {
-    // TODO: Find the minimum isoline that overlaps with the limit
-    // within the visible range
-    const maxdtd
-          = bu.searchby(glarr, e => isocompare(isolimit, getiso(e), bbox) ? 1 : -1)
-    return (maxdtd[1]==null)?maxdtd[0]:maxdtd[1]
+    // TODO: Find the minimum isoline that overlaps with the limit w/in the 
+    // visible range.
+    //const maxdtd = 
+    //  bu.searchby(glarr, e => isocompare(isolimit, getiso(e), bbox) ? 1 : -1)
+    //return maxdtd[1] == null ? maxdtd[0] : maxdtd[1]
+    const maxdtd =
+      bu.searchHigh(glarr, p => isocompare(isolimit, getiso(p), bbox) ? 1 : -1)
+    return min(maxdtd, glarr.length - 1)
   }
   
-  const maxdtd = bu.searchby(glarr, e => isovisible(getiso(e), bbox) ? -1 : 1)
-  return maxdtd[0] === null ? maxdtd[1] : maxdtd[0]
+  //const maxdtd = bu.searchby(glarr, e => isovisible(getiso(e), bbox) ? -1 : 1)
+  //return maxdtd[0] === null ? maxdtd[1] : maxdtd[0]
+  return max(0, bu.searchLow(glarr, p => isovisible(getiso(p), bbox) ? -1 : 1))
   // Is it weird that the function to search by is something that itself does
   // a search? Probably Uluc is just a couple levels ahead of me but at some 
   // point I'll want to get my head around that! --dreev
