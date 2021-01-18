@@ -395,7 +395,7 @@ self.searchHigh = (sa, df) => {
 // Also, if we do keep this, there's no need to return nulls -- we can just
 // return [lo, hi] and the code that uses this function can error-check the 
 // out-of-bounds indices just as easily as error-checking for nulls.
-self.searchby_old = (sarr, df) => {
+self.searchby = (sarr, df) => {
   const n = sarr.length
   if (n===0) return null // none of this works with an empty array
   let li = 0    // initially the index of the leftmost element of sarr
