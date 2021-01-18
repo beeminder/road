@@ -1,9 +1,10 @@
 'use strict'
 
-const uuidv4 = require('uuid/v4')
+const {v4: uuidv4} = require('uuid')
 const fs = require('fs')
 const gm = require('gm').subClass({imageMagick: true})
-const puppeteer = require('puppeteer')
+const puppeteerch = require('puppeteer-ch')
+const puppeteerff = require('puppeteer-ff')
 const svgo = require('svgo')
 
 const pageTimeout = 40 // Seconds to wait until giving up on generate.html
@@ -113,8 +114,8 @@ class Renderer {
 
     // Install new loggers onto the page for this render
     // instance. Will be removed at the end of processing
-    var listeners = page.listeners('console')
-    if (listeners.length != 0)
+    var listeners = page.listenerCount('console')
+    if (listeners != 0)
       console.log(tag+"renderer.js ERROR: Unremoved console listeners: "+listeners)
     page.on('console', msglog )
     page.on('error', errlog )
@@ -389,12 +390,13 @@ class Renderer {
   }
 }
 
-async function create( id ) {
+async function create( id, pproduct ) {
+  let puppeteer = (pproduct === "chrome")?puppeteerch:puppeteerff
   const browser 
-        = await puppeteer.launch({ /* headless:false, */
+        = await puppeteer.launch({ product: pproduct, /*headless:false,*/
                                    args: ['--no-sandbox', 
                                           '--allow-file-access-from-files'] })
-  console.log(`Started Puppeteer with pid ${browser.process().pid}`);
+  console.log(`Started Puppeteer with pid ${browser.process().pid} and product ${pproduct}`);
 
   browser.on('disconnected', async () => { 
       console.error("Browser disconnected.");
