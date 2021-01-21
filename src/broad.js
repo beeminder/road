@@ -596,21 +596,32 @@ self.isoline = ( rd, dtdarr, gol, v, retall=false ) => {
   else return iso4
 }
   
-// Evaluates a given isoline at the supplied x coordinate
-self.isoval = ( line, x ) => {
-  var nums = line.length-1, s = 0, e = nums-1, m
-  if (x < line[0][0]) return line[0][1]
-  if (x > line[nums][0]) return line[nums][1]
-  while (e-s > 1) { // Uses binary search
-    m = floor((s+e)/2)
-    if (line[m][0] <= x) s = m
-    else e = m
-  }
-  if ((x >= line[e][0]) && (x < line[e+1][0])) s = e
-  var dx = line[s+1][0] - line[s][0]
-  var dy = line[s+1][1] - line[s][1]
-  if (dx == 0) return line[s][1]
-  else return line[s][1]+(x-line[s][0])*dy/dx
+// Evaluate a given isoline (array of (x,y) pairs) at the supplied x-coordinate
+self.isoval = (isoline, x) => {
+  if (!isoline || !isoline.length) return null
+  // assume isolines extend horizontally forever outside their bounds
+  if (x <= isoline[               0][0]) return isoline[               0][1]
+  if (x >= isoline[isoline.length-1][0]) return isoline[isoline.length-1][1]
+
+  const i = bu.searchLow(isoline, p=>p[0]<=x?-1:1)
+  //if (isoline[i][0] === isoline[i+1][0]) {
+  //  console.log("Warning: isoline has vertical segment at " + x)
+  //}
+  return bu.rescale(x, isoline[i][0], isoline[i+1][0],
+                       isoline[i][1], isoline[i+1][1])
+}
+
+// Return which side of a given isoline (an array of (x,y) pairs) a given 
+// datapoint is: -1 for wrong and +1 for correct side. 
+// Being exactly on an isoline counts as the good side (+1).
+// Note the floating point tolerance, multiplied by abs(v) to be a bit more
+// robust. In the extreme case, imagine the values are already so tiny that
+// they're about equal to the tolerance. Then checking if v - isoval was greater
+// than -v would be way too forgiving.
+self.isoside = (g, isoline, t, v) => {
+  const iv = self.isoval(isoline, t)
+  if (iv === null) return 0
+  return (v - iv)*g.yaw >= abs(v)*-1e-15 ? +1 : -1
 }
 
 /** Days To Derail: Count the integer days till you cross the razor road or hit
@@ -746,38 +757,6 @@ self.stepFunc = (d, x, dflt=0) => {
 // recent value.
 self.stepify = (d, dflt=0) =>
   d === null ? x => dflt : x => self.stepFunc(d, x, dflt)
-
-
-// Return which side of a given isoline a given datapoint is: -1 for wrong and
-// +1 for correct side. Being exactly on an isoline counts as the good side.
-self.isoside = (g, isoline, t, v) => {
-  if (!isoline || !isoline.length) return 0
-  const TOL = abs(v)*-1e-15
-  // We multiply that tolerance times abs(v) to be a bit more robust. In the
-  // extreme case, imagine the values are already so tiny that they're about
-  // equal to the tolerance. Then checking if v - isoval was greater than -v
-  // would be way too forgiving.
-
-  //console.log(`ISOSIDE: (${t},${v}) ${JSON.stringify(isoline)}`)
-  const n = isoline.length
-  let s = 0, e = n-1, m    // start, end, midpoint for binary search
-  if (t <= isoline[s][0]) return (v - isoline[s][1])*g.yaw >= TOL ? +1 : -1
-  if (t >= isoline[e][0]) return (v - isoline[e][1])*g.yaw >= TOL ? +1 : -1
-  while (e-s > 1) {
-    m = floor((s+e)/2)
-    if (isoline[m][0] <= t) s = m
-    else e = m
-  }
-  if (isoline[s+1][0] === isoline[s][0]) {
-    console.log("Warning: isoline ended up with infinite slope!")
-    return 0
-  }
-  const slope =   (isoline[s+1][1]-isoline[s][1]) 
-                / (isoline[s+1][0]-isoline[s][0])
-  const isoval = isoline[s][1] + slope*(t - isoline[s][0])
-  //console.log(`DEBUG v=${v} isoval=${isoval}`)
-  return (v - isoval)*g.yaw >= TOL ? +1 : -1 // note tolerance!
-}
 
 // Given a road, a goal, a datapoint {t,v}, and an array of isolines, return the
 // color that the datapoint should be plotted as. That depends on the isolines
