@@ -44,8 +44,8 @@ RUN apk add --no-cache \
 	build-base
 
 # Preinstall the npm dependencies
-COPY package.json /tmp/package.json
-COPY package-lock.json /tmp/package-lock.json
+COPY jsbrain_server/package.json /tmp/package.json
+COPY jsbrain_server/package-lock.json /tmp/package-lock.json
 RUN cd /tmp && npm update
 
 RUN mkdir -p /app/jsbrain_server && cp -a /tmp/node_modules /app/jsbrain_server
