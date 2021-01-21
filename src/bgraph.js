@@ -2019,13 +2019,14 @@ function loadGoal(json, timing = true) {
   zoomAll()
   zoomDefault()
 
+  // Re-enable updates for graph components. Next call to resizeGraph will
+  // redraw all of these components
+  processing = false
+
   updateTable()
   updateDueBy()
   resetDataTable()
 
-  // Re-enable updates for graph components. Next call to resizeGraph will
-  // redraw all of these components
-  processing = false
   updateContextData()
 
   // This next call ensures that stathead and other new graph
