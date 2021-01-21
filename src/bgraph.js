@@ -3745,10 +3745,13 @@ function maxVisibleDTD(limit) {
 =======
     const maxdtd = 
       bu.searchby(glarr, e => isocompare(isolimit, getiso(e), bbox) ? 1 : -1)
-    return maxdtd[1] == null ? maxdtd[0] : maxdtd[1]
-    //const maxdtd =
-    // bu.searchHigh(glarr, p => isocompare(isolimit, getiso(p), bbox) ? 1 : -1)
-    //return min(maxdtd, glarr.length - 1)
+    //return bu.clip(maxdtd[1], 0, glarr.length - 1)
+    return maxdtd[1] === null ? maxdtd[0] : maxdtd[1]
+
+    let a, b
+    a = bu.searchLow( glarr, p => isocompare(isolimit, getiso(p), bbox) ? 1 :-1)
+    b = bu.searchHigh(glarr, p => isocompare(isolimit, getiso(p), bbox) ? 1 :-1)
+    return b > glarr.length - 1 ? a : b
   }
   
   const maxdtd = bu.searchby(glarr, e => isovisible(getiso(e), bbox) ? -1 : 1)
