@@ -479,12 +479,13 @@ function getisopath( val, xr ) {
   let y = isoline[0][1]
   if (x < xr[0]) { x = xr[0]; y = br.isoval(isoline, x) }
   let d = "M"+r1(nXSc(x*SMS))+" "+r1(nYSc(y))
-  let strt = bu.searchby(isoline, e=>(e[0]<xr[0] ? -1 : 1))
-  let end  = bu.searchby(isoline, e=>(e[0]<xr[1] ? -1 : 1))
-  const a = strt[1]
-  const b = end[1]
-  //const a = bu.searchHigh(isoline, p => p[0] < xr[0] ? -1 : 1)
-  //const b = bu.searchHigh(isoline, p => p[0] < xr[1] ? -1 : 1)
+  //let strt = bu.searchby(isoline, e=>(e[0]<xr[0] ? -1 : 1))
+  //let end  = bu.searchby(isoline, e=>(e[0]<xr[1] ? -1 : 1))
+  //const a = strt[1]
+  //const b = end[1]
+  let a = bu.searchHigh(isoline, p => p[0] < xr[0] ? -1 : 1)
+  let b = bu.searchHigh(isoline, p => p[0] < xr[1] ? -1 : 1)
+  if (b > isoline.length - 1) b = isoline.length - 1
   for (let i = a; i <= b; i++) {
     d += " L"+r1(nXSc(isoline[i][0]*SMS))+" "+r1(nYSc(isoline[i][1]))
   }
@@ -3638,16 +3639,16 @@ function isovisible(iso, bbox) {
   // TODO: For efficiency, limit intersection search to isolines in xrange
   const left  = bbox[0] - bbox[2]
   const right = bbox[0] + bbox[2]
-  let l = bu.searchby(iso, e => e[0] < left  ? -1 : 1)
-  let r = bu.searchby(iso, e => e[0] < right ? -1 : 1)
-  if (l[0] == null) l[0] = l[1]
-  if (r[1] == null) r[1] = r[0]
-  let a = l[0]
-  let b = r[0]
-  //let a = bu.searchLow(iso, p => p[0] < left  ? -1 : 1)
-  //let b = bu.searchLow(iso, p => p[0] < right ? -1 : 1)
-  //if (a < 0) a = 0
-  //if (b > iso.length - 2) b = iso.length - 2
+  //let a = bu.searchby(iso, e => e[0] < left  ? -1 : 1)
+  //let b = bu.searchby(iso, e => e[0] < right ? -1 : 1)
+  //if (a[0] == null) a[0] = a[1]
+  //if (b[1] == null) b[1] = b[0]
+  //a = a[0]
+  //b = b[1]
+  let a = bu.searchLow(iso, p => p[0] < left  ? -1 : 1)
+  let b = bu.searchLow(iso, p => p[0] < right ? -1 : 1)
+  if (a < 0) a = 0
+  if (b > iso.length - 2) b = iso.length - 2
   for (let i = a; i <= b; i++) {
     if (lineInBBox([iso[i], iso[i+1]], bbox)) return true
   }
@@ -3665,35 +3666,34 @@ function isocompare(isoa, isob, bbox) {
   if (   br.isoval(isoa, left ) != br.isoval(isob, left )
       || br.isoval(isoa, right) != br.isoval(isob, right)) return false
 
-  let la = bu.searchby(isoa, e => e[0] < left  ? -1 : 1)
-  let ra = bu.searchby(isoa, e => e[0] < right ? -1 : 1)
-  let lb = bu.searchby(isob, e => e[0] < left  ? -1 : 1)
-  let rb = bu.searchby(isob, e => e[0] < right ? -1 : 1)
-  if (la[0] == null) la[0] = la[1]
-  if (ra[1] == null) ra[1] = ra[0]
-  if (lb[0] == null) lb[0] = lb[1]
-  if (rb[1] == null) rb[1] = rb[0]
-  la = la[1]
-  ra = ra[0]
-  lb = lb[1]
-  rb = rb[0]
-  //let la = bu.searchHigh(isoa, p => p[0] < left  ? -1 : 1)
-  //let ra = bu.searchLow( isoa, p => p[0] < right ? -1 : 1)
-  //let lb = bu.searchHigh(isob, p => p[0] < left  ? -1 : 1)
-  //let rb = bu.searchLow( isob, p => p[0] < right ? -1 : 1)
+  //let la = bu.searchby(isoa, e => e[0] < left  ? -1 : 1)
+  //let ra = bu.searchby(isoa, e => e[0] < right ? -1 : 1)
+  //let lb = bu.searchby(isob, e => e[0] < left  ? -1 : 1)
+  //let rb = bu.searchby(isob, e => e[0] < right ? -1 : 1)
+  //if (la[0] == null) la[0] = la[1]
+  //if (ra[1] == null) ra[1] = ra[0]
+  //if (lb[0] == null) lb[0] = lb[1]
+  //if (rb[1] == null) rb[1] = rb[0]
+  //la = la[1]
+  //ra = ra[0]
+  //lb = lb[1]
+  //rb = rb[0]
+  let la = bu.searchHigh(isoa, p => p[0] < left  ? -1 : 1)
+  let ra = bu.searchLow( isoa, p => p[0] < right ? -1 : 1)
+  let lb = bu.searchHigh(isob, p => p[0] < left  ? -1 : 1)
+  let rb = bu.searchLow( isob, p => p[0] < right ? -1 : 1)
   // Evaluate the alternate isoline on inflection points
-  for (let i = la; i < ra; i++)
-    if (br.isoval(isob, isoa[i][0]) != isoa[i][1]) return false
-  for (let i = lb; i < rb; i++)
-    if (br.isoval(isoa, isob[i][0]) != isob[i][1]) return false
+  let i
+  for(i=la;i<ra;i++) if (br.isoval(isob, isoa[i][0]) != isoa[i][1]) return false
+  for(i=lb;i<rb;i++) if (br.isoval(isoa, isob[i][0]) != isob[i][1]) return false
   return true
 }
   
-/* Compute the maximum visible DTD isoline, searching up to the specified
- * limit. Does binary search on the isolines between 0 and limit, checking
- * whether a given isoline intersects the visible graph or not. Since isolines
- * never intersect each other, this should be guaranteed to work unless the
- * maximum DTD isoline is greater than limit in which case limit is returned. */
+/* Compute the maximum visible DTD isoline, searching up to the specified limit.
+ * Does binary search on the isolines between 0 and limit, checking whether a
+ * given isoline intersects the visible graph or not. Since isolines never 
+ * intersect each other, this should be guaranteed to work unless the maximum
+ * DTD isoline is greater than limit in which case limit is returned. */
 let glarr, gllimit = -1 // should be more efficient to not recompute these
 function maxVisibleDTD(limit) {
   const isolimit = getiso(limit)
@@ -3716,10 +3716,13 @@ function maxVisibleDTD(limit) {
     // visible range.
     const maxdtd = 
       bu.searchby(glarr, e => isocompare(isolimit, getiso(e), bbox) ? 1 : -1)
-    return maxdtd[1] == null ? maxdtd[0] : maxdtd[1]
-    //const maxdtd =
-    // bu.searchHigh(glarr, p => isocompare(isolimit, getiso(p), bbox) ? 1 : -1)
-    //return min(maxdtd, glarr.length - 1)
+    //return bu.clip(maxdtd[1], 0, glarr.length - 1)
+    return maxdtd[1] === null ? maxdtd[0] : maxdtd[1]
+
+    let a, b
+    a = bu.searchLow( glarr, p => isocompare(isolimit, getiso(p), bbox) ? 1 :-1)
+    b = bu.searchHigh(glarr, p => isocompare(isolimit, getiso(p), bbox) ? 1 :-1)
+    return b > glarr.length - 1 ? a : b
   }
   
   const maxdtd = bu.searchby(glarr, e => isovisible(getiso(e), bbox) ? -1 : 1)
@@ -5120,10 +5123,9 @@ function updateGraphData(force = false) {
   const limits = [nXSc.invert(            0).getTime()/SMS, 
                   nXSc.invert(plotbox.width).getTime()/SMS]
   if (force) oldscf = 0
-  if (opts.roadEditor)
-    scf = bu.cvx(limits[1], limits[0], limits[0]+73*SID, 1,0.7)
-  else 
-    scf = bu.cvx(limits[1], limits[0], limits[0]+73*SID, 1,0.55)
+  scf = opts.roadEditor ? 
+    bu.clip(bu.rescale(limits[1], limits[0],limits[0]+73*SID, 1,.7 ), .7,  1) :
+    bu.clip(bu.rescale(limits[1], limits[0],limits[0]+73*SID, 1,.55), .55, 1)
 
   if (scf != oldscf) updateDynStyles()
   

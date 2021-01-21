@@ -395,6 +395,20 @@ self.searchHigh = (sa, df) => {
 // Also, if we do keep this, there's no need to return nulls -- we can just
 // return [lo, hi] and the code that uses this function can error-check the 
 // out-of-bounds indices just as easily as error-checking for nulls.
+/* Take a sorted array sarr and a distance function df and do a binary search to
+   return a pair of bounding indexes into the array, [i, j], such that sarr[i]
+   and sarr[j] are as close as possible to what we're searching for.
+   (The distance function takes an element of the array and returns a negative
+   number if it's too small, a positive number if it's too big, and 0 if it's
+   just right.)
+   In the common case we're returning a pair of consecutive indices that an
+   ideal value would be sorted between. Special cases:
+   * If everything in the array is too big, return [null, 0], and if everything
+     in the array is too small, return [n-1, null], where n is the array length.
+   * If there are any just-right elements in the array then we return the start
+     and end indexes of that range of elements -- the ones the distance function
+    maps to zero.
+*/
 self.searchby = (sarr, df) => {
   const n = sarr.length
   if (n===0) return null // none of this works with an empty array
@@ -631,18 +645,8 @@ self.linspace = (a, b, n) => {
 }
 
 // Convex combination: x rescaled to be in [c,d] as x ranges from a to b.
-// Optional param clipQ indicates whether the output value should be clipped to
-// [c,d]. Unsorted inputs [a,b] and [c,d] are also supported and work in the 
-// expected way except when clipQ is false, in which case [a,b] and [c,d] are 
-// sorted prior to computing the output. 
-self.cvx = (x, a,b, c,d, clipQ=true) => {
-  if (self.chop(a-b) === 0) return x <= a ? min(c, d) : max(c, d)
-  if (self.chop(c-d) === 0) return c
-
-  if (clipQ) return self.clip(c + (x-a)/(b-a)*(d-c), min(c, d), max(c, d))
-    
-  if (a > b) [a, b] = [b, a]
-  if (c > d) [c, d] = [d, c]
+self.rescale = (x, a,b, c,d) => {
+  if (abs(a-b) < 1e-7) return x <= (a+b)/2 ? c : d // avoid division by 0
   return c + (x-a)/(b-a)*(d-c)
 }
 
