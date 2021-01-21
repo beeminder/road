@@ -362,8 +362,8 @@ function stampOut(p) {
   p['tdat'] = bu.dayify(p['tdat'])
 }
 
-// Helper function for Exponential Moving Average; returns smoothed value at
-// x.  Very inefficient since we recompute the whole moving average up to x for
+// Exponentially-weighted Moving Average; returns smoothed value at x.
+// Very inefficient since we recompute the whole moving average up to x for
 // every point we want to plot.
 function ema(d, x) {
   // The Hacker's Diet recommends 0.1; Uluc had .0864
@@ -1129,10 +1129,21 @@ function sumSet(rd, gol) {
   // which will be displayed with labels TO GO and TIME LEFT in the stats box
   // and will have both the absolute amounts remaining as well as the 
   // percents done as calculated here.
-  const pt = bu.shn(bu.cvx(bu.daysnap(gol.tcur),
-                           gol.tini, bu.daysnap(gol.tfin), 0,100, false), 1,1)
-  let pv = bu.cvx(gol.vcur, gol.vini,gol.vfin, 0,100, false)
-  pv = bu.shn(gol.vini < gol.vfin ? pv : 100 - pv, 1,1)
+  const at = bu.daysnap(gol.tini)
+  const xt = bu.daysnap(gol.tcur)
+  const bt = bu.daysnap(gol.tfin)
+  const av = gol.vini
+  const xv = gol.vcur
+  const bv = gol.vfin
+  let pt, pv // percent done by time, percent done by value
+  pt = at === bt ? '??' : bu.shn(bu.rescale(xt, at,bt, 0,100), 1,1)
+  if (av === bv)
+    pv = xv < av && gol.yaw > 0 ||
+         xv > av && gol.yaw < 0    ? '00' : '100'
+  else if (abs(av-bv) < 1e-7)
+    pv = xv <  (av+bv)/2 && gol.yaw > 0 ||
+         xv >  (av+bv)/2 && gol.yaw < 0    ? '~0' : '~100'
+  else pv = bu.shn(bu.rescale(gol.vcur, gol.vini,gol.vfin, 0,100), 1,1)
 
   if (pt == pv) gol.progsum = pt+"% done"
   else          gol.progsum = pt+"% done by time -- "+pv+"% by value"
