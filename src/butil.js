@@ -440,6 +440,12 @@ self.searchby = (sarr, df) => {
   while (li > 0)   { if (df(sarr[li-1]) == 0) { li -= 1 } else break }
   while (ui < n-1) { if (df(sarr[ui+1]) == 0) { ui += 1 } else break }
   return [li, ui]
+
+  // TODO
+  const lo = self.searchLow(sarr, df)
+  const hi = self.searchHigh(sarr, df)
+  return [lo < 0            ? null : lo, 
+          hi >= sarr.length ? null : hi]
 }
 
 // Automon is pretty great but sometimes it would also be nice to have unit
