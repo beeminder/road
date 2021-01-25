@@ -167,6 +167,29 @@ self.findSeg = (rd, t, dir=0) => {
   return m
 }
 
+/* Find the index of the road segment containing the given t-value. Note that
+   there could be a vertical segment (or even multiple ones) exactly at the
+   given t-value. In that case the dir parameter says how to disambiguate. Since
+   we've added a flat dummy segment after tfin (and before tini), we're
+   guaranteed to find a non-vertical segment for any t-value.
+   Cases: (these don't make a ton of sense but it's what we're going w/ for now)
+   1. t is within exactly one segemnt: easy, return (the index of) that segment
+   2. t is on a boundary between 2 segments: return 2nd one (regardless of dir)
+   3. t is on a vertical segment & dir=-1: return the first vertical segment
+   4. t on a vert segmt & dir=+1: return the non-vertical segment to the right
+   5. t on a vert segmt & dir=0: return the vertical segment (if there are
+      multiple vertical segments all at t, return one arbitrarily) 
+   TODO: review how this is used because it should generally be easier to call
+         searchLow or searchHigh directly. 
+   TODO: also there's a bug here somehow so this isn't ready yet... */
+self.findSeg_new = (rd, t, dir=0) => {
+  const delt = s => t < s.sta[0] ? s.sta[0]-t :   // Road segment s's delta
+                    t > s.end[0] ? s.end[0]-t : 0 // from t (0 if t's w/in s).
+
+  return dir > 0 ? min(bu.searchHigh(rd, delt), rd.length - 1)
+                 : max(bu.searchLow(rd, s=>s.sta[0]-t), 0)
+}
+
 /** Computes the slope of the supplied road segment */
 self.segSlope = (rd) => (rd.end[1] - rd.sta[1]) / (rd.end[0] - rd.sta[0])
 
@@ -740,16 +763,8 @@ self.odomify = (d) => {
 // (It's like Mathematica's Interpolation[] with interpolation order 0.)
 // If the given x is strictly less than d[0][0], return the given default.
 self.stepFunc = (d, x, dflt=0) => {
-  if (x < d[0][0]) return dflt
-  // TODO: Test the below binary search with duplicate timestamps
-  var numpts = d.length, s = 0, e = numpts-1, m
-  if (x > d[numpts-1][0]) return d[numpts-1][1]
-  while (e-s > 1) {
-    m = floor((s+e)/2)
-    if (d[m][0] <= x) s = m
-    else e = m
-  }
-  return d[s][1]
+  const i = bu.searchLow(d, p=>p[0]-x)
+  return i < 0 ? dflt : d[i][1]
 }
 
 // Take a list of datapoints sorted by x-value and return a pure function that

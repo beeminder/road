@@ -347,7 +347,7 @@ self.clip = (x, a, b) => {
 // Take a sorted array (sa) and a distance function (df) and do a binary search,
 // returning the index of an element with distance zero, erring low per above.
 // Review of the cases:
-// 1. There exist elements of sa for which df is 0: return first such index
+// 1. There exist elements of sa for which df is 0: return index of first such
 // 2. No such elements: return the price-is-right index (highest w/o going over)
 // 3. Every element too small: return n-1 (the index of the last element)
 // 4. Every element is too big: return -1 (one less than the first element)
@@ -369,7 +369,7 @@ self.searchLow = (sa, df) => {
 
 // Take a sorted array (sa) and a distance function (df) and do the same thing
 // as searchLow but erring high. Cases:
-// 1. There exist elements of sa for which df is 0: return last such index
+// 1. There exist elements of sa for which df is 0: return index of last such
 // 2. No such elements: return the least upper bound (lowest w/o going under)
 // 3. Every element is too small: return n (one more than the last element)
 // 4. Every element is too big: return 0 (the index of the first element)
@@ -392,9 +392,7 @@ self.searchHigh = (sa, df) => {
   
 // Now that we have searchHigh & searchLow we can probably refactor the code
 // that uses this searchby function to just use searchHigh/Low directly.
-// Also, if we do keep this, there's no need to return nulls -- we can just
-// return [lo, hi] and the code that uses this function can error-check the 
-// out-of-bounds indices just as easily as error-checking for nulls.
+// PS: Almost done with that...
 /* Take a sorted array sarr and a distance function df and do a binary search to
    return a pair of bounding indexes into the array, [i, j], such that sarr[i]
    and sarr[j] are as close as possible to what we're searching for.
@@ -403,22 +401,22 @@ self.searchHigh = (sa, df) => {
    just right.)
    In the common case we're returning a pair of consecutive indices that an
    ideal value would be sorted between. Special cases:
-   * If everything in the array is too big, return [null, 0], and if everything
-     in the array is too small, return [n-1, null], where n is the array length.
+   * If everything in the array is too big, return [-1, 0], and if everything
+     in the array is too small, return [n-1, n], where n is the array length.
    * If there are any just-right elements in the array then we return the start
      and end indexes of that range of elements -- the ones the distance function
     maps to zero.
 */
 self.searchby = (sarr, df) => {
   const n = sarr.length
-  if (n===0) return null // none of this works with an empty array
+  if (n===0) return [-1, 0] // none of this works with an empty array
   let li = 0    // initially the index of the leftmost element of sarr
   let ui = n-1  // initially the index of the rightmost element of sarr
   let mi        // midpoint of the search range for binary search
   let lv = df(sarr[li])          // value of the lower bound of the search range
-  if (lv > 0) return [null, 0]   // smallest element too big
+  if (lv > 0) return [-1, 0]   // smallest element too big
   let uv = df(sarr[ui])          // value of the upper bound of the search range
-  if (uv < 0) return [n-1, null] // biggest element too small
+  if (uv < 0) return [n-1, n] // biggest element too small
   let mv                         // value of the midpoint of the search range
   
   while (lv != 0 && uv != 0 && ui-li > 1) { // binary search to find the bounds
@@ -442,12 +440,6 @@ self.searchby = (sarr, df) => {
   while (li > 0)   { if (df(sarr[li-1]) == 0) { li -= 1 } else break }
   while (ui < n-1) { if (df(sarr[ui+1]) == 0) { ui += 1 } else break }
   return [li, ui]
-
-  // TODO
-  const lo = self.searchLow(sarr, df)
-  const hi = self.searchHigh(sarr, df)
-  return [lo < 0            ? null : lo, 
-          hi >= sarr.length ? null : hi]
 }
 
 // Automon is pretty great but sometimes it would also be nice to have unit

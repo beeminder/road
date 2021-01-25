@@ -467,8 +467,8 @@ let igoal = {}  // Initial goal object
 let bbr, gol = {}, road = []
 let data = [], rawdata = [], alldata = [], dtd = [], iso = []
 
-function getiso( val ) {
-  if (iso[val] == undefined) iso[val] = br.isoline(road, dtd, gol, val)
+function getiso(val) {
+  if (iso[val] === undefined) iso[val] = br.isoline(road, dtd, gol, val)
   return iso[val]
 }
 
@@ -479,10 +479,6 @@ function getisopath( val, xr ) {
   let y = isoline[0][1]
   if (x < xr[0]) { x = xr[0]; y = br.isoval(isoline, x) }
   let d = "M"+r1(nXSc(x*SMS))+" "+r1(nYSc(y))
-  //let strt = bu.searchby(isoline, e=>(e[0]<xr[0] ? -1 : 1))
-  //let end  = bu.searchby(isoline, e=>(e[0]<xr[1] ? -1 : 1))
-  //const a = strt[1]
-  //const b = end[1]
   let a = bu.searchHigh(isoline, p => p[0] < xr[0] ? -1 : 1)
   let b = bu.searchHigh(isoline, p => p[0] < xr[1] ? -1 : 1)
   if (b > isoline.length - 1) b = isoline.length - 1
@@ -3616,7 +3612,7 @@ Follows the algorithm in
 https://noonat.github.io/intersect/#axis-aligned-bounding-boxes
 The bbox parameter should include the center and the half sizes like so:
   [x_mid, y_mid, w_half, h_half] */
-function lineInBBox( line, bbox ) {
+function lineInBBox(line, bbox) {
 //  console.log("Intersecting "+JSON.stringify(line.map(e=>[bu.dayify(e[0]), e[1]]))+" with "+JSON.stringify([bu.dayify(bbox[0]-bbox[2]), bbox[1]-bbox[3], bu.dayify(bbox[0]+bbox[2]), bbox[1]+bbox[3]]))
   let delta = [line[1][0] - line[0][0], 
                line[1][1] - line[0][1]]
@@ -3630,7 +3626,7 @@ function lineInBBox( line, bbox ) {
   const farTimeY  = (bbox[1] + signY * bbox[3] - line[0][1]) * scaleY    
   if (nearTimeX > farTimeY || nearTimeY > farTimeX) return false
   const nearTime = nearTimeX > nearTimeY ? nearTimeX : nearTimeY
-  const farTime = farTimeX < farTimeY ? farTimeX : farTimeY
+  const farTime  = farTimeX  < farTimeY  ? farTimeX  : farTimeY
   if (nearTime > 1 || farTime < 0) return false
   return true
 }
@@ -3640,53 +3636,33 @@ function isovisible(iso, bbox) {
   // TODO: For efficiency, limit intersection search to isolines in xrange
   const left  = bbox[0] - bbox[2]
   const right = bbox[0] + bbox[2]
-  //let a = bu.searchby(iso, e => e[0] < left  ? -1 : 1)
-  //let b = bu.searchby(iso, e => e[0] < right ? -1 : 1)
-  //if (a[0] == null) a[0] = a[1]
-  //if (b[1] == null) b[1] = b[0]
-  //a = a[0]
-  //b = b[1]
   let a = bu.searchLow(iso, p => p[0] < left  ? -1 : 1)
   let b = bu.searchLow(iso, p => p[0] < right ? -1 : 1)
   if (a < 0) a = 0
   if (b > iso.length - 2) b = iso.length - 2
-  for (let i = a; i <= b; i++) {
-    if (lineInBBox([iso[i], iso[i+1]], bbox)) return true
-  }
+  for (let i=a; i<=b; i++) if (lineInBBox([iso[i], iso[i+1]], bbox)) return true
   return false
 }
 
 // Returns true if two isolines overlap within the specified x range in bbox
 function isocompare(isoa, isob, bbox) {
-  if (isoa.length === 0 || isob.length === 0 ) return false
+  if (!isoa || !isoa.length || !isob || !isob.length) return false
   // TODO: For efficiency, limit intersection search to isolines in xrange
   const left  = bbox[0] - bbox[2]
   const right = bbox[0] + bbox[2]
   // Fail if isolines differ on the boundaries. 
   // TODO: This duplicates the boundary search below. Combine.
-  if (   br.isoval(isoa, left ) != br.isoval(isob, left )
-      || br.isoval(isoa, right) != br.isoval(isob, right)) return false
+  if (   br.isoval(isoa, left ) !== br.isoval(isob, left )
+      || br.isoval(isoa, right) !== br.isoval(isob, right)) return false
 
-  //let la = bu.searchby(isoa, e => e[0] < left  ? -1 : 1)
-  //let ra = bu.searchby(isoa, e => e[0] < right ? -1 : 1)
-  //let lb = bu.searchby(isob, e => e[0] < left  ? -1 : 1)
-  //let rb = bu.searchby(isob, e => e[0] < right ? -1 : 1)
-  //if (la[0] == null) la[0] = la[1]
-  //if (ra[1] == null) ra[1] = ra[0]
-  //if (lb[0] == null) lb[0] = lb[1]
-  //if (rb[1] == null) rb[1] = rb[0]
-  //la = la[1]
-  //ra = ra[0]
-  //lb = lb[1]
-  //rb = rb[0]
   let la = bu.searchHigh(isoa, p => p[0] < left  ? -1 : 1)
   let ra = bu.searchLow( isoa, p => p[0] < right ? -1 : 1)
   let lb = bu.searchHigh(isob, p => p[0] < left  ? -1 : 1)
   let rb = bu.searchLow( isob, p => p[0] < right ? -1 : 1)
   // Evaluate the alternate isoline on inflection points
   let i
-  for(i=la;i<ra;i++) if (br.isoval(isob, isoa[i][0]) != isoa[i][1]) return false
-  for(i=lb;i<rb;i++) if (br.isoval(isoa, isob[i][0]) != isob[i][1]) return false
+  for(i=la;i<ra;i++) if(br.isoval(isob, isoa[i][0]) !== isoa[i][1]) return false
+  for(i=lb;i<rb;i++) if(br.isoval(isoa, isob[i][0]) !== isob[i][1]) return false
   return true
 }
   
@@ -3715,49 +3691,25 @@ function maxVisibleDTD(limit) {
   if (isovisible(isolimit, bbox)) {
     // TODO: Find the minimum isoline that overlaps with the limit w/in the 
     // visible range.
-/* <<<<<<< HEAD */
-    const maxdtd = 
-      bu.searchby(glarr, e => isocompare(isolimit, getiso(e), bbox) ? 1 : -1)
-    //return bu.clip(maxdtd[1], 0, glarr.length - 1)
-    return maxdtd[1] === null ? maxdtd[0] : maxdtd[1]
 
-    let a, b
-    a = bu.searchLow( glarr, p => isocompare(isolimit, getiso(p), bbox) ? 1 :-1)
-    b = bu.searchHigh(glarr, p => isocompare(isolimit, getiso(p), bbox) ? 1 :-1)
-    return b > glarr.length - 1 ? a : b
-  }
-  
-  const maxdtd = bu.searchby(glarr, e => isovisible(getiso(e), bbox) ? -1 : 1)
-  return maxdtd[0] === null ? maxdtd[1] : maxdtd[0]
-  //return max(0, bu.searchLow(glarr, p => isovisible(getiso(p), bbox) ? -1: 1))
-/* =======
+    // OLD
+    let maxdtd =
+      bu.searchby(glarr, i=>isocompare(isolimit, getiso(i), bbox) ? 1:-1)[1]
+    // NEW
+    //console.log(`GLARR: ${JSON.stringify(glarr.map(
+    //  i=>isocompare(isolimit, getiso(i), bbox) ? 1:-1))}`)
     //const maxdtd = 
-    //  bu.searchby(glarr, e => isocompare(isolimit, getiso(e), bbox) ? 1 : -1)
-    //return maxdtd[1] == null ? maxdtd[0] : maxdtd[1]
-    const maxdtd =
-      bu.searchHigh(glarr, p => isocompare(isolimit, getiso(p), bbox) ? 1 : -1)
+    //  bu.searchHigh(glarr, i=>isocompare(isolimit, getiso(i), bbox) ? 1:-1)
+
     return min(maxdtd, glarr.length - 1)
   }
   
-  //const maxdtd = bu.searchby(glarr, e => isovisible(getiso(e), bbox) ? -1 : 1)
-  //return maxdtd[0] === null ? maxdtd[1] : maxdtd[0]
-  return max(0, bu.searchLow(glarr, p => isovisible(getiso(p), bbox) ? -1 : 1))
-=======
-    const maxdtd = 
-      bu.searchby(glarr, e => isocompare(isolimit, getiso(e), bbox) ? 1 : -1)
-    //return bu.clip(maxdtd[1], 0, glarr.length - 1)
-    return maxdtd[1] === null ? maxdtd[0] : maxdtd[1]
+  // OLD
+  //let maxdtd = bu.searchby(glarr, i=>isovisible(getiso(i), bbox) ? -1:1)[0]
+  // NEW
+  const maxdtd = bu.searchLow(glarr, i=>isovisible(getiso(i), bbox) ? -1:1)
 
-    let a, b
-    a = bu.searchLow( glarr, p => isocompare(isolimit, getiso(p), bbox) ? 1 :-1)
-    b = bu.searchHigh(glarr, p => isocompare(isolimit, getiso(p), bbox) ? 1 :-1)
-    return b > glarr.length - 1 ? a : b
-  }
-  
-  const maxdtd = bu.searchby(glarr, e => isovisible(getiso(e), bbox) ? -1 : 1)
-  return maxdtd[0] === null ? maxdtd[1] : maxdtd[0]
-  //return max(0, bu.searchLow(glarr, p => isovisible(getiso(p), bbox) ? -1: 1))
->>>>>>> Prepare to switch to searchHigh/Low */
+  return max(maxdtd, 0)
   // Is it weird that the function to search by is something that itself does
   // a search? Probably Uluc is just a couple levels ahead of me but at some 
   // point I'll want to get my head around that! --dreev
