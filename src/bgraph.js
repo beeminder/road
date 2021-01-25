@@ -3660,10 +3660,6 @@ function isocompare(isoa, isob, bbox) {
   let ra = bu.searchLow( isoa, p => p[0] < right ? -1 : 1)
   let lb = bu.searchHigh(isob, p => p[0] < left  ? -1 : 1)
   let rb = bu.searchLow( isob, p => p[0] < right ? -1 : 1)
-  if (la[0] == null) la[0] = la[1]
-  if (ra[1] == null) ra[1] = ra[0]
-  if (lb[0] == null) lb[0] = lb[1]
-  if (rb[1] == null) rb[1] = rb[0]
   // Evaluate the alternate isoline on inflection points
   for (let i = la[1]; i < ra[0]; i++)
     if (Math.abs(br.isoval(isob, isoa[i][0])-isoa[i][1]) > eps) return false
