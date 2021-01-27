@@ -1744,15 +1744,15 @@ function isRoadValid(rd) {
   if (gol.yaw*br.rdf(rd, now) < gol.yaw*br.rdf(ir, now) - EPS) return false
   if (gol.yaw*br.rdf(rd, hor) < gol.yaw*br.rdf(ir, hor) - EPS) return false
   // Iterate through and check current road points in the pink range
-  var rd_i1 = br.findSeg(rd, now, -1)
-  var rd_i2 = br.findSeg(rd, hor, 1)
+  var rd_i1 = br.findSeg(rd, now) // was dir=-1 but don't think it matters
+  var rd_i2 = br.findSeg(rd, hor) // was dir=+1 but don't think it matters
   for (let i = rd_i1; i < rd_i2; i++) {
     if (gol.yaw*br.rdf(rd, rd[i].end[0]) < 
         gol.yaw*br.rdf(ir, rd[i].end[0]) - EPS) return false
   }
   // Iterate through and check old road points in the pink range
-  var ir_i1 = br.findSeg(ir, now, -1)
-  var ir_i2 = br.findSeg(ir, hor, 1)
+  var ir_i1 = br.findSeg(ir, now) // was dir=-1 but don't think it matters
+  var ir_i2 = br.findSeg(ir, hor) // was dir=+1 but don't think it matters
   for (let i = ir_i1; i < ir_i2; i++) {
     if (gol.yaw*br.rdf(rd, ir[i].end[0]) < 
         gol.yaw*br.rdf(ir, ir[i].end[0]) - EPS) return false
