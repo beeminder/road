@@ -303,9 +303,7 @@ self.ichop = (x, tol=1e-7) => {
 // Clip x to be at least a and at most b: min(b,max(a,x)). Swaps a & b if a > b.
 self.clip = (x, a, b) => {
   if (a > b) [a, b] = [b, a]
-  if (x < a) return a
-  if (x > b) return b
-  return x
+  return x < a ? a : x > b ? b : x
 }
 
 
@@ -388,73 +386,14 @@ self.searchHigh = (sa, df) => {
   }
   return li === -1 || df(sa[li]) !== 0 ? ui : li
 }
-
   
-// Now that we have searchHigh & searchLow we can probably refactor the code
-// that uses this searchby function to just use searchHigh/Low directly.
-// PS: Almost done with that...
-/* Take a sorted array sarr and a distance function df and do a binary search to
-   return a pair of bounding indexes into the array, [i, j], such that sarr[i]
-   and sarr[j] are as close as possible to what we're searching for.
-   (The distance function takes an element of the array and returns a negative
-   number if it's too small, a positive number if it's too big, and 0 if it's
-   just right.)
-   In the common case we're returning a pair of consecutive indices that an
-   ideal value would be sorted between. Special cases:
-   * If everything in the array is too big, return [-1, 0], and if everything
-     in the array is too small, return [n-1, n], where n is the array length.
-   * If there are any just-right elements in the array then we return the start
-     and end indexes of that range of elements -- the ones the distance function
-    maps to zero.
-*/
-self.searchby = (sarr, df) => {
-  const n = sarr.length
-  if (n===0) return [-1, 0] // none of this works with an empty array
-  let li = 0    // initially the index of the leftmost element of sarr
-  let ui = n-1  // initially the index of the rightmost element of sarr
-  let mi        // midpoint of the search range for binary search
-  let lv = df(sarr[li])          // value of the lower bound of the search range
-  if (lv > 0) return [-1, 0]   // smallest element too big
-  let uv = df(sarr[ui])          // value of the upper bound of the search range
-  if (uv < 0) return [n-1, n] // biggest element too small
-  let mv                         // value of the midpoint of the search range
-  
-  while (lv != 0 && uv != 0 && ui-li > 1) { // binary search to find the bounds
-    mi = floor((li+ui)/2)
-    mv = mi === li ? lv : df(sarr[mi]) // avoid calling df unnecessarily
-    if (mv <= 0) { li = mi; lv = mv } 
-    else         { ui = mi; uv = mv }
-  }
-  // Extend and return index region if the exact element is found
-  if (lv != 0 && uv != 0) return [li, ui]
-  li = lv == 0 ? li : ui
-  ui = li
-  // Scooch back out one at a time. If it mattered we could do binary search 
-  // here too to find how far to scooch! But in practice presumably we won't 
-  // have a huge range of just-right elements so scooching one element at a time
-  // until we find the boundary seems fine, I guess?
-  // Also the while-if-break here seems gross. Seems like it should work to just
-  // say "while the function says zero and the index is in bounds".
-  // PS: We're not using any distance functions that can ever even return 0 so 
-  // the code below is unreachable right now anyway.
-  while (li > 0)   { if (df(sarr[li-1]) == 0) { li -= 1 } else break }
-  while (ui < n-1) { if (df(sarr[ui+1]) == 0) { ui += 1 } else break }
-  return [li, ui]
-
-  // TODO
-  const lo = self.searchLow(sarr, df)
-  const hi = self.searchHigh(sarr, df)
-  return [lo < 0            ? null : lo, 
-          hi >= sarr.length ? null : hi]
-}
-
 // Automon is pretty great but sometimes it would also be nice to have unit
 // tests. I'm not sure how best to do that. We don't want crap like the
 // following in production... 
 /*
-const unit_test_1 = self.searchby([7,7,7], x => x-7)
-if (!(unit_test_1[0] === 0 && unit_test_1[1] === 2)) {
-  console.log("TEST FAILED: searchby edge case")
+const unit_test_1 = self.searchLow([7,7,7], x => x-7)
+if (unit_test_1 !== 0) {
+  console.log("TEST FAILED: searchHigh/Low edge case")
   exit(1)
 } 
 */

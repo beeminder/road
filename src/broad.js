@@ -133,19 +133,41 @@ self.copyRoad = (rd) => {
   return nr
 }
 
-/* Find the index of the road segment containing the given t-value. Note that
-   there could be a vertical segment (or even multiple ones) exactly at the
-   given t-value. In that case the dir parameter says how to disambiguate. Since
-   we've added a flat dummy segment after tfin (and before tini), we're
-   guaranteed to find a non-vertical segment for any t-value.
-   Cases:
-   1. t is within exactly one segemnt: easy, return (the index of) that segment
-   2. t is on a boundary between 2 segments: return 2nd one (regardless of dir)
-   3. t is on a vertical segment & dir=-1: return the first vertical segment
-   4. t on a vert segmt & dir=+1: return the non-vertical segment to the right
-   5. t on a vert segmt & dir=0: return the vertical segment (if there are
-      multiple vertical segments all at t, return one arbitrarily) */
-self.findSeg = (rd, t, dir=0) => {
+// These are not currently used but they might be handy elsewhere?
+//const st = i => rd[i].sta[0]                 // start time of ith road segment
+//const et = i => rd[i].end[0]                  // end time of ith road segment
+//const isin = (t,i) => st(i) <= t && t < et(i)  // whether segment i contains t
+//const delt = s => t < s.sta[0] ? s.sta[0]-t :   // Road segment s's delta
+//                  t > s.end[0] ? s.end[0]-t : 0 // from t (0 if t is w/in s).
+
+// Find the index of the road segment containing the given t-value. This may not
+// be unique since there can a vertical segment (or multiple ones) exactly at
+// the given t-value. In that case go with the segment after the vertical
+// segments. Which makes sense since the segment after the vertical ones also
+// contains t: that segment will necessarily start exactly at t.
+// Since we've added a flat dummy segment after tfin (and before tini), we're
+// guaranteed to find a non-vertical segment for any t-value.
+self.findSeg = (rd, t) => {
+  return bu.searchHigh(rd, s => s.end[0] < t ? -1 :
+                                s.sta[0] > t ? +1 : 0)
+}
+
+
+/* SCRATCH AREA -- last remnants of search refactoring #SCHDEL
+
+// Find the index of the road segment containing the given t-value. Note that
+// there could be a vertical segment (or even multiple ones) exactly at the
+// given t-value. In that case the dir parameter says how to disambiguate. Since
+// we've added a flat dummy segment after tfin (and before tini), we're
+// guaranteed to find a non-vertical segment for any t-value.
+// Cases:
+// 1. t is within exactly one segemnt: easy, return (the index of) that segment
+// 2. t is on a boundary between 2 segments: return 2nd one (regardless of dir)
+// 3. t is on a vertical segment & dir=-1: return the first vertical segment
+// 4. t on a vert segmt & dir=+1: return the non-vertical segment to the right
+// 5. t on a vert segmt & dir=0: return the vertical segment (if there are
+//    multiple vertical segments all at t, return one arbitrarily)
+self.findSeg_old = (rd, t, dir=0) => {
   const st = i => rd[i].sta[0]                 // start time of ith road segment
   const et = i => rd[i].end[0]                  // end time of ith road segment
   const isin = (t,i) => st(i) <= t && t < et(i)  // whether segment i contains t
@@ -167,28 +189,37 @@ self.findSeg = (rd, t, dir=0) => {
   return m
 }
 
-/* Find the index of the road segment containing the given t-value. Note that
-   there could be a vertical segment (or even multiple ones) exactly at the
-   given t-value. In that case the dir parameter says how to disambiguate. Since
-   we've added a flat dummy segment after tfin (and before tini), we're
-   guaranteed to find a non-vertical segment for any t-value.
-   Cases: (these don't make a ton of sense but it's what we're going w/ for now)
-   1. t is within exactly one segemnt: easy, return (the index of) that segment
-   2. t is on a boundary between 2 segments: return 2nd one (regardless of dir)
-   3. t is on a vertical segment & dir=-1: return the first vertical segment
-   4. t on a vert segmt & dir=+1: return the non-vertical segment to the right
-   5. t on a vert segmt & dir=0: return the vertical segment (if there are
-      multiple vertical segments all at t, return one arbitrarily) 
-   TODO: review how this is used because it should generally be easier to call
-         searchLow or searchHigh directly. 
-   TODO: also there's a bug here somehow so this isn't ready yet... */
-self.findSeg_new = (rd, t, dir=0) => {
-  const delt = s => t < s.sta[0] ? s.sta[0]-t :   // Road segment s's delta
-                    t > s.end[0] ? s.end[0]-t : 0 // from t (0 if t's w/in s).
+  // the version that matches the original findSeg on paper:
+  //return dir > 0 ? bu.searchHigh(rd, delt) : bu.searchLow(rd, s=>s.sta[0]-t)
 
-  return dir > 0 ? min(bu.searchHigh(rd, delt), rd.length - 1)
-                 : max(bu.searchLow(rd, s=>s.sta[0]-t), 0)
-}
+  // i think this is unneeded and searchHigh/Low cover this:
+  if (!rd || !rd.length || t < st(0) || t > et(rd.length-1)) return -1
+
+  let li = -1         // initially left of the leftmost element of sa
+  let ui = rd.length  // initially right of the rightmost element of sa
+  let mi              // midpoint of the search range for binary search
+  
+  while (ui-li > 1) {
+    mi = floor((li+ui)/2)
+    if (delt(rd[mi]) <= 0) li = mi // df(rd[mi])<0 searchLow; st(mi)<=t old
+    else                   ui = mi
+  }
+  mi = isin(t, ui) ? ui : li // bias right
+  if (dir < 0) while(mi > 0           && st(mi-1) === t) mi--
+  if (dir > 0) while(mi < rd.length-1 && st(mi+1) === t) mi++
+  return mi
+
+  //return bu.searchLow(rd, s => {s.end[0] <  t ? -1 : s.sta[0] >= t ?  1 : 0})
+
+  for (let i = 0; i < rd.length; i++) if (isin(t, i)) return i  
+  console.log(`DEBUG WTF NO ROAD SEGMENT CONTAINS ${t}`)
+  return null
+  
+  //return bu.clip(bu.searchLow(rd, s=>s.sta[0] < t ? -1:1), 0, rd.length-1)
+
+  return bu.clip((dir > 0 ? bu.searchHigh(rd, delt)
+                          : bu.searchLow(rd, s=>s.sta[0]-t)), 1, rd.length - 2)
+*/
 
 /** Computes the slope of the supplied road segment */
 self.segSlope = (rd) => (rd.end[1] - rd.sta[1]) / (rd.end[0] - rd.sta[0])
