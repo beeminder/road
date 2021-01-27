@@ -3646,25 +3646,25 @@ function isovisible(iso, bbox) {
 
 // Returns true if two isolines overlap within the specified x range in bbox
 function isocompare(isoa, isob, bbox) {
-  if (isoa.length === 0 || isob.length === 0 ) return false
-  let eps = 1e-5
+  if (!isoa || !isoa.length || !isob || !isob.length) return false
+  const EPS = 1e-5 // or 1e-9 works fine; maybe have it depend on y-values?
   // TODO: For efficiency, limit intersection search to isolines in xrange
   const left  = bbox[0] - bbox[2]
   const right = bbox[0] + bbox[2]
-  // Fail if isolines differ on the boundaries. TODO: This duplicates
-  // the boundary search below. Combine.
-  if (Math.abs(br.isoval(isoa, left)-br.isoval(isob, left)) > eps
-      || Math.abs(br.isoval(isoa, right)-br.isoval(isob, right)) > eps) return false
+  // Fail if isolines differ on the boundaries. 
+  // TODO: This duplicates the boundary search below. Combine.
+  if (abs(br.isoval(isoa,  left) - br.isoval(isob,  left)) > EPS ||
+      abs(br.isoval(isoa, right) - br.isoval(isob, right)) > EPS) return false
   
   let la = bu.searchHigh(isoa, p => p[0] < left  ? -1 : 1)
   let ra = bu.searchLow( isoa, p => p[0] < right ? -1 : 1)
   let lb = bu.searchHigh(isob, p => p[0] < left  ? -1 : 1)
   let rb = bu.searchLow( isob, p => p[0] < right ? -1 : 1)
   // Evaluate the alternate isoline on inflection points
-  for (let i = la[1]; i < ra[0]; i++)
-    if (Math.abs(br.isoval(isob, isoa[i][0])-isoa[i][1]) > eps) return false
-  for (let i = lb[1]; i < rb[0]; i++)
-    if (Math.abs(br.isoval(isoa, isob[i][0])-isob[i][1]) > eps)  return false
+  for (let i = la; i < ra; i++)
+    if (abs(br.isoval(isob, isoa[i][0]) - isoa[i][1]) > EPS) return false
+  for (let i = lb; i < rb; i++)
+    if (abs(br.isoval(isoa, isob[i][0]) - isob[i][1]) > EPS) return false
   return true
 }
   
@@ -3695,13 +3695,13 @@ function maxVisibleDTD(limit) {
     // visible range.
 
     // OLD
-    let maxdtd =
-      bu.searchby(glarr, i=>isocompare(isolimit, getiso(i), bbox) ? 1:-1)[1]
+    //let maxdtd =
+    //  bu.searchby(glarr, i=>isocompare(isolimit, getiso(i), bbox) ? 1:-1)[1]
     // NEW
     //console.log(`GLARR: ${JSON.stringify(glarr.map(
     //  i=>isocompare(isolimit, getiso(i), bbox) ? 1:-1))}`)
-    //const maxdtd = 
-    //  bu.searchHigh(glarr, i=>isocompare(isolimit, getiso(i), bbox) ? 1:-1)
+    const maxdtd = 
+      bu.searchHigh(glarr, i=>isocompare(isolimit, getiso(i), bbox) ? 1:-1)
 
     return min(maxdtd, glarr.length - 1)
   }
