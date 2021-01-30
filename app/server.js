@@ -104,6 +104,9 @@ app.get("/login", (req, resp) => {
     resp.redirect('/road')
   }
 })
+app.get("/newdesign", (req, resp) => {
+    resp.redirect('/road')
+})
 app.get("/road", (req, resp) => {
   setsession(req)
   if (typeof req.session.access_token === 'undefined' ||
