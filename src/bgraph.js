@@ -1125,8 +1125,8 @@ function createDataTable() {
   while (div.firstChild) div.removeChild(div.firstChild)
 
   var divelt = d3.select(div)
-  divelt.style("margin-right", "30px")
-    .on("wheel.scroll", dsliderscroll, {passive:false})
+  divelt.attr("class", "bmndrdata")
+  divelt.on("wheel.scroll", dsliderscroll, {passive:false})
 
   databody = divelt.append("div").attr("class", "dbody") /* Data table body */
   var datacolumns;
@@ -1134,7 +1134,7 @@ function createDataTable() {
   datacolumns = ['#', 'DATE', 'VALUE', 'COMMENT'];
   databody.append("div").attr('class', 'dhdrrow')
     .selectAll("span.dhdrcell").data(datacolumns)
-    .enter().append('span').attr('class', 'dhdrcell')
+    .enter().append('span').attr('class', (d,i) => ((i==3)?'dhdrcell cmt':'dhdrcell'))
     .style("text-align", (d,i)=>( (i == 0)?"right":null))
     .text((c)=>c);
   databody
@@ -1177,11 +1177,9 @@ function updateDataTable() {
       let date = bu.dayify(bu.dayparse(rawdata[row][0]), '-')
       return [row, date, rawdata[row][1], rawdata[row][2]]
     })
-    .join(enter=>enter.append("span").attr('class', 'dcell')
+    .join(enter=>enter.append("span").attr('class', (d,i)=>( (i == 3)?"dcell cmt":"dcell"))
           .style("border", (d,i)=>( (i == 0)?"0":null))
-          .style("text-align", (d,i)=>( (i == 0)?"right":null))
-          .style("min-width", (d,i)=>( (i == 3)?"200px":null))
-          .style("max-width", (d,i)=>( (i == 3)?"200px":null)),
+          .style("text-align", (d,i)=>( (i == 0)?"right":null)),
           update=>update)
     .text(d=>{return d})
   dtablebusy = false
@@ -4545,6 +4543,7 @@ function updateMovingAv() {
 // Create the table header and body to show road segments
 var tcont, thead, tbody;
 function createRoadTable() {
+  d3.select(opts.divTable).attr("class", "bmndrroad")
   // The main road table doe not have a header
   tcont = d3.select(opts.divTable).select(".rtbmain");
   thead = d3.select(opts.divTable).select(".rtable");

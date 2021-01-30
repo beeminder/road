@@ -117,6 +117,10 @@ async function loadGoals(url) {
   if (graph) graph.loading(false)
   if (editor) editor.loading(false)
   if (sandboxgr) sandboxgr.loading(false)
+  if (!resp) {
+    console.log("Failed to load goal")
+    return
+  }
   await graph.loadGoalJSON( resp )
   await editor.loadGoalJSON( resp )
   await sandbox.loadGoalJSON( resp )

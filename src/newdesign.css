@@ -1,3 +1,9 @@
+body {
+    font-size:130%;
+}
+.dslider{
+    width:400px;
+}
 #header {
     background-color: #FFCB06;
     padding: 8px 2%;
@@ -11,28 +17,115 @@
     background-size: 205px;
 }
 
-/* Style the tab */
-.tab {
-    margin-top:10px;
-    overflow: hidden;
-    border: none;
+/***** Common Element styles *****/
+button, select {
+    color:black;
+    background-color: #ddd;
+    padding: 10px 16px;
+    transition: 0.2s;
+    cursor: pointer;
+    outline: none;
+    border: 1px solid #ccc;
+    font-size:90%;
+}
+button:hover    {  background-color: #FFD949; }
+button.active   {  background-color: #FFD949; }
+button:disabled {  color: #999;               }
+
+input[type=checkbox] {
+    width:20px;
+    height:20px;
+    vertical-align:middle;    
 }
 
-.vtab {
-    transform:translate(-9);
-    overflow: hidden;
-    border: none;
-}
-
-.vtabtitle {
-    padding: 2px;
-    font-size:120%;
-    font-weight:bold;
+label {
+    vertical-align:middle;    
+    font-size:110%;
 }
 
 .tooltitle {
     border-bottom:2px solid #bbb;
     margin: 10px 0px 10px 0px;
+    font-weight:bold;
+}
+
+/***** MAIN TABS AND CONTAINERS *****/
+/* Horizontal container for main tabs */
+.tab {
+    margin-top:10px;
+    overflow: hidden;
+    border: none;
+    width : 100%;
+    max-width:1024px;
+}
+
+.tab button {
+    width : 33.333%;
+    height: 45px;
+    float: left;
+    border-bottom: none;
+}
+
+/* Style the tab content */
+.tabcontent {
+    /*white-space:nowrap;*/
+    box-shadow: 0 0 6px #ccc;
+    display: none;
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    /*width:709px;*/
+} 
+
+.etabcontent, .gtabcontent, .stabcontent {
+    box-shadow: 0 0 6px #ccc;
+    display: none;
+    margin-left:45px;
+    position:relative;
+    top:-45px;
+    width:90%;
+    height:90%;
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+} 
+
+.graphcontainer {
+    width: 100%;
+    margin-right:20px;
+    display:block;
+    vertical-align:top;
+}
+.graphtools {
+    margin: 10px;
+    margin-left: 50px;
+    font-size:90%;
+}
+#snextday {
+    margin-right:40px;
+}
+
+#roadgraph, #roadeditor, #roadsandbox {
+    width: 100%;
+    margin-right:20px;
+    vertical-align:top;
+}
+/***** VERTICAL SECONDARY TABS *****/
+.vtab {
+    width:360px;
+    white-space:nowrap;
+    transform:translate(-9);
+    overflow: hidden;
+    border: none;
+}
+
+.vtab button {
+    display: inline-block;
+    width:90px;
+    height:45px;
+    border-bottom: none;
+}
+.vtabtitle {
+    padding: 2px;
+    font-size:120%;
     font-weight:bold;
 }
 
@@ -49,85 +142,24 @@
     transform:rotate(-90deg) translate(-360px, 0px);
 }
 
-button, select {
-    color:black;
-    background-color: #ddd;
-    padding: 10px 16px;
-    transition: 0.2s;
-    cursor: pointer;
-    outline: none;
-    border: 1px solid #ccc;
-    font-size:90%;
-}
-
-input[type=checkbox] {
-    width:20px;
-    height:20px;
-    vertical-align:middle;    
-}
-label {
-    vertical-align:middle;    
-    font-size:110%;
-}
-
-button:hover {
-    background-color: #FFD949;
-}
-
-button.active {
-    background-color: #FFD949;
-}
-button:disabled {
-    color: #999;
-}
-
-/* Style the buttons that are used to open the tab content */
-.tab button {
-    float: left;
-    border-bottom: none;
-}
-.vtab button {
-    float: left;
-    width:90px;
-    height:45px;
-    border-bottom: none;
-}
-
-/* Style the tab content */
-.tabcontent {
-    white-space:nowrap;
-    box-shadow: 0 0 6px #ccc;
-    display: none;
-    padding: 6px 12px;
-    border: 1px solid #ccc;
-} 
-
-.etabcontent, .gtabcontent, .stabcontent {
-    box-shadow: 0 0 6px #ccc;
-    display: none;
-    margin-left:45px;
-    position:relative;
-    top:-45px;
-    min-width:500px;
-    max-width:650px;
-    min-height:450px;
-    height:90%;
-    padding: 6px 12px;
-    border: 1px solid #ccc;
-} 
 .vtabcontainer {
-    height:453px;
-    display:inline-block;
+    width:90%;
+    height:553px;
     vertical-align:top;
 }
-.dbhdrcell { border-bottom:1px solid black; }
 
+/***** Misc components *****/
+
+.dbhdrcell { border-bottom:1px solid black; } /* Due-by table header */
+
+/* Progress indicators */
 .progrow { display: table-row; }
 .proghdr { display: table-cell; font-size: 80%; padding:4px;padding-right:15px; }
 .progcell { display: table-cell; }
 .progcont { width:300px; height:20px; border: 1px solid black; margin:5px;}
 .progbar { height:100%; background-color:yellow;}
 
+/* Top summary line and components */
 .summary {
     margin:10px 0 5px 50px;
 }
@@ -145,14 +177,50 @@ button:disabled {
     color:white;
 }
 
+/* Submission result for the editor */
 #submitmsg {
     margin-left:5px;
 }
 
+/* New data */
 .dateentry, .valueentry, .cmtentry {
     border: 1px solid black;
     width: 250px;
     height: 30px;
     margin-top: 4px;
     margin-bottom: 4px;
+}
+
+/* Relax width limits for wider screens */
+@media (min-width: 1350px) {
+    .graphcontainer {
+        width: unset;
+        display:inline-block;
+    }
+    #roadgraph, #roadeditor, #roadsandbox {
+        width: 696px;
+        display:inline-block;
+    }
+    .etabcontent, .gtabcontent, .stabcontent {
+        height:100%;
+        width:500px;
+    } 
+    .vtabcontainer {
+        width:unset;
+        height:453px;
+        display:inline-block;
+    }
+    body{
+        max-width:1350px;
+        font-size:100%;
+    }
+    .tab {
+        width : 1024px;
+    }
+    .dslider{
+        width:340px;
+    }
+    #snextday {
+        margin-right:50px;
+    }
 }

@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=650, initial-scale=1">
     <link rel="stylesheet" href="../src/pikaday.css">
     <link rel="stylesheet" href="../src/jsbrain.css">
     <link rel="stylesheet" href="../src/newdesign.css">
@@ -33,6 +34,7 @@
       <option value="../../privatesuite/data/bug-d-mass.bb">Test 5</option>
       <option value="../automon/data/testroad5.bb">Test 6</option>
       <option value="../../privatesuite/data/bugroad3.bb">Test 7</option>
+      <option value="../../privatesuite/data/ybhp-weight-start.bb">Test 8</option>
     </select>
   </div>
   <!-- Tab links -->
@@ -45,9 +47,9 @@
 <!-- Tab content -->
 <div id="graph" class="tabcontent" style="display:block;">
   <div id="gsummary" class="summary"></div>
-  <div style="margin-right:20px; display:inline-block;vertical-align:top;">
-    <div id="roadgraph" style="width:696px; margin-right:20px; display:inline-block;vertical-align:top;"></div>
-    <div style="margin:10px;margin-left:50px;">
+  <div class="graphcontainer">
+    <div id="roadgraph"></div>
+    <div class="graphtools">
       <button id="zoomall" onclick="graph.zoomAll();">View All</button>
       <button id="zoomdflt" onclick="graph.zoomDefault();">Reset Zoom</button>
     </div>
@@ -63,14 +65,14 @@
     </div>
     <div id="entry" class="gtabcontent" style="display:block;">
       <div class="tooltitle">Enter data</div>
-      <div style="width:280px;padding:10px 20px; box-shadow:0 0 6px #ccc;">
+      <div style="padding:10px 20px; box-shadow:0 0 6px #ccc;">
         Date:<br/>
         <input id="datadate" type="text" class="dateentry" contenteditable="true"></input><br/>
         Value:<br/>
         <input id="datavalue" type="number" class="valueentry" contenteditable="true"></input><br/>
         Optional comment:<br/>
         <input id="datacmt" type="text" class="cmtentry" contenteditable="true"></input><br/>
-        <button style="width:256px;" id="dataadd" onclick="handleDataSubmit()">ADD PROGRESS</button>
+        <button id="dataadd" onclick="handleDataSubmit()">ADD PROGRESS</button>
       </div>
     </div>
     <div id="data" class="gtabcontent">
@@ -94,16 +96,16 @@
 
 <div id="editor" class="tabcontent">
   <div id="esummary" class="summary"></div>
-  <div style="margin-right:20px; display:inline-block;vertical-align:top;">
-    <div style="margin:10px;margin-left:50px;">
+  <div class="graphcontainer">
+    <div class="graphtools">
       <button id="eundo" onclick="editor.undo();">Undo (0)</button>
       <button id="eredo" onclick="editor.redo();">Redo (0)</button>
       <button style="margin-left:10px;" id="submit" onclick="handleRoadSubmit();">Submit</button>
       <span id="submitmsg">This is where submit msg goes</span>
     </div>
-    <div id="roadeditor" style="width:696px; margin-right:20px; display:inline-block;vertical-align:top;"></div>
+    <div id="roadeditor"></div>
     <br/>
-    <div style="margin:10px;margin-left:50px;">
+    <div class="graphtools">
       <button id="zoomall" onclick="editor.zoomAll();">View All</button>
       <button id="zoomdflt" onclick="editor.zoomDefault();">Reset Zoom</button>
       <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>
@@ -115,7 +117,7 @@
 
   </div>
   
-  <div style="height:453px;display:inline-block;vertical-align:top;">
+  <div class="vtabcontainer">
     <div class="vtabtitle">Editor Tools</div>
     <div class="vtab">
       <button class="etablinks" onclick="openEditorTab(event, 'eroad')">Road</button>
@@ -159,22 +161,22 @@
 
 <div id="sandbox" class="tabcontent">
   <div id="ssummary" class="summary"></div>
-  <div style="margin-right:20px; display:inline-block;vertical-align:top;">
-    <div style="margin:10px;margin-left:50px;">
+  <div class="graphcontainer">
+    <div class="graphtools">
       <button id="sundo" onclick="sandbox.undo();">Undo (0)</button>
       <button id="sredo" onclick="sandbox.redo();">Redo (0)</button>
-      <button id="snextday" onclick="sandbox.nextDay();" style="float:right;margin-right:50px;">Next Day</button>
+      <button id="snextday" onclick="sandbox.nextDay();" style="float:right;">Next Day</button>
       <button id="srefresh" onclick="sandbox.refresh();" style="float:right;margin-right:5px;">Refresh</button>
     </div>
-    <div id="roadsandbox" style="white-space:normal;width:696px; margin-right:20px; display:inline-block;vertical-align:top;">
+    <div id="roadsandbox">
     </div>
-    <div style="margin:10px;margin-left:50px;">
+    <div class="graphtools">
       <button id="zoomall" onclick="sandboxgr.zoomAll();">View All</button>
       <button id="zoomdflt" onclick="sandboxgr.zoomDefault();">Reset Zoom</button>
     </div>
   </div>
   
-  <div style="height:453px;display:inline-block;vertical-align:top;">
+  <div class="vtabcontainer">
     <div class="vtabtitle">Sandbox Tools</div>
     <div class="vtab">
       <button class="stablinks" onclick="openSandboxTab(event, 'sroad')">Road</button>

@@ -1,5 +1,7 @@
 .bmndrgraph { border:  0px solid #cccccc;
               display: inline-block       }
+.bmndrroad { max-width: 520px;       }
+.bmndrdata { margin-right:30px; white-space:nowrap;  }
 
 svg text {  -webkit-user-select: none;
                -moz-user-select: none;
@@ -129,6 +131,12 @@ div.rowid    { min-width: 35px; }
          font-size:        90%;
          white-space:      nowrap;           }
 .dhdrcell { border:0;}
+
+.dcell.cmt, .dhdrcell.cmt {
+    width:100%;
+    max-width:200px;
+    min-width:200px;
+}
 
 .dslider {
     transform-origin:10px 10px;
