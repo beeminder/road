@@ -114,10 +114,10 @@ app.get("/road", (req, resp) => {
       username: req.session.username,
       access_token: req.session.access_token
     }
-    resp.render('road.ejs', {user: user})
+    resp.render('newdesign.ejs', {user: user})
   }
 })
-app.get("/newdesign", (req, resp) => {
+app.get("/olddesign", (req, resp) => {
   setsession(req)
   if (typeof req.session.access_token === 'undefined' ||
              req.session.access_token === null) {
@@ -127,7 +127,7 @@ app.get("/newdesign", (req, resp) => {
       username: req.session.username,
       access_token: req.session.access_token
     }
-    resp.render('newdesign.ejs', {user: user})
+    resp.render('road.ejs', {user: user})
   }
 })
 app.get("/editor", (req, resp) => {
