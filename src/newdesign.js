@@ -211,12 +211,12 @@ function commitTo(issandbox = false) {
   if (!issandbox) {
     if (isNaN(endSlope.value)) return;
     siru = parseInt(slopeType.value);
-    slope = parseInt(endSlope.value);
+    slope = parseFloat(endSlope.value);
     editor.commitTo(slope / siru);
   } else {
     if (isNaN(endSlopeSandbox.value)) return;
     siru = parseInt(slopeTypeSandbox.value);
-    slope = parseInt(endSlopeSandbox.value);
+    slope = parseFloat(endSlopeSandbox.value);
     sandbox.newRate(slope / siru);
   }    
 }
