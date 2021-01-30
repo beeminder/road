@@ -101,11 +101,11 @@ app.get("/login", (req, resp) => {
       AUTH_REDIRECT_URI:   process.env.AUTH_REDIRECT_URI
     })
   } else {
-    resp.redirect('/road')
+    resp.redirect('/')
   }
 })
 app.get("/newdesign", (req, resp) => {
-    resp.redirect('/road')
+    resp.redirect('/')
 })
 app.get("/road", (req, resp) => {
   setsession(req)
@@ -149,7 +149,7 @@ app.get("/", (req, resp) => {
       username: req.session.username,
       access_token: req.session.access_token
     }
-    resp.render('road.ejs', {user: user})
+    resp.render('newdesign.ejs', {user: user})
   }
 })
 
