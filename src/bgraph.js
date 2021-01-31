@@ -1086,6 +1086,7 @@ function updateDataSliderValue() {
 }
   
 function selectDataIndex(ind) {
+  ind = rawdata.length-ind-1 // reverse table
   // Make sure the data table is visible before selection
   if (!databody.node().offsetParent) return
   dataselected = ind
@@ -1174,6 +1175,7 @@ function updateDataTable() {
     .selectAll(".dcell")
     .data((row, i) => {
       if (row >= rawdata.length) return [null, null, null]
+      row = rawdata.length-row-1 // reverse table
       let date = bu.dayify(bu.dayparse(rawdata[row][0]), '-')
       return [row, date, rawdata[row][1], rawdata[row][2]]
     })
