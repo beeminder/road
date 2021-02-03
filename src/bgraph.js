@@ -929,22 +929,26 @@ function createGraph() {
   // Create and initialize the x and y axes
   xSc   = d3.scaleUtc().range([0,plotbox.width])
   xAxis = d3.axisBottom(xSc).ticks(6)
+
   xAxisObj = focus.append('g')        
     .attr("class", "axis")
     .attr("transform", "translate("+plotbox.x+"," 
           + (plotpad.top+plotbox.height) + ")")
     .call(xAxis)
-  if (!opts.roadEditor) {
-    xGrid = d3.axisTop(xSc).ticks(6).tickFormat("")
-    xGridObj = gGrid.append('g')
-      .attr("class", "grid")
-      .attr("transform", "translate(0,"+(plotbox.height)+")")
-      .call(xGrid)
-    xAxisT = d3.axisTop(xSc).ticks(6)
-    xAxisObjT = focus.append('g')
-      .attr("class", "axis")
-      .attr("transform", "translate("+plotbox.x+"," + (plotpad.top) + ")")
-      .call(xAxisT)
+  xGrid = d3.axisTop(xSc).ticks(6).tickFormat("")
+  xGridObj = gGrid.append('g')
+    .attr("class", "grid")
+    .attr("transform", "translate(0,"+(plotbox.height)+")")
+    .call(xGrid)
+  xAxisT = d3.axisTop(xSc).ticks(6)
+  xAxisObjT = focus.append('g')
+    .attr("class", "axis")
+    .attr("transform", "translate("+plotbox.x+"," + (plotpad.top) + ")")
+    .call(xAxisT)
+
+  if (opts.roadEditor) {
+    xGridObj.attr('display', 'none')
+    xAxisObjT.attr('display', 'none')
   }
 
   ySc    = d3.scaleLinear().range([plotbox.height, 0])
@@ -1038,14 +1042,12 @@ function resizeGraph() {
   nXSc.range([0, plotbox.width])
   xAxisObj.attr("transform", "translate("+plotbox.x+"," 
                    + (plotpad.top+plotbox.height) + ")").call(xAxis.scale(nXSc))
-  if (!opts.roadEditor) {
-    xGridObj.attr("transform", "translate(0,"+(plotbox.height)+")").call(xGrid)
-    xAxisObjT.attr("transform", "translate("+plotbox.x+","+(plotpad.top)+")")
-      .call(xAxisT.scale(nXSc))
-  } else {
-    gRedTape.select('rect').attr('width', plotbox.width).attr('height', plotbox.height)
-    gRedTape.select('text').attr('x', plotbox.width/2)
-  }
+  xGridObj.attr("transform", "translate(0,"+(plotbox.height)+")").call(xGrid)
+  xAxisObjT.attr("transform", "translate("+plotbox.x+","+(plotpad.top)+")")
+    .call(xAxisT.scale(nXSc))
+
+  gRedTape.select('rect').attr('width', plotbox.width).attr('height', plotbox.height)
+  gRedTape.select('text').attr('x', plotbox.width/2)
     
   ySc.range( [0, plotbox.height])
   nYSc.range([0, plotbox.height])
@@ -1119,6 +1121,7 @@ function dsliderscroll() {
 }
 /** Creates the skeleton for the data table and populates it with
  * rows. Cells are created later in updateDueBy using d3 */
+let dcellclass = ["id", "dt", "vl", "cmt"]
 function createDataTable() {
   var div = opts.divData
   if (div === null) return
@@ -1135,7 +1138,7 @@ function createDataTable() {
   datacolumns = ['#', 'DATE', 'VALUE', 'COMMENT'];
   databody.append("div").attr('class', 'dhdrrow')
     .selectAll("span.dhdrcell").data(datacolumns)
-    .enter().append('span').attr('class', (d,i) => ((i==3)?'dhdrcell cmt':'dhdrcell'))
+    .enter().append('span').attr('class', (d,i) => ('dhdrcell '+dcellclass[i]))
     .style("text-align", (d,i)=>( (i == 0)?"right":null))
     .text((c)=>c);
   databody
@@ -1179,7 +1182,7 @@ function updateDataTable() {
       let date = bu.dayify(bu.dayparse(rawdata[row][0]), '-')
       return [row, date, rawdata[row][1], rawdata[row][2]]
     })
-    .join(enter=>enter.append("span").attr('class', (d,i)=>( (i == 3)?"dcell cmt":"dcell"))
+    .join(enter=>enter.append("span").attr('class', (d,i)=>("dcell "+dcellclass[i]))
           .style("border", (d,i)=>( (i == 0)?"0":null))
           .style("text-align", (d,i)=>( (i == 0)?"right":null)),
           update=>update)
@@ -1455,29 +1458,27 @@ function redrawXTicks() {
   xAxisObj.selectAll("g").selectAll(".tick line")
     .attr("transform", "translate(0,-5)")
   
-  if (!opts.roadEditor) {
-    // Repeat the above process for the top X axis
-    xGrid.tickValues(tv).tickSize(plotbox.width);
-    xGridObj.call(xGrid.scale(nXSc));
-    xGridObj.selectAll("g").classed("minor", false);
-    xGridObj.selectAll("g")
-      .filter( (d, i)=>(i%majorSkip!=ind))
-      .classed("minor", true);
-    xAxisT.tickValues(tv)
-      .tickSize(6)
-      .tickSizeOuter(0)
-      .tickFormat(
-        (d,i)=>d3.utcFormat((i%majorSkip==ind)?ticks[tickType][1]:"")(d))
-    xAxisObjT.call(xAxisT.scale(nXSc));
-    xAxisObjT.selectAll("g").classed("minor", false)
-    xAxisObjT.selectAll("g")
-      .filter((d, i)=>(i%majorSkip!=ind))
-      .classed("minor", true)
-
-    // Shift top tick marks downwards to ensure they point inwards
-    xAxisObjT.selectAll("g").selectAll(".tick line")
-      .attr("transform", "translate(0,6)")
-  }
+  // Repeat the above process for the top X axis
+  xGrid.tickValues(tv).tickSize(plotbox.width);
+  xGridObj.call(xGrid.scale(nXSc));
+  xGridObj.selectAll("g").classed("minor", false);
+  xGridObj.selectAll("g")
+    .filter( (d, i)=>(i%majorSkip!=ind))
+    .classed("minor", true);
+  xAxisT.tickValues(tv)
+    .tickSize(6)
+    .tickSizeOuter(0)
+    .tickFormat(
+      (d,i)=>d3.utcFormat((i%majorSkip==ind)?ticks[tickType][1]:"")(d))
+  xAxisObjT.call(xAxisT.scale(nXSc));
+  xAxisObjT.selectAll("g").classed("minor", false)
+  xAxisObjT.selectAll("g")
+    .filter((d, i)=>(i%majorSkip!=ind))
+    .classed("minor", true)
+  
+  // Shift top tick marks downwards to ensure they point inwards
+  xAxisObjT.selectAll("g").selectAll(".tick line")
+    .attr("transform", "translate(0,6)")
 }
 
 /** Check the widths of y-axis labels and tick marks, resizing the graph
@@ -1490,9 +1491,15 @@ function handleYAxisWidth() {
   if (opts.divGraph != null && !hidden) {
     yAxisLabel.text(gol.yaxis)
     if (gol.hidey && !opts.roadEditor) {
-      yAxisObj.selectAll( "text").remove()
-      yAxisObjR.selectAll("text").remove()
+      //yAxisObj.selectAll( "text").remove()
+      //yAxisObjR.selectAll("text").remove()
+      yAxisObj.selectAll( "text").attr('display', 'none')
+      yAxisObjR.selectAll("text").attr('display', 'none')
+    } else {
+      yAxisObj.selectAll( "text").attr('display', null)
+      yAxisObjR.selectAll("text").attr('display', null)
     }
+    
     var bbox = yAxisObj.node().getBBox()
     // Adjust the graph size and axes if the y axis tick
     // width has changed by a nontrivial amount. This
@@ -4567,13 +4574,13 @@ function createStartTable() {
   sthead.append("div").attr('class', 'roadhdr')
     .append("div").attr('class', 'roadhdrrow')
     .selectAll("span.roadhdrcell").data(startcolumns)
-    .enter().append('span').attr('class', 'roadhdrcell')
+    .enter().append('span').attr('class', (d,i)=>('roadhdrcell '+'rtbc'+i))
     .text((c)=>c);
   stbody = sthead.append('div').attr('class', 'roadbody'); 
   sttail = sthead.append("div").attr('class', 'roadhdr');
   sttail.append("div").attr('class', 'roadhdrrow')
     .selectAll("span.roadhdrcell").data(tailcolumns)
-    .enter().append('span').attr('class', 'roadhdrcell')
+    .enter().append('span').attr('class', (d,i)=>('roadhdrcell '+'rtbc'+i))
     .text((c)=>c);
 }
 
@@ -4589,7 +4596,7 @@ function createGoalTable() {
   ghead.append("div").attr('class', 'roadhdr')
     .append("div").attr('class', 'roadhdrrow')
     .selectAll("span.roadhdrcell").data(goalcolumns)
-    .enter().append('span').attr('class', 'roadhdrcell')
+    .enter().append('span').attr('class', (d,i)=>('roadhdrcell '+'rtbc'+i))
     .text((c)=>c)
   gbody = ghead.append('div').attr('class', 'roadbody');
 }
@@ -4943,7 +4950,7 @@ function updateRowValues( elt, s, e, rev ) {
            ?"duplicate":bu.shn(row.slope*gol.siru), name: "slope"+(ri), 
            auto: (row.auto==br.RP.SLOPE), i:ri}]
       });
-   cells.enter().append("div").attr('class', 'roadcell')
+   cells.enter().append("div").attr('class', (d,i)=>('roadcell '+'rtbc'+i))
     .attr('name', (d)=>d.name)
     .attr("contenteditable", 
       (d,i) =>((d.auto || !opts.roadEditor)?'false':'true'))

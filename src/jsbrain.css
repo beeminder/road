@@ -52,13 +52,13 @@ svg text::selection { background: none; }
 /*.rtable, .rtablestart, .rtablegoal { display: table; } */
 .roadhdr    { display:        table-header-group; }
 .roadbody   { display:        table-row-group;
-              border-spacing: 4px;                }
+              border-spacing: 1px;                }
 .roadrow    { display:        table-row;
               white-space:    nowrap;             }
 .roadhdrrow { display:        table-row;
               white-space:    nowrap;             }
 
-.roadbtn { margin-left:  3px;
+.roadbtn { margin-left:  1px;
            margin-right: 1px;
            visibility:   collapse;
            font-size:    80%;      }
@@ -82,23 +82,26 @@ svg text::selection { background: none; }
                background-color: white;
                font-size:        90%;              }
 
+
 .rtbmain, 
 .rtbstart {  padding:          1px 0px 4px 0px;
              border:           1px solid transparent;
              border-collapse:  separate;
-             border-spacing:   8px 1px;                }
+             border-spacing:   6px 1px;                }
 .rtbgoal {  border-collapse:  separate;
             background-color: #eeffee;
             padding:          0px 0px 5px 0px;
             margin:           8px 0px 4px 0px;
             border:           1px solid black;
             border-collapse:  separate;
-            border-spacing:   8px 1px;                }
+            border-spacing:   6px 1px;                }
 
 .rtbgoal .rowid { visibility: hidden; }
 
-div.roadcell { min-width: 95px; }
-div.rowid    { min-width: 35px; }
+div.roadcell.rtbc0,div.roadhdrcell.rtbc0 { width: 85px;min-width: 85px; }
+div.roadcell.rtbc1,div.roadhdrcell.rtbc1 { width: 75px;min-width: 75px; }
+div.roadcell.rtbc2,div.roadhdrcell.rtbc2 { width: 85px;min-width: 85px; }
+.rowid    { min-width: 30px; }
 
 .floating { float:    left;
             position: absolute; }
@@ -136,6 +139,10 @@ div.rowid    { min-width: 35px; }
     width:100%;
     max-width:200px;
     min-width:200px;
+}
+.dcell.vl, .dhdrcell.vl {
+    max-width:60px;
+    min-width:60px;
 }
 
 .dslider {
