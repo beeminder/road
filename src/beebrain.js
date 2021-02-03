@@ -498,8 +498,9 @@ function aggpt(vl, v) { // v is the aggregated value
 
 // This is the subset of procData that takes the raw datapoints -- a list of 
 // timestamp, value, comment triples -- and returns 
-function aggData() {
-
+function aggData(data) {
+  if (!data || !data.length) return data
+  
 }
 
 /** Process goal data<br/>
