@@ -91,6 +91,7 @@ label {
 
 .graphcontainer {
     width: 100%;
+    max-width:694px;
     display:block;
     vertical-align:top;
 }

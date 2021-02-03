@@ -60,7 +60,6 @@ svg text::selection { background: none; }
 
 .roadbtn { margin-left:  1px;
            margin-right: 1px;
-           visibility:   collapse;
            font-size:    80%;      }
 
 .rowid       { display:          table-cell;

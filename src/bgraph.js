@@ -4905,10 +4905,10 @@ function updateTableButtons() {
   btncells
     .attr('id', (d)=>d.row)
     .attr('name', (d)=>d.name)
-    .style('visibility', (d,i) =>
+    .style('display', (d,i) =>
            (((Number(d.row)>0 && Number(d.row)<(road.length-2)) 
              || i==4 
-             || (i>0 && Number(d.row)>0 ))?"visible":"hidden")
+             || (i>0 && Number(d.row)>0 ))?null:"none")
           )
     .property('checked', (d)=>(d.auto?true:false))
 
