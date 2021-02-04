@@ -4560,7 +4560,8 @@ function createRoadTable() {
 }
 
 // Create the table header and body to show the start node
-var sthead, stbody, sttail;
+var sthead, stbody, sttail
+const rtbccls = ["dt", "vl", "sl"]
 function createStartTable() {
   var startcolumns, tailcolumns;
   if (opts.roadEditor) {
@@ -4573,14 +4574,14 @@ function createStartTable() {
   sthead = d3.select(opts.divTable).select(".rtbstart")
   sthead.append("div").attr('class', 'roadhdr')
     .append("div").attr('class', 'roadhdrrow')
-    .selectAll("span.roadhdrcell").data(startcolumns)
-    .enter().append('span').attr('class', (d,i)=>('roadhdrcell '+'rtbc'+i))
+    .selectAll("span.rdhdrcell").data(startcolumns)
+    .enter().append('span').attr('class', (d,i)=>('rdhdrcell '+rtbccls[i]))
     .text((c)=>c);
   stbody = sthead.append('div').attr('class', 'roadbody'); 
   sttail = sthead.append("div").attr('class', 'roadhdr');
   sttail.append("div").attr('class', 'roadhdrrow')
-    .selectAll("span.roadhdrcell").data(tailcolumns)
-    .enter().append('span').attr('class', (d,i)=>('roadhdrcell '+'rtbc'+i))
+    .selectAll("span.rdhdrcell").data(tailcolumns)
+    .enter().append('span').attr('class', (d,i)=>('rdhdrcell '+rtbccls[i]))
     .text((c)=>c);
 }
 
@@ -4595,8 +4596,8 @@ function createGoalTable() {
   ghead = d3.select(opts.divTable).select(".rtbgoal");
   ghead.append("div").attr('class', 'roadhdr')
     .append("div").attr('class', 'roadhdrrow')
-    .selectAll("span.roadhdrcell").data(goalcolumns)
-    .enter().append('span').attr('class', (d,i)=>('roadhdrcell '+'rtbc'+i))
+    .selectAll("span.rdhdrcell").data(goalcolumns)
+    .enter().append('span').attr('class', (d,i)=>('rdhdrcell '+rtbccls[i]))
     .text((c)=>c)
   gbody = ghead.append('div').attr('class', 'roadbody');
 }
@@ -4618,9 +4619,9 @@ function updateTableTitles() {
     roadcolumns = ['', 'End Date',  'Value', ratetext]
     goalcolumns = ['', 'Goal Date', 'Value', ratetext]
   }    
-  sttail.selectAll("span.roadhdrcell").data(roadcolumns).text((c)=>c)
-  thead.selectAll("span.roadhdrcell").data(roadcolumns).text((c)=>c)
-  ghead.selectAll("span.roadhdrcell").data(goalcolumns).text((c)=>c)
+  sttail.selectAll("span.rdhdrcell").data(roadcolumns).text((c)=>c)
+  thead.selectAll("span.rdhdrcell").data(roadcolumns).text((c)=>c)
+  ghead.selectAll("span.rdhdrcell").data(goalcolumns).text((c)=>c)
 
   updateTableWidths()
 }
@@ -4872,7 +4873,7 @@ function updateTableButtons() {
   // Update buttons on all rows at once, including the start node.
   var allrows = d3.select(opts.divTable)
         .selectAll(".rtbstart .roadrow, .rtable .roadrow, .rtbgoal .roadrow")
-  var btncells = allrows.selectAll(".roadbtn")
+  var btncells = allrows.selectAll(".rdbtn")
         .data(function(row, i) {
           // The table row order is reversed, which means that the
           // last road segment comes in the first row.  We need to
@@ -4889,19 +4890,20 @@ function updateTableButtons() {
         })
   
   var newbtncells = btncells.enter().append("input")
-        .attr('class', 'roadbtn')
-        .attr('id',   (d) => d.row)
-        .attr('name', (d) => d.name)
-        .attr('type', (d) => d.type)
-        .attr('value', (d) => { 
-          let cell = "<span class='octicon octicon-plus'></span>"
-          return d.txt  // how does setting cell locally here matter??
-        })
-        .on('click', (d) => d.evt())
+      .attr('class', (d)=>('rdbtn '+d.txt))
+      .attr('id',   (d) => d.row)
+      .attr('name', (d) => d.name)
+      .attr('type', (d) => d.type)
+      .attr('value', (d) => { 
+
+        //let cell = "<span class='octicon octicon-plus'></span>"
+        return d.txt  // how does setting cell locally here matter??
+      })
+      .on('click', (d) => d.evt())
   
   btncells.exit().remove()
   btncells = allrows.selectAll(
-    ".rtbstart .roadbtn, .rtable .roadbtn, .rtbgoal .roadbtn")
+    ".rtbstart .rdbtn, .rtable .rdbtn, .rtbgoal .rdbtn")
   btncells
     .attr('id', (d)=>d.row)
     .attr('name', (d)=>d.name)
@@ -4912,11 +4914,11 @@ function updateTableButtons() {
           )
     .property('checked', (d)=>(d.auto?true:false))
 
-  allrows.selectAll(".roadcell, .roadbtn")
+  allrows.selectAll(".rdcell, .rdbtn")
     .sort((a,b)=>d3.ascending(a.order,b.order))
 
   if (!opts.roadEditor) {
-    allrows.selectAll(".roadbtn").style('display', "none")
+    allrows.selectAll(".rdbtn").style('display', "none")
       .attr("value","")
   }
 }
@@ -4937,7 +4939,7 @@ function updateRowValues( elt, s, e, rev ) {
   rows.attr("name", (d,i)=>('roadrow'+ifn(s+i)))
     .attr("id", (d,i)=>(ifn(s+i)))
   rows.select("div").text((d,i)=>(ifn(s+i)+":"))
-  var cells = rows.selectAll(".roadcell")
+  var cells = rows.selectAll(".rdcell")
       .data((row, i) => {
         var datestr = bu.dayify(row.end[0], '-')
         var ri = ifn(s+i)
@@ -4950,7 +4952,7 @@ function updateRowValues( elt, s, e, rev ) {
            ?"duplicate":bu.shn(row.slope*gol.siru), name: "slope"+(ri), 
            auto: (row.auto==br.RP.SLOPE), i:ri}]
       });
-   cells.enter().append("div").attr('class', (d,i)=>('roadcell '+'rtbc'+i))
+   cells.enter().append("div").attr('class', (d,i)=>('rdcell '+rtbccls[i]))
     .attr('name', (d)=>d.name)
     .attr("contenteditable", 
       (d,i) =>((d.auto || !opts.roadEditor)?'false':'true'))
@@ -4960,7 +4962,7 @@ function updateRowValues( elt, s, e, rev ) {
     .on('keydown', tableKeyDown)
 
    cells.exit().remove()
-   cells = rows.selectAll(".roadcell")
+   cells = rows.selectAll(".rdcell")
    cells.text((d,i)=>d.value)
      .attr('name', (d)=>d.name)
     .style('color', (d) =>{
@@ -4979,10 +4981,10 @@ function updateRowValues( elt, s, e, rev ) {
 function updateTableWidths() {
   if (opts.divTable == null || hidden) return;
   // var wfn = function(d,i) {
-  //   var sel = tbody.select(".roadrow").selectAll(".rowid, .roadcell"); 
+  //   var sel = tbody.select(".roadrow").selectAll(".rowid, .rdcell"); 
   //   var nds = sel.nodes();
   //   if (nds.length == 0) {
-  //     sel = gbody.select(".roadrow").selectAll(".rowid, .roadcell"); 
+  //     sel = gbody.select(".roadrow").selectAll(".rowid, .rdcell"); 
   //     nds = sel.nodes();
   //   }
   //   var w = nds[i].offsetWidth;
@@ -4991,13 +4993,13 @@ function updateTableWidths() {
   //   else w = w - 13;
   //   d3.select(this).style("width", w+"px");
   // };
-  // stbody.selectAll(".rowid, .roadcell").each( wfn );
+  // stbody.selectAll(".rowid, .rdcell").each( wfn );
   // if (road.length > 3) {
-  //   gbody.selectAll(".rowid, .roadcell").each( wfn );
+  //   gbody.selectAll(".rowid, .rdcell").each( wfn );
   //   d3.select(opts.divTable)
   //     .style("width", (tbody.node().offsetWidth+30)+"px");
   // } else {
-  //   gbody.selectAll(".rowid, .roadcell").style( "width", null );
+  //   gbody.selectAll(".rowid, .rdcell").style( "width", null );
   //   d3.select(opts.divTable)
   //     .style("width", (gbody.node().offsetWidth+30)+"px");
   // }

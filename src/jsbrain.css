@@ -58,7 +58,7 @@ svg text::selection { background: none; }
 .roadhdrrow { display:        table-row;
               white-space:    nowrap;             }
 
-.roadbtn { margin-left:  1px;
+.rdbtn { margin-left:  1px;
            margin-right: 1px;
            font-size:    80%;      }
 
@@ -67,13 +67,13 @@ svg text::selection { background: none; }
                padding:          2px;
                text-align:       right;
                white-space:      nowrap;           }
-.roadhdrcell { display:          table-cell;
+.rdhdrcell { display:          table-cell;
                border:           0px;
                padding:          5px 2px 2px 2px;
                text-align:       center;
                font-size:        90%;
                white-space:      nowrap;           }
-.roadcell    { display:          table-cell;
+.rdcell    { display:          table-cell;
                border:           1px solid black;
                padding:          2px 2px 2px 2px;
                text-align:       center;
@@ -97,9 +97,9 @@ svg text::selection { background: none; }
 
 .rtbgoal .rowid { visibility: hidden; }
 
-div.roadcell.rtbc0,div.roadhdrcell.rtbc0 { width: 85px;min-width: 85px; }
-div.roadcell.rtbc1,div.roadhdrcell.rtbc1 { width: 75px;min-width: 75px; }
-div.roadcell.rtbc2,div.roadhdrcell.rtbc2 { width: 85px;min-width: 85px; }
+div.rdcell.dt,div.rdhdrcell.dt { width: 85px;min-width: 85px; }
+div.rdcell.vl,div.rdhdrcell.vl { width: 75px;min-width: 75px; }
+div.rdcell.sl,div.rdhdrcell.sl { width: 85px;min-width: 85px; }
 .rowid    { min-width: 30px; }
 
 .floating { float:    left;
