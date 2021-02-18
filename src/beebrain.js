@@ -497,7 +497,8 @@ function aggpt(vl, v) { // v is the aggregated value
 }
 
 // This is the subset of procData that takes the raw datapoints -- a list of 
-// timestamp, value, comment triples -- and returns 
+// timestamp, value, comment triples -- and returns what's actually plotted on
+// the y-axis, accounting for kyoom, odom, and aggday.
 function aggData(data) {
   if (!data || !data.length) return data
   
@@ -520,18 +521,17 @@ function aggData(data) {
     the input data array.
 */
 function procData() { 
-  if (data == null || data.length == 0) return "No datapoints"
-  const numpts = data.length
-  let i, d
+  if (!data || !data.length) return "No datapoints"
+  const n = data.length
+  let i
 
-  for (i = 0; i < numpts; i++) {
-    d = data[i]
+  for (i = 0; i < n; i++) {
+    const d = data[i]
     // Sanity check data element
     if (!(bu.nummy(d[0]) && d[0]>0 && bu.nummy(d[1]) && bu.stringy(d[2])))
       return "Invalid datapoint: "+d[0]+" "+d[1]+' "'+d[3] 
 
-    // Extract and record hashtags
-    if (gol.hashtags) {
+    if (gol.hashtags) {                           // extract and record hashtags
       const hset = hashextract(d[2])
       if (hset.size == 0) continue
       if (!(d[0] in hashhash)) hashhash[d[0]] = new Set()
@@ -542,27 +542,25 @@ function procData() {
   // Precompute list of [t, hashtext] pairs for efficient display
   if (gol.hashtags) {
     hashtags = []
-    const keys = Object.keys(hashhash)
+    //const keys = Object.keys(hashhash) #SCHDEL
     for (const key in hashhash)
-      hashtags.push([key, Array.from(hashhash[key]).join(" ")])
+      hashtags.push([key, Array.from(hashhash[key]).join(' ')])
   }
 
   // Identify derailments and construct a copied array
   derails = data.filter(e => recommitted(e[2]))
   derails = derails.map(e => e.slice())
-  // CHANGEDATE is the day that we switched to recommitting goals yesterday
-  // instead of the day after the derail.
-  for (i = 0; i < derails.length; i++) {
-    const CHANGEDATE = 1562299200 // 2019-07-05
-    if (derails[i][0] < CHANGEDATE) derails[i][0] = derails[i][0]-SID
-  }
-    
-  // Identify, record and process odometer reset for odom goals
-  if (gol.odom) {
-    oresets = data.filter(e => e[1]==0).map(e => e[0])
+  // Legacy adjustment for before we switched from defining derailment as today
+  // and yesterday being in the red to just yesterday in the red. As of 2021
+  // there are still current graphs that become messed up without this...
+  for (i = 0; i < derails.length; i++)
+    if (derails[i][0] < 1562299200/*2019-07-05*/) derails[i][0] -= SID
+  
+  if (gol.odom) {               // identify, record, and process odometer resets
+    oresets = data.filter(e => e[1] == 0).map(e => e[0])
     br.odomify(data)
   }
-  const nonfuda = data.filter(e => e[0]<=gol.asof)
+  const nonfuda = data.filter(e => e[0] <= gol.asof)
   if (gol.plotall) gol.numpts = nonfuda.length
   
   allvals = {}
@@ -570,8 +568,8 @@ function procData() {
 
   // Aggregate datapoints and handle kyoom
   let newpts = []
-  let ct = data[0][0] // Current time
-  let vl = []  // Value list: All values [t, v, c, ind, originalv] for time ct 
+  let ct = data[0][0] // Current Time
+  let vl = []  // Value List: All values [t, v, c, ind, originalv] for time ct 
         
   let pre = 0 // Current cumulative sum
   let prevpt
@@ -581,16 +579,14 @@ function procData() {
   br.rsk8 = gol.rfin * SID / gol.siru // convert rfin to daily rate
 
   // Process all datapoints
-  for (i = 0; i <= data.length; i++) {
-    if (i < data.length && data[i][0] == ct) {
-      // Record all points for the current timestamp in vl
-      vl.push(data[i].slice())
-    }
+  for (i = 0; i <= n; i++) {
+    if (i < n && data[i][0] == ct)
+      vl.push(data[i].slice()) // record all points for current timestamp in vl
     
     if (i >= data.length || data[i][0] != ct) {
       // Done recording all data for today
-      let vlv = vl.map(dval)              // Extract all values for today
-      let ad  = br.AGGR[gol.aggday](vlv)  // Compute aggregated value
+      let vlv = vl.map(dval)              // extract all values for today
+      let ad  = br.AGGR[gol.aggday](vlv)  // compute aggregated value
       // Find previous point to record its info in the aggregated point
       if (newpts.length > 0) prevpt = newpts[newpts.length-1]
       else prevpt = [ct, ad+pre]
@@ -606,11 +602,11 @@ function procData() {
       // Update allvals and aggval associative arrays
       // allvals[timestamp] has entries [vtotal, comment, vorig]
       if (gol.kyoom) {
-        if (gol.aggday === "sum") {
+        if (gol.aggday === "sum")
           allvals[ct] = 
             bu.accumulate(vlv).map((e,j) => 
                                       [ct, e+pre, vl[j][2], vl[j][3], vl[j][4]])
-        } else allvals[ct] = vl.map(e => [ct, e[1]+pre, e[2], e[3], e[4]])
+        else allvals[ct] = vl.map(e => [ct, e[1]+pre, e[2], e[3], e[4]])
         aggval[ct] = pre+ad
         pre += ad
       } else {
@@ -619,7 +615,7 @@ function procData() {
       }
       const vw = allvals[ct].map(e => e[1])
 
-      // What we actually want for derailval is not this "worstval" but the 
+      // What we actually want for derailval is not this "worstval" but the
       // agg'd value up to and including the recommit datapoint (see the
       // recommitted() function) and nothing after that:
       derailval[ct] = gol.yaw < 0 ? bu.arrMax(vw) : bu.arrMin(vw)
@@ -631,8 +627,8 @@ function procData() {
     }
   }
     
-  // Recompute an array of all datapoints based on allvals,
-  // having incorporated aggregation and other processing steps.
+  // Recompute an array of all datapoints based on allvals, having incorporated
+  // aggregation and other processing steps.
   let allpts = []
   for (let t in allvals) {
     allpts = allpts.concat(allvals[t].map(d => 
@@ -642,8 +638,8 @@ function procData() {
   }
   alldata = allpts
 
-  fuda = newpts.filter(e => e[0]>gol.asof)
-  data = newpts.filter(e => e[0]<=gol.asof)
+  fuda = newpts.filter(e => e[0] >  gol.asof)
+  data = newpts.filter(e => e[0] <= gol.asof)
   if (data.length == 0) return "All datapoints are in the future!"
 
   if (!gol.plotall) gol.numpts = data.length
@@ -665,11 +661,10 @@ function procData() {
     else                            ct = derails[i][0]
     if (ct in derailval)
       //derails[i][1] = derailval[ct] // see "What we actually want" above...
-      derails[i][1] = aggval[ct]  // doing this until derailval's done right
+      derails[i][1] = aggval[ct]  // doing this until derailval is done right
   }
   
-  // Extract computed points that are different than any entered data (hollow
-  // pts)
+  // Extract computed points that're different than any entered data
   hollow = data.filter(e => {
     if (!(e[0] in allvals)) return false
     return (e[0]<gol.asof && !allvals[e[0]].map(e => e[1]).includes(e[1]))
