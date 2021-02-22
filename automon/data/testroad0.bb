@@ -27,7 +27,7 @@
   "plotall":true,
   "integery":false,
   "monotone":true,
-  "hidey":false,
+  "hidey":true,
   "waterbux":"$0",
   "yoog":"d/test",
   "timezone":"America/Los_Angeles",
@@ -35,6 +35,6 @@
   "asof":"20170710"
 }, 
 "data":[
-  ["20170628",0,"initial datapoint of 0"],
-  ["20170629",10,"initial datapoint of 0"]
+  ["20170628",0,"initial datapoint of 0 #hash1"],
+  ["20170629",10,"initial datapoint of 0 #hash2"]
 ]} 
