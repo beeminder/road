@@ -126,6 +126,8 @@ img.dicon, img.ricon {
 
 button.dcell, button.rdbtn {
     padding:1px 6px;
+    margin-right:2px;
+    border:1px solid #aaaaaa;
 }
 .dhdrcell,
 span.dcell,
