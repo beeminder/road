@@ -3,7 +3,7 @@ body {
     min-width:620px;
 }
 .dslider{
-    width:400px;
+    width:340px;
 }
 #header {
     background-color: #FFCB06;
@@ -19,7 +19,8 @@ body {
 }
 
 /***** Common Element styles *****/
-button, select {
+
+button.bmdrbtn, select {
     color:black;
     background-color: #ddd;
     padding: 10px 16px;
@@ -29,9 +30,9 @@ button, select {
     border: 1px solid #ccc;
     font-size:90%;
 }
-button:hover    {  background-color: #FFD949; }
-button.active   {  background-color: #FFD949; }
-button:disabled {  color: #999;               }
+button.bmdrbtn:hover    {  background-color: #FFD949; }
+button.bmdrbtn.active   {  background-color: #FFD949; }
+button.bmdrbtn:disabled {  color: #999;               }
 
 input[type=checkbox] {
     width:20px;
@@ -60,7 +61,7 @@ label {
     max-width:1024px;
 }
 
-.tab button {
+.tab button.bmdrbtn {
     width : 33.333%;
     height: 45px;
     float: left;
@@ -100,9 +101,6 @@ label {
     margin-left: 10px;
     font-size:90%;
 }
-#snextday {
-    margin-right:40px;
-}
 
 #roadgraph, #roadeditor, #roadsandbox {
     width: 100%;
@@ -118,7 +116,7 @@ label {
     border: none;
 }
 
-.vtab button {
+.vtab button.bmdrbtn {
     display: inline-block;
     width:90px;
     height:45px;
@@ -219,9 +217,6 @@ label {
         width : 1024px;
     }
     .dslider{
-        width:340px;
-    }
-    #snextday {
-        margin-right:50px;
+        width:280px;
     }
 }

@@ -39,7 +39,9 @@
   </div>
   <!-- Tab links -->
   <div class="tab">
-    <button id="graphtab" class="tablinks active" onclick="openMainTab(event, 'graph');">Graph</button><button id="editortab" class="tablinks" onclick="openMainTab(event, 'editor')">Editor</button><button id="sandboxtab" class="tablinks" onclick="openMainTab(event, 'sandbox')">Sandbox</button>
+    <button id="graphtab" class="bmdrbtn tablinks active" onclick="openMainTab(event, 'graph');">Graph</button>
+    <button id="editortab" class="bmdrbtn tablinks" onclick="openMainTab(event, 'editor')">Road Editor</button>
+    <button id="sandboxtab" class="bmdrbtn tablinks" onclick="openMainTab(event, 'sandbox')">Sandbox</button>
   </div>
   
 <!-- Tab content -->
@@ -47,19 +49,20 @@
   <div id="gsummary" class="summary"></div>
   <div class="graphcontainer">
     <div id="roadgraph"></div>
+    <hr/>
     <div class="graphtools">
-      <button id="zoomall" onclick="graph.zoomAll();">View All</button>
-      <button id="zoomdflt" onclick="graph.zoomDefault();">Reset Zoom</button>
+      <button class="bmdrbtn" id="zoomall" onclick="graph.zoomAll();">View All</button>
+      <button class="bmdrbtn" id="zoomdflt" onclick="graph.zoomDefault();">Reset Zoom</button>
     </div>
   </div>
 
   <div class="vtabcontainer">
     <div class="vtabtitle">Graph Tools</div>
     <div class="vtab">
-      <button class="gtablinks" onclick="openGraphTab(event, 'road')">Road</button><button class="gtablinks" onclick="openGraphTab(event, 'stats')">Stats</button><button class="gtablinks" onclick="openGraphTab(event, 'data')">Data</button><button class="gtablinks active" onclick="openGraphTab(event, 'entry')">Entry</button>
+      <button class="bmdrbtn gtablinks" onclick="openGraphTab(event, 'road')">Road</button><button class="bmdrbtn gtablinks" onclick="openGraphTab(event, 'stats')">Stats</button><button class="bmdrbtn gtablinks" onclick="openGraphTab(event, 'data')">Data</button><button class="bmdrbtn gtablinks active" onclick="openGraphTab(event, 'entry')">Entry</button> <!-- Warning, these elements should be on the same line to prevent inline spacing -->
     </div>
     <div id="entry" class="gtabcontent" style="display:block;">
-      <div class="tooltitle">Enter data</div>
+      <div class="tooltitle">Enter new data</div>
       <div style="padding:10px 20px; box-shadow:0 0 6px #ccc;">
         Date:<br/>
         <input id="datadate" type="text" class="dateentry" contenteditable="true"></input><br/>
@@ -67,11 +70,11 @@
         <input id="datavalue" type="number" class="valueentry" contenteditable="true"></input><br/>
         Optional comment:<br/>
         <input id="datacmt" type="text" class="cmtentry" contenteditable="true"></input><br/>
-        <button id="dataadd" onclick="handleDataSubmit()">ADD PROGRESS</button>
+        <button class="bmdrbtn" id="dataadd" onclick="handleDataSubmit()">ADD PROGRESS</button>
       </div>
     </div>
     <div id="data" class="gtabcontent">
-      <div class="tooltitle">Past data</div>
+      <div class="tooltitle">View and edit past data</div>
       <div id="graphdata">
         <input class="data-range" type="range" step="0.5" value="5" min="1" max="10">
       </div>
@@ -92,22 +95,26 @@
 <div id="editor" class="tabcontent">
   <div id="esummary" class="summary"></div>
   <div class="graphcontainer">
-    <div class="graphtools">
-      <button id="eundo" onclick="editor.undo();">Undo (0)</button>
-      <button id="eredo" onclick="editor.redo();">Redo (0)</button>
-      <button style="margin-left:10px;" id="submit" onclick="handleRoadSubmit();">Submit</button>
-      <span id="submitmsg">This is where submit msg goes</span>
-    </div>
     <div id="roadeditor"></div>
     <br/>
     <div class="graphtools">
-      <button id="zoomall" onclick="editor.zoomAll();">View All</button>
-      <button id="zoomdflt" onclick="editor.zoomDefault();">Reset Zoom</button>
-      <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>
-      <label>Show data</label>
-      <input style="margin-left:50px" id="keepslopes" type="checkbox"
+      <button class="bmdrbtn" id="submit" onclick="handleRoadSubmit();">Submit</button>
+      <span id="submitmsg">This is where submit msg goes</span>
+    </div>
+    <div class="graphtools">
+      <button class="bmdrbtn" id="eundo" onclick="editor.undo();">Undo (0)</button>
+      <button class="bmdrbtn" id="eredo" onclick="editor.redo();">Redo (0)</button>
+      <button class="bmdrbtn" id="ereset" onclick="editor.undoAll();">Undo All</button>
+      <input id="keepslopes" type="checkbox"
              onclick="editor.keepSlopes(this.checked)" checked>
       <label>Propagate changes forward</label>
+    </div>
+    <hr/>
+    <div class="graphtools">
+      <button class="bmdrbtn" id="zoomall" onclick="editor.zoomAll();">View All</button>
+      <button class="bmdrbtn" id="zoomdflt" onclick="editor.zoomDefault();">Reset Zoom</button>
+      <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>
+      <label>Show data</label>
     </div>
 
   </div>
@@ -115,10 +122,10 @@
   <div class="vtabcontainer">
     <div class="vtabtitle">Editor Tools</div>
     <div class="vtab">
-      <button class="etablinks" onclick="openEditorTab(event, 'eroad')">Road</button><button class="etablinks" onclick="openEditorTab(event, 'estats')">Stats</button><button class="etablinks" onclick="openEditorTab(event, 'edata')">Data</button><button class="etablinks active" onclick="openEditorTab(event, 'eedit')">Edit</button>
+      <button class="bmdrbtn etablinks active" onclick="openEditorTab(event, 'eroad')">Road</button><button class="bmdrbtn etablinks" onclick="openEditorTab(event, 'estats')">Stats</button><button class="bmdrbtn etablinks" onclick="openEditorTab(event, 'edata')">Data</button><button class="bmdrbtn etablinks" onclick="openEditorTab(event, 'eedit')">Dial</button> <!-- Warning, these elements should be on the same line to prevent inline spacing -->
     </div>
-    <div id="eedit" class="etabcontent" style="display:block;">
-      <div class="tooltitle">Road dial</div>
+    <div id="eedit" class="etabcontent">
+      <div class="tooltitle">Dial road</div>
       <div>
         Goal rate:<br/>
         <input type = "number" id="endslope" step="any" style="margin-bottom:10px;height:30px;width:10em;"><br/>
@@ -128,13 +135,11 @@
           <option value="2629800">per month</option>
           <option value="31557600">per year</option>
         </select> 
-        <button id="commit" onclick="commitTo(false)">UPDATE</button>
+        <button class="bmdrbtn" id="commit" onclick="commitTo(false)">UPDATE</button>
       </div>
-      <div class="tooltitle">History</div>
-      <button id="ereset" onclick="editor.undoAll();">Reset</button>
     </div>
     <div id="edata" class="etabcontent">
-      <div class="tooltitle">Past data</div>
+      <div class="tooltitle">View past data</div>
       <div id="editordata">
       </div>
     </div>
@@ -144,7 +149,7 @@
       <div class="tooltitle">Goal Progress</div>
       <div id="eprogress"></div>
     </div>
-    <div id="eroad" class="etabcontent">
+    <div id="eroad" class="etabcontent" style="display:block;">
       <div class="tooltitle">Road Matrix</div>
       <div id="editorroad"></div>
     </div>
@@ -154,27 +159,30 @@
 <div id="sandbox" class="tabcontent">
   <div id="ssummary" class="summary"></div>
   <div class="graphcontainer">
-    <div class="graphtools">
-      <button id="sundo" onclick="sandbox.undo();">Undo (0)</button>
-      <button id="sredo" onclick="sandbox.redo();">Redo (0)</button>
-      <button id="snextday" onclick="sandbox.nextDay();" style="float:right;">Next Day</button>
-      <button id="srefresh" onclick="sandbox.refresh();" style="float:right;margin-right:5px;">Refresh</button>
-    </div>
     <div id="roadsandbox">
     </div>
     <div class="graphtools">
-      <button id="zoomall" onclick="sandboxgr.zoomAll();">View All</button>
-      <button id="zoomdflt" onclick="sandboxgr.zoomDefault();">Reset Zoom</button>
+      <button class="bmdrbtn" id="snextday" onclick="sandbox.nextDay();">Next Day</button>
+    </div>
+    <div class="graphtools">
+      <button class="bmdrbtn" id="sundo" onclick="sandbox.undo();">Undo (0)</button>
+      <button class="bmdrbtn" id="sredo" onclick="sandbox.redo();">Redo (0)</button>
+      <button class="bmdrbtn" id="sreset" onclick="sandbox.undoAll();">Undo All</button>
+    </div>
+    <hr/>
+    <div class="graphtools">
+      <button class="bmdrbtn" id="zoomall" onclick="sandboxgr.zoomAll();">View All</button>
+      <button class="bmdrbtn" id="zoomdflt" onclick="sandboxgr.zoomDefault();">Reset Zoom</button>
     </div>
   </div>
   
   <div class="vtabcontainer">
     <div class="vtabtitle">Sandbox Tools</div>
     <div class="vtab">
-      <button class="stablinks" onclick="openSandboxTab(event, 'sroad')">Road</button><button class="stablinks" onclick="openSandboxTab(event, 'sstats')">Stats</button><button class="stablinks" onclick="openSandboxTab(event, 'sdata')">Data</button><button class="stablinks active" onclick="openSandboxTab(event, 'sedit')">Edit</button>
+      <button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sroad')">Road</button><button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sstats')">Stats</button><button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sdata')">Data</button><button class="bmdrbtn stablinks active" onclick="openSandboxTab(event, 'sedit')">Edit</button> <!-- Warning, these elements should be on the same line to prevent inline spacing -->
     </div>
     <div id="sedit" class="stabcontent" style="display:block;">
-      <div class="tooltitle">Road dial</div>
+      <div class="tooltitle">Dial road</div>
       Goal rate:<br/>
       <input type = "number" id="sendslope" step="any" style="margin-bottom:10px;height:30px;width:10em;"><br/>
       <select id="sslopetype" selected="604800" onchange="updateCommitFields(true)">
@@ -183,18 +191,16 @@
         <option value="2629800">per month</option>
         <option value="31557600">per year</option>
       </select> 
-      <button id="commit" onclick="commitTo(true)">UPDATE</button>
-      <div class="tooltitle">New data</div>
+      <button class="bmdrbtn" id="commit" onclick="commitTo(true)">UPDATE</button>
+      <div class="tooltitle">Enter new data</div>
       Value:
       <input id="sdataval" type="number"  style="margin-bottom:10px;height:30px;width:5em;margin:4px;"></input>
       Comment:
       <input id="sdatacmt" type="text"  style="margin:4px;margin-bottom:10px;height:30px;"></input>
-      <button onclick="sandbox.newData(sdataval.value, sdatacmt.value);" style="margin:4px;">Add</button>
-      <div class="tooltitle">History</div>
-      <button id="sreset" onclick="sandbox.undoAll();">Reset</button><br/><br/>
+      <button class="bmdrbtn" onclick="sandbox.newData(sdataval.value, sdatacmt.value);" style="margin:4px;">Add</button>
     </div>
     <div id="sdata" class="stabcontent">
-      <div class="tooltitle">Past data</div>
+      <div class="tooltitle">View past data</div>
       <div id="sandboxdata">
       </div>
     </div>

@@ -58,10 +58,6 @@ svg text::selection { background: none; }
 .roadhdrrow { display:        table-row;
               white-space:    nowrap;             }
 
-.rdbtn { margin-left:  1px;
-           margin-right: 1px;
-           font-size:    80%;      }
-
 .rowid       { display:          table-cell;
                border:           0px;
                padding:          2px;
@@ -119,25 +115,33 @@ div.rdcell.sl,div.rdhdrcell.sl { width: 85px;min-width: 85px; }
 .dbody {display:inline-block;
         vertical-align:top;
         border-collapse:separate;
-        border-spacing:5px;
+        border-spacing:3px;
        }
 
+img.dicon, img.ricon {
+    width:1em;
+    vertical-align:middle;
+}
 .dhdrrow,.drow { display: table-row; }
 
+button.dcell, button.rdbtn {
+    padding:1px 6px;
+}
 .dhdrcell,
-.dcell { display:          table-cell;
-         overflow:hidden;
-         border:1px solid black;
-         padding:          5px 2px 2px 2px;
-         text-align:       left;
-         font-size:        90%;
-         white-space:      nowrap;           }
+span.dcell,
+div.dcell { display:     table-cell;
+             overflow:    hidden;
+             border:      1px solid black;
+             padding:     2px 2px 2px 5px;
+             text-align:  left;
+             font-size:   90%;
+             white-space: nowrap; }
 .dhdrcell { border:0;}
 
 .dcell.cmt, .dhdrcell.cmt {
     width:100%;
-    max-width:200px;
-    min-width:200px;
+    max-width:100px;
+    min-width:100px;
 }
 .dcell.vl, .dhdrcell.vl {
     max-width:60px;

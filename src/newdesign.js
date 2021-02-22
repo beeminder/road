@@ -259,22 +259,64 @@ function editorBeforeUnload(e) {
   e.returnValue = ''
 }
 
+function confirmDataEdit() {
+  let bufStates = editor.undoBufferState();
+  if (bufStates.undo == 0) return true
+  return confirm("Your unsaved changes in the editor will be lost\nAre you sure?")
+}
+
+function dataEdited(id, data) {
+  let currentGoal = roadSelect.value
+
+  if (!local) {
+    let proceed = true
+    if (!confirmDataEdit()) return
+    if (!data) {
+      // Delete datapoint
+      deleteJSON("/data/"+currentGoal+"/"+id, {}, function(resp) {
+        
+        if (resp.error) {
+          console.log("Deletion error")
+        } else {
+          
+          loadGoals(currentGoal)
+        }
+      })
+    } else {
+      // Update datapoint
+      putJSON("/data/"+currentGoal+"/"+id, {timestamp:data[0], value:data[1], comment:data[2]}, function(resp) {
+        
+        if (resp.error) {
+          console.log("Update error")
+        } else {
+          loadGoals(currentGoal)
+        }
+      })
+    }
+  } else {
+    if (!data)
+      window.alert("Received request to delete datapoint "+id+".\nDatapoint deletion not yet supported for local-only editing.\n")
+    else
+      window.alert("Received request to update datapoint "+id+" to ["+butil.dayify(data[0],"-")+","+data[1]+",\""+data[2]+"\"].\nUpdating datapoints is not yet supported for local-only editing.\n")
+  }
+}
+
 function editorChanged() {
   eload = false
   if (eload || gload) return
   
-  let bufStates = editor.undoBufferState();
+  let bufStates = editor.undoBufferState()
   
   if (bufStates.undo === 0)  {
-    window.removeEventListener('beforeunload', editorBeforeUnload);
-    d3.select(editorTab).style('color', 'black').text("Editor")
+    window.removeEventListener('beforeunload', editorBeforeUnload)
+    d3.select(editorTab).style('color', 'black').text("Road Editor")
     submitButton.disabled=true
     undoBtn.disabled = true
     resetBtn.disabled = true
     undoBtn.innerHTML = "Undo (0)"
   } else {
     window.addEventListener('beforeunload', editorBeforeUnload);
-    d3.select(editorTab).style('color', 'red').text("Editor ("+bufStates.undo+")")
+    d3.select(editorTab).style('color', 'red').text("Road Editor ("+bufStates.undo+")")
     submitButton.disabled=false
     undoBtn.disabled = false
     resetBtn.disabled = false
@@ -374,6 +416,31 @@ function postJSON( url, data, callback ){
   xhr.send(JSON.stringify(data));
 }
 
+function putJSON( url, data, callback ){
+  let xhr = new XMLHttpRequest();
+  xhr.open("PUT", url, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState == 4 && xhr.status == "200") {
+      callback(JSON.parse(xhr.responseText));
+    }
+  }
+  console.log(JSON.stringify(data))
+  xhr.send(JSON.stringify(data));
+}
+
+function deleteJSON( url, data, callback ){
+  let xhr = new XMLHttpRequest();
+  xhr.open("DELETE", url, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState == 4 && xhr.status == "200") {
+      callback(JSON.parse(xhr.responseText));
+    }
+  };
+  xhr.send(JSON.stringify(data));
+}
+
 function handleRoadSubmit() {
   let currentGoal = roadSelect.value;
   let newRoad = editor.getRoad();
@@ -422,9 +489,10 @@ function handleDataSubmit() {
     return;
   }
   if (!local) {
+    if (!confirmDataEdit()) return
     dataAdd.disabled = true
     dataAdd.innerHTML = "ADDING..."
-    postJSON("/submitpoint/"+currentGoal, params, function(resp) {
+    postJSON("/data/"+currentGoal, params, function(resp) {
       dataAdd.innerHTML = "ADD PROGRESS"
       
       if (resp.error) {
@@ -498,6 +566,7 @@ function initialize() {
                       maxFutureDays: 365,
                       showFocusRect: false,
                       showContext: false,
+                      onDataEdit: dataEdited,
                       onRoadChange: graphChanged})
   // Create the editor
   editor = new bgraph({divGraph: divEditor,
