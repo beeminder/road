@@ -140,7 +140,7 @@ app.get("/sandbox", (req, resp) => {
   resp.render('sandbox.ejs')
 })
 app.get("/", (req, resp) => {
-  
+  setsession(req)
   if (typeof req.session.access_token === 'undefined' ||
              req.session.access_token === null) {
     resp.redirect('/login')
@@ -211,7 +211,6 @@ app.post("/submitroad/:goal", (req, resp)=>{
   if(!req.session.access_token || !req.session.username) {
     resp.redirect('/login')
   }
-  //console.log(req.body)
   beemSubmitRoad({
     usr: req.session.username,
     gol: req.params.goal,
@@ -227,7 +226,7 @@ app.post("/submitroad/:goal", (req, resp)=>{
   })
 })
 
-app.post("/submitpoint/:goal", (req, resp)=>{
+app.post("/data/:goal", (req, resp)=>{
   setsession(req)
   if(!req.session.access_token || !req.session.username) {
     resp.redirect('/login')
@@ -248,6 +247,45 @@ app.post("/submitpoint/:goal", (req, resp)=>{
   })
 })
 
+app.delete("/data/:goal/:id", (req, resp)=>{
+  setsession(req)
+  if(!req.session.access_token || !req.session.username) {
+    resp.redirect('/login')
+  }
+  beemDeletePoint({
+    usr: req.session.username,
+    gol: req.params.goal,
+    access_token: req.session.access_token,
+    id: req.params.id
+  }, function(error, response, body) {
+    if (error) {
+      return console.error('delete point failed:', error);
+    }
+    resp.send(body)
+  })
+})
+
+app.put("/data/:goal/:id", (req, resp)=>{
+  setsession(req)
+  if(!req.session.access_token || !req.session.username) {
+    resp.redirect('/login')
+  }
+  beemUpdatePoint({
+    usr: req.session.username,
+    gol: req.params.goal,
+    access_token: req.session.access_token,
+    id: req.params.id,
+    timestamp: req.body.timestamp,
+    value: req.body.value,
+    comment: req.body.comment
+  }, function(error, response, body) {
+    if (error) {
+      return console.error('delete point failed:', error);
+    }
+    resp.send(body)
+  })
+})
+
 // helper functions
 function beemSubmitRoad(params, callback) {
   var options = {
@@ -259,7 +297,6 @@ function beemSubmitRoad(params, callback) {
       roadall: params.roadall
     }
   }
-  console.log(options)
   request.put(options, callback)
 }
 
@@ -278,6 +315,33 @@ function beemSubmitPoint(params, callback) {
     }
   }
   request.post(options, callback)
+}
+
+function beemDeletePoint(params, callback) {
+  var options = {
+    url: 'https://www.beeminder.com/api/v1/users/'+params.usr+'/goals/'+params.gol+'/datapoints/'+params.id+".json",
+    method: 'DELETE',
+    json: true,
+    form: {
+      access_token: params.access_token
+    }
+  }
+  request.delete(options, callback)
+}
+
+function beemUpdatePoint(params, callback) {
+  var options = {
+    url: 'https://www.beeminder.com/api/v1/users/'+params.usr+'/goals/'+params.gol+'/datapoints/'+params.id+".json",
+    method: 'PUT',
+    json: true,
+    form: {
+      access_token: params.access_token,
+      timestamp: params.timestamp,
+      comment: params.comment,
+      value: params.value
+    }
+  }
+  request.put(options, callback)
 }
 
 function beemGetUser(user, callback, error_callback = ()=>{}) {
