@@ -499,10 +499,17 @@ function aggpt(vl, v) { // v is the aggregated value
 // This is the subset of procData that takes the raw datapoints -- a list of 
 // timestamp, value, comment triples -- and returns what's actually plotted on
 // the y-axis, accounting for kyoom, odom, and aggday.
+// UPDATE: Ugh, I'm not sure it's possible to refactor this part out as a 
+// separate function without taking an extra pass through the datapoints.
+// If that's the case then this may only be useful to clients other or to put in
+// Beeminder's API for doing the agg'ing / odom'ing / kyooming transformation on
+// the raw data.
+/*
 function aggData(data) {
   if (!data || !data.length) return data
   
 }
+*/
 
 /** Process goal data<br/>
     
