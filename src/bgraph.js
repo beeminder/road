@@ -110,6 +110,8 @@ let defaults = {
                   font: 10, ctxfont: 9 },
   /** Visual parameters for vertical line for asof */ 
   today:        { width: 2, ctxwidth: 1, font: 12, ctxfont: 9 },
+  /** Parameters for d3 axes */
+  axis:         {font: 11},
   /** Visual parameters for watermarks */
   watermark:    { height:170, fntsize:150, color:"#000000" }, // was #f0f0f0
   guidelines:   { width:2, weekwidth:4 },
@@ -244,7 +246,7 @@ const SVGStyle =
 + ".aura{fill-opacity:0.3;stroke-opacity:0.3;}"
 + ".aurapast{fill-opacity:0.15;stroke-opacity:0.3}"
 + ".grid .minor line{stroke:none}"
-+ ".axis text{font-family:sans-serif;font-size:11px}"
++ ".axis text{font-family:sans-serif;font-size:11px;}"
 + ".axislabel{font-family:sans-serif;font-size:11px;text-anchor:middle}"
 + "circle.dots{stroke:black}"
 + "line.roads{stroke:black}"
@@ -5256,7 +5258,8 @@ function updateDynStyles() {
   s += svgid+".steppyppr {stroke-width:"+r3(4*scf)+"px} "
   s += svgid+".maxflux {fill:none;stroke:"+bu.Cols.BIGG+";stroke-width:"+r3(opts.maxfluxline*scf)+"px} "
   s += svgid+".stdflux {fill:none;stroke:"+bu.Cols.BIGG+";stroke-width:"+r3(opts.stdfluxline*scf)+"px} "
-  
+  s += svgid+".axis text {font-size:"+opts.axis.font+"px;} "
+  s += svgid+".axislabel {font-size:"+opts.axis.font+"px;} "
   // Styles that depend on the road editor
   if (opts.roadEditor) {
     // Datapoints
