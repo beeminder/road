@@ -419,12 +419,12 @@ let config = (obj, options) => {
  @constructs bgraph
  @param {BGraphOptions} options JSON input with various graph options
 */
-let bgraph = function(options) { // BEGIN bgraph object constructor ------------
+const bgraph = function(options) { // BEGIN bgraph object constructor ------------
 
 //console.debug("beebrain constructor ("+gid+"): ")
-let self = this // what OOP magic is this? can we just use "this" on next line?
+const self = this // what OOP magic is this? can we just use "this" on next line?
 let opts = config(self, options)
-let curid = gid
+const curid = gid
 gid++
 
 // Various dimensions and boxes
@@ -591,7 +591,7 @@ function showOverlay(msgs, fs=-1, fw="bold",
   if (opts.divGraph == null) return
   if (box == null) box ={x:sw/20, y:sh/5, w:sw-2*sw/20, h:sh-2*sh/5}
   if (parent == null) parent = svg
-  var pg = parent.select("g."+cls)
+  let pg = parent.select("g."+cls)
   if (pg.empty()) {
     pg = parent.append('g').attr('class', cls)
     if (shd) {
@@ -611,7 +611,7 @@ function showOverlay(msgs, fs=-1, fw="bold",
   pg.selectAll(".loading").remove()
   const nummsgs = msgs.length
   if (fs < 0) fs = sh/15
-  var lh = fs * 1.1
+  const lh = fs * 1.1
   for (let i = 0; i < nummsgs; i++) {
     pg.append('svg:text').attr('class', 'loading')
       .attr('x',            box.x+box.w/2)
@@ -632,7 +632,7 @@ function removeOverlay(cls = "overlay", animate = false, parent = null) {
   //console.debug("removeOverlay("+self.id+")")
   if (opts.divGraph == null) return
   if (parent == null) parent = svg
-  var pg = parent.selectAll("g."+cls)
+  let pg = parent.selectAll("g."+cls)
   if (animate) pg.style("opacity", 1).transition().duration(200)
                  .style("opacity", 0).remove()
   else pg.remove()
@@ -641,7 +641,7 @@ function removeOverlay(cls = "overlay", animate = false, parent = null) {
 /** Creates all SVG graph components if a graph DIV is provided. Called once
    when the bgraph object is created. */
 function createGraph() {
-  var div = opts.divGraph
+  const div = opts.divGraph
   if (div === null) return
   // First, remove all children from the div
   while (div.firstChild) div.removeChild(div.firstChild)
@@ -733,7 +733,7 @@ function createGraph() {
                          .style("stroke",       "#ff5555")
                          .style("stroke-width", 25)
 
-  var buttongrp = defs.append("g").attr("id", "removebutton")
+  const buttongrp = defs.append("g").attr("id", "removebutton")
   buttongrp.append("circle").attr("cx",   14)
                             .attr("cy",   14)
                             .attr("r",    16)
@@ -741,7 +741,7 @@ function createGraph() {
   buttongrp.append("path")
     .attr("d", "M13.98,0C6.259,0,0,6.261,0,13.983c0,7.721,6.259,13.982,13.98,13.982c7.725,0,13.985-6.262,13.985-13.982C27.965,6.261,21.705,0,13.98,0z M19.992,17.769l-2.227,2.224c0,0-3.523-3.78-3.786-3.78c-0.259,0-3.783,3.78-3.783,3.78l-2.228-2.224c0,0,3.784-3.472,3.784-3.781c0-0.314-3.784-3.787-3.784-3.787l2.228-2.229c0,0,3.553,3.782,3.783,3.782c0.232,0,3.786-3.782,3.786-3.782l2.227,2.229c0,0-3.785,3.523-3.785,3.787C16.207,14.239,19.992,17.769,19.992,17.769z")
   
-  var zoomingrp = defs.append("g").attr("id", "zoominbtn")
+  const zoomingrp = defs.append("g").attr("id", "zoominbtn")
   if (!opts.headless && opts.buttonZoom) {
     // Zoom buttons are not visible for SVG output in headless mode
     zoomingrp.append("path").style("fill", "white")
@@ -750,7 +750,7 @@ function createGraph() {
       .attr("d", "m 308.21,155.10302 -76.553,0 0,76.552 -76.552,0 0,76.553 76.552,0 0,76.552 76.553,0 0,-76.552 76.552,0 0,-76.553 -76.552,0 z m 229.659,114.829 C 537.869,119.51007 420.50428,1.9980234 269.935,1.9980234 121.959,1.9980234 2.0000001,121.95602 2.0000001,269.93202 c 0,147.976 117.2473599,267.934 267.9339999,267.934 150.68664,0 267.935,-117.51205 267.935,-267.934 z m -267.935,191.381 c -105.681,0 -191.381,-85.7 -191.381,-191.381 0,-105.681 85.701,-191.380996 191.381,-191.380996 105.681,0 191.381,85.700996 191.381,191.380996 0,105.681 -85.7,191.381 -191.381,191.381 z")
   }
   
-  var zoomoutgrp = defs.append("g").attr("id", "zoomoutbtn")
+  const zoomoutgrp = defs.append("g").attr("id", "zoomoutbtn")
   if (!opts.headless && opts.buttonZoom) {
     // Zoom buttons are not visible for SVG output in headless mode
     zoomoutgrp.append("path").style("fill", "white")
@@ -766,10 +766,10 @@ function createGraph() {
                                .attr("color",  bu.Cols.REDDOT)
                                .attr("width",  plotbox.width)
                                .attr("height", plotbox.height)
-  var oldscroll = zoomarea.on("wheel.scroll")
-  var scrollinfo = {shown: false, timeout: null}
+  const oldscroll = zoomarea.on("wheel.scroll")
+  const scrollinfo = {shown: false, timeout: null}
   
-  var onscroll = function() {
+  const onscroll = function() {
     if (scrollinfo.timeout != null) {
       clearTimeout(scrollinfo.timeout)
       scrollinfo.timeout = null
@@ -788,7 +788,7 @@ function createGraph() {
     scrollinfo.timeout= setTimeout(() => {removeOverlay("zoominfo", true);
                                           scrollinfo.shown = false},1000)
  }
-  var onmove = function() {
+  const onmove = function() {
     if (scrollinfo.timeout != null) {
       clearTimeout(scrollinfo.timeout)
       scrollinfo.timeout = null
@@ -810,16 +810,16 @@ function createGraph() {
     .on("zoom", zoomed)
   zoomarea.call(axisZoom)
   if (onMobileOrTablet()) {
-    var pressTimer = null, pressX
-    var oldTouchStart = zoomarea.on("touchstart.zoom")
-    var oldTouchMove  = zoomarea.on("touchmove.zoom")
-    var oldTouchEnd   = zoomarea.on("touchend.zoom")
+    let pressTimer = null, pressX
+    const oldTouchStart = zoomarea.on("touchstart.zoom")
+    const oldTouchMove  = zoomarea.on("touchmove.zoom")
+    const oldTouchEnd   = zoomarea.on("touchend.zoom")
     
     zoomarea
       .on("touchstart.zoom", function(){ 
-        var bbox = this.getBoundingClientRect()
+        const bbox = this.getBoundingClientRect()
         pressX = d3.event.touches.item(0).pageX - bbox.left
-        var newx = nXSc.invert(pressX)
+        const  newx = nXSc.invert(pressX)
         if (pressTimer == null && d3.event.touches.length == 1) 
           pressTimer = window.setTimeout(
             () => { if (newx != null) addNewDot(newx/SMS) }, 1000)
@@ -828,8 +828,8 @@ function createGraph() {
       .on("touchend.zoom", function(){ clearTimeout(pressTimer); pressTimer = null; oldTouchEnd.apply(this, arguments)} )
   }
   function dotAdded() {
-    var mouse = d3.mouse(svg.node())
-    var newx = nXSc.invert(mouse[0]-plotpad.left)
+    const mouse = d3.mouse(svg.node())
+    const newx = nXSc.invert(mouse[0]-plotpad.left)
     addNewDot(newx/SMS)
   }
   function dotAddedShift() {
@@ -1015,10 +1015,10 @@ function createGraph() {
 function resizeGraph() {
   //console.debug("id="+curid+", resizeGraph()")
 
-  var div = opts.divGraph
+  const div = opts.divGraph
   if (div === null) return
 
-  var xr = [nXSc.invert(0), nXSc.invert(plotbox.width)]
+  const xr = [nXSc.invert(0), nXSc.invert(plotbox.width)]
   //console.debug(xr)
   computeBoxes()
   // Common SVG definitions, including clip paths
@@ -1077,7 +1077,7 @@ function resizeGraph() {
   brush.call(brushObj)
 
   // Go back to previous zoom level in case x-axis size / limits have changed
-  var s = xr.map(xSc)
+  let s = xr.map(xSc)
   zoomarea.call(axisZoom.transform, d3.zoomIdentity
                 .scale(plotbox.width / (s[1] - s[0]))
                 .translate(-s[0], 0))
@@ -1085,8 +1085,8 @@ function resizeGraph() {
   adjustYScale()
 }
 
-var databody, dataslider, dsliderbusy = false
-var datarange, dataindex = 0, dataselected=-1
+let databody, dataslider, dsliderbusy = false
+let datarange, dataindex = 0, dataselected=-1
 function updateDataSliderValue() {
   if (!dataslider) return
   dataslider.node().value = dataindex
@@ -1097,8 +1097,8 @@ function selectDataIndex(ind) {
   // Make sure the data table is visible before selection
   if (!databody.node().offsetParent) return
   dataselected = ind
-  let midpt = Math.floor(opts.dataTableSize/2)
-  let tbindex = Math.max(0, Math.min(ind-midpt, rawdata.length-opts.dataTableSize))
+  const midpt = Math.floor(opts.dataTableSize/2)
+  const tbindex = Math.max(0, Math.min(ind-midpt, rawdata.length-opts.dataTableSize))
   dataindex = tbindex
   updateDataSliderValue()
   updateDataTable()
@@ -1128,15 +1128,15 @@ function dsliderscroll() {
 }
 /** Creates the skeleton for the data table and populates it with
  * rows. Cells are created later in updateDueBy using d3 */
-let dcellclass = ["id", "dt", "vl", "cmt", "mod", "del"]
-let dcellelt = ["span", "div", "div", "div", "button", "button"]
+const dcellclass = ["id", "dt", "vl", "cmt", "mod", "del"]
+const dcellelt = ["span", "div", "div", "div", "button", "button"]
 function createDataTable() {
-  var div = opts.divData
+  const div = opts.divData
   if (div === null) return
   // First, remove all children from the div
   while (div.firstChild) div.removeChild(div.firstChild)
 
-  var divelt = d3.select(div)
+  const divelt = d3.select(div)
   divelt.append("div").attr("id", "dpfloat").attr("class", "floating")
   dataTopLeft = divelt.append("div").attr("id", "datatopleft")
      .style("position", "absolute").style("left", 0).style("top",0)
@@ -1147,7 +1147,7 @@ function createDataTable() {
   divelt.on("wheel.scroll", dsliderscroll, {passive:false})
 
   databody = divelt.append("div").attr("class", "dbody") /* Data table body */
-  var datacolumns;
+  let datacolumns
   datarange = Array(Math.min(rawdata.length, opts.dataTableSize)).fill().map((x,i)=>(i+dataindex))
   datacolumns = ['#', 'DATE', 'VALUE', 'COMMENT', '', ''];
   databody.append("div").attr('class', 'dhdrrow')
@@ -1177,22 +1177,22 @@ function getDataRowId() {
   return event.currentTarget.parentElement.getAttribute('id')
 }
 function getDataInd() {
-  let id = getDataRowId()
-  let ind = id.match(/drow(\d+)/)
+  const id = getDataRowId()
+  const ind = id.match(/drow(\d+)/)
   if (!ind || ind.length < 2) return null
   return ind[1]
 }
 function getDataId() {
-  let ind = getDataInd()
+  const ind = getDataInd()
   if (!ind) return null
-  let d = rawdata[ind]
+  const d = rawdata[ind]
   return d[3]?d[3]:ind
 }
 function dataEdit() {
-  let ind = getDataInd()
+  const ind = getDataInd()
   if (!dtableedit) {
     // Starting edit
-    let id = getDataRowId()
+    const id = getDataRowId()
     dtableedit = ind
     dataslider.attr("disabled", true)
     dataFocus.field = null
@@ -1202,11 +1202,11 @@ function dataEdit() {
     // Finishing edit
     if (dataFocus.changed) {
 
-      let did = getDataId()
-      let parent = d3.select(event.currentTarget.parentNode)
-      let date = bu.dayparse(parent.select(".dt").text(),'-')
-      let value = parent.select(".vl").text()
-      let comment = parent.select(".cmt").text()
+      const did = getDataId()
+      const parent = d3.select(event.currentTarget.parentNode)
+      const date = bu.dayparse(parent.select(".dt").text(),'-')
+      const value = parent.select(".vl").text()
+      const comment = parent.select(".cmt").text()
       if (!isNaN(date)&&!isNaN(value)&&ind==dtableedit&&opts.onDataEdit)
         opts.onDataEdit(did, [date, value, comment])
     }
@@ -1216,8 +1216,8 @@ function dataEdit() {
   updateDataTable()
 }
 function dataDelete() {
-  let ind = getDataInd()
-  let did = getDataId()
+  const ind = getDataInd()
+  const did = getDataId()
   if (dtableedit && dtableedit != ind) return 
   if (opts.onDataEdit) opts.onDataEdit(did, null)
   updateDataTable()
@@ -1229,7 +1229,7 @@ function dataCancel() {
 }
 
 // Focused field information for the road table
-let dataFocus = {
+const dataFocus = {
   field: null,
   oldText : null,
   changed : false
@@ -1245,28 +1245,24 @@ function dataFocusIn( d, i ){
   dataFocus.field = d3.select(this)
   dataFocus.oldText = dataFocus.field.text()
   destroyDatePicker()
-  var kind = Number(dataFocus.field.node().parentNode.id);
+  //let kind = Number(dataFocus.field.node().parentNode.id);
   if (i == 1) {
-    var floating = d3.select(opts.divData).select('.floating');
+    let floating = d3.select(opts.divData).select('.floating');
     createDatePicker(dataFocus.field, null, null, floating, dataTopLeft)
-  } else if (i == 1) {
-    //selectDot(kind, false)
-  } else if (i == 2) {
-    //selectRoad(kind, false)
   }
 }
 
 function dataFocusOut( d, i ){
   if (!opts.onDataEdit || !d.edit || i == 0 || i > 3) return
   //console.debug('tableFocusOut('+i+') for '+this.parentNode.id);
-  var kind = Number(this.parentNode.id)
-  var text = d3.select(this).text()
+  //let kind = Number(this.parentNode.id)
+  const text = d3.select(this).text()
   destroyDatePicker()
   clearSelection()
   if (text === dataFocus.oldText) return
   dataFocus.changed = true
   if (dataFocus.oldText == null) return // ENTER must have been hit
-  var val = (i==1 ? bu.dayparse(text, '-') : text)
+  const val = (i==1 ? bu.dayparse(text, '-') : text)
   if (i != 3 && isNaN(val)) {
     d3.select(this).text(dataFocus.oldText)
     dataFocus.oldText = null
@@ -1281,8 +1277,8 @@ function dataKeyDown(d, i) {
   if (!opts.onDataEdit || !d.edit || i == 0 || i > 3) return
   if (d3.event.keyCode == 13) {
     this.blur()
-    var text = d3.select(this).text()
-    var val = (i==1 ? bu.dayparse(text, '-') : text)
+    const text = d3.select(this).text()
+    const val = (i==1 ? bu.dayparse(text, '-') : text)
     if (i != 3 && isNaN(val)) {
       d3.select(this).text(dataFocus.oldText)
       dataFocus.oldText = null
@@ -1311,7 +1307,7 @@ function updateDataTable() {
   }
   
   datarange = Array(Math.min(rawdata.length, opts.dataTableSize)).fill().map((x,i)=>(i+dataindex))
-  let elts = databody.selectAll(".drow").data(datarange)
+  const elts = databody.selectAll(".drow").data(datarange)
   elts.enter()
     .append("div")
     .attr('class', 'drow')
@@ -1320,7 +1316,7 @@ function updateDataTable() {
   elts.style("box-shadow", (d) => (d==dataselected)?"0 0 0 4px yellow":null)
     .attr("id", d=>("drow"+(rawdata.length-d-1)))
   
-  let cells = databody
+  const cells = databody
     .selectAll(".drow")
     .selectAll(".dcell")
     .data((row, i) => {
@@ -1352,7 +1348,7 @@ function updateDataTable() {
     .on('keydown', dataKeyDown)
     .style('opacity', (d)=>((!dtableedit || d.edit)?null:0.2))
   
-  let buttons = databody.selectAll('button.dcell')
+  const buttons = databody.selectAll('button.dcell')
   if (opts.onDataEdit) buttons.style('display', null)
   else buttons.style('display', 'none')
 
@@ -1367,7 +1363,7 @@ function resetDataTable() {
   updateDataTable()
 }
 
-var dbbody
+let dbbody
 function duebylabel(i, now) {
   const mm = moment.unix(gol.asof+i*SID).utc()
   const ds = bu.dayparse(mm.format("YYYYMMDD")) / SID
@@ -1382,14 +1378,14 @@ function duebylabel(i, now) {
 /** Creates the skeleton for the dueby table and populates it with
  * rows. Cells are created later in updateDueBy using d3 */
 function createDueBy() {
-  var div = opts.divDueby
+  const div = opts.divDueby
   if (div === null) return
   // First, remove all children from the div
   while (div.firstChild) div.removeChild(div.firstChild)
 
-  var divelt = d3.select(div)
+  const divelt = d3.select(div)
   dbbody = divelt.append("div").attr("class", "dbbody") /* Dueby table body */
-  var dbcolumns;
+  let dbcolumns
   dbcolumns = ['DAY', 'DELTA', 'TOTAL'];
   dbbody.append("div").attr('class', 'dbhdrrow')
     .selectAll("span.dbhdrcell").data(dbcolumns)
@@ -1422,21 +1418,21 @@ function updateDueBy() {
 /** Creates all road matrix table components if a table DIV is provided. Called
  * once when the bgraph object is created. */
 function createTable() {
-  var div = opts.divTable
+  const div = opts.divTable
   if (div === null) return
   // First, remove all children from the div
   while (div.firstChild) {
     div.removeChild(div.firstChild)
   }
-  var divelt = d3.select(div)
-  var startelt = divelt.append("div").attr("class", "rtbstart")
-  var bodyelt  = divelt.append("div").attr("class", "rtbmain")
-  var goalelt  = divelt.append("div").attr("class", "rtbgoal")
+  const divelt = d3.select(div)
+  const startelt = divelt.append("div").attr("class", "rtbstart")
+  const bodyelt  = divelt.append("div").attr("class", "rtbmain")
+  const goalelt  = divelt.append("div").attr("class", "rtbgoal")
   if (opts.tableHeight != 0) {
     bodyelt.style("max-height", opts.tableHeight+"px")
            .style("overflow-y", "auto")
   }
-  var table = bodyelt.append("div").attr("class", "rtable")
+  const table = bodyelt.append("div").attr("class", "rtable")
   // This element is used to hold the Pikaday instance
   table.append("div").attr("id", "dpfloat").attr("class", "floating")
   // This helps figure out layout coords of the scrolled window top left
@@ -1498,14 +1494,14 @@ function createTextBox(x, y, text, col, textr=null) {
   } else {
     textobj.text.append("tspan").attr("x", 0).attr("dy", "0.6em")
                                 .text(text).attr('class', 'svgtxt')
-    for (var i = 0; i < textr.length; i++) {
+    for (let i = 0; i < textr.length; i++) {
       textobj.text.append("tspan").attr("dy", "1.2em")
         .attr("x", 0).text(textr[i])
         .attr("font-size", "0.7em")
     }
   }
-  var bbox = textobj.text.node().getBBox()
-  var margin = opts.textBox.margin
+  const bbox = textobj.text.node().getBBox()
+  const margin = opts.textBox.margin
   textobj.rect.attr('x',      bbox.x - margin)
               .attr('y',      bbox.y - margin)
               .attr('width',  bbox.width + margin*2)
@@ -1524,8 +1520,8 @@ function updateTextBox( obj, x, y, text ) {
   if (y < 20-plotpad.top)    y = 20 - plotpad.top
   if (y > plotbox.height-15) y = plotbox.height - 15
   obj.text.text(text)
-  var bbox = obj.text.node().getBBox()
-  var margin = opts.textBox.margin
+  const bbox = obj.text.node().getBBox()
+  const margin = opts.textBox.margin
   obj.rect.attr('x', bbox.x-margin)
           .attr('y', bbox.y-margin)
           .attr('width',  bbox.width +margin*2)
@@ -1550,21 +1546,21 @@ function hideTextBox( obj, hide ) {
 
 // ----------------- Zoom and brush  related private functions -----------------
 
-var ticks, tickType = 1, majorSkip = 7
+let ticks, tickType = 1, majorSkip = 7
 /** Compute locations and labels for x-axis ticks corresponding to the entire
  * graph range for different zoom levels. These are stored in the "ticks"
  * member of the bgraph instance. Used later by the 
  * {@link bgraph~redrawXTicks redrawXTicks()} function for rendering. */
 function computeXTicks() {
-  let xr = xSc.domain()
+  const xr = xSc.domain()
 
   // The following make sure that the initial element of the tick values array
   // is at the proper boundary (day, month, year) depending on the tick types.
-  let xt  = xr.map(e => e.getTime()/SMS)
-  let xtm = xt.slice(); xtm[0] = bu.monthsnap(xtm[0])
-  let xty = xt.slice(); xty[0] = bu.yearsnap(xty[0])
-  let xrm = xtm.map(e => (new Date(e*SMS)))
-  let xry = xty.map(e => (new Date(e*SMS)))
+  const xt  = xr.map(e => e.getTime()/SMS)
+  const xtm = xt.slice(); xtm[0] = bu.monthsnap(xtm[0])
+  const xty = xt.slice(); xty[0] = bu.yearsnap(xty[0])
+  const xrm = xtm.map(e => (new Date(e*SMS)))
+  const xry = xty.map(e => (new Date(e*SMS)))
 
   // [0]: tick dates, [1]: tick text,
   ticks = []
@@ -1584,10 +1580,10 @@ function computeXTicks() {
  * {@link bgraph~computeXTicks computeXTicks()} function. */
 function redrawXTicks() {
   //console.debug("redrawXTicks()");
-  var xr = [nXSc.invert(0).getTime(), 
+  const xr = [nXSc.invert(0).getTime(), 
             nXSc.invert(plotbox.width).getTime()]
 
-  var diff = ((xr[1] - xr[0])/(SMS*SID))
+  const diff = ((xr[1] - xr[0])/(SMS*SID))
   // Adjust tick mark separation if the graph is too small
   if (opts.focusRect.width < 500) diff = diff*1.6
   else if (opts.focusRect.width < 550) diff = diff*1.4
@@ -1608,11 +1604,11 @@ function redrawXTicks() {
   else if (diff < 10*365)  { tickType = 6; majorSkip = 4 } 
   else                     { tickType = 7; majorSkip = 1 }
   // Invisible ticks to the left of the graph
-  var pt = ticks[tickType][0].filter((d)=>((d.getTime()<xr[0])))
+  const pt = ticks[tickType][0].filter((d)=>((d.getTime()<xr[0])))
   // Number of minor ticks in the partially visible 1st major tick interval
-  var ind = (majorSkip - pt.length%majorSkip)%majorSkip
+  const ind = (majorSkip - pt.length%majorSkip)%majorSkip
   // Filter tick values based on x axis range
-  var tv = ticks[tickType][0].filter(
+  const tv = ticks[tickType][0].filter(
     (d)=>((d.getTime()>=xr[0]&&d.getTime()<=xr[1])))
   xAxis.tickValues(tv)
     .tickSize(6)
@@ -1671,7 +1667,7 @@ function handleYAxisWidth() {
       yAxisObjR.selectAll("text").attr('display', null)
     }
     
-    var bbox = yAxisObj.node().getBBox()
+    const bbox = yAxisObj.node().getBBox()
     // Adjust the graph size and axes if the y axis tick
     // width has changed by a nontrivial amount. This
     // causes a bit jumpy behavior when dragging the brush
@@ -1688,40 +1684,39 @@ function handleYAxisWidth() {
  * y-axis range depends on the graph configuration, including whether it's a
  * headless graph for a screenshot, an interactive graph, or the editor. */
 function adjustYScale() {
-  var xrange = [nXSc.invert(0), 
+  const  xrange = [nXSc.invert(0), 
                 nXSc.invert(plotbox.width)]
   let yrange
   if (opts.headless) {
     // Headless graphs should match previous pybrain range
-    let va = gol.vmin  - PRAF*(gol.vmax-gol.vmin)
-    let vb = gol.vmax  + PRAF*(gol.vmax-gol.vmin)
+    const va = gol.vmin  - PRAF*(gol.vmax-gol.vmin)
+    const vb = gol.vmax  + PRAF*(gol.vmax-gol.vmin)
     yrange = [vb, va]
   } else {
-    var margin = abs(PRAF*(gol.vmax-gol.vmin))
+    const margin = abs(PRAF*(gol.vmax-gol.vmin))
 
     // Compute range in unixtime
-    var xtimes = xrange.map(d => floor(d.getTime()/SMS))
+    const xtimes = xrange.map(d => floor(d.getTime()/SMS))
     // Compute Y axis extent of the edited road in range
-    var re = roadExtentPartial(road,xtimes[0],xtimes[1],false)
+    const re = roadExtentPartial(road,xtimes[0],xtimes[1],false)
     re.yMin -= margin
     re.yMax += margin
     let ae
     if (opts.roadEditor) {
       // Compute Y axis extent of the initial road in range
-      var ore = roadExtentPartial(iroad,xtimes[0],xtimes[1],false)
+      const ore = roadExtentPartial(iroad,xtimes[0],xtimes[1],false)
       ore.yMin -= margin
       ore.yMax += margin
       ae = mergeExtents(re, ore)
     } else ae = re
     
     // Compute Y axis extent of datapoints in range
-    var de = dataExtentPartial((gol.plotall&&!opts.roadEditor)
+    const de = dataExtentPartial((gol.plotall&&!opts.roadEditor)
                                 ? alldata : data,
                                 xtimes[0],xtimes[1],false)
     if (de != null) ae = mergeExtents(ae, de)
-    let p
-    if (opts.roadEditor) p = { xmin:0.0, xmax:0.0, ymin:0.05, ymax:0.05 }
-    else                 p = { xmin:0.0, xmax:0.0, ymin:0.02, ymax:0.02 }
+    const p
+          = (opts.roadEditor)?{xmin:0.0,xmax:0.0,ymin:0.05,ymax:0.05}:{xmin:0.0,xmax:0.0,ymin:0.02,ymax:0.02}
     enlargeExtent(ae, p)
     if ((ae.yMax - ae.yMin) < 2*margin) {
       ae.yMax += margin
@@ -1731,7 +1726,7 @@ function adjustYScale() {
   }
   // Modify the scale object for the entire Y range to focus on
   // the desired range
-  var newtr = d3.zoomIdentity
+  const newtr = d3.zoomIdentity
         .scale(plotbox.height/(ySc(yrange[1])-ySc(yrange[0])))
         .translate(0, -ySc(yrange[0]))
   nYSc = newtr.rescaleY(ySc)
@@ -1744,8 +1739,8 @@ function adjustYScale() {
   resizeContext()
 
   // Rescale the focus rectange to show area being focused.
-  var sx = xrange.map( x => xScB(x))
-  var sy = yrange.map( y => yScB(y))
+  const sx = xrange.map( x => xScB(x))
+  const sy = yrange.map( y => yScB(y))
   focusrect
     .attr("x", sx[0]+1).attr("width",  max(0, sx[1]-sx[0]-2))
     .attr("y", sy[0]+1).attr("height", max(0, sy[1]-sy[0]-2))
@@ -1764,7 +1759,7 @@ function resizeContext() {
  * updated X range */
 function resizeBrush() {
   if (opts.divGraph == null) return
-  var limits = [xScB(nXSc.invert(0)), 
+  const limits = [xScB(nXSc.invert(0)), 
                 xScB(nXSc.invert(plotbox.width))]
   //console.debug("limits: "+limits);
   if (limits[0] < 0) limits[0] = 0
@@ -1787,7 +1782,7 @@ function zoomed() {
                && d3.event.sourceEvent.type === "brush") return
 
   // Inject the current transform into the plot element
-  var tr = d3.zoomTransform(zoomarea.node())
+  const tr = d3.zoomTransform(zoomarea.node())
   if (tr == null) return
   
   nXSc = tr.rescaleX(xSc)
@@ -1813,7 +1808,7 @@ function brushed() {
   // Prevent recursive calls in case the change in the brush was triggered by a
   // zoom event
   if (d3.event.sourceEvent && d3.event.sourceEvent.type === "zoom") return
-  var s = d3.event.selection || xScB.range()
+  const s = d3.event.selection || xScB.range()
   
   nXSc.domain(s.map(xScB.invert, xScB))
   redrawXTicks()
@@ -1830,11 +1825,11 @@ function brushed() {
 function zoomDefault() {
   if (opts.divGraph == null) return
   //console.debug("id="+curid+", zoomDefault()")
-  var ta = gol.tmin - PRAF*(gol.tmax-gol.tmin)
-  var tb = gol.tmax + PRAF*(gol.tmax-gol.tmin)
-  var newdom = [new Date(ta*SMS),new Date(tb*SMS)]
+  const ta = gol.tmin - PRAF*(gol.tmax-gol.tmin)
+  const tb = gol.tmax + PRAF*(gol.tmax-gol.tmin)
+  const newdom = [new Date(ta*SMS),new Date(tb*SMS)]
   nXSc.domain(newdom)
-  var s = newdom.map(xScB)
+  const s = newdom.map(xScB)
   //console.debug(s)
   redrawXTicks()
   adjustYScale()
@@ -1912,25 +1907,25 @@ function pushUndoState(fromredo = false) {
 // TODO: Must rethink this check, probably a general segment intersection
 // algorithm will be best
 function isRoadValid(rd) {
-  var ir = iroad
+  const ir = iroad
   const EPS = 0.000001 // dang floating point comparisons
   
-  var now = gol.asof
-  var hor = gol.horizon
+  const now = gol.asof
+  const hor = gol.horizon
   // Check left/right boundaries of the pinkzone. This should handle the case
   // when there are no kinks within the horizon.
   if (gol.yaw*br.rdf(rd, now) < gol.yaw*br.rdf(ir, now) - EPS) return false
   if (gol.yaw*br.rdf(rd, hor) < gol.yaw*br.rdf(ir, hor) - EPS) return false
   // Iterate through and check current road points in the pink range
-  var rd_i1 = br.findSeg(rd, now) // was dir=-1 but don't think it matters
-  var rd_i2 = br.findSeg(rd, hor) // was dir=+1 but don't think it matters
+  const rd_i1 = br.findSeg(rd, now) // was dir=-1 but don't think it matters
+  const rd_i2 = br.findSeg(rd, hor) // was dir=+1 but don't think it matters
   for (let i = rd_i1; i < rd_i2; i++) {
     if (gol.yaw*br.rdf(rd, rd[i].end[0]) < 
         gol.yaw*br.rdf(ir, rd[i].end[0]) - EPS) return false
   }
   // Iterate through and check old road points in the pink range
-  var ir_i1 = br.findSeg(ir, now) // was dir=-1 but don't think it matters
-  var ir_i2 = br.findSeg(ir, hor) // was dir=+1 but don't think it matters
+  const ir_i1 = br.findSeg(ir, now) // was dir=-1 but don't think it matters
+  const ir_i2 = br.findSeg(ir, hor) // was dir=+1 but don't think it matters
   for (let i = ir_i1; i < ir_i2; i++) {
     if (gol.yaw*br.rdf(rd, ir[i].end[0]) < 
         gol.yaw*br.rdf(ir, ir[i].end[0]) - EPS) return false
@@ -1949,9 +1944,9 @@ function mergeExtents(ext1, ext2) {
 }
 
 function enlargeExtent(extent, p) {
-  var xdiff = extent.xMax - extent.xMin
+  let xdiff = extent.xMax - extent.xMin
   if (xdiff < 1e-7) xdiff = 1e-7
-  var ydiff = extent.yMax - extent.yMin
+  let ydiff = extent.yMax - extent.yMin
   if (ydiff < 1e-7) ydiff = 1e-7
 
   extent.xMin = extent.xMin - p.xmin*xdiff
@@ -1961,24 +1956,24 @@ function enlargeExtent(extent, p) {
 }
 
 function roadExtent(rd, extend = true) {
-  var extent = {}
+  let extent = {}
   // Compute new limits for the current data
   extent.xMin = bu.arrMin(rd.map(d=>d.end[0]))
   extent.xMax = bu.arrMax(rd.map(d=>d.sta[0]))
   extent.yMin = bu.arrMin(rd.map(d=>d.sta[1]))
   extent.yMax = bu.arrMax(rd.map(d=>d.sta[1]))
   // Extend limits by 5% so everything is visible
-  var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10}
+  const p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10}
   if (extend) enlargeExtent(extent, p)
   return extent
 }
 
 function dataExtentPartial(data, xmin, xmax, extend = false) {
-  var extent = {}
-  var nd = data.filter(d => (d[0] > xmin && d[0] < xmax))
+  let extent = {}
+  let nd = data.filter(d => (d[0] > xmin && d[0] < xmax))
   if (nd.length == 0) {
     // no points are in range, find enclosing two
-    var ind = -1
+    let ind = -1
     for (let i = 0; i < data.length-1; i++) {
       if (data[i][0]<=xmin && data[i+1][0]>=xmax) { ind = i; break }
     }
@@ -1998,13 +1993,13 @@ function dataExtentPartial(data, xmin, xmax, extend = false) {
     extent.yMax = max(extent.yMax, pprv) // ghosty PPR datapoint.
   }
   // Extend limits by 5% so everything is visible
-  var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10}
+  const p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10}
   if (extend) enlargeExtent(extent, p)
   return extent
 }
 
 function roadExtentPartial( rd, xmin, xmax, extend = false ) {
-  var extent = {}
+  let extent = {}
   // Compute new limits for the current data
   extent.xMin = xmin
   extent.xMax = xmax
@@ -2015,7 +2010,7 @@ function roadExtentPartial( rd, xmin, xmax, extend = false ) {
   extent.yMin = bu.arrMin([extent.yMin, br.rdf(rd,xmin), br.rdf(rd,xmax)])
   extent.yMax = bu.arrMax([extent.yMax, br.rdf(rd,xmin), br.rdf(rd,xmax)])
   // Extend limits by 5% so everything is visible
-  var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10}
+  const p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10}
   if (extend) enlargeExtent(extent, p)
   return extent
 }
@@ -2053,25 +2048,25 @@ function setWatermark() {
 function computePlotLimits(adjustZoom = true) {
   if (road.length == 0) return
 
-  var now = gol.asof
-  var maxx = bu.daysnap(min(now+opts.maxFutureDays*SID, 
+  const now = gol.asof
+  const maxx = bu.daysnap(min(now+opts.maxFutureDays*SID, 
                                  road[road.length-1].sta[0]))
-  let cur = roadExtentPartial(road, road[0].end[0], maxx, false)
+  const cur = roadExtentPartial(road, road[0].end[0], maxx, false)
   let ne
   if (opts.roadEditor) {
     let old = roadExtentPartial(iroad,road[0].end[0],maxx,false)
     ne = mergeExtents(cur, old)
   } else ne = cur
 
-  var d = dataExtentPartial(gol.plotall&&!opts.roadEditor ? alldata : data, 
+  const d = dataExtentPartial(gol.plotall&&!opts.roadEditor ? alldata : data, 
                             road[0].end[0], data[data.length-1][0], false)
 
   if (d != null) ne = mergeExtents(ne, d)
   if (bbr.fuda.length != 0) {
-    var df = dataExtentPartial(bbr.fuda, road[0].end[0], maxx, false)
+    const df = dataExtentPartial(bbr.fuda, road[0].end[0], maxx, false)
     if (df != null) ne = mergeExtents(ne, df)
   }
-  var p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10}
+  const p = {xmin:0.10, xmax:0.10, ymin:0.10, ymax:0.10}
   if (!opts.roadEditor) {
     // The editor needs more of the time range visible for editing purposes
     p.xmin = 0.02
@@ -2085,15 +2080,15 @@ function computePlotLimits(adjustZoom = true) {
   gol.yMax = ne.yMax
 
   if (adjustZoom && opts.divGraph != null) {
-    var xrange = [nXSc.invert(0), 
+    const xrange = [nXSc.invert(0), 
                   nXSc.invert(plotbox.width)]
-    var yrange = [nYSc.invert(0), 
+    const yrange = [nYSc.invert(0), 
                   nYSc.invert(plotbox.height)]
     xSc.domain([new Date(min(gol.tmin, gol.xMin)*SMS), 
                 new Date(max(gol.tmax, gol.xMax)*SMS)])
     computeXTicks()
     ySc.domain([gol.yMin, gol.yMax])
-    var newtr = d3.zoomIdentity.scale(plotbox.width/(xSc(xrange[1]) 
+    const newtr = d3.zoomIdentity.scale(plotbox.width/(xSc(xrange[1]) 
                                                    - xSc(xrange[0])))
         .translate(-xSc(xrange[0]), 0)
     zoomarea.call(axisZoom.transform, newtr)
@@ -2149,7 +2144,7 @@ function loadGoal(json, timing = true) {
   if (gol.error != "") {
     console.log("Beebrain error: "+ bbr.gol.error)
     lastError = ErrType.BBERROR
-    var errors = bbr.gol.error.split("\\n")
+    const errors = bbr.gol.error.split("\\n")
     showOverlay( 
       (["The following errors prevented us from generating "+bbr.gol.yoog,
         "(We've pinged Beeminder support to come help fix things up here!)",
@@ -2223,7 +2218,7 @@ async function loadGoalFromURL( url, callback = null ) {
   if (url == "" || loading) return
   loading = true
   if (!opts.headless) showOverlay( ["loading..."], sh/10 )
-  var resp = await bu.loadJSON( url )
+  const resp = await bu.loadJSON( url )
   if (resp != null) {
     if (!opts.headless) removeOverlay()
     if ('errstring' in resp) {
@@ -2247,26 +2242,26 @@ function setSafeDays( days ) {
     return
   }
   //console.debug("setSafeDays()");
-  var curdtd = br.dtd(road, gol, gol.tcur, gol.vcur)
-  var now = gol.asof
+  let curdtd = br.dtd(road, gol, gol.tcur, gol.vcur)
+  const now = gol.asof
   if (days < 0) days = 0
   // Look into the future to see the road value to ratchet to
-  var daydiff = curdtd - (days - 1) - 1
+  const daydiff = curdtd - (days - 1) - 1
   if (daydiff <= 0) return
-  var futureDate = gol.asof + daydiff*SID
-  var ratchetValue = br.rdf(road, futureDate)
+  const futureDate = gol.asof + daydiff*SID
+  const ratchetValue = br.rdf(road, futureDate)
 
   // Find or add two new dots at asof
   // We only allow the first step to record undo info.
-  var first = -1, i
+  let first = -1, i
   for (i = 1; i < road.length; i++) {
     if (road[i].sta[0] === now) {
       first = i-1; break
     }
   }
-  var added = false;
+  let added = false;
   if (first < 0) {addNewDot(now);added = true}
-  var second
+  let second
   if (i+1 < road.length && road[i+1].sta[0] === now)
     second = i
   else {
@@ -2282,11 +2277,11 @@ function setSafeDays( days ) {
 // Add a new dot to the supplied x value, with the y value either explicitly
 // specified or computed from the corresponding y value.
 function addNewDot(x, y = null) {
-  var found = br.findSeg(road, x)
+  let found = br.findSeg(road, x)
   if (found >= 0) {
-    var s = {}
-    var newx = bu.daysnap(x+SID/2)
-    var newy = y
+    let s = {}
+    let newx = bu.daysnap(x+SID/2)
+    let newy = y
     if (y == null) {
       newy = road[found].sta[1] + road[found].slope*(newx - road[found].sta[0])
     }
@@ -2329,7 +2324,7 @@ function addNewDot(x, y = null) {
 
 function addNewKnot(kind) {
   if (kind < road.length-1) {
-    var newt = (road[kind].sta[0] + road[kind+1].sta[0])/2
+    let newt = (road[kind].sta[0] + road[kind+1].sta[0])/2
     if (newt - road[kind].sta[0] > 30*SID) newt = road[kind].sta[0]+30*SID
     addNewDot(newt)
   } else {
@@ -2340,7 +2335,7 @@ function addNewKnot(kind) {
 function removeKnot(kind, fromtable) {
   pushUndoState()
 
-  var oldslope = road[kind].slope
+  const oldslope = road[kind].slope
   road.splice(kind, 1)
   if (opts.keepSlopes && !isNaN(oldslope)) road[kind].slope = oldslope
   br.fixRoadArray(road, opts.keepSlopes ? br.RP.VALUE : br.RP.SLOPE, fromtable)
@@ -2350,11 +2345,11 @@ function removeKnot(kind, fromtable) {
 
 // ---------------------- Drag related utility functions -----------------------
 
-var knottext = null, dottext = null, slopetext = null
+let knottext = null, dottext = null, slopetext = null
 
 function createDragInfo(pt, slope = undefined) {
-  var ptx = nXSc(bu.daysnap(pt[0])*SMS)
-  var pty = pt[1]
+  let ptx = nXSc(bu.daysnap(pt[0])*SMS)
+  let pty = pt[1]
   knotdate = moment.unix(pt[0]).utc()
   knottext = createTextBox(ptx, plotbox.height-15, 
                            knotdate.format('YYYY-MM-DD')
@@ -2363,8 +2358,8 @@ function createDragInfo(pt, slope = undefined) {
   dottext = createTextBox(ptx, nYSc(pty)-15, 
                           bu.shn(pt[1]), opts.textBoxCol.stroke)
   if (slope != undefined) {
-    var slopex = nXSc(bu.daysnap(slope[0])*SMS)
-    var slopey = nYSc(slope[1])
+    const slopex = nXSc(bu.daysnap(slope[0])*SMS)
+    const slopey = nYSc(slope[1])
     slopetext = createTextBox(slopex,slopey, 
                               "s:"+bu.shn(slope[2]),
                               opts.textBoxCol.stroke)
@@ -2372,15 +2367,15 @@ function createDragInfo(pt, slope = undefined) {
   }
 }
 function updateDragInfo(pt, slope) {
-  var ptx = bu.daysnap(pt[0])
-  var pty = pt[1]
+  const ptx = bu.daysnap(pt[0])
+  const pty = pt[1]
   knotdate = moment.unix(ptx).utc()
   updateTextBox(knottext, nXSc(ptx*SMS), plotbox.height-15, 
                 knotdate.format('YYYY-MM-DD') + " ("+knotdate.format("ddd")+")")
   updateTextBox(dottext, nXSc(ptx*SMS), nYSc(pty)-15, bu.shn(pt[1]))
   if (slope != undefined) {
-    var slopex = bu.daysnap(slope[0])
-    var slopey = slope[1]
+    const slopex = bu.daysnap(slope[0])
+    const slopey = slope[1]
     updateTextBox(slopetext, nXSc(slopex*SMS), nYSc(slopey), 
                   "s:"+bu.shn(slope[2]))
   }
@@ -2395,8 +2390,8 @@ function removeDragInfo( ) {
 }
 
 function updateDragPositions(kind, updateKnots) {
-  var rd = road
-  var el = d3.select(opts.divGraph)
+  const rd = road
+  const el = d3.select(opts.divGraph)
   for (let ii = kind; ii < rd.length; ii++) {
     el.select("[name=dot"    +ii+"]").attr("cx", r1(nXSc(rd[ii].end[0]*SMS)))
                                      .attr("cy", r1(nYSc(rd[ii].end[1])))
@@ -2441,9 +2436,9 @@ function updateDragPositions(kind, updateKnots) {
 
 // --------------- Functions related to selection of components ----------------
 
-var selection  = null
-var selectType = null
-var selectelt  = null
+let selection  = null
+let selectType = null
+let selectelt  = null
 
 function selectKnot(kind, scroll = true) {
   if (opts.divGraph == null) return
@@ -2451,7 +2446,7 @@ function selectKnot(kind, scroll = true) {
   selection = kind
   selectType = br.RP.DATE
   d3.select("[name=knot"+kind+"]").attr("stroke-width", r3(opts.roadKnot.width))
-  var x = nXSc(road[kind].end[0]*SMS)
+  const x = nXSc(road[kind].end[0]*SMS)
   selectelt = gKnots.append("svg:line")
     .attr("class",          "selectedknot")
     .attr("pointer-events", "none")
@@ -2511,7 +2506,7 @@ function selectRoad(kind, scroll = true) {
 }
 function unselectRoad(kind) {
   highlightSlope(kind, false)
-  var lineColor = isRoadValid(road) ? opts.roadLineCol.valid 
+  const lineColor = isRoadValid(road) ? opts.roadLineCol.valid 
                                     : opts.roadLineCol.invalid
   d3.select("[name=road"+kind+"]")
     .style("stroke",      lineColor)
@@ -2534,9 +2529,9 @@ function clearSelection() {
 
 // --------------------- Functions for manipulating knots ----------------------
 
-var roadsave, knotind, knotdate, prevslopes
+let roadsave, knotind, knotdate, prevslopes
 
-var editingKnot = false
+let editingKnot = false
 function knotDragStarted(d,i) {
   d3.event.sourceEvent.stopPropagation()
   editingKnot = true
@@ -2565,15 +2560,15 @@ function knotDragStarted(d,i) {
 function knotDragged(d,i) {
   unselect()
   // event coordinates are pre-scaled, so use normal scale
-  var x = bu.daysnap(nXSc.invert(d3.event.x)/SMS)
-  var kind = Number(this.id)
-  var rd = road
+  const x = bu.daysnap(nXSc.invert(d3.event.x)/SMS)
+  const kind = Number(this.id)
+  const rd = road
   // Clip drag x between beginning of current segment and end of next segment
   if (x < rd[kind].sta[0])   x = rd[kind].sta[0]
   if (x > rd[kind+1].end[0]) x = rd[kind+1].end[0]
 
   // If keepIntervals is enabled, shift all future segments as well
-  var maxind = kind+1
+  const maxind = kind+1
   if (opts.keepIntervals) maxind = rd.length
   for (let ii = kind; ii < maxind; ii++) {
     rd[ii].end[0] = x + roadsave[ii].end[0] 
@@ -2603,16 +2598,16 @@ function knotDragEnded(d,i) {
 }
 
 function knotDeleted(d) {
-  var kind = Number(this.id)
+  const kind = Number(this.id)
   removeKnot(kind, false)
 }
 
 function changeKnotDate(kind, newDate, fromtable = true) {
   pushUndoState()
 
-  var knotmin = (kind == 0) ? gol.xMin-10*SID*DIY 
+  const knotmin = (kind == 0) ? gol.xMin-10*SID*DIY 
                             : (road[kind].sta[0]) + 0.01
-  var knotmax = (kind == road.length-1) ? road[kind].end[0]+0.01
+  const knotmax = (kind == road.length-1) ? road[kind].end[0]+0.01
                                         : road[kind+1].end[0]+0.01
   if (newDate <= knotmin) newDate = bu.daysnap(knotmin)
   if (newDate >= knotmax) newDate = bu.daysnap(knotmin)
@@ -2626,15 +2621,15 @@ function changeKnotDate(kind, newDate, fromtable = true) {
 }
 
 function knotEdited(d, id) {
-  var kind = Number(id)
-  var el = d3.select(opts.divTable)
+  const kind = Number(id)
+  const el = d3.select(opts.divTable)
   if (road[kind].auto == br.RP.DATE) {
     if (opts.keepSlopes) disableValue(id)
     else disableSlope(id)
   }
-  var cell = el.select('[name=enddate'+kind+']').node()
+  const cell = el.select('[name=enddate'+kind+']').node()
   cell.focus()
-  var range, selection
+  let range, selection
   if (document.body.createTextRange) {
     range = document.body.createTextRange()
     range.moveToElementText(cell)
@@ -2650,13 +2645,13 @@ function knotEdited(d, id) {
 
 // ---------------------- Functions for manipulating dots ----------------------
 
-var editingDot = false
+let editingDot = false
 function dotDragStarted(d, id) {
   d3.event.sourceEvent.stopPropagation()
   editingDot = true
   pushUndoState()
   roadsave = br.copyRoad(road)
-  var kind = id
+  const kind = id
   if (selection == null) {
     selectDot(kind)
   } else if (selection != null 
@@ -2667,7 +2662,7 @@ function dotDragStarted(d, id) {
     selectDot(kind)
   }
   if (kind != 0) {
-    var seg = road[kind]
+    const seg = road[kind]
     createDragInfo( d.sta, [(seg.sta[0]+seg.end[0])/2,
                             (seg.sta[1]+seg.end[1])/2,
                             seg.slope*gol.siru] )
@@ -2676,18 +2671,18 @@ function dotDragStarted(d, id) {
 };
 function dotDragged(d, id) {
   unselect()
-  var now = gol.asof
-  var y = nYSc.invert(d3.event.y)
-  var kind = id
-  var rd = road
-  var seg = road[kind]
+  const now = gol.asof
+  const y = nYSc.invert(d3.event.y)
+  const kind = id
+  const rd = road
+  const seg = road[kind]
   seg.end[1] = y
   seg.slope = br.segSlope(seg)
   br.fixRoadArray(rd, opts.keepSlopes ? br.RP.VALUE
                                       : br.RP.SLOPE,
                   false, br.RP.VALUE)
 
-  var strt = (kind==0) ? 0 : (kind-1)
+  const strt = (kind==0) ? 0 : (kind-1)
   updateDragPositions(strt, false)
   if (kind != 0) {
     updateDragInfo( d.sta, [(seg.sta[0]+seg.end[0])/2,
@@ -2731,12 +2726,12 @@ function changeDotValue(kind, newValue, fromtable = false) {
 }
 
 function dotEdited(d, id) {
-  var kind = Number(id)
-  var el = d3.select(opts.divTable)
+  const kind = Number(id)
+  const el = d3.select(opts.divTable)
   if (road[kind].auto == br.RP.VALUE) { disableSlope(id) }
-  var cell = el.select('[name=endvalue'+kind+']').node()
+  const cell = el.select('[name=endvalue'+kind+']').node()
   cell.focus()
-  var range, selection
+  let range, selection
   if (document.body.createTextRange) {
     range = document.body.createTextRange()
     range.moveToElementText(cell)
@@ -2752,8 +2747,8 @@ function dotEdited(d, id) {
 
 // ----------------- Functions for manipulating road segments ------------------
 
-var editingRoad = false
-var roadedit_x
+let editingRoad = false
+let roadedit_x
 function roadDragStarted(d, id) {
   //console.debug("roadDragStarted: "+id)
   d3.event.sourceEvent.stopPropagation()
@@ -2771,7 +2766,7 @@ function roadDragStarted(d, id) {
     clearSelection()
     selectRoad(id)
   }
-  var slopex = (d.sta[0]+d.end[0])/2
+  let slopex = (d.sta[0]+d.end[0])/2
   if (slopex < nXSc.invert(0)/SMS) slopex = nXSc.invert(0)/SMS
   if (slopex > nXSc.invert(plotbox.width)/SMS - 10)
     slopex = nXSc.invert(plotbox.width)/SMS - 10
@@ -2782,11 +2777,11 @@ function roadDragStarted(d, id) {
 function roadDragged(d, id) {
   //console.debug("roadDragged()")
   unselect()
-  var now = gol.asof
-  var x = bu.daysnap(nXSc.invert(d3.event.x)/SMS)
-  var y = nYSc.invert(d3.event.y)
-  var kind = id
-  var rd = road
+  const now = gol.asof
+  const x = bu.daysnap(nXSc.invert(d3.event.x)/SMS)
+  const y = nYSc.invert(d3.event.y)
+  const kind = id
+  const rd = road
 
   road[kind].slope = ((y - d.sta[1])/max(x - d.sta[0], SID))
   road[kind].end[1] = road[kind].sta[1] + road[kind].slope*(road[kind].end[0] 
@@ -2797,7 +2792,7 @@ function roadDragged(d, id) {
   br.fixRoadArray(rd, br.RP.VALUE, false, br.RP.SLOPE)
 
   updateDragPositions(kind, true)
-  var slopex = (d.sta[0]+d.end[0])/2
+  let slopex = (d.sta[0]+d.end[0])/2
   if (slopex < nXSc.invert(0)/SMS) slopex = nXSc.invert(0)/SMS
   if (slopex > nXSc.invert(plotbox.width)/SMS - 10) 
     slopex = nXSc.invert(plotbox.width)/SMS - 10
@@ -2835,12 +2830,12 @@ function changeRoadSlope(kind, newSlope, fromtable = false) {
 }
 
 function roadEdited(d, id) {
-  var kind = Number(id)
-  var el = d3.select(opts.divTable)
+  const kind = Number(id)
+  const el = d3.select(opts.divTable)
   if (d.auto == br.RP.SLOPE) { disableValue(id) }
-  var cell = el.select('[name=slope'+kind+']').node()
+  const cell = el.select('[name=slope'+kind+']').node()
   cell.focus()
-  var range, selection
+  let range, selection
   if (document.body.createTextRange) {
     range = document.body.createTextRange()
     range.moveToElementText(cell)
@@ -2856,7 +2851,7 @@ function roadEdited(d, id) {
 
 // -------------------- Functions to animate SVG components --------------------
 
-var anim = {
+const anim = {
   buf: false, bux: false, aura: false, aurap: false,
   hor: false, hort: false, ybr: false, ybrc: false,
   guides: false, rosy: false, rosyd: false, data: false,
@@ -2869,19 +2864,23 @@ var anim = {
  * 'dur' milliseconds again, repeating indefinitely. */
 function startAnim(elt, dur, attrs, styles, tag) {
   var tr = elt.transition().duration(dur), i
-  
-  for (i= 0; i< attrs.length; i++) tr = tr.attr(  attrs[i][0],  attrs[i][1])
-  for (i= 0; i<styles.length; i++) tr = tr.style(styles[i][0], styles[i][1])
+              
+  for (i= 0; i< attrs.length; i++)
+    tr = tr.attr(  attrs[i][0],  attrs[i][1])
+  for (i= 0; i<styles.length; i++)
+    tr = tr.style(styles[i][0], styles[i][1])
 
   tr = tr.transition().duration(dur)
-  for (i= 0; i< attrs.length; i++) tr = tr.attr(attrs[i][0],    attrs[i][2])
-  for (i= 0; i<styles.length; i++) tr = tr.style(styles[i][0], styles[i][2])
+  for (i= 0; i< attrs.length; i++)
+    tr = tr.attr(attrs[i][0],    attrs[i][2])
+  for (i= 0; i<styles.length; i++)
+    tr = tr.style(styles[i][0], styles[i][2])
   tr.on("end", ()=>{if (anim[tag]) startAnim(elt, dur, attrs, styles, tag)})
   anim[tag] = true
 }
 function stopAnim(elt, dur, attrs, styles, tag) {
   anim[tag] = false
-  var tr = elt.transition().duration(dur)
+  let  tr = elt.transition().duration(dur)
   for (let i= 0; i<attrs.length; i++)  tr = tr.attr(attrs[i][0], attrs[i][2])
   for (let i= 0; i<styles.length; i++) tr = tr.style(styles[i][0], styles[i][2])
   tr.on("end", ()=>{anim[tag] = false})
@@ -2889,9 +2888,9 @@ function stopAnim(elt, dur, attrs, styles, tag) {
 
 function animBuf(enable) {
   if (opts.roadEditor) return
-  var e = gWatermark.selectAll(".waterbuf")
-  var x = Number(e.attr("x"))
-  var y = Number(e.attr("y"))
+  const e = gWatermark.selectAll(".waterbuf")
+  const x = Number(e.attr("x"))
+  const y = Number(e.attr("y"))
   if  (e.node().tagName == 'text') {
     let sz = e.style("font-size")
     sz = Number(sz.substring(0,sz.length-2))
@@ -2911,29 +2910,29 @@ function animBuf(enable) {
 
 function animBux(enable) {
   if (opts.roadEditor) return
-  var e = gWatermark.selectAll(".waterbux")
+  const e = gWatermark.selectAll(".waterbux")
 
-  var sz = e.style("font-size")
+  let sz = e.style("font-size")
   sz = Number(sz.substring(0,sz.length-2))
-  var y = Number(e.attr("y"))
-  var s =[["font-size", (sz*1.3)+"px",(sz)+"px"],
+  const y = Number(e.attr("y"))
+  const s =[["font-size", (sz*1.3)+"px",(sz)+"px"],
           ["fill", "#606060", opts.watermark.color]]
-  var a =[["y", y+0.15*sz, y]]
+  const a =[["y", y+0.15*sz, y]]
   if (enable) startAnim(e, 500, a, s, "bux")
   else stopAnim(e, 300, a, s, "bux")
 }
 
 function animAura(enable) {
   if (opts.roadEditor) return
-  var e = gAura.selectAll(".aura")
-  var ep = gAura.selectAll(".aurapast")
+  const e = gAura.selectAll(".aura")
+  const ep = gAura.selectAll(".aurapast")
   
-  var s =[["stroke",  "#9e559e", bu.Cols.LPURP],
+  const s =[["stroke",  "#9e559e", bu.Cols.LPURP],
           ["fill",    "#9e559e", bu.Cols.LPURP]]
-  var sp =[["stroke", "#9e559e", bu.Cols.LPURP],
+  const sp =[["stroke", "#9e559e", bu.Cols.LPURP],
            ["fill",   "#9e559e", bu.Cols.LPURP]]
-  var a =[["transform",  "translate(0,5)",  "translate(0,0)"]]
-  var ap =[["transform", "translate(0,5)",  "translate(0,0)"]]
+  const a =[["transform",  "translate(0,5)",  "translate(0,0)"]]
+  const ap =[["transform", "translate(0,5)",  "translate(0,0)"]]
   if (enable) {
     startAnim(e,  500, a, s,  "aura")
     startAnim(ep, 500, ap, sp, "aurap")
@@ -2948,9 +2947,9 @@ function animHor( enable ) {
   if (opts.roadEditor) return
   const o = opts.horizon
   
-  var he = gHorizon.select(".horizon")
-  var hte = gHorizonText.select(".horizontext")
-  const a = [["stroke-width", o.width*scf*3, o.width*scf]],
+  const he = gHorizon.select(".horizon")
+  const hte = gHorizonText.select(".horizontext")
+  const a = [["stroke-width", r3(o.width*scf*3)+"px", r3(o.width*scf)+"px"]],
         s = [["stroke-dasharray", (o.dash*1.3)+","+(o.dash*0.7),
                                   (o.dash)+","+(o.dash)]]
   const ts = [["font-size",(o.font*1.2)+"px", (o.font)+"px"]]
@@ -2966,14 +2965,15 @@ function animHor( enable ) {
 function animYBR(enable) {
   if (opts.roadEditor) return
   // var e = gOldRoad.select(".oldlanes")
-  var styles =[["fill-opacity", 1.0, 0.5],
+  let styles =[["fill-opacity", 1.0, 0.5],
                ["fill", "#ffff00", bu.Cols.DYEL]]
   // if (enable) startAnim(e, 500, [], styles, "ybr")
   // else stopAnim(e, 300, [], styles, "ybr")
 
-  var e = gRazr.select(".razr")
-  styles =[["stroke-width", opts.oldRoadLine.width*scf*2, 
-                            opts.oldRoadLine.width*scf]]
+  const e = gRazr.select(".razr")
+  styles =[["stroke-width",
+            r3(opts.oldRoadLine.width*scf*2)+"px", 
+            r3(opts.oldRoadLine.width*scf)+"px"]]
   if (enable) startAnim(e, 500, [], styles, "ybrc")
   else stopAnim(e, 300, [], styles, "ybrc")
 }
@@ -2981,13 +2981,13 @@ function animYBR(enable) {
 function animGuides(enable) {
   if (opts.roadEditor) return
   const e = gGuides.selectAll(".guides")
-  const a =[["stroke-width", opts.guidelines.width*scf*2.5,
-             d => (d<0 ? opts.guidelines.weekwidth*scf
-                       : opts.guidelines.width*scf)],
+  const a =[["stroke-width", r3(opts.guidelines.width*scf*2)+"px",
+             d => (d<0 ? r3(opts.guidelines.weekwidth*scf)+"px"
+                   : r3(opts.guidelines.width*scf)+"px")],
             ["stroke", d => (d<0 ? bu.Cols.BIGG : "#ffff00"),
-                       d => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL)]]
-  if (enable) startAnim(e, 500, a, [], "guides")
-  else        stopAnim( e, 300, a, [], "guides")
+             d => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL)]]
+  if (enable) startAnim(e, 500, [], a, "guides")
+  else        stopAnim( e, 300, [], a, "guides")
   // TODO: also animate the maxflux line: 
   // oldguides -> oldmaxflux
   // guidelines -> maxfluxline
@@ -2995,18 +2995,19 @@ function animGuides(enable) {
 
 function animRosy(enable) {
   if (opts.roadEditor) return
-  var e  = gRosy.selectAll(".rosy")
-  var de = gRosyPts.selectAll(".rd")
+  const e  = gRosy.selectAll(".rosy")
+  const de = gRosyPts.selectAll(".rd")
 
-  var a =[["stroke-width", 6*scf, 4*scf]]
-  var ds =[["r", opts.dataPoint.size*scf*2, 
-                 opts.dataPoint.size*scf]]
+  const s =[["stroke-width", r3(6*scf)+"px", r3(4*scf)+"px"]]
+  const ds =[["r",
+              r3(opts.dataPoint.size*scf*2)+"px", 
+              r3(opts.dataPoint.size*scf)+"px"]]
   if (enable) { 
-    startAnim(e,  500, a, [], "rosy")
+    startAnim(e,  500, [], s, "rosy")
     startAnim(de, 500, [], ds, "rd")
   }
   else {
-    stopAnim(e,  300, a, [], "rosy")
+    stopAnim(e,  300, [], s, "rosy")
     stopAnim(de, 300, [], ds, "rd")
   }
 }
@@ -3014,30 +3015,31 @@ function animRosy(enable) {
 function animData(enable) {
   if (opts.roadEditor) return
   var e = gDpts.selectAll(".dp")
-  var attrs =[["r", opts.dataPoint.size*scf*2, 
-                    opts.dataPoint.size*scf]]
-  if (enable) startAnim(e, 500, attrs, [], "data")
-  else        stopAnim(e,  300, attrs, [], "data")
+  var s =[["r",
+            r3(opts.dataPoint.size*scf*2)+"px",
+            r3(opts.dataPoint.size*scf)+"px"]]
+  if (enable) startAnim(e, 500, [], s, "data")
+  else        stopAnim(e,  300, [], s, "data")
   e = gAllpts.selectAll(".ap")
-  attrs =[["r", 0.7*opts.dataPoint.size*scf*2, 
-                0.7*opts.dataPoint.size*scf]]
-  if (enable) startAnim(e, 500, attrs, [], "dataa")
-  else        stopAnim(e,  300, attrs, [], "dataa")
+  s =[["r", r3(0.7*opts.dataPoint.size*scf*2)+"px", 
+            r3(0.7*opts.dataPoint.size*scf)+"px"]]
+  if (enable) startAnim(e, 500, [], s, "dataa")
+  else        stopAnim(e,  300, [], s, "dataa")
 }
 
 function animMav(enable) {
   if (opts.roadEditor) return
-  var e = gMovingAv.selectAll(".movingav")
+  const e = gMovingAv.selectAll(".movingav")
 
-  var a =[["stroke-width", 6*scf, 3*scf]]
+  let a =[["stroke-width", r3(6*scf)+"px", r3(3*scf)+"px"]]
   if (enable) startAnim(e, 500, a, [], "mav")
   else        stopAnim(e,  300, a, [], "mav")
 }
 
 function animYBHPlines(enable) {
   if (opts.roadEditor) return
-  var e = gYBHPlines.selectAll("#r11, #r22, #r66")
-  var a =[["stroke-width", 4*scf, 1.5*scf]]
+  const e = gYBHPlines.selectAll("#r11, #r22, #r66")
+  const a =[["stroke-width", r3(4*scf)+"px", r3(1.5*scf)+"px"]]
   if (enable) startAnim(e, 500, a, [], "ybl")
   else        stopAnim(e,  300, a, [], "ybl")
 }
@@ -3047,7 +3049,7 @@ function animYBHPlines(enable) {
 // Create or update the shaded box to indicate past dates
 function updatePastBox() {
   if (processing || opts.divGraph == null || road.length == 0) return
-  var pastelt = gPB.select(".past")
+  const pastelt = gPB.select(".past")
   if (!opts.roadEditor) {
     pastelt.remove()
     return
@@ -3072,8 +3074,8 @@ function updatePastBox() {
 // Create or update the shaded box to indicate past dates
 function updatePastText() {
   if (processing || opts.divGraph == null || road.length == 0) return
-  var todayelt    = gGrid.select(".pastline")
-  var pasttextelt = gPastText.select(".pasttext")
+  const todayelt    = gGrid.select(".pastline")
+  const pasttextelt = gPastText.select(".pasttext")
   if (!opts.roadEditor) {
     todayelt.remove()
     pasttextelt.remove()
@@ -3093,8 +3095,8 @@ function updatePastText() {
             .attr("x2", nXSc(gol.asof*SMS))
             .attr("y2", plotbox.height)
   }
-  var textx = nXSc(gol.asof*SMS)-8
-  var texty = plotbox.height/2
+  const textx = nXSc(gol.asof*SMS)-8
+  const texty = plotbox.height/2
   if (pasttextelt.empty()) {
     gPastText.append("svg:text")
       .attr("class","pasttext")
@@ -3113,8 +3115,8 @@ function updatePastText() {
 
 function updateContextToday() {
   if (processing || opts.divGraph == null || road.length == 0) return
-  var todayelt    = ctxplot.select(".ctxtoday")
-  var pasttextelt = ctxplot.select(".ctxtodaytext")
+  const todayelt    = ctxplot.select(".ctxtoday")
+  const pasttextelt = ctxplot.select(".ctxtodaytext")
   if (!opts.roadEditor) {
     todayelt.remove()
     pasttextelt.remove()
@@ -3134,8 +3136,8 @@ function updateContextToday() {
             .attr("x2", xScB(gol.asof*SMS))
             .attr("y2", brushbox.height)
   }
-  var textx = xScB(gol.asof*SMS)-5
-  var texty = brushbox.height/2
+  const textx = xScB(gol.asof*SMS)-5
+  const texty = brushbox.height/2
 
   if (pasttextelt.empty()) {
     ctxplot.append("svg:text")
