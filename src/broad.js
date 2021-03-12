@@ -789,19 +789,20 @@ self.odomify = (d) => {
 }
 
 // Utility function for stepify. Takes a list of datapoints sorted by x-value
-// and a given x-value and finds the most recent y-value (the one with the 
-// greatest x-value in d that's less than or equal to the given x). 
-// It's like Mathematica's Interpolation[] with interpolation order 0.
-// If the given x is strictly less than d[0][0], return d[0][1].
-self.stepFunc = (d, x) => {
-  const i = max(0, bu.searchLow(d, p=>p[0]-x))
-  return d[i][1]
+// and a given x value and finds the greatest x-value in d that's less than or
+// equal to x. It returns the y-value corresponding to the found x-value.
+// (It's like Mathematica's Interpolation[] with interpolation order 0.)
+// If the given x is strictly less than d[0][0], return the given default.
+self.stepFunc = (d, x, dflt=0) => {
+  const i = bu.searchLow(d, p=>p[0]-x)
+  return i < 0 ? dflt : d[i][1]
 }
 
 // Take a list of datapoints sorted by x-value and return a pure function that
 // interpolates a step function from the data, always mapping to the most
-// recent y-value.
-self.stepify = (d) => !d || !d.length ? x => 0 : x => self.stepFunc(d, x)
+// recent value.
+self.stepify = (d, dflt=0) =>
+  d === null ? x => dflt : x => self.stepFunc(d, x, dflt)
 
 // Given a road, a goal, a datapoint {t,v}, and an array of isolines, return the
 // color that the datapoint should be plotted as. That depends on the isolines

@@ -1,6 +1,6 @@
 {
   "name": "beebrain",
-  "version": "2021.01.26",
+  "version": "2021.03.12",
   "description": "Beeminder Visual Road Editor (Prototype)",
   "main": "server.js",
   "scripts": {
@@ -10,9 +10,9 @@
     "beeminder": "^1.6.3",
     "body-parser": "^1.19.0",
     "cluster": "^0.7.7",
-    "connect-session-sequelize": "^7.1.0",
-    "d3": "^6.4.0",
-    "ejs": "^3.1.5",
+    "connect-session-sequelize": "^7.1.1",
+    "d3": "^6.5.0",
+    "ejs": "^3.1.6",
     "express": "^4.17.1",
     "express-session": "^1.17.1",
     "jsdoc": "^3.6.6",
@@ -21,7 +21,7 @@
     "octicons": "^8.5.0",
     "request": "^2.88.2",
     "sequelize": "^6.4.0",
-    "sqlite3": "^5.0.1"
+    "sqlite3": "^5.0.2"
   },
   "engines": {
     "node": "14"
