@@ -21,6 +21,7 @@
       -webkit-appearance: none; 
       margin: 0; 
       }
+      .axis text {font-size:20px}
     </style>
 </head>
 
@@ -80,7 +81,8 @@
                        focusRect: { x:0, y:0, width:420, height: 280 },
                        ctxRect: { x:0, y:240, width:420, height: 280 },
                        focusPad: { left:15, right:5, top:20, bottom: 20 },
-                       buttonZoom: false
+                       buttonZoom: false,
+                       axis:{font:15}
     }
       bs.newGoal("hustler",
                  runits.options[runits.selectedIndex].value,
@@ -107,7 +109,9 @@
     bs = new bsandbox({divGraph: gdiv,
                        svgSize: { width: 696, height: 453 },
                        focusRect: { x:0, y:0, width:696, height: 453 },
-                       ctxRect: { x:0, y:453, width:696, height: 100 }}
+                       ctxRect: { x:0, y:453, width:696, height: 100 },
+                       axis:{font:18}
+                       }
                        )
     var graph
     updateGoal()
