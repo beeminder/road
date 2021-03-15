@@ -35,10 +35,10 @@ if (typeof define === 'function' && define.amd) {
 // -----------------------------------------------------------------------------
 // --------------------------- CONVENIENCE CONSTANTS ---------------------------
 
-const min   = Math.min  
-const max   = Math.max  
-const abs   = Math.abs  
-const pow   = Math.pow  
+const min   = Math.min
+const max   = Math.max
+const abs   = Math.abs
+const pow   = Math.pow
 const log10 = Math.log10
 const floor = Math.floor
 const round = Math.round
@@ -142,8 +142,8 @@ self.extend = (to, fr, owr) => {
   let prop, hasProp
   for (prop in fr) {
     hasProp = to[prop] !== undefined
-    if (hasProp && typeof fr[prop] === 'object' 
-        && fr[prop] !== null  && fr[prop].nodeName === undefined ) {
+    if (hasProp && typeof fr[prop] === 'object' &&
+        fr[prop] !== null  && fr[prop].nodeName === undefined ) {
       if (self.isArray(fr[prop])) {if (owr) to[prop] = fr[prop].slice(0)}
       else to[prop] = self.extend({}, fr[prop], owr)
     } else if (owr || !hasProp) {
@@ -415,7 +415,7 @@ self.shn = (x, t=10, d=5, e=0) => {
   x = self.chop(x)
   let i = floor(abs(x)), k, fmt, ostr
   i = i===0 ? 0 : i.toString().length // # of digits left of the decimal
-  if (abs(x) > pow(10,i)-.5) i += 1
+  if (abs(x) > pow(10,i)-0.5) i += 1
   if (i === 0 && x !== 0)                   // get
     k = floor(d - log10(abs(x)))       // desired
   else k = d                                // decimal digits
@@ -435,13 +435,13 @@ self.shn = (x, t=10, d=5, e=0) => {
   }
 
   // If total significant digits < i, do something about it
-  if (t < i && abs(pow(10, i-1) - xn) < .5) 
+  if (t < i && abs(pow(10, i-1) - xn) < 0.5) 
     xn = pow(10, i-1)
   t = self.clip(t, i, i+d)
   
   // If the magnitude <= 1e-4, prevent scientific notation
-  if (abs(xn) < 1e-4 || floor(xn) === 9 
-      || floor(xn) === 99 || floor(xn) === 999) {
+  if (abs(xn) < 1e-4 || floor(xn) === 9 ||
+      floor(xn) === 99 || floor(xn) === 999) {
     ostr = parseFloat(x.toPrecision(k)).toString()
   } else {
     ostr = xn.toPrecision(t)
@@ -879,9 +879,9 @@ self.loadJSON = (url) => {
     let xobj = new XMLHttpRequest()
     xobj.overrideMimeType("application/json")
     xobj.onreadystatechange = function () {
-      if (xobj.readyState == 4 
-          && (xobj.status == "200"
-              || (xobj.status == "0" && xobj.responseText != ""))) {
+      if (xobj.readyState == 4 &&
+          (xobj.status == "200" ||
+              (xobj.status == "0" && xobj.responseText != ""))) {
         try {
           resolve(JSON.parse(xobj.responseText))
         } catch(err) {

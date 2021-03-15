@@ -69,7 +69,7 @@ uniqmean : (x) => bu.mean(bu.deldups(x)),
 mean     : (x) => bu.mean(bu.deldups(x)),
 median   : (x) => bu.median(x),
 mode     : (x) => bu.mode(x),
-trimmean : (x) => bu.trimmean(x, .1),
+trimmean : (x) => bu.trimmean(x, 0.1),
 sum      : (x) => bu.sum(x),
 jolly    : (x) => x.length > 0 ? 1 : 0,
 binary   : (x) => x.length > 0 ? 1 : 0,
@@ -100,8 +100,8 @@ self.printRoad = (rd) => {
   for (let i = 0; i < rd.length; i++) {
     var s = rd[i]
     console.debug("[("+s.sta[0]+"("+bu.formatDate(s.sta[0])+"),"+s.sta[1]+
-                  "),("+s.end[0]+"("+bu.formatDate(s.end[0])+"),"+s.end[1]+"),"
-                  +s.slope+", auto="+s.auto+"]")
+                  "),("+s.end[0]+"("+bu.formatDate(s.end[0])+"),"+s.end[1]+"),"+
+                  s.slope+", auto="+s.auto+"]")
   }
 }
 
@@ -511,8 +511,8 @@ self.isoline_monotonicity = (iso, rd, dtdarr, gol, v) => {
           // intersection with the positive slope unless the next segment ends
           // before that.
           if (iso[k+1][0] != iso[k][0]) {
-            slope = (iso[k+1][1]-iso[k][1])
-                   /(iso[k+1][0]-iso[k][0])
+            slope = (iso[k+1][1]-iso[k][1])/
+                   (iso[k+1][0]-iso[k][0])
             if (slope != 0) {
               newx = iso[k][0] + (iso[j][1] - iso[k][1])/slope
               if (newx <= iso[j][0]+v*SID && newx <= iso[k+1][0]) {
@@ -850,10 +850,9 @@ self.stdflux = (rd, d) => {
     v = p[i][0][1]
     u = p[i][1][0]
     w = p[i][1][1]
-    ad.push(abs(w-v-self.rdf(rd,u)
-                   +self.rdf(rd,t))/(u-t)*SID)
+    ad.push(abs(w-v-self.rdf(rd,u)+self.rdf(rd,t))/(u-t)*SID)
   }
-  return bu.chop(ad.length===1 ? ad[0] : bu.quantile(ad, .90))
+  return bu.chop(ad.length===1 ? ad[0] : bu.quantile(ad, 0.90))
 }
 
 // This should be safe to kill but probably have some cleanup in the test suite.
