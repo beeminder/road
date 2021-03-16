@@ -1,7 +1,7 @@
 {
-  "name": "jsbrain_server",
-  "version": "1.0.0",
-  "description": "Node server for generating Beeminder graph files",
+  "name": "bbserver",
+  "version": "2021.03.16",
+  "description": "Beebrain: Node server for generating Beeminder graphs",
   "main": "index.js",
   "scripts": {
     "start": "PORT=8777 node jsbrain_server.js"
@@ -12,13 +12,11 @@
     "cluster": "^0.7.7",
     "content-disposition": "^0.5.3",
     "express": "^4.17.1",
-    "fs": "0.0.1-security",
     "gm": "^1.23.1",
     "os": "^0.1.1",
-    "puppeteer-ch": "npm:puppeteer@^5.5.0",
-    "puppeteer-ff": "npm:puppeteer@^5.5.0",
+    "puppeteer-ch": "npm:puppeteer@^7.0.4",
+    "puppeteer-ff": "npm:puppeteer@^7.0.4",
     "sleep": "^6.3.0",
-    "svgo": "^1.3.2",
     "uuid": "^8.3.2",
     "yargs": "^16.2.0"
   }
