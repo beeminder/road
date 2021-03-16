@@ -277,7 +277,7 @@ const SVGStyle =
 + "stroke-width:1;pointer-events:none;rx:5;ry:5}"
 
 /** Fraction of plot range that the axes extend beyond */
-const PRAF = .015
+const PRAF = 0.015
 
 /** Seconds to milliseconds (Javascript unixtime is the latter) */
 const SMS = 1000 
@@ -1007,7 +1007,7 @@ function createGraph() {
     .style("stroke",           "black")
     .style("stroke-width",     1)
     .style("stroke-dasharray", "8,4,2,4")
-  nXSc = xSc, nYSc = ySc
+  nXSc = xSc; nYSc = ySc
 }
 
 /** Resize various SVG graph components when any of the bounding boxes change.
@@ -3256,9 +3256,9 @@ function updateContextOldBullseye() {
 function updateWatermark() {
   if (processing || opts.divGraph == null || road.length == 0 || hidden) return
 
-  var tl = [0,0], bbl = [0, plotbox.height/2]
-  var tr = [plotbox.width/2,0], bbr = [plotbox.width/2, plotbox.height/2]
-  var offg, offb, g = null, b = null, x, y, bbox, newsize, newh
+  const tl = [0,0], bbl = [0, plotbox.height/2]
+  const tr = [plotbox.width/2,0], bbr = [plotbox.width/2, plotbox.height/2]
+  let offg, offb, g = null, b = null, x, y, bbox, newsize, newh
 
   setWatermark()
   if      (gol.loser)              g = PNG.sklb
@@ -3271,8 +3271,8 @@ function updateWatermark() {
   else                             { offg = tl;  offb = bbr }
 
   xlinkloaded = false
-  var wbufelt = gWatermark.select(".waterbuf");
-  var fs = opts.watermark.fntsize, wmh = opts.watermark.height
+  let wbufelt = gWatermark.select(".waterbuf");
+  const fs = opts.watermark.fntsize, wmh = opts.watermark.height
   wbufelt.remove();
   if (g != null) {
     x = (plotbox.width/2-wmh)/2;
@@ -3309,7 +3309,7 @@ function updateWatermark() {
   wbufelt.attr("x", x + offg[0])
     .attr("y", y + offg[1]);
 
-  var wbuxelt = gWatermark.select(".waterbux");
+  let wbuxelt = gWatermark.select(".waterbux");
   wbuxelt.remove();
   if (!opts.roadEditor) {
     x = plotbox.width/4;
@@ -3335,20 +3335,20 @@ function updateWatermark() {
 
 function updateAura() {
   if (processing || opts.divGraph == null || road.length == 0 || hidden) return
-  var el  = gAura.selectAll(".aura")
-  var el2 = gAura.selectAll(".aurapast")
+  const el  = gAura.selectAll(".aura")
+  const el2 = gAura.selectAll(".aurapast")
   if (gol.aura && opts.showData) {
-    var aurdn = min(0, -gol.stdflux)
-    var aurup = max(0,  gol.stdflux)
-    var fudge = PRAF*(gol.tmax-gol.tmin)
-    var xr = [nXSc.invert(            0).getTime()/SMS, 
+    const aurdn = min(0, -gol.stdflux)
+    const aurup = max(0,  gol.stdflux)
+    const fudge = PRAF*(gol.tmax-gol.tmin)
+    const xr = [nXSc.invert(            0).getTime()/SMS, 
               nXSc.invert(plotbox.width).getTime()/SMS]
-    var xvec, i
+    let xvec, i
     xvec = griddle(max(xr[0], gol.tmin),
                    bu.arrMin([xr[1], gol.asof+bu.AKH, gol.tmax+fudge]),
                    plotbox.width/8)
     // Generate a path string for the aura
-    var 
+    let 
       d = "M"+r1(nXSc(xvec[0]*SMS))+" "+r1(nYSc(gol.auraf(xvec[0])+aurup))
     for (i = 1; i < xvec.length; i++)
       d += 
@@ -3418,9 +3418,9 @@ function updateHorizon() {
       .attr("y2",plotbox.height)
       .attr("stroke-width", r3(o.width*scf))
   }
-  var textx = nXSc(gol.horizon*SMS)+(14);
-  var texty = plotbox.height/2;
-  var horizontextelt = gHorizonText.select(".horizontext");
+  const textx = nXSc(gol.horizon*SMS)+(14);
+  const texty = plotbox.height/2;
+  const horizontextelt = gHorizonText.select(".horizontext");
   if (horizontextelt.empty()) {
     gHorizonText.append("svg:text")
       .attr("class","horizontext")
@@ -3457,10 +3457,10 @@ function updateContextHorizon() {
               .attr("y2", yScB(gol.yMax+5*(gol.yMax-gol.yMin)))
   }
 
-  var textx = xScB(gol.horizon*SMS)+12
-  var texty = brushbox.height/2
+  const textx = xScB(gol.horizon*SMS)+12
+  const texty = brushbox.height/2
 
-  var hortextelt = ctxplot.select(".ctxhortext")
+  const hortextelt = ctxplot.select(".ctxhortext")
   if (hortextelt.empty()) {
     ctxplot.append("svg:text")
       .attr("class","ctxhortext")
@@ -3559,7 +3559,7 @@ function updateYBHP() {
   
   // HT cpcallen who proposed changing this max to a min, though turns out
   // that's wrong. Sad trombone!
-  for (var ri = 0; ri < max(prevcnt, regions.length); ri++) {
+  for (let ri = 0; ri < max(prevcnt, regions.length); ri++) {
     // SVG elements for regions are given unique class names
     const clsname = "halfplane"+ri
     const reg = regions[ri]
@@ -3971,11 +3971,11 @@ function updateStdFluxline() {
 function updateContextOldRoad() {
   if (processing || opts.divGraph == null || road.length == 0) return
   // Create, update, and delete road lines on the brush graph
-  var roadelt = ctxplot.selectAll(".ctxoldroads")
-  var rd = iroad
+  const roadelt = ctxplot.selectAll(".ctxoldroads")
+  let rd = iroad
   // For non-editor graphs, use the most recent road
   if (!opts.roadEditor) rd = road
-  var d = "M"+r1(xScB(rd[0].sta[0]*SMS))+" "
+  let d = "M"+r1(xScB(rd[0].sta[0]*SMS))+" "
              +r1(yScB(rd[0].sta[1]))
   for (let i = 0; i < rd.length; i++) {
     d += " L"+r1(xScB(rd[i].end[0]*SMS))+" "
@@ -4008,7 +4008,7 @@ function updateOdomResets() {
     return
 
   // Create, update and delete vertical knot lines
-  var orelt = gOResets.selectAll(".oresets").data(bbr.oresets)
+  const orelt = gOResets.selectAll(".oresets").data(bbr.oresets)
   if (opts.roadEditor) { orelt.remove(); return }
   orelt.exit().remove()
   orelt
@@ -4033,8 +4033,8 @@ function updateOdomResets() {
 function updateKnots() {
   if (processing || opts.divGraph == null || road.length == 0) return
   // Create, update and delete vertical knot lines
-  var knotelt = gKnots.selectAll(".knots").data(road)
-  var knotrmelt = buttonarea.selectAll(".remove").data(road)
+  const knotelt = gKnots.selectAll(".knots").data(road)
+  const knotrmelt = buttonarea.selectAll(".remove").data(road)
   if (!opts.roadEditor) {
     knotelt.remove()
     knotrmelt.remove()
@@ -4058,7 +4058,7 @@ function updateKnots() {
     .attr("stroke-width",opts.roadKnot.width)
     .on('wheel', function(d) {
       // Redispatch a copy of the event to the zoom area
-      var new_event = new d3.event.constructor(d3.event.type, d3.event)
+      const new_event = new d3.event.constructor(d3.event.type, d3.event)
       zoomarea.node().dispatchEvent(new_event)
       // Prevents mouse wheel event from bubbling up to the page
       d3.event.preventDefault()
@@ -4128,7 +4128,7 @@ function updateRoads() {
   //var lineColor = valid?opts.roadLineCol.valid:opts.roadLineCol.invalid;
 
   // Create, update and delete road lines
-  var roadelt = gRoads.selectAll(".roads").data(road);
+  const roadelt = gRoads.selectAll(".roads").data(road);
   if (!opts.roadEditor) {
     roadelt.remove();
     return;
@@ -4157,7 +4157,7 @@ function updateRoads() {
     .attr("stroke-width",opts.roadLine.width)
     .on('wheel', function(d) { 
       // Redispatch a copy of the event to the zoom area
-      var new_event = new d3.event.constructor(d3.event.type, d3.event)
+      const new_event = new d3.event.constructor(d3.event.type, d3.event)
       zoomarea.node().dispatchEvent(new_event)
       // Prevents mouse wheel event from bubbling up to the page
       d3.event.preventDefault()
@@ -4205,7 +4205,7 @@ function updateRoadValidity() {
   if (processing || opts.divGraph == null || road.length == 0) return
   if (!opts.roadEditor) return
   
-  let valid = isRoadValid( road )
+  const valid = isRoadValid( road )
   //var lineColor = valid?opts.roadLineCol.valid:opts.roadLineCol.invalid
 
   if (!valid) gRedTape.attr('visibility', 'visible')
@@ -4221,11 +4221,11 @@ function updateRoadValidity() {
 
 function updateContextRoads() {
   if (processing || opts.divGraph == null || road.length == 0) return
-  var lineColor = isRoadValid( road )?
+  const lineColor = isRoadValid( road )?
         opts.roadLineCol.valid:opts.roadLineCol.invalid
 
   // Create, update and delete road lines for the brush 
-  var roadelt = ctxplot.selectAll(".ctxroads").data(road);
+  const roadelt = ctxplot.selectAll(".ctxroads").data(road);
   if (!opts.roadEditor) {
     roadelt.remove()
     return
@@ -4253,7 +4253,7 @@ function updateContextRoads() {
 function updateDots() {
   if (processing || opts.divGraph == null) return
   // Create, update and delete inflection points
-  var dotelt = gDots.selectAll(".dots").data(road)
+  const dotelt = gDots.selectAll(".dots").data(road)
   if (!opts.roadEditor) {
     dotelt.remove()
     return
@@ -4273,7 +4273,7 @@ function updateDots() {
     .style("stroke-width", opts.roadDot.border) 
     .on('wheel', function(d) {
       // Redispatch a copy of the event to the zoom area
-      var new_event = new d3.event.constructor(d3.event.type, d3.event)
+      const new_event = new d3.event.constructor(d3.event.type, d3.event)
       zoomarea.node().dispatchEvent(new_event)
       // Prevents mouse wheel event from bubbling up to the page
       d3.event.preventDefault()
@@ -4300,10 +4300,11 @@ function updateDots() {
           .on("end", function(d,i) { 
             dotDragEnded(d, Number(this.id))}))
 }
+  
 function updateContextDots() {
   if (processing || opts.divGraph == null) return;
   // Create, update and delete inflection points
-  var dotelt = ctxplot.selectAll(".ctxdots").data(road);
+  const dotelt = ctxplot.selectAll(".ctxdots").data(road);
   if (!opts.roadEditor) {
     dotelt.remove();
     return;
@@ -4331,7 +4332,7 @@ styleLookup[bu.Cols.BLCK]   = " blk"
 
 function dpStyle( pt ) {
   let sty = ""
-  let col = br.dotcolor(road, gol, pt[0], pt[1], iso) 
+  const col = br.dotcolor(road, gol, pt[0], pt[1], iso) 
   if (pt[3] != bbr.DPTYPE.AGGPAST) sty += " fuda"
   sty += styleLookup[col]
   return  sty
@@ -4348,13 +4349,13 @@ function dpStrokeWidth( pt ) {
 
 var dotTimer = null, dotText = null
 function showDotText(d) {
-  var ptx = nXSc(bu.daysnap(d[0])*SMS)
-  var pty = nYSc(d[1])
-  var txt = ((d[7]!=null)?"#"+d[7]+": ":"")          // datapoint index
+  const ptx = nXSc(bu.daysnap(d[0])*SMS)
+  const pty = nYSc(d[1])
+  const txt = ((d[7]!=null)?"#"+d[7]+": ":"")          // datapoint index
       +moment.unix(d[0]).utc().format("YYYY-MM-DD")  // datapoint time
     +", "+((d[6] != null)?bu.shn(d[6]):bu.shn(d[1])) // datapoint original value
   if (dotText != null) rmTextBox(dotText)
-  var info = []
+  const info = []
   if (d[2] !== "") info.push("\""+d[2]+"\"")
   if (d[6] !== null && d[1] !== d[6]) info.push("total:"+d[1])
   var col = br.dotcolor(road, gol, d[0], d[1], iso)

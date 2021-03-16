@@ -4,6 +4,7 @@ const concat = require('gulp-concat')
 const changed = require('gulp-changed')
 const cleancss = require('gulp-clean-css')
 const jsdoc = require("gulp-jsdoc3")
+const jshint = require("gulp-jshint")
 
 const LIBDIR = 'lib'
 const LIBJS = LIBDIR+"/js"
@@ -96,8 +97,14 @@ function gendoc() {
     .pipe(jsdoc(config));
 }
 
+function linter() {
+  return gulp.src(['src/butil.js', 'src/broad.js', 'src/bgraph.js', 'src/bsandbox.js', 'src/newdesign.js']).pipe(jshint({esversion:8, asi:true, laxbreak:true})).pipe(jshint.reporter('default'))
+}
+
 exports.compile = gulp.series(compress_js,
                               gulp.parallel(combine_js, combine_jsmin, clean_css),
                               copy_vendor
                              ) 
 exports.gendoc = gendoc
+
+exports.jshint = linter
