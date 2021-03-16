@@ -960,6 +960,8 @@ function vetParams() {
   }
   if (gol.kyoom && gol.odom)
     return "The odometer setting doesn't make sense for an auto-summing goal!"
+  if (gol.tmin > gol.asof)
+    return "You can't set the graph bounds to be solely in the future!"
 
   return ""
 }
