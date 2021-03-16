@@ -1,6 +1,6 @@
 {
   "name": "beebrain",
-  "version": "2021.03.12",
+  "version": "2021.03.15",
   "description": "Beeminder Visual Road Editor (Prototype)",
   "main": "server.js",
   "scripts": {
@@ -20,7 +20,7 @@
     "moment-timezone": "^0.5.32",
     "octicons": "^8.5.0",
     "request": "^2.88.2",
-    "sequelize": "^6.4.0",
+    "sequelize": "^6.5.1",
     "sqlite3": "^5.0.2"
   },
   "engines": {
@@ -44,6 +44,6 @@
     "gulp-jsdoc3": "^2.0.0",
     "gulp-minify": "^3.1.0",
     "gulp-typescript": "^5.0.1",
-    "typescript": "^3.3.4000"
+    "typescript": "^3.9.9"
   }
 }
