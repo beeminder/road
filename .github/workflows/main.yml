@@ -1,0 +1,30 @@
+
+name: CI
+
+# Controls when the action will run. 
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build and run basic tests
+        run: |
+          cd $GITHUB_WORKSPACE/jsbrain_server/docker
+          docker-compose --file docker-compose.test.yml down
+          docker-compose --file docker-compose.test.yml build
+          docker-compose --file docker-compose.test.yml up -d jsbrain
+          sleep 10
+          docker ps
+          docker-compose --file docker-compose.test.yml logs jsbrain 
+          docker-compose --file docker-compose.test.yml run sut
