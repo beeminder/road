@@ -18,11 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Build jsbrain server Docker images
+      - name: Build and run basic tests
         run: |
           cd $GITHUB_WORKSPACE/jsbrain_server/docker
           docker-compose --file docker-compose.test.yml build
-      - name: Run basic tests
-        run: |
-          cd $GITHUB_WORKSPACE/jsbrain_server/docker
           docker-compose --file docker-compose.test.yml run sut
