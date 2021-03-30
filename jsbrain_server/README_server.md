@@ -84,6 +84,14 @@ You shouldn't see an error, but instead should get a response of something like:
   "json":"/path/to/road/jsbrain_server/../automon/data/testroad1.json",
   "error":null }
 
+You can also go into `jsbrain_server/docker`, and run:
+
+```
+docker-compose -f docker-compose.test.yml build && docker-compose -f docker-compose.test.yml run sut
+```
+
+which will build a test container and use it to poke a jsbrain-server container.
+
 ## Principles of operation
 
 The following sequence of events occur upon receiving a request of the form described above:
