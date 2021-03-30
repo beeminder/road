@@ -1,0 +1,13 @@
+version: "2.4"
+services:
+  jsbrain:
+    build:
+      context: ../../
+      dockerfile: jsbrain_server/docker/Dockerfile
+  sut: # stands for "software under test", and is a docker norm
+    depends_on:
+      - jsbrain
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    command: /app/test.sh
