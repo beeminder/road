@@ -16,13 +16,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: $GITHUB_WORKSPACE/jsbrain_server/docker
-
     steps:
       - uses: actions/checkout@v2
-      - name: Build images
-        run: docker-compose --file docker-compose.test.yml build
+      - name: Build jsbrain server Docker images
+        run: |
+          pwd
+          find . 
+          cd $GITHUB_WORKSPACE/jsbrain_server/docker
+          docker-compose --file docker-compose.test.yml build
       - name: Run basic tests
         run: docker-compose --file docker-compose.test.yml run sut
