@@ -311,10 +311,10 @@ self.clip = (x, a, b) => {
 // The following pair of functions -- searchHigh and searchLow -- take a sorted
 // array and a distance function. A distance function is like an "is this the
 // element we're searching for and if not, which way did it go?" function. It
-// takes an element of a sorted array and returns a negative number if it's too
-// small, a positive number if it's too big, and zero if it's just right. Like
-// if you wanted to find the number 7 in an array of numbers you could use `x-7`
-// as a distance function.                                     L     H
+// takes an element of the sorted array and returns a negative number if it's
+// too small, a positive number if it's too big, and zero if it's just right.
+// Like if you wanted to find the number 7 in an array of numbers you could use
+// `x-7` as a distance function.                               L     H
 //   Sorted array:                                [-1,  3,  4, 7, 7, 7,  9,  9]
 //   Output of distance function on each element: [-8, -4, -3, 0, 0, 0, +2, +2]
 // So searchLow would return the index of the first 7 and searchHigh the last 7.
@@ -335,7 +335,7 @@ self.clip = (x, a, b) => {
 //   Output of distance function on each element: [+1, +1, +2, +5, +6]
 // Then it's the opposite, with searchHigh giving the first index, 0, and
 // searchLow giving one less than that, -1.
-// HISTORICAL NOTE: 
+// HISTORICAL NOTE:
 // We'd found ourselves implementing and reimplementing ad hoc binary searches
 // all over the Beebrain code. Sometimes they would inelegantly do O(n)
 // scooching to find the left and right bounds in the case of multiple matches.
@@ -386,7 +386,7 @@ self.searchHigh = (sa, df) => {
   }
   return li === -1 || df(sa[li]) !== 0 ? ui : li
 }
-  
+
 // Automon is pretty great but sometimes it would also be nice to have unit
 // tests. I'm not sure how best to do that. We don't want crap like the
 // following in production... 

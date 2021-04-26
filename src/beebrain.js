@@ -264,7 +264,6 @@ gol.yMin =    -1;        gol.yMax = 1
 /**Convert legacy parameters to modern counterparts for backward compatibility.
    @param {Object} p Goal parameters from the bb file */
 function legacyIn(p) {
-  //if (p.gldt!==undefined && p.tfin===undefined)      p.tfin = p.gldt   #SCHDEL
   if ('goal' in p && !('vfin' in p))                 p.vfin = p.goal
   if ('rate' in p && !('rfin' in p))                 p.rfin = p.rate
   if ('usr'  in p && 'graph' in p && !('yoog' in p)) p.yoog = p.usr+"/"+p.graph
@@ -1033,7 +1032,7 @@ function procParams() {
   
   gol.road = br.fillroad(gol.road, gol)
   const rl = gol.road.length
-  gol.tfin = gol.road[rl-1][0]
+  gol.tfin = gol.road[rl-1][0] // TODO: what if this isn't at a day boundary?
   gol.vfin = gol.road[rl-1][1]
   gol.rfin = gol.road[rl-1][2]
   // tfin, vfin, rfin are set in procRoad

@@ -1190,7 +1190,7 @@ def monitor(stdscr, bbdir, graph, svgo, logging, force, watchdirs):
       alertTask()
       curses.doupdate()
       #flon('sleep 1s (originally 0.01)')
-      time.sleep(.01) # TODO: originally 0.01, 1 or more for debugging
+      time.sleep(.01) # originally 0.01, 1 or more for debugging
 
   except Exception as e:
     flon("Barf!")

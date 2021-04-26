@@ -3867,16 +3867,13 @@ function maxVisibleDTD(limit) {
 
   if (limit != gllimit) {
     // For efficiency, only compute the search array when there's a change
-    // Eek, looks like it's possible for limit to not be an integer!?
-    //console.log(`DEBUG limit=${limit} vs gllimit=${gllimit}`)
     gllimit = limit
-    glarr = Array(ceil(limit)).fill().map((x,i)=>i) // sticking in ceil for now
+    glarr = Array(limit).fill().map((x,i)=>i)
   }
 
   // If upper limit is visible, nothing to do, otherwise proceed with the search
   if (isovisible(isolimit, bbox)) {
-    // TODO: Find the minimum isoline that overlaps with the limit w/in the 
-    // visible range.
+    // TODO: Find min isoline that overlaps w/ limit w/in the visible range
     const maxdtd = 
       bu.searchHigh(glarr, i=>isocompare(isolimit, getiso(i), bbox) ? 1:-1)
     return min(maxdtd, glarr.length - 1)
@@ -3911,17 +3908,17 @@ function updateGuidelines() {
   
   const lnw = isolnwborder(xrange) // estimate intra-isoline delta
   const lnw_px = abs(nYSc(0) - nYSc(lnw))
-  const numdays = (gol.tfin-gol.tini)/SID
+  const numdays = ceil((gol.tfin-gol.tini)/SID)
 
   let numlines = maxVisibleDTD(numdays)
 
-  if      (lnw_px>8 || numlines<6*7)        skip = 1   // All lines till 6 weeks
-  else if (7*lnw_px>8 || numlines<6*28)     skip = 7    // Weekly lines till 6mo
-  else if (28*lnw_px>12 || numlines<2*12*28) skip = 28  // Monthly lines till 2y
-  else if (4*28*lnw_px>12 || numlines<6*12*28) skip = 4*28  // 4m lines till 6 y
+  if      (lnw_px>8 || numlines<6*7)          skip = 1  // All lines till 6w
+  else if (7*lnw_px>8 || numlines<6*28)       skip = 7  // Weekly lines till 6mo
+  else if (28*lnw_px>12 || numlines<2*12*28)  skip = 28 // Monthly lines till 2y
+  else if (4*28*lnw_px>12 || numlines<6*12*28) skip = 4*28 // 4mo lines till 6y
   else                                   skip = 12*28 // Yearly lines afterwards
 
-  numlines = ceil( numlines/skip )
+  numlines = ceil(numlines/skip)
   //console.log(
   //  `DEBUG delta=${delta} lnw=${lnw} numlines=${numlines} \
   //  yrange=${yrange[0]},${yrange[1]}`)

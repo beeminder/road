@@ -38,7 +38,7 @@ if (typeof define === 'function' && define.amd) {
 // -----------------------------------------------------------------------------
 // --------------------------- CONVENIENCE CONSTANTS ---------------------------
 
-const rnd   = Math.round
+//const rnd   = Math.round
 const max   = Math.max
 const min   = Math.min
 const abs   = Math.abs
@@ -706,8 +706,7 @@ self.bufcap = (rd, g, n=7) => {
     v = goal value 
     r = rate in hertz (s^-1), ie, road rate per second
     return the third, namely, whichever one is passed in as null. */
-self.tvr = (tp, vp, t, v, r) => {
-  
+self.tvr = (tp, vp, t, v, r) => {  
   if (t === null) {
     if (r === 0) return bu.BDUSK
     else         return bu.daysnap(min(bu.BDUSK, tp + (v-vp)/r))
@@ -721,11 +720,16 @@ self.tvr = (tp, vp, t, v, r) => {
 }
 
 /** Helper for fillroad for propagating forward filling in all the nulls */
-var nextrow =  (or, nr) => {
-  var tprev = or[0], vprev = or[1], rprev = or[2], n = or[3]
+const nextrow =  (or, nr) => {
+  const tprev = or[0]
+  const vprev = or[1]
+  const rprev = or[2]
+  const n     = or[3]
 
-  var t = nr[0], v = nr[1], r = nr[2]
-  var x = self.tvr(tprev, vprev, t,v,r) // the missing t, v, or r
+  const t = nr[0]
+  const v = nr[1]
+  const r = nr[2]
+  const x = self.tvr(tprev, vprev, t,v,r) // the missing t, v, or r
   if (t === null) return [x, v, r, 0]
   if (v === null) return [t, x, r, 1]
   if (r === null) return [t, v, x, 2]
@@ -737,8 +741,7 @@ var nextrow =  (or, nr) => {
 self.fillroad = (rd, g) => {
   rd.forEach(e => e[2] = null===e[2] ? e[2] : e[2]/g.siru)
   rd[0] = nextrow([g.tini, g.vini, 0, 0], rd[0])
-  for (let i = 1; i < rd.length; i++)
-    rd[i] = nextrow(rd[i-1], rd[i])
+  for (let i = 1; i < rd.length; i++) rd[i] = nextrow(rd[i-1], rd[i])
   rd.forEach(e => (e[2] = (null==e[2])?e[2]:e[2]*g.siru))
 
   // Remove rows that have timestamps before tini. This is temporary until
