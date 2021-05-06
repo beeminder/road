@@ -456,12 +456,18 @@ function computeRosy() {
 }
 
 // Take, eg, "shark jumping #yolo :) #shark" and return {"#yolo", "#shark"}
+// Pro tip: use scriptular.com to test these regexes
 let hashtagRE
 try {
   //hashtagRE = /(?:^|\s)(#\p{L}[\p{L}0-9_]+)(?=$|\s)/gu
-  hashtagRE = new RegExp("(?:^|\\s)(#\\p{L}[\\p{L}0-9_]*)(?=$|\\s)", "gu")
-} catch { // Firefox can't handle the above in 2019 so...
-  hashtagRE = /(?:^|\s)(#[a-zA-Z]\w*)(?=$|\s)/g
+  hashtagRE = new RegExp(
+    //"(?:^|\\s)(#\\p{L}[\\p{L}0-9_]*)(?=$|\\s)", "gu")
+      "(?:^|\\s)(#\\p{L}[\\p{L}0-9_]*)(?=$|[\\s])", "gu")
+    //"(?:^|\\s)(#\\p{L}[\\p{L}0-9_]*)(?=$|\\s|\\.|\\!|\\,|\\:|\\))", "gu")
+} catch { // Firefox couldn't handle the above in 2019 so just in case:
+  hashtagRE = 
+      /(?:^|\s)(#[a-zA-Z]\w*)(?=$|\s)/g  // version not allowing punctuation
+    ///(?:^|\s)(#[a-zA-Z]\w*)(?=$|\s|\.|\!|\,|\:|\))/g
 }
 function hashextract(s) {
   let set = new Set(), m
@@ -646,9 +652,15 @@ function procData() {
 
   fuda = newpts.filter(e => e[0] >  gol.asof)
   data = newpts.filter(e => e[0] <= gol.asof)
-  if (data.length == 0) return "All datapoints are in the future!"
-
   if (!gol.plotall) gol.numpts = data.length
+  if (data.length == 0) {
+    gol.tdat = gol.tcur
+    gol.mean = 0
+    hollow = []
+    return ""
+    return "All datapoints are in the future!" // TODO
+  }
+
   
   // Compute data mean after filling in gaps
   const gfd = br.gapFill(data)
@@ -787,8 +799,8 @@ function flatline() {
 original version of flatline() ************************************************/
   const now = gol.asof
   const numpts = data.length
-  const tlast = data[numpts-1][0]
-  const vlast = data[numpts-1][1]
+  const tlast = data.length === 0 ? gol.tini : data[numpts-1][0]
+  const vlast = data.length === 0 ? gol.vini : data[numpts-1][1]
   
   if (tlast > gol.tfin) return
   
@@ -812,7 +824,7 @@ original version of flatline() ************************************************/
   }
 
   if (!(x in aggval)) {
-    const prevpt = data[numpts-1]
+    const prevpt = data.length === 0 ? [gol.tini, gol.vini] : data[numpts-1]
     flad = [x, vlast, "PPR", DPTYPE.FLATLINE, prevpt[0], prevpt[1], null]
     data.push(flad)
   }
