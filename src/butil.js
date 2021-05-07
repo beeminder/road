@@ -626,6 +626,7 @@ self.clocky = (a) => {
 
 /** Arithmetic mean of values in list a
     @param {Number[]} a Input list*/
+// TODO: average = (array) => array.reduce((s,x) => s+x) / array.length
 self.mean = (a) => {
   let s = 0, l = a.length, i
   if (l == 0) return 0
