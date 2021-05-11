@@ -2029,22 +2029,28 @@ function deaddow(t) {
 
 // Set watermark (waterbuf) to number of safe days if not given explicitly
 function setWatermark() {
-  if (gol.waterbuf0 != null) return
+  if (gol.waterbuf0 !== null) return // it was set as a Beebrain in-param
   
+  // This seems bad to set all these goal fields as a side effect here!
   gol.safebuf = br.dtd(road, gol, gol.tcur, gol.vcur)
-  gol.tluz = gol.tcur+gol.safebuf*SID
-  if (gol.tfin < gol.tluz) gol.tluz = bu.BDUSK
-  gol.loser = br.redyest(road, gol, gol.tcur) // TODO: needs iso here
-
-  if  (gol.asof >= gol.tfin && !gol.loser) {
-    gol.waterbuf = ":)"
-    return
-  }
-
-  if      (gol.safebuf > 999) { gol.waterbuf = "inf" } 
-  else if (gol.safebuf >= 7)  { gol.waterbuf = gol.safebuf+"d" } 
-  else if (gol.safebuf <= 0)  { gol.waterbuf = deadtod(gol.deadline)+"!" }
-  else                        { gol.waterbuf = deaddow(gol.tluz) }
+  gol.tluz = min(gol.tcur + gol.safebuf*SID, gol.tfin + SID, bu.BDUSK)
+  //gol.tluz = gol.tcur + gol.safebuf*SID
+  if (gol.tluz > gol.tfin) gol.tluz = bu.BDUSK // TODO see thing in procParams()
+  gol.loser = br.redyest(road, gol, gol.tcur) // needs iso here; is that fine?
+  const del = bu.chop(gol.yaw*(gol.vcur - gol.vfin))
+  const yay = gol.asof >= gol.tfin && del >= 0
+  const eke = gol.asof >= gol.tfin && del < 0
+  
+  gol.waterbuf = 
+    gol.loser           ? ':('                      : // show skull&crossbones
+    yay                 ? ':)'                      : // show happyface
+    eke                 ? 'eke'                     : // eking by on last day
+    gol.safebuf > 999   ? '>999d'                   : // quasi-infinite buffer
+    gol.tluz > gol.tfin ? 'inf'                     : // coasting till tfin
+    gol.safebuf >= 7    ? gol.safebuf+'d'           : // show number of buf days
+    gol.safebuf <= 0    ? deadtod(gol.deadline)+'!' : // show deadline time
+    gol.safebuf < 7     ? deaddow(gol.tluz)         : // show deadline day
+                          '???'                       // should never happen
 }
 
 function computePlotLimits(adjustZoom = true) {
@@ -3261,9 +3267,9 @@ function updateWatermark() {
   let offg, offb, g = null, b = null, x, y, bbox, newsize, newh
 
   setWatermark()
-  if      (gol.loser)              g = PNG.sklb
+  if      (gol.waterbuf === ':(' ) g = PNG.sklb
   if      (gol.waterbuf === 'inf') g = PNG.infb
-  else if (gol.waterbuf === ':)')  g = PNG.smlb
+  else if (gol.waterbuf === ':)' ) g = PNG.smlb
 
   if      (gol.dir>0 && gol.yaw<0) { offg = bbr; offb = tl  }
   else if (gol.dir<0 && gol.yaw>0) { offg = tr;  offb = bbl }

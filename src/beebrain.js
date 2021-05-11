@@ -653,14 +653,12 @@ function procData() {
   fuda = newpts.filter(e => e[0] >  gol.asof)
   data = newpts.filter(e => e[0] <= gol.asof)
   if (!gol.plotall) gol.numpts = data.length
-  if (data.length == 0) {
+  if (data.length == 0) { // all datapoints are in the future
     gol.tdat = gol.tcur
     gol.mean = 0
     hollow = []
     return ""
-    return "All datapoints are in the future!" // TODO
   }
-
   
   // Compute data mean after filling in gaps
   const gfd = br.gapFill(data)
@@ -1092,7 +1090,13 @@ function procParams() {
   gol.vprev= data[max(dl-2,0)][1] // default to vcur if < 2 datapts
 
   gol.safebuf = br.dtd(roads, gol, gol.tcur, gol.vcur)
-  gol.tluz = gol.tcur+gol.safebuf*SID
+
+  gol.tluz = min(gol.tcur + gol.safebuf*SID, gol.tfin + SID, bu.BDUSK)
+  //gol.tluz = gol.tcur + gol.safebuf*SID
+  // proposal to kill the following so soon-to-end goals just have the tluz as
+  // tfin + 1 day:
+  if (gol.tluz > gol.tfin) gol.tluz = bu.BDUSK
+
   gol.delta = bu.chop(gol.vcur - br.rdf(roads, gol.tcur))
   gol.rah = br.rdf(roads, gol.tcur+bu.AKH)
   
@@ -1111,12 +1115,10 @@ function procParams() {
   gol.sadbrink = (gol.tcur-SID > gol.tini)
     && (br.dotcolor(roads, gol, gol.tcur-SID,
                     gol.dtf(gol.tcur-SID, gol.isolines))==bu.Cols.REDDOT)
-  if (gol.safebuf <= 0) gol.tluz = gol.tcur
-  if (gol.tfin < gol.tluz)  gol.tluz = bu.BDUSK
+  //if (gol.safebuf <= 0) gol.tluz = gol.tcur // TODO: shouldn't be needed?
+  //if (gol.tfin < gol.tluz)  gol.tluz = bu.BDUSK // TODO: now done earlier
       
   setDefaultRange()
-  //genRazr()
-  //console.log(`rdf(tfin)=${br.rdf(roads, gol.tfin)}`)
   return ""
 }
 
@@ -1322,7 +1324,8 @@ function genStats(p, d, tm=null) {
     
     gol.siru = bu.SECS[gol.runits]
     gol.horizon = gol.asof+bu.AKH
-    // Save initial waterbuf value for comparison in bgraph.js
+    // Save initial waterbuf value for comparison in bgraph.js because we don't
+    // want to keep recomputing it there as the redline is edited 
     gol.waterbuf0 = gol.waterbuf
     
     // Append final segment to the road array. These values will be re-extracted
