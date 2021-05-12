@@ -2017,15 +2017,13 @@ function roadExtentPartial( rd, xmin, xmax, extend = false ) {
   return extent
 }
 
-// Convert deadline value (seconds from midnight) to time-of-day like "3am"
-function deadtod(ds) {
-  return moment.unix(ds).utc().format("h:mma").replace(":00","")
+// Convert time of day given as seconds from midnight to a string like "3am"
+function TOD(ds) {
+  return moment.unix(ds).utc().format("h:mma").replace(":00", "")
 }
 
-// Convert tluz to the day of the week (eg, "Wed") of the eep day
-function deaddow(t) {
-  return moment.unix(t).utc().format("ddd")
-}
+// Convert unixtime to a day-of-the-week string like "Wed"
+function DOW(t) { return moment.unix(t).utc().format("ddd") }
 
 // Set watermark (waterbuf) to number of safe days if not given explicitly
 function setWatermark() {
@@ -2042,15 +2040,17 @@ function setWatermark() {
   const eke = gol.asof >= gol.tfin && del < 0
   
   gol.waterbuf = 
+    // TODO: if asof > tfin then say "fin", else "eke" or happyface
     gol.loser           ? ':('                      : // show skull&crossbones
     yay                 ? ':)'                      : // show happyface
     eke                 ? 'eke'                     : // eking by on last day
-    gol.safebuf > 999   ? '>999d'                   : // quasi-infinite buffer
     gol.tluz > gol.tfin ? 'inf'                     : // coasting till tfin
-    gol.safebuf >= 7    ? gol.safebuf+'d'           : // show number of buf days
-    gol.safebuf <= 0    ? deadtod(gol.deadline)+'!' : // show deadline time
-    gol.safebuf < 7     ? deaddow(gol.tluz)         : // show deadline day
-                          '???'                       // should never happen
+    gol.safebuf <= 0    ? TOD(gol.deadline)+'!'     : // show deadline time
+    gol.safebuf < 7     ? DOW(gol.tluz)             : // show deadline day
+    gol.safebuf < 365   ? gol.safebuf+'d'           : // show number of buf days
+    gol.safebuf <= 999  ? gol.safebuf+'d'           : // way too much buffer
+    gol.safebuf > 999   ? '>999d'                   : // quasi-infinite buffer
+                          '???'                       // can't actually happen
 }
 
 function computePlotLimits(adjustZoom = true) {

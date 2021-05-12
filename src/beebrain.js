@@ -1092,9 +1092,8 @@ function procParams() {
   gol.safebuf = br.dtd(roads, gol, gol.tcur, gol.vcur)
 
   gol.tluz = min(gol.tcur + gol.safebuf*SID, gol.tfin + SID, bu.BDUSK)
-  //gol.tluz = gol.tcur + gol.safebuf*SID
-  // proposal to kill the following so soon-to-end goals just have the tluz as
-  // tfin + 1 day:
+  // let's kill the following so soon-to-end goals just have the tluz as tfin +
+  // 1 day:
   if (gol.tluz > gol.tfin) gol.tluz = bu.BDUSK
 
   gol.delta = bu.chop(gol.vcur - br.rdf(roads, gol.tcur))
@@ -1111,12 +1110,10 @@ function procParams() {
   gol.color = (gol.safebuf < 1 ? "red"    :
                gol.safebuf < 2 ? "orange" :
                gol.safebuf < 3 ? "blue"   : "green")
-  gol.loser = br.redyest(roads, gol, gol.tcur) // TODO: need iso here
+  gol.loser = br.redyest(roads, gol, gol.tcur) // needs iso here; is that fine?
   gol.sadbrink = (gol.tcur-SID > gol.tini)
     && (br.dotcolor(roads, gol, gol.tcur-SID,
                     gol.dtf(gol.tcur-SID, gol.isolines))==bu.Cols.REDDOT)
-  //if (gol.safebuf <= 0) gol.tluz = gol.tcur // TODO: shouldn't be needed?
-  //if (gol.tfin < gol.tluz)  gol.tluz = bu.BDUSK // TODO: now done earlier
       
   setDefaultRange()
   return ""
