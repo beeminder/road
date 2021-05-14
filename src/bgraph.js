@@ -1,9 +1,9 @@
 /**
- * Beebrain graph generation and yellow brick road editing provided as a UMD
- * module. Provides a {@link bgraph} class, which can be used to construct
- * independent graph generating objects each with their own internal state,
- * possibly linked to particular div elements on the DOM.<br/>
- * <br/>Copyright 2017-2020 Uluc Saranli and Daniel Reeves
+ * Beebrain graph generation and red line editing provided as a UMD module.
+ * Provides a {@link bgraph} class, which can be used to construct independent
+ * graph generating objects each with their own internal state, possibly linked
+ * to particular div elements on the DOM.<br/>
+ * <br/>Copyright 2017-2021 Uluc Saranli and Daniel Reeves
  @module bgraph
  @requires d3
  @requires moment
@@ -2040,17 +2040,17 @@ function setWatermark() {
   const eke = gol.asof >= gol.tfin && del < 0
   
   gol.waterbuf = 
-    // TODO: if asof > tfin then say "fin", else "eke" or happyface
-    gol.loser           ? ':('                      : // show skull&crossbones
-    yay                 ? ':)'                      : // show happyface
-    eke                 ? 'eke'                     : // eking by on last day
-    gol.tluz > gol.tfin ? 'inf'                     : // coasting till tfin
-    gol.safebuf <= 0    ? TOD(gol.deadline)+'!'     : // show deadline time
-    gol.safebuf < 7     ? DOW(gol.tluz)             : // show deadline day
-    gol.safebuf < 365   ? gol.safebuf+'d'           : // show number of buf days
-    gol.safebuf <= 999  ? gol.safebuf+'d'           : // way too much buffer
-    gol.safebuf > 999   ? '>999d'                   : // quasi-infinite buffer
-                          '???'                       // can't actually happen
+    gol.loser           ? ':('                  : // show skull & crossbones
+    gol.asof > gol.tfin ? 'fin'                 : // past tfin? shouldn't happen
+    yay                 ? ':)'                  : // show happyface
+    eke                 ? 'eke'                 : // eking by on last day
+    gol.tluz > gol.tfin ? 'inf'                 : // coasting till tfin
+    gol.safebuf <= 0    ? TOD(gol.deadline)+'!' : // show deadline time
+    gol.safebuf < 7     ? DOW(gol.tluz)         : // show deadline day
+    gol.safebuf < 365   ? gol.safebuf+'d'       : // show number of safe days
+    gol.safebuf <= 999  ? gol.safebuf+'d'       : // way too much buffer
+    gol.safebuf > 999   ? '>999d'               : // quasi-infinite buffer
+                          '???'                   // can't actually happen
 }
 
 function computePlotLimits(adjustZoom = true) {
