@@ -87,7 +87,7 @@ let defaults = {
   ctxRect:      { x:0, y:370, width:700, height: 80 },
   /** Initial padding within the context graph. */
   ctxPad:       { left:25, right:5, top:0, bottom:30 },
-  /** Height of the road matrix table. Choose 0 for unspecified */
+  /** Height of the graph matrix table. Choose 0 for unspecified */
   tableHeight:  387,
   
   /** Visual parameters for the zoom in/out buttons. "factor" 
@@ -169,16 +169,16 @@ let defaults = {
   /** Indicates whether intervals between the knots for segments beyond the
       currently dragged element should be kept constant during editing */
   keepIntervals: false,
-  /** Indicates whether the road matrix table should be shown with the earliest
+  /** Indicates whether the graph matrix table should be shown with the earliest
       rows first (normal) or most recent rows first (reversed) */ 
   reverseTable: false,
-  /** Indicates whether the auto-scrolling feature for the road matrix table
+  /** Indicates whether the auto-scrolling feature for the graph matrix table
       should be enabled such that when the mouse moves over knots, dots, or road
       elements, the corresponding table row is scrolled to be visible in the
       table. This is particularly useful when tableHeight is explicitly
       specified and is nonzero. */ 
   tableAutoScroll: true,
-  /** Chooses whether the road matrix table should be dynamically updated
+  /** Chooses whether the graph matrix table should be dynamically updated
       during the dragging of road knots, dots, and segments. Enabling this may
       induce some lagginess, particularly on Firefox due to more components
       being updated during dragging. */
@@ -186,7 +186,7 @@ let defaults = {
   /** Chooses whether the dueby table should be dynamically updated
       during the dragging of road knots, dots, and segments. */
   duebyUpdateOnDrag: true,
-  /** Chooses whether the road matrix table should include checkboxes for
+  /** Chooses whether the graph matrix table should include checkboxes for
       choosing the field to be automatically computed */
   tableCheckboxes: true,
   /** Callback function that gets invoked when the road is edited by the user.
@@ -373,11 +373,11 @@ let config = (obj, options) => {
     @property {Integer} maxFutureDays Indicates how many days beyond asof should be included in the fully zoomed out graph. This is useful for when the goal date is too far beyond asof, making the context graph somewhat useless in terms of its interface utility.
 
     @property {object}  divTable Binds the road table to a div element
-    @property {Number} tableHeight Height of the road matrix table. Choose 0 for unspecified
-    @property {Boolean} tableCheckboxes Chooses whether the road matrix table should include checkboxes for choosing the field to be automatically computed.
-    @property {Boolean} reverseTable Indicates whether the road matrix table should be shown with the earliest rows first (normal) or most recent rows first(reversed).
-    @property {Boolean} tableAutoScroll Indicates whether the auto-scrolling feature for the road matrix table should be enabled such that when the mouse moves over knots, dots or road elements, the corresponding table row is scrolled to be visible in the table. This is particularly useful when tableHeight is explicitly specified and is nonzero.
-    @property {Boolean} tableUpdateOnDrag Chooses whether the road matrix table should be dynamically updated during the dragging of road knots, dots and segments. Enabling this may induce some lagginess, particularly on Firefox due to more components being updated during dragging
+    @property {Number} tableHeight Height of the graph matrix table. Choose 0 for unspecified
+    @property {Boolean} tableCheckboxes Chooses whether the graph matrix table should include checkboxes for choosing the field to be automatically computed.
+    @property {Boolean} reverseTable Indicates whether the graph matrix table should be shown with the earliest rows first (normal) or most recent rows first(reversed).
+    @property {Boolean} tableAutoScroll Indicates whether the auto-scrolling feature for the graph matrix table should be enabled such that when the mouse moves over knots, dots or road elements, the corresponding table row is scrolled to be visible in the table. This is particularly useful when tableHeight is explicitly specified and is nonzero.
+    @property {Boolean} tableUpdateOnDrag Chooses whether the graph matrix table should be dynamically updated during the dragging of road knots, dots and segments. Enabling this may induce some lagginess, particularly on Firefox due to more components being updated during dragging
   
   
     @property {function} onRoadChange Callback function that gets invoked when the road is finished loading or has been edited by the user. Various interface functions can then be used to retrieve the new road state. This is also useful to update the state of undo/redo and submit buttons based on how many edits have been done on the original road.
@@ -1417,7 +1417,7 @@ function updateDueBy() {
     .style('color', d=>d[1])
 }
 
-/** Creates all road matrix table components if a table DIV is provided. Called
+/** Creates all graph matrix table components if a table DIV is provided. Called
  * once when the bgraph object is created. */
 function createTable() {
   const div = opts.divTable
@@ -2121,7 +2121,7 @@ const graph_timeid = `bgraph(${curid}): Goal graph`
 // timestamp,value pairs
 
 /**Load goal details from the supplied JSON input and populate the graph and
-   road matrix table with necessary components based on initially supplied
+   graph matrix table with necessary components based on initially supplied
    options.
    @param {Object} json JSON object with the contents of a BB file, directly fed
    to a {@link beebrain} object instance. */
@@ -3778,7 +3778,7 @@ function updateRedline(rd, g, gelt, cls, delta, usedash) {
 
   let d = "M"+r1(fx)+" "+(r1(fy))
   for (const segment of rd) {
-    // Some goals have non-daysnapped road matrix entries, which
+    // Some goals have non-daysnapped graph matrix entries, which
     // breaks the tfin check. This hopefully overcomes that problem
     let segx = bu.daysnap(segment.end[0])
     ex = nXSc(segment.end[0]*SMS)
@@ -5477,7 +5477,7 @@ this.zoomDefault = () => { if (road.length == 0) return; else zoomDefault() }
 
 /** Initiates loading a new goal from the indicated url.
  Expected input format is the same as beebrain. Once the input
- file is fetched, the goal graph and road matrix table are
+ file is fetched, the goal graph and graph matrix table are
  updated accordingly. 
 @param {String} url URL to load the goal BB file from*/
 this.loadGoal = async ( url ) => {
@@ -5489,7 +5489,7 @@ this.loadGoal = async ( url ) => {
 
 /** Initiates loading a new goal from the supplied object.
  Expected input format is the same as beebrain. The goal graph and
- road matrix table are updated accordingly.
+ graph matrix table are updated accordingly.
 @param {object} json Javascript object containing the goal BB file contents*/
 this.loadGoalJSON = ( json, timing = true ) => {
   removeOverlay()
@@ -5620,7 +5620,7 @@ this.commitTo = ( newSlope ) => {
 */
 this.getRoad = () => {
   function dt(d) { return moment.unix(d).utc().format("YYYYMMDD")}
-  // Format the current road matrix to be submitted to Beeminder
+  // Format the current graph matrix to be submitted to Beeminder
   var r = {}, seg, rd, kd
   if (road.length == 0) {
     console.log("bgraph("+curid+"):getRoad(), road is empty!")
@@ -5738,7 +5738,7 @@ this.loading = (flag) => {
   if (flag) showOverlay(['loading...'], sh/10)
   else removeOverlay()
 }
-/** Returns the road matrix object (in the internal format) for the
+/** Returns the graph matrix object (in the internal format) for the
     goal. Primarily used to synchronize two separate graph
     instances on the same HTML page. 
     @return {object} Internal road object
@@ -5753,7 +5753,7 @@ this.getGoalObj = () => (gol)
  * since beebrain.setRoadObj() already calls reloadRoad()*/
 var settingRoad = false
 
-/** Sets the road matrix (in the internal format) for the
+/** Sets the graph matrix (in the internal format) for the
     goal. Primarily used to synchronize two separate graph
     instances on the same HTML page. Should only be called with
     the return value of {@link bgraph#getRoadObj}.
