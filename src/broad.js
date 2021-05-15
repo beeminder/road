@@ -1,9 +1,11 @@
 /**
  * Library of utilities for Beebrain, provided as a UMD module. Returns a
- * "broad" object with public member functions and constants for calculating 
- * things about yellow brick roads. Does not hold any internal state.
+ * "broad" (Beeminder Road) object with public member functions and constants
+ * for calculating things about the piecewise linear function representing
+ * Beeminder's Bright Red Line (nee Yellow Brick Road). Does not hold any
+ * internal state.
  *
- * Copyright 2018-2020 Uluc Saranli and Daniel Reeves
+ * Copyright 2018-2021 Uluc Saranli and Daniel Reeves
 
  @requires moment
  @requires butil

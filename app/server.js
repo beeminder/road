@@ -85,7 +85,7 @@ app.use('/data', express.static('data'))
 app.use('/lib', express.static('lib'))
 
 var listener = app.listen(process.env.PORT, () => {
-  console.log(`Road Editor app is running on port ${listener.address().port}`)
+  console.log(`Graph Editor app is running on port ${listener.address().port}`)
   console.log(`AUTH_REDIRECT_URI is ${process.env.AUTH_REDIRECT_URI}`)
 })
 

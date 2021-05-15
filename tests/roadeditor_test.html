@@ -20,7 +20,7 @@
 
 <body>
 
-<h1>Beeminder Visual Road Editor and Client-Side Graphs</h1>
+<h1>Beeminder Visual Graph Editor and Client-Side Graphs</h1>
 
 <form name="graphType">
 
@@ -29,21 +29,21 @@
   <input type="radio" name="typeButton" value="editor" onclick="handleRadio(this);">Editor<br>
   
   <select id="roadselect" class="roadselect" onchange="breakstart.value=&quot;&quot;;eload=true; gload = true;loadGoals(this.value);">
-    <option value="../automon/data/testroad0.bb">Test Road 0</option>
-    <option value="../automon/data/testroad1.bb">Test Road 1</option>
-    <option value="../automon/data/testroad2.bb">Test Road 2</option>
-    <option value="../automon/data/testroad3.bb">Test Road 3</option>
-    <option value="../automon/data/testroad4.bb">Test Road 4</option>
-    <option value="../automon/data/testroad5.bb">Test Road 5</option>
-    <option value="../automon/data/testroad6.bb">Test Road 6</option>
-    <option value="../automon/data/testroad7.bb">Test Road 7</option>
+    <option value="../automon/data/testroad0.bb">Test Graph 0</option>
+    <option value="../automon/data/testroad1.bb">Test Graph 1</option>
+    <option value="../automon/data/testroad2.bb">Test Graph 2</option>
+    <option value="../automon/data/testroad3.bb">Test Graph 3</option>
+    <option value="../automon/data/testroad4.bb">Test Graph 4</option>
+    <option value="../automon/data/testroad5.bb">Test Graph 5</option>
+    <option value="../automon/data/testroad6.bb">Test Graph 6</option>
+    <option value="../automon/data/testroad7.bb">Test Graph 7</option>
   </select> 
  
 </form>
 
 <div id="diveditor">
 <ul>
-<li>Drag dots, vertical lines or roads to edit, double-click to add
+<li>Drag dots, vertical lines or the bright red line to edit, double-click to add
 new node, Ctrl-z to undo, Ctrl-y to redo</li>
 </ul>
 

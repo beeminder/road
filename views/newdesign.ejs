@@ -59,7 +59,7 @@
   <div class="vtabcontainer">
     <div class="vtabtitle">Graph Tools</div>
     <div class="vtab">
-      <button class="bmdrbtn gtablinks" onclick="openGraphTab(event, 'road')">Road</button><button class="bmdrbtn gtablinks" onclick="openGraphTab(event, 'stats')">Stats</button><button class="bmdrbtn gtablinks" onclick="openGraphTab(event, 'data')">Data</button><button class="bmdrbtn gtablinks active" onclick="openGraphTab(event, 'entry')">Entry</button> <!-- Warning, these elements should be on the same line to prevent inline spacing -->
+      <button class="bmdrbtn gtablinks" onclick="openGraphTab(event, 'road')">Red Line</button><button class="bmdrbtn gtablinks" onclick="openGraphTab(event, 'stats')">Stats</button><button class="bmdrbtn gtablinks" onclick="openGraphTab(event, 'data')">Data</button><button class="bmdrbtn gtablinks active" onclick="openGraphTab(event, 'entry')">Entry</button> <!-- Warning, these elements should be on the same line to prevent inline spacing -->
     </div>
     <div id="entry" class="gtabcontent" style="display:block;">
       <div class="tooltitle">Enter new data</div>
@@ -86,7 +86,7 @@
       <div id="gprogress"></div>
     </div>
     <div id="road" class="gtabcontent">
-      <div class="tooltitle">Road Matrix</div>
+      <div class="tooltitle">Graph Matrix</div>
       <div id="graphroad"></div>
     </div>
   </div>
@@ -122,10 +122,10 @@
   <div class="vtabcontainer">
     <div class="vtabtitle">Editor Tools</div>
     <div class="vtab">
-      <button class="bmdrbtn etablinks active" onclick="openEditorTab(event, 'eroad')">Road</button><button class="bmdrbtn etablinks" onclick="openEditorTab(event, 'estats')">Stats</button><button class="bmdrbtn etablinks" onclick="openEditorTab(event, 'edata')">Data</button><button class="bmdrbtn etablinks" onclick="openEditorTab(event, 'eedit')">Dial</button> <!-- Warning, these elements should be on the same line to prevent inline spacing -->
+      <button class="bmdrbtn etablinks active" onclick="openEditorTab(event, 'eroad')">Red Line</button><button class="bmdrbtn etablinks" onclick="openEditorTab(event, 'estats')">Stats</button><button class="bmdrbtn etablinks" onclick="openEditorTab(event, 'edata')">Data</button><button class="bmdrbtn etablinks" onclick="openEditorTab(event, 'eedit')">Dial</button> <!-- Warning, these elements should be on the same line to prevent inline spacing -->
     </div>
     <div id="eedit" class="etabcontent">
-      <div class="tooltitle">Dial road</div>
+      <div class="tooltitle">Dial Graph</div>
       <div>
         Goal rate:<br/>
         <input type = "number" id="endslope" step="any" style="margin-bottom:10px;height:30px;width:10em;"><br/>
@@ -150,7 +150,7 @@
       <div id="eprogress"></div>
     </div>
     <div id="eroad" class="etabcontent" style="display:block;">
-      <div class="tooltitle">Road Matrix</div>
+      <div class="tooltitle">Graph Matrix</div>
       <div id="editorroad"></div>
     </div>
   </div>
@@ -179,10 +179,10 @@
   <div class="vtabcontainer">
     <div class="vtabtitle">Sandbox Tools</div>
     <div class="vtab">
-      <button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sroad')">Road</button><button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sstats')">Stats</button><button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sdata')">Data</button><button class="bmdrbtn stablinks active" onclick="openSandboxTab(event, 'sedit')">Edit</button> <!-- Warning, these elements should be on the same line to prevent inline spacing -->
+      <button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sroad')">Red Line</button><button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sstats')">Stats</button><button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sdata')">Data</button><button class="bmdrbtn stablinks active" onclick="openSandboxTab(event, 'sedit')">Edit</button> <!-- Warning, these elements should be on the same line to prevent inline spacing -->
     </div>
     <div id="sedit" class="stabcontent" style="display:block;">
-      <div class="tooltitle">Dial road</div>
+      <div class="tooltitle">Dial Graph</div>
       Goal rate:<br/>
       <input type = "number" id="sendslope" step="any" style="margin-bottom:10px;height:30px;width:10em;"><br/>
       <select id="sslopetype" selected="604800" onchange="updateCommitFields(true)">
@@ -211,7 +211,7 @@
       <div id="sprogress"></div>
     </div>
     <div id="sroad" class="stabcontent">
-      <div class="tooltitle">Road Matrix</div>
+      <div class="tooltitle">Graph Matrix</div>
       <div id="sandboxroad"></div>
     </div>
   </div>

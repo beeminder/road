@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Beeminder Visual Road Editor (Prototype)</title>
-  <meta name="description" content="Beeminder Client-Side Graphs and Road Editor">
+  <title>Beeminder Visual Graph Editor (Prototype)</title>
+  <meta name="description" content="Beeminder Client-Side Graphs and Graph Editor">
   <link id="favicon" rel="icon" href="https://beeminder.com/favicon.ico" type="image/x-icon">
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -25,7 +25,7 @@
 <body>
 <div class="container">
   
-<h1>Beeminder Visual Road Editor (Prototype)</h1>
+<h1>Beeminder Visual Graph Editor (Prototype)</h1>
 
 <form name="graphType">
   <input type="radio" name="typeButton" value="graph" onclick="handleRadio(this)" checked>
@@ -39,7 +39,7 @@
 </form>
 
 <div id="diveditor">
-Drag the bright red line (AKA yellow brick road) or double-click for new segments!
+Drag the bright red line or double-click for new segments!
 
 <table>
 <tr>
@@ -53,7 +53,7 @@ Drag the bright red line (AKA yellow brick road) or double-click for new segment
 <!-- Show context graph<br> -->
 
 <p>
-Road-dragging behavior: &nbsp; &nbsp;
+Red-line-dragging behavior: &nbsp; &nbsp;
 <input id="keepslopes" type="checkbox" onclick="editor.keepSlopes(this.checked);" checked> Fixed slopes&nbsp;
 <input id="keepintervals" onclick="editor.keepIntervals(this.checked);" type="checkbox"> Fixed intervals<br>
 </p>
@@ -64,7 +64,7 @@ Road-dragging behavior: &nbsp; &nbsp;
 <button class="btn btn-secondary" id="savesvg" onclick="editor.saveGraph(document.getElementById('download'));">Generate static image</button>
 <a id="download" target="_blank">[Right-click for SVG]</a><br/><br/>
     
-Visual versions of Ratcheting, Take-A-Break, and the Road Dial...<br/><br/>
+Visual versions of Ratcheting, Take-A-Break, and the Graph Dial...<br/><br/>
 <ul>
 <li>Reduce safety buffer to: 
 <input type="number" value="0" min="0" id="ratchetdays" style="width:4em"> days
@@ -80,7 +80,7 @@ days
 <button class="btn btn-secondary" id="insertbreak" onclick="scheduleBreak(true);">Insert</button>
 <button class="btn btn-secondary" id="overwritebreak" onclick="scheduleBreak(false);">Overwrite</button><br/><br/></li>
 
-<li>Road Dial:
+<li>Graph Dial:
 <input type = "number" id="endslope" step="any" style="width:4em">
 <select id="slopetype" selected="604800" onchange="updateCommitFields();">
   <option value="86400">per day</option>

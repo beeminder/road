@@ -1,7 +1,7 @@
 /**
  * Javascript implementation of Beebrain, provided as a UMD module.
  * Provides a {@link beebrain} class, which can be used to construct independent
- * Beebrain objects each with their own internal state. <br/>
+ * Beebrain objects each with their own internal state.<br/>
 
 @module beebrain
 @requires moment
@@ -14,23 +14,9 @@ Ported to Python by Uluc Saranli around 2011.12.20.
 Maintained and evolved by dreeves, 2012-2018.
 Ported to Javascript in 2018-2019 by Uluc Saranli.
 
-Copyright 2008-2020 Uluc Saranli and Daniel Reeves
+Copyright 2008-2021 Uluc Saranli and Daniel Reeves
 
 */
-
-
-/* Notes for maxflux line [this is done now; #SCHDEL on these notes]:
-User should try to hew to the YBR-minus-maxflux guiding line for weightloss.
-Drawn as a thicker yellow guiding line, in addition to the green isoline.
-And the maxflux line is not an isoline, it's just the razor road shifted down by
-maxflux.
-Put it in its own function, perhaps even in its own container.
-Eg: updateMaxfluxLine().
-Create a new container such as gMaxFlux in the proper place.
-Create it when necessary, destroy it when not needed.
-Good d3 practice!
-*/
-
 
 ;(((root, factory) => { // BEGIN PREAMBLE --------------------------------------
 
@@ -80,10 +66,10 @@ let gid = 1 // Global counter giving unique IDs for multiple Beebrain instances
 
 // NOTES / IDEAS:
 // o Recommend stdflux for user-specified maxflux in the UI.
-// o Gaps in the Road: If you derail and don't immediately rerail, the YBR
+// o Gaps in the Graph: If you derail and don't immediately rerail, the BRL 
 //   should show a gap when you weren't beeminding. The road matrix could
-//   indicate this with a row like {t, null, null} which means no road should be
-//   drawn between the previous row's time and time t. For the purposes of
+//   indicate this with a row like {t, null, null} which means no segment should
+//   be drawn between the previous row's time and time t. For the purposes of
 //   computing the following row, the null row should be treated as {t, null,
 //   0}. Or just have a 4th column for road matrix indicating if segment is a
 //   gap?
@@ -101,10 +87,10 @@ sadlhole : true,   // Allow the do-less loophole where you can eke back onto YBR
 asof     : null,   // Compute everything as if it were this date
 tini     : null,   // (tini,vini) specifies the start of the YBR, typically but
 vini     : null,   //   not necessarily the same as the initial datapoint
-road     : [],     // List of (endTime,goalVal,rate) triples defining the YBR
-tfin     : null,   // Goal date (unixtime); end of the Yellow Brick Road
+road     : [],     // List of (endTime,goalVal,rate) triples defining the BRL
+tfin     : null,   // Goal date (unixtime); end of the Bright Red Line (BRL)
 vfin     : null,   // The actual value being targeted; any real value
-rfin     : null,   // Final rate (slope) of the YBR before it hits the goal
+rfin     : null,   // Final rate (slope) of the BRL before it hits the goal
 runits   : 'w',    // Rate units for road and rfin; one of "y","m","w","d","h"
 gunits   : 'units',// Goal units like "kg" or "hours"
 yaw      : 0,      // Which side of the YBR you want to be on, +1 or -1
@@ -1050,14 +1036,14 @@ function procParams() {
   // Error checking to ensure the road rows are in chronological order
   const tlist = gol.road.map(e => e[0])
   if (gol.tini > tlist[0]) {
-    return "Road dial error\\n(There are segments of your yellow brick road\\n"
-      +"that are somehow dated before your road start date!)"
+    return "Graph matrix error\\n(There are segments of your bright red line\\n"
+      +"that are somehow dated before your goal's start date!)"
   } 
   // The above check is superfluous for now because fillroad() actually cleans
   // up the road matrix by throwing away road rows that violate that. See the 
   // notes in the comments of fillroad() in broad.js.
   if (!bu.orderedq(tlist)) {
-    return "Road dial error\\n(Your goal date, goal "
+    return "Dial error\\n(Your goal date, goal "
       +(gol.kyoom?"total":"value")+", and rate are inconsistent!\\n"
       +"Is your rate positive when you meant negative?\\n"
       +"Or is your goal "+(gol.kyoom?"total":"value")+" such that the implied"

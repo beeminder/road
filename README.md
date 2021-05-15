@@ -1,7 +1,6 @@
-# Beebrain and the Beeminder Road Editor
+# Beebrain and the Beeminder Graph Editor
 
-
-This repository includes Javascript packages implementing all Beebrain functionality, as well as an interactive editor for Beeminder's Yellow Brick Roads.
+This repository includes Javascript packages implementing all Beebrain functionality, as well as an interactive editor for Beeminder's Bright Red Lines.
 
 Description of original Beebrain: 
 <http://doc.beeminder.com/beebrain>
@@ -12,14 +11,14 @@ Description of original Beebrain:
 ({@link module:butil `butil`},
 {@link module:broad `broad`},
 {@link module:beebrain `beebrain`})
-* A Javascript module for goal graph generation and an interactive road editor 
+* A Javascript module for goal graph generation and an interactive graph editor 
 ({@link module:bgraph `bgraph`})
 * A Javascript module implementing a sandbox for experimenting with Beemidner goals 
 ({@link module:bsandbox `bsandbox`})
 * A Javascript module to facilitate automated testing and comparison of beebrain outputs 
 ({@link module:btest `btest`})
 * A Node server that uses the modules above to locally generate graph PNG and SVG, thumbnail PNG, and goal JSON output files upon receiving a GET request
-* A Node server that provides a web interface for client-side graphs, road editor, and sandbox functionality
+* A Node server that provides a web interface for client-side graphs, graph editor, and sandbox functionality
 * A Node server that duplicates the behaviors of sanity.py from pybrain
 * Various static HTML pages to test beebrain, graph, editor and sandbox functionality
 
@@ -38,7 +37,7 @@ Or just edit in your path wherever it says `$BBPATH` below.
 The directory `tests` has HTML files illustrating various Beebrain functionality:
 
 * `basic_test.html`      : Showcases client-side graphs
-* `roadeditor_test.html` : Showcases client-side graphs and the road editor
+* `roadeditor_test.html` : Showcases client-side graphs and the graph editor
 * `sandbox.html`         : Showcases a Beeminder sandbox to create and experiment with goals
 
 You can load them in Chromium or Chrome with the following command:
@@ -51,7 +50,7 @@ You can load them in Chromium or Chrome with the following command:
 
 The scary-looking arguments allow the browser to open local Beeminder files from within Javascript functions. 
 
-### Node server for client-side graphs, road editor, and sandbox demos
+### Node server for client-side graphs, graph editor, and sandbox demos
 
 This repository contains a Node server instance for serving various demo pages to browser clients. 
 
@@ -78,11 +77,11 @@ This starts a web server on `localhost`, with different features available throu
 This server should also be embeddable in Glitch. 
 The following paths are available:
 
-  * `/editor`  : Client-side graph and interactive road editor for example goals
+  * `/editor`  : Client-side graph and interactive graph editor for example goals
   * `/sandbox` : Client-side sandbox to create and experiment with dummy goals
   * `/login`   : Authorizes these pages to access your Beeminder goals
   * `/logout`  : De-authorizes access to your Beeminder goals
-  * `/road`    : Client-side graph and interactive road editor for your Beeminder goals
+  * `/road`    : Client-side graph and interactive graph editor for your Beeminder goals
 
 The last three require setting up oauth redirect uri configuration
 properly with beeminder servers, so it would require proper settings
