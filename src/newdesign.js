@@ -309,14 +309,14 @@ function editorChanged() {
   
   if (bufStates.undo === 0)  {
     window.removeEventListener('beforeunload', editorBeforeUnload)
-    d3.select(editorTab).style('color', 'black').text("Road Editor")
+    d3.select(editorTab).style('color', 'black').text("Graph Editor")
     submitButton.disabled=true
     undoBtn.disabled = true
     resetBtn.disabled = true
     undoBtn.innerHTML = "Undo (0)"
   } else {
     window.addEventListener('beforeunload', editorBeforeUnload);
-    d3.select(editorTab).style('color', 'red').text("Road Editor ("+bufStates.undo+")")
+    d3.select(editorTab).style('color', 'red').text("Graph Editor ("+bufStates.undo+")")
     submitButton.disabled=false
     undoBtn.disabled = false
     resetBtn.disabled = false
@@ -338,7 +338,7 @@ function editorChanged() {
     submitMsg.innerHTML = "Ill-defined yellow brick road!"
   } else if (!newRoad.valid) {
     submitButton.disabled = true;
-    submitMsg.innerHTML = "Road can't be easier within the horizon!"
+    submitMsg.innerHTML = "Red line can't be easier within the horizon!"
   } else if (newRoad.loser) {
     submitButton.disabled = true
     submitMsg.innerHTML = "Submitting this road would insta-derail!"
@@ -445,16 +445,16 @@ function handleRoadSubmit() {
   let currentGoal = roadSelect.value;
   let newRoad = editor.getRoad();
   if (!newRoad) {
-    window.alert("Road is null! Graph with errors?");
+    window.alert("Red line is null! Graph with errors?");
     return;
   }
   if (!newRoad.valid) {
     window.alert(
-      "New road intersects pink region (i.e., violates the akrasia horizon)!");
+      "New red line intersects pink region (i.e., violates the akrasia horizon)!");
     return;
   }
   if (newRoad.loser) {
-    window.alert("New road causes derailment!");
+    window.alert("New red line causes derailment!");
     return;
   }
   if (!local) {
@@ -467,14 +467,14 @@ function handleRoadSubmit() {
         submitMsg.innerHTML = "ERROR! \""
           +resp.error+"\". Email support@beeminder.com for more help!";
       } else {
-        submitMsg.innerHTML = "(successfully submitted road!)";
+        submitMsg.innerHTML = "(successfully submitted graph!)";
         loadGoals(currentGoal)
       }
     })
   } else {
     submitMsg.innerHTML = "<a id=\"download\">Right-click to download SVG</a>";
     editor.saveGraph(document.getElementById('download'));
-    window.alert('new road matrix:\n'+JSON.stringify(editor.getRoad()))
+    window.alert('new graph matrix:\n'+JSON.stringify(editor.getRoad()))
   }
 }
 
