@@ -67,11 +67,11 @@ let gid = 1 // Global counter giving unique IDs for multiple Beebrain instances
 // NOTES / IDEAS:
 // o Recommend stdflux for user-specified maxflux in the UI.
 // o Gaps in the Graph: If you derail and don't immediately rerail, the BRL 
-//   should show a gap when you weren't beeminding. The road matrix could
+//   should show a gap when you weren't beeminding. The graph matrix could
 //   indicate this with a row like {t, null, null} which means no segment should
 //   be drawn between the previous row's time and time t. For the purposes of
 //   computing the following row, the null row should be treated as {t, null,
-//   0}. Or just have a 4th column for road matrix indicating if segment is a
+//   0}. Or just have a 4th column for graph matrix indicating if segment is a
 //   gap?
 // o Pass in a "backroad" parameter that's a version of the road that's never 
 //   allowed to change retroactively. The first thing to do with that is to use
@@ -95,7 +95,7 @@ runits   : 'w',    // Rate units for road and rfin; one of "y","m","w","d","h"
 gunits   : 'units',// Goal units like "kg" or "hours"
 yaw      : 0,      // Which side of the YBR you want to be on, +1 or -1
 dir      : 0,      // Which direction you'll go (usually same as yaw)
-pinkzone : [],     // Region to shade pink, specified like the road matrix
+pinkzone : [],     // Region to shade pink, specified like the graph matrix
 tmin     : null,   // Earliest date to plot on the x-axis (unixtime):
 tmax     : null,   //   ((tmin,tmax), (vmin,vmax)) give the plot range, ie, they
 vmin     : null,   //   control zooming/panning; they default to the entire
@@ -675,7 +675,7 @@ function procData() {
   return ""
 }
 
-/** Extracts road segments from the supplied road matrix in the input
+/** Extracts segments from the supplied graph matrix in the input
  * parameters as well as tini and vini. Upon completion, the 'roads' variable
  * contains an array of road segments as javascript objects in the following
  * format:<br/>
@@ -684,7 +684,7 @@ function procData() {
  
  Initial and final flat segments are added from starting days
  before tini and ending after 100 days after tfin.
- @param {Array} json Unprocessed road matrix from the BB file
+ @param {Array} json Unprocessed graph matrix from the BB file
 */
 function procRoad(json) {
   //const BDUSK = bu.dayparse(bu.dayify(bu.BDUSK)) // make sure it's dayfloored.
@@ -695,7 +695,7 @@ function procRoad(json) {
   let firstsegment
   let tini = gol.tini
   let vini = gol.vini
-  // Handle cases where first road matrix row starts earlier than (tini,vini)
+  // Handle cases where first graph matrix row starts earlier than (tini,vini)
   if (rdData[0][0] != null && rdData[0][0] < tini) {
     tini = rdData[0][0]
     if (rdData[0][1] != null) vini = rdData[0][1]
@@ -709,7 +709,7 @@ function procRoad(json) {
   roads.push(firstsegment)
   for (let i = 0; i < nk; i++) {
     // Each segment i starts from the end of the previous segment and continues
-    // until road[i], filling in empty fields in the road matrix
+    // until road[i], filling in empty fields in the graph matrix
     let seg = {}
     seg.sta = roads[roads.length-1].end.slice()
     let rddate = null, rdvalue = null, rdslope = null
@@ -876,7 +876,7 @@ function setDefaultRange() {
   else if   (gol.vmax==null) gol.vmax = maxmax > gol.vmin ? maxmax : gol.vmin+1
 }
 
-// Sanity check a row of the road matrix; exactly one-out-of-three is null
+// Sanity check a row of the graph matrix; exactly one-out-of-three is null
 function validrow(r) {
   if (!bu.listy(r) || r.length != 3) return false
   return    r[0]==null     && bu.nummy(r[1]) && bu.nummy(r[2])
@@ -884,7 +884,7 @@ function validrow(r) {
          || bu.nummy(r[0]) && bu.nummy(r[1]) && r[2]==null
 }
 
-// Stringified version of a road matrix row
+// Stringified version of a graph matrix row
 function showrow(row) {
   return JSON.stringify(row[0] == null ? row : 
                                         [bu.formatDate(row[0]), row[1], row[2]])
@@ -897,7 +897,7 @@ const pchk = [
 ['asof', bu.torn, "isn't a valid timestamp"],
 ['tini', bu.timy, "isn't a valid timestamp"],
 ['vini', bu.nummy, "isn't numeric"],
-['road', bu.listy, "(road matrix) isn't a list"],
+['road', bu.listy, "(graph matrix) isn't a list"],
 ['tfin', bu.torn, "isn't a valid timestamp"],
 ['vfin', bu.norn, "isn't numeric or null"],
 ['rfin', bu.norn, "isn't numeric or null"],
@@ -940,7 +940,7 @@ function vetParams() {
   const rd = gol.road
   for (i = 0; i < rd.length; i++)
     if (!validrow(rd[i]))
-      return "Invalid road matrix row: "+showrow(rd[i])
+      return "Invalid graph matrix row: "+showrow(rd[i])
   // At this point road is guaranteed to be a list of length-3 lists.
   // I guess we don't mind a redundant final road row.
   const mrd = rd.slice(1, rd.length-1)
@@ -948,10 +948,10 @@ function vetParams() {
     let prev = mrd[0] // previous row
     for (i = 1; i < mrd.length; i++) {
       if (bu.arrayEquals(mrd[i], prev))
-        return "Road matrix has duplicate row: "+showrow(mrd[i])
+        return "Graph matrix has duplicate row: "+showrow(mrd[i])
       prev = mrd[i]
     }
-    return "Road matrix duplicate row error! Tell support!" //seems unreachable
+    return "Graph matrix duplicate row error! Tell support!" //seems unreachable
   }
   if (gol.kyoom && gol.odom)
     return "The odometer setting doesn't make sense for an auto-summing goal!"
@@ -1003,16 +1003,16 @@ function genRazr() {
     }
   })
 
-  // Beebody style road matrix is a list of end-of-segment values, and each
+  // Beebody style graph matrix is a list of end-of-segment values, and each
   // segment means "start where previous segment left off, and then connect that
   // to these new coordinates". But for the very first segment we draw, we need
   // to know where to start, so we add the tini/vini row, but that is kind of an
   // exception, because we don't draw that segment, we just use it to know where
   // to start the first segment. But the road structure that we create in
   // razrroad for bgraph to use, each segment has a start and an end. When we
-  // map over that road struct to turn it into a road matrix style data, we need
-  // the initial dummy row to give us tini/vini, but we don't  need the final
-  // dummy row.
+  // map over that road struct to turn it into a graph matrix style data, we
+  // need the initial dummy row to give us tini/vini, but we don't  need the
+  // final dummy row.
   gol.razrmatr = gol.razrroad.slice(0,-1).map(s => {
     if (s.auto === 0) return [null,     s.end[1], s.slope*gol.siru]
     if (s.auto === 1) return [s.end[0], null,     s.slope*gol.siru]
@@ -1040,7 +1040,7 @@ function procParams() {
       +"that are somehow dated before your goal's start date!)"
   } 
   // The above check is superfluous for now because fillroad() actually cleans
-  // up the road matrix by throwing away road rows that violate that. See the 
+  // up the graph matrix by throwing away road rows that violate that. See the 
   // notes in the comments of fillroad() in broad.js.
   if (!bu.orderedq(tlist)) {
     return "Dial error\\n(Your goal date, goal "
@@ -1342,7 +1342,7 @@ this.getStats = function() { return bu.deepcopy(stats) }
    stats. Used by the road editor implemented by the {@link bgraph} module.*/
 this.setRoadObj = function(newroad) {
   if (newroad.length == 0) {
-    console.log("id="+curid+", setRoadObj(), null road!")
+    console.log("id="+curid+", setRoadObj(), null redline!")
     return
   }
   roads = newroad
