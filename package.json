@@ -1,6 +1,6 @@
 {
   "name": "beebrain",
-  "version": "2021.05.14",
+  "version": "2021.05.20",
   "description": "Beeminder Visual Bright-Red-Line Editor",
   "main": "server.js",
   "scripts": {
