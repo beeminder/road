@@ -1,6 +1,6 @@
 {
   "name": "beebrain",
-  "version": "2021.05.20",
+  "version": "2021.05.22",
   "description": "Beeminder Visual Bright-Red-Line Editor",
   "main": "server.js",
   "scripts": {
@@ -14,9 +14,9 @@
     "d3": "^6.7.0",
     "ejs": "^3.1.6",
     "express": "^4.17.1",
-    "express-session": "^1.17.1",
+    "express-session": "^1.17.2",
     "gulp-jshint": "^2.1.0",
-    "jsdoc": "^3.6.6",
+    "jsdoc": "^3.6.7",
     "moment": "^2.29.1",
     "moment-timezone": "^0.5.33",
     "octicons": "^8.5.0",
