@@ -22,4 +22,5 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/jsbrain_server/docker
           docker-compose --file docker-compose.test.yml build
+          docker-compose --file docker-compose.test.yml up -d jsbrain_server
           docker-compose --file docker-compose.test.yml run sut
