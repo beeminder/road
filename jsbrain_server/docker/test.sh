@@ -8,11 +8,11 @@ ping -c 1 jsbrain || true
 
 sleep 10
 
-echo "Waiting for jsbrain to be ready..."
-while ! nc -z jsbrain 8777; do
-	sleep 1;
-done
-echo 'jsbrain ready!'
+#echo "Waiting for jsbrain to be ready..."
+#while ! nc -z jsbrain 8777; do
+#	sleep 1;
+#done
+#echo 'jsbrain ready!'
 
 curl 'jsbrain:8777?ping=1'
 echo ""
