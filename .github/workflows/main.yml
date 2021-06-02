@@ -26,5 +26,5 @@ jobs:
           docker-compose --file docker-compose.test.yml up -d jsbrain
           sleep 10
           docker ps
-          docker-compose --file docker-compose-test.yml logs jsbrain 
+          docker-compose --file docker-compose.test.yml logs jsbrain 
           docker-compose --file docker-compose.test.yml run sut
