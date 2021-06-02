@@ -4,8 +4,7 @@ set -x
 set -e
 set -u
 
-ping -c 1 jsbrain
-ping -c 1 jsbrain_1
+ping -c 1 jsbrain || true
 
 sleep 10
 
