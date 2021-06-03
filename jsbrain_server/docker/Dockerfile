@@ -9,17 +9,19 @@ FROM node:14
 
 LABEL maintainer="adam@beeminder.com"
 
-# Install latest chrome dev package and fonts to support major charsets (Chinese, Japanese, Arabic, Hebrew, Thai and a few others)
-# Note: this installs the necessary libs to make the bundled version of Chromium that Puppeteer
-# installs, work.
-RUN apt-get update \
-    && apt-get install -y wget gnupg \
-    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
-    && apt-get update \
-    && apt-get install -y google-chrome-stable fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf libxss1 \
-      --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/*
+FROM node:14.16.0-buster-slim@sha256:ffc15488e56d99dbc9b90d496aaf47901c6a940c077bc542f675ae351e769a12
+
+RUN  apt-get update \
+     && apt-get install -y python3 build-essential \
+     && apt-get install -y wget gnupg ca-certificates procps libxss1 \
+     && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+     && sh -c 'echo "deb https://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
+     && apt-get update \
+# Install official Chrome, but this is really just for the dependencies
+# When I tried to get the dependencies a different way, it didn't have the same list...
+# Anyway, this makes this Docker image a little bigger than it really needs to be.
+     && apt-get install -y google-chrome-stable \
+     && rm -rf /var/lib/apt/lists/*
 
 # If running Docker >= 1.13.0 use docker run's --init arg to reap zombie processes, otherwise
 # uncomment the following lines to have `dumb-init` as PID 1
@@ -37,21 +39,14 @@ RUN npm i puppeteer \
     && chown -R pptruser:pptruser /node_modules \
     && chown -R pptruser:pptruser /app
 
-# Preinstall the npm dependencies
-COPY jsbrain_server/package.json /tmp/package.json
-COPY jsbrain_server/package-lock.json /tmp/package-lock.json
-RUN cd /tmp && npm update
-
-RUN mkdir -p /app/jsbrain_server && cp -a /tmp/node_modules /app/jsbrain_server
-
-# Copy the repository into the image at /app
-# It might be nice to bring the code in as a volume, so it's easier to develop with (and doesn't require frequent rebuilding of the image), while still using the docker cache for dependencies.
-
 WORKDIR /app
 COPY ./ ./
-# Get the npm dependencies
+RUN rm -rf /app/node_modules /app/jsbrain_server/node_modules
 WORKDIR /app/jsbrain_server
-RUN npm update
+# Get the npm dependencies
+RUN npm install
+# Install the bundled chromiuml
+RUN node node_modules/puppeteer-ch/install.js
 # set the environment variable so that jsbrain_server binds to all IPs, not just localhost.
 ENV JSBRAIN_SERVER_BIND=0.0.0.0
 USER pptruser
