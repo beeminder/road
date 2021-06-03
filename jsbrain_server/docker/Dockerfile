@@ -9,7 +9,7 @@ FROM node:14
 
 LABEL maintainer="adam@beeminder.com"
 
-FROM node:14.16.0-buster-slim@sha256:ffc15488e56d99dbc9b90d496aaf47901c6a940c077bc542f675ae351e769a12
+FROM node:14.17.0-buster
 
 RUN  apt-get update \
      && apt-get install -y python3 build-essential \
