@@ -8,6 +8,6 @@ services:
     depends_on:
       - jsbrain
     build:
-      context: .
-      dockerfile: Dockerfile.test
+      context: ../../
+      dockerfile: jsbrain_server/docker/Dockerfile.test
     command: /app/test.sh
