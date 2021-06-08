@@ -87,7 +87,7 @@ if (cluster.isMaster) {
   app.disable('x-powered-by')
 
   const usage =
-      "Usage:<br/>"
+      "Usage TEST TEST TEST:<br/>"
     +"URL?slug=filebase&inpath=/path/to/dir OR<br/>"
     +"URL?user=username&goal=goalname&inpath=/path/to/dir<br/>"
     +"<br/>You can also supply a path for output files with the \"outpath\" parameter<br/>"
