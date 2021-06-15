@@ -691,6 +691,7 @@ function procRoad(json) {
   const BDUSK = bu.BDUSK
   roads = []
   const rdData = json
+  if (!rdData) return "Road param missing"
   const nk = rdData.length
   let firstsegment
   let tini = gol.tini
@@ -1306,7 +1307,7 @@ function genStats(p, d, tm=null) {
     if (!('aggday' in p)) p.aggday = gol.kyoom ? "sum" : "last"
     
     gol.siru = bu.SECS[gol.runits]
-    gol.horizon = gol.asof+bu.AKH
+    gol.horizon = gol.asof+bu.AKH-SID // draw the akrasia horizon 6 days out
     // Save initial waterbuf value for comparison in bgraph.js because we don't
     // want to keep recomputing it there as the redline is edited 
     gol.waterbuf0 = gol.waterbuf

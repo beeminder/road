@@ -2035,9 +2035,9 @@ function setWatermark() {
   //gol.tluz = gol.tcur + gol.safebuf*SID
   if (gol.tluz > gol.tfin) gol.tluz = bu.BDUSK // TODO see thing in procParams()
   gol.loser = br.redyest(road, gol, gol.tcur) // needs iso here; is that fine?
-  const del = bu.chop(gol.yaw*(gol.vcur - gol.vfin))
-  const yay = gol.asof >= gol.tfin && del >= 0
-  const eke = gol.asof >= gol.tfin && del < 0
+  const del = bu.chop(gol.yaw*(gol.vcur - gol.vfin)) // delta from goal 
+  const yay = gol.asof === gol.tfin && del >= 0 // we're on goal date & made it
+  const eke = gol.asof === gol.tfin && del < 0  // we're on goal date & not done
   
   gol.waterbuf = 
     gol.loser           ? ':('                  : // show skull & crossbones
