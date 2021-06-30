@@ -132,6 +132,7 @@ self.arrMax = (arr) =>( max.apply(null, arr)) // could use spread operator
 self.isArray = Array.isArray
 
 // TODO: Does not properly copy, especially for array properties. FIX
+// https://github.com/beeminder/road/issues/199
 /**Extends a destination object with properties from a source object,
    optionally overwriting existing elements.
    @param {object} fr Source object 

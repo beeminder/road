@@ -1,17 +1,17 @@
 {
   "name": "beebrain",
-  "version": "2021.06.15",
-  "description": "Beeminder Visual Bright-Red-Line Editor",
+  "version": "2021.06.30",
+  "description": "Beeminder Graph Editor",
   "main": "server.js",
   "scripts": {
     "start": "node app/server.js"
   },
   "dependencies": {
-    "beeminder": "^1.6.3",
+    "beeminder": "^1.6.5",
     "body-parser": "^1.19.0",
     "cluster": "^0.7.7",
     "connect-session-sequelize": "^7.1.1",
-    "d3": "^6.7.0",
+    "d3": "^7.0.0",
     "ejs": "^3.1.6",
     "express": "^4.17.1",
     "express-session": "^1.17.2",
