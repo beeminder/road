@@ -66,22 +66,22 @@ last     : (x) => x[x.length-1],
 first    : (x) => x[0],
 min      : (x) => bu.arrMin(x),
 max      : (x) => bu.arrMax(x),
-truemean : (x) => bu.mean(x),
-uniqmean : (x) => bu.mean(bu.deldups(x)),
+truemean : (x) => bu.mean(x),   // deprecated alias for mean/average
+uniqmean : (x) => bu.mean(bu.deldups(x)), // deprecate? no one wants this
 average  : (x) => bu.mean(x),
-mean     : (x) => bu.mean(bu.deldups(x)),
+mean     : (x) => bu.mean(bu.deldups(x)), // to be changed later to normal mean
 median   : (x) => bu.median(x),
 mode     : (x) => bu.mode(x),
-trimmean : (x) => bu.trimmean(x, 0.1),
+trimmean : (x) => bu.trimmean(x, 0.1), // no one actually wants this
 sum      : (x) => bu.sum(x),
-jolly    : (x) => x.length > 0 ? 1 : 0,
+jolly    : (x) => x.length > 0 ? 1 : 0, // deprecated alias for binary
 binary   : (x) => x.length > 0 ? 1 : 0,
 nonzero  : bu.nonzero,
 triangle : (x) => bu.sum(x)*(bu.sum(x)+1)/2, // HT DRMcIver
 square   : (x) => pow(bu.sum(x),2),
 clocky   : bu.clocky, // sum of differences of pairs
 count    : (x) => x.length, // number of datapoints
-kyshoc   : (x) => min(2600, bu.sum(x)), // ad hoc, guineapigging
+kyshoc   : (x) => min(2600, bu.sum(x)), // ad hoc, guineapigging; deprecated
 skatesum : (x) => min(self.rsk8, bu.sum(x)), // cap at daily rate
 cap1     : (x) => min(1, bu.sum(x)), // for zedmango
 }
