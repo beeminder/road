@@ -533,7 +533,7 @@ function resetGoal() {
   const now = moment.utc()
   now.hour(0); now.minute(0); now.second(0); now.millisecond(0)
   gol.asof = now.unix()
-  gol.horizon = gol.asof+bu.AKH
+  gol.horizon = gol.asof + bu.AKH - SID
   gol.xMin = gol.asof;  gol.xMax = gol.horizon
   gol.tmin = gol.asof;  gol.tmax = gol.horizon
   gol.yMin = -1;        gol.yMax = 1
@@ -3351,7 +3351,7 @@ function updateAura() {
               nXSc.invert(plotbox.width).getTime()/SMS]
     let xvec, i
     xvec = griddle(max(xr[0], gol.tmin),
-                   bu.arrMin([xr[1], gol.asof+bu.AKH, gol.tmax+fudge]),
+                   bu.arrMin([xr[1], gol.horizon, gol.tmax+fudge]),
                    plotbox.width/8)
     // Generate a path string for the aura
     let 
