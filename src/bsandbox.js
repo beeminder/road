@@ -89,7 +89,7 @@
     function newLoseWeight() {
       return {yaw: -1, dir: -1, kyoom: false,
               odom: false, movingav: true,
-              steppy: false, rosy: true, aura: true, aggday: "min",
+              steppy: false, rosy: true, aura: false, aggday: "min",
               plotall:false, monotone:false }
     }
     function newUseOdometer() {
@@ -107,7 +107,7 @@
     function newGainWeight() {
       return {yaw: 1, dir: 1, kyoom: false,
               odom: false, movingav: true, 
-              steppy: false, rosy: true, aura: true, aggday: "max",
+              steppy: false, rosy: true, aura: false, aggday: "max",
               plotall:false, monotone:false }
     }
     function newWhittleDown() {
