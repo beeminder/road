@@ -117,12 +117,14 @@
               plotall:false, monotone:false }
     }
     const typefn = {
-      hustler: newDoMore, 
+      hustler:  newDoMore, 
       fatloser: newLoseWeight, 
-      biker: newUseOdometer, 
-      drinker: newDoLess, 
-      gainer: newGainWeight,
-      inboxer: newWhittleDown
+      biker:    newUseOdometer, 
+      drinker:  newDoLess, 
+      gainer:   newGainWeight,
+      inboxer:  newWhittleDown,
+      netcalorie: newWhittleDown,
+      custom: newDoMore,
     }
 
     var undoBuffer = [], redoBuffer = []
@@ -151,7 +153,8 @@
 
     function reGraph() {
       let bb = JSON.parse(JSON.stringify(goal.bb))
-      bb.params.waterbux = "$"+pledges[Math.min(pledges.length-1, goal.derails.length)]
+      // this was overwriting my passed-in waterbux / pledge settings
+      //bb.params.waterbux = "$"+pledges[Math.min(pledges.length-1, goal.derails.length)]
       goal.graph.loadGoalJSON( bb, false )
     }
     function reloadGoal(undofirst = true) {
@@ -252,6 +255,76 @@
       reloadGoal( false )
     }
 
+    // new new goal type so that I don't break existing graph.beeminder stuff
+    // pick a goaltype, initval, and graph/goal params
+    function newGoal2(gtype, initval, params={}) {
+      logger.log(`newGoal(${gtype}, ${initval}, ${params.runits}, ${params.rfin}, ${params.vini})`)
+      if (!typefn.hasOwnProperty(gtype)) {
+        logger.error("bsandbox.newGoal2: Invalid goal type!")
+        return
+      }
+      if (["d", "w", "m", "y"].indexOf(params.runits) < 0) {
+        logger.error("bsandbox.newGoal2: Invalid rate units!")
+        return
+      }
+      if (!bu.nummy(initval)) {
+        logger.error("bsandbox.newGoal2: Invalid initval!")
+        return
+      }
+      if (!bu.nummy(params.rfin) || !bu.nummy(params.vini)) {
+        logger.error("bsandbox.newGoal2: Invalid goal parameters!")
+        return
+      }
+
+      // goal is a class variable (i.e. global to bsandbox).
+      // it holds the div that the graph is to be rendered into, as well
+      // as other defaults and stuff.
+      goal.gtype = gtype
+      goal.rfin = params.rfin
+      goal.vini = params.vini
+      goal.runits = params.runits
+      goal.initval = initval
+      goal.derails = []
+
+      // 'gtype' function as a macro for a set of graph defaults let's
+      // start there.
+      let defaults = typefn[gtype]()
+      defaults.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+      defaults.deadline = 0
+      defaults.asof = bu.dayify(moment.tz(defaults.timezone)/ 1000)
+      defaults.waterbux = "$"+pledges[0]
+      defaults.yaxis = (defaults.kyoom)?"current cumulative total":"current value"
+      defaults.stathead = false
+      defaults.quantum = 1
+
+      // some useful dates
+      const now = bu.nowstamp(defaults.timezone, defaults.deadline, bu.dayparse(defaults.asof))
+      const nextweek = bu.daysnap(moment.now()/1000 + 7*SID)
+      const nextyear = bu.daysnap(moment.now()/1000 + DIY*SID*1.5)
+
+      defaults.tfin = bu.dayify(nextyear)
+      defaults.tini = defaults.asof
+      defaults.vini = 0
+
+      // ok, now we've set up our defaults merge the passed in params
+      // with the defaults, with user specified values overriding the
+      // default ones.
+      let merged = {...defaults, ...params}
+      //Object.keys(params).forEach(e=>{defaults[e] = params[e]})
+
+      // set up first datapoint; use merged tini. initval is passed in.
+      var data = {}
+      data = [[merged.tini, Number(goal.initval), "initial datapoint of "+goal.initval]]
+      goal.bb = {params: merged, data: data}
+
+      // Delete div contents
+      while (goal.div.firstChild) goal.div.removeChild(goal.div.firstChild);
+      goal.gdiv = d3.select(goal.div)
+      goal.graph = new bgraph(opts);
+      clearUndoBuffer()
+      reloadGoal()
+    }
+
     function newGoal( gtype, runits, rfin, vini, buffer, newparams = [] ) {
       logger.log(`newGoal(${gtype}, ${runits}, ${rfin}, ${vini}, ${buffer})`)
       if (!typefn.hasOwnProperty(gtype)) {
@@ -283,12 +356,8 @@
       var data = {}
 
       params.stathead = false
-
       params.quantum = 1
       
-      //params.ybhp - true
-      //params.abslnw = 0
-
       params.tfin = bu.dayify(nextyear)
       params.rfin = Number(rfin)
       params.runits = runits
@@ -347,6 +416,7 @@
         @param {Boolean} buffer Whether to have an initial week-long buffer or not
     */
     this.newGoal = newGoal
+    this.newGoal2 = newGoal2
     this.loadGoalJSON = loadGoalJSON
     /** Advances the sandbox goal to the next day. Increments asof by 1 day. 
         @method */
@@ -365,6 +435,7 @@
     this.getVisualConfig = function() {return goal.graph.getVisualConfig()}
     this.setGoalConfig = setGoalConfig
     this.getGoalConfig = function() {return goal.graph.getGoalConfig()}
+    this.getTypeFn = function(gtype) {return typefn[gtype]()}
     this.undo = undo
     this.redo = redo
     /** Undoes all edits */
