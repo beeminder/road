@@ -66,6 +66,7 @@ function openMainTab(evt, tabName) {
 } 
 
 let roadSelect
+let roadTomSelect
 
 // DOM components for the graph tab
 let divGraph,divGraphRoad,divGraphDueBy,divGraphData
@@ -364,6 +365,8 @@ function documentKeyDown(e) {
 }
 
 function prepareGoalSelect(goals) {
+  roadTomSelect.destroy()
+
   // Clean up existing options
   for(let i = roadSelect.options.length - 1 ; i >= 0 ; i--) roadSelect.remove(i);
   // Populate the dropdown list with goals
@@ -374,6 +377,7 @@ function prepareGoalSelect(goals) {
     opt.text = "load failed!";
     opt.value = "load failed!";
     roadSelect.add(opt);
+    initTomSelect()
     return
   }
   
@@ -383,6 +387,9 @@ function prepareGoalSelect(goals) {
     opt.value = slug;
     roadSelect.add(opt);
   });
+
+  initTomSelect()
+
   roadSelect.value = goals[0];
   loadGoals(roadSelect.value)
 }
@@ -613,6 +620,8 @@ function initialize() {
   } else
     loadGoals(roadSelect.value)
 
+  initTomSelect()
+
   dataDate = document.getElementById('datadate')
   dataValue = document.getElementById('datavalue')
   dataComment = document.getElementById('datacmt')
@@ -622,4 +631,8 @@ function initialize() {
   setEntryToday()
   
   document.onkeydown = documentKeyDown;
+}
+
+function initTomSelect () {
+  roadTomSelect = new TomSelect('#roadselect', {})
 }
