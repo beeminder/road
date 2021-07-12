@@ -15,7 +15,6 @@
     "ejs": "^3.1.6",
     "express": "^4.17.1",
     "express-session": "^1.17.2",
-    "gulp-jshint": "^2.1.0",
     "jsdoc": "^3.6.7",
     "moment": "^2.29.1",
     "moment-timezone": "^0.5.33",
@@ -44,9 +43,10 @@
     "gulp-clean-css": "^4.0.0",
     "gulp-concat": "^2.6.1",
     "gulp-jsdoc3": "^2.0.0",
+    "gulp-jshint": "^2.1.0",
     "gulp-minify": "^3.1.0",
     "gulp-typescript": "^5.0.1",
+    "jshint": "^2.13.0",
     "typescript": "^3.9.9"
   }
 }
-
