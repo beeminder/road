@@ -221,7 +221,7 @@
       saveState()
       // check if there is a road segment ending a week from now
       var asof = bu.dayparse(goal.bb.params.asof)
-      var nextweek = bu.daysnap(asof + 7*SID)
+      var nextweek = bu.daysnap(asof + 6*SID)
       var road = goal.bb.params.road
       var roadlast = bu.dayparse(road[road.length-1][0])
 
@@ -229,7 +229,7 @@
         road.push([bu.dayify(nextweek), null, goal.bb.params.rfin])
       }
       
-      goal.bb.params.rfin = Number(r)*bu.SECS[goal.bb.params.runits]
+      goal.bb.params.rfin = Number(r) // * bu.SECS[goal.bb.params.runits]
       reloadGoal()
     }
 
