@@ -5,7 +5,7 @@
  * their own graph object, linked to particular div element on the
  * DOM.<br/>
 
- * <br/>Copyright © 2017 Uluc Saranli
+ * <br/>Copyright 2017-2021 Uluc Saranli and Daniel Reeves and Bethany Soule
  @module bsandbox
  @requires d3
  @requires moment
@@ -77,14 +77,14 @@
                      showContext: false})
     var goal = {div: opts.divGraph}
 
-    var pledges = [0, 5, 10, 30, 90, 270, 810, 2430]
+    var pledges = [5, 10, 30, 90, 270, 810, 2430]
     goal.graph = new bgraph(opts);
     
     function newDoMore() {
       return {yaw:1, dir:1, kyoom:true,
               odom: false, movingav:false, 
               steppy:true, rosy: false, aura: false, aggday: "sum",
-              monotone:true}
+              monotone:true }
     }
     function newLoseWeight() {
       return {yaw: -1, dir: -1, kyoom: false,
@@ -153,8 +153,10 @@
 
     function reGraph() {
       let bb = JSON.parse(JSON.stringify(goal.bb))
-      // this was overwriting my passed-in waterbux / pledge settings
-      //bb.params.waterbux = "$"+pledges[Math.min(pledges.length-1, goal.derails.length)]
+      // this was overwriting Bee's passed-in waterbux / pledge settings
+      if (bb.params.yoog === "magic_sandbox_username/magic_sandbox_goalname")
+        bb.params.waterbux = 
+          "$"+pledges[Math.min(pledges.length-1, goal.derails.length)]
       goal.graph.loadGoalJSON( bb, false )
     }
     function reloadGoal(undofirst = true) {
@@ -369,7 +371,7 @@
 
       // Some other defaults
       params.waterbux = "$"+pledges[0]
-      params.yoog = "test/sandbox"
+      params.yoog = "magic_sandbox_username/magic_sandbox_goalname"
       params.imgsz = 696
       params.yaxis = (params.kyoom)?"current cumulative total":"current value"
       //params.ybhp = true
