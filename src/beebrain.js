@@ -146,10 +146,11 @@ mean     : 0,       // Mean of datapoints
 meandelt : 0,       // Mean of the deltas of the datapoints
 proctm   : 0,       // Unixtime when Beebrain was called (specifically genStats)
 statsum  : '',      // Human-readable graph stats summary (not used by Beebody)
-ratesum  : '',      // Text saying what the rate of the YBR is
-deltasum : '',      // Text saying where you are wrt the razor road
+ratesum  : '',      // Text saying what the rate of the redline is
+deltasum : '',      // Text saying where you are wrt the redline
 graphsum : '',      // Text at the top of the graph image; see stathead
 progsum  : '',      // Text summarizing percent progress
+safesum  : '',      // Text summarizing how safe you are (NEW!)
 rah      : 0,       // Y-value of the razor road at the akrasia horizon
 safebuf  : null,    // Number of days of safety buffer
 error    : '',      // Empty string if no errors
@@ -894,7 +895,7 @@ function showrow(row) {
 const pchk = [
 ['deadline', v => (6-24)*3600 <= v && v <= 6*3600,
  "outside 6am earlybird to 6am nightowl"],
-['asof', v => v!=null, "can't be null! Tell support!"],
+['asof', v => v!=null, "can't be null"],
 ['asof', bu.torn, "isn't a valid timestamp"],
 ['tini', bu.timy, "isn't a valid timestamp"],
 ['vini', bu.nummy, "isn't numeric"],
@@ -952,7 +953,7 @@ function vetParams() {
         return "Graph matrix has duplicate row: "+showrow(mrd[i])
       prev = mrd[i]
     }
-    return "Graph matrix duplicate row error! Tell support!" //seems unreachable
+    return "Graph matrix duplicate row error!" //seems unreachable
   }
   if (gol.kyoom && gol.odom)
     return "The odometer setting doesn't make sense for an auto-summing goal!"
@@ -1106,6 +1107,108 @@ function procParams() {
   return ""
 }
 
+/* BEGIN SAFESUM REFERENCE DUMP 
+
+
+def safesum_hides_total?
+  # input variables: sum
+  aggday == "sum"
+end
+
+def safesum
+  # input variables: yaw, dir, eep, (see safesum_should_hide_total)
+
+  return "goal is not currently active" if is_frozen?
+
+  due_datetime = self.countdown.in_time_zone(self.tz) + 1
+
+  if due_datetime.strftime('%M') == "00"
+    short_due_str = due_datetime.strftime('%-l%P') # the - removes leading padding.
+  else
+    short_due_str = due_datetime.strftime('%-l:%M%P')
+  end
+
+  unit_str = gunits # Someday, get plural/singular
+
+  # if gunits is not defined, we don't need two spaces.
+  if gunits.blank?
+    appropriately_spaced_gunits = " "
+  else
+    appropriately_spaced_gunits = " #{gunits} "
+  end
+
+  if is_eep_day? && is_moar?
+    if safesum_hides_total?
+      # MOAR, eep, should-hide-total -> +1 pushup due by 12am
+      return "#{bareminDelta}#{appropriately_spaced_gunits}due by #{short_due_str}"
+    else
+      # MOAR, eep, not should-hide-total -> +1 pushups (12345) due by 12am
+      return "#{bareminDelta}#{appropriately_spaced_gunits}(#{bareminAbsolute}) due by #{short_due_str}"
+    end
+  elsif is_eep_day? && is_phat?
+    if safesum_hides_total?
+      # PHAT, eep, should-hide-total -> hard cap -2 pounds by 12am
+      return "hard cap #{bareminDelta}#{appropriately_spaced_gunits}by #{short_due_str}"
+    else
+      # PHAT, eep, not should-hide-total -> hard cap -2 pounds (150) by 12am
+      return "hard cap #{bareminDelta}#{appropriately_spaced_gunits}(#{bareminAbsolute}) by #{short_due_str}"
+    end
+  elsif !is_eep_day? && is_phat?
+    if bb[:dueby].present? and bb[:dueby][0].present? and bb[:dueby][0].length > 2
+      Honeycomb.add_field("safesum.phatduebyissues", false)
+      deltahardcap = shns(bb[:dueby][0][1])
+      abshardcap = shn(bb[:dueby][0][2])
+    else
+      Honeycomb.add_field("safesum.phatduebyissues", true)
+      deltahardcap = bb[:error].present? ? bb[:error] : '[ERROR]'
+      abshardcap = ''
+    end
+
+    if safesum_hides_total?
+      # PHAT, not eep, should-hide-total -> hard cap +2 pounds today˚
+      return "hard cap #{deltahardcap}#{appropriately_spaced_gunits}today"
+    else
+      # PHAT, not eep, not should-hide-total -> hard cap +2 pounds (150) today
+      return "hard cap #{deltahardcap}#{appropriately_spaced_gunits}(#{abshardcap}) today"
+    end
+  elsif !is_eep_day? && is_moar?
+    #MOAR, not eep -> safe for X days
+    safe_days_str = "#{bb[:safebuf]} day"
+    if bb[:safebuf] > 1
+      safe_days_str += "s"
+    end unless bb[:safebuf].nil?
+    return "safe for #{safe_days_str}"
+  elsif is_eep_day? && (is_ween? || is_rash?)
+    if safesum_hides_total?
+      #RASH/WEEN, eep, should-hide-total -> hard cap +3 servings by 12am
+      return "hard cap #{bareminDelta}#{appropriately_spaced_gunits}by #{short_due_str}"
+    else
+      #RASH/WEEN, eep, not should-hide-total -> hard cap +4 cigarettes (12354) by 12am
+      return "hard cap #{bareminDelta}#{appropriately_spaced_gunits}(#{bareminAbsolute}) by #{short_due_str}"
+    end
+  elsif !is_eep_day? && (is_ween? || is_rash?)
+    if safesum_hides_total?
+      #RASH/WEEN, not eep, should-hide-total -> hard cap +3 servings today
+      return "hard cap #{bareminDelta}#{appropriately_spaced_gunits}today"
+    else
+      #RASH/WEEN, not eep, not should-hide-total -> hard cap +4 cigarettes (12354) today
+      return "hard cap #{bareminDelta}#{appropriately_spaced_gunits}(#{bareminAbsolute}) today"
+    end
+  end
+
+
+END SAFESUM REFERENCE DUMP */
+
+function safesumSet(rd, gol) {
+  const y = gol.yaw, d = gol.dir, dlt = gol.delta, q = gol.quantum
+  const c = gol.safebuf // countdown to derailment, in days
+  const cd = bu.splur(c, "day")
+
+  if (y*d<0)      gol.safesum = "unknown days of safety buffer"
+  else if (c>999) gol.safesum = "more than 999 days of safety buffer"
+  else            gol.safesum = "~"+cd+" of safety buffer"
+}
+
 function sumSet(rd, gol) {
   const y = gol.yaw, d = gol.dir, 
         l = gol.lane, dlt = gol.delta, 
@@ -1198,9 +1301,6 @@ function sumSet(rd, gol) {
     if (WEEN) gol.limsum= shns(limd)+" today ("    +shn(lim)+")"    
     if (RASH) gol.limsum= shns(limd)+" today ("    +shn(lim)+")"
   }
-  if (y*d<0)      gol.safeblurb = "unknown days of safety buffer"
-  else if (c>999) gol.safeblurb = "more than 999 days of safety buffer"
-  else            gol.safeblurb = "~"+cd+" of safety buffer"
 
   gol.titlesum = 
     bu.toTitleCase(gol.color) + ": bmndr.com/"+gol.yoog+" is safe for ~"+cd
@@ -1223,6 +1323,7 @@ function sumSet(rd, gol) {
   else           gol.statsum += "bare min: "
   gol.statsum += gol.limsum+"\\n"
   //gol.statsum = encodeURI(gol.statsum) // TODO
+  safesumSet(rd, gol)
 }
 
 // Fetch value with key n from hash p, defaulting to d -- NOT USED 
