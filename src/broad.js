@@ -887,11 +887,11 @@ self.autowiden = (rd, g, d, nw) => {
 /** Whether the road has a vertical segment at time t */
 self.vertseg = (rd, t) => (rd.filter(e=>(e.sta[0] === t)).length > 1)
 
-/** Used with grAura() and for computing mean and meandelt, this
-    adds dummy datapoints on every day that doesn't have a datapoint,
-    interpolating linearly. */
+/**Used in grAura() and for computing mean & meandelt, add dummy datapoints
+   on every day that doesn't have a datapoint, interpolating linearly. */
 self.gapFill = (d) => {
-  var interp = (bef, aft, atPt) => (bef + (aft - bef) * atPt)
+  if (!d || !d.length) return []
+  const interp = (bef, aft, atPt) => (bef + (aft - bef) * atPt)
   var start = d[0][0], end = d[d.length-1][0]
   var n = floor((end-start)/SID)
   var out = Array(n), i, j = 0, t = start
@@ -908,21 +908,22 @@ self.gapFill = (d) => {
 
 /** Return a pure function that fits the data smoothly, used by grAura */
 self.smooth = (d) => {
-  var SMOOTH = (d[0][0] + d[d.length-1][0])/2
-  var dz = bu.zip(d)
-  var xnew = dz[0].map((e)=>(e-SMOOTH)/SID)
-  var poly = new Polyfit(xnew, dz[1])
-  var solver = poly.getPolynomial(3)
-  var range = abs(max(...dz[1])-min(...dz[1]))
-  var error = poly.standardError(poly.computeCoefficients(3))
+  if (!d || !d.length) return (x) => x
+  const SMOOTH = (d[0][0] + d[d.length-1][0])/2
+  const dz = bu.zip(d)
+  const xnew = dz[0].map((e) => (e-SMOOTH)/SID)
+  const poly = new Polyfit(xnew, dz[1])
+  let solver = poly.getPolynomial(3)
+  const range = abs(max(...dz[1])-min(...dz[1]))
+  const error = poly.standardError(poly.computeCoefficients(3))
   if (error > 10000*range) {
-    // Very large error. Potentially due to ill-conditioned matrices
+    // Very large error. Potentially due to ill-conditioned matrices.
     console.log(
       "butil.smooth: Possible ill-conditioned polyfit. Reducing dimension.")
     solver = poly.getPolynomial(2)
   }
 
-  return (x) =>(solver((x-SMOOTH)/SID))
+  return (x) => solver((x-SMOOTH)/SID)
 }
 
 /** Assumes both datapoints and the x values are sorted */
