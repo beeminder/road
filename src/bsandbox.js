@@ -260,7 +260,7 @@
     // new new goal type so that I don't break existing graph.beeminder stuff
     // pick a goaltype, initval, and graph/goal params
     function newGoal2(gtype, initval, params={}) {
-      logger.log(`newGoal(${gtype}, ${initval}, ${params.runits}, ${params.rfin}, ${params.vini})`)
+      logger.log(`newGoal2(${gtype}, ${initval})`)
       if (!typefn.hasOwnProperty(gtype)) {
         logger.error("bsandbox.newGoal2: Invalid goal type!")
         return
@@ -273,8 +273,15 @@
         logger.error("bsandbox.newGoal2: Invalid initval!")
         return
       }
-      if (!bu.nummy(params.rfin) || !bu.nummy(params.vini)) {
-        logger.error("bsandbox.newGoal2: Invalid goal parameters!")
+      // if rfin is present, is it a number?
+      // if vfin is present, is it a number?
+      if (!bu.norn(params.rfin) || !bu.norn(vfin) ||
+        (params.rfin === null && params.vfin === null)) {
+        logger.error("bsandbox.newGoal2: Invalid rfin or vfin!")
+        return
+      }
+      if (!bu.nummy(params.vini)) {
+        logger.error("bsandbox.newGoal2: Invalid vini!")
         return
       }
 
@@ -282,7 +289,8 @@
       // it holds the div that the graph is to be rendered into, as well
       // as other defaults and stuff.
       goal.gtype = gtype
-      goal.rfin = params.rfin
+      goal.rfin = params.rfin = (params.rfin === null ? null : Number(params.rfin))
+      goal.vfin = params.vfin = (params.vfin === null ? null : Number(params.vfin))
       goal.vini = params.vini
       goal.runits = params.runits
       goal.initval = initval
