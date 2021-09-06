@@ -295,7 +295,7 @@ self.fixRoadArray = (rd, autop=self.RP.VALUE, usematrix=false,
    and being on the wrong side gives a negative delta. */
 self.gdelt = (rd, g, t, v) => bu.chop(g.yaw*(v - self.rdf(rd, t)))
 
-/** Whether the given point is on or on the good side of the razor road */
+/** Whether the given point is on or on the good side of the bright red line */
 self.aok = (rd, g, t, v) => {
   //console.log(`DEBUG: ${JSON.stringify(rd)}`)
   // DRY: this is check is basically the same code as isoside()

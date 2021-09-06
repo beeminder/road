@@ -762,62 +762,36 @@ function procRoad(json) {
   return ""
 }
 
-// Back in Pybrain the intention was to flatline all the way to today for 
-// WEEN/RASH and to stop flatlining if 2 red days in a row for MOAR/PHAT.
-// That might've stopped making sense after the new red-yesterday derailment
-// criterion. In any case, bgraph.js:updateDataPoints() seems to draw the 
-// flatlined datapoint fine for do-more goals and I'm not sure why we still
-// need this for do-less goals but things break without it.
+// Add a flatlined datapoint today if the last datapoint is before today.
+// But don't keep flatlining past a derailment unless doing so will eventually
+// put you back on the right side of the bright red line, like if the goal is
+// restarted and the red line reset. That's nicer to stop the flatlining early
+// if possible because maybe you derailed years ago and by not flatlining past
+// that point you can actually see that ancient derailment on the graph. If we
+// always flatlined to today, the graph would look dumb/boring, with everything
+// interesting squished to the left and then a years-long flatline with a little
+// triangle at the end. 
+// PS: We currently only do this fanciness for UPTOP/DNLOW (aka MOAR/PHAT)
+// because for UPLOW/DNTOP (aka WEEN/RASH) we'd have to deal with PPRs I guess?
 let flad = null // Holds the flatlined datapoint if it exists
 function flatline() {
-/************** candidate new version of this function that breaks flatlining...
-  flad = null
-  const prevpt = data[data.length-1]
-  const tlast  = prevpt[0]
-  const vlast  = prevpt[1]
-  if (gol.yaw * gol.dir < 0 && tlast <= gol.tfin) {
-    const tflat = min(gol.asof, gol.tfin)
-    if (!(tflat in aggval)) {
-      flad = [tflat, vlast, "PPR", DPTYPE.FLATLINE, tlast, vlast, null]
-      data.push(flad)
+  const lastpt = data.length === 0 ? [gol.tini, gol.vini] : data[data.length-1]
+  const tlast  = lastpt[0]
+  const vlast  = lastpt[1]
+  if (tlast > gol.tfin) return // no flatlining past the end of the goal
+  const tcurr  = min(gol.asof, gol.tfin) // flatline at most this far
+  const red = (t) => !br.aok(roads, gol, t, vlast) // convenience function
+
+  let tflat = tcurr // the time we're flatlining to, walking backward from here
+  if (gol.yaw * gol.dir > 0) { // UPTOP (MOAR) and DNLOW (PHAT)
+    while (red(tflat -   SID) && tflat-SID > tlast &&
+           red(tflat - 2*SID) && tflat-SID > gol.tini) {
+      tflat -= SID
     }
   }
-original version of flatline() ************************************************/
 
-  // WIP for gissue #223:
-  // We only flatline to the last datapoint BUT if that means the goal is in a
-  // derailed state whereas flatlining to today (asof) would put the goal  in a
-  // non-derailed state, then flatline to today.
-
-  const now = gol.asof
-  const numpts = data.length
-  const tlast = data.length === 0 ? gol.tini : data[numpts-1][0]
-  const vlast = data.length === 0 ? gol.vini : data[numpts-1][1]
-  
-  if (tlast > gol.tfin) return
-  
-  let x = tlast // x = the time we're flatlining to
-  if (gol.yaw * gol.dir < 0) 
-    x = min(now, gol.tfin) // WEEN/RASH: flatline all the way
-  else { // for MOAR/PHAT, stop flatlining if 2 red days in a row
-    let prevcolor = null
-    let newcolor
-    while (x <= min(now, gol.tfin)) { // walk forward from tlast
-      // gol.isolines not defined yet so makes no sense calling dotcolor() TODO
-      newcolor = br.dotcolor(roads, gol, x, vlast, gol.isolines)
-      // done iff 2 reds in a row
-      if (prevcolor===newcolor && prevcolor===bu.Cols.REDDOT) break
-      prevcolor = newcolor
-      x += SID // or see doc.bmndr.com/ppr
-    }
-    // the following looks particularly unnecessary
-    x = min(x, now, gol.tfin)
-    for (let i = 0; i < numpts; i++) if (x == data[i][0]) return
-  }
-
-  if (!(x in aggval)) {
-    const prevpt = data.length === 0 ? [gol.tini, gol.vini] : data[numpts-1]
-    flad = [x, vlast, "PPR", DPTYPE.FLATLINE, prevpt[0], prevpt[1], null]
+  if (!(tflat in aggval)) { // only make a flatline point if no actual datapoint
+    flad = [tflat, vlast, "PPR", DPTYPE.FLATLINE, tlast, vlast, null]
     data.push(flad)
   }
 }
@@ -907,7 +881,7 @@ function validead(d) { return bu.nummy(d) && (6-24)*3600 <= d && d <= 6*3600 }
 const pchex = [
 ['deadline', validead,           "outside 6am earlybird to 6am nightowl"],
 //['asof',     v => v !== null,    "can't be null"],
-['asof',     bu.oktm,            "isn't a valid timestamp or null"],
+['asof',     bu.oktm,            "isn't a valid timestamp"],
 ['tini',     bu.oktm,            "isn't a valid timestamp"],
 ['vini',     bu.nummy,           "isn't numeric"],
 ['road',     bu.listy,           "(graph matrix) isn't a list"],
@@ -1147,8 +1121,8 @@ function procParams() {
     } else gol.filtpts = []
   } else gol.filtpts = []
   
-  gol.tcur = data[dl-1][0]
-  gol.vcur = data[dl-1][1]
+  gol.tcur = dl === 0 ? gol.tini : data[dl-1][0]
+  gol.vcur = dl === 0 ? gol.vini : data[dl-1][1]
   gol.vprev= data[max(dl-2,0)][1] // default to vcur if < 2 datapts
 
   gol.safebuf = br.dtd(roads, gol, gol.tcur, gol.vcur)
@@ -1451,21 +1425,22 @@ function sumSet(rd, gol) {
   let x, ybrStr
   if (gol.cntdn < 7) {
     x = sign(gol.rfin) * (gol.vfin - gol.vcur)
-    ybrStr = "To go to goal: "+shn(x,0,2,1)+"."
+    ybrStr = "w/ "+shn(x,0,2,1)+" to go to goal"
   } else {
     x = br.rdf(roads, gol.tcur+gol.siru) - br.rdf(roads, gol.tcur)
-    ybrStr = "Yellow Brick Rd = "+(x>=0 ? "+" : "")+bu.shn(x, 2, 1, 0)
-                           +" / "+bu.UNAM[gol.runits]+"."
+    ybrStr = "@ "+(x>=0 ? "+" : "")+bu.shn(x, 2, 1, 0)
+                           +" / "+bu.UNAM[gol.runits]
   }
 
   const ugprefix = false // debug mode: prefix yoog to graph title
   gol.graphsum = 
-    (ugprefix ? gol.yoog : "")
+      (gol.asof !== gol.tcur ? "["+bu.shd(gol.asof)+"] " : "")
+    + (ugprefix ? gol.yoog : "")
     + shn(gol.vcur,0,3,1)+" on "+bu.shd(gol.tcur)+" ("
     + bu.splur(gol.numpts, "datapoint")+" in "
     + bu.splur(1+floor((gol.tcur-gol.tini)/SID),"day")+") "
     + "targeting "+shn(gol.vfin,0,3,1)+" on "+bu.shd(gol.tfin)+" ("
-    + bu.splur(gol.cntdn, "more day")+"). "+ybrStr
+    + bu.splur(gol.cntdn, "more day")+") "+ybrStr
 
   gol.deltasum = shn(abs(dlt),0) + " " + gol.gunits
     + (dlt<0 ? " below" : " above")+" the bright line"
