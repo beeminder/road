@@ -77,6 +77,14 @@ let gid = 1 // Global counter giving unique IDs for multiple Beebrain instances
 //   allowed to change retroactively. The first thing to do with that is to use
 //   it to color historical datapoints with their original color (aka
 //   permacolor)
+// o Some of these in-params have null as a default but don't actually allow 
+//   null, meaning that it's an error to not specify those in-params. Would it
+//   be better to be explicit and distinguish? Null could mean that null is a
+//   valid default and if we require the in-param to be explicitly specified we
+//   could have the default below be a magic string like '_DEFAULT_DISALLOWED_'
+//   or '_NOD_' or maybe just anything that will obviously fail the error check?
+// o Any changes to the in-params (pin) should also be reflected in the error-
+//   checking (pchex) below.
 
 const pin = { // In Params: Graph settings and their defaults
 quantum  : 1e-5,   // Precision/granularity for conservarounding baremin etc
@@ -872,120 +880,81 @@ function validrow(r) {
          || bu.nummy(r[0]) && bu.nummy(r[1]) && r[2]==null
 }
 
-function validyaw(y) { return y === -1 || y === 0 || y === 1 }
+// Convenience functions for error checking
+const validyaw = (y) => y === -1 || y === 0 || y === 1               // yaw
+const validead = (d) => bu.nummy(d) && (6-24)*3600 <= d&&d <= 6*3600 // deadline
+const validate = (t) => bu.nummy(t) && 0 < t && t < bu.BDUSK         // tini etc
+const validyax = (s) => bu.stringy(s) && s.length<80                 // yaxis
+const torf     = (x) => typeof x === "boolean"      // True or False
+const born     = (x) => torf(x) || x === null       // Boolean or Null
+const norn     = (x) => bu.nummy(x) || x === null   // Numeric or Null
+const torn     = (x) => validate(x) || x === null   // Timey or Null
+const sorn     = (x) => bu.stringy(x) || x === null // String or Null
 
-function validead(d) { return bu.nummy(d) && (6-24)*3600 <= d && d <= 6*3600 }
-
-
-
-const pchex = [
-['deadline', validead,           "outside 6am earlybird to 6am nightowl"],
-//['asof',     v => v !== null,    "can't be null"],
-['asof',     bu.oktm,            "isn't a valid timestamp"],
-['tini',     bu.oktm,            "isn't a valid timestamp"],
-['vini',     bu.nummy,           "isn't numeric"],
-['road',     bu.listy,           "(graph matrix) isn't a list"],
-['tfin',     bu.torn,            "isn't a valid timestamp or null"],
-['vfin',     bu.norn,            "isn't numeric or null"],
-['rfin',     bu.norn,            "isn't numeric or null"],
-['runits',   v => v in bu.SECS,  "isn't a valid rate unit"],
-['yaw',      validyaw,           "isn't -1 or 1 or 0"],
-['dir',      v => v==1 || v==-1, "isn't -1 or 1"],
-['tmin',     bu.torn,            "isn't a valid timestamp or null"],
-['tmax',     bu.torn,            "isn't a valid timestamp or null"],
-['vmin',     bu.norn,            "isn't numeric or null"],
-['vmax',     bu.norn,            "isn't numeric or null"],
-['kyoom',    bu.torf,            "isn't boolean"],
-['odom',     bu.torf,            "isn't boolean"],
-['monotone', bu.torf,            "isn't boolean"],
-['aggday',   v => v in br.AGGR,  "isn't one of max, sum, last, mean, etc"],
-['plotall',  bu.torf,            "isn't boolean"],
-['steppy',   bu.torf,            "isn't boolean"],
-['rosy',     bu.torf,            "isn't boolean"],
-['movingav', bu.torf,            "isn't boolean"],
-['aura',     bu.torf,            "isn't boolean"],
-['yaxis',    bu.stringy,         "isn't a string"],
-['yaxis',    v => v.length<80,   "is more than 79 characters"],
-['waterbuf', bu.sorn,            "isn't a string or null"],
-['waterbux', bu.stringy,         "isn't a string"],
-['hidey',    bu.torf,            "isn't boolean"],
-['stathead', bu.torf,            "isn't boolean"],
-['imgsz',    bu.nummy,           "isn't numeric"],
-['yoog',     bu.stringy,         "isn't a string"],
-]
-
-
-/*
-// WIP
-// Error-checking function and error message template for each in-param
+// Error-checking function and error message for each in-param
 const pchex = {
-quantum  : [bu.nummy, "$P = $V, not a number"],
-timey    : [bu.torf,  "$P = $V, not a boolean"],
-ppr      : [bu.torf,  "$P = $V, not a boolean"],
-deadline : [validead, "$P = $V, not between 6am earlybird and 6am nightowl"],
-deadline : 0,      // Time of deadline given as seconds before or after midnight
-sadlhole : true,   // Allow the do-less loophole where you can eke back onto YBR
-asof     : null,   // Compute everything as if it were this date                
-tini     : null,   // (tini,vini) specifies the start of the YBR, typically but 
-vini     : null,   //   not necessarily the same as the initial datapoint       
-road     : [],     // List of (endTime,goalVal,rate) triples defining the BRL   
-tfin     : null,   // Goal date (unixtime); end of the Bright Red Line (BRL)    
-vfin     : null,   // The actual value being targeted; any real value           
-rfin     : null,   // Final rate (slope) of the BRL before it hits the goal     
-runits   : 'w',    // Rate units for road and rfin; one of "y","m","w","d","h"  
-gunits   : 'units',// Goal units like "kg" or "hours"                           
-yaw      : 0,      // Which side of the YBR you want to be on, +1 or -1         
-dir      : 0,      // Which direction you'll go (usually same as yaw)           
-pinkzone : [],     // Region to shade pink, specified like the graph matrix     
-tmin     : null,   // Earliest date to plot on the x-axis (unixtime):           
-tmax     : null,   //   ((tmin,tmax), (vmin,vmax)) give the plot range, ie, they
-vmin     : null,   //   control zooming/panning; they default to the entire     
-vmax     : null,   //   plot -- initial datapoint to past the akrasia horizon   
-kyoom    : false,  // Cumulative; plot values as the sum of those entered so far
-odom     : false,  // Treat zeros as accidental odom resets                     
-maxflux  : 0,      // User-specified max daily fluctuation                      
-monotone : false,  // Whether the data is necessarily monotone (used in limsum) 
-aggday   : null,   // sum/last/first/min/max/mean/median/mode/trimmean/jolly    
-plotall  : true,   // Plot all the points instead of just the aggregated point  
-steppy   : false,  // Join dots with purple steppy-style line                   
-rosy     : false,  // Show the rose-colored dots and connecting line            
-movingav : false,  // Show moving average line superimposed on the data         
-aura     : false,  // Show blue-green/turquoise (now purple I guess) aura/swath 
-hashtags : true,   // Show annotations on graph for hashtags in datapt comments 
-yaxis    : '',     // Label for the y-axis, eg, "kilograms"                     
-waterbuf : null,   // Watermark on the good side of the YBR; safebuf if null    
-waterbux : '',     // Watermark on the bad side, ie, pledge amount              
-hidey    : false,  // Whether to hide the y-axis numbers                        
-stathead : true,   // Whether to include a label with stats at top of graph     
-imgsz    : 760,    // Image size; width in pixels of the graph image            
-yoog     : 'U/G',  // Username/graphname, eg, "alice/weight"                    
-usr      : null,   // Username (synonym for first half of yoog) ############ DEP
-graph    : null,   // Graph name (synonym for second half of yoog) ######### DEP
-goal     : null,   // Synonym for vfin ##################################### DEP
-rate     : null,   // Synonym for rfin ##################################### DEP
+quantum  : [bu.nummy,           "isn't numeric"],
+timey    : [torf,               "isn't boolean"],
+ppr      : [torf,               "isn't boolean"],
+deadline : [validead,           "outside 6am earlybird and 6am nightowl"],
+sadlhole : [torf,               "isn't boolean"],
+asof     : [validate,           "isn't a valid timestamp"],
+tini     : [validate,           "isn't a valid timestamp"],
+vini     : [bu.nummy,           "isn't numeric"],
+road     : [bu.listy,           "(graph matrix) isn't a list"],
+tfin     : [torn,               "isn't a valid timestamp or null"],
+vfin     : [norn,               "isn't numeric or null"],
+rfin     : [norn,               "isn't numeric or null"],
+runits   : [v => v in bu.SECS,  "isn't a valid rate unit"],
+gunits   : [bu.stringy,         "isn't a string"],
+yaw      : [validyaw,           "isn't -1 or 1 or 0"],
+dir      : [v => v==1 || v==-1, "isn't -1 or 1"],
+pinkzone : [bu.listy,           "isn't a a list"],
+tmin     : [torn,               "isn't a valid timestamp or null"],
+tmax     : [torn,               "isn't a valid timestamp or null"],
+vmin     : [norn,               "isn't numeric or null"],
+vmax     : [norn,               "isn't numeric or null"],
+kyoom    : [torf,               "isn't boolean"],
+odom     : [torf,               "isn't boolean"],
+monotone : [torf,               "isn't boolean"],
+aggday   : [v => v in br.AGGR,  "isn't one of max, sum, last, mean, etc"],
+plotall  : [torf,               "isn't boolean"],
+steppy   : [torf,               "isn't boolean"],
+rosy     : [torf,               "isn't boolean"],
+movingav : [torf,               "isn't boolean"],
+aura     : [torf,               "isn't boolean"],
+hashtags : [torf,               "isn't boolean"],
+yaxis    : [validyax,           "isn't a string of at most 79 chars"],
+waterbuf : [sorn,               "isn't a string or null"],
+waterbux : [bu.stringy,         "isn't a string"],
+hidey    : [torf,               "isn't boolean"],
+stathead : [torf,               "isn't boolean"],
+imgsz    : [bu.nummy,           "isn't numeric"],
+yoog     : [bu.stringy,         "isn't a string"],
+usr      : [sorn,               "isn't a string or null"],
+graph    : [sorn,               "isn't a string or null"],
+goal     : [norn,               "isn't numeric or null"],
+rate     : [norn,               "isn't numeric or null"],
 }
-*/
-
 
 /** Sanity check the input parameters. Return non-empty string if it fails. */
 function vetParams() {
-  //let i #SCHDEL
-  
-  for (const row of pchex) {
-    const p   = row[0]
-    const chk = row[1]
-    const msg = row[2]
-    if (!(chk(gol[p]))) 
-      return `'${p}' = ${JSON.stringify(gol[p])}\\nERROR: ${msg}`
+  for (const p in pchex) {
+    const chk = pchex[p][0]
+    const msg = pchex[p][1]
+    if (!chk(gol[p])) return `${p} = ${JSON.stringify(gol[p])}\\nERROR: ${msg}`
   }
   
-  //const rd = gol.road
   for (const row of gol.road)
     if (!validrow(row))
       return "Invalid graph matrix row: "+showrow(row)
 
+  for (const row of gol.pinkzone)
+    if (!validrow(row))
+      return "Invalid pinkzone row: "+showrow(row)
+
   // At this point graph matrix (road) guaranteed to be a list of length-3 lists
-  // (I guess we don't mind a redundant final road row)
+  // (I guess we don't mind a redundant final graph matrix row)
   const mrd = gol.road.slice(1, gol.road.length-1)
   if (mrd.length !== bu.deldups(mrd).length) {
     let prev = mrd[0] // previous row
@@ -994,14 +963,6 @@ function vetParams() {
         return "Graph matrix has duplicate row: "+showrow(row)
       prev = row
     }
-/* SCHDEL
-    for (i = 1; i < mrd.length; i++) {
-      if (bu.arrayEquals(mrd[i], prev))
-        return "Graph matrix has duplicate row: "+showrow(mrd[i])
-      prev = mrd[i]
-    }
-    return "Graph matrix duplicate row error!" //seems unreachable
-*/
   }
   if (gol.kyoom && gol.odom)
     return "The odometer setting doesn't make sense for an auto-summing goal!"
@@ -1121,9 +1082,9 @@ function procParams() {
     } else gol.filtpts = []
   } else gol.filtpts = []
   
-  gol.tcur = dl === 0 ? gol.tini : data[dl-1][0]
-  gol.vcur = dl === 0 ? gol.vini : data[dl-1][1]
-  gol.vprev= data[max(dl-2,0)][1] // default to vcur if < 2 datapts
+  gol.tcur  = dl === 0 ? gol.tini : data[dl-1][0]
+  gol.vcur  = dl === 0 ? gol.vini : data[dl-1][1]
+  gol.vprev = data[max(dl-2,0)][1] // default to vcur if < 2 datapts
 
   gol.safebuf = br.dtd(roads, gol, gol.tcur, gol.vcur)
 

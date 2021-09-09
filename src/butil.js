@@ -934,15 +934,9 @@ self.arrayEquals = (a1, a2) => {
 }
 
 // Type-checking convenience functions
-self.nummy   = (n) => !isNaN(parseFloat(n)) && isFinite(n)
-self.stringy = (x) => (typeof x === "string")
+self.nummy   = (x) => !isNaN(parseFloat(x)) && isFinite(x)
+self.stringy = (x) => typeof x === "string"
 self.listy   = (x) => Array.isArray(x)
-self.torf    = (x) => typeof x === "boolean"                  // True or False
-self.born    = (x) => self.torf(x) || x === null              // Boolean or Null
-self.norn    = (x) => self.nummy(x) || x === null             // Numeric or Null
-self.oktm    = (x) => self.nummy(x) && 0<x && x<self.BDUSK    // Valid time
-self.torn    = (x) => self.oktm(x) || x === null              // Timey or Null
-self.sorn    = (x) => typeof x === "string" || x === null     // String or Null
 
 return self
 

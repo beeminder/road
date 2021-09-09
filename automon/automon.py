@@ -32,6 +32,31 @@
 # regenerate the output, automon won't notice that it should regenerate the 
 # graph until you edit the bb file again.
 
+# I think I could save a lot of time if automon had persistent memory (like
+# writing it to a file) of how long ago it checked each bb file. Then we just
+# need a simple ordering function like: the next file to check is ...
+# first, if a source file changes then every bb file is marked dirty.
+# if a bb file itself changes, it is marked dirty.
+# when we regenerate the output for a bb file, it's marked clean.
+# so when picking the next bb file to check, the first sort key is dirtiness.
+# of the dirty files, we want to first pick those with errors (status quo does
+# this).
+# of the dirty files without errors, we want to first pick those least recently
+# checked.
+#
+# (the idea being that you have some errors and you edit the source code to 
+# hopefully fix them. so first we recheck every bb file that had errors and then
+# we proceed with the least recently checked bb files.)
+#
+# that way we can visually scan the queue of upcoming files to be checked
+#
+# Side note: rather than clearing the column when there are no errors, there
+# should just be the full list of bb files, sorted as above, with the next
+# things to check on top, with a little '!' for errors and an amount of time
+# like '4h' for how long ago it was checked. then if the top item has no '!' and
+# was checked recently then you know you're good and don't have to wait for the
+# full progress bar to finish to be sure.
+
 
 # Might need to do pip3 install watchdog
 import curses, sys, getopt, os, time, requests, subprocess, re
