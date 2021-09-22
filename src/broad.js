@@ -749,10 +749,10 @@ self.fillroad = (rd, g) => {
 
   // Remove rows that have timestamps before tini. This is temporary until
   // we clean up the goals in the database where this is an issue. After that
-  // we should just fail loudly when we get a bb file that has any road rows
+  // we should just fail loudly when we get a bb file that has any redline rows
   // with dates that are earlier than tini. Huge violation of the
   // anti-robustness principle [blog.beeminder.com/postel] to let Beebody send
-  // broken road matrices and clean them up here in Beebrain!
+  // broken graph matrices and clean them up here in Beebrain!
   while (rd !== undefined && rd[0] !== undefined && rd[0][0] < g.tini) 
     rd.shift()
 

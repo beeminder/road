@@ -1,6 +1,6 @@
 {
   "name": "beebrain",
-  "version": "2021.09.06",
+  "version": "2021.09.22",
   "description": "Beeminder Graph Editor",
   "main": "server.js",
   "scripts": {

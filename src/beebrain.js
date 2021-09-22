@@ -126,8 +126,6 @@ hidey    : false,  // Whether to hide the y-axis numbers
 stathead : true,   // Whether to include a label with stats at top of graph 
 imgsz    : 760,    // Image size; width in pixels of the graph image        
 yoog     : 'U/G',  // Username/graphname, eg, "alice/weight"                
-usr      : null,   // Username (synonym for first half of yoog) ############ DEP
-graph    : null,   // Graph name (synonym for second half of yoog) ######### DEP
 goal     : null,   // Synonym for vfin ##################################### DEP
 rate     : null,   // Synonym for rfin ##################################### DEP
 }
@@ -181,7 +179,9 @@ rfin     : null,    // Subsumed by fullroad ################################ DEP
 
 const pig = [ // In Params to ignore; complain about anything not here or in pin
 //'rerails',  // Idea for something to be passed to Beebrain
-'ybhp',     // Lanes delenda est!
+'usr',      // Username (old synonym for first half of yoog)
+'graph',    // Graph name (old synonym for second half of yoog)
+'ybhp',     // Boolean used for the yellow brick half-plane transition
 'integery', // Replaced by 'quantum'; fully killed as of 2020-08-21
 'noisy',    // Pre-YBHP; fully killed as of 2020-08-20
 'abslnw',   // Pre-YBHP; fully killed as of 2020-08-19
@@ -261,7 +261,7 @@ gol.yMin =    -1;        gol.yMax = 1
 function legacyIn(p) {
   if ('goal' in p && !('vfin' in p))                 p.vfin = p.goal
   if ('rate' in p && !('rfin' in p))                 p.rfin = p.rate
-  if ('usr'  in p && 'graph' in p && !('yoog' in p)) p.yoog = p.usr+"/"+p.graph
+//if ('usr'  in p && 'graph' in p && !('yoog' in p)) p.yoog = p.usr+"/"+p.graph
 }
   
 // Helper function for legacyOut
@@ -931,8 +931,6 @@ hidey    : [torf,               "isn't boolean"],
 stathead : [torf,               "isn't boolean"],
 imgsz    : [bu.nummy,           "isn't numeric"],
 yoog     : [bu.stringy,         "isn't a string"],
-usr      : [sorn,               "isn't a string or null"],
-graph    : [sorn,               "isn't a string or null"],
 goal     : [norn,               "isn't numeric or null"],
 rate     : [norn,               "isn't numeric or null"],
 }
