@@ -245,7 +245,7 @@ const visualProps =
   ['plotall','steppy','rosy','movingav','aura','hidey','stathead','hashtags']
 function setVisualConfig( opts ) {
   visualProps.map(e=>{
-    if (opts.hasOwnProperty(e) && bu.torf(opts[e])) 
+    if (opts.hasOwnProperty(e) && typeof opts[e] === "boolean")
       gol.bb.params[e] = opts[e]
   })
   reloadGoal()
@@ -349,7 +349,7 @@ function newGoal( gtype, runits, rfin, vini, buffer, newparams = [] ) {
     logger.error("bsandbox.newGoal: Invalid rate units!")
     return
   }
-  if (!bu.nummy(rfin) || !bu.nummy(vini) || !bu.torf(buffer)) {
+  if (!bu.nummy(rfin) || !bu.nummy(vini) || typeof buffer !== "boolean") {
     logger.error("bsandbox.newGoal: Invalid goal parameters!")
     return
   }

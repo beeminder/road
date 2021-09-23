@@ -91,7 +91,6 @@ quantum  : 1e-5,   // Precision/granularity for conservarounding baremin etc
 timey    : false,  // Whether numbers should be shown in HH:MM format
 ppr      : true,   // Whether PPRs are turned on (ignored if not WEEN/RASH)
 deadline : 0,      // Time of deadline given as seconds before or after midnight
-sadlhole : true,   // Allow the do-less loophole where you can eke back onto YBR
 asof     : null,   // Compute everything as if it were this date
 tini     : null,   // (tini,vini) specifies the start of the YBR, typically but
 vini     : null,   //   not necessarily the same as the initial datapoint
@@ -124,7 +123,6 @@ waterbuf : null,   // Watermark on the good side of the YBR; safebuf if null
 waterbux : '',     // Watermark on the bad side, ie, pledge amount
 hidey    : false,  // Whether to hide the y-axis numbers
 stathead : true,   // Whether to include a label with stats at top of graph 
-imgsz    : 760,    // Image size; width in pixels of the graph image        
 yoog     : 'U/G',  // Username/graphname, eg, "alice/weight"                
 goal     : null,   // Synonym for vfin ##################################### DEP
 rate     : null,   // Synonym for rfin ##################################### DEP
@@ -190,6 +188,8 @@ const pig = [ // In Params to ignore; complain about anything not here or in pin
 'backroad', // Related to the permacolor idea; see doc.bmndr.com/permacolor
 'edgy',     // Ancient; killed as one of the prereqs for YBHP
 'offred',   // Used for the transition to the red-yesterday derail condition
+'sadlhole', // Allowed the do-less loophole where you could eke back onto YBR
+'imgsz',    // Image size (default 760); width in pixels of graph image
 //'offparis', // Temporary thing related to red-yesterday
 ]
 
@@ -897,7 +897,6 @@ quantum  : [bu.nummy,           "isn't numeric"],
 timey    : [torf,               "isn't boolean"],
 ppr      : [torf,               "isn't boolean"],
 deadline : [validead,           "outside 6am earlybird and 6am nightowl"],
-sadlhole : [torf,               "isn't boolean"],
 asof     : [validate,           "isn't a valid timestamp"],
 tini     : [validate,           "isn't a valid timestamp"],
 vini     : [bu.nummy,           "isn't numeric"],
@@ -929,7 +928,6 @@ waterbuf : [sorn,               "isn't a string or null"],
 waterbux : [bu.stringy,         "isn't a string"],
 hidey    : [torf,               "isn't boolean"],
 stathead : [torf,               "isn't boolean"],
-imgsz    : [bu.nummy,           "isn't numeric"],
 yoog     : [bu.stringy,         "isn't a string"],
 goal     : [norn,               "isn't numeric or null"],
 rate     : [norn,               "isn't numeric or null"],
