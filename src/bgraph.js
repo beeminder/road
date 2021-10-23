@@ -317,11 +317,11 @@ const onMobileOrTablet = () => {
 
 /** Configure functionality (private) */
 let config = (obj, options) => {
-  if (!obj.opts) obj.opts = bu.extend({}, defaults, true)
+  if (!obj.opts) obj.opts = bu.extendo({}, defaults, true)
   
-  if (onMobileOrTablet()) bu.extend(obj.opts, mobiledefaults)
+  if (onMobileOrTablet()) bu.extendo(obj.opts, mobiledefaults)
   
-  let opts = bu.extend(obj.opts, options, true)
+  let opts = bu.extendo(obj.opts, options, true)
   
   opts.divGraph = opts.divGraph && opts.divGraph.nodeName ? opts.divGraph : null
   
@@ -545,8 +545,8 @@ resetGoal()
 /** Recompute padding value and bounding boxes for various components in the
  * graph. In particular, plotpad, contextpad, plotbox, and contextbox. */
 function computeBoxes() {
-  plotpad    = bu.extend({}, opts.focusPad)
-  contextpad = bu.extend({}, opts.ctxPad)
+  plotpad    = bu.extendo({}, opts.focusPad)
+  contextpad = bu.extendo({}, opts.ctxPad)
   if (gol.stathead && !opts.roadEditor) plotpad.top += 15
   plotpad.left  += yaxisw
   plotpad.right += yaxisw+(gol.hidey?8:0) // Extra padding if yaxis text hidden

@@ -133,21 +133,20 @@ self.isArray = Array.isArray
 
 // TODO: Does not properly copy, especially for array properties. FIX
 // https://github.com/beeminder/road/issues/199
-/**Extends a destination object with properties from a source object,
-   optionally overwriting existing elements.
-   @param {object} fr Source object 
-   @param {object} to Destination object
-   @param {boolean} owr Whether to overwrite existing properties of destination
-*/
-self.extend = (to, fr, owr) => {
+// Extends a destination object with properties from a source object, optionally
+// overwriting existing elements.
+// @param {object}  fr Source object 
+// @param {object}  to Destination object
+// @param {boolean} ow Whether to overwrite existing properties of destination
+self.extendo = (to, fr, ow) => {
   let prop, hasProp
   for (prop in fr) {
     hasProp = to[prop] !== undefined
     if (hasProp && typeof fr[prop] === 'object' &&
         fr[prop] !== null  && fr[prop].nodeName === undefined ) {
-      if (self.isArray(fr[prop])) {if (owr) to[prop] = fr[prop].slice(0)}
-      else to[prop] = self.extend({}, fr[prop], owr)
-    } else if (owr || !hasProp) {
+      if (self.isArray(fr[prop])) { if (ow) to[prop] = fr[prop].slice(0) }
+      else to[prop] = self.extendo({}, fr[prop], ow)
+    } else if (ow || !hasProp) {
       if (self.isArray(fr[prop])) to[prop] = fr[prop].slice(0)
       else to[prop] = fr[prop]
     }

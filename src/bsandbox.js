@@ -70,11 +70,11 @@ var logger = (debug && typeof console != 'undefined') ? console : {
     }
 logger.debug("beebrain constructor ("+gid+"): ");
 var self = this,
-    opts = bu.extend({}, optsin),
+    opts = bu.extendo({}, optsin),
     curid = gid
 gid++
 
-bu.extend(opts, {roadEditor:false,
+bu.extendo(opts, {roadEditor:false,
                  maxFutureDays: 365,
                  showFocusRect: false,
                  showContext: false})

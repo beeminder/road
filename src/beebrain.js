@@ -176,6 +176,7 @@ rfin     : null,    // Subsumed by fullroad ################################ DEP
 }
 
 const pig = [ // In Params to ignore; complain about anything not here or in pin
+'timezone', // Beebody sends this but we don't use it currently
 //'rerails',  // Idea for something to be passed to Beebrain
 'usr',      // Username (old synonym for first half of yoog)
 'graph',    // Graph name (old synonym for second half of yoog)
@@ -184,13 +185,12 @@ const pig = [ // In Params to ignore; complain about anything not here or in pin
 'noisy',    // Pre-YBHP; fully killed as of 2020-08-20
 'abslnw',   // Pre-YBHP; fully killed as of 2020-08-19
 'tagtime',  // Used in the very early days
-'timezone', // Might make sense to send this to Beebrain in the future
 'backroad', // Related to the permacolor idea; see doc.bmndr.com/permacolor
 'edgy',     // Ancient; killed as one of the prereqs for YBHP
 'offred',   // Used for the transition to the red-yesterday derail condition
+//'offparis', // Temporary thing related to red-yesterday
 'sadlhole', // Allowed the do-less loophole where you could eke back onto YBR
 'imgsz',    // Image size (default 760); width in pixels of graph image
-//'offparis', // Temporary thing related to red-yesterday
 ]
 
 /** Enum object to identify different types of datapoints

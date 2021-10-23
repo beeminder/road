@@ -1,6 +1,6 @@
 {
   "name": "beebrain",
-  "version": "2021.09.22",
+  "version": "2021.10.23",
   "description": "Beeminder Graph Editor",
   "main": "server.js",
   "scripts": {
@@ -11,7 +11,7 @@
     "body-parser": "^1.19.0",
     "cluster": "^0.7.7",
     "connect-session-sequelize": "^7.1.2",
-    "d3": "^7.0.1",
+    "d3": "^7.1.1",
     "ejs": "^3.1.6",
     "express": "^4.17.1",
     "express-session": "^1.17.2",
@@ -20,19 +20,18 @@
     "moment-timezone": "^0.5.33",
     "octicons": "^8.5.0",
     "request": "^2.88.2",
-    "selenium-webdriver": "^4.0.0-beta.1",
-    "sequelize": "^6.6.5",
+    "selenium-webdriver": "^4.0.0",
+    "sequelize": "^6.7.0",
     "sqlite3": "^5.0.2"
   },
   "engines": {
-    "node": "14"
+    "node": "16"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/beeminder/road"
   },
   "keywords": [
-    "node",
     "beeminder"
   ],
   "license": "MIT",
