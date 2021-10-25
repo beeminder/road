@@ -450,6 +450,12 @@ function computeRosy() {
   }
 }
 
+// Magic strings in datapoint comments:
+// 1. "#PPR" (and for backward compatibility: /^PESSIMISTIC PRESUMPTION/)
+// 2. "#DERAIL" (and for backward compatibility: /^RECOMMITTED/)
+// 3. "#TARE" (not implemented yet; see gissue #216)
+// 4. (/^RESTART PLACEHOLDER/ has been thankfully killed)
+
 // Take, eg, "shark jumping #yolo :) #shark" and return {"#yolo", "#shark"}
 // Pro tip: use scriptular.com to test these regexes
 let hashtagRE
@@ -471,9 +477,12 @@ function hashextract(s) {
   return set
 }
 
-// Whether datapoint comment string s has the magic string indicating it's a
-// recommit datapoint, ie, when a derailment happened.
-function recommitted(s) { return s.startsWith("RECOMMITTED") }
+// Whether datapoint comment string s has the magic string indicating it's when
+// a derailment happened (previously known as a recommit datapoint).
+function rerailed(s) { 
+  return /(?:^|\s)#DERAIL(?=$|\s)/.test(s) ||
+    s.startsWith("RECOMMITTED") // backward compatibility; see magic strings
+}
 
 // Convenience function to extract values from datapoints
 function dval(d) { return d[1] }
@@ -496,14 +505,14 @@ function aggpt(vl, v) { // v is the aggregated value
   } // first change; second change
 }
 
-// This is the subset of procData that takes the raw datapoints -- a list of 
-// timestamp, value, comment triples -- and returns what's actually plotted on
-// the y-axis, accounting for kyoom, odom, and aggday.
+// WIP: This is the subset of procData that takes the raw datapoints -- a list
+// of timestamp, value, comment triples -- and returns what's actually plotted
+// on the y-axis, accounting for kyoom, odom, and aggday.
 // UPDATE: Ugh, I'm not sure it's possible to refactor this part out as a 
 // separate function without taking an extra pass through the datapoints.
-// If that's the case then this may only be useful to clients other or to put in
-// Beeminder's API for doing the agg'ing / odom'ing / kyooming transformation on
-// the raw data.
+// Regardless, it would be very nice to have this available as a separate thing,
+// like for Beeminder's API to provide both raw data, like it does now, and 
+// processed/aggregated data, giving what's actually plotted on the y-axis.
 /*
 function aggData(data) {
   if (!data || !data.length) return data
@@ -511,22 +520,15 @@ function aggData(data) {
 }
 */
 
-/** Process goal data<br/>
-    
-    Coming here, we assume that data has entries with the
-    following format:[t, v, comment, original index,
-    v(original), id]<br/>
-    
-    Coming out, datapoints have the following format: [t, v,
-    comment, type, prevt, prevv, v(original) or null, index]<br/>
-    
-    Each point also records coordinates for the preceding point to
-    enable connecting plots such as steppy and rosy even after
-    filtering based on visibility in graph. v(original) is the
-    datapoint value before aggregated values etc. are
-    computed. Finally, index is the array index of the datapoint in
-    the input data array.
-*/
+// Walk through the list of datapoints (stored in the gobal "data") converting
+// them as follow:
+//    IN: [t, v, comment, original index, v(original), id] 
+//   OUT: [t, v, comment, type, prevt, prevv, v(original) or null, index]
+// Each datapoint records coordinates for the preceding point to enable
+// connecting plots such as steppy and rosy even after filtering based on
+// visibility in graph. v(original) is the datapoint value before aggregated
+// values etc. are computed. Finally, index is the array index of the datapoint
+// in the input data array.
 function procData() { 
   if (!data || !data.length) return "No datapoints"
   const n = data.length
@@ -549,13 +551,12 @@ function procData() {
   // Precompute list of [t, hashtext] pairs for efficient display
   if (gol.hashtags) {
     hashtags = []
-    //const keys = Object.keys(hashhash) #SCHDEL
     for (const key in hashhash)
       hashtags.push([key, Array.from(hashhash[key]).join(' ')])
   }
 
   // Identify derailments and construct a copied array
-  derails = data.filter(e => recommitted(e[2]))
+  derails = data.filter(e => rerailed(e[2]))
   derails = derails.map(e => e.slice())
   // Legacy adjustment for before we switched from defining derailment as today
   // and yesterday being in the red to just yesterday in the red. As of 2021
@@ -623,8 +624,8 @@ function procData() {
       const vw = allvals[ct].map(e => e[1])
 
       // What we actually want for derailval is not this "worstval" but the
-      // agg'd value up to and including the recommit datapoint (see the
-      // recommitted() function) and nothing after that:
+      // agg'd value up to and including the rerail (nee recommit) datapoint 
+      // (see the rerailed() function) and nothing after that:
       derailval[ct] = gol.yaw < 0 ? bu.arrMax(vw) : bu.arrMin(vw)
       
       if (i < data.length) {
