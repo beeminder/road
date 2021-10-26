@@ -582,6 +582,7 @@ self.linspace = (a, b, n) => {
 }
 
 // Convex combination: x rescaled to be in [c,d] as x ranges from a to b.
+// PS: This wants to be called lerp, for linear interpolation. HT Freya Holmer
 self.rescale = (x, a,b, c,d) => {
   if (abs(a-b) < 1e-7) return x <= (a+b)/2 ? c : d // avoid division by 0
   return c + (x-a)/(b-a)*(d-c)

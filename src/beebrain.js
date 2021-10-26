@@ -450,11 +450,13 @@ function computeRosy() {
   }
 }
 
-// Magic strings in datapoint comments:
+
+// Magic strings in datapoint comments: (see beeminder/beeminder/issues/606)
 // 1. "#PPR" (and for backward compatibility: /^PESSIMISTIC PRESUMPTION/)
-// 2. "#DERAIL" (and for backward compatibility: /^RECOMMITTED/)
-// 3. "#TARE" (not implemented yet; see gissue #216)
-// 4. (/^RESTART PLACEHOLDER/ has been thankfully killed)
+// 2. "#DERAIL" (and for backward compatibility: /^RECOMMITTED ON/)
+// 3. "#RESTART" (and for backward compatibility: /^RESTARTED ON/)
+// 4. "#TARE" (not implemented yet; see gissue #216)
+// 5. (/^RESTART PLACEHOLDER/ has been thankfully killed)
 
 // Take, eg, "shark jumping #yolo :) #shark" and return {"#yolo", "#shark"}
 // Pro tip: use scriptular.com to test these regexes
@@ -481,7 +483,7 @@ function hashextract(s) {
 // a derailment happened (previously known as a recommit datapoint).
 function rerailed(s) { 
   return /(?:^|\s)#DERAIL(?=$|\s)/.test(s) ||
-    s.startsWith("RECOMMITTED") // backward compatibility; see magic strings
+    s.startsWith("RECOMMITTED ON") // backward compatibility; see magic strings
 }
 
 // Convenience function to extract values from datapoints
