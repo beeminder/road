@@ -10,10 +10,10 @@ if (typeof username != 'undefined') {
 /* MISC TOOLS ***************************************/
 
 // Maps graph colors to fot colors
-const cols = {"red":butil.Cols.REDDOT,
-              "green":butil.Cols.GRNDOT,
-              "blue":butil.Cols.BLUDOT,
-              "orange":butil.Cols.ORNDOT}
+const cols = {"red":butil.BHUE.REDDOT,
+              "green":butil.BHUE.GRNDOT,
+              "blue":butil.BHUE.BLUDOT,
+              "orange":butil.BHUE.ORNDOT}
 
 /* TAB CONTROLS ***************************************/
 
