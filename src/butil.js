@@ -31,7 +31,6 @@ if (typeof define === 'function' && define.amd) {
 
 'use strict'
 
-
 // -----------------------------------------------------------------------------
 // --------------------------- CONVENIENCE CONSTANTS ---------------------------
 
@@ -42,6 +41,7 @@ const pow   = Math.pow
 const log10 = Math.log10
 const floor = Math.floor
 const round = Math.round
+const sign  = Math.sign
 
 const DIY = 365.25 // this is what physicists use, eg, to define a light year
 const SID = 86400  // seconds in a day (not used: DIM=DIY/12, WIM=DIY/12/7)
@@ -49,23 +49,18 @@ const SID = 86400  // seconds in a day (not used: DIM=DIY/12, WIM=DIY/12/7)
 // -----------------------------------------------------------------------------
 // ---------------------------- BEEBRAIN CONSTANTS -----------------------------
 
-var self = {}
+// Maximum amount of time in milliseconds that Beebrain processing should take.
+// Users of bgraph and related tools should implement timeouts with this amount
+// to avoid infinite waits in case something goes wrong.
+const MAXTIME = 60000
 
-/**Maximum amount of time Beebrain processing should take (in ms). Users of
-   bgraph and related tools should implement timeouts with this amount to avoid
-   infinite waits in case something goes wrong.
-   @type {Number}*/
-self.MAXTIME = 60000
+// Base URL for images.
+const BBURL = "http://brain.beeminder.com/"
 
-/** Base URL for images.
-    @type {String}*/
-self.BBURL = "http://brain.beeminder.com/"
-
-/** Beeminder colors (pro tip: paste this into Slack for swatches)
-    @enum {string} */
+// Beeminder colors (pro tip: paste this into Slack for swatches)
 // Handy: https://material.io/design/color/#tools-for-picking-colors
 //        http://tutorials.jenkov.com/svg/fill-patterns.html
-self.Cols = {
+const BHUE = {
   DYEL:   "#ffff44", // Dark yellow  (mma 1,1,.55; py 1,1,.4)
   LYEL:   "#ffff88", // Light yellow (mma 1,1,.68; py 1,1,.6)
   ROSE:   "#ff8080", // (originally 1,1/3,1/3 then 251,130,199)
@@ -93,43 +88,35 @@ self.Cols = {
   RAZR3:  "#6BC461", // Green line;                     faded = #6BC461
 }
 
-/** Akrasia horizon, in seconds 
-    @type {Number} */
-self.AKH   = 7*SID
-/** ~2038, specifically Rails's ENDOFDAYS+1 (was 2^31-2weeks) 
-    @type {Number} */
-self.BDUSK = 2147317201
+const AKH   = 7*SID       // Akrasia horizon, in seconds 
+const BDUSK = 2147317201  // circa 2038, Rails's ENDOFDAYS+1 (was 2^31-2weeks)
 
-/** Number of seconds in a year, month, etc 
-    @enum {Number} */
-self.SECS = { 'y' : DIY*SID, 
-              'm' : DIY*SID/12,
-              'w' : 7*SID,
-              'd' : SID,
-              'h' : 3600        }
-/** Unit names
-    @enum {string} */
-self.UNAM = { 'y' : 'year',
-              'm' : 'month',
-              'w' : 'week',
-              'd' : 'day',
-              'h' : 'hour'      }
+// Number of seconds in a year, month, etc 
+const SECS = { 'y' : DIY*SID, 
+               'm' : DIY*SID/12,
+               'w' : 7*SID,
+               'd' : SID,
+               'h' : 3600        }
+// Unit names
+const UNAM = { 'y' : 'year',
+               'm' : 'month',
+               'w' : 'week',
+               'd' : 'day',
+               'h' : 'hour'      }
 
 /******************************************************************************
  *                                 FUNCTIONS                                  *
  ******************************************************************************/
 
-/** Returns minimum from an array of numbers 
-    @param {Number[]} arr Input array */
-self.arrMin = (arr) =>( min.apply(null, arr)) // could use spread operator
-/** Returns maximum from an array of numbers
-    @param {Number[]} arr Input array */
-self.arrMax = (arr) =>( max.apply(null, arr)) // could use spread operator
+// Type-checking convenience functions
+function nummy(x)   { return !isNaN(parseFloat(x)) && isFinite(x) }
+function stringy(x) { return typeof x === "string" }
+function listy(x)   { return Array.isArray(x) }
 
-/** Returns true if input is an array 
-    @param {} o Input parameter*/
-//self.isArray = (o) => ((/Array/).test(Object.prototype.toString.call(o)))
-self.isArray = Array.isArray
+
+// Min/max of an array of numbers
+function arrMin(arr) { return min.apply(null, arr) } // use spread operator?
+function arrMax(arr) { return max.apply(null, arr) } 
 
 // TODO: Does not properly copy, especially for array properties. FIX
 // https://github.com/beeminder/road/issues/199
@@ -138,16 +125,16 @@ self.isArray = Array.isArray
 // @param {object}  fr Source object 
 // @param {object}  to Destination object
 // @param {boolean} ow Whether to overwrite existing properties of destination
-self.extendo = (to, fr, ow) => {
+function extendo(to, fr, ow) {
   let prop, hasProp
   for (prop in fr) {
     hasProp = to[prop] !== undefined
     if (hasProp && typeof fr[prop] === 'object' &&
         fr[prop] !== null  && fr[prop].nodeName === undefined ) {
-      if (self.isArray(fr[prop])) { if (ow) to[prop] = fr[prop].slice(0) }
-      else to[prop] = self.extendo({}, fr[prop], ow)
+      if (listy(fr[prop])) { if (ow) to[prop] = fr[prop].slice(0) }
+      else to[prop] = extendo({}, fr[prop], ow)
     } else if (ow || !hasProp) {
-      if (self.isArray(fr[prop])) to[prop] = fr[prop].slice(0)
+      if (listy(fr[prop])) to[prop] = fr[prop].slice(0)
       else to[prop] = fr[prop]
     }
   }
@@ -155,29 +142,25 @@ self.extendo = (to, fr, ow) => {
 }
 
 // Make a deep copy of object x (simpler/better version of above?)
-self.deepcopy = (x) => {
+function deepcopy(x) {
   let y, val, key
   if (typeof x !== "object" || x === null) return x // base case
-  y = Array.isArray(x) ? [] : {} // initialize the copy
+  y = listy(x) ? [] : {} // initialize the copy
   for (key in x) {
     val = x[key]
-    y[key] = self.deepcopy(val) // recur!
+    y[key] = deepcopy(val) // recur!
   }
   return y
 }
 
-/** Applies f on elements of dom, picks the maximum and returns
-    the domain element that achieves that maximum. 
-
-    @param {function} f Filter function
-    @param {Array} dom Array with domain elements
-*/
-self.argmax = (f, dom) => {
+// Return the index of domain element for which the function is maximal.
+/* Not currently used. 
+function argmax(f, dom) {
   if (dom === null) return null
   let newdom = dom.map(f)
-  let maxelt = self.arrMax(newdom)
+  let maxelt = arrMax(newdom)
   return dom[newdom.findIndex(e => e === maxelt)]
-}
+} */
 
 /** Partitions list l into sublists whose beginning indices are separated by d,
     and whose lengths are n. If the end of the list is reached and there are
@@ -187,31 +170,30 @@ self.argmax = (f, dom) => {
     @param {Number} n Length of each sublist
     @param {Number} d Sublist separation
 */
-self.partition = (l, n, d) => {
+function partition(l, n, d) {
   let il = l.length
   let ol = []
   for (let i=0; i < il; i+=d) if (i+n <= il) ol.push(l.slice(i,i+n))
   return ol
 }
 
-/** Returns a list containing the fraction and integer parts of a float
-    @param {Number} f Input number */
-self.modf = (f) =>{
-  let fp = (f<0)?-f:f, fl = floor(fp)
-  return (f<0)?[-(fp-fl),-fl]:[(fp-fl),fl]
+// Return a list containing the fraction and integer parts of a float
+function modf(x) {
+  const s = sign(x)
+  const fl = floor(s*x)
+  return [s*(s*x-fl), s*fl]
 }
 
-/** The qth quantile of values in l. For median, set q=1/2.  See
-    http://reference.wolfram.com/mathematica/ref/Quantile.html 
-    by Ernesto P. Adorio, PhD; UP Extension Program in Pampanga, Clark Field
-    @param {Number[]} l Input array
-    @param {Number} q Desired quantile, in range [0,1]
-    @param {Number} [qt=1] Type of quantile computation, Hyndman and Fan
-      algorithm, integer between 1 and 9
-    @param {boolean} [issorted=false] Flag to indicate whether the input array
-      is sorted
-*/
-self.quantile = (l, q, qt=1, issorted=false) => {
+// The qth quantile of values in l. For median, set q=1/2.
+// See http://reference.wolfram.com/mathematica/ref/Quantile.html 
+// by Ernesto P. Adorio, PhD; UP Extension Program in Pampanga, Clark Field
+// @param {Number[]} l Input array
+// @param {Number} q Desired quantile, in range [0,1]
+// @param {Number} [qt=1] Type of quantile computation, Hyndman and Fan
+//   algorithm, integer between 1 and 9
+// @param {boolean} [issorted=false] Flag to indicate whether the input array is
+// sorted.
+function quantile(l, q, qt=1, issorted=false) {
   let y
   if (issorted) y = l
   else y = l.slice().sort((a,b)=>(a-b))
@@ -232,7 +214,7 @@ self.quantile = (l, q, qt=1, issorted=false) => {
       c = abcd[qt-1][2],
       d = abcd[qt-1][3],
       n = l.length,
-      out = self.modf(a + (n+b)*q - 1),
+      out = modf(a + (n+b)*q - 1),
       g = out[0],
       j = out[1]
   if (j < 0) return y[0]
@@ -243,15 +225,14 @@ self.quantile = (l, q, qt=1, issorted=false) => {
 
 /** Return a list with the sum of the elements in l 
  @param {list} l Input array */
-self.sum = (l) => (l.reduce((a,b)=>(a+b), 0))
+function sum(l) { return l.reduce((a,b)=>(a+b), 0) }
 
 /**  foldlist(f,x, [e1, e2, ...]) -> [x, f(x,e1), f(f(x,e1), e2), ...] 
-
  @param {function} f Filter function that takes two arguments
  @param {} x First argument to the function
  @param {Array} l Array of second arguments to the function
 */
-self.foldlist = (f, x, l) => {
+function foldlist(f, x, l) {
   let out = [x]
   for (let i = 0; i < l.length; i++)
     out.push(f(out[i], l[i]))
@@ -261,7 +242,7 @@ self.foldlist = (f, x, l) => {
 /** Return a list with the cumulative sum of the elements in l,
     left to right 
     @param {Number[]} l*/
-self.accumulate = (l) => {
+function accumulate(l) {
   let ne = l.length
   if (ne === 0) return l
   let nl = [l[0]]
@@ -275,7 +256,7 @@ self.accumulate = (l) => {
     @param {Number[]} l 
     @param {Number} [dir=1] Direction to monotonize: 1 or -1
 */
-self.monotonize = (l, dir=1) => {
+function monotonize(l, dir=1) {
   let lo = l.slice(), i
   if (dir === 1) {
     for (i = 1; i < lo.length; i++) lo[i] = max(lo[i-1],lo[i])
@@ -285,23 +266,25 @@ self.monotonize = (l, dir=1) => {
   return lo
 }
 
-/** zip([[1,2], [3,4]]) --> [[1,3], [2,4]].
-    @param {Array[]} av Array of Arrays to zip */
-self.zip =  (av) => av[0].map((_,i) => av.map(a => a[i]))
+// zip([[1,2], [3,4]]) --> [[1,3], [2,4]].
+// @param {Array[]} av Array of Arrays to zip
+function zip(av) { return av[0].map((_,i) => av.map(a => a[i])) }
 
 // Return 0 when x is very close to 0.
-self.chop = (x, tol=1e-7) => (abs(x) < tol ? 0 : x)
+function chop(x, tol=1e-7) { return abs(x) < tol ? 0 : x }
 
 // Return an integer when x is very close to an integer.
-self.ichop = (x, tol=1e-7) => {
+/* Not currently used
+function ichop(x, tol=1e-7) {
   let fp = x % 1, ip = x - fp
   if (fp < 0) {fp += 1; ip -= 1;}
-  if (fp > 0.5) fp = 1 - self.chop(1-fp)
-  return floor(ip) + self.chop(fp, tol)
+  if (fp > 0.5) fp = 1 - chop(1-fp)
+  return floor(ip) + chop(fp, tol)
 }
+*/
 
 // Clip x to be at least a and at most b: min(b,max(a,x)). Swaps a & b if a > b.
-self.clip = (x, a, b) => {
+function clip(x, a, b) {
   if (a > b) [a, b] = [b, a]
   return x < a ? a : x > b ? b : x
 }
@@ -322,9 +305,9 @@ self.clip = (x, a, b) => {
 //   Sorted array:                                [-1,  3,  4,  9,  9]
 //   Output of distance function on each element: [-8, -4, -3, +2, +2]
 // In that case searchLow returns the (index of the) 4 and searchHigh the 9. In
-// other words, searchLow errs low, returning the biggest element less than the
+// other words, searchLow errs low, returning the biggest element LESS than the
 // target if the target isn't found. And searchHigh errs high, returning the
-// smallest element greater than the target if the target isn't found.
+// smallest element GREATER than the target if the target isn't found.
 // In the case that every element is too low...                     L   H
 //   Sorted array:                                [-2, -2, -1,  4,  6]
 //   Output of distance function on each element: [-9, -9, -8, -3, -1]
@@ -350,7 +333,7 @@ self.clip = (x, a, b) => {
 // 3. Every element too small: return n-1 (the index of the last element)
 // 4. Every element is too big: return -1 (one less than the first element)
 // *This is like finding the infimum of the set of just-right elements.*
-self.searchLow = (sa, df) => {
+function searchLow(sa, df) {
   if (!sa || !sa.length) return -1 // empty/non-array => every element too big
 
   let li = -1         // initially left of the leftmost element of sa
@@ -372,7 +355,7 @@ self.searchLow = (sa, df) => {
 // 3. Every element is too small: return n (one more than the last element)
 // 4. Every element is too big: return 0 (the index of the first element)
 // *This is like finding the supremum of the set of just-right elements.*
-self.searchHigh = (sa, df) => {
+function searchHigh(sa, df) {
   if (!sa || !sa.length) return 0 // empty/non-array => every element too small
 
   let li = -1         // initially left of the leftmost element of sa
@@ -391,7 +374,7 @@ self.searchHigh = (sa, df) => {
 // tests. I'm not sure how best to do that. We don't want crap like the
 // following in production... 
 /*
-const unit_test_1 = self.searchLow([7,7,7], x => x-7)
+const unit_test_1 = searchLow([7,7,7], x => x-7)
 if (unit_test_1 !== 0) {
   console.log("TEST FAILED: searchHigh/Low edge case")
   exit(1)
@@ -410,9 +393,9 @@ if (unit_test_1 !== 0) {
     @param {Number} [t=10] Total number of significant figures 
     @param {Number} [d=5] Number of significant figures after the decimal 
     @param {Number} [e=0] Error direction for conservarounding */
-self.shn = (x, t=10, d=5, e=0) => {
+function shn(x, t=10, d=5, e=0) {
   if (isNaN(x)) return x.toString()
-  x = self.chop(x)
+  x = chop(x)
   let i = floor(abs(x)), k, fmt, ostr
   i = i===0 ? 0 : i.toString().length // # of digits left of the decimal
   if (abs(x) > pow(10,i)-0.5) i += 1
@@ -431,13 +414,13 @@ self.shn = (x, t=10, d=5, e=0) => {
   // Crappy conservaround that just tacks on decimal places till conservative
   if (e < 0 && xn > x || e > 0 && xn < x) { 
     if (d >= 10) xn = x
-    else return self.shn(x, t, d+1, e)
+    else return shn(x, t, d+1, e)
   }
 
   // If total significant digits < i, do something about it
   if (t < i && abs(pow(10, i-1) - xn) < 0.5) 
     xn = pow(10, i-1)
-  t = self.clip(t, i, i+d)
+  t = clip(t, i, i+d)
   
   // If the magnitude <= 1e-4, prevent scientific notation
   if (abs(xn) < 1e-4 || floor(xn) === 9 ||
@@ -456,62 +439,59 @@ self.shn = (x, t=10, d=5, e=0) => {
     @param {Number} [t=16] Total number of significant figures 
     @param {Number} [d=5] Number of significant figures after the decimal 
     @param {Number} [e=0] Error direction for conservarounding */
-//self.shns = (x, t=16, d=5, e=0) => (x>=0 ? "+" : "") + self.shn(x, t, d, e)
+//shns = (x, t=16, d=5, e=0) => (x>=0 ? "+" : "") + shn(x, t, d, e)
 
 /** Show Date: take timestamp and return something like 2012.10.22
     @param {Number} t Unix timestamp */
-self.shd = (t) => t === null ? 'null' : self.formatDate(t)
+function shd(t) { return t === null ? 'null' : formatDate(t) }
 
-/** Show Date/Time: take timestamp and return something like 2012.10.22 15:27:03
-    @param {Number} t Unix timestamp */
-self.shdt = (t) => t === null ? 'null' : self.formatDateTime(t)
+// Show Date/Time: Take Unix timestamp and return something like 
+// "2012.10.22 15:27:03". Not currently used.
+//function shdt(t) return { t === null ? 'null' : formatDateTime(t) }
 
-/** Singular or Plural: Pluralize the given noun properly, if n is not 1.
-    Provide the plural version if irregular. 
-    Eg: splur(3, "boy") -> "3 boys", splur(3, "man", "men") -> "3 men" 
-    @param {Number} n Count
-    @param {String} noun Noun to pluralize
-    @param {String} [nounp=''] Irregular pluralization if present */
-self.splur = (n, noun, nounp='') => {
+// Singular or Plural: Pluralize the given noun properly, if n is not 1.
+// Provide the plural version if irregular. 
+// Eg: splur(3, "boy") -> "3 boys", splur(3, "man", "men") -> "3 men" 
+function splur(n, noun, nounp='') {
   if (nounp === '') nounp = noun + 's'
-  return self.shn(n, 10, 5) + ' ' + (n === 1 ? noun : nounp)
+  return shn(n, 10, 5) + ' ' + (n === 1 ? noun : nounp)
 }
 
-/** Rate as a string.
- @param {Number} r Rate */
-//self.shr = (r) => {
+// Rate as a string.
+//function shr(r) {
 //  //if (r === null) r = 0 // maybe?
-//  return self.shn(r, 4,2)
+//  return shn(r, 4,2)
 //}
 
 // Shortcuts for common ways to show numbers
 /** shn(chop(x), 4, 2). See {@link module:butil.shn shn}.
     @param {Number} x Input 
     @param {Number} [e=0] Error direction for conservarounding */
-//self.sh1 = function(x, e=0)  { return self.shn( x, 4,2, e) }
+//sh1 = function(x, e=0)  { return shn( x, 4,2, e) }
 /** shns(chop(x), 4, 2). See {@link module:butil.shns shns}.
     @param {Number} x Input 
     @param {Number} [e=0] Error direction for conservarounding */
-//self.sh1s = function(x, e=0) { return self.shns(x, 4,2, e) }
+//sh1s = function(x, e=0) { return shns(x, 4,2, e) }
 
 
 /******************************************************************************
  *                         QUANTIZE AND CONSERVAROUND                         *
  ******************************************************************************/
 
+// MASTER COPY CONFUSION WARNING:
 // These functions are from conservaround.glitch.me
 
 // Normalize number: Return the canonical string representation. Is idempotent.
 // If we were true nerds we'd do it like wikipedia.org/wiki/Normalized_number
 // but instead we're canonicalizing via un-scientific-notation-ing. The other
 // point of this is to not lose trailing zeros after the decimal point.
-self.normberlize = (x) => {
+function normberlize(x) {
   x = typeof x == 'string' ? x.trim() : x.toString()  // stringify the input
   const car = x.charAt(0), cdr = x.substr(1)          // 1st char, rest of chars
   if (car === '+') x = cdr                            // drop the leading '+'
-  if (car === '-') return '-'+self.normberlize(cdr)   // set aside leading '-'
+  if (car === '-') return '-'+normberlize(cdr)        // set aside leading '-'
   x = x.replace(/^0+([^eE])/, '$1')                   // ditch leading zeros
-  const rnum = /^(?:\d+\.?\d*|\.\d+)$/                // eg 2 or 5. or 6.7 or .9
+  const rnum = /^(?:\d+\.?\d*|\.\d+)$/                // eg 2 or 3. or 6.7 or .9
   if (rnum.test(x)) return x                          // already normal! done!
   const rsci = /^(\d+\.?\d*|\.\d+)e([+-]?\d+)$/i      // scientific notation
   const marr = x.match(rsci)                          // match array
@@ -532,8 +512,8 @@ self.normberlize = (x) => {
 // logs and powers and such but (a) the string the user typed is the ground
 // truth and (b) using the numeric representation we wouldn't be able to tell
 // the difference between, say, "3" (precision 1) and "3.00" (precision .01).
-self.quantize = (x) => {
-  let s = self.normberlize(x)          // put the input in canonical string form
+function quantize(x) {
+  let s = normberlize(x)               // put the input in canonical string form
   if (/^-?\d+\.?$/.test(s)) return 1   // no decimal pt (or only a trailing one)
   s = s.replace(/^-?\d*\./, '.')       // eg, -123.456 -> .456
   s = s.replace(/\d/g, '0')            // eg,             .456 -> .000
@@ -543,25 +523,25 @@ self.quantize = (x) => {
 
 // Round x to nearest r, avoiding floating point crap like 9999*.1=999.900000001
 // at least when r is an integer or negative power of 10.
-self.round = (x, r=1) => {
+function tidyround(x, r=1) {
   if (r < 0) return NaN
   if (r===0) return +x
   const y = round(x/r)
-  const rpow = /^0?\.(0*)1$/   // eg .1 or .01 or .001 -- a negative power of 10
-  const marr = r.toString().match(rpow)   // match array; marr[0] is whole match
+  const rpow = /^0?\.(0*)10*$/ // eg .1 or .01 or .001 -- a negative power of 10
+  const marr = normberlize(r).match(rpow) // match array; marr[0] is whole match
   if (!marr) return y*r
   const p = -marr[1].length-1 // p is the power of 10
-  return +self.normberlize(`${y}e${p}`)
+  return +normberlize(`${y}e${p}`)
 }
 
 // Round x to the nearest r ... that's >= x if e is +1
 //                          ... that's <= x if e is -1
-self.conservaround = (x, r=1, e=0) => {
-  let y = self.round(x, r)
+function conservaround(x, r=1, e=0) {
+  let y = tidyround(x, r)
   if (e===0) return y
   if (e < 0 && y > x) y -= r
   if (e > 0 && y < x) y += r
-  return self.round(y, r) // y's already rounded but the +r can f.p. it up
+  return tidyround(y, r) // already rounded but the +r can fu-loatingpoint it up
 }
 
 /******************************************************************************
@@ -572,7 +552,7 @@ self.conservaround = (x, r=1, e=0) => {
  @param {Number} a Left boundary
  @param {Number} b Right boundary
  @param {Number} n Number of samples */
-self.linspace = (a, b, n) => {
+function linspace(a, b, n) {
   if (typeof n === "undefined") n = max(round(b-a)+1, 1)
   if (n < 2) return n===1 ? [a] : []
   let i,ret = Array(n)
@@ -583,7 +563,7 @@ self.linspace = (a, b, n) => {
 
 // Convex combination: x rescaled to be in [c,d] as x ranges from a to b.
 // PS: This wants to be called lerp, for linear interpolation. HT Freya Holmer
-self.rescale = (x, a,b, c,d) => {
+function rescale(x, a,b, c,d) {
   if (abs(a-b) < 1e-7) return x <= (a+b)/2 ? c : d // avoid division by 0
   return c + (x-a)/(b-a)*(d-c)
 }
@@ -593,7 +573,7 @@ self.rescale = (x, a,b, c,d) => {
    @param {Array} a Input array
    @param {function} [idfun=(x=>x)] Function to map elements to an equivalence
            class */
-self.deldups = (a, idfun=(x=>x)) => {
+function deldups(a, idfun=(x=>x)) {
   let seen = {}
   return a.filter(i => {
     const marker = JSON.stringify(idfun(i))
@@ -603,14 +583,14 @@ self.deldups = (a, idfun=(x=>x)) => {
 
 /** Whether list l is sorted in increasing order.
     @param {Number[]} l Input list*/
-self.orderedq = (l) => {
+function orderedq(l) {
   for (let i = 0; i < l.length-1; i++) if (l[i] > l[i+1]) return false
   return true
 }
 
 /** Whether all elements in a list are zero
     @param {Number[]} a Input list*/
-self.nonzero = (a) => {
+function nonzero(a) {
   let l = a.length, i
   for (i = 0; i < l; i++) if (a[i] !== 0) return true
   return false
@@ -619,7 +599,7 @@ self.nonzero = (a) => {
 /** Sum of differences of pairs, eg, [1,2,6,9] -> 2-1 + 9-6 = 1+3 = 4
     If there's an odd number of elements then the last one is ignored.
     @param {Number[]} a Input list*/
-self.clocky = (a) => {
+function clocky(a) {
   let s = 0
   for (let i = 1; i < a.length; i += 2) s += a[i]-a[i-1]
   return s
@@ -628,7 +608,7 @@ self.clocky = (a) => {
 /** Arithmetic mean of values in list a
     @param {Number[]} a Input list*/
 // TODO: average = (array) => array.reduce((s,x) => s+x) / array.length
-self.mean = (a) => {
+function mean(a) {
   let s = 0, l = a.length, i
   if (l == 0) return 0
   for(i = 0; i < l; i++) s += a[i]
@@ -637,7 +617,7 @@ self.mean = (a) => {
 
 /** Median of values in list a
     @param {Number[]} a Input list*/
-self.median = (a) => {
+function median(a) {
   let m = 0, l = a.length
   a.sort((a,b)=>a-b)
   if (l % 2 === 0) m = (a[l/2-1] + a[l/2]) / 2
@@ -649,7 +629,7 @@ self.median = (a) => {
     appears first in the lsit. (Mathematica-brain gave the median of the list of
     commonest elements but literally no one cares about aggday=mode anyway.)
     @param {Number[]} a Input list*/
-self.mode = (a) => {
+function mode(a) {
   if (!a || !a.length) return NaN
   let tally = {} // hash mapping each element of a to how many times it appears
   let maxtally = 1
@@ -665,8 +645,8 @@ self.mode = (a) => {
 }
 
 // Trimmed mean. Takes a list of numbers, a, and a fraction to trim.
-self.trimmean = (a, trim) => {
-  const n = Math.floor(a.length * trim)
+function trimmean(a, trim) {
+  const n = floor(a.length * trim)
   const ta = a.sort((a,b) => a-b).slice(n, a.length - n) // trimmed array
   return ta.reduce((a,b) => a+b) / ta.length
 }
@@ -675,13 +655,13 @@ self.trimmean = (a, trim) => {
     @param {Number} x
     @param {Number} min
     @param {Number} max */
-self.inrange = (x, min, max) => x >= min && x <= max
+// function inrange(x, min, max) { return x >= min && x <= max }
 
 /** Whether abs(a-b) < eps 
     @param {Number} a
     @param {Number} b
     @param {Number} eps */
-self.nearEq = (a, b, eps) => abs(a-b) < eps
+function nearEq(a, b, eps) { return abs(a-b) < eps }
 
 /******************************************************************************
  *                              DATE FACILITIES                               *
@@ -691,11 +671,13 @@ self.nearEq = (a, b, eps) => abs(a-b) < eps
  * days (uses moment)
  @param {moment} m Moment object
  @param {Number} days Number of days to add */
-self.addDays = (m, days) => {
+/* Not currently used
+function addDays(m, days) {
   let result = moment(m)
   result.add(days, 'days')
   return result
 }
+*/
 
 /* Utility functions from hmsparsafore in case they're useful...
 
@@ -745,7 +727,7 @@ function TODfromUnixtime(t) {
 
 /** Fixes the supplied unixtime to 00:00:00 on the same day (uses Moment)
     @param {Number} ut Unix time  */
-self.daysnap = (ut) => {
+function daysnap(ut) {
   let d = moment.unix(ut).utc()
   d.hours(0)
   d.minutes(0)
@@ -756,7 +738,7 @@ self.daysnap = (ut) => {
 
 /** Scooches unixtime ut to 00:00:00 on the first of the month (uses Moment)
     @param {Number} ut Unix time  */
-self.monthsnap = (ut) => {
+function monthsnap(ut) {
   let d = moment.unix(ut).utc()
   d.date(1).hours(0).minutes(0).seconds(0).milliseconds(0)
   return d.unix()
@@ -765,7 +747,7 @@ self.monthsnap = (ut) => {
 /** Fixes the supplied unixtime to the first day 00:00:00 on the
     same year (uses moment)
     @param {Number} ut Unix time  */
-self.yearsnap = (ut) => {
+function yearsnap(ut) {
   let d = moment.unix(ut).utc()
   d.month(0).date(1).hours(0).minutes(0).seconds(0).milliseconds(0)
   return d.unix()
@@ -773,7 +755,7 @@ self.yearsnap = (ut) => {
 
 /** Formats the supplied unix time as YYYY.MM.DD
     @param {Number} ut Unix time  */
-self.formatDate = (ut) => {
+function formatDate(ut) {
   let mm = moment.unix(ut).utc()
   let year = mm.year()
   let month = (mm.month()+1)
@@ -785,7 +767,7 @@ self.formatDate = (ut) => {
 
 /** Formats the supplied unix time as YYYY.MM.DD HH.MM.SS
     @param {Number} ut Unix time  */
-self.formatDateTime = (ut) => {
+function formatDateTime(ut) {
   let mm = moment.unix(ut).utc()
   let hour = mm.hour()
   hour = hour < 10 ? "0"+hour.toString() : hour.toString()
@@ -793,7 +775,7 @@ self.formatDateTime = (ut) => {
   minute = minute < 10 ? "0"+minute.toString() : minute.toString()
   let second = mm.second()
   second = second < 10  ? "0"+second.toString() : second.toString()
-  return self.formatDate(ut)+" "+hour+":"+minute+":"+second
+  return formatDate(ut)+" "+hour+":"+minute+":"+second
 }
 
 let dpre_empty = RegExp('^(\\d{4})(\\d{2})(\\d{2})$')
@@ -802,7 +784,7 @@ let pat_empty = "YYYYMMDD"
     (dreev confirmed this seems to match Beebrain's function)
     @param {String} s Daystamp as a string "YYYY[s]MM[s]DD"
     @param {String} [sep=''] Separator character */
-self.dayparse = (s, sep='') => {
+function dayparse(s, sep='') {
   let re, pat
   if (s == null) return null
   if (sep=='') {
@@ -829,7 +811,7 @@ self.dayparse = (s, sep='') => {
     option to choose a separator
     @param {Number} t Integer unix timestamp
     @param {String} [sep=''] Separator character to use */
-self.dayify = (t, sep = '') => {
+function dayify(t, sep = '') {
   if (isNaN(t) || t < 0) { return "ERROR" }
   if (t == null) return null
   let mm = moment.unix(t).utc()
@@ -841,7 +823,7 @@ self.dayify = (t, sep = '') => {
   
 /** adjasof: Indicates whether the date object for "now" should be
  * adjusted for the asof value to support the sandbox etc. */
-self.nowstamp = (tz, deadline, asof) => {
+function nowstamp(tz, deadline, asof) {
   let d
   if (tz) {
     // Use supplied timezone if moment-timezone is loaded
@@ -867,15 +849,15 @@ self.nowstamp = (tz, deadline, asof) => {
   d.subtract(deadline, 's')
   return d.format("YYYYMMDD")
 }
-/** Converts a number to an integer string.
-    @param {Number} x Input number */
-self.sint = (x) => round(x).toString()
+
+// Convert a number to an integer string.
+function sint(x) { return round(x).toString() }
 
 /** Returns a promise that loads a JSON file from the supplied
     URL. Resolves to null on error, parsed JSON object on
     success. 
     @param {String} url URL to load JSON from*/
-self.loadJSON = (url) => {   
+function loadJSON(url) {
   return new Promise(function(resolve, reject) {
     if (url === "") resolve(null)
     let xobj = new XMLHttpRequest()
@@ -903,7 +885,7 @@ self.loadJSON = (url) => {
 
 /** Changes first letter of each word to uppercase 
     @param {String} str Input string*/
-self.toTitleCase = (str) => {
+function toTitleCase(str) {
   return str.replace( /\w\S*/g, function(txt) { 
     return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()});
 }
@@ -912,7 +894,7 @@ self.toTitleCase = (str) => {
  * objects within the array 
  @param {Array} a1 First array 
  @param {Array} a2 Second array */
-self.arrayEquals = (a1, a2) => {
+function arrayEquals(a1, a2) {
   // if the other array is a falsy value, return
   if (!(a1 instanceof Array) || !(a2 instanceof Array)) return false
 
@@ -923,7 +905,7 @@ self.arrayEquals = (a1, a2) => {
     // Check if we have nested arrays
     if (a1[i] instanceof Array && a2[i] instanceof Array) {
       // recurse into the nested arrays
-      if (!self.arrayEquals(a1[i], a2[i])) return false
+      if (!arrayEquals(a1[i], a2[i])) return false
     } else if (a1[i] !== a2[i]) { 
       // Warning - two separate object instances will never
       // be equal: {x:20} != {x:20}
@@ -933,11 +915,27 @@ self.arrayEquals = (a1, a2) => {
   return true
 }
 
-// Type-checking convenience functions
-self.nummy   = (x) => !isNaN(parseFloat(x)) && isFinite(x)
-self.stringy = (x) => typeof x === "string"
-self.listy   = (x) => Array.isArray(x)
+/******************************************************************************
+ *                                 SPLINE FIT                                 *
+ ******************************************************************************/
 
-return self
+// TODO
+
+
+// All the constants and functions butil exports
+return {
+  MAXTIME, BBURL, BHUE, AKH, BDUSK, SECS, UNAM, 
+  nummy, stringy, listy,
+  arrMin, arrMax, extendo, deepcopy, partition, quantile, sum, foldlist, 
+  accumulate, monotonize, zip, chop, clip, 
+  searchLow, searchHigh, 
+  shn, shd, splur, 
+  conservaround, 
+  linspace, rescale, deldups, orderedq, nonzero, 
+  clocky, mean, median, mode, trimmean, 
+  nearEq, 
+  daysnap, monthsnap, yearsnap, formatDate, dayparse, dayify, nowstamp, 
+  loadJSON, toTitleCase, arrayEquals, 
+}
 
 })); // END MAIN ---------------------------------------------------------------

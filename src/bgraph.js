@@ -257,22 +257,22 @@ const SVGStyle =
 + ".loading{text-anchor:middle;font-family:Dejavu Sans,sans-serif}"
 + ".zoomarea{fill:none}"
 + "circle.ap{stroke:none}"
-+ "circle.rd{stroke:none;pointer-events:none;fill:"+bu.Cols.ROSE+"}"
-+ "circle.std{stroke:none;pointer-events:none;fill:"+bu.Cols.PURP+"}"
-+ "circle.hp{stroke:none;fill:"+bu.Cols.WITE+"}"
-+ ".dp.gra,.ap.gra{fill:"+bu.Cols.GRADOT+"}"
-+ ".dp.grn,.ap.grn{fill:"+bu.Cols.GRNDOT+"}"
-+ ".dp.blu,.ap.blu{fill:"+bu.Cols.BLUDOT+"}"
-+ ".dp.orn,.ap.orn{fill:"+bu.Cols.ORNDOT+"}"
-+ ".dp.red,.ap.red{fill:"+bu.Cols.REDDOT+"}"
-+ ".dp.blk,.ap.blk{fill:"+bu.Cols.BLCK+"}"
++ "circle.rd{stroke:none;pointer-events:none;fill:"+bu.BHUE.ROSE+"}"
++ "circle.std{stroke:none;pointer-events:none;fill:"+bu.BHUE.PURP+"}"
++ "circle.hp{stroke:none;fill:"+bu.BHUE.WITE+"}"
++ ".dp.gra,.ap.gra{fill:"+bu.BHUE.GRADOT+"}"
++ ".dp.grn,.ap.grn{fill:"+bu.BHUE.GRNDOT+"}"
++ ".dp.blu,.ap.blu{fill:"+bu.BHUE.BLUDOT+"}"
++ ".dp.orn,.ap.orn{fill:"+bu.BHUE.ORNDOT+"}"
++ ".dp.red,.ap.red{fill:"+bu.BHUE.REDDOT+"}"
++ ".dp.blk,.ap.blk{fill:"+bu.BHUE.BLCK+"}"
 + ".dp.fuda,.ap.fuda{fill-opacity:0.3}"
-+ ".guides{pointer-events:none;fill:none;stroke:"+bu.Cols.LYEL+"}"
++ ".guides{pointer-events:none;fill:none;stroke:"+bu.BHUE.LYEL+"}"
 + ".ybhp{pointer-events:none}"
-+ ".rosy{fill:none;stroke:"+bu.Cols.ROSE+";pointer-events:none}"
-+ ".steppy{fill:none;stroke:"+bu.Cols.PURP+";pointer-events:none}"
-+ ".steppyppr{fill:none;stroke-opacity:0.8;stroke:"+bu.Cols.LPURP+";pointer-events:none}"
-+ ".derails{fill:"+bu.Cols.REDDOT+";pointer-events:none}"
++ ".rosy{fill:none;stroke:"+bu.BHUE.ROSE+";pointer-events:none}"
++ ".steppy{fill:none;stroke:"+bu.BHUE.PURP+";pointer-events:none}"
++ ".steppyppr{fill:none;stroke-opacity:0.8;stroke:"+bu.BHUE.LPURP+";pointer-events:none}"
++ ".derails{fill:"+bu.BHUE.REDDOT+";pointer-events:none}"
 + ".overlay .textbox{fill:#ffffcc;fill-opacity:0.5;stroke:black;"
 + "stroke-width:1;pointer-events:none;rx:5;ry:5}"
 
@@ -601,7 +601,7 @@ function showOverlay(msgs, fs=-1, fw="bold",
                            .attr('y',             0)
                            .attr('width',         sw)
                            .attr('height',        sh)
-                           .style('fill',         bu.Cols.WITE)
+                           .style('fill',         bu.BHUE.WITE)
                            .style('fill-opacity', 0.5)
     }
     pg.append('svg:rect').attr("class",  "textbox")
@@ -708,7 +708,7 @@ function createGraph() {
                          .attr("y",                0)
                          .attr("width",            10)
                          .attr("height",           10)
-                         .attr("fill", bu.Cols.PINK)
+                         .attr("fill", bu.BHUE.PINK)
   gPinkPat.append("line").attr("x1",            0)
                          .attr("y1",            0)
                          .attr("x2",            0)
@@ -765,7 +765,7 @@ function createGraph() {
   zoomarea = svg.append('rect').attr("class",  "zoomarea")
                                .attr("x",      plotbox.x)
                                .attr("y",      plotbox.y)
-                               .attr("color",  bu.Cols.REDDOT)
+                               .attr("color",  bu.BHUE.REDDOT)
                                .attr("width",  plotbox.width)
                                .attr("height", plotbox.height)
   const oldscroll = zoomarea.on("wheel.scroll")
@@ -1369,12 +1369,12 @@ let dbbody
 function duebylabel(i, now) {
   const mm = moment.unix(gol.asof+i*SID).utc()
   const ds = bu.dayparse(mm.format("YYYYMMDD")) / SID
-  if (ds == now-1) return ["Yesterday", bu.Cols.REDDOT]
-  if (ds == now) return ["Today", bu.Cols.ORNG]
-  if (ds == now+1) return ["Tomorrow", bu.Cols.BLUDOT]
+  if (ds == now-1) return ["Yesterday", bu.BHUE.REDDOT]
+  if (ds == now) return ["Today", bu.BHUE.ORNG]
+  if (ds == now+1) return ["Tomorrow", bu.BHUE.BLUDOT]
   const dstr = mm.format("ddd (Do)")
-  if (ds == now+2) return [dstr, bu.Cols.GRNDOT]
-  return [dstr, bu.Cols.BLCK]
+  if (ds == now+2) return [dstr, bu.BHUE.GRNDOT]
+  return [dstr, bu.BHUE.BLCK]
 }
   
 /** Creates the skeleton for the dueby table and populates it with
@@ -2935,10 +2935,10 @@ function animAura(enable) {
   const e = gAura.selectAll(".aura")
   const ep = gAura.selectAll(".aurapast")
   
-  const s =[["stroke",  "#9e559e", bu.Cols.LPURP],
-          ["fill",    "#9e559e", bu.Cols.LPURP]]
-  const sp =[["stroke", "#9e559e", bu.Cols.LPURP],
-           ["fill",   "#9e559e", bu.Cols.LPURP]]
+  const s =[["stroke",  "#9e559e", bu.BHUE.LPURP],
+          ["fill",    "#9e559e", bu.BHUE.LPURP]]
+  const sp =[["stroke", "#9e559e", bu.BHUE.LPURP],
+           ["fill",   "#9e559e", bu.BHUE.LPURP]]
   const a =[["transform",  "translate(0,5)",  "translate(0,0)"]]
   const ap =[["transform", "translate(0,5)",  "translate(0,0)"]]
   if (enable) {
@@ -2974,7 +2974,7 @@ function animYBR(enable) {
   if (opts.roadEditor) return
   // var e = gOldRoad.select(".oldlanes")
   let styles =[["fill-opacity", 1.0, 0.5],
-               ["fill", "#ffff00", bu.Cols.DYEL]]
+               ["fill", "#ffff00", bu.BHUE.DYEL]]
   // if (enable) startAnim(e, 500, [], styles, "ybr")
   // else stopAnim(e, 300, [], styles, "ybr")
 
@@ -2992,8 +2992,8 @@ function animGuides(enable) {
   const a =[["stroke-width", r3(opts.guidelines.width*scf*2)+"px",
              d => (d<0 ? r3(opts.guidelines.weekwidth*scf)+"px"
                    : r3(opts.guidelines.width*scf)+"px")],
-            ["stroke", d => (d<0 ? bu.Cols.BIGG : "#ffff00"),
-             d => (d<0 ? bu.Cols.BIGG : bu.Cols.LYEL)]]
+            ["stroke", d => (d<0 ? bu.BHUE.BIGG : "#ffff00"),
+             d => (d<0 ? bu.BHUE.BIGG : bu.BHUE.LYEL)]]
   if (enable) startAnim(e, 500, [], a, "guides")
   else        stopAnim( e, 300, [], a, "guides")
   // TODO: also animate the maxflux line: 
@@ -3095,7 +3095,7 @@ function updatePastText() {
                             .attr("y1",            0)
                             .attr("x2",            nXSc(gol.asof*SMS))
                             .attr("y2",            plotbox.height)
-                            .style("stroke",       bu.Cols.AKRA) 
+                            .style("stroke",       bu.BHUE.AKRA) 
                             .style("stroke-width", r3(opts.today.width))
   } else {
     todayelt.attr("x1", nXSc(gol.asof*SMS))
@@ -3110,7 +3110,7 @@ function updatePastText() {
       .attr("class","pasttext")
       .attr("x",textx ).attr("y",texty)
       .attr("transform", "rotate(-90,"+textx+","+texty+")")
-      .attr("fill", bu.Cols.AKRA) 
+      .attr("fill", bu.BHUE.AKRA) 
       .style("font-size", opts.horizon.font+"px") 
       .text("Today"+" ("+moment.unix(gol.asof).utc().format("ddd")+")")
   } else {
@@ -3366,8 +3366,8 @@ function updateAura() {
     if (el.empty()) {
       gAura.append("svg:path")
         .attr("class","aura").attr("d", d)
-        .style("fill", bu.Cols.LPURP)
-        .style("stroke-width", 2).style("stroke", bu.Cols.LPURP);
+        .style("fill", bu.BHUE.LPURP)
+        .style("stroke-width", 2).style("stroke", bu.BHUE.LPURP);
     } else {
       el.attr("d", d);
     }
@@ -3384,10 +3384,10 @@ function updateAura() {
       if (el2.empty()) {
         gAura.append("svg:path")
           .attr("class","aurapast").attr("d", d)
-          .style("fill", bu.Cols.LPURP)
+          .style("fill", bu.BHUE.LPURP)
           .style("stroke-width", 2)
           .style("stroke-dasharray", "4,4")
-          .style("stroke", bu.Cols.LPURP)
+          .style("stroke", bu.BHUE.LPURP)
       } else {
         el2.attr("d", d)
       }
@@ -3412,7 +3412,7 @@ function updateHorizon() {
       .attr("y1",0)
       .attr("x2", nXSc(gol.horizon*SMS))
       .attr("y2",plotbox.height)
-      .style("stroke", bu.Cols.AKRA) 
+      .style("stroke", bu.BHUE.AKRA) 
       .style("stroke-dasharray", 
              (o.dash)+","+(o.dash)) 
       .attr("stroke-width", r3(o.width*scf))
@@ -3432,7 +3432,7 @@ function updateHorizon() {
       .attr("class","horizontext")
       .attr("x",textx ).attr("y",texty)
       .attr("transform", "rotate(-90,"+textx+","+texty+")")
-      .attr("fill", bu.Cols.AKRA) 
+      .attr("fill", bu.BHUE.AKRA) 
       .style("font-size", (o.font)+"px") 
       .text("Akrasia Horizon");
   } else {
@@ -3453,7 +3453,7 @@ function updateContextHorizon() {
       .attr("y1", yScB(gol.yMin-5*(gol.yMax-gol.yMin)))
       .attr("x2", xScB(gol.horizon*SMS))
       .attr("y2", yScB(gol.yMax+5*(gol.yMax-gol.yMin)))
-      .style("stroke", bu.Cols.AKRA) 
+      .style("stroke", bu.BHUE.AKRA) 
       .style("stroke-dasharray", (o.ctxdash)+","+(o.ctxdash)) 
       .style("stroke-width", r3(o.ctxwidth))
   } else {
@@ -3472,7 +3472,7 @@ function updateContextHorizon() {
       .attr("class","ctxhortext")
       .attr("x",textx ).attr("y",texty)
       .attr("transform", "rotate(-90,"+textx+","+texty+")")
-      .attr("fill", bu.Cols.AKRA) 
+      .attr("fill", bu.BHUE.AKRA) 
       .style("font-size", (o.ctxfont)+"px") 
       .text("Horizon")
   } else {
@@ -3499,9 +3499,9 @@ function updateYBHP() {
 
   const xrfull   = [gol.tini, gol.tfin]       // x-axis range tini to tfin
   const xrakr    = [gol.asof, gol.asof+7*SID] // now to akrasia horizon
-  const bgreen   = bu.Cols.RAZR3 // bu.Cols.GRNDOT // was RAZR3
-  const bblue    = bu.Cols.RAZR2
-  const borange  = bu.Cols.RAZR1
+  const bgreen   = bu.BHUE.RAZR3 // bu.BHUE.GRNDOT // was RAZR3
+  const bblue    = bu.BHUE.RAZR2
+  const borange  = bu.BHUE.RAZR1
   const lyellow  = "#ffff88" // light yellow same as LYEL for classic YBR
   const llyellow  = "#ffffbd" // uluc had #ffffdd
   const gsw      = .99  // stroke width for guiding lines
@@ -3710,7 +3710,7 @@ function updatePinkRegion() {                         // AKA nozone AKA oinkzone
 
   const pr = d3.select(" #pinkzonepat"+curid+" rect")
   const pl = d3.select(" #pinkzonepat"+curid+" line")
-  pr.attr("fill", (valid||!opts.roadEditor)?bu.Cols.PINK:"#ffbbbb")
+  pr.attr("fill", (valid||!opts.roadEditor)?bu.BHUE.PINK:"#ffbbbb")
   pl.style("stroke", (valid||!opts.roadEditor)?"#aaaaaa":"#666666")
   
   // Compute road indices for left and right boundaries
@@ -3993,15 +3993,15 @@ function updateContextOldRoad() {
              +ceil(opts.oldRoadLine.ctxdash/2))
       .style("fill", "none")
       .style("stroke-width",opts.oldRoadLine.ctxwidth)
-      .style("stroke", !opts.roadEditor ? bu.Cols.RAZR0
-                                        : bu.Cols.ORNG) // TODO: don't need this
+      .style("stroke", !opts.roadEditor ? bu.BHUE.RAZR0
+                                        : bu.BHUE.ORNG) // TODO: don't need this
   } else {
     roadelt.attr("d", d)
       .style("stroke-dasharray",
              (!opts.roadEditor)?null:(opts.oldRoadLine.ctxdash)+","
              +ceil(opts.oldRoadLine.ctxdash/2))
-      .style("stroke", !opts.roadEditor ? bu.Cols.RAZR0
-                                        : bu.Cols.ORNG) // TODO: don't need this
+      .style("stroke", !opts.roadEditor ? bu.BHUE.RAZR0
+                                        : bu.BHUE.ORNG) // TODO: don't need this
   }
 }
 
@@ -4326,12 +4326,12 @@ function updateContextDots() {
 }
 
 let styleLookup = {}
-styleLookup[bu.Cols.GRADOT] = " gra",
-styleLookup[bu.Cols.GRNDOT] = " grn",
-styleLookup[bu.Cols.BLUDOT] = " blu",
-styleLookup[bu.Cols.ORNDOT] = " orn",
-styleLookup[bu.Cols.REDDOT] = " red",
-styleLookup[bu.Cols.BLCK]   = " blk"
+styleLookup[bu.BHUE.GRADOT] = " gra",
+styleLookup[bu.BHUE.GRNDOT] = " grn",
+styleLookup[bu.BHUE.BLUDOT] = " blu",
+styleLookup[bu.BHUE.ORNDOT] = " orn",
+styleLookup[bu.BHUE.REDDOT] = " red",
+styleLookup[bu.BHUE.BLCK]   = " blk"
 
 function dpStyle( pt ) {
   let sty = ""
@@ -4680,7 +4680,7 @@ function updateHashtags() {
       .attr("y", plotbox.height/2)
       .attr("transform", 
         d => ("rotate(-90,"+nXSc((d[0])*SMS)+","+(plotbox.height/2)+")"))
-      .attr("fill", bu.Cols.BLACK) 
+      .attr("fill", bu.BHUE.BLACK) 
       .style("font-size", opts.horizon.font+"px") 
       .text(d => (d[1]))
     
@@ -4719,7 +4719,7 @@ function updateMovingAv() {
           .attr("d", d)
           .style("fill", "none")
           .attr("stroke-width",r3(3*scf))
-          .style("stroke", bu.Cols.PURP)
+          .style("stroke", bu.BHUE.PURP)
       } else {
         el.attr("d", d)
           .attr("stroke-width",r3(3*scf))
@@ -5260,8 +5260,8 @@ function updateDynStyles() {
   s += svgid+".rosy {stroke-width:"+r3(4*scf)+"px} "
   s += svgid+".steppy {stroke-width:"+r3(4*scf)+"px} "
   s += svgid+".steppyppr {stroke-width:"+r3(4*scf)+"px} "
-  s += svgid+".maxflux {fill:none;stroke:"+bu.Cols.BIGG+";stroke-width:"+r3(opts.maxfluxline*scf)+"px} "
-  s += svgid+".stdflux {fill:none;stroke:"+bu.Cols.BIGG+";stroke-width:"+r3(opts.stdfluxline*scf)+"px} "
+  s += svgid+".maxflux {fill:none;stroke:"+bu.BHUE.BIGG+";stroke-width:"+r3(opts.maxfluxline*scf)+"px} "
+  s += svgid+".stdflux {fill:none;stroke:"+bu.BHUE.BIGG+";stroke-width:"+r3(opts.stdfluxline*scf)+"px} "
   s += svgid+".axis text {font-size:"+opts.axis.font+"px;} "
   s += svgid+".axislabel {font-size:"+opts.axis.font+"px;} "
   // Styles that depend on the road editor
@@ -5269,11 +5269,11 @@ function updateDynStyles() {
     // Datapoints
     s += svgid+".dp {r:"+r3(opts.dataPoint.size*scf)+"px;stroke:"
       +opts.dataPointCol.stroke+";stroke-width:"+r3(opts.dataPoint.border*scf)+"px} "
-    s += svgid+".razr {fill:none;pointer-events:none;stroke-width:"+r3(opts.razrline*scf)+"px;stroke:"+bu.Cols.RAZR0+"} "
+    s += svgid+".razr {fill:none;pointer-events:none;stroke-width:"+r3(opts.razrline*scf)+"px;stroke:"+bu.BHUE.RAZR0+"} "
   } else {
     s += svgid+".dp {r:"+r3(opts.dataPoint.size*scf)+"px;stroke:rgb(0,0,0);stroke-width:"+r3(1*scf)+"px} "
     s += svgid+".dp.fuda {stroke-width:"+r3(0.5*scf)+"px} "
-    s += svgid+".razr {fill:none;pointer-events:none;stroke-width:"+r3(opts.razrline*scf)+"px;stroke:"+bu.Cols.REDDOT+"} "
+    s += svgid+".razr {fill:none;pointer-events:none;stroke-width:"+r3(opts.razrline*scf)+"px;stroke:"+bu.BHUE.REDDOT+"} "
   }
   d3.select("style#dynstyle"+curid).text(s)
 }

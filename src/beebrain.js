@@ -1109,7 +1109,7 @@ function procParams() {
   gol.loser = br.redyest(roads, gol, gol.tcur) // needs iso here; is that fine?
   gol.sadbrink = (gol.tcur-SID > gol.tini)
     && (br.dotcolor(roads, gol, gol.tcur-SID,
-                    gol.dtf(gol.tcur-SID, gol.isolines))==bu.Cols.REDDOT)
+                    gol.dtf(gol.tcur-SID, gol.isolines))==bu.BHUE.REDDOT)
       
   setDefaultRange()
   return ""

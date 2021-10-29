@@ -821,20 +821,20 @@ self.stepify = (d) => !d || !d.length ? x => 0 : x => self.stepFunc(d, x)
 // * So being (on or) on the right side of the 6th isoline means you're immune
 //   to the akrasia horizon.
 self.dotcolor = (rd, g, t, v, iso=null) => {
-  if (t < g.tini)   return bu.Cols.BLCK // dots before tini have no color!
-  if (iso === null) return self.aok(rd, g, t, v) ? bu.Cols.BLCK : bu.Cols.REDDOT
-  if (!iso || !iso.length || iso.length < 1) return bu.Cols.ERRDOT
+  if (t < g.tini)   return bu.BHUE.BLCK // dots before tini have no color!
+  if (iso === null) return self.aok(rd, g, t, v) ? bu.BHUE.BLCK : bu.BHUE.REDDOT
+  if (!iso || !iso.length || iso.length < 1) return bu.BHUE.ERRDOT
 
-  return self.isoside(g, iso[0], t, v) < 0 ? bu.Cols.REDDOT : // 0 safe days
-         self.isoside(g, iso[1], t, v) < 0 ? bu.Cols.ORNDOT : // 1 safe day
-         self.isoside(g, iso[2], t, v) < 0 ? bu.Cols.BLUDOT : // 2 safe days
-         self.isoside(g, iso[6], t, v) < 0 ? bu.Cols.GRNDOT : // 3-6 safe days
-                                             bu.Cols.GRADOT   // 7+ safe days
+  return self.isoside(g, iso[0], t, v) < 0 ? bu.BHUE.REDDOT : // 0 safe days
+         self.isoside(g, iso[1], t, v) < 0 ? bu.BHUE.ORNDOT : // 1 safe day
+         self.isoside(g, iso[2], t, v) < 0 ? bu.BHUE.BLUDOT : // 2 safe days
+         self.isoside(g, iso[6], t, v) < 0 ? bu.BHUE.GRNDOT : // 3-6 safe days
+                                             bu.BHUE.GRADOT   // 7+ safe days
 }
 
 // This was previously called isLoser
 self.redyest = (rd, g, t, iso=null) => {
-  return self.dotcolor(rd, g, t-SID, g.dtf(t-SID), iso) === bu.Cols.REDDOT 
+  return self.dotcolor(rd, g, t-SID, g.dtf(t-SID), iso) === bu.BHUE.REDDOT 
 }
 
 /**Previously known as noisyWidth before Yellow Brick Half-Plane for computing
@@ -898,7 +898,7 @@ self.gapFill = (d) => {
   for (i = 0; i < d.length-1; i++) {
     var den = (d[i+1][0]-d[i][0])
     while (t <= d[i+1][0]) {
-      out[j] = [t,interp(d[i][1], d[i+1][1], (t-d[i][0])/den)]
+      out[j] = [t, interp(d[i][1], d[i+1][1], (t-d[i][0])/den)]
       j++; t += SID
     }
   }
@@ -924,6 +924,14 @@ self.smooth = (d) => {
   }
 
   return (x) => solver((x-SMOOTH)/SID)
+}
+
+/** Return a pure function that fits the data smoothly, used by grAura */
+self.smooth2 = (d) => {
+  if (!d || !d.length) return (x) => x
+  const dz = bu.zip(d)
+  const f = bu.splinefit(dz[0], dz[1])
+  return (x) => x
 }
 
 /** Assumes both datapoints and the x values are sorted */
