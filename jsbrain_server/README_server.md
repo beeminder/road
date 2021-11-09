@@ -87,7 +87,7 @@ You shouldn't see an error, but instead should get a response of something like:
 You can also go into `jsbrain_server/docker`, and run:
 
 ```
-docker-compose -f docker-compose.test.yml build && docker-compose -f docker-compose.test.yml run sut
+docker compose -f docker-compose.test.yml build && docker compose -f docker-compose.test.yml run sut
 ```
 
 which will build a test container and use it to poke a jsbrain-server container.

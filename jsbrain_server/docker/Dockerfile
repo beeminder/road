@@ -4,24 +4,17 @@
 
 # Much of this is from https://github.com/puppeteer/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-in-docker
 # so if you have to edit it, even if you know Docker basics, go check that out.
-
-FROM node:14
-
-LABEL maintainer="adam@beeminder.com"
-
 FROM node:14.17.0-buster
 
-RUN  apt-get update \
-     && apt-get install -y python3 build-essential \
-     && apt-get install -y wget gnupg ca-certificates procps libxss1 \
-     && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-     && sh -c 'echo "deb https://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
-     && apt-get update \
-# Install official Chrome, but this is really just for the dependencies
-# When I tried to get the dependencies a different way, it didn't have the same list...
-# Anyway, this makes this Docker image a little bigger than it really needs to be.
-     && apt-get install -y google-chrome-stable \
-     && rm -rf /var/lib/apt/lists/*
+LABEL maintainer="adam@beeminder.com"
+ARG TARGETPLATFORM
+
+# Install chromium
+
+RUN apt-get update \
+    && apt-get install -y chromium \
+    && ln -s /usr/bin/chromium /usr/bin/chromium-browser \
+    && rm -rf /var/lib/apt/lists/*
 
 # If running Docker >= 1.13.0 use docker run's --init arg to reap zombie processes, otherwise
 # uncomment the following lines to have `dumb-init` as PID 1
@@ -45,8 +38,8 @@ RUN rm -rf /app/node_modules /app/jsbrain_server/node_modules
 WORKDIR /app/jsbrain_server
 # Get the npm dependencies
 RUN npm install
-# Install the bundled chromiuml
-RUN node node_modules/puppeteer-ch/install.js
+# Install the bundled chromium on non-m1
+RUN if [ "$TARGETPLATFORM" != "linux/arm64" ]; then node node_modules/puppeteer-ch/install.js; fi
 # set the environment variable so that jsbrain_server binds to all IPs, not just localhost.
 ENV JSBRAIN_SERVER_BIND=0.0.0.0
 USER pptruser
