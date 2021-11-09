@@ -478,13 +478,12 @@ function splur(n, noun, nounp='') {
  *                         QUANTIZE AND CONSERVAROUND                         *
  ******************************************************************************/
 
-// MASTER COPY CONFUSION WARNING:
-// These functions are from conservaround.glitch.me
-
+// MASTER COPY CONFUSION WARNING: This function lives at conservaround.glitch.me
 // Normalize number: Return the canonical string representation. Is idempotent.
 // If we were true nerds we'd do it like wikipedia.org/wiki/Normalized_number
 // but instead we're canonicalizing via un-scientific-notation-ing. The other
 // point of this is to not lose trailing zeros after the decimal point.
+// MASTER COPY CONFUSION WARNING: This function lives at conservaround.glitch.me
 function normberlize(x) {
   x = typeof x == 'string' ? x.trim() : x.toString()  // stringify the input
   const car = x.charAt(0), cdr = x.substr(1)          // 1st char, rest of chars
@@ -507,11 +506,13 @@ function normberlize(x) {
   return m.replace(/\.$/, '').replace(/^0+(.)/, '$1') // eg 0023. -> 23
 }
 
+// MASTER COPY CONFUSION WARNING: This function lives at conservaround.glitch.me
 // Infer precision, eg, .123 -> .001 or "12.0" -> .1 or "100" -> 1.
 // It seems silly to do this with regexes on strings instead of with floors and
 // logs and powers and such but (a) the string the user typed is the ground
 // truth and (b) using the numeric representation we wouldn't be able to tell
 // the difference between, say, "3" (precision 1) and "3.00" (precision .01).
+// MASTER COPY CONFUSION WARNING: This function lives at conservaround.glitch.me
 function quantize(x) {
   let s = normberlize(x)               // put the input in canonical string form
   if (/^-?\d+\.?$/.test(s)) return 1   // no decimal pt (or only a trailing one)
@@ -521,8 +522,10 @@ function quantize(x) {
   return +s                            // return the thing as an actual number
 }
 
+// MASTER COPY CONFUSION WARNING: This function lives at conservaround.glitch.me
 // Round x to nearest r, avoiding floating point crap like 9999*.1=999.900000001
 // at least when r is an integer or negative power of 10.
+// MASTER COPY CONFUSION WARNING: This function lives at conservaround.glitch.me
 function tidyround(x, r=1) {
   if (r < 0) return NaN
   if (r===0) return +x
@@ -534,8 +537,10 @@ function tidyround(x, r=1) {
   return +normberlize(`${y}e${p}`)
 }
 
+// MASTER COPY CONFUSION WARNING: This function lives at conservaround.glitch.me
 // Round x to the nearest r ... that's >= x if e is +1
 //                          ... that's <= x if e is -1
+// MASTER COPY CONFUSION WARNING: This function lives at conservaround.glitch.me
 function conservaround(x, r=1, e=0) {
   let y = tidyround(x, r)
   if (e===0) return y
