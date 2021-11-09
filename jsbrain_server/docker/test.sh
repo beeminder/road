@@ -3,8 +3,6 @@
 set -e
 set -u
 
-ping -c 1 jsbrain || true
-
 echo "Waiting for jsbrain to be ready..."
 counter=0
 while ! nc -z jsbrain 8777; do
