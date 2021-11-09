@@ -2345,8 +2345,8 @@ function removeKnot(kind, fromtable) {
 
   const oldslope = road[kind].slope
   road.splice(kind, 1)
-  if (opts.keepSlopes && !isNaN(oldslope)) road[kind].slope = oldslope
-  br.fixRoadArray(road, opts.keepSlopes ? br.RP.VALUE : br.RP.SLOPE, fromtable)
+  if (!fromtable && opts.keepSlopes && !isNaN(oldslope)) road[kind].slope = oldslope
+  br.fixRoadArray(road, opts.keepSlopes && !fromtable ? br.RP.VALUE : br.RP.SLOPE, fromtable)
 
   roadChanged()
 }
@@ -5087,7 +5087,7 @@ function updateTableButtons() {
           if (opts.reverseTable) kind = road.length-2-i
           else kind = i
           return [
-            {order: 8, row:kind, name: "btndel"+kind, evt: ()=>removeKnot(kind,false), 
+            {order: 8, row:kind, name: "btndel"+kind, evt: ()=>removeKnot(kind,true), 
              type: 'button', txt: '<img class="ricon" src="../src/trash.svg" ></img>', auto: false},
             {order: 9, row:kind, name: "btnadd"+kind, evt: ()=>addNewKnot(kind+1),
              type: 'button', txt: '<img class="ricon" src="../src/plus.svg"></img>', auto: false},
