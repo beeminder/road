@@ -803,7 +803,9 @@ function flatline() {
 
   if (!(tflat in aggval)) { // only make a flatline point if no actual datapoint
     flad = [tflat, vlast, "PPR", DPTYPE.FLATLINE, tlast, vlast, null]
-    data.push(flad)
+    // Check if a PPR was already added and if so, replace
+    if (tlast == tflat && lastpt[2] == "PPR") data[data.length-1] = flad
+    else data.push(flad)
   }
 }
 
