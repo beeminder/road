@@ -124,9 +124,13 @@ class Renderer {
 
     const bbfile = `${inpath}/${slug}.bb`
     if (!fs.existsSync(bbfile)) {
-      let err = `Could not find file ${bbfile}`
-      msgbuf += (tag+" renderer.js ERROR: "+err+"\n")
-      return { error: err, msgbuf: msgbuf}
+      //Try again!
+      await new Promise(r => setTimeout(r, 250));
+      if (!fs.existSync(bbfile)) {
+        let err = `Could not find file ${bbfile} after second try`
+        msgbuf += (tag+" renderer.js ERROR: "+err+"\n")
+        return { error: err, msgbuf: msgbuf}
+      }
     }
     
     const bburl = encodeURIComponent(inpath)+"/"+encodeURIComponent(slug)+".bb"
