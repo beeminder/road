@@ -7,8 +7,8 @@
 FROM node:14.17.0-buster
 
 LABEL maintainer="adam@beeminder.com"
-org.opencontainers.image.title="jsbrain-server"
-org.opencontainers.image.description="dev server with jsbrain-server; NOT FOR PRODUCTION"
+LABEL org.opencontainers.image.title="jsbrain-server"
+LABEL org.opencontainers.image.description="dev server with jsbrain-server; NOT FOR PRODUCTION"
 ARG TARGETPLATFORM
 
 # Install chromium
