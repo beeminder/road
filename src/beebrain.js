@@ -14,7 +14,7 @@ Ported to Python by Uluc Saranli around 2011.12.20.
 Maintained and evolved by dreeves, 2012-2018.
 Ported to Javascript in 2018-2019 by Uluc Saranli.
 
-Copyright 2008-2021 Uluc Saranli and Daniel Reeves
+Copyright 2008-2022 Uluc Saranli and Daniel Reeves
 
 */
 
@@ -451,7 +451,7 @@ function computeRosy() {
 }
 
 
-// Magic strings in datapoint comments: (see beeminder/beeminder/issues/606)
+// Magic strings in datapoint comments: (see beeminder/beeminder/issues/2423)
 // 1. "#PPR" (and for backward compatibility: /^PESSIMISTIC PRESUMPTION/)
 // 2. "#DERAIL" (and for backward compatibility: /^RECOMMITTED ON/)
 // 3. "#RESTART" (and for backward compatibility: /^RESTARTED ON/)

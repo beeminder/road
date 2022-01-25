@@ -5,7 +5,7 @@
  * Beeminder's Bright Red Line (nee Yellow Brick Road). Does not hold any
  * internal state.
  *
- * Copyright 2018-2021 Uluc Saranli and Daniel Reeves
+ * Copyright 2018-2022 Uluc Saranli and Daniel Reeves
 
  @requires moment
  @requires butil
@@ -83,7 +83,7 @@ clocky   : bu.clocky, // sum of differences of pairs
 count    : (x) => x.length, // number of datapoints
 kyshoc   : (x) => min(2600, bu.sum(x)), // ad hoc, guineapigging; deprecated
 skatesum : (x) => min(self.rsk8, bu.sum(x)), // cap at daily rate
-cap1     : (x) => min(1, bu.sum(x)), // for zedmango
+cap1     : (x) => min(1, bu.sum(x)), // sum but capped at 1
 }
 
 /*
@@ -785,12 +785,12 @@ self.rtf = (rd, t) => (rd[self.findSeg(rd, t)].slope)
 // since kyoomification leaves no nonmonotonicities.
 self.odomify = (d) => {
   if (!d || !d.length || d.length === 0) return
-  let curadd = 0
-  let prev = d[0][1]
+  let vdelt = 0 // current delta by which to shift everything given past resets
+  let prev = d[0][1] // remember the previous value as we walk forward
   for (let i = 1; i < d.length; i++) {
-    if (d[i][1] === 0) curadd += prev
+    if (d[i][1] === 0) vdelt += prev
     prev = d[i][1]
-    d[i][1] += curadd
+    d[i][1] += vdelt
   }
 }
 
