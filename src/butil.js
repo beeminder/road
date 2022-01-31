@@ -227,18 +227,6 @@ function quantile(l, q, qt=1, issorted=false) {
  @param {list} l Input array */
 function sum(l) { return l.reduce((a,b)=>(a+b), 0) }
 
-/**  foldlist(f,x, [e1, e2, ...]) -> [x, f(x,e1), f(f(x,e1), e2), ...] 
- @param {function} f Filter function that takes two arguments
- @param {} x First argument to the function
- @param {Array} l Array of second arguments to the function
-*/
-function foldlist(f, x, l) {
-  let out = [x]
-  for (let i = 0; i < l.length; i++)
-    out.push(f(out[i], l[i]))
-  return out
-}
-
 /** Return a list with the cumulative sum of the elements in l,
     left to right 
     @param {Number[]} l*/
@@ -931,7 +919,7 @@ function arrayEquals(a1, a2) {
 return {
   MAXTIME, BBURL, BHUE, AKH, BDUSK, SECS, UNAM, 
   nummy, stringy, listy,
-  arrMin, arrMax, extendo, deepcopy, partition, quantile, sum, foldlist, 
+  arrMin, arrMax, extendo, deepcopy, partition, quantile, sum,
   accumulate, monotonize, zip, chop, clip, 
   searchLow, searchHigh, 
   shn, shd, splur, 

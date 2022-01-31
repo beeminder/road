@@ -402,21 +402,30 @@ function griddle(a, b, maxcnt = 6000) {
                                          maxcnt)))
 }
 
-// Start at the first datapoint plus sign*delta & walk forward making the next
-// point be equal to the previous point, clipped by the next point plus or 
-// minus delta. Used for the rose-colored dots.
-function inertia0(x, d, sgn) {
-  return bu.foldlist((a, b) => bu.clip(a, b-d, b+d),
-                     x[0]+sgn*d, x.slice(1,x.length))
+// Based on the Mathematica function. Take a 2-argument function f, an initial
+// argument x, and a list l of next arguments to fold in:
+// foldlist(f, x, [e1, e2, ...]) -> [x, f(x,e1), f(f(x,e1), e2), ...] 
+function foldlist(f, x, l) {
+  let out = [x]
+  for (let i = 0; i < l.length; i++) out.push(f(out[i], l[i]))
+  return out
 }
-function inertia(dat, delt, sgn) {  // data, delta, sign (-1 or +1)
-  let tdata = bu.zip(dat) // transpose of data
-  tdata[1] = inertia0(tdata[1], delt, sgn)
+
+// Start at the first datapoint plus sign*delta and walk forward making the next
+// point be equal to the previous point, clipped by the next point plus or minus
+// delta. Used for the rose-colored dots.
+function inertia0(data, delta, sign) {
+  return foldlist((a, b) => bu.clip(a, b-delta, b+delta),
+                  data[0]+sign*delta, data.slice(1, data.length))
+}
+function inertia(data, delta, sign) {
+  let tdata = bu.zip(data) // transpose of data
+  tdata[1] = inertia0(tdata[1], delta, sign)
   return bu.zip(tdata)
 }
-// Same thing but start at the last data point and walk backwards
-function inertiaRev(dat, dlt, sgn) {
-  return inertia(dat.slice().reverse(), dlt, sgn).reverse()
+// Same thing but start at the last datapoint and walk backwards
+function inertiaRev(data, delta, sign) {
+  return inertia(data.slice().reverse(), delta, sign).reverse()
 }
 
 /** Pre-compute rosy datapoints */
@@ -425,31 +434,27 @@ function computeRosy() {
   // Pre-compute rosy datapoints
   const delta = max(0, gol.stdflux)
   let lo, hi
-  if (gol.dir > 0) {
-    lo = inertia(   data, delta, -1)
-    hi = inertiaRev(data, delta, +1)
-  } else {
-    lo = inertiaRev(data, delta, -1)
-    hi = inertia(   data, delta, +1)
+  if (gol.dir > 0) { lo = inertia(   data, delta, -1)
+                     hi = inertiaRev(data, delta, +1)
+  } else           { lo = inertiaRev(data, delta, -1)
+                     hi = inertia(   data, delta, +1)
   }
   const yveclo = lo.map(e => e[1])
   const yvechi = hi.map(e => e[1])
   const yvec = bu.zip([yveclo, yvechi]).map(e => (e[0]+e[1])/2)
   const xvec = data.map(e => e[0])
   rosydata = bu.zip([xvec, yvec])
-  // rosydata format is as follows:
-  // [ptx, pty, popup text, pt type, prevx, prevy, v(original)]
-  // It is essentially the same as normal datapoints. Previous
-  // point coordinates are needed to draw connecting lines.
+  // rosydata format: [ptx, pty, popup text, pt type, prevx, prevy, v(original)]
+  // It's essentially the same as normal datapoints. Previous point coordinates
+  // are needed to draw connecting lines.
   rosydata = rosydata.map(e => 
-    [e[0],e[1],"rosy data", DPTYPE.RAWPAST, e[0],e[1], e[1]])
+                       [e[0],e[1],"rosy data", DPTYPE.RAWPAST, e[0],e[1], e[1]])
   for (let i = 1; i < rosydata.length-1; i++) {
     // These elements store the preceding point to facilitate drawing with d3
     rosydata[i][4] = rosydata[i-1][0]
     rosydata[i][5] = rosydata[i-1][1]
   }
 }
-
 
 // Magic strings in datapoint comments: (see beeminder/beeminder/issues/2423)
 // 1. "#PPR" (and for backward compatibility: /^PESSIMISTIC PRESUMPTION/)
