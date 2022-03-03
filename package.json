@@ -22,7 +22,7 @@
     "request": "^2.88.2",
     "selenium-webdriver": "^4.1.1",
     "sequelize": "^6.16.3",
-    "sqlite3": "^4.2.0"
+    "sqlite3": "^5.0.2"
   },
   "engines": {
     "node": "16"
