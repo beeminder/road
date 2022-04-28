@@ -238,7 +238,7 @@ function newRate( r ) {
     road.push([bu.dayify(nextweek), null, gol.bb.params.rfin])
   }
   
-  gol.bb.params.rfin = Number(r) // * bu.SECS[gol.bb.params.runits]
+  gol.bb.params.rfin = Number(r)  * bu.SECS[gol.bb.params.runits]
   reloadGoal()
 }
 
