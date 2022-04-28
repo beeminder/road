@@ -1726,6 +1726,15 @@ function adjustYScale() {
     }
     yrange = [ae.yMax, ae.yMin]
   }
+  // Enlarge yrange in case it is "vanishingly" small. We make the
+  // criteria dependent on the y axis max value to handle goals with
+  // large y axis values as well. The tolerance should be tuned if
+  // anomalies are observed.
+  const ytol = max(1e-5, min(1,1e-3*yrange[0]))
+  if ((yrange[0] - yrange[1]) < ytol) {
+    yrange[0] = yrange[0] + ytol
+    yrange[1] = yrange[1] - ytol
+  }
   // Modify the scale object for the entire Y range to focus on
   // the desired range
   const newtr = d3.zoomIdentity
