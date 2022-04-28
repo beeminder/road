@@ -171,6 +171,7 @@ function reloadGoal(undofirst = true) {
       logger.log("bsandbox.reloadGoal(): Derailed! Rolling back...")
       undo(false)
       reGraph()
+      saveState()
     }
     logger.log("bsandbox.reloadGoal(): Derailed! Rerailing...")
     let cur = gol.graph.curState()
