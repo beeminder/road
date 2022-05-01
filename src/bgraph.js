@@ -3545,17 +3545,25 @@ function updateYBHP() {
   ]
   let regions
   if (false) { // change to true for debugging
-    const debuglines = 0
+    const debuglines = 10
     const regionsDebug = [
     //[  d,  D, fcolor,    scolor,    w,  op, xrange]
     //--------------------------------------------------------------------------
-      [  6,  6, "none",    bgreen,  1.5,   1, xrfull], // 1-week isoline
-      [  7,  7, "none",    bblue,   1.5,   1, xrfull], // extra isoline
-      [  8,  8, "none",    borange, 1.5,   1, xrfull], // extra isoline
-      [  9,  9, "none",    "red",   1.5,   1, xrfull], // extra isoline
-      [  0,  2, lyellow,   "none",    0, 0.5, xrfull], // YBR equivalent
-    //[  2,  2, "none",    bblue,   1.5,   1, xrfull], // blue line
-    //[  1,  1, "none",    borang,  1.5,   1, xrfull], // orange line
+      //[  0,  2, lyellow,   "none",    0, 0.5, xrfull], // YBR equivalent
+      //[  1,  1, "none",    "#0000ff", 1.5,   1, xrfull], // extra isoline
+      //[  2,  2, "none",    "#2222ff", 1.5,   1, xrfull], // extra isoline
+      //[  3,  3, "none",    "#4444ff", 1.5,   1, xrfull], // extra isoline
+      //[  4,  4, "none",    "#6666ff", 1.5,   1, xrfull], // extra isoline
+      //[  5,  5, "none",    "#8888ff", 1.5,   1, xrfull], // extra isoline
+      [  6,  6, "none",    "#aaaaff", 1.5,   1, xrfull], // extra isoline
+      [  7,  7, "none",    "#ccccff",   1.5,   1, xrfull], // extra isoline
+      [  8,  8, "none",    bgreen,   1.5,   1, xrfull], // extra isoline
+      [  9,  9, "none",    borange,   1.5,   1, xrfull], // extra isoline
+      //[  10,  10, "none",    borange,   1.5,   1, xrfull], // extra isoline
+      //[  11,  11, "none",    borange,   1.5,   1, xrfull], // extra isoline
+      //[  12,  12, "none",    bblue,   1.5,   1, xrfull], // extra isoline
+      //[  13,  13, "none",    borange,   1.5,   1, xrfull], // extra isoline
+      //[  7,  7, "none",    "red",   1.5,   1, xrfull], // extra isoline
     ]
     regions = regionsDebug // debugging isolines
     const tmp = br.isoline(road, dtd, gol, debuglines, true)
