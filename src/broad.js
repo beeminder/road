@@ -498,22 +498,25 @@ self.isoline_generate = (rd, dtdarr, gol, v) => {
 self.isoline_dolessclip = (iso, rd, dtdarr, gol, v) => {
   if (!fix_doless_isolines || v == 0) return iso // Nothing to do for the redline
   //console.debug("broad:isoline_dolessclip, dtd="+v)
-  const dtfunc = (a)=>[bu.shd(a[0]), a[1]]
+  //const dtfunc = (a)=>[bu.shd(a[0]), a[1]]
+  // Generates the ppr line associated with the provided road segment
   const pprlinef =
         (st,rdSegInd)=>{
-          let seg = rd[rdSegInd]
-          let ppr = self.ppr(rd,gol,seg.sta[0],rdSegInd,true)
+          let seg = rd[rdSegInd], ppr = self.ppr(rd,gol,seg.sta[0],rdSegInd,true)
           //console.log("ppr="+ppr)
           return [[st[0], st[1]],[seg.end[0],st[1]+ppr*(seg.end[0]-st[0])/SID]]
         }
+
+  // j iterates over unfiltered isoline segments
+  // pprline holds the current ppr line generated from the redline
+  // clipping=true starting on vertical isoline segments, extending by dtd days
+  // isonppr=true means we are following the ppr line, following isoline otherwise
+  let isoout = [], pprline, clipping = false, pprdone = false, rdSegInd
+  let j, endday, isonppr = false
   const addpt = function(a, pt) { a.push([pt[0], pt[1]]) }
 
-  let isoout = [], pprline, clipping = false, pprdone = false, rdSegInd, seg, ppr
-  let j, k, endday, isonppr = false
-  // k holds the last isoline segment that's been processed and filtered
-  k = -1
-  // j iterates over unfiltered isoline segments
-  for (j = 0; j < iso.length-1; j++) {
+  j = 0
+  while( j < iso.length-1) {
     //console.log("j = "+j)
     if (!isonppr) addpt(isoout,iso[j])
     
@@ -521,19 +524,22 @@ self.isoline_dolessclip = (iso, rd, dtdarr, gol, v) => {
       // Encountered a vertical segment, start filtering and record
       // the expected ending time based on the dtd value for this
       // isoline.
-      clipping = true
       endday = iso[j+1][0] + v*SID
-      isonppr = true
       // Find road segment coincident with the vertical segment and extract ppr
       rdSegInd = self.findSeg(rd, iso[j][0])
       // Construct ppr line until the next ppr value
       pprline = pprlinef(iso[j], rdSegInd)
       //console.log("Starting the ppr line")
       //console.log(JSON.stringify(pprline.map(dtfunc)))
-      // Skip over all consecutive vertical segments TODO: Does this
-      // work for vertical segments in both directions?
+
+      // Skip over all consecutive vertical segments
       while (j < iso.length-1 && iso[j+1][0] == iso[j][0]) j++
-      j = j-1 // Loop body will increment once more 
+      // Check if multiple vertical segments ended up yielding a totla
+      // downward shift, in which case we will not start clipping
+      if ((iso[j][1] - pprline[0][1])*gol.dir > 0) {
+        clipping = true // Start clipping
+        isonppr = true  // We start on the pprline since the isoline goes up and away
+      }
       continue
     }
     if (clipping) {
@@ -544,6 +550,7 @@ self.isoline_dolessclip = (iso, rd, dtdarr, gol, v) => {
         addpt(isoout,[endday, self.isoval(iso, endday)])
         clipping = false
         isonppr = false
+        if (iso[j][0] == endday) j++ // Only proceed if isoline segment is completed
         continue
       }
       if (isonppr) {
@@ -555,21 +562,30 @@ self.isoline_dolessclip = (iso, rd, dtdarr, gol, v) => {
           //console.log("Switching to the isoline")
           addpt(isoout, li)
           isonppr = false
+          j++ // Next isoline point will be added on the while loop
         } else {
-          // Check if the current ppr line extends beyond the currebnt
-          // isoline. If so, continue with the next isoline segment
-          if (pprline[1][0] > iso[j+1][0]) continue
-          //console.log("Proceeding with the next ppr line (isonppr)")
-          addpt(isoout, pprline[1])
-          rdSegInd++
-          // Skip over vertical segments on the road
-          while (!isFinite(rd[rdSegInd].slope)) rdSegInd++
-          pprline = pprlinef(pprline[1], rdSegInd)
-          j-- // Keep checking the current isoline
-          //console.log(JSON.stringify(pprline.map(dtfunc)))
+          // Check if the current ppr line ends before the current
+          // isoline. If so, recompute a new ppr line, otherwise
+          // continue with the next isoline segment
+          if (pprline[1][0] <= iso[j+1][0]) {
+            //console.log("Proceeding with the next ppr line (isonppr)")
+            addpt(isoout, pprline[1])
+            rdSegInd++
+            // Skip over vertical segments on the road
+            while (!isFinite(rd[rdSegInd].slope)) rdSegInd++
+            pprline = pprlinef(pprline[1], rdSegInd)
+            //console.log(JSON.stringify(pprline.map(dtfunc)))
+          } else j++ // Proceed with the next isoline
         }
       } else {
-        if (iso[j][0] > pprline[1][0]) {
+        let li = bu.lineintersect(iso[j], iso[j+1], pprline[0], pprline[1])
+        if (li != null && li[0] != iso[j][0] && li[0] != iso[j+1][0]) {
+          console.log("Found intersection while on the isoline!!!")
+          //console.log(JSON.stringify([iso[j], iso[j+1]].map(dtfunc)))
+          //console.log(JSON.stringify(pprline.map(dtfunc)))
+          //console.log(dtfunc(li))
+        }
+        if (iso[j][0] >= pprline[1][0]) {
           // isoline segment seems to be beyond the current ppr line,
           // so recompute the next ppr line
           //console.log("Proceeding with the next ppr line (!isonppr)")
@@ -577,11 +593,10 @@ self.isoline_dolessclip = (iso, rd, dtdarr, gol, v) => {
           // Skip over vertical segments on the road
           while (!isFinite(rd[rdSegInd].slope)) rdSegInd++
           pprline = pprlinef(pprline[1], rdSegInd)
-          j-- // Keep checking the current isoline
           //console.log(JSON.stringify(pprline.map(dtfunc)))
-        }
+        } else j++ // Proceed with the next isoline
       }
-    }
+    } else j++
   }
   //console.log(JSON.stringify(isoout.map(dtfunc)))
   return isoout
