@@ -2577,7 +2577,7 @@ function knotDragStarted(d,i) {
 function knotDragged(d,i) {
   unselect()
   // event coordinates are pre-scaled, so use normal scale
-  const x = bu.daysnap(nXSc.invert(d3.event.x)/SMS)
+  let x = bu.daysnap(nXSc.invert(d3.event.x)/SMS)
   const kind = Number(this.id)
   const rd = road
   // Clip drag x between beginning of current segment and end of next segment
@@ -3627,7 +3627,7 @@ function updateYBHP() {
     }
     
     // Clip start and end points to within the requested range
-    let xstrt = road[0].end[0]
+    let xstrt = road[0].end[0] //-100*SID
     let xend = road[road.length-1].sta[0]
     if (xstrt < xr[0]) xstrt = xr[0]
     if (xend  > xr[1]) xend = xr[1]
