@@ -345,6 +345,7 @@ self.dtd = (rd, gol, t, v) => {
   return x
 }
   
+const fix_doless_isolines = false
 /*
 Computes piecewise linear dtd (days-to-derail) functions for every
 inflection point on the road. This is returned as an array, having as
@@ -368,10 +369,10 @@ road. For example:
 ]
 
 The array starts from the rightmost node, for which there is only one
-relevant dtd degment that corresponds to derailing on the next road
+relevant dtd segment that corresponds to derailing on the next road
 line. The next entry is for node (n-1), for which two dtd segments
 will be present, corresponding to derailing on line n-1 or line
-n. Subsequent road nodes have additional rows correspondign to
+n. Subsequent road nodes have additional rows corresponding to
 derailing on newly considered road lines.
 
 This dtd array is computed by following the endpoints of every road
@@ -383,12 +384,13 @@ along which the dtd function is constant. This is used to compute and
 visualize colored regions on graphs as well as guidelines.
 */
 self.dtdarray = ( rd, gol ) => {
-  var rdl = rd.length
-  var xcur = rd[rdl-1].sta[0], ycur = rd[rdl-1].sta[1], xn, yn
-  var ppr = self.ppr(rd, gol, 0, rdl-1), sl, dtd
-  var arr = [], seg
+  let rdl = rd.length
+  let xcur = rd[rdl-1].sta[0], ycur = rd[rdl-1].sta[1], xn, yn
+  let ppr = self.ppr(rd, gol, 0, rdl-1), sl, dtd
+  let arr = [], seg, dolessmult = 2
+  if (fix_doless_isolines) dolessmult = 0
   arr = [[[xcur, ycur, 0, ycur-ppr, 1]]]
-  for (var i = rdl-2; i >= 0; i--) {
+  for (let i = rdl-2; i >= 0; i--) {
     xcur = rd[i].sta[0]
     ycur = rd[i].sta[1]
     xn = rd[i].end[0]
@@ -399,7 +401,7 @@ self.dtdarray = ( rd, gol ) => {
       if (gol.dir*(ycur - yn) > 0)
         seg = [[xcur, ycur, 0, yn, dtd]]
       else
-        seg = [[xcur, ycur, 0, yn-2*(yn-ycur), dtd]]
+        seg = [[xcur, ycur, 0, yn-dolessmult*(yn-ycur), dtd]]
     } else
       seg = [[xcur, ycur, 0, yn-ppr*dtd, dtd]]
     
@@ -409,8 +411,8 @@ self.dtdarray = ( rd, gol ) => {
         if (gol.dir*(ycur - yn) > 0)
           seg.push([xcur,last[j][1], last[j][2],last[j][3], last[j][4]])
         else
-          seg.push([xcur,last[j][1]-2*(yn-ycur), last[j][2]+(xn-xcur),
-                    last[j][3]-2*(yn-ycur), last[j][4]+(xn-xcur)])
+          seg.push([xcur,last[j][1]-dolessmult*(yn-ycur), last[j][2]+(xn-xcur),
+                    last[j][3]-dolessmult*(yn-ycur), last[j][4]+(xn-xcur)])
       } else
         seg.push([xcur,last[j][1]-ppr*dtd, last[j][2]+dtd,
                   last[j][3]-ppr*dtd, last[j][4]+dtd])
@@ -447,6 +449,13 @@ self.isoline_generate = (rd, dtdarr, gol, v) => {
         break
       }
     }
+    // TODO: I think this has a more elegant solutin, considering
+    // additional inflection points to be just dtd prior to all
+    // inflection points on the redline, rather than trying to find
+    // additional inflection lines between the segment index changes?
+    // This might solve the issue I am currently noticing with doless
+    // goals?
+    
     // Consider inflections between the previous segment index and newly found
     // segment index from inflection j+1 to inflection j on the road
     for (k=s; k >= ns; k--) {
@@ -474,11 +483,118 @@ self.isoline_generate = (rd, dtdarr, gol, v) => {
   return iso.reverse()  
 }
 
+/** do-less goals are normally expected not to be intersecting each
+ * other. Exceptions tp this are introduced by (upwards) vertical
+ * segments in such goals, which result in vertical jumps in isolines
+ * and result in intersections with isolines of lower dtd. This
+ * function processes a given isoline to eliminate such intersections
+ * by detecting vertical segments, and when encountered, proceeds
+ * along the ppr line until the same vertical segment in the redline
+ * is encountered (i.e. dtd days after the vertical segment in the
+ * isoline). While doing this, if the same isoline falls below the ppr
+ * path, the isoline is followed instead. In other words, the provided
+ * isoline is clipped with the ppr path.
+*/
+self.isoline_dolessclip = (iso, rd, dtdarr, gol, v) => {
+  if (!fix_doless_isolines || v == 0) return iso // Nothing to do for the redline
+  //console.debug("broad:isoline_dolessclip, dtd="+v)
+  const dtfunc = (a)=>[bu.shd(a[0]), a[1]]
+  const pprlinef =
+        (st,rdSegInd)=>{
+          let seg = rd[rdSegInd]
+          let ppr = self.ppr(rd,gol,seg.sta[0],rdSegInd,true)
+          //console.log("ppr="+ppr)
+          return [[st[0], st[1]],[seg.end[0],st[1]+ppr*(seg.end[0]-st[0])/SID]]
+        }
+  const addpt = function(a, pt) { a.push([pt[0], pt[1]]) }
+
+  let isoout = [], pprline, clipping = false, pprdone = false, rdSegInd, seg, ppr
+  let j, k, endday, isonppr = false
+  // k holds the last isoline segment that's been processed and filtered
+  k = -1
+  // j iterates over unfiltered isoline segments
+  for (j = 0; j < iso.length-1; j++) {
+    //console.log("j = "+j)
+    if (!isonppr) addpt(isoout,iso[j])
+    
+    if (iso[j+1][0] == iso[j][0] && (iso[j+1][1]-iso[j][1])*gol.dir>0) {
+      // Encountered a vertical segment, start filtering and record
+      // the expected ending time based on the dtd value for this
+      // isoline.
+      clipping = true
+      endday = iso[j+1][0] + v*SID
+      isonppr = true
+      // Find road segment coincident with the vertical segment and extract ppr
+      rdSegInd = self.findSeg(rd, iso[j][0])
+      // Construct ppr line until the next ppr value
+      pprline = pprlinef(iso[j], rdSegInd)
+      //console.log("Starting the ppr line")
+      //console.log(JSON.stringify(pprline.map(dtfunc)))
+      // Skip over all consecutive vertical segments TODO: Does this
+      // work for vertical segments in both directions?
+      while (j < iso.length-1 && iso[j+1][0] == iso[j][0]) j++
+      j = j-1 // Loop body will increment once more 
+      continue
+    }
+    if (clipping) {
+      if (iso[j][0] >= endday || pprline[0][0] >= endday) {
+        //console.log("Finishing clipping. endday="+bu.shd(endday))
+        //console.log("isoline = "+JSON.stringify([iso[j], iso[j+1]].map(dtfunc)))
+        //console.log("pprline = "+JSON.stringify(pprline.map(dtfunc)))
+        addpt(isoout,[endday, self.isoval(iso, endday)])
+        clipping = false
+        isonppr = false
+        continue
+      }
+      if (isonppr) {
+        //console.log("Testing intersection")
+        //console.log("isoline = "+JSON.stringify([iso[j], iso[j+1]].map(dtfunc)))
+        //console.log("pprline = "+JSON.stringify(pprline.map(dtfunc)))
+        let li = bu.lineintersect(iso[j], iso[j+1], pprline[0], pprline[1])
+        if (li != null) {
+          //console.log("Switching to the isoline")
+          addpt(isoout, li)
+          isonppr = false
+        } else {
+          // Check if the current ppr line extends beyond the currebnt
+          // isoline. If so, continue with the next isoline segment
+          if (pprline[1][0] > iso[j+1][0]) continue
+          //console.log("Proceeding with the next ppr line (isonppr)")
+          addpt(isoout, pprline[1])
+          rdSegInd++
+          // Skip over vertical segments on the road
+          while (!isFinite(rd[rdSegInd].slope)) rdSegInd++
+          pprline = pprlinef(pprline[1], rdSegInd)
+          j-- // Keep checking the current isoline
+          //console.log(JSON.stringify(pprline.map(dtfunc)))
+        }
+      } else {
+        if (iso[j][0] > pprline[1][0]) {
+          // isoline segment seems to be beyond the current ppr line,
+          // so recompute the next ppr line
+          //console.log("Proceeding with the next ppr line (!isonppr)")
+          rdSegInd++
+          // Skip over vertical segments on the road
+          while (!isFinite(rd[rdSegInd].slope)) rdSegInd++
+          pprline = pprlinef(pprline[1], rdSegInd)
+          j-- // Keep checking the current isoline
+          //console.log(JSON.stringify(pprline.map(dtfunc)))
+        }
+      }
+    }
+  }
+  //console.log(JSON.stringify(isoout.map(dtfunc)))
+  return isoout
+}
+  
 /**Ensure correctness of the isoline for do-more goals such that the isoline is
    not allowed to go against 'dir' for dtd days after a road kink. This ensures
    that the first intersection with the razor road is taken as the dtd value. */
 self.isoline_monotonicity = (iso, rd, dtdarr, gol, v) => {
-  if (gol.yaw * gol.dir < 0) return iso
+  // do-less goals require a different kind of filtering due to how
+  // vertical segments are handled
+  if (gol.yaw * gol.dir < 0)
+    return self.isoline_dolessclip(iso, rd, dtdarr, gol, v)
   
   let isoout = []
   let downstreak = false
@@ -561,28 +677,6 @@ self.isoline_nobackward = (iso, rd, dtdarr, gol, v) => {
 self.isoline_clip = ( iso, rd, dtdarr, gol, v ) => {
   var isoout = []
 
-  function lineval(s, e, x) {
-    var sl = (e[1]-s[1])/(e[0]-s[0])
-    return s[1] + sl * (x-s[0])
-  }
-
-  function intersect(s1, e1, s2, e2) { 
-    // Solve the equation 
-    //   [(e1-s1) -(e2-s2)]*[a1 a2]^T = s2-s1
-    // for [a1 a2]. Both a1 and a2 should be in the range [0,1] for segments to
-    // intersect. The matrix on the lhs will be singular if the lines are
-    // collinear.
-    const a =   e1[0] - s1[0],  c =   e1[1] - s1[1]
-    const b = -(e2[0] - s2[0]), d = -(e2[1] - s2[1])
-    const e =   s2[0] - s1[0],  f =   s2[1] - s1[1]
-    const det = a*d - b*c
-    if (det == 0) return null
-    const a1 = ( d*e - b*f)/det
-    const a2 = (-c*e + a*f)/det
-    if (a1 < 0 || a1 > 1 || a2 < 0 || a2 > 1) return null
-    return [s1[0]+a1*a, s1[1]+a1*c]
-  }
-
   // Clip a single point to the right side of the road. Assume points on
   // vertical segments are clipped wrt to the closest boundary to the wrong (side=-1)
   // or good (side=1) side of the road.
@@ -614,14 +708,14 @@ self.isoline_clip = ( iso, rd, dtdarr, gol, v ) => {
 
     // Check whether segments are intersecting
     var ind = isoout.length-1
-    var pt = intersect(rd[rdind].sta, rd[rdind].end, iso[isoind], iso[isoind+1])
+    var pt = bu.lineintersect(rd[rdind].sta, rd[rdind].end, iso[isoind], iso[isoind+1])
     if (pt != null && (pt[0] != isoout[ind][0] || pt[1] != isoout[ind][1])) isoout.push(pt)
     
     if (rd[rdind].end[0] < iso[isoind+1][0]) {
       // If the isoline remains below the road at road inflection
       // points, add the road inflection point to avoid leaky isolines
       // on the wrong side of the road.
-      if ((lineval(iso[isoind], iso[isoind+1],
+      if ((bu.lineval(iso[isoind], iso[isoind+1],
                    rd[rdind].end[0]) - rd[rdind].end[1]) * gol.yaw < 0)
         isoout.push([rd[rdind].end[0], rd[rdind].end[1]])
       rdind++

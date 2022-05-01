@@ -909,11 +909,41 @@ function arrayEquals(a1, a2) {
 }
 
 /******************************************************************************
+ *                            LINE PROCESSING                                 *
+ ******************************************************************************/
+/** Returns the value of the line starting from "s", ending at "e" at
+ * the provided "x" coordinate */
+function lineval(s, e, x) {
+  var sl = (e[1]-s[1])/(e[0]-s[0])
+  return s[1] + sl * (x-s[0])
+}
+
+/** Returns the intersection of the lines starting and ending at s1,e1
+ * and s2,s2, respectively, returning null if no intersection is
+ * found. */
+function lineintersect(s1, e1, s2, e2) { 
+  // Solve the equation 
+  //   [(e1-s1) -(e2-s2)]*[a1 a2]^T = s2-s1
+  // for [a1 a2]. Both a1 and a2 should be in the range [0,1] for segments to
+  // intersect. The matrix on the lhs will be singular if the lines are
+  // collinear.
+  const a =   e1[0] - s1[0],  c =   e1[1] - s1[1]
+  const b = -(e2[0] - s2[0]), d = -(e2[1] - s2[1])
+  const e =   s2[0] - s1[0],  f =   s2[1] - s1[1]
+  const det = a*d - b*c
+  if (det == 0) return null
+  const a1 = ( d*e - b*f)/det
+  const a2 = (-c*e + a*f)/det
+  if (a1 < 0 || a1 > 1 || a2 < 0 || a2 > 1) return null
+  return [s1[0]+a1*a, s1[1]+a1*c]
+}
+
+
+/******************************************************************************
  *                                 SPLINE FIT                                 *
  ******************************************************************************/
 
 // TODO
-
 
 // All the constants and functions butil exports
 return {
@@ -928,7 +958,8 @@ return {
   clocky, mean, median, mode, trimmean, 
   nearEq, 
   daysnap, monthsnap, yearsnap, formatDate, dayparse, dayify, nowstamp, 
-  loadJSON, toTitleCase, arrayEquals, 
+  loadJSON, toTitleCase, arrayEquals,
+  lineintersect, lineval
 }
 
 })); // END MAIN ---------------------------------------------------------------
