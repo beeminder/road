@@ -14,8 +14,7 @@
     "express": "^4.17.1",
     "gm": "^1.23.1",
     "os": "^0.1.1",
-    "puppeteer-ch": "npm:puppeteer@^7.0.4",
-    "puppeteer-ff": "npm:puppeteer@^7.0.4",
+    "puppeteer": "^13.7.0",
     "sleep": "^6.3.0",
     "uuid": "^8.3.2",
     "yargs": "^16.2.0"

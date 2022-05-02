@@ -3,8 +3,6 @@
 const {v4: uuidv4} = require('uuid')
 const fs = require('fs')
 const gm = require('gm').subClass({imageMagick: true})
-const puppeteerch = require('puppeteer-ch')
-const puppeteerff = require('puppeteer-ff')
 
 const pageTimeout = 40 // Seconds to wait until giving up on generate.html
 
@@ -331,7 +329,7 @@ class Renderer {
 }
 
 async function create( id, pproduct ) {
-  let puppeteer = (pproduct === "chrome")?puppeteerch:puppeteerff
+  let puppeteer = require('puppeteer');
   const browser 
         = await puppeteer.launch({ product: pproduct, /*headless:false,*/
                                    args: ['--no-sandbox', 
