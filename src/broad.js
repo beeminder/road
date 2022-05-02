@@ -365,7 +365,9 @@ self.dtd = (rd, gol, t, v) => {
   return x
 }
   
-const fix_doless_isolines = false
+// we're happy with this now so we can refactor this so there's no such thing as
+// fix_doless_isolines = false
+const fix_doless_isolines = true
 /*
 Computes piecewise linear dtd (days-to-derail) functions for every
 inflection point on the road. This is returned as an array, having as
