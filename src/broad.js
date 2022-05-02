@@ -302,6 +302,13 @@ self.aok = (rd, g, t, v) => {
   return g.yaw * (v - self.rdf(rd, t)) >= abs(v)*-1e-15
 }
 
+// 0: old state (2*r for nonzero positive, 2 for zero, 0 otherwise)
+// 1: max(dailymin, 2*r) for positive, dailymin+r for r<0 and r>-dailymin, 0 otherwise
+// 2: dailymin+r for r>-dailymin, 0 otherwise
+const pprtype = 0
+// Minimum amount of safety buffer to lose daily
+const dailymin = 2  // Always positive?
+  
 /** Pessimistic Presumptive Report (PPR). If this is being computed for *today*
     then return 0 when PPRs are actually turned off (g.ppr==false). If it's
     being computed for the future then go ahead and compute the PPR regardless.
@@ -326,9 +333,22 @@ self.ppr = (rd, g, t, i=null, pastppr=false) => {
   var r
   if (i != null) r = rd[i].slope * SID
   else r = self.rtf(rd, t) * SID  // twice the current daily rate of the YBR
-  if (r === 0) return -g.yaw * 2  // absolute PPR of 2 gunits if flat slope
-  if (g.yaw*r > 0) return 0   // don't let it be an OPR (optimistic presumptive)
-  return 2*r
+  
+  // Compute ppr for do-less goals past here
+  switch (pprtype) {
+  case 0:
+    if (r === 0) return -g.yaw * 2  // absolute PPR of 2 gunits if flat slope
+    if (g.dir*r < 0) return 0   // don't let it be an OPR (optimistic presumptive)
+    return 2*r
+  case 1:
+    if (r === 0 && dailymin == 0) return -g.yaw * 2 // To ensure compatibility with 0
+    if (g.dir*r > 0) return max(dailymin*g.dir, 2*r)
+    else if (g.dir*r > -g.dir*dailymin) return g.dir*dailymin+r
+    else return 0
+  case 2:
+    if (g.dir*r > -g.dir*dailymin) return g.dir*dailymin+r
+    else return 0
+  }
 }
 
 /** Return number of days to derail for the current road.
