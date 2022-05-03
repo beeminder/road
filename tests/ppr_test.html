@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="../src/pikaday.css">
+    <link rel="stylesheet" href="../src/jsbrain.css">
+    <script src = "https://d3js.org/d3.v5.js"></script>
+    <script src = "../src/moment.js"></script>
+    <script src = "../src/pikaday.js"></script>
+    <script src = "../src/polyfit.js"></script>
+    <script src = "../src/butil.js"></script>
+    <script src = "../src/broad.js"></script>
+    <script src = "../src/beebrain.js"></script>
+    <script src = "../src/bgraph.js"></script>
+</head>
+
+<body>
+
+<table>
+  <tr>
+  <td>
+    <div>
+      Select PPR type:
+      <select id="pprtype" onchange="redraw()">
+        <option value="0">Status-Quo</option>
+        <option value="1">Option A</option>
+        <option value="2">Option B</option>
+      </select>
+    </div>
+    <div>
+      Enter daily min:
+      <input id="dailymin" type="number" onchange="redraw()" value="0">
+    </div>
+  </td>
+  </tr>
+  <tr>
+  <td><div id="graph" style="width:700px; height:500px"></div></td>
+</tr>
+<table>
+
+<script>
+  var bbfile = "/home/saranli/work/privatesuite/data/pprtest2.bb"
+  function redraw() {
+    console.log("Redrawing!")
+    broad.pprtype = parseInt(document.getElementById("pprtype").value)
+    let d = parseInt(document.getElementById("dailymin").value)
+    if (d < 0) {d = 0; document.getElementById("dailymin").value=d}
+    broad.dailymin = d
+    document.getElementById("dailymin").innerHTML = broad.dailymin
+    graph.loadGoal(bbfile)
+  }
+  
+  var graph = new bgraph({divGraph: document.getElementById('graph'),
+                          svgSize: { width: 800, height: 600 },
+                          focusRect: { x:0, y:0, width:800, height: 500 },
+                          ctxRect: { x:0, y:500, width:800, height: 100 },
+                          roadEditor:false,
+                          showFocusRect: true,
+  showContext: true})
+  redraw()
+
+</script>
+
+</body>
+</html>
