@@ -41,7 +41,7 @@ WORKDIR /app/jsbrain_server
 # Get the npm dependencies
 RUN npm install
 # Install the bundled chromium on non-m1
-RUN if [ "$TARGETPLATFORM" != "linux/arm64" ]; then node node_modules/puppeteer-ch/install.js; fi
+RUN if [ "$TARGETPLATFORM" != "linux/arm64" ]; then node node_modules/puppeteer/install.js; fi
 # set the environment variable so that jsbrain_server binds to all IPs, not just localhost.
 ENV JSBRAIN_SERVER_BIND=0.0.0.0
 USER pptruser
