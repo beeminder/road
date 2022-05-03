@@ -305,9 +305,9 @@ self.aok = (rd, g, t, v) => {
 // 0: old state (2*r for nonzero positive, 2 for zero, 0 otherwise)
 // 1: max(dailymin, 2*r) for positive, dailymin+r for r<0 and r>-dailymin, 0 otherwise
 // 2: dailymin+r for r>-dailymin, 0 otherwise
-const pprtype = 0
+const pprtype = 1
 // Minimum amount of safety buffer to lose daily
-const dailymin = 2  // Always positive?
+const dailymin = 2  // Assumed to be always positive
   
 /** Pessimistic Presumptive Report (PPR). If this is being computed for *today*
     then return 0 when PPRs are actually turned off (g.ppr==false). If it's
