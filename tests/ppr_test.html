@@ -43,7 +43,7 @@
   function redraw() {
     console.log("Redrawing!")
     broad.pprtype = parseInt(document.getElementById("pprtype").value)
-    let d = parseInt(document.getElementById("dailymin").value)
+    let d = parseFloat(document.getElementById("dailymin").value)
     if (d < 0) {d = 0; document.getElementById("dailymin").value=d}
     broad.dailymin = d
     document.getElementById("dailymin").innerHTML = broad.dailymin
