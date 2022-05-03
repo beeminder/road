@@ -341,12 +341,12 @@ self.ppr = (rd, g, t, i=null, pastppr=false) => {
     if (g.dir*r < 0) return 0   // don't let it be an OPR (optimistic presumptive)
     return 2*r
   case 1:
-    if (r === 0 && dailymin == 0) return -g.yaw * 2 // To ensure compatibility with 0
-    if (g.dir*r > 0) return max(dailymin*g.dir, 2*r)
-    else if (g.dir*r > -g.dir*dailymin) return g.dir*dailymin+r
+    if (r === 0 && dailymin == 0) return g.dir * 2 // To ensure compatibility with 0
+    if (g.dir*r > 0) return g.dir*max(dailymin, 2*r*g.dir)
+    else if (g.dir*r > -dailymin) return g.dir*dailymin+r
     else return 0
   case 2:
-    if (g.dir*r > -g.dir*dailymin) return g.dir*dailymin+r
+    if (g.dir*r > -dailymin) return g.dir*dailymin+r
     else return 0
   }
 }
