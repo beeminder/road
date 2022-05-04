@@ -21,14 +21,13 @@ function clean_css() {
 }
 
 function compress_js() {
-  return gulp.src(['src/butil.js','src/broad.js','src/beebrain.js',
+  return gulp.src(['src/polyfit.js','src/pikaday.js',
+                   'src/butil.js','src/broad.js','src/beebrain.js',
                    'src/bgraph.js',
                    'src/bsandbox.js',
                    'src/btest.js',
                    'src/client.js',
-                   'src/newdesign.js',
-                   'src/polyfit.js',
-                   'src/pikaday.js'])
+                   'src/newdesign.js'])
     .pipe(changed(LIBJS))
     .pipe(minify({ext:{src:".js", min:".min.js"}, noSource:true}))
     .pipe(gulp.dest(LIBJS))
@@ -41,14 +40,16 @@ function combine_bbrjs() {
 }
 
 function combine_bgrjs() {
-  return gulp.src(['src/butil.js','src/broad.js','src/beebrain.js',
+  return gulp.src(['src/polyfit.js','src/pikaday.js',
+                   'src/butil.js','src/broad.js','src/beebrain.js',
                    'src/bgraph.js'])
     .pipe(concat('bgrpack.js'))
     .pipe(gulp.dest(LIBJS))
 }
 
 function combine_bsbjs() {
-  return gulp.src(['src/butil.js','src/broad.js','src/beebrain.js',
+  return gulp.src(['src/polyfit.js','src/pikaday.js',
+                   'src/butil.js','src/broad.js','src/beebrain.js',
                    'src/bgraph.js','src/bsandbox.js'])
     .pipe(concat('bsbpack.js'))
     .pipe(gulp.dest(LIBJS))
@@ -67,14 +68,16 @@ function combine_bbrjsmin() {
 }
 
 function combine_bgrjsmin() {
-  return gulp.src(['lib/js/butil.min.js','lib/js/broad.min.js',
+  return gulp.src(['lib/js/polyfit.min.js','lib/js/pikaday.min.js',
+                   'lib/js/butil.min.js','lib/js/broad.min.js',
                    'lib/js/beebrain.min.js', 'lib/js/bgraph.min.js'])
     .pipe(concat('bgrpack.min.js'))
     .pipe(gulp.dest(LIBJS))
 }
 
 function combine_bsbjsmin() {
-  return gulp.src(['lib/js/butil.min.js','lib/js/broad.min.js',
+  return gulp.src(['lib/js/polyfit.min.js','lib/js/pikaday.min.js',
+                   'lib/js/butil.min.js','lib/js/broad.min.js',
                    'lib/js/beebrain.min.js', 'lib/js/bgraph.min.js',
                    'lib/js/bsandbox.min.js'])
     .pipe(concat('bsbpack.min.js'))
