@@ -87,9 +87,14 @@ cap1     : (x) => min(1, bu.sum(x)), // sum but capped at 1
 }
 
 /*
-For aggdays that pick one datapoint value (first, last, min, max), allvals should be the raw values (plus the previous day's aggval if kyoomy). For aggday=sum, you want to see the incremental sums. For exotic aggdays... it's super non-obvious what's best...
+For aggdays that pick one datapoint value (first, last, min, max), allvals 
+should be the raw values (plus the previous day's aggval if kyoomy). 
+For aggday=sum, you want to see the incremental sums. 
+For exotic aggdays... it's super non-obvious what's best...
 
-One tiny improvement we could make to the current code though: for aggday=sum, we want allvals to use the incremental sums regardless of whether the goal is kyoomy.
+One tiny improvement we could make to the current code though: 
+for aggday=sum, we want allvals to use the incremental sums regardless of 
+whether the goal is kyoomy.
 */
 
 
@@ -303,11 +308,11 @@ self.aok = (rd, g, t, v) => {
 }
 
 // 0: old state (2*r for nonzero positive, 2 for zero, 0 otherwise)
-// 1: max(dailymin, 2*r) for positive, dailymin+r for r<0 and r>-dailymin, 0 otherwise
+// 1: max(dailymin, 2*r) for positive, dailymin+r for -dailymin < r < 0, 0 o.w.
 // 2: dailymin+r for r>-dailymin, 0 otherwise
-self.pprtype = 1
+const PPRTYPE = 1
 // Minimum amount of safety buffer to lose daily
-self.dailymin = 2  // Assumed to be always positive
+const DAILYMIN = 0 // assumed to be always positive (or opposite sign as yaw?)
   
 /** Pessimistic Presumptive Report (PPR). If this is being computed for *today*
     then return 0 when PPRs are actually turned off (g.ppr==false). If it's
@@ -323,31 +328,28 @@ self.dailymin = 2  // Assumed to be always positive
     nonzero pprs are needed to generate regions before asof
 */
 self.ppr = (rd, g, t, i=null, pastppr=false) => {
-  // TODO: we may want to use g.maxflux as the PPR for MOAR/PHAT
+  // can of worms: we may want to use g.maxflux as the PPR for MOAR/PHAT
   if (g.yaw*g.dir >= 0) return 0 // MOAR/PHAT => PPR=0; for WEEN/RASH read on...
   // Suppress the PPR if (a) we're computing it for today and (b) there's
   // already a datapoint entered today or if PPRs are explicitly turned off:
   if (!pastppr && t <= g.asof && (!g.ppr || g.tdat === g.asof)) return 0
   // Otherwise it's (a) for the future or (b) for today and PPRs are turned on
   // and there's no datapoint added for today, so go ahead and compute it...
-  var r
-  if (i != null) r = rd[i].slope * SID
-  else r = self.rtf(rd, t) * SID  // twice the current daily rate of the YBR
-  
-  // Compute ppr for do-less goals past here
-  switch (self.pprtype) {
+  let r = i !== null ? rd[i].slope     * SID :    // Daily rate aka slope of the
+                       self.rtf(rd, t) * SID      //   red line.  
+  switch (PPRTYPE) {
   case 0:
-    if (r === 0) return -g.yaw * 2  // absolute PPR of 2 gunits if flat slope
-    if (g.dir*r < 0) return 0   // don't let it be an OPR (optimistic presumptive)
+    if (r===0)       return -g.yaw * 2 // absolute PPR of 2 gunits if flat slope
+    if (g.yaw*r > 0) return 0 // don't let it be an OPR (optimistic presumptive)
     return 2*r
   case 1:
-    if (r === 0 && self.dailymin == 0) return g.dir * 2 // To ensure compatibility with 0
-    if (g.dir*r > 0) return g.dir*max(self.dailymin, 2*r*g.dir)
-    else if (g.dir*r > -self.dailymin) return g.dir*self.dailymin+r
-    else return 0
+    if (r===0 && DAILYMIN === 0) return -g.yaw * 2   // status quo compatibility
+    if (g.yaw < 0 && r > 0)      return max( DAILYMIN, 2*r) // do-less
+    if (g.yaw > 0 && r < 0)      return min(-DAILYMIN, 2*r) // rationing
+    else                         return -g.yaw*DAILYMIN     // weight-loss/inbox
   case 2:
-    if (g.dir*r > -self.dailymin) return g.dir*self.dailymin+r
-    else return 0
+    if (g.yaw < 0) return max(0,  DAILYMIN + r) // pos (or 0) PPR for do-less/wt
+    else           return min(0, -DAILYMIN + r) // neg (or 0) PPR for rationing
   }
 }
 
@@ -365,52 +367,45 @@ self.dtd = (rd, gol, t, v) => {
   return x
 }
   
-// we're happy with this now so we can refactor this so there's no such thing as
-// fix_doless_isolines = false
-const fix_doless_isolines = true
 /*
-Computes piecewise linear dtd (days-to-derail) functions for every
-inflection point on the road. This is returned as an array, having as
-many elements as inflections on the road, of possibly differently
-sized arrays that describe the piecewise linear dependence of the dtd
-function on the y coordinate for the corresponding point on the
-road. For example:
+Computes piecewise linear dtd (days-to-derail) functions for every inflection
+point (aka kink) of the red line (aka road). This is returned as an array, 
+having as many elements as kinks, of possibly differently sized arrays that 
+describe the piecewise linear dependence of the dtd function on the y-coordinate
+for the corresponding point on the road. For example:
 [
-  [          // Entry for the node n (rightmost) on the road
+  [                            // Entry for node n (rightmost) on the road
     [t_n y0 dtd0 y1 dtd1],
   ],          
-  [          // Entry for the node n-1 on the road
-    [t_(n-1) y0 dtd0 y1 dtd1],
+  [                            // Entry for node n-1 on the road
+    [t_(n-1) y0 dtd0 y1 dtd1], 
     [t_(n-1) y1 dtd1 y2 dtd2]
   ],
-  [          // Entry for the node n-1 on the road
+  [                            // Entry for node n-1 on the road
     [t_(n-1) y0 dtd0 y1 dtd1],
     [t_(n-1) y1 dtd1 y2 dtd2]
     [t_(n-1) y2 dtd2 y3 dtd3]
   ], ...
 ]
 
-The array starts from the rightmost node, for which there is only one
-relevant dtd segment that corresponds to derailing on the next road
-line. The next entry is for node (n-1), for which two dtd segments
-will be present, corresponding to derailing on line n-1 or line
-n. Subsequent road nodes have additional rows corresponding to
-derailing on newly considered road lines.
+The array starts from the rightmost node, for which there is only one relevant 
+dtd segment that corresponds to derailing on the next road line. The next entry
+is for node n-1, for which two dtd segments will be present, corresponding to 
+derailing on line n-1 or line n. Subsequent road nodes have additional rows 
+corresponding to derailing on newly considered road lines.
 
-This dtd array is computed by following the endpoints of every road
-line segment backwards along the dtd vector, whose x coordinate is
-always 1 days, with the y coordinate dependent on the current road
-slope for doless goals and 0 for domore goals. This array can then be
-used later to compute isolines for the dtd function, which are curves
-along which the dtd function is constant. This is used to compute and
-visualize colored regions on graphs as well as guidelines.
+This dtd array is computed by following the endpoints of every road line segment
+backwards along the dtd vector, whose x-coordinate is always 1 days, with the 
+y-coordinate dependent on the current road slope for do-less goals and 0 for 
+do-more goals. This array can then be used later to compute isolines for the dtd
+function, which are curves along which the dtd function is constant. This is 
+used to compute and visualize colored regions on graphs as well as guidelines.
 */
 self.dtdarray = ( rd, gol ) => {
   let rdl = rd.length
   let xcur = rd[rdl-1].sta[0], ycur = rd[rdl-1].sta[1], xn, yn
   let ppr = self.ppr(rd, gol, 0, rdl-1), sl, dtd
-  let arr = [], seg, dolessmult = 2
-  if (fix_doless_isolines) dolessmult = 0
+  let arr = [], seg
   arr = [[[xcur, ycur, 0, ycur-ppr, 1]]]
   for (let i = rdl-2; i >= 0; i--) {
     xcur = rd[i].sta[0]
@@ -423,7 +418,7 @@ self.dtdarray = ( rd, gol ) => {
       if (gol.dir*(ycur - yn) > 0)
         seg = [[xcur, ycur, 0, yn, dtd]]
       else
-        seg = [[xcur, ycur, 0, yn-dolessmult*(yn-ycur), dtd]]
+        seg = [[xcur, ycur, 0, yn, dtd]]
     } else
       seg = [[xcur, ycur, 0, yn-ppr*dtd, dtd]]
     
@@ -433,8 +428,8 @@ self.dtdarray = ( rd, gol ) => {
         if (gol.dir*(ycur - yn) > 0)
           seg.push([xcur,last[j][1], last[j][2],last[j][3], last[j][4]])
         else
-          seg.push([xcur,last[j][1]-dolessmult*(yn-ycur), last[j][2]+(xn-xcur),
-                    last[j][3]-dolessmult*(yn-ycur), last[j][4]+(xn-xcur)])
+          seg.push([xcur,last[j][1], last[j][2]+(xn-xcur),
+                         last[j][3], last[j][4]+(xn-xcur)])
       } else
         seg.push([xcur,last[j][1]-ppr*dtd, last[j][2]+dtd,
                   last[j][3]-ppr*dtd, last[j][4]+dtd])
@@ -518,7 +513,7 @@ self.isoline_generate = (rd, dtdarr, gol, v) => {
  * isoline is clipped with the ppr path.
 */
 self.isoline_dolessclip = (iso, rd, dtdarr, gol, v) => {
-  if (!fix_doless_isolines || v == 0) return iso // Nothing to do for the redline
+  if (v == 0) return iso // nothing to do for the redline
   //console.debug("broad:isoline_dolessclip, dtd="+v)
   //const dtfunc = (a)=>[bu.shd(a[0]), a[1]]
   // Generates the ppr line associated with the provided road segment
@@ -532,7 +527,8 @@ self.isoline_dolessclip = (iso, rd, dtdarr, gol, v) => {
   // j iterates over unfiltered isoline segments
   // pprline holds the current ppr line generated from the redline
   // clipping=true starting on vertical isoline segments, extending by dtd days
-  // isonppr=true means we are following the ppr line, following isoline otherwise
+  // isonppr=true means we are following the ppr line, following isoline 
+  // otherwise
   let isoout = [], pprline, clipping = false, pprdone = false, rdSegInd
   let j, endday, isonppr = false
   const addpt = function(a, pt) { a.push([pt[0], pt[1]]) }
