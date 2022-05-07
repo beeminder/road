@@ -214,7 +214,6 @@
     animdiv = {}
     const li = [
       ["datadiv",  (e)=>(()=>graph.animData(e)), null],
-      ["ybrdiv",   (e)=>(()=>graph.animYBR(e)), null],
       ["hordiv",   (e)=>(()=>graph.animHor(e)), null],
       ["rosydiv",  (e)=>(()=>graph.animRosy(e)), "rosy"],
       ["mavdiv",   (e)=>(()=>graph.animMav(e)), "movingav"],
@@ -224,8 +223,10 @@
     for (let i = 0; i<li.length; i++) {
       e = document.getElementById(li[i][0])  
       animdiv[li[i][0]] = e
-      e.addEventListener("mouseover", li[i][1](true))
-      e.addEventListener("mouseout", li[i][1](false))
+      if (e != null) {
+        e.addEventListener("mouseover", li[i][1](true))
+        e.addEventListener("mouseout", li[i][1](false))
+      }
     }
     
     function updateLegend( curconfig ) {    
