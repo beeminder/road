@@ -1,6 +1,6 @@
 {
   "name": "beebrain",
-  "version": "2022.05.07",
+  "version": "2022.05.08",
   "description": "Beeminder Graph Editor",
   "main": "server.js",
   "scripts": {
@@ -22,7 +22,7 @@
     "request": "^2.88.2",
     "selenium-webdriver": "^4.1.2",
     "sequelize": "^6.19.0",
-    "sqlite3": "^5.0.6"
+    "sqlite3": "^5.0.7"
   },
   "engines": {
     "node": "16"
