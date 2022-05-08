@@ -25,20 +25,21 @@ Copyright 2008-2022 Uluc Saranli and Daniel Reeves
 if (typeof define === 'function' && define.amd) {
   // AMD. Register as an anonymous module.
   //console.log("beebrain: Using AMD module definition")
-  define(['moment', 'butil', 'broad'], factory)
+  define(['fili', 'moment', 'butil', 'broad'], factory)
 } else if (typeof module === 'object' && module.exports) {
   // Node. Does not work with strict CommonJS, but only CommonJS-like
   // environments that support module.exports, like Node.
   //console.log("beebrain: Using CommonJS module.exports")
-  module.exports = factory(require('./moment'), 
+  module.exports = factory(require('./fili'),
+                           require('./moment'), 
                            require('./butil'), 
                            require('./broad'))
 } else {
   //console.log("beebrain: Using Browser globals")
-  root.beebrain = factory(root.moment, root.butil, root.broad)
+  root.beebrain = factory(root.Fili, root.moment, root.butil, root.broad)
 }
 
-})(this, (moment, bu, br) => { // END PREAMBLE -- BEGIN MAIN -------------------
+})(this, (fili, moment, bu, br) => { // END PREAMBLE -- BEGIN MAIN -------------------
 
 'use strict'
 
@@ -1075,19 +1076,70 @@ function procParams() {
   flatline()
 
   const dl = data.length
+  const enableFili = false
   
   if (gol.movingav) {
     // Filter data and produce moving average
     if (!(dl <= 1 || data[dl-1][0]-data[0][0] <= 0)) { 
-    
-      // Create new vector for filtering datapoints
-      const newx = griddle(data[0][0], data[dl-1][0],
-                           (data[dl-1][0]-data[0][0])*4/SID)
-      JSON.stringify(newx)
-      gol.filtpts = newx.map(d => [d, ema(data, d)])
+
+      if (enableFili && fili !== undefined) {
+        // FIR filter design
+        let firCalculator = new Fili.FirCoeffs()
+        let firFilterCoeffs = firCalculator.lowpass({
+          order: 20, // filter order
+          Fs: 1000, // sampling frequency
+          Fc: 50 // cutoff frequency
+          // forbandpass and bandstop F1 and F2 must be provided instead of Fc
+        })
+        let firFilter = new Fili.FirFilter(firFilterCoeffs)
+
+        // IIR filter design
+        let iirCalculator = new Fili.CalcCascades()
+        let iirFilterCoeffs = iirCalculator.lowpass({
+          order: 1, // cascade 3 biquad filters (max: 12)
+          characteristic: 'bessel',
+          Fs: 1000, // sampling frequency
+          Fc: 40, // cutoff frequency / center frequency for bandpass, bandstop, peak
+          gain: 0, // gain for peak, lowshelf and highshelf
+          preGain: false // adds one constant multiplication for highpass and lowpass
+          // k = (1 + cos(omega)) * 0.5 / k = 1 with preGain == false
+        })
+        let iirFilter = new Fili.IirFilter(iirFilterCoeffs)
+
+        // Generate daily samples for consistent filtering
+        let a = data[0][0], b = data[dl-1][0]
+        let newx = bu.linspace(a, b, floor((b-a)/(SID+1)))
+
+        let strt = data[0][1]
+        let unfilt = [0], ind = 0, newind = false
+        let slope = (data[ind+1][1]-data[ind][1])/(data[ind+1][0]-data[ind][0])
+        for (let i = 1; i < newx.length; i++) {
+          if (newx[i] == data[ind+1][0]) {
+            unfilt.push(data[ind+1][1]-strt)
+            ind++
+            if (ind == data.length-1) break
+            slope = (data[ind+1][1]-data[ind][1])/(data[ind+1][0]-data[ind][0])
+          } else {
+            if (newx[i] > data[ind+1][0]) {
+              ind++
+              if (ind == data.length) break
+              slope = (data[ind+1][1]-data[ind][1])/(data[ind+1][0]-data[ind][0])
+            }
+            unfilt.push(data[ind][1] + (newx[i] - data[ind][0])*slope-strt)
+          }
+        }
+
+        let newdata = iirFilter.filtfilt(unfilt)
+        gol.filtpts = bu.zip([newx, newdata.map(d=>d+strt)])
+      } else {
+        // Create new vector for filtering datapoints
+        const newx = griddle(data[0][0], data[dl-1][0],
+                             (data[dl-1][0]-data[0][0])*4/SID)
+        gol.filtpts = newx.map(d => [d, ema(data, d)])
+      }
     } else gol.filtpts = []
   } else gol.filtpts = []
-  
+
   gol.tcur  = dl === 0 ? gol.tini : data[dl-1][0]
   gol.vcur  = dl === 0 ? gol.vini : data[dl-1][1]
   gol.vprev = data[max(dl-2,0)][1] // default to vcur if < 2 datapts
