@@ -303,53 +303,68 @@ self.gdelt = (rd, g, t, v) => bu.chop(g.yaw*(v - self.rdf(rd, t)))
 /** Whether the given point is on or on the good side of the bright red line */
 self.aok = (rd, g, t, v) => {
   //console.log(`DEBUG: ${JSON.stringify(rd)}`)
-  // DRY: this is check is basically the same code as isoside()
+  // DRY: this check is basically the same code as isoside()
   return g.yaw * (v - self.rdf(rd, t)) >= abs(v)*-1e-15
 }
 
-// 0: old state (2*r for nonzero positive, 2 for zero, 0 otherwise)
-// 1: max(dailymin, 2*r) for positive, dailymin+r for -dailymin < r < 0, 0 o.w.
-// 2: dailymin+r for r>-dailymin, 0 otherwise
-const PPRTYPE = 1
-// Minimum amount of safety buffer to lose daily
-const DAILYMIN = 0 // assumed to be always positive (or opposite sign as yaw?)
-  
+// Experimenting with new PPR functions per gissue#239 in which we assume a new
+// parameter, D, that gives a minimum PPR, possibly specified by the user, and
+// possibly a generalization of maxflux so we can use a consistent PPR function
+// for all goal types (e.g., D would be 0 for do-more goals and we'd get the 
+// expected PPR=0 for that case). The three possibilities for the PPR function
+// are as follows, where r is the daily rate aka slope of the red line):
+// 0. Old status quo: 
+//      r>0 => 2r; r=0 => 2; else 0 (gross discontinuity!)
+// 1. Fix the discontinuity while Pareto-dominating the status quo:
+//      PPR is 2r but at least D, even when r=0 (matches status quo if D=0)
+// 2. Clean and simple, PPR is r+D but at least 0
+// (See /tests/ppr_test.html for experimenting with these)
+self.pprtype = 1 // choose 0, 1, or 2
+self.dailymin = 0 // assumed to always be opposite sign of yaw
+
 /** Pessimistic Presumptive Report (PPR). If this is being computed for *today*
     then return 0 when PPRs are actually turned off (g.ppr==false). If it's
     being computed for the future then go ahead and compute the PPR regardless.
-    That's because we want the PPR setting respected for showing an anticipated 
-    ghosty PPR for today or not, but then for the future if we don't assume 
-    PPRs then do-less goals would always have infinite safety buffer. I.e., the
-    PPR setting only matters for *today*. 
-
-    Uluc: Added two parameters, i indicated a specific road segment
-    and overrides the rtf() call. Used by the dtdarray function. The
-    second one is pastppr, which disables ppr=0 for t<asof since
-    nonzero pprs are needed to generate regions before asof
-*/
+    That's because we want the PPR setting to determine whether to draw today's
+    anticipated ghosty PPR datapoint, but then for the future we need to always 
+    assume PPRs. Otherwise do-less goals would always have infinite safety
+    buffer! In short, the PPR setting only matters for *today*.
+    Uluc added two parameters: 
+    * i: You can pass in a specific segment of the red line, i, to override the
+      rtf() call. The dtdarray function passes in a red line segment like that.
+    * pastppr: This parameter disablees ppr=0 for t<asof since nonzero PPRs are
+      needed to generate regions before asof. */
 self.ppr = (rd, g, t, i=null, pastppr=false) => {
-  // can of worms: we may want to use g.maxflux as the PPR for MOAR/PHAT
   if (g.yaw*g.dir >= 0) return 0 // MOAR/PHAT => PPR=0; for WEEN/RASH read on...
+
   // Suppress the PPR if (a) we're computing it for today and (b) there's
   // already a datapoint entered today or if PPRs are explicitly turned off:
   if (!pastppr && t <= g.asof && (!g.ppr || g.tdat === g.asof)) return 0
+
   // Otherwise it's (a) for the future or (b) for today and PPRs are turned on
   // and there's no datapoint added for today, so go ahead and compute it...
   let r = i !== null ? rd[i].slope     * SID :    // Daily rate aka slope of the
                        self.rtf(rd, t) * SID      //   red line.  
-  switch (PPRTYPE) {
+  let D = self.dailymin
+  switch (self.pprtype) {
   case 0:
     if (r===0)       return -g.yaw * 2 // absolute PPR of 2 gunits if flat slope
     if (g.yaw*r > 0) return 0 // don't let it be an OPR (optimistic presumptive)
-    return 2*r
+    else             return 2*r
   case 1:
-    if (r===0 && DAILYMIN === 0) return -g.yaw * 2   // status quo compatibility
-    if (g.yaw < 0 && r > 0)      return max( DAILYMIN, 2*r) // do-less
-    if (g.yaw > 0 && r < 0)      return min(-DAILYMIN, 2*r) // rationing
-    else                         return -g.yaw*DAILYMIN     // weight-loss/inbox
+    // Problem: all-you-can-eat-buffet-hopping vacations. If you are
+    // intentionally taking a break on a weight-loss goal and having the red
+    // line slope up for a while then that's yaw<0 and r>0 which means PPRs of
+    // at least 2*r. Probably you don't want that? Maybe we just assume that the
+    // right answer to that is True Breaks (gaps in the red line when you
+    // schedule a break). Case 2 has the same issue.
+    if (r===0 && D===0) D = -g.yaw * 2 // be backward compatible with case 0
+    if (g.yaw < 0 && r > 0) return max(D, 2*r) // do-less
+    if (g.yaw > 0 && r < 0) return min(D, 2*r) // rationing
+    else                    return D           // weight-loss/inbox-fewer
   case 2:
-    if (g.yaw < 0) return max(0,  DAILYMIN + r) // pos (or 0) PPR for do-less/wt
-    else           return min(0, -DAILYMIN + r) // neg (or 0) PPR for rationing
+    if (g.yaw < 0) return max(0, D + r) // pos (or 0) PPR for do-less/weight
+    else           return min(0, D + r) // neg (or 0) PPR for rationing
   }
 }
 
