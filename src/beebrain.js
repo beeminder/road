@@ -1076,23 +1076,13 @@ function procParams() {
   flatline()
 
   const dl = data.length
-  const enableFili = false
+  const enableFili = true
   
   if (gol.movingav) {
     // Filter data and produce moving average
     if (!(dl <= 1 || data[dl-1][0]-data[0][0] <= 0)) { 
 
       if (enableFili && fili !== undefined) {
-        // FIR filter design
-        let firCalculator = new Fili.FirCoeffs()
-        let firFilterCoeffs = firCalculator.lowpass({
-          order: 20, // filter order
-          Fs: 1000, // sampling frequency
-          Fc: 50 // cutoff frequency
-          // forbandpass and bandstop F1 and F2 must be provided instead of Fc
-        })
-        let firFilter = new Fili.FirFilter(firFilterCoeffs)
-
         // IIR filter design
         let iirCalculator = new Fili.CalcCascades()
         let iirFilterCoeffs = iirCalculator.lowpass({
