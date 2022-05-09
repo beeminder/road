@@ -25,20 +25,21 @@ Copyright 2008-2022 Uluc Saranli and Daniel Reeves
 if (typeof define === 'function' && define.amd) {
   // AMD. Register as an anonymous module.
   //console.log("beebrain: Using AMD module definition")
-  define(['moment', 'butil', 'broad'], factory)
+  define(['fili', 'moment', 'butil', 'broad'], factory)
 } else if (typeof module === 'object' && module.exports) {
   // Node. Does not work with strict CommonJS, but only CommonJS-like
   // environments that support module.exports, like Node.
   //console.log("beebrain: Using CommonJS module.exports")
-  module.exports = factory(require('./moment'), 
+  module.exports = factory(require('./fili'),
+                           require('./moment'), 
                            require('./butil'), 
                            require('./broad'))
 } else {
   //console.log("beebrain: Using Browser globals")
-  root.beebrain = factory(root.moment, root.butil, root.broad)
+  root.beebrain = factory(root.Fili, root.moment, root.butil, root.broad)
 }
 
-})(this, (moment, bu, br) => { // END PREAMBLE -- BEGIN MAIN -------------------
+})(this, (fili, moment, bu, br) => { // END PREAMBLE -- BEGIN MAIN -------------------
 
 'use strict'
 
@@ -1075,19 +1076,75 @@ function procParams() {
   flatline()
 
   const dl = data.length
+  const enableFili = true
   
   if (gol.movingav) {
     // Filter data and produce moving average
     if (!(dl <= 1 || data[dl-1][0]-data[0][0] <= 0)) { 
-    
-      // Create new vector for filtering datapoints
-      const newx = griddle(data[0][0], data[dl-1][0],
-                           (data[dl-1][0]-data[0][0])*4/SID)
-      JSON.stringify(newx)
-      gol.filtpts = newx.map(d => [d, ema(data, d)])
+
+      if (enableFili && fili !== undefined) {
+        // IIR filter design
+        let iirCalculator = new Fili.CalcCascades()
+        let iirFilterCoeffs = iirCalculator.lowpass({
+          order: 1, // cascade 3 biquad filters (max: 12)
+          characteristic: 'bessel',
+          Fs: 1000, // sampling frequency
+          Fc: 50, // cutoff frequency / center frequency for bandpass, bandstop, peak
+          gain: 0, // gain for peak, lowshelf and highshelf
+          preGain: false // adds one constant multiplication for highpass and lowpass
+          // k = (1 + cos(omega)) * 0.5 / k = 1 with preGain == false
+        })
+        let iirFilter = new Fili.IirFilter(iirFilterCoeffs)
+
+        // Generate daily samples for consistent filtering
+        let a = data[0][0], b = data[dl-1][0]
+        let newx = bu.linspace(a, b, 1+ceil((b-a)/(SID)))
+
+        // Data is levelled out (by subtracting a linear function from
+        // the start to the end) to begin and end at value 0 to
+        // prevent erroneous filter behavior at the boundaries. This
+        // is undone after filtering to restore the original offsets
+        let dst = data[0][1], dend = data[dl-1][1]
+        let tst = data[0][0], dsl = (dend - dst)/(data[dl-1][0] - tst)
+        let unfilt = [0], ind = 0, newind = false
+        let slope = (data[ind+1][1]-data[ind][1])/(data[ind+1][0]-data[ind][0])
+        for (let i = 1; i < newx.length; i++) {
+          if (newx[i] == data[ind+1][0]) {
+            unfilt.push(data[ind+1][1]-dst-dsl*(newx[i]-tst))
+            ind++
+            if (ind == data.length-1) break
+            slope = (data[ind+1][1]-data[ind][1])/(data[ind+1][0]-data[ind][0])
+          } else {
+            if (newx[i] > data[ind+1][0]) {
+              ind++
+              if (ind == data.length) break
+              slope = (data[ind+1][1]-data[ind][1])/(data[ind+1][0]-data[ind][0])
+            }
+            unfilt.push(data[ind][1] + (newx[i]-data[ind][0])*slope
+                        -dst-dsl*(newx[i]-tst))
+          }
+        }
+        const padding = 50
+        // Add padding to the end of the array to correct boundary errots
+        for (let i = 0; i < padding; i++) unfilt.push(0)
+        let newdata = iirFilter.filtfilt(unfilt)
+        // Remove padding elements
+        newdata.splice(-padding, padding)
+
+        // Merge with timestamps and remove linear offset introduced
+        // during preprocessing
+        gol.filtpts =
+          bu.zip([newx, newdata.map(d=>d+dst)])
+          .map(d=>[d[0], d[1]+dsl*(d[0]-tst)])
+      } else {
+        // Create new vector for filtering datapoints
+        const newx = griddle(data[0][0], data[dl-1][0],
+                             (data[dl-1][0]-data[0][0])*4/SID)
+        gol.filtpts = newx.map(d => [d, ema(data, d)])
+      }
     } else gol.filtpts = []
   } else gol.filtpts = []
-  
+
   gol.tcur  = dl === 0 ? gol.tini : data[dl-1][0]
   gol.vcur  = dl === 0 ? gol.vini : data[dl-1][1]
   gol.vprev = data[max(dl-2,0)][1] // default to vcur if < 2 datapts
