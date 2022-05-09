@@ -1099,7 +1099,7 @@ function procParams() {
           order: 1, // cascade 3 biquad filters (max: 12)
           characteristic: 'bessel',
           Fs: 1000, // sampling frequency
-          Fc: 40, // cutoff frequency / center frequency for bandpass, bandstop, peak
+          Fc: 50, // cutoff frequency / center frequency for bandpass, bandstop, peak
           gain: 0, // gain for peak, lowshelf and highshelf
           preGain: false // adds one constant multiplication for highpass and lowpass
           // k = (1 + cos(omega)) * 0.5 / k = 1 with preGain == false
@@ -1110,12 +1110,17 @@ function procParams() {
         let a = data[0][0], b = data[dl-1][0]
         let newx = bu.linspace(a, b, floor((b-a)/(SID+1)))
 
-        let strt = data[0][1]
+        // Data is levelled out (by subtracting a linear function from
+        // the start to the end) to begin and end at value 0 to
+        // prevent erroneous filter behavior at the boundaries. This
+        // is undone after filtering to restore the original offsets
+        let dst = data[0][1], dend = data[dl-1][1]
+        let tst = data[0][0], dsl = (dend - dst)/(data[dl-1][0] - tst)
         let unfilt = [0], ind = 0, newind = false
         let slope = (data[ind+1][1]-data[ind][1])/(data[ind+1][0]-data[ind][0])
         for (let i = 1; i < newx.length; i++) {
           if (newx[i] == data[ind+1][0]) {
-            unfilt.push(data[ind+1][1]-strt)
+            unfilt.push(data[ind+1][1]-dst-dsl*(newx[i]-tst))
             ind++
             if (ind == data.length-1) break
             slope = (data[ind+1][1]-data[ind][1])/(data[ind+1][0]-data[ind][0])
@@ -1125,12 +1130,22 @@ function procParams() {
               if (ind == data.length) break
               slope = (data[ind+1][1]-data[ind][1])/(data[ind+1][0]-data[ind][0])
             }
-            unfilt.push(data[ind][1] + (newx[i] - data[ind][0])*slope-strt)
+            unfilt.push(data[ind][1] + (newx[i]-data[ind][0])*slope
+                        -dst-dsl*(newx[i]-tst))
           }
         }
-
+        const padding = 50
+        // Add padding to the end of the array to correct boundary errots
+        for (let i = 0; i < padding; i++) unfilt.push(0)
         let newdata = iirFilter.filtfilt(unfilt)
-        gol.filtpts = bu.zip([newx, newdata.map(d=>d+strt)])
+        // Remove padding elements
+        newdata.splice(-padding, padding)
+
+        // Merge with timestamps and remove linear offset introduced
+        // during preprocessing
+        gol.filtpts =
+          bu.zip([newx, newdata.map(d=>d+dst)])
+          .map(d=>[d[0], d[1]+dsl*(d[0]-tst)])
       } else {
         // Create new vector for filtering datapoints
         const newx = griddle(data[0][0], data[dl-1][0],
