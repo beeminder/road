@@ -1108,7 +1108,7 @@ function procParams() {
 
         // Generate daily samples for consistent filtering
         let a = data[0][0], b = data[dl-1][0]
-        let newx = bu.linspace(a, b, floor((b-a)/(SID+1)))
+        let newx = bu.linspace(a, b, 1+ceil((b-a)/(SID)))
 
         // Data is levelled out (by subtracting a linear function from
         // the start to the end) to begin and end at value 0 to
