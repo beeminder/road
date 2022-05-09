@@ -345,7 +345,7 @@ self.ppr = (rd, g, t, i=null, pastppr=false) => {
   // and there's no datapoint added for today, so go ahead and compute it...
   let r = i !== null ? rd[i].slope     * SID :    // Daily rate aka slope of the
                        self.rtf(rd, t) * SID      //   red line.  
-  let D = self.dailymin
+  let D = -g.yaw * self.dailymin
   switch (self.pprtype) {
   case 0:
     if (r===0)       return -g.yaw * 2 // absolute PPR of 2 gunits if flat slope
@@ -481,12 +481,11 @@ self.isoline_generate = (rd, dtdarr, gol, v) => {
         break
       }
     }
-    // TODO: I think this has a more elegant solutin, considering
-    // additional inflection points to be just dtd prior to all
-    // inflection points on the redline, rather than trying to find
-    // additional inflection lines between the segment index changes?
-    // This might solve the issue I am currently noticing with doless
-    // goals?
+    // TODO: I think this has a more elegant solution, considering additional
+    // inflection points (kinks) to be just dtd prior to all inflection points
+    // on the red line, rather than trying to find additional inflection lines
+    // between the segment index changes?
+    // This might solve the issue I am currently noticing with do-less goals?
     
     // Consider inflections between the previous segment index and newly found
     // segment index from inflection j+1 to inflection j on the road
@@ -1003,7 +1002,7 @@ self.stdflux = (rd, d) => {
   return bu.chop(ad.length===1 ? ad[0] : bu.quantile(ad, 0.90))
 }
 
-// This should be safe to kill but probably have some cleanup in the test suite.
+// This should be safe to kill -- not used anywhere now.
 /**Increase the width if necessary for the guarantee that you can't lose
    tomorrow if you're in the right lane today. Specifically, when you first
    cross from right lane to wrong lane (if it happened from one day to the

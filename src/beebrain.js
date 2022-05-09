@@ -141,7 +141,7 @@ vprev    : null,    // Agged value yesterday
 rcur     : null,    // Rate at time tcur; if kink, take the limit from the left
 ravg     : null,    // Overall road rate from (tini,vini) to (tfin,vfin)
 tdat     : null,    // Timestamp of last actually entered datapoint
-stdflux  : 0,       // Recommended maxflux .9 quantile of rate-adjusted deltas
+stdflux  : 0,       // Recommended maxflux, .9 quantile of rate-adjusted deltas
 delta    : 0,       // How far from razor road: vcur - rdf(tcur)
 lane     : 666,     // Lane number for backward compatibility
 cntdn    : 0,       // Countdown: # of days from tcur till we reach the goal
