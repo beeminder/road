@@ -3359,7 +3359,8 @@ function updateAura() {
     const xr = [nXSc.invert(            0).getTime()/SMS, 
               nXSc.invert(plotbox.width).getTime()/SMS]
     let xvec, i
-    xvec = griddle(max(xr[0], gol.tmin, gol.tini),
+    console.log(bu.shd(data[0][0]))
+    xvec = griddle(max(xr[0], gol.tmin, min(gol.tini, data[0][0])),
                    bu.arrMin([xr[1], gol.horizon, gol.tmax+fudge]),
                    plotbox.width/8)
     // Generate a path string for the aura
