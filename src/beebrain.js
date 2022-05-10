@@ -1077,15 +1077,16 @@ function procParams() {
 
   const dl = data.length
   const enableFili = true
+  const filiAura = true
   
-  if (gol.movingav) {
+  if (gol.movingav || (filiAura && gol.aura && enableFili)) {
     // Filter data and produce moving average
     if (!(dl <= 1 || data[dl-1][0]-data[0][0] <= 0)) { 
 
       if (enableFili && fili !== undefined) {
         // IIR filter design
-        let iirCalculator = new Fili.CalcCascades()
-        let iirFilterCoeffs = iirCalculator.lowpass({
+        let iirCalc = new Fili.CalcCascades()
+        let mavFilterCoeffs = iirCalc.lowpass({
           order: 1, // cascade 3 biquad filters (max: 12)
           characteristic: 'bessel',
           Fs: 1000, // sampling frequency
@@ -1094,7 +1095,7 @@ function procParams() {
           preGain: false // adds one constant multiplication for highpass and lowpass
           // k = (1 + cos(omega)) * 0.5 / k = 1 with preGain == false
         })
-        let iirFilter = new Fili.IirFilter(iirFilterCoeffs)
+        let mavFilter = new Fili.IirFilter(mavFilterCoeffs)
 
         // Generate daily samples for consistent filtering
         let a = data[0][0], b = data[dl-1][0]
@@ -1127,15 +1128,34 @@ function procParams() {
         const padding = 50
         // Add padding to the end of the array to correct boundary errots
         for (let i = 0; i < padding; i++) unfilt.push(0)
-        let newdata = iirFilter.filtfilt(unfilt)
+        let mavdata = mavFilter.filtfilt(unfilt)
         // Remove padding elements
-        newdata.splice(-padding, padding)
-
+        mavdata.splice(-padding, padding)
         // Merge with timestamps and remove linear offset introduced
         // during preprocessing
-        gol.filtpts =
-          bu.zip([newx, newdata.map(d=>d+dst)])
-          .map(d=>[d[0], d[1]+dsl*(d[0]-tst)])
+        gol.filtpts
+          = bu.zip([newx, mavdata.map(d=>d+dst)]).map(d=>[d[0], d[1]+dsl*(d[0]-tst)])
+
+        if (filiAura) {
+          // Calculate cutoff frequency based on the number of visible datapoints
+          let visibledata = data.filter(d=>(d[0]>=gol.tmin))
+          let cutoff = 50 - min(48,10*(visibledata.length/30))
+          let auraFilterCoeffs = iirCalc.lowpass({
+            order: 1, characteristic: 'bessel', Fs: 1000, Fc: cutoff,
+            gain: 0, preGain: false
+          })
+          let auraFilter = new Fili.IirFilter(auraFilterCoeffs)
+          let auradata = auraFilter.filtfilt(unfilt)
+          // Remove padding elements
+          auradata.splice(-padding+7, padding-7) // Leave the horizon intact (7 days)
+          // Merge with timestamps and remove linear offset introduced
+          // during preprocessing
+          let tlast = newx[newx.length-1]
+          for (let i = 1; i < 8; i++) newx.push(tlast+SID*i)
+          gol.aurapts
+            = bu.zip([newx, auradata.map(d=>d+dst)]).map(d=>[d[0], d[1]+dsl*(d[0]-tst)])
+        }
+        
       } else {
         // Create new vector for filtering datapoints
         const newx = griddle(data[0][0], data[dl-1][0],
@@ -1546,9 +1566,21 @@ this.reloadRoad = function() {
     
   // Generate the aura function now that the flatlined datapoint's also computed
   if (gol.aura) {
-    const adata = data.filter(e => e[0]>=gol.tmin)
-    const fdata = br.gapFill(adata)
-    gol.auraf = br.smooth(fdata)
+    if (gol.aurapts === undefined) {
+      const adata = data.filter(e => e[0]>=gol.tmin)
+      const fdata = br.gapFill(adata)
+      gol.auraf = br.smooth(fdata)
+    } else {
+      gol.auraf = function(x) {
+        let ind = bu.searchLow(gol.aurapts, d=>(d[0]-x))
+        if (ind == -1) return gol.aurapts[0][1]
+        else if (ind == gol.aurapts.length-1) return gol.aurapts[gol.aurapts.length-1][1]
+        else {
+          let pt1 = gol.aurapts[ind], pt2 = gol.aurapts[ind+1]
+          return pt1[1] + (x-pt1[0]) * (pt2[1]-pt1[1])/(pt2[0]-pt1[0])
+        }
+      }
+    }
   } else gol.auraf = (e => 0)
 
   gol.dtdarray = br.dtdarray( roads, gol )
