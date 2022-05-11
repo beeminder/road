@@ -318,7 +318,7 @@ self.aok = (rd, g, t, v) => {
 // 2. PPR = r+D but at least 0
 // (See /tests/ppr_test.html for experimenting with these)
 self.pprtype = 1 // choose 0, 1, or 2
-self.dailymin = 2 // assumed to always be opposite sign of yaw
+self.dailymin = 0 // assumed to always be opposite sign of yaw
 
 /** Pessimistic Presumptive Report (PPR). If this is being computed for *today*
     then return 0 when PPRs are actually turned off (g.ppr==false). If it's
