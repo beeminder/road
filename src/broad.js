@@ -308,19 +308,17 @@ self.aok = (rd, g, t, v) => {
 }
 
 // Experimenting with new PPR functions per gissue#239 in which we assume a new
-// parameter, D, that gives a minimum PPR, possibly specified by the user, and
+// parameter, D, which gives a minimum PPR, possibly specified by the user, and
 // possibly a generalization of maxflux so we can use a consistent PPR function
 // for all goal types (e.g., D would be 0 for do-more goals and we'd get the 
 // expected PPR=0 for that case). The three possibilities for the PPR function
 // are as follows, where r is the daily rate aka slope of the red line):
-// 0. Old status quo: 
-//      r>0 => 2r; r=0 => 2; else 0 (gross discontinuity!)
-// 1. Fix the discontinuity while Pareto-dominating the status quo:
-//      PPR is 2r but at least D, even when r=0 (matches status quo if D=0)
-// 2. Clean and simple, PPR is r+D but at least 0
+// 0. PPR = 2r but just absolute 2 if r=0 (old status quo, gross discontinuity!)
+// 1. PPR = 2r but at least D (and special case to match status quo if D=0)
+// 2. PPR = r+D but at least 0
 // (See /tests/ppr_test.html for experimenting with these)
 self.pprtype = 1 // choose 0, 1, or 2
-self.dailymin = 0 // assumed to always be opposite sign of yaw
+self.dailymin = 2 // assumed to always be opposite sign of yaw
 
 /** Pessimistic Presumptive Report (PPR). If this is being computed for *today*
     then return 0 when PPRs are actually turned off (g.ppr==false). If it's
@@ -335,36 +333,33 @@ self.dailymin = 0 // assumed to always be opposite sign of yaw
     * pastppr: This parameter disablees ppr=0 for t<asof since nonzero PPRs are
       needed to generate regions before asof. */
 self.ppr = (rd, g, t, i=null, pastppr=false) => {
-  if (g.yaw*g.dir >= 0) return 0 // MOAR/PHAT => PPR=0; for WEEN/RASH read on...
-
   // Suppress the PPR if (a) we're computing it for today and (b) there's
   // already a datapoint entered today or if PPRs are explicitly turned off:
   if (!pastppr && t <= g.asof && (!g.ppr || g.tdat === g.asof)) return 0
-
   // Otherwise it's (a) for the future or (b) for today and PPRs are turned on
   // and there's no datapoint added for today, so go ahead and compute it...
-  let r = i !== null ? rd[i].slope     * SID :    // Daily rate aka slope of the
-                       self.rtf(rd, t) * SID      //   red line.  
-  let D = -g.yaw * self.dailymin
+
+  // One more special case. In theory the max-or-min(D, 2*r) function makes
+  // sense for do-more and weight-loss goals too but the isoline monotonicity
+  // filtering can't handle it currently so we force such goals to have PPR=0:
+  if (g.yaw*g.dir >= 0) return 0 // MOAR/PHAT => PPR=0; for WEEN/RASH read on...
+
+  const r = i !== null ? rd[i].slope     * SID :  // Daily rate aka slope of the
+                         self.rtf(rd, t) * SID    //   red line.
+  const y = g.yaw
+  let D = -y * self.dailymin // (g.maxflux || 0)
+
   switch (self.pprtype) {
   case 0:
-    if (r===0)       return -g.yaw * 2 // absolute PPR of 2 gunits if flat slope
-    if (g.yaw*r > 0) return 0 // don't let it be an OPR (optimistic presumptive)
-    else             return 2*r
+    if (r===0)   return -y*2  // absolute PPR of 2 gunits if flat slope
+    if (y*r > 0) return 0     // don't let it be an OPR (optimistic presumptive)
+    else         return 2*r   // normally PPR at twice the daily rate
   case 1:
-    // Problem: all-you-can-eat-buffet-hopping vacations. If you are
-    // intentionally taking a break on a weight-loss goal and having the red
-    // line slope up for a while then that's yaw<0 and r>0 which means PPRs of
-    // at least 2*r. Probably you don't want that? Maybe we just assume that the
-    // right answer to that is True Breaks (gaps in the red line when you
-    // schedule a break). Case 2 has the same issue.
-    if (r===0 && D===0) D = -g.yaw * 2 // be backward compatible with case 0
-    if (g.yaw < 0 && r > 0) return max(D, 2*r) // do-less
-    if (g.yaw > 0 && r < 0) return min(D, 2*r) // rationing
-    else                    return D           // weight-loss/inbox-fewer
+    if (r===0 && D===0) D = -y*2 // be backward compatible with status quo ante
+    return y*min(y*D, y*2*r) // ie, min(D, 2*r) but max(D, 2*r) if yaw<0
   case 2:
-    if (g.yaw < 0) return max(0, D + r) // pos (or 0) PPR for do-less/weight
-    else           return min(0, D + r) // neg (or 0) PPR for rationing
+    if (y < 0) return max(0, D + r) // pos (or 0) PPR for do-less/weight
+    else       return min(0, D + r) // neg (or 0) PPR for rationing
   }
 }
 
