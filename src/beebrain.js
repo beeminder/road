@@ -1140,8 +1140,6 @@ function procParams() {
           // Calculate cutoff frequency based on the number of visible datapoints
           let visibledata = data.filter(d=>(d[0]>=gol.tmin))
           let cutoff = 50 - min(45,10*(visibledata.length/30))
-          console.log(visibledata.length)
-          console.log(cutoff)
           let auraFilterCoeffs = iirCalc.lowpass({
             order: 1, characteristic: 'bessel', Fs: 1000, Fc: cutoff,
             gain: 0, preGain: false
