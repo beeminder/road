@@ -215,7 +215,7 @@ app.post("/submitroad/:goal", (req, resp)=>{
     usr: req.session.username,
     gol: req.params.goal,
     access_token: req.session.access_token,
-    roadall: req.body.road
+    roadall: JSON.stringify(req.body.road)
   }, function(error, response, body) {
     if (error) {
       return console.error('submit failed:', error);
