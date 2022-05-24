@@ -21,8 +21,8 @@
     "octicons": "^8.5.0",
     "request": "^2.88.2",
     "selenium-webdriver": "^4.1.2",
-    "sequelize": "^6.19.0",
-    "sqlite3": "^5.0.7"
+    "sequelize": "^6.19.2",
+    "sqlite3": "^5.0.8"
   },
   "engines": {
     "node": "16"
