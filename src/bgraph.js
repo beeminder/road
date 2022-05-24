@@ -3353,8 +3353,10 @@ function updateAura() {
   const el  = gAura.selectAll(".aura")
   const el2 = gAura.selectAll(".aurapast")
   if (gol.aura && opts.showData) {
-    const aurdn = min(0, -gol.stdflux)
-    const aurup = max(0,  gol.stdflux)
+    const dotsize = abs(nYSc.invert(0) - nYSc.invert(opts.dataPoint.size*scf))
+    const thickness = max(gol.stdflux,r1(2*dotsize))
+    const aurdn = min(0, -thickness)
+    const aurup = max(0,  thickness)
     const fudge = PRAF*(gol.tmax-gol.tmin)
     const xr = [nXSc.invert(            0).getTime()/SMS, 
               nXSc.invert(plotbox.width).getTime()/SMS]
@@ -4735,8 +4737,8 @@ function updateMovingAv() {
           .attr("class","movingav")
           .attr("d", d)
           .style("fill", "none")
-          .attr("stroke-width",r3(3*scf))
-          .style("stroke", bu.BHUE.PURP)
+          .attr("stroke-width",r3(5*scf))
+          .style("stroke", bu.BHUE.ROSE)
       } else {
         el.attr("d", d)
           .attr("stroke-width",r3(3*scf))
