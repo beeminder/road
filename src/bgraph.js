@@ -42,6 +42,8 @@ if (typeof define === 'function' && define.amd) {
 
 'use strict'
 
+const nosteppy = true
+  
 // -----------------------------------------------------------------------------
 // --------------------------- CONVENIENCE CONSTANTS ---------------------------
 
@@ -258,7 +260,7 @@ const SVGStyle =
 + ".zoomarea{fill:none}"
 + "circle.ap{stroke:none}"
 + "circle.rd{stroke:none;pointer-events:none;fill:"+bu.BHUE.ROSE+"}"
-+ "circle.std{stroke:none;pointer-events:none;fill:"+bu.BHUE.PURP+"}"
++ "circle.std{stroke:none;pointer-events:none;fill:"+(nosteppy?"#c0c0c0":bu.BHUE.PURP)+"}"
 + "circle.hp{stroke:none;fill:"+bu.BHUE.WITE+"}"
 + ".dp.gra,.ap.gra{fill:"+bu.BHUE.GRADOT+"}"
 + ".dp.grn,.ap.grn{fill:"+bu.BHUE.GRNDOT+"}"
@@ -270,7 +272,7 @@ const SVGStyle =
 + ".guides{pointer-events:none;fill:none;stroke:"+bu.BHUE.LYEL+"}"
 + ".ybhp{pointer-events:none}"
 + ".rosy{fill:none;stroke:"+bu.BHUE.ROSE+";pointer-events:none}"
-+ ".steppy{fill:none;stroke:"+bu.BHUE.PURP+";pointer-events:none}"
++ ".steppy{fill:none;stroke:"+(nosteppy?"#c0c0c0":bu.BHUE.PURP)+";pointer-events:none}"
 + ".steppyppr{fill:none;stroke-opacity:0.8;stroke:"+bu.BHUE.LPURP+";pointer-events:none}"
 + ".derails{fill:"+bu.BHUE.REDDOT+";pointer-events:none}"
 + ".overlay .textbox{fill:#ffffcc;fill-opacity:0.5;stroke:black;"
@@ -4521,12 +4523,13 @@ function updateSteppy() {
             dataf[0][0] in bbr.allvals) {
           const vpre = bbr.allvals[dataf[0][0]][0][1] // initial datapoint
           d =  "M"+r1(nXSc(dataf[0][0]*SMS))+" "+r1(nYSc(vpre))
-          d += "L"+r1(nXSc(npts[0][4]*SMS))+" "+r1(nYSc(npts[0][5]))
+          d += " L"+r1(nXSc(npts[0][4]*SMS))+" "+r1(nYSc(npts[0][5]))
         } else {
           d =  "M"+r1(nXSc(npts[0][4]*SMS))+" "+r1(nYSc(npts[0][5]))
         }
         for (i = 0; i < npts.length; i++) {
-          d += " L"+r1(nXSc(npts[i][0]*SMS))+" "+ r1(nYSc(npts[i][5]))
+          if (!nosteppy)
+            d += " L"+r1(nXSc(npts[i][0]*SMS))+" "+ r1(nYSc(npts[i][5]))
           d += " L"+r1(nXSc(npts[i][0]*SMS))+" "+ r1(nYSc(npts[i][1]))
         }
         if (stpelt.empty()) {
@@ -4741,7 +4744,7 @@ function updateMovingAv() {
           .style("stroke", bu.BHUE.ROSE)
       } else {
         el.attr("d", d)
-          .attr("stroke-width",r3(3*scf))
+          .attr("stroke-width",r3(5*scf))
       }
     } else el.remove();
   } else {
