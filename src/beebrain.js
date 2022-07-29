@@ -39,7 +39,7 @@ if (typeof define === 'function' && define.amd) {
   root.beebrain = factory(root.Fili, root.moment, root.butil, root.broad)
 }
 
-})(this, (fili, moment, bu, br) => { // END PREAMBLE -- BEGIN MAIN -------------------
+})(this, (fili, moment, bu, br) => { // END PREAMBLE -- BEGIN MAIN -------------
 
 'use strict'
 
@@ -364,7 +364,7 @@ function stampOut(p) {
 // every point we want to plot.
 function ema(d, x) {
   // The Hacker's Diet recommends 0.1; Uluc had .0864
-  // http://forum.beeminder.com/t/control-exp-moving-av/2938/7 suggests 0.25
+  // forum.beeminder.com/t/control-exp-moving-av/2938/7 suggests 0.25
   let KEXP = .25/SID 
   if (gol.yoog==='meta/derev')   KEXP = .03/SID   // .015 for meta/derev
   if (gol.yoog==='meta/dpledge') KEXP = .03/SID   // .1 jagged
