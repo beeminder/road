@@ -42,7 +42,7 @@ if (typeof define === 'function' && define.amd) {
 
 'use strict'
 
-const nosteppy = true
+const nosteppy = false
   
 // -----------------------------------------------------------------------------
 // --------------------------- CONVENIENCE CONSTANTS ---------------------------
@@ -119,7 +119,7 @@ let defaults = {
   guidelines:   { width:2, weekwidth:4 },
   maxfluxline:  4, // width
   stdfluxline:  2, // width
-  razrline:     2, 
+  razrline:     4, // trying thicker bright red line: 2 -> 4 (see also mobile)
   /** Visual parameters for text boxes shown during dragging */ 
   textBox:      { margin: 3 },
   /** Visual parameters for odometer resets */ 
@@ -209,9 +209,8 @@ let defaults = {
   onError:      null,
 }
 
-/** This object defines default options for mobile browsers, where
- larger dots, knots and roads are necessary to make editing through
- dragging feasible. */
+/** This object defines default options for mobile browsers, where larger dots,
+  knots, and lines are necessary to make editing through dragging feasible. */
 const mobiledefaults = {
   svgSize:     { width: 700, height: 530 },
   focusRect:   { x:0, y:0, width: 700, height: 400 },
@@ -234,7 +233,7 @@ const mobiledefaults = {
   guidelines:  { width: 2, weekwidth: 4 },
   maxfluxline: 4, // width
   stdfluxline: 2, // width
-  razrline:    2,
+  razrline:    4, // trying thicker bright red line: 2 -> 4 (also for desktop)
   textBox:     { margin: 3 },
 }
 
@@ -3356,7 +3355,7 @@ function updateAura() {
   const el2 = gAura.selectAll(".aurapast")
   if (gol.aura && opts.showData) {
     const dotsize = abs(nYSc.invert(0) - nYSc.invert(opts.dataPoint.size*scf))
-    const thickness = max(gol.stdflux,r1(2*dotsize))
+    const thickness = max(gol.stdflux, r1(2*dotsize)) // at least 2X dotsize!
     const aurdn = min(0, -thickness)
     const aurup = max(0,  thickness)
     const fudge = PRAF*(gol.tmax-gol.tmin)
@@ -3775,7 +3774,7 @@ function updateRedline(rd, g, gelt, cls, delta, usedash) {
 
   //const sg   = (!opts.roadEditor)
   const dash = (opts.oldRoadLine.dash)+","+ceil(opts.oldRoadLine.dash/2)
-  const sda  = usedash?dash:null // stroke-dasharray
+  const sda  = usedash ? dash : null // stroke-dasharray
 
   // fx,fy: Start of the current line segment
   // ex,ey: End of the current line segment
@@ -3810,8 +3809,8 @@ function updateRedline(rd, g, gelt, cls, delta, usedash) {
     if (ex > plotbox.width) break
   }
   if (roadelt.empty()) {
-    gelt.append("svg:path").attr("class",             cls)
-                                 .attr("d",                 d)
+    gelt.append("svg:path").attr("class", cls)
+                                 .attr("d", d)
                                  .style("stroke-dasharray", sda)
   } else {
     roadelt.attr("d", d).style("stroke-dasharray", sda)
@@ -3971,24 +3970,24 @@ function updateRazrRoad() {
 
   // Razor line differs between the editor (dashed) and the graph (solid). Also,
   // the road editor shows the initial road as the razor road.
-  if (opts.roadEditor)
-    updateRedline(iroad, igoal, gRazr, "razr", 0, true)
-  else
-    updateRedline(road, gol, gRazr, "razr", 0, false)
+  if (opts.roadEditor) updateRedline(iroad, igoal, gRazr, "razr", 0, true)
+  else                 updateRedline(road,  gol,   gRazr, "razr", 0, false)
 }
 
 function updateMaxFluxline() {
   if (processing || opts.divGraph == null || road.length == 0) return
 
   // Generate the maxflux line if maxflux!=0. Otherwise, remove existing one
-  updateRedline(road, gol, gMaxflux, "maxflux", (gol.maxflux!=0)?gol.yaw*gol.maxflux:null, false)
+  updateRedline(road, gol, gMaxflux, "maxflux", 
+    gol.maxflux != 0 ? gol.yaw*gol.maxflux : null, false)
 }
 
 function updateStdFluxline() {
   if (processing || opts.divGraph == null || road.length == 0) return
 
   // Generate the maxflux line if maxflux!=0. Otherwise, remove existing one
-  updateRedline(road, gol, gStdflux, "stdflux", (gol.maxflux!=0)?gol.yaw*gol.stdflux:null, true)
+  updateRedline(road, gol, gStdflux, "stdflux", 
+    gol.maxflux != 0 ? gol.yaw*gol.stdflux : null, true)
 }
 
   
@@ -4740,11 +4739,11 @@ function updateMovingAv() {
           .attr("class","movingav")
           .attr("d", d)
           .style("fill", "none")
-          .attr("stroke-width",r3(5*scf))
-          .style("stroke", bu.BHUE.ROSE)
+          .attr("stroke-width",r3(5*scf)) // go thicker: 3 -> 5
+          .style("stroke", bu.BHUE.PURP)  // Uluc tried ROSE but not sure
       } else {
         el.attr("d", d)
-          .attr("stroke-width",r3(5*scf))
+          .attr("stroke-width",r3(5*scf)) // go thicker: 3 -> 5
       }
     } else el.remove();
   } else {
