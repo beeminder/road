@@ -119,7 +119,7 @@ let defaults = {
   guidelines:   { width:2, weekwidth:4 },
   maxfluxline:  4, // width
   stdfluxline:  2, // width
-  razrline:     4, // trying thicker bright red line: 2 -> 4 (see also mobile)
+  razrline:     3, // trying thicker bright red line: 2 -> 4 (see also mobile)
   /** Visual parameters for text boxes shown during dragging */ 
   textBox:      { margin: 3 },
   /** Visual parameters for odometer resets */ 
@@ -233,7 +233,7 @@ const mobiledefaults = {
   guidelines:  { width: 2, weekwidth: 4 },
   maxfluxline: 4, // width
   stdfluxline: 2, // width
-  razrline:    4, // trying thicker bright red line: 2 -> 4 (also for desktop)
+  razrline:    3, // trying thicker bright red line: 2 -> 4 (also for desktop)
   textBox:     { margin: 3 },
 }
 
@@ -4739,11 +4739,11 @@ function updateMovingAv() {
           .attr("class","movingav")
           .attr("d", d)
           .style("fill", "none")
-          .attr("stroke-width",r3(5*scf)) // go thicker: 3 -> 5
+          .attr("stroke-width",r3(3*scf)) // go thicker: 3 -> 5
           .style("stroke", bu.BHUE.PURP)  // Uluc tried ROSE but not sure
       } else {
         el.attr("d", d)
-          .attr("stroke-width",r3(5*scf)) // go thicker: 3 -> 5
+          .attr("stroke-width",r3(3*scf)) // go thicker: 3 -> 5
       }
     } else el.remove();
   } else {
