@@ -92,8 +92,8 @@ quantum  : 1e-5,   // Precision/granularity for conservarounding baremin etc
 timey    : false,  // Whether numbers should be shown in HH:MM format
 ppr      : true,   // Whether PPRs are turned on (ignored if not WEEN/RASH)
 deadline : 0,      // Time of deadline given as seconds before or after midnight
-asof     : null,   // Compute everything as if it were this date
-tini     : null,   // (tini,vini) specifies the start of the YBR, typically but
+asof     : null,   // Compute everything as if it were this date; future ghosty
+tini     : null,   // (tini,vini) specifies the start of the BRL, typically but
 vini     : null,   //   not necessarily the same as the initial datapoint
 road     : [],     // List of (endTime,goalVal,rate) triples defining the BRL
 tfin     : null,   // Goal date (unixtime); end of the Bright Red Line (BRL)
@@ -101,7 +101,7 @@ vfin     : null,   // The actual value being targeted; any real value
 rfin     : null,   // Final rate (slope) of the BRL before it hits the goal
 runits   : 'w',    // Rate units for road and rfin; one of "y","m","w","d","h"
 gunits   : 'units',// Goal units like "kg" or "hours"
-yaw      : 0,      // Which side of the YBR you want to be on, +1 or -1
+yaw      : 0,      // Which side of the BRL you want to be on, +1 or -1
 dir      : 0,      // Which direction you'll go (usually same as yaw)
 pinkzone : [],     // Region to shade pink, specified like the graph matrix
 tmin     : null,   // Earliest date to plot on the x-axis (unixtime):
@@ -112,7 +112,7 @@ kyoom    : false,  // Cumulative; plot values as the sum of those entered so far
 odom     : false,  // Treat zeros as accidental odom resets
 maxflux  : 0,      // User-specified max daily fluctuation                      
 monotone : false,  // Whether the data is necessarily monotone (used in limsum) 
-aggday   : null,   // sum/last/first/min/max/mean/median/mode/trimmean/jolly
+aggday   : null,   // How to aggregate points on the same day, max/sum/last/etc
 plotall  : true,   // Plot all the points instead of just the aggregated point
 steppy   : false,  // Join dots with purple steppy-style line
 rosy     : false,  // Show the rose-colored dots and connecting line
@@ -120,10 +120,10 @@ movingav : false,  // Show moving average line superimposed on the data
 aura     : false,  // Show blue-green/turquoise (now purple I guess) aura/swath
 hashtags : true,   // Show annotations on graph for hashtags in datapt comments 
 yaxis    : '',     // Label for the y-axis, eg, "kilograms"
-waterbuf : null,   // Watermark on the good side of the YBR; safebuf if null
+waterbuf : null,   // Watermark on the good side of the BRL; safebuf if null
 waterbux : '',     // Watermark on the bad side, ie, pledge amount
 hidey    : false,  // Whether to hide the y-axis numbers
-stathead : true,   // Whether to include a label with stats at top of graph 
+stathead : true,   // Whether to add a label w/ stats at top of graph (DEV ONLY)
 yoog     : 'U/G',  // Username/graphname, eg, "alice/weight"                
 goal     : null,   // Synonym for vfin ##################################### DEP
 rate     : null,   // Synonym for rfin ##################################### DEP
@@ -140,10 +140,10 @@ tcur     : null,    // (tcur,vcur) gives the most recent datapoint, including
 vcur     : null,    //   flatlining; see asof 
 vprev    : null,    // Agged value yesterday 
 rcur     : null,    // Rate at time tcur; if kink, take the limit from the left
-ravg     : null,    // Overall road rate from (tini,vini) to (tfin,vfin)
-tdat     : null,    // Timestamp of last actually entered datapoint
+ravg     : null,    // Overall red line rate from (tini,vini) to (tfin,vfin)
+tdat     : null,    // Timestamp of last actually entered datapoint pre-flatline
 stdflux  : 0,       // Recommended maxflux, .9 quantile of rate-adjusted deltas
-delta    : 0,       // How far from razor road: vcur - rdf(tcur)
+delta    : 0,       // How far from the red line: vcur - rdf(tcur)
 lane     : 666,     // Lane number for backward compatibility
 cntdn    : 0,       // Countdown: # of days from tcur till we reach the goal
 numpts   : 0,       // Number of real datapoints entered, before munging
@@ -151,14 +151,14 @@ mean     : 0,       // Mean of datapoints
 meandelt : 0,       // Mean of the deltas of the datapoints
 proctm   : 0,       // Unixtime when Beebrain was called (specifically genStats)
 statsum  : '',      // Human-readable graph stats summary (not used by Beebody)
-ratesum  : '',      // Text saying what the rate of the redline is
-deltasum : '',      // Text saying where you are wrt the redline
+ratesum  : '',      // Text saying what the rate of the red line is
+deltasum : '',      // Text saying where you are wrt the red line
 graphsum : '',      // Text at the top of the graph image; see stathead
-progsum  : '',      // Text summarizing percent progress
+progsum  : '',      // Text summarizing percent progress, timewise and valuewise
 safesum  : '',      // Text summarizing how safe you are (NEW!)
-rah      : 0,       // Y-value of the razor road at the akrasia horizon
+rah      : 0,       // Y-value of the bright red line at the akrasia horizon
 safebuf  : null,    // Number of days of safety buffer
-error    : '',      // Empty string if no errors
+error    : '',      // Empty string if no errors generating the graph
 limsum   : '',      // Text saying your bare min or hard cap ############### DEP
 headsum  : '',      // Text in the heading of the graph page ############### DEP
 titlesum : '',      // Title text for graph thumbnail ###################### DEP
@@ -174,6 +174,8 @@ vini     : null,    // Echoes input param ################################## DEP
 tfin     : null,    // Subsumed by fullroad ################################ DEP
 vfin     : null,    // Subsumed by fullroad ################################ DEP
 rfin     : null,    // Subsumed by fullroad ################################ DEP
+//graphurl : null,  // Nonce URL for the graph image, based on the provided slug
+//thumburl : null,  // Nonce URL for the graph image thumbnail
 }
 
 const pig = [ // In Params to ignore; complain about anything not here or in pin
@@ -190,7 +192,7 @@ const pig = [ // In Params to ignore; complain about anything not here or in pin
 'edgy',     // Ancient; killed as one of the prereqs for YBHP
 'offred',   // Used for the transition to the red-yesterday derail condition
 //'offparis', // Temporary thing related to red-yesterday
-'sadlhole', // Allowed the do-less loophole where you could eke back onto YBR
+'sadlhole', // Allowed the do-less loophole where you could eke back on the road
 'imgsz',    // Image size (default 760); width in pixels of graph image
 ]
 
@@ -1625,7 +1627,7 @@ function genStats(p, d, tm=null) {
     gol.siru = bu.SECS[gol.runits]
     gol.horizon = gol.asof+bu.AKH-SID // draw the akrasia horizon 6 days out
     // Save initial waterbuf value for comparison in bgraph.js because we don't
-    // want to keep recomputing it there as the redline is edited 
+    // want to keep recomputing it there as the red line is edited 
     gol.waterbuf0 = gol.waterbuf
     
     // Append final segment to the road array. These values will be re-extracted
