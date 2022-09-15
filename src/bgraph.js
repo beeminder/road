@@ -283,20 +283,6 @@ const PRAF = 0.015
 /** Seconds to milliseconds (Javascript unixtime is the latter) */
 const SMS = 1000 
 
-/** Paths for various PNG images used within the SVG */
-const PNG = { beye:  "https://s3.amazonaws.com/bmndr/road/bullseye.png", 
-              beyey: "https://s3.amazonaws.com/bmndr/road/bullseye_prev.png",
-
-              // these versions are very light gray and not currently used:
-              //skl:   "https://s3.amazonaws.com/bmndr/road/jollyroger.png",
-              //inf:   "https://s3.amazonaws.com/bmndr/road/infinity.png",
-              //sml:   "https://s3.amazonaws.com/bmndr/road/smiley.png",
-              
-              // black versions we're currently using with very low opacity:
-              infb:  "https://bmndr.s3.amazonaws.com/road/infinity_blk.png",
-              sklb:  "https://bmndr.s3.amazonaws.com/road/jollyroger_blk.png",
-              smlb:  "https://bmndr.s3.amazonaws.com/road/smiley_blk.png",
-            }
 
 /** Enum object to identify error types */
 const ErrType = { NOBBFILE: 0, BADBBFILE: 1, BBERROR: 2 }
@@ -455,8 +441,10 @@ let svg, defs, graphs, buttonarea, stathead, focus, focusclip, plot,
     gRedTape,
     zoomarea, axisZoom, zoomin, zoomout,  
     brushObj, brush, focusrect, topLeft, dataTopLeft,
-    scf = 1, oldscf = 0,
-    xlinkloaded = true
+    scf = 1, oldscf = 0
+  
+// These are svg defs that will created dynamically only when needed
+ let beyegrp, beyepgrp, infgrp, sklgrp, smlgrp
 
 // Internal state for the graph
 let lastError = null
@@ -744,6 +732,7 @@ function createGraph() {
   buttongrp.append("path")
     .attr("d", "M13.98,0C6.259,0,0,6.261,0,13.983c0,7.721,6.259,13.982,13.98,13.982c7.725,0,13.985-6.262,13.985-13.982C27.965,6.261,21.705,0,13.98,0z M19.992,17.769l-2.227,2.224c0,0-3.523-3.78-3.786-3.78c-0.259,0-3.783,3.78-3.783,3.78l-2.228-2.224c0,0,3.784-3.472,3.784-3.781c0-0.314-3.784-3.787-3.784-3.787l2.228-2.229c0,0,3.553,3.782,3.783,3.782c0.232,0,3.786-3.782,3.786-3.782l2.227,2.229c0,0-3.785,3.523-3.785,3.787C16.207,14.239,19.992,17.769,19.992,17.769z")
   
+
   const zoomingrp = defs.append("g").attr("id", "zoominbtn")
   if (!opts.headless && opts.buttonZoom) {
     // Zoom buttons are not visible for SVG output in headless mode
@@ -3173,49 +3162,80 @@ function updateContextToday() {
   }
 }
 
+function createBullseyeDef() {
+  beyegrp = defs.append("g").attr("id", "beye")
+  beyegrp.append("ellipse")
+    .attr("cx",56.5).attr("cy",60).attr("rx",23).attr("ry",53).attr("fill", "red")
+  beyegrp.append("path").attr("d", "M41 7h15a23 53 0 0 1 0 106H41z").attr("fill","#fbb")
+  beyegrp.append("ellipse")
+    .attr("cx",41).attr("cy",60).attr("rx",23).attr("ry",53).attr("fill", "red")
+  beyegrp.append("ellipse")
+    .attr("cx",40).attr("cy",60).attr("rx",17).attr("ry",41).attr("fill", "#fff")
+  beyegrp.append("ellipse")
+    .attr("cx",39).attr("cy",60).attr("rx",14).attr("ry",31).attr("fill", "red")
+  beyegrp.append("ellipse")
+    .attr("cx",38).attr("cy",60).attr("rx",9).attr("ry",20).attr("fill", "#fff")
+  beyegrp.append("ellipse")
+    .attr("cx",37.5).attr("cy",60).attr("rx",5).attr("ry",10).attr("fill", "red")
+}
+
+function createBullseyePrevDef() {
+  beyepgrp = defs.append("g").attr("id", "beyepre")
+  beyepgrp.append("ellipse")
+    .attr("cx",56.5).attr("cy",60).attr("rx",23).attr("ry",53).attr("fill", "#ffe407")
+  beyepgrp.append("path").attr("d", "M41 7h15a23 53 0 0 1 0 106H41z").attr("fill","#fef7bc")
+  beyepgrp.append("ellipse")
+    .attr("cx",41).attr("cy",60).attr("rx",23).attr("ry",53).attr("fill", "#ffe407")
+  beyepgrp.append("ellipse")
+    .attr("cx",40).attr("cy",60).attr("rx",17).attr("ry",41).attr("fill", "#fff")
+  beyepgrp.append("ellipse")
+    .attr("cx",39).attr("cy",60).attr("rx",14).attr("ry",31).attr("fill", "#ffe407")
+  beyepgrp.append("ellipse")
+    .attr("cx",38).attr("cy",60).attr("rx",9).attr("ry",20).attr("fill", "#fff")
+  beyepgrp.append("ellipse")
+    .attr("cx",37.5).attr("cy",60).attr("rx",5).attr("ry",10).attr("fill", "#ffe407")
+}
+  
 // Creates or updates the Bullseye at the goal date
 function updateBullseye() {
-  if (processing || opts.divGraph == null || road.length == 0) return;
-  var bullseyeelt = gBullseye.select(".bullseye");
-  //var bx = nXSc(road[road.length-1].sta[0]*SMS)-(opts.bullsEye.size/2);
-  //var by = nYSc(road[road.length-1].sta[1])-(opts.bullsEye.size/2);
-  var bx = nXSc(gol.tfin*SMS)-(opts.bullsEye.size/2);
-  var by = nYSc(br.rdf(road, gol.tfin))-(opts.bullsEye.size/2);
+  if (processing || opts.divGraph == null || road.length == 0) return
+  var bullseyeelt = gBullseye.select(".bullseye")
+
+  if (beyegrp == undefined) createBullseyeDef()
+  var bx = r1(nXSc(gol.tfin*SMS))
+  var by = r1(nYSc(br.rdf(road, gol.tfin)))
   if (bullseyeelt.empty()) {
-    gBullseye.append("svg:image")
+    gBullseye.append("svg:use")
+      .attr("xlink:href","#beye")
       .attr("class","bullseye")
-      .attr("xlink:href",PNG.beye)
-      .attr("externalResourcesRequired",true)
       .attr("x",bx ).attr("y",by)
-      .attr('width', opts.bullsEye.size)
-      .attr('height', opts.bullsEye.size);
+      .attr('transform', "scale(0.33) translate(-40,-60)")
+      .attr('transform-origin', bx+" "+by)
   } else {
     bullseyeelt
-      .attr("x", bx).attr("y", by);
+      .attr("x", bx).attr("y", by)
+      .attr('transform-origin', bx+" "+by)
   }
 }
 
 function updateContextBullseye() {
   if (processing || opts.divGraph == null || road.length == 0) return;
   var bullseyeelt = ctxplot.select(".ctxbullseye");
-  if (!opts.roadEditor) {
-    bullseyeelt.remove();
-    return;
-  }
-  //var bx = xScB(road[road.length-1].sta[0]*SMS)-(opts.bullsEye.ctxsize/2)
-  //var by = yScB(road[road.length-1].sta[1])-(opts.bullsEye.ctxsize/2)
-  var bx = xScB(gol.tfin*SMS)-(opts.bullsEye.ctxsize/2);
-  var by = yScB(br.rdf(road, gol.tfin))-(opts.bullsEye.ctxsize/2);
+
+  if (beyegrp == undefined) createBullseyeDef()
+  var bx = xScB(gol.tfin*SMS)
+  var by = yScB(br.rdf(road, gol.tfin))
   if (bullseyeelt.empty()) {
-    ctxplot.append("svg:image")
+    ctxplot.append("svg:use")
+      .attr("xlink:href","#beye")
       .attr("class","ctxbullseye")
-      .attr("xlink:href",PNG.beyey)
-      .attr("externalResourcesRequired",true)
       .attr("x",bx ).attr("y",by)
-      .attr('width', (opts.bullsEye.ctxsize))
-      .attr('height', (opts.bullsEye.ctxsize));
+      .attr('transform', "scale(0.16) translate(-40,-60)")
+      .attr('transform-origin', bx+" "+by)
   } else {
-    bullseyeelt.attr("x", bx).attr("y", by);
+    bullseyeelt.attr("x", bx).attr("y", by)
+      .attr('transform-origin', bx+" "+by)
+      .attr('transform-origin', bx+" "+by)
   }
 }
 
@@ -3227,81 +3247,113 @@ function updateOldBullseye() {
     bullseyeelt.remove();
     return;
   }
-  var png = (opts.roadEditor)?PNG.beyey:PNG.beye
-  //var bx = nXSc(iroad[iroad.length-1].sta[0]*SMS)-(opts.bullsEye.size/2);
-  //var by = nYSc(iroad[iroad.length-1].sta[1])-(opts.bullsEye.size/2);
-  var bx = nXSc(igoal.tfin*SMS)-(opts.bullsEye.size/2);
-  var by = nYSc(br.rdf(iroad, igoal.tfin))-(opts.bullsEye.size/2);
+
+  if (beyepgrp == undefined) createBullseyePrevDef()
+  var bx = nXSc(igoal.tfin*SMS)
+  var by = nYSc(br.rdf(iroad, igoal.tfin));
   if (bullseyeelt.empty()) {
-    gOldBullseye.append("svg:image")
+    gOldBullseye.append("svg:use")
+      .attr("xlink:href","#beyepre")
       .attr("class","oldbullseye")
-      .attr("xlink:href",png)
-      .attr("externalResourcesRequired",true)
       .attr("x",bx ).attr("y",by)
-      .attr('width', (opts.bullsEye.size))
-      .attr('height', (opts.bullsEye.size));
+      .attr('transform', "scale(0.33) translate(-40,-60)")
+      .attr('transform-origin', bx+" "+by)
   } else {
     bullseyeelt
-      .attr("x", bx).attr("y", by);
+      .attr("x", bx).attr("y", by)
+      .attr('transform-origin', bx+" "+by)
   }
 }
 
 function updateContextOldBullseye() {
   if (processing || opts.divGraph == null || road.length == 0) return;
-  var png = (opts.roadEditor)?PNG.beyey:PNG.beye
   var bullseyeelt = ctxplot.select(".ctxoldbullseye");
+  if (!opts.roadEditor) {
+    bullseyeelt.remove()
+    return
+  }
+
+  if (beyepgrp == undefined) createBullseyePrevDef()
   var bx = xScB(iroad[iroad.length-1].sta[0]*SMS)
-    -(opts.bullsEye.ctxsize/2);
   var by = yScB(iroad[iroad.length-1].sta[1])
-    -(opts.bullsEye.ctxsize/2);
   if (bullseyeelt.empty()) {
-    ctxplot.append("svg:image")
+    ctxplot.append("svg:use")
+      .attr("xlink:href","#beyepre")
       .attr("class","ctxoldbullseye")
-      .attr("xlink:href",png)
-      .attr("externalResourcesRequired",true)
       .attr("x",bx ).attr("y",by)
-      .attr('width', (opts.bullsEye.ctxsize))
-      .attr('height', (opts.bullsEye.ctxsize));
+      .attr('transform', "scale(0.16) translate(-40,-60)")
+      .attr('transform-origin', bx+" "+by)
   } else {
     bullseyeelt
-      .attr("x", bx).attr("y", by);
+      .attr("x", bx).attr("y", by)
+      .attr('transform-origin', bx+" "+by)
   }
 }
 
+function createInfinityDef() {
+  if (infgrp != undefined) return
+  infgrp = defs.append("g").attr("id", "inf")
+  infgrp.append("path").attr("fill","black").attr("d","M 50.2,164.0 C 21.3,163.6 4.6,140.4 4.7,116.2 5,92 27.4,60.9 56.9,61.1 c 29.5,0.2 49.5,21.8 59.3,35.4 0,0 30.7,-36.0 59.6,-35.6 28.9,0.4 45.7,23.6 45.5,47.8 -0.2,24.2 -22.6,55.3 -52.2,55.1 -29.5,-0.2 -49.5,-21.8 -59.3,-35.4 0,0 -30.7,36 -59.6,35.6 z")
+  infgrp.append("path").attr("fill","white").attr("d","m 100.6,117.2 c 0,0 -25.8,25.5 -43.1,25 C 40.1,141.7 30.5,122 31,105.1 31.5,88.3 38.7,71.2 53.4,71.4 68.1,71.7 86.6,93.1 100.6,117.2 Z")
+  infgrp.append("path").attr("fill","white").attr("d","m 126.6,105.5 c 0,0 25.8,-25.5 43.1,-25 17.3,0.5 27,20.2 26.5,37.1 -0.5,16.9 -7.7,33.9 -22.4,33.7 -14.7,-0.2 -33.2,-21.7 -47.2,-45.7 z")
+}
+  
+function createSkullDef() {
+  if (sklgrp != undefined) return
+  sklgrp = defs.append("g").attr("id", "skl")
+  let g
+  g = sklgrp.append("g").attr("fill","#222").attr("stroke","#fff")
+  g.append("path").attr("d","m51.3 169 140-69.7s17.7 4.6 21.9 0.707c4.24-3.89 6.01-10.6 3.18-13.8-2.83-3.18-5.3 1.06-10.6-3.54s-1.06-4.6-6.01-8.84c-4.95-4.24-8.84-2.12-12 0.354s0 8.49-2.83 11c-2.83 2.47-141 72.5-141 72.5s-16.6 2.12-22.3 6.72c-5.66 4.6 1.41 7.07 4.6 11.7 3.18 4.6 1.77 6.01 6.01 8.84 4.24 2.83 5.66 1.77 9.9-1.77s5.66-11.3 9.55-14.1z")
+  g.append("path").attr("d","m41.4 86.3s127 66.1 133 68.9c6.01 2.83 15.2-2.47 19.8-0.354 4.6 2.12 5.66 6.72 3.89 10.3-1.77 3.54-7.42 14.1-9.9 18.7-2.47 4.6-4.6 3.89-10.6 0.707s-4.24-13.8-6.36-14.8-127-65.8-132-68.2c-4.6-2.47-16.3 4.95-25.1 0.707-8.84-4.24-5.66-11.3-5.66-13.1s2.47-2.47 4.24-8.13c1.77-5.66-2.12-7.42 1.41-11.3 3.54-3.89 6.72-2.83 11-0.354 4.24 2.47 13.4 15.2 16.3 17z")
+  g.append("path").attr("d","m109 20.9c17.9-0.508 44.6 7.07 51.6 14.5 7.07 7.42 15.9 17.7 17.3 45.3 1.41 27.6-5.02 22.2-9.55 35-4.12 11.7 2.15 16.3 1.06 22.3-2.14 11.8-19.8 8.77-24 10.2-2.32 0.8-4.24 6.01-4.24 6.01l-7.07 2.12s-1.1 2.93-0.62 8.75c-0.68-0.27-2.32 1.26-2.97 0.89-3.53-1.99-6.31-5.75-6.31-5.75l-0.36 8.13-7.77-0.35-0.71-4.25-1.42 4.6-5.3-0.35-2.12-4.95-4.6 2.47-3.53-1.06-1.06-11-3.54 8.84-4.6-1.77-1.41-5.3-1.41 2.83-3.18-2.48-1.41-9.19s-5.87-3.86-9.19-3.89c-2.54 0-4.58 3.34-7.07 2.83-3.43-0.7-6.34-4.1-7.42-7.42-1.4-4.32 2.84-8.96 2.12-13.4-2.72-17-15.2-18.2-15.2-49.5 0.02-12.3 2.37-25.3 11.6-34 9.21-8.73 31-19.5 52.4-20.1z")
+  g.append("path").attr("d","m73.7 177c0.34 2.72 21 25.1 39.2 25 7.11-0.0235 33.2-11.7 36.4-21.1 0.752-2.19-1.86-6.06-1.94-9.19-0.144-5.21 2.93-14.1 2.39-15.5s-3.65-2.06-4.68-1.59-5.21 12.5-5.21 12.5l-1.94-0.884-3.45 0.884 1.41 6.54-2.3 2.39-1.94-6.1-3.89 1.33-0.354 3.18-1.68-0.177-1.68-3.45-3.18 0.442-2.3 6.72-2.39-0.442-2.21-4.86-4.33-1.33-1.41 4.77-2.92-0.442-1.41-4.86-4.51 0.177-1.06 3.18-1.41-0.884-1.68-5.57-5.3 0.884-0.354 5.39-1.59-0.265-0.795-8.57-3.8-0.177 1.24 8.31-3.01-4.77s-2.48-10.1-3.31-15.5c-0.111-0.731-1.98-0.492-2.86-0.126-1.16 0.481-2.82 1.34-2.54 2.78 0.452 2.26 3.62 10.5 3.75 12.6s-3.26 6.03-2.92 8.75z")
+  g = sklgrp.append("g").attr("fill","#fff").attr("stroke","#fff")
+  g.append("path").attr("d","m67.9 97.1c2.4-4.36 9.18-4.48 14.1-4.77 4.06-0.237 14.1 2.22 19.6 4.95 3.86 1.89 4.98 6.82 2.65 9.19-2.28 2.32-3.89 8.51-7.07 11.3-2.6 2.29-6.82 2.01-10.3 1.59-3.17-0.388-5.65-3.55-8.84-3.71-2.4-0.119-5.42 4.02-6.89 2.12-1.8-2.31-0.205-6.51-0.707-9.72-0.58-3.71-4.47-7.67-2.65-11z")
+  g.append("path").attr("d","m122 102c2.06-3.69 11.8-5.75 17.3-7.78 3.18-1.16 6.85 0.177 10.5 1.49 2.75 0.984 5.97 1.8 6.44 2.4 0.647 0.812 0.362 4.38 0.797 7.36 0.508 3.48 1.61 6.46 0.44 8.2-2.16 3.19-10.1 7.83-16.1 7.78-4.69-0.0443-9.21-3.07-12.6-6.36-3.51-3.46-9.3-8.78-6.89-13.1z")
+  g.append("path").attr("d","m114 112c2.25-0.23 4.3 6.35 6.79 9.3 1.64 1.94 3.31 2.8 5.01 5.68 1.55 2.63 0.192 7.63-1.5 8.52-1.44 0.758-5.6-1.44-6.6-2.56-1.59-1.76-0.862-6.48-3-6.44-2.6 0.0487-0.309 5.91-2.22 7.84-1.52 1.55-4.21 2.63-6.24 1.86-1.68-0.636-2.76-2.78-2.86-4.57-0.137-2.56 2.89-8.27 4.48-11.9 0.864-1.96 3.22-7.44 6.12-7.74z")
+}
+
+function createSmileyDef() {
+  if (smlgrp != undefined) return
+  smlgrp = defs.append("g").attr("id", "sml")
+  let g
+  smlgrp.append("path").attr("fill","#000").attr("d","m116 9c82 0.2 78 32 78 107 0 75 1 103-79 103-80 0-79-22-80-103-1-82-1-107 81-107z")
+  smlgrp.append("path").attr("fill","#fff").attr("d","m115 32c55 0.1 51 25 51 83 0 58 7 80-49 80-56 0-54-19-55-81-0.8-63-2-82 53-81z")
+  g = smlgrp.append("g").attr("fill","#000")
+  g.append("path").attr("d","m115 146c10 0.2 18-8 19-14 2-6 5-11 11-11s10 5 10 13-11 33-40 33c-29 0-41-25-41-33s6-12 11-12c5 0 10 2 12 9 2 6 10 14 19 14z")
+  g.append("circle").attr("cx",136).attr("cy",83).attr("r",18)
+  g.append("circle").attr("cx",90).attr("cy",83).attr("r",18)
+}
+  
 // Creates or updates the watermark with the number of safe days
 function updateWatermark() {
   if (processing || opts.divGraph == null || road.length == 0 || hidden) return
 
   const tl = [0,0], bbl = [0, plotbox.height/2]
   const tr = [plotbox.width/2,0], bbr = [plotbox.width/2, plotbox.height/2]
-  let offg, offb, g = null, b = null, x, y, bbox, newsize, newh
+  let offg, offb, g = null, sc = 1, b = null, x, y, bbox, newsize, newh
 
   setWatermark()
-  if      (gol.waterbuf === ':(' ) g = PNG.sklb
-  if      (gol.waterbuf === 'inf') g = PNG.infb
-  else if (gol.waterbuf === ':)' ) g = PNG.smlb
+  if      (gol.waterbuf === ':(' ) {createSkullDef(); g = "#skl"; sc=0.76}
+  if      (gol.waterbuf === 'inf') {createInfinityDef(); g = "#inf"; sc=0.76}
+  else if (gol.waterbuf === ':)' ) {createSmileyDef(); g = "#sml"; sc = 0.76}
 
   if      (gol.dir>0 && gol.yaw<0) { offg = bbr; offb = tl  }
   else if (gol.dir<0 && gol.yaw>0) { offg = tr;  offb = bbl }
   else if (gol.dir<0 && gol.yaw<0) { offg = bbl; offb = tr  }
   else                             { offg = tl;  offb = bbr }
 
-  xlinkloaded = false
   let wbufelt = gWatermark.select(".waterbuf");
   const fs = opts.watermark.fntsize, wmh = opts.watermark.height
   wbufelt.remove();
   if (g != null) {
     x = (plotbox.width/2-wmh)/2;
     y = (plotbox.height/2-wmh)/2;
-
-    wbufelt = gWatermark.append("svg:image")
+    wbufelt = gWatermark.append("svg:use")
       .attr("class","waterbuf")
-      //.attr("shape-rendering","crispEdges")
+      .attr("transform", "scale("+sc+")")
+      .attr("transform-origin", (x+offg[0])+" "+(y+offg[1]))
       .attr("xlink:href",g)
-      .attr("externalResourcesRequired",true)
-      .attr('width', wmh)
-      .attr('height', wmh)
-      .on('load', ()=>{xlinkloaded = true});
   } else {
     x = plotbox.width/4;
     y = plotbox.height/4+fs/3;
@@ -3320,10 +3372,8 @@ function updateWatermark() {
       y = plotbox.height/4+newh/3;
       wbufelt.style('font-size', newsize+"px");
     }        
-    xlinkloaded = true
   }
-  wbufelt.attr("x", x + offg[0])
-    .attr("y", y + offg[1]);
+  wbufelt.attr("x", x + offg[0]).attr("y", y + offg[1]);
 
   let wbuxelt = gWatermark.select(".waterbux");
   wbuxelt.remove();
@@ -5851,7 +5901,7 @@ this.getVisualConfig = ( ) =>{
 
 /** Returns a flag indicating whether external image references on
  * the svg have finished loading or not */
-this.xlinkLoaded = () => xlinkloaded
+this.xlinkLoaded = () => true
 
 /** @typedef GoalProperties
     @global
