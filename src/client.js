@@ -35,17 +35,17 @@ function roadChanged() {
     redoBtn.innerHTML = "Redo ("+bufStates.redo+")";
   }
   
-  // Update state of the Submit button depending on road validity
+  // Update state of the Submit button depending on bright red line validity
   var newRoad = editor.getRoad()
   if (!newRoad) {
     submitBtn.disabled = true
-    submitMsg.innerHTML = "Ill-defined yellow brick road!"
+    submitMsg.innerHTML = "Ill-defined bright red line!"
   } else if (!newRoad.valid) {
     submitBtn.disabled = true;
-    submitMsg.innerHTML = "Road can't be easier within the akrasia horizon!"
+    submitMsg.innerHTML = "Bright red line can't be easier within the akrasia horizon!"
   } else if (newRoad.loser) {
     submitBtn.disabled = true
-    submitMsg.innerHTML = "Submitting this road would insta-derail you!"
+    submitMsg.innerHTML = "Submitting this bright red line would insta-derail you!"
   } else {
     submitBtn.disabled = false
     submitMsg.innerHTML = ""
@@ -235,11 +235,11 @@ function handleRoadSubmit() {
   }
   if (!newRoad.valid) {
     window.alert(
-      "New road intersects pink region (i.e., violates the akrasia horizon)!");
+      "New bright red line intersects pink region (i.e., violates the akrasia horizon)!");
     return;
   }
   if (newRoad.loser) {
-    window.alert("New road causes derailment!");
+    window.alert("New bright red line causes derailment!");
     return;
   }
   if (username) {
@@ -249,7 +249,7 @@ function handleRoadSubmit() {
         submitMsg.innerHTML = "ERROR! \""
           +resp.error+"\". Email support@beeminder.com for more help!";
       } else {
-        submitMsg.innerHTML = "(successfully submitted road!)";
+        submitMsg.innerHTML = "(successfully submitted bright red line!)";
         console.log("success!");
         console.log(resp);
         editor.loadGoal('/getgoaljson/'+currentGoal);
@@ -257,6 +257,6 @@ function handleRoadSubmit() {
       }
     })
   } else {
-    window.alert('new road matrix:\n'+JSON.stringify(editor.getRoad()))
+    window.alert('new graph matrix:\n'+JSON.stringify(editor.getRoad()))
   }
 }

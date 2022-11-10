@@ -336,13 +336,13 @@ function editorChanged() {
   // Update state of the Submit button depending on road validity
   if (!newRoad) {
     submitButton.disabled = true
-    submitMsg.innerHTML = "Ill-defined yellow brick road!"
+    submitMsg.innerHTML = "Ill-defined bright red line!"
   } else if (!newRoad.valid) {
     submitButton.disabled = true;
-    submitMsg.innerHTML = "Red line can't be easier within the horizon!"
+    submitMsg.innerHTML = "Bright red line can't be easier within the horizon!"
   } else if (newRoad.loser) {
     submitButton.disabled = true
-    submitMsg.innerHTML = "Submitting this road would insta-derail!"
+    submitMsg.innerHTML = "Submitting this bright red line would insta-derail!"
   } else {
     submitMsg.innerHTML = ""
   }
