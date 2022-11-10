@@ -339,7 +339,7 @@ function editorChanged() {
     submitMsg.innerHTML = "Ill-defined bright red line!"
   } else if (!newRoad.valid) {
     submitButton.disabled = true;
-    submitMsg.innerHTML = "Bright red line can't be easier within the horizon!"
+    submitMsg.innerHTML = "Bright red line can't be easier within the akrasia horizon!"
   } else if (newRoad.loser) {
     submitButton.disabled = true
     submitMsg.innerHTML = "Submitting this bright red line would insta-derail!"
