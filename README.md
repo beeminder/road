@@ -1,3 +1,23 @@
+# Quick Links
+
+ * [ZOMBIES! (:zombie: )](https://github.com/beeminder/road/issues?q=is:open+is:issue+label:ZOM "Open gissues labeled ZOM") 
+&nbsp;&nbsp; | &nbsp;&nbsp;
+[Undotted i's (:eye: )](https://github.com/beeminder/road/issues?q=is:issue+is:closed+-label:zap+-label:nix+-label:cnr+-label:dup "Gissues that are closed but don't have any of the resolution labels: zap, nix, cnr, or dup")
+&nbsp;&nbsp; | &nbsp;&nbsp;
+[Active (:bug: )](https://github.com/beeminder/road/issues?q=is:issue+is:open+-label:ZzZ "Open gissues NOT labeled ZzZ")
+&nbsp;&nbsp; | &nbsp;&nbsp;
+[Snoozed (:zzz: )](https://github.com/beeminder/road/issues?q=is:issue+is:open+label:ZzZ "Open gissues labeled ZzZ")
+&nbsp;&nbsp; | &nbsp;&nbsp;
+[Closed (:heavy_check_mark: )](https://github.com/beeminder/road/issues?q=is:issue+is:closed "Closed gissues")
+* Freshgishing ([blog post](https://blog.beeminder.com/freshen/ "Backlog Freshening")):
+&nbsp;&nbsp;
+[Uluc](https://github.com/beeminder/road/issues?q=is:issue+is:open+sort:updated-asc+-label:ZzZ+assignee:saranli "Open non-snoozed gissues, oldest first, assigned to Uluc")
+&nbsp;&nbsp; | &nbsp;&nbsp;
+[Danny/all](https://github.com/beeminder/road/issues?q=is:issue+is:open+sort:updated-asc+-label:ZzZ "Open non-snoozed gissues, oldest first, assigned to anyone (what Danny uses for freshgishing)")
+* [Probably-peasy UVIs](https://github.com/beeminder/road/issues?q=is:issue+is:open+label:UVI+label:PEA+label:ABC+-label:SKY "Open gissues that are peasy (PEA), not sky-pie (SKY), user-visible (UVI), and just involve webcopy (ABC)")
+&nbsp;&nbsp; | &nbsp;&nbsp;
+[Potentially-peasy UVIs](https://github.com/beeminder/road/issues?q=is:issue+is:open+label:UVI+label:PEA "Open gissues that are peasy (PEA) and user-visible (UVI)")
+
 # Beebrain and the Beeminder Graph Editor
 
 This repository includes Javascript packages implementing all Beebrain functionality, as well as an interactive editor for Beeminder's Bright Red Lines.
