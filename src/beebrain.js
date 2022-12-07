@@ -245,7 +245,7 @@ let derails = []    // Derailments
 let hollow = []     // Hollow points
 let allvals = {}    // Hash mapping timestamps to list of datapoint values
 let aggval = {}     // Hash mapping timestamps to aggday'd value for that day
-let derailval = {}  // Map timestamp to value as of RECOMMIT datapoint that day
+let derailval = {}  // Map timestamp to value as of DERAIL datapoint that day
 let hashhash = {}   // Map timestamp to sets of hashtags to display on graph
 let hashtags = []   // Array of timestamp string pairs for hashtag lists
  

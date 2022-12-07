@@ -186,7 +186,7 @@ function reloadGoal(undofirst = true) {
     road.push([bu.dayify(nextweek), null, 0])
     gol.bb.data.push([derail,
                        (gol.bb.params.kyoom)?0:Number(cur[1]),
-                       "RECOMMITTED at "+derail])
+                       "DERAILED at "+derail])
 
     gol.derails.push(derail)
 
