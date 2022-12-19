@@ -460,7 +460,7 @@ function computeRosy() {
 }
 
 // Magic strings in datapoint comments: (see beeminder/beeminder/issues/2423)
-// 1. "#PPR" (and for backward compatibility: /^PESSIMISTIC PRESUMPTION/)
+// 1. "#SELFDESTRUCT" (and for backward compat: /^PESSIMISTIC PRESUMPTION/)
 // 2. "#DERAIL" (and for backward compatibility: /^RECOMMITTED ON/)
 // 3. "#RESTART" (and for backward compatibility: /^RESTARTED ON/)
 // 4. "#TARE" (not implemented yet; see gissue #216)
