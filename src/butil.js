@@ -89,7 +89,8 @@ const BHUE = {
 }
 
 const AKH   = 7*SID       // Akrasia horizon, in seconds 
-const BDUSK = 2147317201  // circa 2038, Rails's ENDOFDAYS+1 (was 2^31-2weeks)
+//const BDUSK = 2147317201  // circa 2038, Rails's ENDOFDAYS+1 (was 2^31-2weeks)
+const BDUSK = 4102444799 // 2099-12-31 23:59:59 UTC
 
 // Number of seconds in a year, month, etc 
 const SECS = { 'y' : DIY*SID, 
