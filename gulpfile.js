@@ -5,12 +5,25 @@ const changed = require('gulp-changed')
 const cleancss = require('gulp-clean-css')
 const jsdoc = require("gulp-jsdoc3")
 const jshint = require("gulp-jshint")
+const rimraf = require('rimraf')
 
 const LIBDIR = 'lib'
 const LIBJS = LIBDIR+"/js"
 const LIBCSS = LIBDIR+"/css"
 const LIBIMG = LIBDIR+"/images"
 const DOCDIR = './docs'
+
+async function clean() {
+  await Promise.all([
+    rimraf(LIBJS),
+    rimraf(LIBCSS),
+    rimraf(LIBIMG)
+    ])
+}
+gulp.task('clean',
+  function(cb) {
+    clean().then(cb);
+  });
 
 function clean_css() {
   return gulp.src(['src/jsbrain.css','src/newdesign.css',
@@ -104,10 +117,18 @@ function linter() {
   return gulp.src(['src/butil.js', 'src/broad.js', 'src/bgraph.js', 'src/bsandbox.js', 'src/newdesign.js']).pipe(jshint({esversion:8, asi:true, laxbreak:true})).pipe(jshint.reporter('default'))
 }
 
-exports.compile = gulp.series(compress_js,
-                              gulp.parallel(combine_js, combine_jsmin, clean_css),
-                              copy_vendor
-                             ) 
+function images() {
+  return gulp.src('src/images/*')
+    .pipe(gulp.dest(LIBIMG))
+}
+
+exports.compile = gulp.series(clean,
+  images,
+  compress_js,
+  gulp.parallel(combine_js,
+    combine_jsmin,
+    clean_css),
+  copy_vendor)
 exports.gendoc = gendoc
 
 exports.jshint = linter

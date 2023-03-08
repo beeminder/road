@@ -79,7 +79,7 @@ To install dependencies and compile the project, run the following commands:
 ```bash
 nvm use # use the correct Node version
 npm ci # install all dependencies
-npm run compile # generate distribution files
+npm run compile # clear out lib/ and generate distribution files
 ```
 
 After installing Node modules and using Gulp to compile js modules, you will need to provide a `.env` file with proper server settings to access central Beeminder servers for your login. After copying `template.dev.env` or `template.prod.env` to `.env`, read the comments in `.env` and update the file with proper settings.
@@ -146,7 +146,7 @@ Do `gulp gendoc` in the root directory and point your browser to
 The directory structure for this repository is organized as follows
 
 - `src` : Javascript and CSS sources
-- `lib` : Files generated and copied by gulp, served under `/lib`
+- `lib` : Files generated and copied by gulp, served under `/lib` (Many projects use `dist` for this)
 - `data`: Example BB files, accessible through `/data`
 - `views`: express.js view templates
 - `tests`: HTML files for various local tests, loading scripts from `src`
