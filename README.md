@@ -42,17 +42,7 @@ Description of original Beebrain:
 - A Node server that duplicates the behaviors of sanity.py from pybrain
 - Various static HTML pages to test beebrain, graph, editor and sandbox functionality
 
-## Getting started
-
-First make an environment variable with the path to this repository, for example:
-
-`export BBPATH=/Users/alice/projects/road`
-
-(Or wherever you git-cloned this to.)
-You can put that in your .bashrc if you want.
-Or just edit in your path wherever it says `$BBPATH` below.
-
-### Local tests for basic functionality
+### Getting started with local tests for basic functionality
 
 The directory `tests` has HTML files illustrating various Beebrain functionality:
 
@@ -60,27 +50,38 @@ The directory `tests` has HTML files illustrating various Beebrain functionality
 - `roadeditor_test.html` : Showcases client-side graphs and the graph editor
 - `sandbox.html` : Showcases a Beeminder sandbox to create and experiment with goals
 
-You can load them in Chromium or Chrome with the following command:
+To load these in Chromium or Chrome, first, set up your environment:
 
-(Chromium on Linux)  
-`chromium-browser --allow-file-access-from-files --disable-web-security --user-data-dir=$BBPATH/chromium-data --remote-debugging-port=9222 --use-gl=osmesa file://$BBPATH/tests/basic_test.html file://$BBPATH/tests/roadeditor_test.html file://$BBPATH/tests/sandbox.html`
+```
+export BBPATH=/absolule/path/to/this/repository
+```
 
-(Chrome on MacOS)  
-`open -na /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args --allow-file-access-from-files --disable-web-security --user-data-dir=$BBPATH/chromium-data --remote-debugging-port=9222 --use-gl=osmesa file://$BBPATH/tests/basic_test.html file://$BBPATH/tests/roadeditor_test.html file://$BBPATH/tests/sandbox.html`
+Then, if you are on Linux, you can load them in Chromium with the following example command:
+```
+chromium-browser --allow-file-access-from-files --disable-web-security --user-data-dir=$BBPATH/chromium-data --remote-debugging-port=9222 --use-gl=osmesa file://$BBPATH/tests/basic_test.html file://$BBPATH/tests/roadeditor_test.html file://$BBPATH/tests/sandbox.html
+```
+
+If you are on macOS, you can load them in Chrome with the following example command:
+```
+open -na /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args --allow-file-access-from-files --disable-web-security --user-data-dir=$BBPATH/chromium-data --remote-debugging-port=9222 --use-gl=osmesa file://$BBPATH/tests/basic_test.html file://$BBPATH/tests/roadeditor_test.html file://$BBPATH/tests/sandbox.html
+```
 
 The scary-looking arguments allow the browser to open local Beeminder files from within Javascript functions.
 
-### Node server for client-side graphs, graph editor, and sandbox demos
+Note that these will use the files out of `src/`, not the generated files in `lib/`.
+
+### Getting started with the Node server for client-side graphs, graph editor, and sandbox demos
 
 This repository contains a Node server instance for serving various demo pages to browser clients.
 
 To install dependencies and compile the project, run the following commands:
 
 ```bash
-nvm use # use the correct Node version
-npm ci # install all dependencies
+npm ci # install all dependencies per package-lock.json
 npm run compile # clear out lib/ and generate distribution files
 ```
+
+Some demos have you to log in with your Beeminder account so it can access your Beeminder goals data.
 
 After installing Node modules and using Gulp to compile js modules, you will need to provide a `.env` file with proper server settings to access central Beeminder servers for your login. After copying `template.dev.env` or `template.prod.env` to `.env`, read the comments in `.env` and update the file with proper settings.
 
@@ -100,41 +101,21 @@ The following paths are available:
 
 The last three require setting up oauth redirect uri configuration
 properly with beeminder servers, so it would require proper settings
-in `.env`. Note that getting
-the last three to work requires the Node server being accessible from
+in `.env`.
+
+Note that getting  the last three to work requires the Node server being accessible from
 beeminder servers for the redirect_uri provided in `.env`, associated
 with the clientid also configured in `.env`.
 
-### Node server for local server-side graph generation
+### Getting started with the Node server for local server-side graph generation
+
+See jsbrain_server/README.md for details.
 
 This feature enables running a separate Node.js instance on a server,
-listening to GET requests that initiate the generation of PNG,SVG and
-JSON files for particular beeminder goals. This server resides under
-the directory `jsbrain_server`. You should first update Node modules with
+listening to GET requests that initiate the generation of PNG, SVG and
+JSON files for particular Beeminder goals.
 
-`cd jsbrain_server`
-`npm update`
-
-At this point, you can start the server in the same directory with
-
-`npm start`
-
-which should start a Node server on port 3000. At this point, every
-GET request you issue to `localhost:3000` with appropriate parameters
-will initiate graph generation. valid parameters are:
-
-- `inpath=/path/to/input` : Path to local directory for the BB file
-- `outpath=/path/to/output`: (optional) Path to local directory for generated files
-- `user=u`: beeminder username (`slug` param must be empty)
-- `goal=g`: beeminder goalname (`slug` param must be empty)
-- `slug=filebase`: base name for the BB files (`user` and `goal` params must be empty)
-- `pyjson=/path/to/pyout/slug.json`: (optional) Local path to pybrain JSON output
-
-This reads the file `u+g.bb` (or `slug.bb`) from `/path/to/input`, and
-generates `u+g.png`, `u+g-thumb.png`, `u+g.svg` and `u+g.json` in
-`/path/to/output`.
-
-### Generating this documentation
+### Generating documentation
 
 Do `gulp gendoc` in the root directory and point your browser to
 `file:///path/to/road/docs/index.html`
@@ -150,9 +131,9 @@ The directory structure for this repository is organized as follows
 - `data`: Example BB files, accessible through `/data`
 - `views`: express.js view templates
 - `tests`: HTML files for various local tests, loading scripts from `src`
-- `jsbrain_server`:Local server to handle graph generation requests
+- `jsbrain_server`: Local server to handle graph generation requests
 
-Emacs environment:
+### B. Emacs development notes:
 
 - indium works well
 - sr-speedbar is docked
@@ -165,7 +146,7 @@ Emacs environment:
   - OfficeCodePro: https://github.com/nathco/Office-Code-Pro
   - Font rendering: https://wiki.manjaro.org/index.php?title=Improve_Font_Rendering
 
-### B. Deployment to Glitch (or similar)
+### C. Deployment to Glitch (or similar)
 
 1. Import from https://github.com/beeminder/road
 2. Create a new Beeminder client at https://www.beeminder.com/apps/new
