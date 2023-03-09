@@ -1,5 +1,5 @@
 
-name: CI
+name: jsbrain-server CI
 
 # Controls when the action will run. 
 on:

@@ -1,6 +1,6 @@
 # Started from https://docs.github.com/en/actions/publishing-packages/publishing-docker-images#publishing-images-to-github-packages
 
-name: Create and publish a jsbrain-server Docker image to Github Packages
+name: jsbrain-server publish Docker image to GitHub Packages
 
 on:
   push:

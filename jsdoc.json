@@ -1,15 +1,15 @@
 {
   "opts": {
     "destination": "./docs",
-    "tutorials":"./tutorials"
+    "tutorials": "./tutorials"
   },
-  "templates":{
+  "templates": {
     "includeDate": false,
     "dateFormat": " ",
-    "default":{
+    "default": {
       "includeDate": false,
-      "staticFiles":{
-        "include":["./tutorials/static"]
+      "staticFiles": {
+        "include": ["./tutorials/static"]
       }
     }
   }
