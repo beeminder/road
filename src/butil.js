@@ -300,13 +300,13 @@ function clip(x, a, b) {
 // In the case that every element is too low...                     L   H
 //   Sorted array:                                [-2, -2, -1,  4,  6]
 //   Output of distance function on each element: [-9, -9, -8, -3, -1]
-// As you'd expect, searchLow returns the last index (length minus one) and 
-// searchHigh returns one more than that (the actual array length).
+// As you'd expect, searchLow returns the index of the last element and
+// searchHigh returns one more than that, so out of bounds of the array.
 // And if every element is too big...           L   H
 //   Sorted array:                                [ 8,  8,  9, 12, 13]
 //   Output of distance function on each element: [+1, +1, +2, +5, +6]
-// Then it's the opposite, with searchHigh giving the first index, 0, and
-// searchLow giving one less than that, -1.
+// Then it's the opposite, with searchHigh giving the first index and searchLow
+// giving one less than that, so -1 since Javascript array's are 0-based.
 // HISTORICAL NOTE:
 // We'd found ourselves implementing and reimplementing ad hoc binary searches
 // all over the Beebrain code. Sometimes they would inelegantly do O(n)
@@ -325,14 +325,13 @@ function clip(x, a, b) {
 function searchLow(sa, df) {
   if (!sa || !sa.length) return -1 // empty/non-array => every element too big
 
-  let li = -1         // initially left of the leftmost element of sa
-  let ui = sa.length  // initially right of the rightmost element of sa
-  let mi              // midpoint of the search range for binary search
+  let li = -1           // initially left of the leftmost element of sa   
+  let ui = sa.length    // initially right of the rightmost element of sa   
+  let mi                // midpoint of the search range for binary search   
   
-  while (ui-li > 1) {
-    mi = floor((li+ui)/2)
-    if (df(sa[mi]) < 0) li = mi
-    else                ui = mi
+  while (ui-li > 1) {           // squeeze the upper/lower bounds till they meet
+    mi = floor((li+ui)/2)       // pick the midpoint, breaking ties towards li
+    if (df(sa[mi]) < 0) li = mi; else ui = mi  // drop lower/upper half of range
   }
   return ui === sa.length || df(sa[ui]) !== 0 ? li : ui
 }
@@ -347,14 +346,13 @@ function searchLow(sa, df) {
 function searchHigh(sa, df) {
   if (!sa || !sa.length) return 0 // empty/non-array => every element too small
 
-  let li = -1         // initially left of the leftmost element of sa
-  let ui = sa.length  // initially right of the rightmost element of sa
-  let mi              // midpoint of the search range for binary search
+  let li = -1          // This part's the same as searchLow and in fact the only
+  let ui = sa.length   // differences are returning 0 above, the < vs <= in the
+  let mi               // while loop, and mutatis mutandis in the final return.
   
   while (ui-li > 1) {
     mi = floor((li+ui)/2)
-    if (df(sa[mi]) <= 0) li = mi
-    else                 ui = mi
+    if (df(sa[mi]) <= 0) li = mi; else ui = mi
   }
   return li === -1 || df(sa[li]) !== 0 ? ui : li
 }
