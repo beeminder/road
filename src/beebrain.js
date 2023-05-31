@@ -14,7 +14,7 @@ Ported to Python by Uluc Saranli around 2011.12.20.
 Maintained and evolved by dreeves, 2012-2018.
 Ported to Javascript in 2018-2019 by Uluc Saranli.
 
-Copyright 2008-2022 Uluc Saranli and Daniel Reeves
+Copyright 2008-2023 Uluc Saranli and Daniel Reeves
 
 */
 

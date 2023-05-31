@@ -1,6 +1,6 @@
 {
   "name": "beebrain",
-  "version": "2023.04.11a",
+  "version": "2023.05.31-c",
   "description": "Beeminder Graph Generator and Graph Editor",
   "main": "server.js",
   "scripts": {
@@ -12,18 +12,18 @@
     "beeminder": "^2.0.0",
     "body-parser": "^1.20.2",
     "cluster": "^0.7.7",
-    "connect-session-sequelize": "^7.1.5",
+    "connect-session-sequelize": "^7.1.7",
     "d3": "^7.8.4",
     "ejs": "^3.1.9",
     "express": "^4.18.2",
     "express-session": "^1.17.3",
     "jsdoc": "^4.0.2",
     "moment": "^2.29.4",
-    "moment-timezone": "^0.5.42",
+    "moment-timezone": "^0.5.43",
     "octicons": "^8.5.0",
     "request": "^2.88.2",
-    "selenium-webdriver": "^4.8.2",
-    "sequelize": "^6.31.0",
+    "selenium-webdriver": "^4.9.2",
+    "sequelize": "^6.31.1",
     "sqlite3": "^5.1.6"
   },
   "engines": {
