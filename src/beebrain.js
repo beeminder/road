@@ -9,10 +9,10 @@
 @requires broad
 
 Beebrain -- doc.bmndr.com/beebrain
-Originally written in Mathematica by dreeves, 2008-2010.
+First written in Mathematica by dreev, 2008-2010.
 Ported to Python by Uluc Saranli around 2011.12.20.
-Maintained and evolved by dreeves, 2012-2018.
-Ported to Javascript in 2018-2019 by Uluc Saranli.
+Maintained and evolved by dreev, 2012-2018.
+Ported to Javascript by Uluc Saranli, in 2018-2019.
 
 Copyright 2008-2023 Uluc Saranli and Daniel Reeves
 
@@ -178,7 +178,7 @@ rfin     : null,    // Subsumed by fullroad ################################ DEP
 //thumburl : null,  // Nonce URL for the graph image thumbnail
 }
 
-const pig = [ // In Params to ignore; complain about anything not here or in pin
+const pig = [ // In-params to ignore; complain about anything not here or in pin
 'timezone', // Beebody sends this but we don't use it currently
 //'rerails',  // Idea for something to be passed to Beebrain
 'usr',      // Username (old synonym for first half of yoog)
