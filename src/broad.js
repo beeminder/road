@@ -48,6 +48,7 @@ const pow   = Math.pow
 const floor = Math.floor
 const ceil  = Math.ceil
 const sign  = Math.sign
+const sqrt  = Math.sqrt
 
 const DIY = 365.25
 const SID = 86400
@@ -84,6 +85,7 @@ count    : (x) => x.length, // number of datapoints
 kyshoc   : (x) => min(2600, bu.sum(x)), // ad hoc, guineapigging; deprecated
 skatesum : (x) => min(self.rsk8, bu.sum(x)), // cap at daily rate
 cap1     : (x) => min(1, bu.sum(x)), // sum but capped at 1
+sqrt     : (x) => sqrt(bu.sum(x)), // sqrt of sum
 }
 
 /*
