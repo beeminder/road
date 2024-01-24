@@ -1,22 +1,22 @@
 # Quick Links
 
-- [ZOMBIES!](https://github.com/beeminder/road/issues?q=is:open+is:issue+label:ZOM "Open gissues labeled ZOM") (:zombie: )
+- [ZOMBIES!](https://github.com/beeminder/road/issues?q=is:open+is:issue+label:ZOM "Open gissues labeled ZOM") :zombie:
   &nbsp;&nbsp; | &nbsp;&nbsp;
-  [Undotted i's](https://github.com/beeminder/road/issues?q=is:issue+is:closed+-label:zap+-label:nix+-label:cnr+-label:dup "Gissues that are closed but don't have any of the resolution labels: zap, nix, cnr, or dup") (:eye: )
+  [Undotted i's](https://github.com/beeminder/road/issues?q=is:issue+is:closed+-label:zap+-label:nix+-label:cnr+-label:dup "Gissues that are closed but don't have any of the resolution labels: zap, nix, cnr, or dup") :eye:
   &nbsp;&nbsp; | &nbsp;&nbsp;
-  [Active](https://github.com/beeminder/road/issues?q=is:issue+is:open+-label:ZzZ "Open gissues NOT labeled ZzZ") (:bug: )
+  [Active](https://github.com/beeminder/road/issues?q=is:issue+is:open+-label:ZzZ "Open gissues NOT labeled ZzZ") :bug:
   &nbsp;&nbsp; | &nbsp;&nbsp;
-  [Snoozed](https://github.com/beeminder/road/issues?q=is:issue+is:open+label:ZzZ "Open gissues labeled ZzZ") (:zzz: )
+  [Snoozed](https://github.com/beeminder/road/issues?q=is:issue+is:open+label:ZzZ "Open gissues labeled ZzZ") :zzz:
   &nbsp;&nbsp; | &nbsp;&nbsp;
-  [Closed](https://github.com/beeminder/road/issues?q=is:issue+is:closed "Closed gissues") (:heavy_check_mark: )
+  [Closed](https://github.com/beeminder/road/issues?q=is:issue+is:closed "Closed gissues") :heavy_check_mark:
 - Freshgishing ([blog post](https://blog.beeminder.com/freshen/ "Backlog Freshening")):
   &nbsp;&nbsp;
   [Uluc](https://github.com/beeminder/road/issues?q=is:issue+is:open+sort:updated-asc+-label:ZzZ+assignee:saranli "Open non-snoozed gissues, oldest first, assigned to Uluc")
   &nbsp;&nbsp; | &nbsp;&nbsp;
-  [Danny/all](https://github.com/beeminder/road/issues?q=is:issue+is:open+sort:updated-asc+-label:ZzZ "Open non-snoozed gissues, oldest first, assigned to anyone (what Danny uses for freshgishing)")
+  [Danny/all](https://github.com/beeminder/road/issues?q=is:issue+is:open+sort:updated-asc+-label:ZzZ "Open non-snoozed gissues, oldest first, assigned to anyone (what Danny uses for freshgishing)") :soap:
 - [Probably-peasy UVIs](https://github.com/beeminder/road/issues?q=is:issue+is:open+label:UVI+label:PEA+label:ABC+-label:SKY "Open gissues that are peasy (PEA), not sky-pie (SKY), user-visible (UVI), and just involve webcopy (ABC)")
   &nbsp;&nbsp; | &nbsp;&nbsp;
-  [Potentially-peasy UVIs](https://github.com/beeminder/road/issues?q=is:issue+is:open+label:UVI+label:PEA "Open gissues that are peasy (PEA) and user-visible (UVI)")
+  [Potentially-peasy UVIs](https://github.com/beeminder/road/issues?q=is:issue+is:open+label:UVI+label:PEA "Open gissues that are peasy (PEA) and user-visible (UVI)") :sweat_smile:
 
 # Beebrain and the Beeminder Graph Editor
 
