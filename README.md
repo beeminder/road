@@ -13,7 +13,7 @@
   &nbsp;&nbsp;
   [Uluc](https://github.com/beeminder/road/issues?q=is:issue+is:open+sort:updated-asc+-label:ZzZ+assignee:saranli "Open non-snoozed gissues, oldest first, assigned to Uluc")
   &nbsp;&nbsp; | &nbsp;&nbsp;
-  [Danny/all](https://github.com/beeminder/road/issues?q=is:issue+is:open+sort:updated-asc+-label:ZzZ "Open non-snoozed gissues, oldest first, assigned to anyone (what Danny uses for freshgishing)") :soap:
+  [Danny/all](https://github.com/beeminder/road/issues?q=is:issue+is:open+sort:updated-asc+-label:ZzZ "Open non-snoozed gissues, oldest first, assigned to anyone (what Danny uses for freshgishing)") &nbsp;&nbsp; :soap:
 - [Probably-peasy UVIs](https://github.com/beeminder/road/issues?q=is:issue+is:open+label:UVI+label:PEA+label:ABC+-label:SKY "Open gissues that are peasy (PEA), not sky-pie (SKY), user-visible (UVI), and just involve webcopy (ABC)")
   &nbsp;&nbsp; | &nbsp;&nbsp;
   [Potentially-peasy UVIs](https://github.com/beeminder/road/issues?q=is:issue+is:open+label:UVI+label:PEA "Open gissues that are peasy (PEA) and user-visible (UVI)") :sweat_smile:
