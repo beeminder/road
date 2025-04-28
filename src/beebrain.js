@@ -14,7 +14,7 @@ Ported to Python by Uluc Saranli around 2011.12.20.
 Maintained and evolved by dreev, 2012-2018.
 Ported to Javascript by Uluc Saranli, in 2018-2019.
 
-Copyright 2008-2023 Uluc Saranli and Daniel Reeves
+Copyright 2008-2025 Uluc Saranli and Daniel Reeves
 
 */
 
@@ -817,6 +817,22 @@ function flatline() {
   }
 }
 
+/* For relative tmin, this from Claude seems to work to turn ISO durations like
+"-P1Y" into absolute dates:
+
+const { DateTime, Duration } = luxon;
+function addTimeToNow(isoDuration) {
+  try {
+    const duration = Duration.fromISO(isoDuration);
+    const now = DateTime.now();
+    const newDate = now.plus(duration);
+    return newDate.toISODate();
+  } catch (error) {
+      throw new Error("Invalid ISO 8601 duration format");
+  }
+}
+*/
+
 /** Set any of {tmin, tmax, vmin, vmax} that don't have explicit values.
  * Duplicates Pybrain's setRange() behavior. */
 function setDefaultRange() {
@@ -1203,43 +1219,23 @@ function procParams() {
 
 /* BEGIN SAFESUM REFERENCE DUMP 
 
-def platonic_type
+def plato
   return "phat" if dir == -1 && yaw == -1
   return "moar" if dir ==  1 && yaw ==  1
   return "ween" if dir ==  1 && yaw == -1
   return "rash" if dir == -1 && yaw ==  1
   return "moar" # should never fall thru to this but some old goals have yaw==0
 end
+def moar? plato == "moar" end
+def phat? plato == "phat" end
+def ween? plato == "ween" end
+def rash? plato == "rash" end
 
-def is_moar?
-  platonic_type == "moar"
-end
+def is_autod? ii[:name].present? end
 
-def is_phat?
-  platonic_type == "phat"
-end
-
-def is_ween?
-  platonic_type == "ween"
-end
-
-def is_rash?
-  platonic_type == "rash"
-end
-
-# Is this goal a WEEN or RASH (see platonic goal types in api docs)
-def is_weeny?
-  yaw * dir < 0
-end
-
-def is_autod?
-  ii[:name].present?
-end
-
-def is_eep_day?
-  if bb[:safebuf] && bb[:safebuf]-1 < 0
-    return true
-  elsif is_weeny? && !is_autod? && pessimistic
+def eepday?
+  if bb[:safebuf] && bb[:safebuf] < 1; return true
+  elsif (ween? || rash?) && !is_autod? && pessimistic
     if bb[:safebuf] && bb[:safebuf] < 1
       datapoints.on_date(nowstamp(self.deadline, tz).to_s(:ds)).none?
     end
@@ -1247,37 +1243,28 @@ def is_eep_day?
   return false
 end
 
-def baremin(show_seconds=false)
-  if bb[:limsum].nil? || !bb[:error].blank?
-    bb[:error]
-  elsif bb[:limsum] == "n/a"
-    bb[:limsum]
+def baremin(show_secs=false)
+  if    bb[:limsum].nil? || !bb[:error].blank?; bb[:error]
+  elsif bb[:limsum] == "n/a";                   bb[:limsum]
   else
     bmin = bb[:limsum].match(/([\d\.\-\+]+)/)[0]
+    prefix = bmin.to_f > 0 ? "+" : ""
     if self.timey
-      prefix = bmin.to_f > 0 ? "+" : ""
       prefix + TimeUtils.hours_to_HHMM(bmin, 
-        yaw > 0 ? "ceil" : "floor", show_seconds)
-    elsif Integer(100*bmin.to_f) == 100*bmin.to_f
-      "#{bmin}"
+        yaw>0 ? "ceil" : "floor", show_secs)
+    elsif Integer(100*bmin.to_f) == 100*bmin.to_f; "#{bmin}"
     else
-      prefix = bmin.to_f > 0 ? "+" : ""
-      if self.yaw > 0
-        prefix + "#{((100*bmin.to_f).floor + 1).round/100.0}"
-      elsif self.yaw < 0
-        prefix + "#{((100*bmin.to_f).ceil - 1).round/100.0}"
+      if    self.yaw > 0; prefix + "#{((100*bmin.to_f).floor + 1).round/100.0}"
+      elsif self.yaw < 0; prefix + "#{((100*bmin.to_f).ceil  - 1).round/100.0}"
       end
     end
   end
 end
 
-def bareminDelta(show_seconds=false)
-  if !bb[:error].blank?
-    return bb[:error]
-  elsif bb[:delta].nil? || bb[:lnw].nil? || bb[:vcur].nil?
-    return "Error"
-  elsif bb[:safebump].nil?
-    return baremin(show_seconds)
+def bareminDelta(show_secs=false)
+  if !bb[:error].blank?;                                    return bb[:error]
+  elsif bb[:delta].nil? || bb[:lnw].nil? || bb[:vcur].nil?; return "Error"
+  elsif bb[:safebump].nil?; return baremin(show_secs)
   end
   if yaw*dir < 1
     hardcap = (bb[:delta] + yaw*bb[:lnw])*yaw
@@ -1287,13 +1274,10 @@ def bareminDelta(show_seconds=false)
   end
 end
 
-def bareminAbs(show_seconds=false)
-  if !bb[:error].blank?
-    return bb[:error]
-  elsif bb[:delta].nil? || bb[:lnw].nil? || bb[:vcur].nil?
-    return "Error"
-  elsif bb[:safebump].nil?
-    return baremintotal(show_seconds)
+def bareminAbs(show_secs=false)
+  if !bb[:error].blank?;                                    return bb[:error]
+  elsif bb[:delta].nil? || bb[:lnw].nil? || bb[:vcur].nil?; return "Error"
+  elsif bb[:safebump].nil?; return baremintotal(show_secs)
   end
   if yaw*dir < 1
     critical_edge = bb[:vcur] - bb[:delta] - yaw*bb[:lnw]
@@ -1303,66 +1287,54 @@ def bareminAbs(show_seconds=false)
   end
 end
 
-def baremintotal(show_seconds=false)
+def baremintotal(show_secs=false)
   # As of Dec 2019 or earlier; deprecated, but still used for frozen/stale goals
-  if bb[:limsum].nil? || !bb[:error].blank?
-    bb[:error]
-  elsif bb[:limsum] == "n/a"
-    bb[:limsum]
+  if bb[:limsum].nil? || !bb[:error].blank?; bb[:error]
+  elsif bb[:limsum] == "n/a";                bb[:limsum]
   else
     bmintotal = 
      bb[:vcur] + bb[:limsum].match(/^[\d\.\+\-]+/)[0].gsub(/[^\d\.\-]/, "").to_f
     if self.timey
-      TimeUtils.hours_to_HHMM(bmintotal, 
-        yaw > 0 ? "ceil" : "floor", show_seconds)
-    elsif bmintotal.floor == bmintotal
-      "#{bmintotal.to_i}"
-    elsif Integer(100*bmintotal.to_f) == 100*bmintotal.to_f
-      "#{bmintotal}"
-    elsif self.yaw > 0
-      "#{((100*bmintotal.to_f).floor + 1).round/100.0}"
-    elsif self.yaw < 0
-      "#{((100*bmintotal.to_f).ceil - 1).round/100.0}"
+         TimeUtils.hours_to_HHMM(bmintotal, yaw>0 ? "ceil" : "floor", show_secs)
+    elsif bmintotal.floor == bmintotal;                      #{bmintotal.to_i}"
+    elsif Integer(100*bmintotal.to_f) == 100*bmintotal.to_f; #{bmintotal}"
+    elsif self.yaw > 0; "#{((100*bmintotal.to_f).floor + 1).round/100.0}"
+    elsif self.yaw < 0; "#{((100*bmintotal.to_f).ceil  - 1).round/100.0}"
     end
   end
 end
 
-# input variables: yaw, dir, eep
-
+# BEGIN generating safesum string. Input variables: yaw, dir, eep.
 return "goal is not currently active" if is_frozen?
-
 due_datetime = self.countdown.in_time_zone(self.tz) + 1
-
 if due_datetime.strftime('%M') == "00"
-  short_due_str = due_datetime.strftime('%-l%P') # the - removes leading padding
+  due_str = due_datetime.strftime('%-l%P') # the '-' removes leading padding
 else
-  short_due_str = due_datetime.strftime('%-l:%M%P')
+  due_str = due_datetime.strftime('%-l:%M%P')
 end
+gunits = gunits.blank? ? " " : " #{gunits} " # don't have 2 spaces if no gunits
 
-# if gunits is not defined, we don't want two spaces
-gunits = gunits.blank? ? " " : " #{gunits} "
-
-if is_eep_day? && is_moar?
-  if aggday == "sum" // aka safesum hides total
+# Truth table (PLATO X EEP X SUMMY) @ github.com/beeminder/beeminder/issues/1290
+if eepday? && moar?
+  if aggday == "sum" // safesum hides total in this case
     # MOAR, eep, delta-only -> +1 pushup due by 12am
-    return "#{bareminDelta}#{gunits}due by #{short_due_str}"
+    return "#{bareminDelta}#{gunits}due by #{due_str}"
   else
     # MOAR, eep, not delta-only -> +1 pushups (12345) due by 12am
-    return "#{bareminDelta}#{gunits}(#{bareminAbs}) due by #{short_due_str}"
+    return "#{bareminDelta}#{gunits}(#{bareminAbs}) due by #{due_str}"
   end
-elsif is_eep_day? && is_phat?
-  if aggday == "sum" // aka safesum hides total
+elsif eepday? && phat?
+  if aggday == "sum" // safesum hides total in this case
     # PHAT, eep, delta-only -> hard cap -2 pounds by 12am
-    return "hard cap #{bareminDelta}#{gunits}by #{short_due_str}"
+    return "hard cap #{bareminDelta}#{gunits}by #{due_str}"
   else
     # PHAT, eep, not delta-only -> hard cap -2 pounds (150) by 12am
-    return 
-      "hard cap #{bareminDelta}#{gunits}(#{bareminAbs}) by #{short_due_str}"
+    return "hard cap #{bareminDelta}#{gunits}(#{bareminAbs}) by #{due_str}"
   end
-elsif !is_eep_day? && is_phat?
+elsif !eepday? && phat?
   if bb[:dueby].present? and bb[:dueby][0].present? and bb[:dueby][0].length > 2
     deltahardcap = shns(bb[:dueby][0][1])
-    abshardcap = shn(bb[:dueby][0][2])
+    abshardcap   = shn( bb[:dueby][0][2])
   else
     deltahardcap = bb[:error].present? ? bb[:error] : '[ERROR]'
     abshardcap = ''
@@ -1375,28 +1347,26 @@ elsif !is_eep_day? && is_phat?
     # PHAT, not eep, not delta-only -> hard cap +2 pounds (150) today
     return "hard cap #{deltahardcap}#{gunits}(#{abshardcap}) today"
   end
-elsif !is_eep_day? && is_moar?
-  #MOAR, not eep -> safe for X days
+elsif !eepday? && moar?
+  # MOAR, not eep -> safe for X days
   safe_days_str = "#{bb[:safebuf]} day"
-  if bb[:safebuf] > 1
-    safe_days_str += "s"
+  if bb[:safebuf] > 1; safe_days_str += "s"
   end unless bb[:safebuf].nil?
   return "safe for #{safe_days_str}"
-elsif is_eep_day? && (is_ween? || is_rash?)
+elsif eepday? && (ween? || rash?)
   if aggday == "sum" // aka safesum hides total
-    #RASH/WEEN, eep, delta-only -> hard cap +3 servings by 12am
-    return "hard cap #{bareminDelta}#{gunits}by #{short_due_str}"
+    # RASH/WEEN, eep, delta-only -> hard cap +3 servings by 12am
+    return "hard cap #{bareminDelta}#{gunits}by #{due_str}"
   else
-    #RASH/WEEN, eep, not delta-only -> hard cap +4 cigarettes (12354) by 12am
-    return 
-      "hard cap #{bareminDelta}#{gunits}(#{bareminAbs}) by #{short_due_str}"
+    # RASH/WEEN, eep, not delta-only -> hard cap +4 cigarettes (12354) by 12am
+    return "hard cap #{bareminDelta}#{gunits}(#{bareminAbs}) by #{due_str}"
   end
-elsif !is_eep_day? && (is_ween? || is_rash?)
+elsif !eepday? && (ween? || rash?)
   if aggday == "sum" // aka safesum hides total
-    #RASH/WEEN, not eep, delta-only -> hard cap +3 servings today
+    # RASH/WEEN, not eep, delta-only -> hard cap +3 servings today
     return "hard cap #{bareminDelta}#{gunits}today"
   else
-    #RASH/WEEN, not eep, not delta-only -> hard cap +4 cigarettes (12354) today
+    # RASH/WEEN, not eep, not delta-only -> hard cap +4 cigarettes (12354) today
     return "hard cap #{bareminDelta}#{gunits}(#{bareminAbs}) today"
   end
 end
