@@ -39,7 +39,7 @@
   "license": "MIT",
   "devDependencies": {
     "dotenv": "^6.2.0",
-    "gulp": "^4.0.2",
+    "gulp": "^5.0.0",
     "gulp-changed": "^3.2.0",
     "gulp-clean-css": "^4.0.0",
     "gulp-concat": "^2.6.1",
