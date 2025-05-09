@@ -205,9 +205,11 @@ if (cluster.isMaster) {
 
       return res.status(200).send(JSON.stringify(json))
     } catch (e) {
-      next(e)
+      // Make sure we only send one response
+      if (!res.headersSent)
+        return res.status(500).send(JSON.stringify({error: e.message}))
     }
-
+    // Is the following unreachable?
     return res.status(400).send(noinpath)
   })
 
