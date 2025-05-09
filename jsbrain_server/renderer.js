@@ -124,7 +124,7 @@ class Renderer {
     if (!fs.existsSync(bbfile)) {
       //Try again!
       await new Promise(r => setTimeout(r, 250));
-      if (!fs.existSync(bbfile)) {
+      if (!fs.existsSync(bbfile)) {  // was mistakenly "existSync" for years??
         let err = `Could not find file ${bbfile} after second try`
         msgbuf += (tag+" renderer.js ERROR: "+err+"\n")
         return { error: err, msgbuf: msgbuf}
