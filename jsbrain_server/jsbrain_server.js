@@ -75,7 +75,7 @@ if (cluster.isMaster) {
   const port = process.env.PORT || 3000
 
   const fs = require('fs')
-  const sleep = require('sleep-promise') // change 'sleep' to 'sleep-promise'
+  const sleep = require('sleep') // change 'sleep' to 'sleep-promise'
   const express = require('express')
   const contentDisposition = require('content-disposition')
   const createRenderer = require('./renderer')
@@ -205,11 +205,9 @@ if (cluster.isMaster) {
 
       return res.status(200).send(JSON.stringify(json))
     } catch (e) {
-      // Make sure we only send one response
-      if (!res.headersSent)
-        return res.status(500).send(JSON.stringify({error: e.message}))
+      next(e)
     }
-    // Is the following unreachable?
+
     return res.status(400).send(noinpath)
   })
 

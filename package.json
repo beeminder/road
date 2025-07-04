@@ -20,9 +20,9 @@
     "jsdoc": "^4.0.4",
     "moment": "^2.30.1",
     "moment-timezone": "^0.5.48",
-    "octicons": "^8.5.0",
+    "octicons": "^8.4.2",
     "request": "^2.88.2",
-    "selenium-webdriver": "^4.31.0",
+    "selenium-webdriver": "^4.32.0",
     "sequelize": "^6.37.7",
     "sqlite3": "^5.1.7"
   },
@@ -38,7 +38,7 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "dotenv": "^6.2.0",
+    "dotenv": "^16.5.0",
     "gulp": "^4.0.2",
     "gulp-changed": "^3.2.0",
     "gulp-clean-css": "^4.0.0",

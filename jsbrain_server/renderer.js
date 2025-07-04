@@ -65,25 +65,22 @@ class Renderer {
       this.pages.push( pageinfo )
     }
 
-    // Install new loggers onto the page for this render instance. Will be
-    // removed at the end of processing.
+    // Install new loggers onto the page for this render
+    // instance. Will be removed at the end of processing
     var listeners = page.listenerCount('console')
     if (listeners != 0)
       console.log(tag+"renderer.js ERROR: Unremoved console listeners: "+listeners)
-    
-    page.on('console',   msglog)
-    page.on('error',     errlog)
-    page.on('pageerror', errlog)
+    page.on('console', msglog )
+    page.on('error', errlog )
+    page.on('pageerror', errlog )
       
     // Render the page and return result
     try {
       await page.goto(url, gotoOptions)
     } catch (error) {
-      // Remove listeners to prevent accumulation of old listeners for reused 
-      // pages. UPDATE: Remove listeners using off() instead of removeListener()
-      page.off('console',   msglog)
-      page.off('error',     errlog)
-      page.off('pageerror', errlog)
+      page.removeListener('console', msglog)
+      page.removeListener('error', errlog)
+      page.removeListener('pageerror', errlog)
       console.log(error)
       pageinfo.busy = false
       return null
@@ -116,7 +113,7 @@ class Renderer {
     
     let tag = this.prf(rid)
     let msgbuf = ""
-
+    
     if (!fs.existsSync(outpath)) {
       let err = `Could not find directory ${outpath}`
       msgbuf += (tag+" renderer.js ERROR: "+err+"\n")
@@ -127,7 +124,7 @@ class Renderer {
     if (!fs.existsSync(bbfile)) {
       //Try again!
       await new Promise(r => setTimeout(r, 250));
-      if (!fs.existsSync(bbfile)) {  // was mistakenly "existSync" for years??
+      if (!fs.existSync(bbfile)) {
         let err = `Could not find file ${bbfile} after second try`
         msgbuf += (tag+" renderer.js ERROR: "+err+"\n")
         return { error: err, msgbuf: msgbuf}
@@ -305,10 +302,11 @@ class Renderer {
       }
     } finally {
       if (page) {
-        // UPDATE: Remove listeners using off() instead of removeListener()
-        page.off('console',   msglog)
-        page.off('error',     errlog)
-        page.off('pageerror', errlog)
+        // Remove listeners to prevent accumulation of old listeners
+        // for reused pages
+        page.removeListener('console', msglog)
+        page.removeListener('error', errlog)
+        page.removeListener('pageerror', errlog)
         pageinfo.busy = false
         pageinfo.timeout
           = setTimeout(
