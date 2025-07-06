@@ -3,7 +3,7 @@
  * Provides a "butil" object holding various constants and utility functions.
  * No internal state.<br/>
  *
- * Copyright 2018-2022 Uluc Saranli and Daniel Reeves
+ * Copyright 2018-2025 Uluc Saranli and Daniel Reeves
  *
  * @requires moment
  * @exports butil
@@ -87,6 +87,7 @@ const BHUE = {
   RAZR2:  "#3f3fff", // Blue line;                      faded = #8C7AFF
   RAZR3:  "#6BC461", // Green line;                     faded = #6BC461
 }
+
 
 const AKH   = 7*SID       // Akrasia horizon, in seconds 
 //const BDUSK = 2147317201  // circa 2038, Rails's ENDOFDAYS+1 (was 2^31-2weeks)
@@ -599,7 +600,7 @@ function clocky(a) {
 
 /** Arithmetic mean of values in list a
     @param {Number[]} a Input list*/
-// TODO: average = (array) => array.reduce((s,x) => s+x) / array.length
+// Nicer version: average = (array) => array.reduce((s,x) => s+x) / array.length
 function mean(a) {
   let s = 0, l = a.length, i
   if (l == 0) return 0
@@ -942,7 +943,8 @@ function lineintersect(s1, e1, s2, e2) {
  *                                 SPLINE FIT                                 *
  ******************************************************************************/
 
-// TODO
+// I guess we never implemented spline fits.
+
 
 // All the constants and functions butil exports
 return {

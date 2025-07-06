@@ -5,7 +5,7 @@
  * Beeminder's Bright Red Line (nee Yellow Brick Road). Does not hold any
  * internal state.
  *
- * Copyright 2018-2022 Uluc Saranli and Daniel Reeves
+ * Copyright 2018-2025 Uluc Saranli and Daniel Reeves
 
  @requires moment
  @requires butil
