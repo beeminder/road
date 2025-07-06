@@ -37,58 +37,66 @@ class Renderer {
   async renderPage( url, tag, msglog, errlog ) {
     let gotoOptions = { timeout: pageTimeout * 1000, waitUntil: 'load' }
 
-    var pageinfo = null, page = null
-    // Grab one of the unused tabs, create a new one if necessary
-    var numpages = this.pages.length
-    for (var i = 0; i < numpages; i++) {
-      if (!this.pages[i].busy) {
-        pageinfo = this.pages[i]
-        pageinfo.busy = true
-        // Check if page was closed by timeout, recreate if necessary
-        if (!pageinfo.page) {
-          console.log(tag+"renderer.js: Reinstantiating page in slot "+i)
-          pageinfo.page = await this.browser.newPage()
-        }
-        page = pageinfo.page
-        if (pageinfo.timeout) {
-          clearTimeout(pageinfo.timeout)
-          pageinfo.timeout = null
-        }
-        break
-      }
-    }
-    if (!pageinfo) {
-      // If all existing pages are found to be busy, create a new one
-      console.log(tag+"renderer.js: Creating new page in slot "+numpages)
-      page = await this.browser.newPage()
-      pageinfo = {page: page, busy: true, slot: numpages}
-      this.pages.push( pageinfo )
-    }
-
-    // Install new loggers onto the page for this render instance. Will be
-    // removed at the end of processing.
-    var listeners = page.listenerCount('console')
-    if (listeners != 0)
-      console.log(tag+"renderer.js ERROR: Unremoved console listeners: "+listeners)
-    
-    page.on('console',   msglog)
-    page.on('error',     errlog)
-    page.on('pageerror', errlog)
-      
-    // Render the page and return result
     try {
-      await page.goto(url, gotoOptions)
+      var pageinfo = null, page = null;
+      // Grab one of the unused tabs, create a new one if necessary
+      var numpages = this.pages.length
+      for (var i = 0; i < numpages; i++) {
+        if (!this.pages[i].busy) {
+          pageinfo = this.pages[i]
+          pageinfo.busy = true
+          // Check if page was closed by timeout, recreate if necessary
+          if (!pageinfo.page) {
+            console.log(tag+"renderer.js: Reinstantiating page in slot "+i)
+            pageinfo.page = await this.browser.newPage()
+          }
+          page = pageinfo.page
+          if (pageinfo.timeout) {
+            clearTimeout(pageinfo.timeout)
+            pageinfo.timeout = null
+          }
+          break
+        }
+      }
+      if (!pageinfo) {
+        // If all existing pages are found to be busy, create a new one
+        console.log(tag+"renderer.js: Creating new page in slot "+numpages)
+        page = await this.browser.newPage()
+        pageinfo = {page: page, busy: true, slot: numpages}
+        this.pages.push( pageinfo )
+      }
+
+      // Install new loggers onto the page for this render instance. Will be
+      // removed at the end of processing.
+      var listeners = page.listenerCount('console')
+      if (listeners != 0)
+        console.log(tag+"renderer.js ERROR: Unremoved console listeners: "+listeners)
+      
+      page.on('console',   msglog)
+      page.on('error',     errlog)
+      page.on('pageerror', errlog)
+      page.on('requestfailed', (request) => {
+        console.error(`Request failed: ${request.url()} ${request.failure().errorText}`);
+      });
+
+      // Render the page and return result
+      try {
+        await page.goto(url, gotoOptions)
+      } catch (error) {
+        // Remove listeners to prevent accumulation of old listeners for reused 
+        // pages. UPDATE: Remove listeners using off() instead of removeListener()
+        page.off('console',   msglog)
+        page.off('error',     errlog)
+        page.off('pageerror', errlog)
+        console.log(error)
+        pageinfo.busy = false
+        return null
+      } 
+      return pageinfo
     } catch (error) {
-      // Remove listeners to prevent accumulation of old listeners for reused 
-      // pages. UPDATE: Remove listeners using off() instead of removeListener()
-      page.off('console',   msglog)
-      page.off('error',     errlog)
-      page.off('pageerror', errlog)
-      console.log(error)
-      pageinfo.busy = false
-      return null
-    } 
-    return pageinfo
+      console.error('Error in renderPage:', error);
+      throw error;
+    }
   }
 
   /** Returns the base URL for graph and thumbnail links */
@@ -332,18 +340,36 @@ class Renderer {
 
 async function create( id, pproduct ) {
   let puppeteer = require('puppeteer');
-  const browser 
-        = await puppeteer.launch({ product: pproduct, /*headless:false,*/
-                                   args: ['--no-sandbox', 
-                                          '--allow-file-access-from-files'] })
-  console.log(`Started Puppeteer with pid ${browser.process().pid} and product ${pproduct}`);
+  
+  try {
+    console.log(`Attempting to launch Puppeteer with product ${pproduct}...`);
+    const browser = await puppeteer.launch({ 
+      product: pproduct,
+      args: ['--no-sandbox', '--allow-file-access-from-files'],
+      // Add more detailed logging
+      dumpio: true
+    });
+    
+    console.log(`Successfully started Puppeteer with pid ${browser.process().pid} and product ${pproduct}`);
 
-  browser.on('disconnected', async () => { 
-      console.error("Browser disconnected.");
+    browser.on('disconnected', async () => { 
+      console.error("Browser disconnected unexpectedly. This may indicate a crash or resource issue.");
       process.exit(1);
-  });
+    });
 
-  return new Renderer(browser, id)
+    browser.on('targetcreated', async (target) => {
+      console.log('New target created:', target.url());
+    });
+
+    browser.on('targetdestroyed', async (target) => {
+      console.log('Target destroyed:', target.url());
+    });
+
+    return new Renderer(browser, id);
+  } catch (error) {
+    console.error('Failed to initialize Puppeteer:', error);
+    throw error;
+  }
 }
 
 module.exports = create
