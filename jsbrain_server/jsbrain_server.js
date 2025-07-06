@@ -226,11 +226,24 @@ if (cluster.isMaster) {
     const bindip = process.env.JSBRAIN_SERVER_BIND || 'localhost'
       
     app.listen(port, bindip, () => {
-      console.info(prefix+`Listen port on ${bindip} ${port}.`)
+      console.info(prefix+`Listening on ${bindip}:${port}`)
     })
   }).catch(e => {
-    console.error('Fail to initialze renderer.', e)
+    console.error('Failed to initialize renderer:', e)
+    // Exit with error code to ensure process manager restarts the service
+    process.exit(1)
   })
+
+  // Add process error handlers
+  process.on('uncaughtException', (err) => {
+    console.error('Uncaught exception:', err);
+    process.exit(1);
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled rejection at:', promise, 'reason:', reason);
+    process.exit(1);
+  });
 }
 
 // Terminate process
