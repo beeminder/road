@@ -1,6 +1,6 @@
 {
   "name": "bbserver",
-  "version": "2022.05.04",
+  "version": "2022.05.12",
   "description": "Beebrain: Node server for generating Beeminder graphs",
   "main": "index.js",
   "scripts": {
@@ -11,12 +11,12 @@
   "dependencies": {
     "cluster": "^0.7.7",
     "content-disposition": "^0.5.4",
-    "express": "^4.19.2",
+    "express": "^5.1.0",
     "gm": "^1.23.1",
     "os": "^0.1.2",
-    "puppeteer": "^23.2.0",
+    "puppeteer": "^23.11.1",
     "sleep-promise": "^9.1.0",
-    "uuid": "^8.3.2",
-    "yargs": "^17.4.1"
+    "uuid": "^11.1.0",
+    "yargs": "^17.7.2"
   }
 }
