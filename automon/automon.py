@@ -645,47 +645,66 @@ def jsbrain_make(job):
 
 # Compare the output graph to a reference for the supplied slug
 def graph_compare(slug, out, ref):
-  errmsg = ""
-  imgout = out+"/"+slug+".png"
-  imgref = ref+"/"+slug+".png"
-  svgout = out+"/"+slug+".svg"
-  svgref = ref+"/"+slug+".svg"
-  imgdiff = out+"/"+slug+"-diff.png"
-  diffcnt = 0
+  errmsg  = ""
+  imgout  = os.path.join(out, f"{slug}.png")
+  imgref  = os.path.join(ref, f"{slug}.png")
+  svgout  = os.path.join(out, f"{slug}.svg")
+  svgref  = os.path.join(ref, f"{slug}.svg")
+  imgdiff = os.path.join(out, f"{slug}-diff.png")
+  diffcnt = None       # sentinel: "not parsed yet", as opposed to 0 differences
+  
+  # First check if the SVGs are identical
   try:
-    if (filecmp.cmp(svgref, svgout, shallow=False)):
+    if filecmp.cmp(svgref, svgout, shallow=False):
+      #flon(f"DEBUG: {slug}: SVGs identical, skip PNG compare")
       return {'diffcnt': 0, 'imgdiff': imgdiff, 'errmsg': errmsg}
-  except OSError as e:
+  except OSError:
     pass
-    # print("Error comparing SVG files: "+str(e.strerror))
-  try: 
-    try:
-      resp = subprocess.check_output(
-        ['compare', '-metric', 'AE', "-fuzz", "1%", imgref, imgout, 
-         '-compose', 'src', imgdiff], stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-      if (e.returncode == 1):
-        diffcnt = int(e.output.decode('utf-8'))
-      else:
-        errmsg = "Failed to compare images for "+slug+" with command:\n"
-        errmsg += str(e.cmd)
-        errmsg += "\n return code: "+str(e.returncode)
-        errmsg += "\n and output:\n"+str(e.output.decode('utf-8'))
-    except OSError as e:
-        errmsg += "Could not execute 'compare' (no ImageMagick?):\n"
-        errmsg += " "+e.strerror
-    try:
-      if (diffcnt == 0):
-        os.unlink(imgdiff) # Seems like there are no errors, remove diff
-      else:
-        subprocess.check_output(
-          ['convert', '-append', imgdiff, imgref, imgout, imgdiff],
-          stderr=subprocess.STDOUT)
-    except OSError as e:
-      errmsg += "\nCould not execute 'convert' (no ImageMagick?):\n"
-      errmsg += " "+e.strerror
-  finally:
-    return {'diffcnt': diffcnt, 'imgdiff': imgdiff, 'errmsg': errmsg}
+    flon(f"DEBUG: {slug}: SVG compare OSError, fall back to PNG compare?")
+
+  # Pixel-wise compare with ImageMagick
+  proc = subprocess.run(
+    ['compare', '-metric', 'AE', '-fuzz', '1%', imgref, imgout, '-compose', 
+     'src', imgdiff],
+    capture_output=True, text=True
+  )
+
+  raw = (proc.stderr or proc.stdout or "").strip()
+  #flon(f"DEBUG-gc: {slug}: compare rc={proc.returncode}, raw='{raw}'")
+
+  if proc.returncode not in (0, 1): # TODO: (0, 1)
+    flon(f"DEBUG: {slug}: compare rc={proc.returncode}, raw='{raw}'")
+    raise RuntimeError(f"compare exit code {proc.returncode} (want 0 or 1)")
+
+  # Parse the pixel-difference count and fail loudly if we can't
+  m = re.search(r'\((\d+)\)', raw) # modern ImageMagick: "... (12345)"
+  if m:
+    diffcnt = int(m.group(1))
+  else:
+    n = re.match(r'[-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?', raw)  # legacy token
+    if n:
+      diffcnt = int(float(n.group(0)))
+    else:
+      raise RuntimeError(f"Un-parsable output from compare: {raw!r}")
+
+  # Tidy up
+  try:
+    if diffcnt == 0:
+      with contextlib.suppress(FileNotFoundError):
+        os.unlink(imgdiff)
+    else:
+      subprocess.check_output(
+        ['convert', '-append', imgdiff, imgref, imgout, imgdiff],
+        stderr=subprocess.STDOUT
+      )
+  except (subprocess.CalledProcessError, OSError) as e:
+    errmsg += f"\nError handling diff image: {e}"
+
+  # Sanity check & return
+  if diffcnt is None:
+    raise RuntimeError("graph_compare: diffcnt was never determined!")
+
+  return {'diffcnt': diffcnt, 'imgdiff': imgdiff, 'errmsg': errmsg}
 
 def json_compare(job):
   txt = ""
@@ -771,17 +790,21 @@ def worker(pending, completed):
           #    resp.errmsg += "* No json differences found.\n"
           
           # If enabled, compare generated graph to the reference
+          #flog("About to compare graphs for "+job.slug+"\n")
           if (cm.graph):
             setstatus(reqstr+": Comparing graphs for "+job.slug+"...")
             gres = graph_compare(job.slug, job.outpath, job.jsref )
             if (gres['errmsg']):
+              flon("Error comparing graphs: "+gres['errmsg'])
               resp.errmsg += "\nError comparing graphs:\n"
               resp.errmsg += gres['errmsg']
             elif (gres['diffcnt'] > 0):
+              #flon("Graphs differ by "+str(gres['diffcnt'])+" pixels")
               resp.grdiff = gres['diffcnt']
               resp.errmsg += "Graphs differ by "+str(resp.grdiff)+" pixels."
             #elif (refstatus == -2):
             #  resp.errmsg += "\n* No graph differences found."
+            #flog("DEBUG: no error, diffcnt = "+str(gres['diffcnt'])+"\n")
                     
         setstatus(reqstr+": Comparison for "+job.slug+" finished!")
         updateAverage(resp.dt)
@@ -1020,7 +1043,7 @@ def jobTask():
       if (cm.state != ST.IDLE):
         cm.curgoal += 1
         if (cm.curgoal > len(cm.goals)): 
-          flog(f'DEBUG: {cm.curgoal} out of {len(cm.goals)} goals?')
+          flon(f'DEBUG: {cm.curgoal} out of {len(cm.goals)} goals?')
           setprogress(100)
         else:
           setprogress(100*cm.curgoal/len(cm.goals))
