@@ -11,6 +11,9 @@ var session = require("express-session");
 var Sequelize = require("sequelize");
 var request = require("request");
 
+// Read package.json to get version
+var packageJson = require("../package.json");
+
 // Setting session store to Sequelize
 var SequelizeStore = require("connect-session-sequelize")(session.Store);
 
@@ -105,6 +108,7 @@ app.get("/login", (req, resp) => {
     resp.render("login.ejs", {
       BEEMINDER_CLIENT_ID: process.env.BEEMINDER_CLIENT_ID,
       AUTH_REDIRECT_URI: process.env.AUTH_REDIRECT_URI,
+      version: packageJson.version,
     });
   } else {
     resp.redirect("/");
