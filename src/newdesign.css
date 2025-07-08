@@ -226,3 +226,14 @@ label {
   font-size: 120%;
   width: 250px;
 }
+
+/* Increase font size for dropdown options (HT Codebuff) */
+.ts-dropdown .ts-dropdown-content .ts-option {
+  font-size: 16px;
+  padding: 8px 10px;
+}
+
+/* Also increase font size for the control input (HT Codebuff) */
+.ts-control.roadselect .ts-input {
+  font-size: 16px;
+}

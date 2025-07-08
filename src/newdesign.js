@@ -634,5 +634,9 @@ function initialize() {
 }
 
 function initTomSelect () {
-  roadTomSelect = new TomSelect('#roadselect', {})
+  roadTomSelect = new TomSelect('#roadselect', {
+    onFocus: () => {
+      roadTomSelect.clear()
+    }
+  })
 }
