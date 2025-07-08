@@ -1,27 +1,51 @@
 <!DOCTYPE html>
-<!-- --------------------------------- 80chars ----------------------------- -->
-
 <html ng-app="beeApp">
 <head>
-
-<title>Beeminder Graph Editor</title>
-<meta name="description" 
-      content="Beeminder Graph Editor">
-<link id="favicon" rel="icon" href="https://www.beeminder.com/favicon.ico" 
-      type="image/x-icon">
 <meta charset="utf-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<!-- -------------------- HTML Boilerplate Instructions -------------------- -->
+<!-- 1. Note unDRY title, description, URL, and imgURL -->
+<!-- 2. Use realfavicongenerator.net to generate the ICONS section -->
+<!-- 3. Replace style.css and client.js filenames as needed -->
+<!-- 4. It's fine to throw out lines containing "$OPT" -->
+<!-- 5. Site name displays as additional line in link preview above title -->
+<title>Beeminder Graph Editor</title>
+<meta name="description"        content="Make arbitrary changes to your bright red line, subject to the akrasia horizon.">
+<meta property="og:description" content="Make arbitrary changes to your bright red line, subject to the akrasia horizon.">
+<meta property="og:title" content="Beeminder Graph Editor">
+<meta property="og:site_name" content="Beeminder">
+<meta property="og:type" content="website">
+<link rel="canonical"       href="https://graph.beeminder.com/">
+<meta property="og:url"  content="https://graph.beeminder.com/">
+<meta property="og:image" content="https://graph.beeminder.com/lib/favicons/beebrain-screenshot.png">
+<meta property="og:image:alt" content="Graph editor screenshot">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@bmndr">
+<meta name="theme-color" content="#FFCB06">
+<!-- BEGIN ICONS -->
+<link rel="icon" type="image/png" href="/lib/favicons/favicon-96x96.png" sizes="96x96" />
+<link rel="icon" type="image/svg+xml" href="/lib/favicons/favicon.svg" />
+<link rel="shortcut icon" href="/lib/favicons/favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="/lib/favicons/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-title" content="Beeminder Graph Editor" />
+<link rel="manifest" href="/lib/favicons/site.webmanifest" />
+<!-- END ICONS -->
+<script type="application/ld+json"> {
+"@context": "https://schema.org",
+"@type": "WebSite",
+"name": "Beeminder Graph Editor",
+"alternateName": ["Beebrain"],
+"url": "https://graph.beeminder.com/",
+"image": "https://graph.beeminder.com/lib/favicons/beebrain-screenshot.png" }
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <!-- Latest compiled and minified CSS -->
 <link rel="stylesheet" 
   href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
   integrity=
        "sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
   crossorigin="anonymous">
-
 <link rel="stylesheet" href="/lib/css/editorpage.css">
-
+<!-- optional preconnect / prefetch go here, eg to load Google fonts faster -->
 </head>
 <body>
 
@@ -30,14 +54,13 @@
     Beeminder Graph Editor
   </h1>
   <div style="text-align: center; font-size:1rem; color:#999;">
-    [v2025.07.07-h]
+    [v2025.07.08-a]
   </div>
 </header>
 
 <div style="margin-bottom: 40px;">&nbsp;</div>
 <main>
-  
-<!-- Initial welcome screen -->
+  <!-- Initial welcome screen -->
 <div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3" 
       ng-if="currentStage == 'initialScreen'" style="text-align: center;">
   <a class="btn btn-primary" href=
@@ -49,14 +72,7 @@
   Log in with your Beeminder account
   </a>
 </div>
-
 </main>
-
-<p>
-<br>
-<center>
-</center>
-</p>
 
 </body>
 </html>
