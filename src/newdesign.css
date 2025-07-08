@@ -1,156 +1,156 @@
 body {
-    font-size:130%;
-    min-width:620px;
+  font-size:130%;
+  min-width:620px;
 }
 .dslider{
-    width:340px;
+  width:340px;
 }
 #header {
-    background-color: #FFCB06;
-    padding: 8px 2%;
-    margin-bottom:10px;
+  background-color: #FFCB06;
+  padding: 8px 2%;
+  margin-bottom:10px;
 }
 
 .logo {
-    height: 59px;
-    width: 260px;
-    /*
-        background: url(https://www.beeminder.com/assets/website_logo_mid_type.png) no-repeat;
-    background-size: 205px;
-    */
-    /* temporary version till we fix the above URL */
-    background: url(/lib/favicons/bee-with-big-brain.png) no-repeat;
-    background-size: 59px;
-    background-position: left center;
+  height: 59px;
+  width: 260px;
+  /*
+  background: url(https://www.beeminder.com/assets/website_logo_mid_type.png) no-repeat;
+  background-size: 205px;
+  */
+  /* temporary version till we fix the above URL */
+  background: url(/lib/favicons/bee-with-big-brain.png) no-repeat;
+  background-size: 59px;
+  background-position: left center;
 }
 
 /***** Common Element styles *****/
 
 button.bmdrbtn, select {
-    color:black;
-    background-color: #ddd;
-    padding: 10px 16px;
-    transition: 0.2s;
-    cursor: pointer;
-    outline: none;
-    border: 1px solid #ccc;
-    font-size:90%;
+  color:black;
+  background-color: #ddd;
+  padding: 10px 16px;
+  transition: 0.2s;
+  cursor: pointer;
+  outline: none;
+  border: 1px solid #ccc;
+  font-size:90%;
 }
 button.bmdrbtn:hover    {  background-color: #FFD949; }
 button.bmdrbtn.active   {  background-color: #FFD949; }
 button.bmdrbtn:disabled {  color: #999;               }
 
 input[type=checkbox] {
-    width:20px;
-    height:20px;
-    vertical-align:middle;    
+  width:20px;
+  height:20px;
+  vertical-align:middle;    
 }
 
 label {
-    vertical-align:middle;    
-    font-size:110%;
+  vertical-align:middle;    
+  font-size:110%;
 }
 
 .tooltitle {
-    border-bottom:2px solid #bbb;
-    margin: 10px 0px 10px 0px;
-    font-weight:bold;
+  border-bottom:2px solid #bbb;
+  margin: 10px 0px 10px 0px;
+  font-weight:bold;
 }
 
 /***** MAIN TABS AND CONTAINERS *****/
 /* Horizontal container for main tabs */
 .tab {
-    margin-top:10px;
-    overflow: hidden;
-    border: none;
-    width : 100%;
-    max-width:1024px;
+  margin-top:10px;
+  overflow: hidden;
+  border: none;
+  width : 100%;
+  max-width:1024px;
 }
 
 .tab button.bmdrbtn {
-    width : 33.333%;
-    height: 45px;
-    float: left;
-    border-bottom: none;
+  width : 33.333%;
+  height: 45px;
+  float: left;
+  border-bottom: none;
 }
 
 /* Style the tab content */
 .tabcontent {
-    /*white-space:nowrap;*/
-    box-shadow: 0 0 6px #ccc;
-    display: none;
-    padding: 6px 12px;
-    border: 1px solid #ccc;
-    /*width:709px;*/
+  /*white-space:nowrap;*/
+  box-shadow: 0 0 6px #ccc;
+  display: none;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  /*width:709px;*/
 } 
 
 .etabcontent, .gtabcontent, .stabcontent {
-    box-shadow: 0 0 6px #ccc;
-    display: none;
-    margin-left:45px;
-    position:relative;
-    top:-45px;
-    width:90%;
-    height:90%;
-    padding: 6px 6px;
-    border: 1px solid #ccc;
+  box-shadow: 0 0 6px #ccc;
+  display: none;
+  margin-left:45px;
+  position:relative;
+  top:-45px;
+  width:90%;
+  height:90%;
+  padding: 6px 6px;
+  border: 1px solid #ccc;
 } 
 
 .graphcontainer {
-    width: 100%;
-    max-width:694px;
-    display:block;
-    vertical-align:top;
+  width: 100%;
+  max-width:694px;
+  display:block;
+  vertical-align:top;
 }
 .graphtools {
-    margin: 10px;
-    margin-left: 10px;
-    font-size:90%;
+  margin: 10px;
+  margin-left: 10px;
+  font-size:90%;
 }
 
 #roadgraph, #roadeditor, #roadsandbox {
-    width: 100%;
-    margin-right:10px;
-    vertical-align:top;
+  width: 100%;
+  margin-right:10px;
+  vertical-align:top;
 }
 /***** VERTICAL SECONDARY TABS *****/
 .vtab {
-    width:360px;
-    white-space:nowrap;
-    transform:translate(-9);
-    overflow: hidden;
-    border: none;
+  width:360px;
+  white-space:nowrap;
+  transform:translate(-9);
+  overflow: hidden;
+  border: none;
 }
 
 .vtab button.bmdrbtn {
-    display: inline-block;
-    width:90px;
-    height:45px;
-    border-bottom: none;
+  display: inline-block;
+  width:90px;
+  height:45px;
+  border-bottom: none;
 }
 .vtabtitle {
-    padding: 2px;
-    font-size:120%;
-    font-weight:bold;
+  padding: 2px;
+  font-size:120%;
+  font-weight:bold;
 }
 
 #graph .vtab {
-    transform-origin:0 0;
-    transform:rotate(-90deg) translate(-360px, 0px);
+  transform-origin:0 0;
+  transform:rotate(-90deg) translate(-360px, 0px);
 }
 #editor .vtab {
-    transform-origin:0 0;
-    transform:rotate(-90deg) translate(-360px, 0px);
+  transform-origin:0 0;
+  transform:rotate(-90deg) translate(-360px, 0px);
 }
 #sandbox .vtab {
-    transform-origin:0 0;
-    transform:rotate(-90deg) translate(-360px, 0px);
+  transform-origin:0 0;
+  transform:rotate(-90deg) translate(-360px, 0px);
 }
 
 .vtabcontainer {
-    width:90%;
-    height:553px;
-    vertical-align:top;
+  width:90%;
+  height:553px;
+  vertical-align:top;
 }
 
 /***** Misc components *****/
@@ -166,71 +166,71 @@ label {
 
 /* Top summary line and components */
 .summary {
-    margin:10px 0 5px 50px;
+  margin:10px 0 5px 50px;
 }
 .yoog,.baremin,.doom-modifier,.doom,.pledgepre,.pledge {
-    display:inline-block;
-    font-size:24px;
-    margin:0 5px 0 5px;
+  display:inline-block;
+  font-size:24px;
+  margin:0 5px 0 5px;
 }
 .baremin,.doom, .pledge {
-    padding:5px 10px;
-    background-color: #3b3b3b;
-    color:#ffcb06;
+  padding:5px 10px;
+  background-color: #3b3b3b;
+  color:#ffcb06;
 }
 .doom {
-    color:white;
+  color:white;
 }
 
 /* Submission result for the editor */
 #submitmsg {
-    margin-left:5px;
+  margin-left:5px;
 }
 
 /* New data */
 .dateentry, .valueentry, .cmtentry {
-    border: 1px solid black;
-    width: 250px;
-    height: 30px;
-    margin-top: 4px;
-    margin-bottom: 4px;
+  border: 1px solid black;
+  width: 250px;
+  height: 30px;
+  margin-top: 4px;
+  margin-bottom: 4px;
 }
 
 /* Relax width limits for wider screens */
 @media (min-width: 1280px) {
-    .graphcontainer {
-        width: unset;
-        display:inline-block;
-    }
-    #roadgraph, #roadeditor, #roadsandbox {
-        width: 696px;
-        display:inline-block;
-    }
-    .etabcontent, .gtabcontent, .stabcontent {
-        height:100%;
-        width:430px;
-    } 
-    .vtabcontainer {
-        width:unset;
-        height:453px;
-        display:inline-block;
-    }
-    body{
-        max-width:1280px;
-        font-size:100%;
-    }
-    .tab {
-        width : 1024px;
-    }
-    .dslider{
-        width:280px;
-    }
+  .graphcontainer {
+    width: unset;
+    display:inline-block;
+  }
+  #roadgraph, #roadeditor, #roadsandbox {
+    width: 696px;
+    display:inline-block;
+  }
+  .etabcontent, .gtabcontent, .stabcontent {
+    height:100%;
+    width:430px;
+  } 
+  .vtabcontainer {
+    width:unset;
+    height:453px;
+    display:inline-block;
+  }
+  body{
+    max-width:1280px;
+    font-size:100%;
+  }
+  .tab {
+    width : 1024px;
+  }
+  .dslider{
+    width:280px;
+  }
 }
 
 .ts-control.roadselect {
-  display: inline-block;
-  font-size: 120%;
-  width: 250px;
+ display: inline-block;
+ font-size: 120%;
+ width: 250px;
 }
 
 /* Increase font size for dropdown options (HT Codebuff) */
