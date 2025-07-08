@@ -345,7 +345,7 @@ async function create( id, pproduct ) {
     console.log(`Attempting to launch Puppeteer with product ${pproduct}...`);
     const browser = await puppeteer.launch({ 
       product: pproduct,
-      args: ['--no-sandbox', '--allow-file-access-from-files'],
+      args: ['--no-sandbox', '--allow-file-access-from-files', '--log-level=3'],
       // Add more detailed logging
       dumpio: true
     });
