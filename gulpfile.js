@@ -1,11 +1,13 @@
 const gulp = require('gulp')
 const minify = require('gulp-minify')
 const concat = require('gulp-concat')
-const changed = require('gulp-changed')
+//const changed = require('gulp-changed') #SCHDEL
+const changed = require('gulp-changed').default
 const cleancss = require('gulp-clean-css')
 const jsdoc = require("gulp-jsdoc3")
 const jshint = require("gulp-jshint")
-const rimraf = require('rimraf')
+//const rimraf = require('rimraf') #SCHDEL
+const { rimraf } = require('rimraf')
 
 const LIBDIR = 'lib'
 const LIBJS = LIBDIR+"/js"
@@ -117,9 +119,9 @@ function linter() {
   return gulp.src(['src/butil.js', 'src/broad.js', 'src/bgraph.js', 'src/bsandbox.js', 'src/newdesign.js']).pipe(jshint({esversion:8, asi:true, laxbreak:true})).pipe(jshint.reporter('default'))
 }
 
-function images() {
-  return gulp.src('src/images/*')
-    .pipe(gulp.dest(LIBIMG))
+function images () {
+  // Gulp 5: keep the stream in Buffer-mode so PNGs aren’t re-encoded as UTF-8
+  return gulp.src('src/images/*', { encoding: false }).pipe(gulp.dest(LIBIMG))
 }
 
 exports.compile = gulp.series(clean,

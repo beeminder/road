@@ -27,7 +27,7 @@
     "sqlite3": "^5.1.7"
   },
   "engines": {
-    "node": "26"
+    "node": ">=22"
   },
   "repository": {
     "type": "git",
