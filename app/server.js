@@ -155,18 +155,40 @@ app.get("/sandbox", (req, resp) => {
 });
 app.get("/", (req, resp) => {
   setsession(req);
-  if (
-    typeof req.session.access_token === "undefined" ||
-    req.session.access_token === null
-  ) {
-    resp.redirect("/login");
-  } else {
-    var user = {
-      username: req.session.username,
-      access_token: req.session.access_token,
-    };
-    resp.render("newdesign.ejs", { user: user });
+  
+  // Check if this is a social media crawler requesting meta tags
+  const ua = (req.get('User-Agent') || '').toLowerCase();
+  const socialCrawlers = [
+    'twitterbot',          // covers “Twitterbot/2.0” etc.
+    'facebookexternalhit',
+    'linkedinbot',
+    'whatsapp',
+    'telegrambot',
+    'skypeuripreview',
+    'slackbot',
+    'discordbot'
+  ];
+  const isBot = socialCrawlers.some(sig => ua.includes(sig));
+
+  if (isBot) {
+    // 200 OK with card tags
+    return resp.render('login.ejs', {
+      BEEMINDER_CLIENT_ID: process.env.BEEMINDER_CLIENT_ID,
+      AUTH_REDIRECT_URI:  process.env.AUTH_REDIRECT_URI,
+      version:            packageJson.version
+    });
   }
+
+  if (!req.session?.access_token) {
+    return resp.redirect('/login');   // humans hit the normal flow
+  }
+
+  resp.render('newdesign.ejs', {
+    user: {
+      username:      req.session.username,
+      access_token:  req.session.access_token
+    }
+  });
 });
 
 // Callback endpoint to receive username and access_token from Beeminder upon
