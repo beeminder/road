@@ -14,8 +14,14 @@ body {
 .logo {
     height: 59px;
     width: 260px;
-    background: url(https://www.beeminder.com/assets/website_logo_mid_type.png) no-repeat;
+    /*
+        background: url(https://www.beeminder.com/assets/website_logo_mid_type.png) no-repeat;
     background-size: 205px;
+    */
+    /* temporary version till we fix the above URL */
+    background: url(/lib/favicons/bee-with-big-brain.png) no-repeat;
+    background-size: 59px;
+    background-position: left center;
 }
 
 /***** Common Element styles *****/
