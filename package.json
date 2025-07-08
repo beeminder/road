@@ -6,7 +6,8 @@
   "scripts": {
     "start": "nodemon app/server.js",
     "clean": "gulp clean",
-    "compile": "gulp compile"
+    "compile": "gulp compile",
+    "postinstall": "gulp compile"
   },
   "dependencies": {
     "@primer/octicons": "^19.15.3",
