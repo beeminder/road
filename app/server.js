@@ -20,6 +20,7 @@ var SequelizeStore = require("connect-session-sequelize")(session.Store);
 // Initializing the app
 var app = express();
 
+// Placeholder function for session-related logic. Chesterton's fence I guess.
 function setsession(req) {}
 
 // Enabling cookies via HTTPS
