@@ -1,7 +1,7 @@
 {
-  "name": "beebrain",
-  "version": "2025.07.10-g",
-  "description": "Beeminder Graph Generator and Graph Editor",
+  "name": "Beebrain",
+  "version": "2025.07.10-h",
+  "description": "Beeminder Graph Generator and Visual Graph Editor",
   "main": "server.js",
   "scripts": {
     "clean": "gulp clean",
@@ -40,7 +40,7 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "dotenv": "^17.1.0",
+    "dotenv": "^17.2.0",
     "gulp": "^5.0.1",
     "gulp-changed": "^5.0.2",
     "gulp-clean-css": "^4.0.0",
