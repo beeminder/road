@@ -20,7 +20,9 @@
   <script src = "../src/bgraph.js"></script>
   <script src = "../src/bsandbox.js"></script>
   <script src = "../src/tom-select.js"></script>
-  <script> const username = <%- (user != null)?"\""+user.username+"\"":"null" %></script>
+  <script>
+    const username = <%= JSON.stringify(user ? user.username : null) %>;
+  </script>
 </head>
 
 <body>
