@@ -106,15 +106,15 @@ function openSandboxTab(evt, tabName) {
 
 // Loads a goal from the specified URL for all tabs
 async function loadGoals(url) {
+  // Tom Select fires once with an empty value when the dropdown is first
+  // focused; skip that so we don't hit /getgoaljson/ and get a 404:
+  if (!url || url.trim() === '') return;
   let resp
   if (graph) graph.loading(true)
   if (editor) editor.loading(true)
   if (sandboxgr) sandboxgr.loading(true)
-  if (local) {
-    resp = await butil.loadJSON( url )
-  } else {
-    resp = await butil.loadJSON( "/getgoaljson/"+url )
-  }
+  if (local) { resp = await butil.loadJSON( url ) } 
+  else       { resp = await butil.loadJSON( "/getgoaljson/"+url ) }
   if (graph) graph.loading(false)
   if (editor) editor.loading(false)
   if (sandboxgr) sandboxgr.loading(false)
