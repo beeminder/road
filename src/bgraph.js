@@ -294,7 +294,7 @@ const ErrMsgs = [ "Could not find goal (.bb) file.",
 
 /** This atrocity attempts to determine whether the page was loaded from a 
     mobile device. It might be from 2019 and in want of updating. */
-const onMobileOrTablet = () => {
+const onMobileOrTablet = function() {
   if (typeof navigator == 'undefined' && typeof window == 'undefined') 
     return false
   var check = false;
@@ -439,7 +439,7 @@ let svg, defs, graphs, buttonarea, stathead, focus, focusclip, plot,
     gAura, gDerails, gAllpts, gDpts, gHollow, gFlat, 
     gBullseye, gRoads, gDots, gWatermark, gHashtags, gHorizon, gHorizonText,
     gRedTape,
-    zoomarea, axisZoom, zoomin, zoomout,  
+    zoomarea, axisZoom, zoomin, zoomout, // exportBtn,  
     brushObj, brush, focusrect, topLeft, dataTopLeft,
     scf = 1, oldscf = 0
   
@@ -749,8 +749,8 @@ function createGraph() {
       .attr("d", "m 530.86356,264.94116 a 264.05649,261.30591 0 1 1 -528.1129802,0 264.05649,261.30591 0 1 1 528.1129802,0 z")
     zoomoutgrp.append("path")
       .attr("d", "m 155.105,231.65502 0,76.553 229.657,0 0,-76.553 c -76.55233,0 -153.10467,0 -229.657,0 z m 382.764,38.277 C 537.869,119.51007 420.50428,1.9980234 269.935,1.9980234 121.959,1.9980234 2.0000001,121.95602 2.0000001,269.93202 c 0,147.976 117.2473599,267.934 267.9339999,267.934 150.68664,0 267.935,-117.51205 267.935,-267.934 z m -267.935,191.381 c -105.681,0 -191.381,-85.7 -191.381,-191.381 0,-105.681 85.701,-191.380996 191.381,-191.380996 105.681,0 191.381,85.700996 191.381,191.380996 0,105.681 -85.7,191.381 -191.381,191.381 z")
-  }
-  
+  } 
+   
   // Create rectange to monitor zoom events and install handlers
   zoomarea = svg.append('rect').attr("class",  "zoomarea")
                                .attr("x",      plotbox.x)
@@ -907,21 +907,21 @@ function createGraph() {
     .attr("xlink:href", "#zoominbtn")
     .attr("opacity",opts.zoomButton.opacity)
     .attr("transform", zoombtntr.botin)
-    .on("click", () => { zoomarea.call(axisZoom.scaleBy, 
+    .on("click", function() { zoomarea.call(axisZoom.scaleBy, 
                                        opts.zoomButton.factor) })
-    .on("mouseover", () =>{
+    .on("mouseover", function() {
       if (!mobileOrTablet) d3.select(this).style("fill", "red")})
-    .on("mouseout",(d,i) => {d3.select(this).style("fill", "black")})
+    .on("mouseout",function(d,i) { d3.select(this).style("fill", "black") })
   zoomout = focusclip.append("svg:use")
     .attr("class",      "zoomout")
     .attr("xlink:href", "#zoomoutbtn")
     .attr("opacity",    opts.zoomButton.opacity)
     .attr("transform",  zoombtntr.botout)
-    .on("click", () => { zoomarea.call(axisZoom.scaleBy, 
+    .on("click", function() { zoomarea.call(axisZoom.scaleBy, 
                                        1/opts.zoomButton.factor) })
-    .on("mouseover", () => {
+    .on("mouseover", function() {
       if (!mobileOrTablet) d3.select(this).style("fill", "red") })
-    .on("mouseout",(d,i) => { d3.select(this).style("fill", "black") })
+    .on("mouseout", function(d,i) { d3.select(this).style("fill", "black") })
 
   // Create and initialize the x and y axes
   xSc   = d3.scaleUtc().range([0,plotbox.width])
@@ -5689,7 +5689,7 @@ this.commitTo = ( newSlope ) => {
  <li><b>siru</b>: seconds in rate units</li>
  </ul>
 */
-this.getRoad = () => {
+this.getRoad = function() {
   function dt(d) { return moment.unix(d).utc().format("YYYYMMDD")}
   // Format the current graph matrix to be submitted to Beeminder
   var r = {}, seg, rd, kd
@@ -5789,7 +5789,7 @@ this.hide = () => {hidden = true}
  elements, which might have previously been incorrectly rendered
  if hidden. 
  @see {@link bgraph#hide}*/
-this.show = () => {
+this.show = function() {
   //console.debug("curid="+curid+", show()");
   hidden = false
   if (road.length == 0) {
@@ -5866,7 +5866,9 @@ this.isLoser = () => {
 }
 
 this.getProgress = () => {
-  return [[bu.dayify(gol.tini,'-'), gol.vini], [bu.dayify(gol.tcur,'-'), gol.vcur], [bu.dayify(gol.tfin,'-'), gol.vfin]]
+  return [[bu.dayify(gol.tini,'-'), gol.vini], 
+          [bu.dayify(gol.tcur,'-'), gol.vcur], 
+          [bu.dayify(gol.tfin,'-'), gol.vfin]]
 }
   
 /** Returns current goal state
