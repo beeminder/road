@@ -65,6 +65,7 @@ import traceback
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from enum import Enum
+import contextlib
 
 ################################################################################
 ######################### CONSTANTS AND CONFIGURATION ##########################
@@ -1181,7 +1182,7 @@ def jobTask():
     flon("Exiting!")
 
   else:
-    exitonerr("Invalid state :"+str(cm.state), false)
+    exitonerr("Invalid state :"+str(cm.state), False)
     
   if (prevstate != cm.state): refresh_status()
   

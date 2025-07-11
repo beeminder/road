@@ -1,6 +1,7 @@
 
 ## CHANGELOG
 
+* 2025.07.10 migrate from Glitch to Render and remember that a changelog exists
 * 2019.01.12 beebrain.js tutorials
 * 2019.01.12 Static graph axis limits consistent with pybrain
 * 2019.01.11 Solved problems with goals for which tfin=null

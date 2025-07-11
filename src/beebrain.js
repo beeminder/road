@@ -15,7 +15,6 @@ Maintained and evolved by dreev, 2012-2018.
 Ported to Javascript by Uluc Saranli, in 2018-2019.
 
 Copyright 2008-2025 Uluc Saranli and Daniel Reeves
-
 */
 
 ;(((root, factory) => { // BEGIN PREAMBLE --------------------------------------

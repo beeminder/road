@@ -4,7 +4,7 @@
  * independent sandbox objects each with their own graph object, linked to
  * particular div element on the DOM.<br/>
 
- * <br/>Copyright 2017-2021 Uluc Saranli and Daniel Reeves and Bethany Soule
+ * <br/>Copyright 2017-2025 Uluc Saranli and Daniel Reeves and Bethany Soule
  @module bsandbox
  @requires d3
  @requires moment

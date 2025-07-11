@@ -3,7 +3,7 @@
  * Provides a {@link bgraph} class, which can be used to construct independent
  * graph generating objects each with their own internal state, possibly linked
  * to particular div elements on the DOM.<br/>
- * <br/>Copyright 2017-2021 Uluc Saranli and Daniel Reeves
+ * <br/>Copyright 2017-2025 Uluc Saranli and Daniel Reeves
  @module bgraph
  @requires d3
  @requires moment

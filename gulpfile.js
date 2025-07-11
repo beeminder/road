@@ -116,7 +116,10 @@ function gendoc() {
 }
 
 function linter() {
-  return gulp.src(['src/butil.js', 'src/broad.js', 'src/bgraph.js', 'src/bsandbox.js', 'src/newdesign.js']).pipe(jshint({esversion:8, asi:true, laxbreak:true})).pipe(jshint.reporter('default'))
+  return gulp.src(['src/butil.js', 'src/broad.js', 'src/bgraph.js', 
+                   'src/bsandbox.js', 'src/newdesign.js'])
+    .pipe(jshint({esversion:8, asi:true, laxbreak:true}))
+    .pipe(jshint.reporter('default'))
 }
 
 function images () { // Copy images from src to lib
