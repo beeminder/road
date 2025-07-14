@@ -36,27 +36,47 @@ button.bmdrbtn, select {
   outline: none;
   border: 1px solid #ccc;
   font-size:90%;
+  /* border-radius: 4px; */
 }
-button.bmdrbtn:hover    {  background-color: #FFD949; }
-button.bmdrbtn.active   {  background-color: #FFD949; }
-button.bmdrbtn:disabled {  color: #999;               }
+
+button.bmdrbtn:hover {
+  background-color: #FFD949;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+button.bmdrbtn.active {
+  background-color: #FFD949;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+}
+
+button.bmdrbtn:disabled {
+  color: #999;
+  cursor: not-allowed;
+  transform: none;
+}
 
 input[type=checkbox] {
   width:20px;
   height:20px;
-  vertical-align:middle;    
+  vertical-align:middle;
+  cursor: pointer;
 }
 
 label {
-  vertical-align:middle;    
+  vertical-align:middle;
   font-size:110%;
+  cursor: pointer;
 }
 
 .tooltitle {
   border-bottom:2px solid #bbb;
   margin: 10px 0px 10px 0px;
   font-weight:bold;
+  /* padding-bottom: 5px; */
 }
+
+
 
 /***** MAIN TABS AND CONTAINERS *****/
 /* Horizontal container for main tabs */
@@ -76,14 +96,14 @@ label {
 }
 
 /* Style the tab content */
-.tabcontent {
+.tabcontent {  
   /*white-space:nowrap;*/
   box-shadow: 0 0 6px #ccc;
   display: none;
   padding: 6px 12px;
   border: 1px solid #ccc;
   /*width:709px;*/
-} 
+}
 
 .etabcontent, .gtabcontent, .stabcontent {
   box-shadow: 0 0 6px #ccc;
@@ -95,7 +115,7 @@ label {
   height:90%;
   padding: 6px 6px;
   border: 1px solid #ccc;
-} 
+}
 
 .graphcontainer {
   width: 100%;
@@ -128,6 +148,7 @@ label {
   width:90px;
   height:45px;
   border-bottom: none;
+  /* margin: 0; */
 }
 .vtabtitle {
   padding: 2px;
@@ -135,6 +156,7 @@ label {
   font-weight:bold;
 }
 
+/* original was like so before codebuff DRY'd it up a bit:
 #graph .vtab {
   transform-origin:0 0;
   transform:rotate(-90deg) translate(-360px, 0px);
@@ -146,6 +168,14 @@ label {
 #sandbox .vtab {
   transform-origin:0 0;
   transform:rotate(-90deg) translate(-360px, 0px);
+}
+*/
+
+#graph .vtab,
+#editor .vtab,
+#sandbox .vtab {
+  transform-origin: 0 0;
+  transform: rotate(-90deg) translate(-360px, 0px);
 }
 
 .vtabcontainer {
@@ -160,10 +190,25 @@ label {
 
 /* Progress indicators */
 .progrow { display: table-row; }
-.proghdr { display: table-cell; font-size: 80%; padding:4px;padding-right:15px; }
+.proghdr {
+  display: table-cell;
+  font-size: 80%;
+  padding: 4px 15px 4px 4px;
+}
 .progcell { display: table-cell; }
-.progcont { width:300px; height:20px; border: 1px solid black; margin:5px;}
-.progbar { height:100%; background-color:yellow;}
+.progcont {
+  width:300px;
+  height:20px;
+  border: 1px solid black;
+  margin:5px;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progbar { 
+  height:100%; 
+  background-color: #FFD949; 
+  transition: width 0.3s ease; 
+}
 
 /* Top summary line and components */
 .summary {
@@ -188,36 +233,57 @@ label {
   margin-left:5px;
 }
 
-/* New data */
+/* New data entry form */
+/*
+.data-entry-form {
+  padding: 20px;
+  box-shadow: 0 0 6px #ccc;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+}
+*/
+
 .dateentry, .valueentry, .cmtentry {
-  border: 1px solid black;
-  width: 250px;
+  border: 1px solid #ccc;
+  width: 100%;
+  max-width: 250px;
   height: 30px;
   margin-top: 4px;
   margin-bottom: 4px;
+  /* margin: 8px 0; */
+  /* padding: 5px 10px; */
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.dateentry:focus, .valueentry:focus, .cmtentry:focus {
+  outline: none;
+  border-color: #FFD949;
+  box-shadow: 0 0 0 2px rgba(255, 217, 73, 0.2);
 }
 
 /* Relax width limits for wider screens */
-@media (min-width: 1280px) {
+@media (min-width: 1280px) {  
   .graphcontainer {
-    width: unset;
+    width: unset; /* was "width:unset" pre-codebuff, 696px post-codebuff */
+    max-width: 696px;
     display:inline-block;
   }
   #roadgraph, #roadeditor, #roadsandbox {
     width: 696px;
     display:inline-block;
-  }
+  }  
   .etabcontent, .gtabcontent, .stabcontent {
     height:100%;
     width:430px;
-  } 
+  }
   .vtabcontainer {
-    width:unset;
+    width:unset; /* was "width:unset" pre-codebuff, 430px post-codebuff */
     height:453px;
     display:inline-block;
   }
   body{
-    max-width:1280px;
+    /* was max-width:1280px pre-codebuff */
     font-size:100%;
   }
   .tab {
@@ -229,9 +295,10 @@ label {
 }
 
 .ts-control.roadselect {
- display: inline-block;
- font-size: 120%;
- width: 250px;
+  display: inline-block;
+  font-size: 120%;
+  width: 250px;
+  border-radius: 4px;
 }
 
 /* Increase font size for dropdown options (HT Codebuff) */
@@ -243,4 +310,28 @@ label {
 /* Also increase font size for the control input (HT Codebuff) */
 .ts-control.roadselect .ts-input {
   font-size: 16px;
+}
+
+/* Stuff below is all from Codebuff */
+
+/* Improve form styling */
+input[type="number"],
+input[type="text"],
+select { transition: all 0.2s ease; }
+
+input[type="number"]:hover,
+input[type="text"]:hover,
+select:hover { border-color: #bbb; }
+
+/* Better spacing for inline elements */
+/*
+.graphtools input[type="checkbox"] {
+  margin-right: 5px;
+.graphtools label {
+  margin-right: 15px;
+*/
+hr {
+  border: none;
+  border-top: 1px solid #e0e0e0;
+  margin: 20px 0;
 }
