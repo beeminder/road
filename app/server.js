@@ -83,7 +83,7 @@ sequelize
   });
 
 // Stuff in the pub directory is served statically
-app.use("/staticdesign", express.static("tests/newdesign.html"));
+app.use("/staticdesign", express.static("tests/generated/newdesign.html"));
 app.use("/tutorial", express.static("tests/tutorial.html"));
 app.use("/newgoal", express.static("tests/newgoal.html"));
 // Serve js files under the src directory through /src
@@ -127,7 +127,7 @@ app.get("/road", (req, resp) => {
     resp.redirect("/login");
   } else {
     var user = {
-      username: req.session.username,
+      username:     req.session.username,
       access_token: req.session.access_token,
     };
     resp.render("newdesign.ejs", { user: user });

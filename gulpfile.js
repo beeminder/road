@@ -6,6 +6,8 @@ const cleancss = require('gulp-clean-css')
 const jsdoc = require("gulp-jsdoc3")
 const jshint = require("gulp-jshint")
 const { rimraf } = require('rimraf')
+const ejs = require('ejs')
+const fs = require('fs')
 
 const LIBDIR = 'lib'
 const LIBJS = LIBDIR+"/js"
@@ -131,11 +133,26 @@ function favicons () { // Copy favicons from src to lib
   return gulp.src('src/favicons/*', { encoding: false }).pipe(gulp.dest(LIBFAV))
 }
 
+function generate_test_html() {
+  // Generate tests/generated/newdesign.html from views/newdesign.ejs
+  const ejsTemplate = fs.readFileSync('views/newdesign.ejs', 'utf8')
+  const html = ejs.render(ejsTemplate, { user: null })
+  
+  // Ensure generated directory exists
+  if (!fs.existsSync('tests/generated')) {
+    fs.mkdirSync('tests/generated', { recursive: true })
+  }
+  
+  fs.writeFileSync('tests/generated/newdesign.html', html)
+  return Promise.resolve()
+}
+
 exports.compile = gulp.series(
   clean,
   gulp.parallel(images, favicons),
   compress_js,
   gulp.parallel(combine_js, combine_jsmin, clean_css),
-  copy_vendor)
+  copy_vendor,
+  generate_test_html)
 exports.gendoc = gendoc
 exports.jshint = linter

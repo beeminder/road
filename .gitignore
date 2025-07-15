@@ -10,3 +10,4 @@ lib/css/
 lib/js/
 lib/images/
 lib/favicons/
+tests/generated/
