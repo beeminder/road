@@ -64,7 +64,7 @@ Red-line-dragging behavior: &nbsp; &nbsp;
 <button class="btn btn-secondary" id="savesvg" onclick="editor.saveGraph(document.getElementById('download'));">Generate static image</button>
 <a id="download" target="_blank">[Right-click for SVG]</a><br/><br/>
     
-Visual versions of Ratcheting, Take-A-Break, and the Graph Dial...<br/><br/>
+Visual versions of Ratcheting, Take-A-Break, and the Commitment Dial...<br/><br/>
 <ul>
 <li>Reduce safety buffer to: 
 <input type="number" value="0" min="0" id="ratchetdays" style="width:4em"> days
@@ -80,7 +80,7 @@ days
 <button class="btn btn-secondary" id="insertbreak" onclick="scheduleBreak(true);">Insert</button>
 <button class="btn btn-secondary" id="overwritebreak" onclick="scheduleBreak(false);">Overwrite</button><br/><br/></li>
 
-<li>Graph Dial:
+<li>Commmitment Dial:
 <input type = "number" id="endslope" step="any" style="width:4em">
 <select id="slopetype" selected="604800" onchange="updateCommitFields();">
   <option value="86400">per day</option>

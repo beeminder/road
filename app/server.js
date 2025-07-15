@@ -223,7 +223,8 @@ app.get("/logout", (req, resp) => {
 app.get("/getusergoals", (req, resp) => {
   setsession(req);
   if (!req.session.access_token || !req.session.username) {
-    resp.redirect("/login");
+    resp.status(401).json({error: "Not authenticated"});
+    return;
   }
   beemGetUser(
     {
