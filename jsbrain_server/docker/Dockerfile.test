@@ -1,5 +1,5 @@
 FROM buildpack-deps
-RUN apt-get update && apt-get install -yq curl netcat jq && apt-get clean
+RUN apt-get update && apt-get install -yq curl netcat-openbsd jq && apt-get clean
 WORKDIR /app
 ADD jsbrain_server/docker/test.sh /app/test.sh
 ADD automon/data automon-data

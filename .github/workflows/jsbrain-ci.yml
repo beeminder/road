@@ -21,5 +21,5 @@ jobs:
       - name: Build and run basic tests
         run: |
           cd $GITHUB_WORKSPACE/jsbrain_server/docker
-          docker-compose --file docker-compose.test.yml build
-          docker-compose --file docker-compose.test.yml run sut
+          docker compose --file docker-compose.test.yml build
+          docker compose --file docker-compose.test.yml run sut
