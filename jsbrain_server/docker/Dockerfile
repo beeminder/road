@@ -4,7 +4,7 @@
 
 # Much of this is from https://github.com/puppeteer/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-in-docker
 # so if you have to edit it, even if you know Docker basics, go check that out.
-FROM node:14.17.0-buster
+FROM node:22.17-bookworm
 
 LABEL maintainer="adam@beeminder.com"
 LABEL org.opencontainers.image.title="jsbrain-server"
