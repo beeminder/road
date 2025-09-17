@@ -673,9 +673,14 @@ def graph_compare(slug, out, ref):
   raw = (proc.stderr or proc.stdout or "").strip()
   #flon(f"DEBUG-gc: {slug}: compare rc={proc.returncode}, raw='{raw}'")
 
-  if proc.returncode not in (0, 1): # TODO: (0, 1)
+  if proc.returncode not in (0, 1, 2):
     flon(f"DEBUG: {slug}: compare rc={proc.returncode}, raw='{raw}'")
-    raise RuntimeError(f"compare exit code {proc.returncode} (want 0 or 1)")
+    raise RuntimeError(f"compare exit code {proc.returncode} (want 0, 1, or 2)")
+  
+  if proc.returncode == 2:
+    # ImageMagick compare error - return error with diagnostic info
+    errmsg += f"\nImageMagick compare error (exit code 2): {raw}"
+    return {'diffcnt': 0, 'imgdiff': imgdiff, 'errmsg': errmsg}
 
   # Parse the pixel-difference count and fail loudly if we can't
   m = re.search(r'\((\d+)\)', raw) # modern ImageMagick: "... (12345)"

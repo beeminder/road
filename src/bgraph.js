@@ -4077,8 +4077,8 @@ function updateContextOldRoad() {
 
 // Creates or updates vertical lines for tarings (including odometer resets)
 function updateTarings() {
-  if (processing || opts.divGraph == null || road.length == 0 || bbr.tarings.length == 0)
-    return
+  if (processing || opts.divGraph == null || road.length == 0 
+      || bbr.tarings.length == 0) return
 
   // Create, update, and delete vertical knot lines
   const trelt = gTarings.selectAll(".oresets").data(bbr.tarings) //TODOT: tarings
@@ -4165,7 +4165,8 @@ function updateKnots() {
           function(d){ 
             return "translate("+(nXSc(d.end[0]*SMS)
                                  +plotpad.left-14*opts.roadKnot.rmbtnscale)
-              +","+(plotpad.top-28*opts.roadKnot.rmbtnscale-3)+") scale("+opts.roadKnot.rmbtnscale+")";
+              +","+(plotpad.top-28*opts.roadKnot.rmbtnscale-3)
+              +") scale("+opts.roadKnot.rmbtnscale+")"
           })
     .style("visibility", function(d,i) {
       return (i > 0 && i<road.length-2)

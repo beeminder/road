@@ -1,12 +1,12 @@
 {
   "name": "bbserver",
-  "version": "2025.07.07-a",
+  "version": "2025.09.17-c",
   "description": "Beebrain: Node server for generating Beeminder graphs",
   "main": "index.js",
   "scripts": {
     "start": "PORT=8777 node jsbrain_server.js"
   },
-  "author": "Uluc Saranli",
+  "author": "Uluc Saranli and Daniel Reeves",
   "license": "MIT",
   "dependencies": {
     "cluster": "^0.7.7",
@@ -14,7 +14,7 @@
     "express": "^5.1.0",
     "gm": "^1.23.1",
     "os": "^0.1.2",
-    "puppeteer": "^23.11.1",
+    "puppeteer": "^24.22.0",
     "sleep-promise": "^9.1.0",
     "uuid": "^13.0.0",
     "yargs": "^18.0.0"

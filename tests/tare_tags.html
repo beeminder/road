@@ -36,6 +36,8 @@ function getTestParams(goalName = "test/tare") {
     yaw: 1,
     dir: 1,
     kyoom: false,
+    asof: "20240110",  // Add explicit asof parameter
+    aggday: "last",    // Use last for TARE testing to avoid aggregation
     road: [
       [null, 150, 10],
       ["20240110", 300, null]
@@ -249,6 +251,67 @@ function runComprehensiveTests() {
     results += `Error: <span class="error">${e.toString()}</span><br/><br/>`;
   }
   
+  results += '</div>';
+  
+  // Test Suite 4: User's Complex Sample Data
+  results += '<div class="test-section">';
+  results += "<h2>Test Suite 4: Complex Sample Data with Multiple Tare Scenarios</h2>";
+  
+  const complexSampleData = [
+    ["20250827", 0, "#TARE but taring is a no-op on an initial zero              =20"],
+    ["20250827", 20, "first real datapoint                                      =20"],
+    ["20250901", 50, "if this were kyoom-y we'd plot '70' but it's not          =50"],
+    ["20250905", 0, "#TARE traditional odometer reset                           =50"],
+    ["20250910", 10, "odometer shows 10 + previous 50                           =60"],
+    ["20250915", 15, "again, add 50 to current odometer reading                 =65"],
+    ["20250917", 100, "#TARE ignore current reading of '100' but remember it    =65"],
+    ["20250918", 140, "40 added from previous 100 so add it to 65              =105"]
+  ];
+  
+  // Sort data chronologically before processing to ensure correct comparisons
+  complexSampleData.sort((a, b) => a[0].localeCompare(b[0]));
+  
+  try {
+    const params = {
+      ...getTestParams("test/complex_sample"), 
+      odom: true, 
+      tini: "20250825", 
+      vini: 0, 
+      tfin: "20250930", 
+      vfin: 200, 
+      asof: "20250930",
+      road: [
+        ["20250930", 200, null]
+      ]
+    };
+    const bb = new beebrain({params: params, data: complexSampleData});
+    
+    results += "<h3>Original Data (with expected results in comments):</h3>";
+    complexSampleData.forEach(d => {
+      results += `${d[0]}: ${d[1]} - ${d[2]}<br/>`;
+    });
+    
+    results += "<h3>Processed Data:</h3>";
+    bb.data.forEach((d, i) => {
+      const date = new Date(d[0]*1000).toISOString().substr(0,10);
+      const expected = complexSampleData[i] ? complexSampleData[i][2].match(/=(\d+)/)?.[1] : 'unknown';
+      results += `${date}: ${d[1]} (expected: ${expected})<br/>`;
+    });
+    
+    results += "<h3>Tarings Detected:</h3>";
+    if (bb.tarings && bb.tarings.length > 0) {
+      bb.tarings.forEach(reset => {
+        results += `Taring at: ${new Date(reset*1000).toISOString().substr(0,10)}<br/>`;
+      });
+    } else {
+      results += "No tarings detected<br/>";
+    }
+    
+    results += `<h3>Status:</h3><span class="success">${bb.getStats().error || "No errors"}</span>`;
+    
+  } catch (error) {
+    results += `<h3>Error:</h3><span class="error">${error.toString()}</span>`;
+  }
   results += '</div>';
   
   // Summary
