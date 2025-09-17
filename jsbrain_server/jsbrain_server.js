@@ -3,6 +3,7 @@
 const cluster = require('cluster')
 const os = require('os')
 const yargs = require('yargs')
+const { hideBin } = require('yargs/helpers')
 const bu = require('../src/butil.js')
 
 function compareJSON(stats, bbr) {
@@ -103,7 +104,7 @@ if (cluster.isMaster) {
   // Render url.
   const proc_timeid = " Total processing"
 
-  const argv = yargs
+  const argv = yargs(hideBin(process.argv))
         .option('firefox', {
           alias: 'f',
           description: 'use headless firefox',
