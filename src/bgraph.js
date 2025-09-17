@@ -123,7 +123,7 @@ let defaults = {
   /** Visual parameters for text boxes shown during dragging */ 
   textBox:      { margin: 3 },
   /** Visual parameters for odometer resets */ 
-  odomReset:    { width: 0.5, dash: 8 },
+  taring:    { width: 0.5, dash: 8 },
   
   roadLineCol:  { valid: "black",    invalid:"#ca1212",  selected:"yellow" },
   roadDotCol:   { fixed: "darkgray", editable:"#c2c2c2", selected: "yellow" },
@@ -136,7 +136,7 @@ let defaults = {
   dataPointCol: { future: "#909090", stroke: "#eeeeee" },
   halfPlaneCol: { fill: "#ffffe8" },
   pastBoxCol:   { fill: "#f8f8f8", opacity:0.5 },
-  odomResetCol: { dflt: "#c2c2c2" }, 
+  taringCol: { dflt: "#c2c2c2" },
                 
   /** Strips the graph of all details except what is needed for svg output */
   headless:     false,
@@ -385,7 +385,7 @@ let config = (obj, options) => {
     @property {object} stdfluxline Visual parameter for stdfluxline (width)
 
     @property {object} textBox Visual parameters for text boxes shown during dragging e.g. { margin: 3 }
-    @property {object} odomReset Visual parameters for odometer resets e.g. { width: 0.5, dash: 8 }
+    @property {object} taring Visual parameters for tarings (nee odometer resets) e.g. { width: 0.5, dash: 8 }
     
 
   @property {object} roadLineCol Colors for road segments for the editor, e.g. { valid: "black", invalid:"#ca1212", selected:"yellow"}
@@ -396,7 +396,7 @@ let config = (obj, options) => {
   @property {object} dataPointCol Colors for datapoints, e.g. { future: "#909090", stroke: "lightgray"}
   @property {object} halfPlaneCol Colors for the yellow brick half plane. e.g. { fill: "#ffffe8" }
   @property {object} pastBoxCol Colors for the past, e.g. { fill: "#f8f8f8", opacity:0.5 }
-  @property {object} odomResetCol Colors for odometer reset indicators, e.g. { dflt: "#c2c2c2" }
+  @property {object} taringCol Colors for taring (nee odometer reset) indicators, e.g. { dflt: "#c2c2c2" }
   
 */
 
@@ -432,7 +432,7 @@ let svg, defs, graphs, buttonarea, stathead, focus, focusclip, plot,
     xSc, nXSc, xAxis, xAxisT, xGrid, xAxisObj, xAxisObjT, xGridObj,
     ySc, nYSc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel,
     xScB, xAxisB, xAxisObjB, yScB,
-    gPB, gYBHP, gYBHPlines, gPink, gPinkPat, gTapePat, gGrid, gOResets,
+    gPB, gYBHP, gYBHPlines, gPink, gPinkPat, gTapePat, gGrid, gTarings,
     gPastText,
     gGuides, gMaxflux, gStdflux, gRazr, gOldBullseye, 
     gKnots, gSteppy, gSteppyPts, gRosy, gRosyPts, gMovingAv,
@@ -870,7 +870,7 @@ function createGraph() {
   gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp') // z = 11
   gBullseye    = plot.append('g').attr('id', 'bullseyegrp')    // z = 12
   gGrid        = plot.append('g').attr('id', 'grid')           // z = 13
-  gOResets     = plot.append('g').attr('id', 'oresetgrp')      // z = 14
+  gTarings     = plot.append('g').attr('id', 'oresetgrp')      // z = 14 //TODOT: taringgrp
   gKnots       = plot.append('g').attr('id', 'knotgrp')        // z = 15
   gSteppy      = plot.append('g').attr('id', 'steppygrp')      // z = 16
   gRosy        = plot.append('g').attr('id', 'rosygrp')        // z = 17
@@ -4075,32 +4075,31 @@ function updateContextOldRoad() {
   }
 }
 
-// Creates or updates vertical lines for odometer resets
-function updateOdomResets() {
-  if (processing || opts.divGraph == null || road.length == 0 || bbr.oresets.length == 0)
+// Creates or updates vertical lines for tarings (including odometer resets)
+function updateTarings() {
+  if (processing || opts.divGraph == null || road.length == 0 || bbr.tarings.length == 0)
     return
 
-  // Create, update and delete vertical knot lines
-  const orelt = gOResets.selectAll(".oresets").data(bbr.oresets)
-  if (opts.roadEditor) { orelt.remove(); return }
-  orelt.exit().remove()
-  orelt
+  // Create, update, and delete vertical knot lines
+  const trelt = gTarings.selectAll(".oresets").data(bbr.tarings) //TODOT: tarings
+  if (opts.roadEditor) { trelt.remove(); return }
+  trelt.exit().remove()
+  trelt
     .attr("x1", function(d){ return nXSc(d*SMS) })
     .attr("y1", 0)
     .attr("x2", function(d){ return nXSc(d*SMS) })
     .attr("y2", plotbox.height)
-  orelt.enter().append("svg:line")
-    .attr("class","oresets")
-    .attr("id", function(d,i) { return i })
-    .attr("name", function(d,i) { return "oreset"+i })
+  trelt.enter().append("svg:line")
+    .attr("class", "oresets") //TODOT: tarings
+    .attr("id", function(d,i){ return i })
+    .attr("name", function(d,i) { return "oreset"+i }) //TODOT: taring
     .attr("x1", function(d){ return nXSc(d*SMS) })
     .attr("y1", 0)
     .attr("x2", function(d){ return nXSc(d*SMS) })
     .attr("y2", plotbox.height)
     .attr("stroke", "rgb(200,200,200)") 
-      .style("stroke-dasharray", 
-             (opts.odomReset.dash)+","+(opts.odomReset.dash)) 
-    .attr("stroke-width",opts.odomReset.width)
+      .style("stroke-dasharray", (opts.taring.dash)+","+(opts.taring.dash))
+    .attr("stroke-width", opts.taring.width)
 }
 
 function updateKnots() {
@@ -5383,7 +5382,7 @@ function updateGraphData(force = false) {
   updateRoads()
   updateDots()
   updateHorizon()
-  updateOdomResets()
+  updateTarings()
   updatePastText()
   updateAura()
   // Record current dot color so it can be retrieved from the SVG
@@ -5911,7 +5910,7 @@ this.xlinkLoaded = () => true
     @property {Boolean} yaw Which side of the YBR you want to be on, +1 or -1
     @property {Boolean} dir Which direction you'll go (usually same as yaw)
     @property {Boolean} kyoom Cumulative; plot vals as sum of those entered so far
-    @property {Boolean} odom Treat zeros as accidental odom resets
+    @property {Boolean} odom Treat zeros as accidental odom resets (deprecated)
     @property {Boolean} monotone Whether data is necessarily monotone
     @property {String} aggday Aggregation function for the day's official value
 */

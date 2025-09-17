@@ -51,8 +51,8 @@ svg: top element
         g (class=grid):
           g (class=grid): vertical grid lines (!roadeditor)
           line (class=pastline): Vertical line showing asof (roadeditor only)
-        g (class=oresetgrp):
-          line (class=oresets): Vertical lines to indicate odometer resets
+        g (class=taringgrp):
+          line (class=tarings): Vertical lines to indicate tarings (including odometer resets)
           ...
         g (class=knotgrp):
           line (class=knots): Vertical knots for editing time (roadeditor)

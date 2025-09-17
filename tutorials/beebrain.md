@@ -106,8 +106,8 @@ following members may be useful:
     non-empty timestamp.  For a given unixtime t, allvals[t] contains
     an array with entries of the form `[vtotal, comment, voriginal]`.
   
-  * {@link beebrain#oresets oresets} : Array of unix timestamps where
-    odometer reset was performed
+  * {@link beebrain#tarings tarings} : Array of unix timestamps where
+    tarings (previously: odometer resets) happened
   
   * {@link beebrain#derails derails} : Array of unix timestamps where
     the goal derailed

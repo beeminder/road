@@ -108,7 +108,7 @@ tmax     : null,   //   ((tmin,tmax), (vmin,vmax)) give the plot range, ie, they
 vmin     : null,   //   control zooming/panning; they default to the entire
 vmax     : null,   //   plot -- initial datapoint to past the akrasia horizon
 kyoom    : false,  // Cumulative; plot values as the sum of those entered so far
-odom     : false,  // Treat zeros as accidental odom resets
+odom     : false,  // Treat zeros as accidental odom resets (deprecated)
 maxflux  : 0,      // User-specified max daily fluctuation                      
 monotone : false,  // Whether the data is necessarily monotone (used in limsum) 
 aggday   : null,   // How to aggregate points on the same day, max/sum/last/etc
@@ -239,7 +239,7 @@ let rosydata = []   // Derived data corresponding to the rosy line
 let fuda = []       // Future data
 let undoBuffer = [] // Array of previous roads for undo
 let redoBuffer = [] // Array of future roads for redo
-let oresets = []    // Odometer resets
+let tarings = []    // Timestamps of tarings (generalization of odometer resets)
 let derails = []    // Derailments
 let hollow = []     // Hollow points
 let allvals = {}    // Hash mapping timestamps to list of datapoint values
@@ -309,7 +309,7 @@ function initGlobals() {
   
   gol = {}
   gol.siru = null
-  oresets = []
+  tarings = []
   derails = []
   hashhash = {}
   
@@ -462,7 +462,7 @@ function computeRosy() {
 // 1. "#SELFDESTRUCT" (and for backward compat: /^PESSIMISTIC PRESUMPTION/)
 // 2. "#DERAIL" (and for backward compatibility: /^RECOMMITTED ON/)
 // 3. "#RESTART" (and for backward compatibility: /^RESTARTED ON/)
-// 4. "#TARE" (not implemented yet; see gissue #216)
+// 4. "#TARE" (replaces/generalizes odometer resets; see gissue #216)
 // 5. (/^RESTART PLACEHOLDER/ has been thankfully killed)
 
 // Take, eg, "shark jumping #yolo :) #shark" and return {"#yolo", "#shark"}
@@ -492,6 +492,10 @@ function rerailed(s) {
   return /(?:^|\s)#DERAIL(?=$|\s)/.test(s) ||
     s.startsWith("RECOMMITTED ON") // backward compatibility; see magic strings
 }
+
+// Whether datapoint comment string s has the magic string indicating it's a
+// tare datapoint (odometer reset replacement)
+function tared(s) { return /(?:^|\s)#TARE(?=$|\s)/.test(s) }
 
 // Convenience function to extract values from datapoints
 function dval(d) { return d[1] }
@@ -573,8 +577,12 @@ function procData() {
   for (i = 0; i < derails.length; i++)
     if (derails[i][0] < 1562299200/*2019-07-05*/) derails[i][0] -= SID
   
-  if (gol.odom) {               // identify, record, and process odometer resets
-    oresets = data.filter(e => e[1] == 0).map(e => e[0])
+  br.tareify(data, tared)
+  tarings = data.filter(e => tared(e[2])).map(e => e[0])
+  
+  // Safety net: if odom=true AND no tare-tagged datapoints, use old odomify
+  if (gol.odom && tarings.length === 0) {
+    tarings = data.filter(e => e[1] == 0).map(e => e[0])
     br.odomify(data)
   }
   const nonfuda = data.filter(e => e[0] <= gol.asof)
@@ -1107,9 +1115,11 @@ function procParams() {
           order: 1, // cascade 3 biquad filters (max: 12)
           characteristic: 'bessel',
           Fs: 1000, // sampling frequency
-          Fc: 50, // cutoff frequency / center frequency for bandpass, bandstop, peak
+          Fc: 50, // cutoff frequency / center frequency for 
+                  // bandpass, bandstop, peak
           gain: 0, // gain for peak, lowshelf and highshelf
-          preGain: false // adds one constant multiplication for highpass and lowpass
+          preGain: false // adds one constant multiplication for highpass 
+                         // and lowpass
           // k = (1 + cos(omega)) * 0.5 / k = 1 with preGain == false
         })
         let mavFilter = new Fili.IirFilter(mavFilterCoeffs)
@@ -1123,7 +1133,7 @@ function procParams() {
         // prevent erroneous filter behavior at the boundaries. This
         // is undone after filtering to restore the original offsets
         let dst = data[0][1], dend = data[dl-1][1]
-        let tst = data[0][0], dsl = (dend - dst)/(data[dl-1][0] - tst)
+        let tst = data[0][0], dsl = (dend - dst) / (data[dl-1][0] - tst)
         let unfilt = [0], ind = 0, newind = false
         let slope = (data[ind+1][1]-data[ind][1])/(data[ind+1][0]-data[ind][0])
         for (let i = 1; i < newx.length; i++) {
@@ -1136,7 +1146,7 @@ function procParams() {
             if (newx[i] > data[ind+1][0]) {
               ind++
               if (ind == data.length) break
-              slope = (data[ind+1][1]-data[ind][1])/(data[ind+1][0]-data[ind][0])
+              slope= (data[ind+1][1]-data[ind][1])/(data[ind+1][0]-data[ind][0])
             }
             unfilt.push(data[ind][1] + (newx[i]-data[ind][0])*slope
                         -dst-dsl*(newx[i]-tst))
@@ -1682,8 +1692,8 @@ this.allvals = allvals
 this.fuda = fuda
 /** Holds the flatlined datapoint */
 this.flad = flad
-/** Holds an array of odometer resets */
-this.oresets = oresets
+/** Holds an array of taring timestamps (generalization of odometer resets) */
+this.tarings = tarings //TODOT
 /** Holds an array of derailments */
 this.derails = derails
 

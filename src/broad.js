@@ -932,6 +932,33 @@ self.odomify = (d) => {
   }
 }
 
+// NB: The odomify function above is being phased out in favor of tareify.
+
+// Transform datapoints per #TARE tags in the comments. See gissue #216.
+// This generalizes the old odometer reset feature. 
+// A tared datapoint means don't count that datapoint itself but treat all
+// subsequent datapoints as relative to it. I.e., replace each subsequent 
+// datapoint with the difference between it and the tared datapoint.
+// relative to it. Like these datapoints:
+//    70 
+//   100 #TARE
+//   150
+// will be transformed into:
+//    70
+//    70
+//   120
+self.tareify = (data, taredFn) => {
+  if (!data || !data.length) return  
+  const values = data.map(e => e[1])
+  const tareFlags = values.map((_, i) => taredFn(data[i][2]))
+  let cd = 0 // cumulative delta to subtract
+  const adjustedValues = values.map((x, i) => {
+    if (tareFlags[i]) cd += x - (i === 0 ? 0 : values[i-1])
+    return x - cd
+  })  
+  data.forEach((e, i) => { e[1] = adjustedValues[i] }) // update data in place
+}
+
 // Utility function for stepify. Takes a list of datapoints sorted by x-value
 // and a given x-value and finds the most recent y-value (the one with the 
 // greatest x-value in d that's less than or equal to the given x). 
