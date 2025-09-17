@@ -345,7 +345,21 @@ async function create( id, pproduct ) {
     console.log(`Attempting to launch Puppeteer with product ${pproduct}...`);
     const browser = await puppeteer.launch({ 
       product: pproduct,
-      args: ['--no-sandbox', '--allow-file-access-from-files', '--log-level=3'],
+      args: [
+        '--no-sandbox', 
+        '--allow-file-access-from-files', 
+        '--disable-web-security', 
+        '--log-level=3',
+        // GPU-related flags to fix Vulkan warnings (according to claude)
+        '--disable-gpu',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-features=IsolateOrigins,site-per-process'
+      ],
+      // Add headless mode explicitly
+      headless: 'new',
       // Add more detailed logging
       dumpio: true
     });
