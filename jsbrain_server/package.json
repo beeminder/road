@@ -1,6 +1,6 @@
 {
   "name": "bbserver",
-  "version": "2025.09.18-a",
+  "version": "2025.09.18-c",
   "description": "Beebrain: Node server for generating Beeminder graphs",
   "main": "index.js",
   "scripts": {
