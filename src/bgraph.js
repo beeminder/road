@@ -293,7 +293,7 @@ const ErrMsgs = [ "Could not find goal (.bb) file.",
                   "Beeminder error" ]
 
 /** This atrocity attempts to determine whether the page was loaded from a 
-    mobile device. It might be from 2019 and in want of updating. */
+    mobile device. It might be from 2019 and be in dire need of updating. */
 const onMobileOrTablet = function() {
   if (typeof navigator == 'undefined' && typeof window == 'undefined') 
     return false
@@ -855,7 +855,7 @@ function createGraph() {
     .style("font-size", "80%")
     .attr('text-anchor', 'middle')
   
-  // Order here determines z-order... 
+  // Order here determines z-order...
   // (The commented z-values are to remember previous order for experimenting)
   gPB          = plot.append('g').attr('id', 'pastboxgrp')     // z = 01
   gYBHP        = plot.append('g').attr('id', 'ybhpgrp')        // z = 02
@@ -870,7 +870,7 @@ function createGraph() {
   gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp') // z = 11
   gBullseye    = plot.append('g').attr('id', 'bullseyegrp')    // z = 12
   gGrid        = plot.append('g').attr('id', 'grid')           // z = 13
-  gTarings     = plot.append('g').attr('id', 'oresetgrp')      // z = 14 //TODOT: taringgrp
+  gTarings     = plot.append('g').attr('id', 'taringgrp')      // z = 14
   gKnots       = plot.append('g').attr('id', 'knotgrp')        // z = 15
   gSteppy      = plot.append('g').attr('id', 'steppygrp')      // z = 16
   gRosy        = plot.append('g').attr('id', 'rosygrp')        // z = 17
@@ -1043,7 +1043,8 @@ function resizeGraph() {
   xAxisObjT.attr("transform", "translate("+plotbox.x+","+(plotpad.top)+")")
     .call(xAxisT.scale(nXSc))
 
-  gRedTape.select('rect').attr('width', plotbox.width).attr('height', plotbox.height)
+  gRedTape.select('rect').attr('width',  plotbox.width)
+                         .attr('height', plotbox.height)
   gRedTape.select('text').attr('x', plotbox.width/2)
     
   ySc.range( [0, plotbox.height])
@@ -4081,7 +4082,7 @@ function updateTarings() {
       || bbr.tarings.length == 0) return
 
   // Create, update, and delete vertical knot lines
-  const trelt = gTarings.selectAll(".oresets").data(bbr.tarings) //TODOT: tarings
+  const trelt = gTarings.selectAll(".tarings").data(bbr.tarings)
   if (opts.roadEditor) { trelt.remove(); return }
   trelt.exit().remove()
   trelt
@@ -4090,9 +4091,9 @@ function updateTarings() {
     .attr("x2", function(d){ return nXSc(d*SMS) })
     .attr("y2", plotbox.height)
   trelt.enter().append("svg:line")
-    .attr("class", "oresets") //TODOT: tarings
+    .attr("class", "tarings")
     .attr("id", function(d,i){ return i })
-    .attr("name", function(d,i) { return "oreset"+i }) //TODOT: taring
+    .attr("name", function(d,i) { return "taring"+i })
     .attr("x1", function(d){ return nXSc(d*SMS) })
     .attr("y1", 0)
     .attr("x2", function(d){ return nXSc(d*SMS) })
@@ -5467,7 +5468,7 @@ this.maxDataDays = ( days ) => {
 
 /** Sets/gets the reverseTable option. Updates the table if
  the option is changed.  
- @param {Boolean} flag Set/reset the option*/
+ @param {Boolean} flag Set/reset the option */
 this.reverseTable = ( flag ) => {
   if (arguments.length > 0) {
     opts.reverseTable = flag
@@ -5496,7 +5497,7 @@ this.tableUpdateOnDrag = ( flag ) => {
 }
 
 /** Sets/gets the tableAutoScroll option.  
- @param {Boolean} flag Set/reset the option*/
+ @param {Boolean} flag Set/reset the option */
 this.tableAutoScroll = ( flag ) => {
   if (arguments.length > 0) opts.tableAutoScroll = flag
   return opts.tableAutoScroll
