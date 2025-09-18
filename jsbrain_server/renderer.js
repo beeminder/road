@@ -5,6 +5,7 @@ const fs = require('fs')
 const gm = require('gm').subClass({imageMagick: true})
 
 const pageTimeout = 40 // Seconds to wait until giving up on generate.html
+const maxConcurrentRenders = 3 // Limit concurrent renders per worker
 
 class Renderer {
   
@@ -12,6 +13,20 @@ class Renderer {
     this.browser = browser
     this.id = id
     this.pages = []
+    this.activeSemaphore = 0
+    this.cancelledRequests = new Set()
+    this.maxPages = 10 // Cap the number of pages to prevent resource exhaustion
+  }
+
+  // Cancel a specific render request
+  cancelRender(rid) {
+    this.cancelledRequests.add(rid)
+    console.log(`(${this.id}:${rid}) Render cancelled`)
+  }
+
+  // Check if a request was cancelled
+  isCancelled(rid) {
+    return this.cancelledRequests.has(rid)
   }
 
   // This method overrides stdout and captures the output of
@@ -23,7 +38,11 @@ class Renderer {
     function process_output(output) { captured += output }
     
     process.stdout.write = process_output
-    console.timeEnd( tagtxt )
+    try {
+      console.timeEnd( tagtxt )
+    } catch (e) {
+      captured += `Error in timeEnd: ${e.message}`
+    }
     process.stdout.write = real_stdout
     return captured
   }
@@ -34,7 +53,7 @@ class Renderer {
   // Renders and returns an available page (tab) within the puppeteer
   // chrome instance. Creates one if all existing ones are found to be
   // busy
-  async renderPage( url, tag, msglog, errlog ) {
+  async renderPage( url, tag, msglog, errlog, rid ) {
     let gotoOptions = { timeout: pageTimeout * 1000, waitUntil: 'load' }
 
     try {
@@ -46,9 +65,18 @@ class Renderer {
           pageinfo = this.pages[i]
           pageinfo.busy = true
           // Check if page was closed by timeout, recreate if necessary
-          if (!pageinfo.page) {
+          if (!pageinfo.page || pageinfo.page.isClosed()) {
             console.log(tag+"renderer.js: Reinstantiating page in slot "+i)
-            pageinfo.page = await this.browser.newPage()
+            try {
+              pageinfo.page = await this.browser.newPage()
+              // Set explicit timeouts
+              await pageinfo.page.setDefaultNavigationTimeout(pageTimeout * 1000)
+              await pageinfo.page.setDefaultTimeout(pageTimeout * 1000)
+            } catch (e) {
+              console.error(tag+"Failed to create new page:", e)
+              pageinfo.busy = false
+              return null
+            }
           }
           page = pageinfo.page
           if (pageinfo.timeout) {
@@ -58,12 +86,29 @@ class Renderer {
           break
         }
       }
-      if (!pageinfo) {
-        // If all existing pages are found to be busy, create a new one
+      if (!pageinfo && numpages < this.maxPages) {
+        // If all existing pages are found to be busy, create a new one (up to limit)
         console.log(tag+"renderer.js: Creating new page in slot "+numpages)
-        page = await this.browser.newPage()
-        pageinfo = {page: page, busy: true, slot: numpages}
-        this.pages.push( pageinfo )
+        try {
+          page = await this.browser.newPage()
+          // Set explicit timeouts
+          await page.setDefaultNavigationTimeout(pageTimeout * 1000)
+          await page.setDefaultTimeout(pageTimeout * 1000)
+          pageinfo = {page: page, busy: true, slot: numpages}
+          this.pages.push( pageinfo )
+        } catch (e) {
+          console.error(tag+"Failed to create new page:", e)
+          return null
+        }
+      } else if (!pageinfo) {
+        // All pages busy and at max limit
+        throw new Error(`All ${this.maxPages} pages are busy, cannot create more`)
+      }
+
+      // Check for cancellation before proceeding
+      if (this.isCancelled(rid)) {
+        pageinfo.busy = false
+        throw new Error('Request cancelled')
       }
 
       // Install new loggers onto the page for this render instance. Will be
@@ -76,7 +121,7 @@ class Renderer {
       page.on('error',     errlog)
       page.on('pageerror', errlog)
       page.on('requestfailed', (request) => {
-        console.error(`Request failed: ${request.url()} ${request.failure().errorText}`);
+        console.error(`${tag}Request failed: ${request.url()} ${request.failure().errorText}`);
       });
 
       // Render the page and return result
@@ -88,13 +133,13 @@ class Renderer {
         page.off('console',   msglog)
         page.off('error',     errlog)
         page.off('pageerror', errlog)
-        console.log(error)
+        console.error(tag+"Page navigation failed:", error.message)
         pageinfo.busy = false
         return null
       } 
       return pageinfo
     } catch (error) {
-      console.error('Error in renderPage:', error);
+      console.error(tag+'Error in renderPage:', error.message);
       throw error;
     }
   }
@@ -114,6 +159,22 @@ class Renderer {
       the graph in PNG and SVG forms as well as the JSON output and
       closes the tab afterwards */
   async render(inpath, outpath, slug, rid, nograph) {
+    // Implement concurrency limiting
+    if (this.activeSemaphore >= maxConcurrentRenders) {
+      throw new Error(`Too many concurrent renders (${this.activeSemaphore}/${maxConcurrentRenders})`)
+    }
+    
+    this.activeSemaphore++
+    
+    try {
+      return await this._doRender(inpath, outpath, slug, rid, nograph)
+    } finally {
+      this.activeSemaphore--
+      this.cancelledRequests.delete(rid) // Clean up cancellation tracking
+    }
+  }
+  
+  async _doRender(inpath, outpath, slug, rid, nograph) {
     let page = null
     let pagelog = {msg:""}
     let pageinfo = null
@@ -142,6 +203,11 @@ class Renderer {
       }
     }
     
+    // Check for cancellation
+    if (this.isCancelled(rid)) {
+      return { error: 'Request cancelled', msgbuf: msgbuf }
+    }
+    
     const bburl = encodeURIComponent(inpath)+"/"+encodeURIComponent(slug)+".bb"
 
     const newid = uuidv4();
@@ -163,9 +229,13 @@ class Renderer {
       var svgftmp = this.tempify(svgf, newid)
       var thmftmp = this.tempify(thmf, newid)
       // Remove any existing graph and thumbnail files
-      if (fs.existsSync(imgf)) fs.unlinkSync( imgf )
-      if (fs.existsSync(svgf)) fs.unlinkSync( svgf )
-      if (fs.existsSync(thmf)) fs.unlinkSync( thmf )
+      try {
+        if (fs.existsSync(imgf)) fs.unlinkSync( imgf )
+        if (fs.existsSync(svgf)) fs.unlinkSync( svgf )
+        if (fs.existsSync(thmf)) fs.unlinkSync( thmf )
+      } catch (e) {
+        msgbuf += (tag+" Warning: Could not remove existing files: "+e.message+"\n")
+      }
     }
     const url
           = `file://${__dirname}/generate.html?bb=file://${bburl}&NOGRAPH=${!graphit}`
@@ -176,12 +246,16 @@ class Renderer {
       // Load and render the page, extract html
       var time_id = tag+` Page creation (${slug})`
       console.time(time_id)
-      pageinfo = await this.renderPage(url,tag, msglog, errlog)
+      pageinfo = await this.renderPage(url,tag, msglog, errlog, rid)
       if (pageinfo) page = pageinfo.page
       if (time_id != null) msgbuf += this.timeEndMsg(time_id)
       time_id = null
 
       if (page) {
+        // Check for cancellation after page creation
+        if (this.isCancelled(rid)) {
+          return { error: 'Request cancelled', msgbuf: msgbuf }
+        }
 
         time_id = tag+` Page render (${slug})`
         console.time(time_id)
@@ -203,16 +277,27 @@ class Renderer {
       
         // Extract goal stats from the JSON field and extend with file locations
         const jsonHandle = await page.$('#goaljson');
+        if (!jsonHandle) {
+          let err = "Could not find #goaljson element on page!"
+          msgbuf += (tag+" renderer.js ERROR: "+err+"\n")
+          return { error:err, msgbuf: msgbuf }
+        }
+        
         jsonstr = await page.evaluate(json => json.innerHTML, jsonHandle);
         if (jsonstr == "" || jsonstr == null) {
           let err = "Could not extract JSON from page!"
           msgbuf += (tag+" renderer.js ERROR: "+err+"\n")
-
           return { error:err, msgbuf: msgbuf }
         }
-        //console.log(`DEBUG:\n${jsonstr}\n`) // TODO
-        json = JSON.parse(jsonstr)
-        //console.log("DEBUG: parse error?") // TODO
+        
+        try {
+          json = JSON.parse(jsonstr)
+        } catch (parseError) {
+          let err = `Could not parse JSON: ${parseError.message}. JSON start: ${jsonstr.substring(0, 200)}`
+          msgbuf += (tag+" renderer.js ERROR: "+err+"\n")
+          return { error:err, msgbuf: msgbuf }
+        }
+        
         json.graphurl=this.BBURL()+imgf
         json.svgurl=this.BBURL()+svgf
         json.thumburl=this.BBURL()+thmf
@@ -220,32 +305,57 @@ class Renderer {
         // Write to the goal JSON, using an intermediate temp file
         let jf = `${outpath}/${slug}.json`
         let jtmp = this.tempify(jf, newid)
-        if (fs.existsSync(jf)) fs.renameSync(jf, jtmp )
-        fs.writeFileSync(jtmp, JSON.stringify(json));  
-        if (fs.existsSync(jtmp)) fs.renameSync(jtmp, jf )
-        // Display statsum on node console
-        //process.stdout.write(tag+json.statsum.replace(/\\n/g, '\n'+tag))
-        //process.stdout.write("\n")
+        try {
+          if (fs.existsSync(jf)) fs.renameSync(jf, jtmp )
+          fs.writeFileSync(jtmp, JSON.stringify(json));  
+          if (fs.existsSync(jtmp)) fs.renameSync(jtmp, jf )
+        } catch (fileError) {
+          msgbuf += (tag+" renderer.js ERROR writing JSON: "+fileError.message+"\n")
+          return { error: fileError.message, msgbuf: msgbuf }
+        }
         
         if (graphit) {
           // Extract and write the SVG file
           const svgHandle = await page.$('svg')
+          if (!svgHandle) {
+            let err = "Could not find SVG element on page!"
+            msgbuf += (tag+" renderer.js ERROR: "+err+"\n")
+            return { error:err, msgbuf: msgbuf }
+          }
+          
           svg = await page.evaluate(svg => svg.outerHTML, svgHandle)
           svg = '<?xml version="1.0" standalone="no"?>\n'+svg
           
           // write to the temp SVG file and rename
-          fs.writeFileSync(svgftmp, svg);  
-          if (fs.existsSync(svgftmp)) fs.renameSync(svgftmp, svgf )
+          try {
+            fs.writeFileSync(svgftmp, svg);  
+            if (fs.existsSync(svgftmp)) fs.renameSync(svgftmp, svgf )
+          } catch (svgError) {
+            msgbuf += (tag+" renderer.js ERROR writing SVG: "+svgError.message+"\n")
+            return { error: svgError.message, msgbuf: msgbuf }
+          }
 
           // Extract the bounding box for the zoom area to generate
           // the thumbnail cropping boundaries
           var za = await page.$('.zoomarea')
+          if (!za) {
+            let err = "Could not find .zoomarea element on page!"
+            msgbuf += (tag+" renderer.js ERROR: "+err+"\n")
+            return { error:err, msgbuf: msgbuf }
+          }
+          
           var zi = await page.evaluate(()=>{
             var z = document.getElementsByClassName('zoomarea')[0]
+            if (!z) return null
             var b = z.getBBox()
             return {x:Math.round(b.x+1), y:Math.round(b.y),
                     width:Math.round(b.width-2), height:Math.round(b.height)};})
-          //console.info("Zoom area bounding box is "+JSON.stringify(zi))
+          
+          if (!zi) {
+            let err = "Could not get zoom area bounding box!"
+            msgbuf += (tag+" renderer.js ERROR: "+err+"\n")
+            return { error:err, msgbuf: msgbuf }
+          }
         
           // Take a screenshot to generate PNG files
           time_id = tag+` Screenshot (${slug})`
@@ -254,49 +364,85 @@ class Renderer {
           // Extract SVG boundaries on page
           const rect = await page.evaluate(s => {
             const element = document.querySelector(s);
+            if (!element) return null
             const {x, y, width, height} = element.getBoundingClientRect();
             return {left: x, top: y, width, height, id: element.id};
           }, "svg");  
-          png = await page.screenshot({path:imgftmp, 
-                                       clip:{x:rect.left, y:rect.top, 
-                                             width:rect.width, height:rect.height}})
+          
+          if (!rect) {
+            let err = "Could not get SVG boundaries!"
+            msgbuf += (tag+" renderer.js ERROR: "+err+"\n")
+            return { error:err, msgbuf: msgbuf }
+          }
+          
+          try {
+            png = await page.screenshot({path:imgftmp, 
+                                         clip:{x:rect.left, y:rect.top, 
+                                               width:rect.width, height:rect.height}})
+          } catch (screenshotError) {
+            msgbuf += (tag+" renderer.js ERROR taking screenshot: "+screenshotError.message+"\n")
+            return { error: screenshotError.message, msgbuf: msgbuf }
+          }
 
           // Generate palette optimized thumbnail thru cropping with ImageMagick
-          //var thmratio = 140/zi.height
-          //var thmw = 212-4 // = Math.round(zi.width*thmratio)-4
-          //var thmh = 140-4 // = Math.round(zi.height*thmratio)-4
-          var res = await new Promise( (resolve, reject) => {
-            gm(imgftmp)
-              .in('-crop').in(zi.width+"x"+zi.height+"+"+zi.x+"+"+zi.y)
-              .in('-resize').in('208x136!')
-              .in('-bordercolor').in(json.color)
-              .in('-border').in('2x2')
-              .in('-filter').in('Box')
-              .in('-remap').in('palette.png')
-              .in('-colors').in('256')
-              .in('+dither')
-              .in('+repage')
-              .write(thmftmp, (err) => {
-                if (err) reject(err)
-                resolve(null)
-              })
-          })
-          if (fs.existsSync(thmftmp)) fs.renameSync(thmftmp, thmf )
+          try {
+            var res = await new Promise( (resolve, reject) => {
+              const timeout = setTimeout(() => {
+                reject(new Error('ImageMagick thumbnail generation timeout'))
+              }, 30000) // 30 second timeout
+              
+              gm(imgftmp)
+                .in('-crop').in(zi.width+"x"+zi.height+"+"+zi.x+"+"+zi.y)
+                .in('-resize').in('208x136!')
+                .in('-bordercolor').in(json.color)
+                .in('-border').in('2x2')
+                .in('-filter').in('Box')
+                .in('-remap').in('palette.png')
+                .in('-colors').in('256')
+                .in('+dither')
+                .in('+repage')
+                .write(thmftmp, (err) => {
+                  clearTimeout(timeout)
+                  if (err) reject(err)
+                  else resolve(null)
+                })
+            })
+            if (fs.existsSync(thmftmp)) fs.renameSync(thmftmp, thmf )
+          } catch (thumbError) {
+            msgbuf += (tag+" renderer.js ERROR generating thumbnail: "+thumbError.message+"\n")
+            return { error: thumbError.message, msgbuf: msgbuf }
+          }
           
           // Generate final graph PNG by palette remapping using ImageMagick
-          res = await new Promise( (resolve, reject) => {
-            gm(imgftmp)
-              .in('-filter').in('Box')
-              .in('-remap').in('palette.png')
-              .in('-colors').in('256')
-              .in('+dither')
-              .write(imgftmp, (err) => {
-                if (err) reject(err)
-                resolve(null)
-              })
-          })
+          try {
+            res = await new Promise( (resolve, reject) => {
+              const timeout = setTimeout(() => {
+                reject(new Error('ImageMagick PNG generation timeout'))
+              }, 30000) // 30 second timeout
+              
+              gm(imgftmp)
+                .in('-filter').in('Box')
+                .in('-remap').in('palette.png')
+                .in('-colors').in('256')
+                .in('+dither')
+                .write(imgftmp, (err) => {
+                  clearTimeout(timeout)
+                  if (err) reject(err)
+                  else resolve(null)
+                })
+            })
+          } catch (pngError) {
+            msgbuf += (tag+" renderer.js ERROR generating final PNG: "+pngError.message+"\n")
+            return { error: pngError.message, msgbuf: msgbuf }
+          }
         }
-        if (fs.existsSync(imgftmp)) fs.renameSync(imgftmp, imgf )
+        
+        try {
+          if (fs.existsSync(imgftmp)) fs.renameSync(imgftmp, imgf )
+        } catch (renameError) {
+          msgbuf += (tag+" renderer.js WARNING: Could not rename final image: "+renameError.message+"\n")
+        }
+        
         if (time_id != null) msgbuf += this.timeEndMsg(time_id)
         time_id = null
 
@@ -312,26 +458,49 @@ class Renderer {
         return { error:err, msgbuf: msgbuf }
       }
     } finally {
-      if (page) {
+      if (page && pageinfo) {
         // UPDATE: Remove listeners using off() instead of removeListener()
-        page.off('console',   msglog)
-        page.off('error',     errlog)
-        page.off('pageerror', errlog)
+        try {
+          page.off('console',   msglog)
+          page.off('error',     errlog)
+          page.off('pageerror', errlog)
+        } catch (e) {
+          console.log(tag+"Warning: Could not remove page listeners:", e.message)
+        }
+        
         pageinfo.busy = false
-        pageinfo.timeout
-          = setTimeout(
-            function(){
-              if (pageinfo) {
-                if (pageinfo.page) {
-                  console.log(tag+"renderer.js: Closing page after timeout in slot "
-                              +pageinfo.slot)
-                  pageinfo.page.close()
-                }
-                pageinfo.page = null
-                pageinfo.timeout = null
-              } else
-                console.log("Warning: pageinfo=null in timeout to close page")
-            }, 10000)
+        
+        // Close page immediately if cancelled or on timeout
+        if (this.isCancelled(rid)) {
+          try {
+            console.log(tag+"renderer.js: Closing cancelled page in slot "+pageinfo.slot)
+            await page.close()
+            pageinfo.page = null
+          } catch (e) {
+            console.log(tag+"Warning: Could not close cancelled page:", e.message)
+            pageinfo.page = null
+          }
+        } else {
+          // Set timeout for page cleanup (shorter timeout)
+          pageinfo.timeout
+            = setTimeout(
+              async function(){
+                if (pageinfo) {
+                  if (pageinfo.page && !pageinfo.page.isClosed()) {
+                    try {
+                      console.log(tag+"renderer.js: Closing page after timeout in slot "
+                                  +pageinfo.slot)
+                      await pageinfo.page.close()
+                    } catch (e) {
+                      console.log(tag+"Warning: Could not close timed out page:", e.message)
+                    }
+                  }
+                  pageinfo.page = null
+                  pageinfo.timeout = null
+                } else
+                  console.log("Warning: pageinfo=null in timeout to close page")
+              }, 5000) // Reduced from 10000 to 5000
+        }
       }
     }
     return {html: html, png: png, svg: svg, json: json, error:null, msgbuf: msgbuf}

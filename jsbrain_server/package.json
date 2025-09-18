@@ -10,6 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "cluster": "^0.7.7",
+    "codebuff": "^1.0.491",
     "content-disposition": "^0.5.4",
     "express": "^5.1.0",
     "gm": "^1.23.1",

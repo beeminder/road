@@ -72,6 +72,7 @@ if (cluster.isMaster) {
   let reqcnt = 0  // Keep track of request id for each worker thread
   let pending = 0 // Number of goals currently being processed
   let msgbuf = {} // Local buffer for message outputs 
+  let activerequests = new Map() // Track active requests for cleanup
   
   const port = process.env.PORT || 3000
 
@@ -130,6 +131,7 @@ if (cluster.isMaster) {
     if (!inpath)                     return res.status(400).send(noinpath)
     if ((!slug && (!user || !goal))) return res.status(400).send(nofile)
     if ((slug && (user || goal)))    return res.status(400).send(paramconflict)
+    
     var rid = reqcnt++ // Increment and store unique request id
     if (nograph == undefined || nograph == "false" || nograph == "0")
       nograph = false
@@ -142,8 +144,36 @@ if (cluster.isMaster) {
     if (!slug) slug = user+"+"+goal
     
     var tag = renderer.prf(rid)
+    
+    // Initialize request state
     pending++
     msgbuf[rid] = ""
+    activerequests.set(rid, { slug, startTime: Date.now() })
+    
+    // Set up cleanup function
+    const cleanup = () => {
+      if (activerequests.has(rid)) {
+        pending = Math.max(0, pending - 1)
+        delete msgbuf[rid]
+        activerequests.delete(rid)
+      }
+    }
+    
+    // Handle client disconnect
+    const onClientDisconnect = () => {
+      console.log(`${tag}Client disconnected for request ${rid} (${slug})`)
+      cleanup()
+      // Cancel the render if possible
+      if (renderer && renderer.cancelRender) {
+        renderer.cancelRender(rid)
+      }
+    }
+    
+    res.on('close', onClientDisconnect)
+    res.on('finish', () => {
+      // Normal completion - cleanup will happen in finally
+    })
+    
     console.log(tag+"============================================")
     console.log(tag+`Request url=${req.url}`)
 
@@ -179,45 +209,89 @@ if (cluster.isMaster) {
           if (!fs.existsSync(pyjson) || !fs.lstatSync(pyjson).isFile()) {
             msgbuf[rid] += (`${tag} Could not find file ${pyjson}\n`)
           } else {
-            let pyout = fs.readFileSync(pyjson, "utf8");
-            let res = compareJSON(resp.json, JSON.parse(pyout))
-            if (res.valid && !res.numeric && !res.summary) {
-              msgbuf[rid] += (`--** Success: Exact match!\n`)
-            } else {
-              if (res.valid) {
-                msgbuf[rid] += ("--** Error: Minor issues\n")
+            try {
+              let pyout = fs.readFileSync(pyjson, "utf8");
+              let res = compareJSON(resp.json, JSON.parse(pyout))
+              if (res.valid && !res.numeric && !res.summary) {
+                msgbuf[rid] += (`--** Success: Exact match!\n`)
               } else {
-                msgbuf[rid] += ("--** Error: CRITICAL!\n")
+                if (res.valid) {
+                  msgbuf[rid] += ("--** Error: Minor issues\n")
+                } else {
+                  msgbuf[rid] += ("--** Error: CRITICAL!\n")
+                }
+                msgbuf[rid] += (tag+`   ${res.result.replace(/\n/g, "\n"+tag+"   ")}`)
+                msgbuf[rid] += ("------------------\n")
               }
-              msgbuf[rid] += (tag+`   ${res.result.replace(/\n/g, "\n"+tag+"   ")}`)
-              msgbuf[rid] += ("------------------\n")
+            } catch (pyJsonError) {
+              msgbuf[rid] += (`${tag} Error reading/parsing pyjson: ${pyJsonError.message}\n`)
             }
           }
         }
       }
 
       msgbuf[rid] += renderer.timeEndMsg(timeid)
-      pending--;
-      
       msgbuf[rid] += (tag+"</BEEBRAIN> (pending: "+pending+")\n")
 
-      process.stdout.write(msgbuf[rid])
-      delete msgbuf[rid]
-
-      return res.status(200).send(JSON.stringify(json))
+      // Only send response if headers haven't been sent
+      if (!res.headersSent) {
+        res.setHeader('Content-Type', 'application/json')
+        return res.status(200).send(JSON.stringify(json))
+      }
     } catch (e) {
+      // Enhanced error logging with context
+      const errorContext = {
+        rid,
+        slug,
+        workerId: cluster.worker.id,
+        timestamp: new Date().toISOString(),
+        error: e.message,
+        stack: e.stack
+      }
+      console.error(`${tag}Render error:`, errorContext)
+      
+      if (msgbuf[rid]) {
+        msgbuf[rid] += (`${tag} ERROR: ${e.message}\n`)
+      }
+      
       // Make sure we only send one response
-      if (!res.headersSent)
-        return res.status(500).send(JSON.stringify({error: e.message}))
+      if (!res.headersSent) {
+        res.setHeader('Content-Type', 'application/json')
+        return res.status(500).send(JSON.stringify({
+          error: e.message,
+          rid: rid,
+          slug: slug,
+          timestamp: new Date().toISOString()
+        }))
+      }
+    } finally {
+      // Always cleanup, regardless of success or failure
+      if (msgbuf[rid]) {
+        process.stdout.write(msgbuf[rid])
+      }
+      cleanup()
     }
-    // Is the following unreachable?
-    return res.status(400).send(noinpath)
   })
 
   // Error page.
   app.use((err, req, res, next) => {
-    console.error(err)
-    res.status(500).send('{"error": "Beebrain 500 error"}')
+    const errorId = Date.now().toString(36)
+    console.error(`Global error handler [${errorId}]:`, {
+      error: err.message,
+      stack: err.stack,
+      workerId: cluster.worker.id,
+      url: req.url,
+      method: req.method
+    })
+    
+    if (!res.headersSent) {
+      res.setHeader('Content-Type', 'application/json')
+      res.status(500).send(JSON.stringify({
+        error: "Beebrain 500 error",
+        errorId: errorId,
+        timestamp: new Date().toISOString()
+      }))
+    }
   })
 
   // Create renderer and start server.
@@ -226,24 +300,49 @@ if (cluster.isMaster) {
     console.info(prefix+'Initialized renderer.')
     const bindip = process.env.JSBRAIN_SERVER_BIND || 'localhost'
       
-    app.listen(port, bindip, () => {
+    const server = app.listen(port, bindip, () => {
       console.info(prefix+`Listening on ${bindip}:${port}`)
     })
+    
+    // Configure server timeouts
+    server.keepAliveTimeout = 65000 // Slightly higher than typical load balancer timeout
+    server.headersTimeout = 66000   // Should be higher than keepAliveTimeout
+    server.requestTimeout = 120000  // 2 minutes max for any request
   }).catch(e => {
     console.error('Failed to initialize renderer:', e)
     // Exit with error code to ensure process manager restarts the service
     process.exit(1)
   })
 
-  // Add process error handlers
+  // Enhanced process error handlers with context
   process.on('uncaughtException', (err) => {
-    console.error('Uncaught exception:', err);
-    process.exit(1);
+    console.error('Uncaught exception in worker', cluster.worker.id, ':', {
+      error: err.message,
+      stack: err.stack,
+      activeRequests: activerequests.size,
+      pending: pending,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Give a small window for cleanup
+    setTimeout(() => {
+      process.exit(1);
+    }, 1000);
   });
 
   process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled rejection at:', promise, 'reason:', reason);
-    process.exit(1);
+    console.error('Unhandled rejection in worker', cluster.worker.id, ':', {
+      reason: reason,
+      promise: promise,
+      activeRequests: activerequests.size,
+      pending: pending,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Give a small window for cleanup
+    setTimeout(() => {
+      process.exit(1);
+    }, 1000);
   });
 }
 
