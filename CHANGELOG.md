@@ -1,6 +1,9 @@
 
 ## CHANGELOG
 
+* 2025.09.19 modernization of deprecated packages
+* 2025.09.18 lots of things we're forgetting to include in this changelog
+* 2025.09.17 tare tags
 * 2025.07.10 migrate from Glitch to Render and remember that a changelog exists
 * 2019.01.12 beebrain.js tutorials
 * 2019.01.12 Static graph axis limits consistent with pybrain

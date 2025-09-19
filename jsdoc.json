@@ -1,4 +1,10 @@
 {
+  "source": {
+    "include": [
+      "README.md",
+      "src"
+    ]
+  },
   "opts": {
     "destination": "./docs",
     "tutorials": "./tutorials"

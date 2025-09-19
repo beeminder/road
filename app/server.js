@@ -6,12 +6,10 @@ const BASEURL  = "https://www.beeminder.com/api/v1/users/";
 require("dotenv").config();
 
 const express = require("express");
-const https = require("https");
-//const http = require("http");  // #SCHDEL
 const bodyParser = require("body-parser");
 const session = require("express-session");
 const Sequelize = require("sequelize");
-const request = require("request");
+const axios = require("axios");
 
 const ver = require("../package.json").version; // version string
 
@@ -200,222 +198,184 @@ app.get("/logout", (req, resp) => {
   resp.redirect("/");
 });
 
-app.get("/getusergoals", (req, resp) => {
+app.get("/getusergoals", async (req, resp) => {
   //setsession(req);
   if (!req.session.access_token || !req.session.username) {
     resp.status(401).json({error: "Not authenticated"});
     return;
   }
-  beemGetUser({ username:     req.session.username,
-                access_token: req.session.access_token },
-    (goals) => { resp.send(JSON.stringify(goals)) },
-    (error) => { console.log(error) }
-  );
+  try {
+    const goals = await beemGetUser({
+      username:     req.session.username,
+      access_token: req.session.access_token,
+    });
+    resp.send(JSON.stringify(goals));
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send("An error occurred.");
+  }
 });
-app.get("/getgoaljson/:goal", (req, resp) => {
+app.get("/getgoaljson/:goal", async (req, resp) => {
   //setsession(req);
   if (!req.session.access_token || !req.session.username) {
     resp.redirect("/login");
+    return;
   }
-  //console.log("user: "+req.session.username+" "+req.session.access_token)
-  beemGetGraphParams({ username:     req.session.username,
-                       goalslug:     req.params.goal,
-                       access_token: req.session.access_token },
-    (goals) => { resp.send(JSON.stringify(goals)) },
-    (error) => { console.log(error) }
-  );
-});
-
-app.post("/submitroad/:goal", (req, resp) => {
-  //setsession(req);
-  if (!req.session.access_token || !req.session.username) {
-    resp.redirect("/login");
+  try {
+    const goals = await beemGetGraphParams({
+      username:     req.session.username,
+      goalname:     req.params.goal,
+      access_token: req.session.access_token,
+    });
+    resp.send(JSON.stringify(goals));
+  } catch (error) {
+    console.log(error);
+    resp.status(500).send("An error occurred.");
   }
-  beemSubmitRoad({ usr:          req.session.username,
-                   gol:          req.params.goal,
-                   access_token: req.session.access_token,
-                   roadall:      JSON.stringify(req.body.road) },
-    function (error, response, body) {
-      if (error) { return console.error("submit failed:", error) }
-      resp.send(body);
-      //console.log("success? ")
-      //console.log(body)
-    }
-  );
 });
 
-app.post("/data/:goal", (req, resp) => {
+app.post("/submitroad/:goal", async (req, resp) => {
   //setsession(req);
   if (!req.session.access_token || !req.session.username) {
     resp.redirect("/login");
+    return;
   }
-  beemSubmitPoint({ usr:          req.session.username,
-                    gol:          req.params.goal,
-                    access_token: req.session.access_token,
-                    daystamp:     req.body.daystamp,
-                    timestamp:    req.body.timestamp,
-                    value:        req.body.value,
-                    comment:      req.body.comment },
-    function (error, response, body) {
-      if (error) { return console.error("submit point failed:", error) }
-      resp.send(body);
-    }
-  );
+  try {
+    const body = await beemSubmitRoad({
+      usr:          req.session.username,
+      gol:          req.params.goal,
+      access_token: req.session.access_token,
+      roadall:      JSON.stringify(req.body.road),
+    });
+    resp.send(body);
+  } catch (error) {
+    console.error("submit failed:", error);
+    resp.status(500).send("An error occurred.");
+  }
 });
 
-app.delete("/data/:goal/:id", (req, resp) => {
+app.post("/data/:goal", async (req, resp) => {
   //setsession(req);
   if (!req.session.access_token || !req.session.username) {
     resp.redirect("/login");
+    return;
   }
-  beemDeletePoint({ usr:          req.session.username,
-                    gol:          req.params.goal,
-                    access_token: req.session.access_token,
-                    id:           req.params.id },
-    function (error, response, body) {
-      if (error) { return console.error("delete point failed:", error) }
-      resp.send(body);
-    }
-  );
+  try {
+    const body = await beemSubmitPoint({
+      usr:          req.session.username,
+      gol:          req.params.goal,
+      access_token: req.session.access_token,
+      daystamp:     req.body.daystamp,
+      timestamp:    req.body.timestamp,
+      value:        req.body.value,
+      comment:      req.body.comment,
+    });
+    resp.send(body);
+  } catch (error) {
+    console.error("submit point failed:", error);
+    resp.status(500).send("An error occurred.");
+  }
 });
 
-app.put("/data/:goal/:id", (req, resp) => {
+app.delete("/data/:goal/:id", async (req, resp) => {
   //setsession(req);
   if (!req.session.access_token || !req.session.username) {
     resp.redirect("/login");
+    return;
   }
-  beemUpdatePoint({ usr:          req.session.username,
-                    gol:          req.params.goal,
-                    access_token: req.session.access_token,
-                    id:           req.params.id,
-                    timestamp:    req.body.timestamp,
-                    value:        req.body.value,
-                    comment:      req.body.comment },
-    function (error, response, body) {
-      if (error) { return console.error("delete point failed:", error) }
-      resp.send(body);
-    }
-  );
+  try {
+    const body = await beemDeletePoint({
+      usr:          req.session.username,
+      gol:          req.params.goal,
+      access_token: req.session.access_token,
+      id:           req.params.id,
+    });
+    resp.send(body);
+  } catch (error) {
+    console.error("delete point failed:", error);
+    resp.status(500).send("An error occurred.");
+  }
+});
+
+app.put("/data/:goal/:id", async (req, resp) => {
+  //setsession(req);
+  if (!req.session.access_token || !req.session.username) {
+    resp.redirect("/login");
+    return;
+  }
+  try {
+    const body = await beemUpdatePoint({
+      usr:          req.session.username,
+      gol:          req.params.goal,
+      access_token: req.session.access_token,
+      id:           req.params.id,
+      timestamp:    req.body.timestamp,
+      value:        req.body.value,
+      comment:      req.body.comment,
+    });
+    resp.send(body);
+  } catch (error) {
+    console.error("update point failed:", error);
+    resp.status(500).send("An error occurred.");
+  }
 });
 
 // helper functions
-function beemSubmitRoad(params, callback) {
-  const options = {
-    url: BASEURL + "users/" + params.usr +
-         "/goals/" + params.gol + ".json",
-    method: "PUT",
-    json: true,
-    body: {
-      access_token: params.access_token,
-      roadall:      params.roadall,
-    },
+async function beemSubmitRoad(params) {
+  const url = `${BASEURL}${params.usr}/goals/${params.gol}.json`;
+  const body = {
+    access_token: params.access_token,
+    roadall:      params.roadall,
   };
-  request.put(options, callback);
+  const response = await axios.put(url, body);
+  return response.data;
 }
 
-function beemSubmitPoint(params, callback) {
-  let r = Math.random().toString(36).substring(7);
-  const options = {
-    url: BASEURL + params.usr + "/goals/" + params.gol + "/datapoints.json",
-    method: "POST",
-    json: true,
-    form: {
-      access_token: params.access_token,
-      daystamp:     params.daystamp,
-      comment:      params.comment,
-      value:        params.value,
-      requestid:    r,
-    },
-  };
-  request.post(options, callback);
-}
-
-function beemDeletePoint(params, callback) {
-  const options = {
-    url: BASEURL + params.usr + "/goals/" + params.gol +
-         "/datapoints/" + params.id + ".json",
-    method: "DELETE",
-    json: true,
-    form: {
-      access_token: params.access_token,
-    },
-  };
-  request.delete(options, callback);
-}
-
-function beemUpdatePoint(params, callback) {
-  const options = {
-    url: BASEURL + params.usr + "/goals/" + params.gol +
-         "/datapoints/" + params.id + ".json",
-    method: "PUT",
-    json: true,
-    form: {
-      access_token: params.access_token,
-      timestamp:    params.timestamp,
-      comment:      params.comment,
-      value:        params.value,
-    },
-  };
-  request.put(options, callback);
-}
-
-function beemGetUser(user, callback, error_callback = () => {}) {
-  const options = {
-    host: BHOST,
-    port: 443,
-    path: "/api/v1/users/" + user.username + 
-          ".json?access_token=" + user.access_token,
-    method: "GET",
-  };
-  const req = https.request(options, (res) => {
-    let data = "";
-    res
-      .on("data", (chunk) => { data = data + chunk })
-      .on("end", () => {
-        const userd = JSON.parse(data);
-        if (userd) {
-          //???? what's an error look like here?
-          callback(userd.goals);
-        } else {
-          error_callback(data);
-        }
-      });
+async function beemSubmitPoint(params) {
+  const r = Math.random().toString(36).substring(7);
+  const url = `${BASEURL}${params.usr}/goals/${params.gol}/datapoints.json`;
+  const data = new URLSearchParams({
+    access_token: params.access_token,
+    daystamp:     params.daystamp,
+    comment:      params.comment,
+    value:        params.value,
+    requestid:    r,
   });
-  req.on("error", (e) => {
-    console.log("problem with request: " + e.message);
-    error_callback(e.message);
-  });
-  req.write("");
-  req.end();
+  const response = await axios.post(url, data);
+  return response.data;
 }
 
-function beemGetGraphParams(usergoal, callback, error_callback = () => {}) {
-  const options = {
-    host: BHOST,
-    port: 443,
-    path: "/api/vx/users/" + usergoal.username +
-          "/goals/" + usergoal.goalslug +
-          "/graph.json?access_token=" + usergoal.access_token,
-    method: "GET",
-  };
-  const req = https.request(options, (res) => {
-    let data = "";
-    res
-      .on("data", (chunk) => { data = data + chunk })
-      .on("end", () => {
-        const goald = JSON.parse(data);
-        if (goald) {
-          //???? what's an error look like here?
-          callback(goald);
-        } else {
-          error_callback(data);
-        }
-      });
+async function beemDeletePoint(params) {
+  const url = 
+    `${BASEURL}${params.usr}/goals/${params.gol}/datapoints/${params.id}.json`;
+  const data = new URLSearchParams({ access_token: params.access_token });
+  const response = await axios.delete(url, { data });
+  return response.data;
+}
+
+async function beemUpdatePoint(params) {
+  const url = 
+    `${BASEURL}${params.usr}/goals/${params.gol}/datapoints/${params.id}.json`;
+  const data = new URLSearchParams({
+    access_token: params.access_token,
+    timestamp:    params.timestamp,
+    comment:      params.comment,
+    value:        params.value,
   });
-  req.on("error", (e) => {
-    console.log("problem with request: " + e.message);
-    error_callback(e.message);
-  });
-  req.write("");
-  req.end();
+  const response = await axios.put(url, data);
+  return response.data;
+}
+
+async function beemGetUser(user) {
+  const url = `https://${BHOST}/api/v1/users/${user.username}` + 
+              `.json?access_token=${user.access_token}`;
+  const response = await axios.get(url);
+  return response.data.goals;
+}
+
+async function beemGetGraphParams(usergoal) {
+  const url = `https://${BHOST}/api/vx/users/${usergoal.username}/goals/` +
+        `${usergoal.goalname}/graph.json?access_token=${usergoal.access_token}`;
+  const response = await axios.get(url);
+  return response.data;
 }
