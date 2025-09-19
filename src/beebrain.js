@@ -460,10 +460,13 @@ function computeRosy() {
 
 // Magic strings in datapoint comments: (see beeminder/beeminder/issues/2423)
 // 1. "#SELFDESTRUCT" (and for backward compat: /^PESSIMISTIC PRESUMPTION/)
+//    ("#THISWILLSELFDESTRUCT" also allowed as a variant)
 // 2. "#DERAIL" (and for backward compatibility: /^RECOMMITTED ON/)
 // 3. "#RESTART" (and for backward compatibility: /^RESTARTED ON/)
 // 4. "#TARE" (replaces/generalizes odometer resets; see gissue #216)
 // 5. (/^RESTART PLACEHOLDER/ has been thankfully killed)
+// Finally, @ signs are also allowed instead of #, which is useful if you don't
+// want the magic strings to show up as hashtags on the graph.
 
 // Take, eg, "shark jumping #yolo :) #shark" and return {"#yolo", "#shark"}
 // Pro tip: use scriptular.com to test these regexes
@@ -489,13 +492,13 @@ function hashextract(s) {
 // Whether datapoint comment string s has the magic string indicating it's when
 // a derailment happened (previously known as a recommit datapoint).
 function rerailed(s) { 
-  return /(?:^|\s)#DERAIL(?=$|\s)/.test(s) ||
+  return /(?:^|\s)[#@]DERAIL(?:$|\s)/.test(s) ||
     s.startsWith("RECOMMITTED ON") // backward compatibility; see magic strings
 }
 
 // Whether datapoint comment string s has the magic string indicating it's a
 // tare datapoint (odometer reset replacement)
-function tared(s) { return /(?:^|\s)#TARE(?=$|\s)/.test(s) }
+function tared(s) { return /(?:^|\s)[#@]TARE(?:$|\s)/.test(s) }
 
 // Convenience function to extract values from datapoints
 function dval(d) { return d[1] }
