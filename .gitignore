@@ -1,6 +1,9 @@
 .env
 .data
 .vscode
+*.swp
+.scratch
+.tool-versions
 node_modules
 chromium-data/*
 automon/debug.log
