@@ -491,7 +491,7 @@ function hashextract(s) {
 
 // Whether datapoint comment string s has the magic string indicating it's when
 // a derailment happened (previously known as a recommit datapoint).
-function rerailed(s) { 
+function derailed(s) { 
   return /(?:^|\s)[#@]DERAIL(?:$|\s)/.test(s) ||
     s.startsWith("RECOMMITTED ON") // backward compatibility; see magic strings
 }
@@ -572,7 +572,7 @@ function procData() {
   }
 
   // Identify derailments and construct a copied array
-  derails = data.filter(e => rerailed(e[2]))
+  derails = data.filter(e => derailed(e[2]))
   derails = derails.map(e => e.slice())
   // Legacy adjustment for before we switched from defining derailment as today
   // and yesterday being in the red to just yesterday in the red. As of 2021
@@ -644,8 +644,8 @@ function procData() {
       const vw = allvals[ct].map(e => e[1])
 
       // What we actually want for derailval is not this "worstval" but the
-      // agg'd value up to and including the rerail (nee recommit) datapoint 
-      // (see the rerailed() function) and nothing after that:
+      // agg'd value up to and including the derail (nee recommit) datapoint 
+      // (see the derailed() function) and nothing after that:
       derailval[ct] = gol.yaw < 0 ? bu.arrMax(vw) : bu.arrMin(vw)
       
       if (i < data.length) {
