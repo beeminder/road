@@ -6,7 +6,9 @@ const fs = require('fs')
 const gm = require('gm').subClass({imageMagick: true})
 
 const pageTimeout = 40 // Seconds to wait until giving up on generate.html
-const maxConcurrentRenders = 3 // Limit concurrent renders per worker
+const maxConcurrentRenders = 2 // Limit concurrent renders per worker
+const pageCreationTimeout = 10000 // 10 seconds timeout for newPage()
+const maxConsecutiveFailures = 3 // Restart browser after this many failures
 
 class Renderer {
   
@@ -16,7 +18,11 @@ class Renderer {
     this.pages = []
     this.activeSemaphore = 0
     this.cancelledRequests = new Set()
-    this.maxPages = 10 // Cap the number of pages to prevent resource exhaustion
+    this.maxPages = 5 // Reduced to prevent resource exhaustion
+    this.pageCreationMutex = false // Serialize page creation
+    this.pageCreationQueue = []
+    this.consecutiveFailures = 0
+    this.browserRestartPromise = null
   }
 
   // Cancel a specific render request
@@ -28,6 +34,87 @@ class Renderer {
   // Check if a request was cancelled
   isCancelled(rid) {
     return this.cancelledRequests.has(rid)
+  }
+
+  // Create page with timeout protection
+  async createPageWithTimeout(timeoutMs = pageCreationTimeout) {
+    const pagePromise = this.browser.newPage()
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Page creation timeout')), timeoutMs)
+    )
+    return Promise.race([pagePromise, timeoutPromise])
+  }
+
+  // Serialize page creation to prevent resource storms
+  async createPageSerialized() {
+    return new Promise(async (resolve, reject) => {
+      // Add to queue if creation is in progress
+      if (this.pageCreationMutex) {
+        this.pageCreationQueue.push({ resolve, reject })
+        return
+      }
+
+      this.pageCreationMutex = true
+      
+      try {
+        // Exponential backoff on consecutive failures
+        if (this.consecutiveFailures > 0) {
+          const delay = Math.min(1000 * Math.pow(2, this.consecutiveFailures - 1), 5000)
+          await new Promise(r => setTimeout(r, delay))
+        }
+
+        const page = await this.createPageWithTimeout()
+        
+        // Set explicit timeouts
+        await page.setDefaultNavigationTimeout(pageTimeout * 1000)
+        await page.setDefaultTimeout(pageTimeout * 1000)
+        
+        this.consecutiveFailures = 0
+        resolve(page)
+      } catch (error) {
+        this.consecutiveFailures++
+        console.error(`Page creation failed (attempt ${this.consecutiveFailures}):`, error.message)
+        
+        // Consider browser restart after multiple failures
+        if (this.consecutiveFailures >= maxConsecutiveFailures) {
+          console.error(`Too many consecutive failures (${this.consecutiveFailures}), browser may need restart`)
+        }
+        
+        reject(error)
+      } finally {
+        this.pageCreationMutex = false
+        
+        // Process next item in queue
+        if (this.pageCreationQueue.length > 0) {
+          const next = this.pageCreationQueue.shift()
+          setImmediate(() => {
+            this.createPageSerialized().then(next.resolve).catch(next.reject)
+          })
+        }
+      }
+    })
+  }
+
+  // Centralized listener management
+  attachPageListeners(page, msglog, errlog) {
+    const listeners = { msglog, errlog }
+    page.on('console', msglog)
+    page.on('error', errlog)
+    page.on('pageerror', errlog)
+    page.on('requestfailed', (request) => {
+      console.error(`Request failed: ${request.url()} ${request.failure().errorText}`)
+    })
+    return listeners
+  }
+
+  detachPageListeners(page, listeners) {
+    try {
+      page.off('console', listeners.msglog)
+      page.off('error', listeners.errlog)
+      page.off('pageerror', listeners.errlog)
+    } catch (e) {
+      console.log(`Warning: Could not remove page listeners: ${e.message}`)
+    }
   }
 
   // This method overrides stdout and captures the output of
@@ -63,22 +150,19 @@ class Renderer {
       var numpages = this.pages.length
       for (var i = 0; i < numpages; i++) {
         if (!this.pages[i].busy) {
-          pageinfo = this.pages[i]
-          pageinfo.busy = true
-          // Check if page was closed by timeout, recreate if necessary
-          if (!pageinfo.page || pageinfo.page.isClosed()) {
-            console.log(tag+"renderer.js: Reinstantiating page in slot "+i)
-            try {
-              pageinfo.page = await this.browser.newPage()
-              // Set explicit timeouts
-              await pageinfo.page.setDefaultNavigationTimeout(pageTimeout * 1000)
-              await pageinfo.page.setDefaultTimeout(pageTimeout * 1000)
-            } catch (e) {
-              console.error(tag+"Failed to create new page:", e)
-              pageinfo.busy = false
-              return null
+            pageinfo = this.pages[i]
+            pageinfo.busy = true
+            // Check if page was closed by timeout, recreate if necessary
+            if (!pageinfo.page || pageinfo.page.isClosed()) {
+              console.log(tag+"renderer.js: Reinstantiating page in slot "+i)
+              try {
+                pageinfo.page = await this.createPageSerialized()
+              } catch (e) {
+                console.error(tag+"Failed to create new page:", e)
+                pageinfo.busy = false
+                return null
+              }
             }
-          }
           page = pageinfo.page
           if (pageinfo.timeout) {
             clearTimeout(pageinfo.timeout)
@@ -91,10 +175,7 @@ class Renderer {
         // If all existing pages are found to be busy, create a new one (up to limit)
         console.log(tag+"renderer.js: Creating new page in slot "+numpages)
         try {
-          page = await this.browser.newPage()
-          // Set explicit timeouts
-          await page.setDefaultNavigationTimeout(pageTimeout * 1000)
-          await page.setDefaultTimeout(pageTimeout * 1000)
+          page = await this.createPageSerialized()
           pageinfo = {page: page, busy: true, slot: numpages}
           this.pages.push( pageinfo )
         } catch (e) {
@@ -118,22 +199,14 @@ class Renderer {
       if (listeners != 0)
         console.log(tag+"renderer.js ERROR: Unremoved console listeners: "+listeners)
       
-      page.on('console',   msglog)
-      page.on('error',     errlog)
-      page.on('pageerror', errlog)
-      page.on('requestfailed', (request) => {
-        console.error(`${tag}Request failed: ${request.url()} ${request.failure().errorText}`);
-      });
+      const pageListeners = this.attachPageListeners(page, msglog, errlog)
 
       // Render the page and return result
       try {
         await page.goto(url, gotoOptions)
       } catch (error) {
-        // Remove listeners to prevent accumulation of old listeners for reused 
-        // pages. UPDATE: Remove listeners using off() instead of removeListener()
-        page.off('console',   msglog)
-        page.off('error',     errlog)
-        page.off('pageerror', errlog)
+        // Remove listeners to prevent accumulation of old listeners for reused pages
+        this.detachPageListeners(page, pageListeners)
         console.error(tag+"Page navigation failed:", error.message)
         pageinfo.busy = false
         return null
@@ -160,9 +233,9 @@ class Renderer {
       the graph in PNG and SVG forms as well as the JSON output and
       closes the tab afterwards */
   async render(inpath, outpath, slug, rid, nograph) {
-    // Implement concurrency limiting
+    // Implement concurrency limiting with better error message
     if (this.activeSemaphore >= maxConcurrentRenders) {
-      throw new Error(`Too many concurrent renders (${this.activeSemaphore}/${maxConcurrentRenders})`)
+      throw new Error(`Server at capacity: ${this.activeSemaphore}/${maxConcurrentRenders} concurrent renders active. Please retry in a few seconds.`)
     }
     
     this.activeSemaphore++
@@ -459,15 +532,9 @@ class Renderer {
         return { error:err, msgbuf: msgbuf }
       }
     } finally {
-      if (page && pageinfo) {
-        // UPDATE: Remove listeners using off() instead of removeListener()
-        try {
-          page.off('console',   msglog)
-          page.off('error',     errlog)
-          page.off('pageerror', errlog)
-        } catch (e) {
-          console.log(tag+"Warning: Could not remove page listeners:", e.message)
-        }
+      if (page && pageinfo && pageListeners) {
+        // Remove listeners using centralized method
+        this.detachPageListeners(page, pageListeners)
         
         pageinfo.busy = false
         
@@ -491,7 +558,10 @@ class Renderer {
                     try {
                       console.log(tag+"renderer.js: Closing page after timeout in slot "
                                   +pageinfo.slot)
-                      await pageinfo.page.close()
+                      await Promise.race([
+                        pageinfo.page.close(),
+                        new Promise(resolve => setTimeout(resolve, 2000)) // Hard 2s timeout
+                      ])
                     } catch (e) {
                       console.log(tag+"Warning: Could not close timed out page:", e.message)
                     }
@@ -500,7 +570,7 @@ class Renderer {
                   pageinfo.timeout = null
                 } else
                   console.log("Warning: pageinfo=null in timeout to close page")
-              }, 5000) // Reduced from 10000 to 5000
+              }, 3000) // Reduced from 5000 to 3000
         }
       }
     }

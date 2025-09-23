@@ -155,6 +155,15 @@ if (cluster.isMaster) {
     
     var tag = renderer.prf(rid)
     
+    // Check if renderer is available and healthy
+    if (!renderer) {
+      return res.status(503).send(JSON.stringify({
+        error: "Renderer not initialized",
+        retryAfter: 5,
+        timestamp: new Date().toISOString()
+      }))
+    }
+    
     // Initialize request state
     pending++
     msgbuf[rid] = ""
