@@ -4,7 +4,7 @@ const rename     = require('gulp-rename')
 const concat     = require('gulp-concat')
 const changed    = require('gulp-changed').default
 const cleancss   = require('gulp-clean-css')
-const jshint     = require("gulp-jshint")
+const eslint     = require("gulp-eslint-new")
 const { rimraf } = require('rimraf')
 const ejs        = require('ejs')
 const fs         = require('fs')
@@ -124,8 +124,8 @@ function copy_vendor() {
 function linter() {
   return gulp.src(['src/butil.js', 'src/broad.js', 'src/bgraph.js', 
                    'src/bsandbox.js', 'src/newdesign.js'])
-    .pipe(jshint({esversion:8, asi:true, laxbreak:true}))
-    .pipe(jshint.reporter('default'))
+    .pipe(eslint())
+    .pipe(eslint.format())
 }
 
 function images () { // Copy images from src to lib

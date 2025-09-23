@@ -2462,7 +2462,7 @@ function selectKnot(kind, scroll = true) {
     .attr("x2",             x)
     .attr("y1",             0)
     .attr("y2",             plotbox.height)
-    .attr("stroke",         opts.roadKnotCol.selected)
+    .attr("stroke",         opts.roadKnotCol.selected) // dflt?
     .attr("stroke-opacity", 0.9)
     .attr("stroke-width",   r3(opts.roadKnot.width+4)).lower()
 }
@@ -2508,7 +2508,7 @@ function selectRoad(kind, scroll = true) {
     .attr("x2",              nXSc(road[kind].end[0]*SMS))
     .attr("y1",              nYSc(road[kind].sta[1]))
     .attr("y2",              nYSc(road[kind].end[1]))
-    .attr("stroke",          opts.roadKnotCol.selected)
+    .attr("stroke",          opts.roadKnotCol.selected) // dflt?
     .attr("stroke-opacity",  0.9)
     .attr("stroke-width",    r3(opts.roadLine.width+4)).lower()
 }

@@ -1,6 +1,6 @@
 {
   "name": "Beebrain",
-  "version": "2025.09.19-g",
+  "version": "2025.09.23-i",
   "description": "Beeminder Graph Generator and Visual Graph Editor",
   "main": "server.js",
   "scripts": {
@@ -39,20 +39,23 @@
     "beeminder, beebrain, road, bright red line, graph editor"
   ],
   "license": "MIT",
+  "overrides": {
+    "sqlite3": {
+      "node-gyp": "^10.2.0"
+    }
+  },
   "devDependencies": {
     "dotenv": "^17.2.0",
     "gulp": "^5.0.1",
     "gulp-changed": "^5.0.2",
     "gulp-clean-css": "^4.0.0",
     "gulp-concat": "^2.6.1",
-    "gulp-jshint": "^2.1.0",
+    "eslint": "^9.15.0",
+    "gulp-eslint-new": "^2.3.0",
     "gulp-rename": "^2.1.0",
     "gulp-terser": "^2.1.0",
-    "gulp-typescript": "^6.0.0-alpha.1",
-    "jshint": "^2.13.0",
     "nodemon": "^3.1.10",
     "rimraf": "^6.0.1",
-    "terser": "^5.44.0",
-    "typescript": "^5.8.3"
+    "terser": "^5.44.0"
   }
 }
