@@ -2,8 +2,8 @@
 
 const cluster = require('cluster')
 const os = require('os')
-const yargs = require('yargs')
-const { hideBin } = require('yargs/helpers')
+// Dynamic import for yargs (ESM module)
+let yargs, hideBin
 const bu = require('../src/butil.js')
 
 function compareJSON(stats, bbr) {
@@ -105,23 +105,33 @@ if (cluster.isMaster) {
   // Render url.
   const proc_timeid = " Total processing"
 
-  const argv = yargs(hideBin(process.argv))
-        .option('firefox', {
-          alias: 'f',
-          description: 'use headless firefox',
-          type: 'boolean'
-        })
-        .help()
-        .alias('help', 'h')
-        .argv
-  
-  let pproduct = "chrome"
-  if (argv.firefox) {
-    console.log("Starting puppeteer with headless FIREFOX.")
-    pproduct = "firefox"
-  } else {
-    console.log("Starting puppeteer with headless CHROME.")
-    pproduct = "chrome"
+  // Async function to handle yargs parsing
+  async function parseArgs() {
+    const yargsModule = await import('yargs')
+    yargs = yargsModule.default
+    const helpersModule = await import('yargs/helpers')
+    hideBin = helpersModule.hideBin
+    
+    const argv = yargs(hideBin(process.argv))
+          .option('firefox', {
+            alias: 'f',
+            description: 'use headless firefox',
+            type: 'boolean'
+          })
+          .help()
+          .alias('help', 'h')
+          .argv
+    
+    let pproduct = "chrome"
+    if (argv.firefox) {
+      console.log("Starting puppeteer with headless FIREFOX.")
+      pproduct = "firefox"
+    } else {
+      console.log("Starting puppeteer with headless CHROME.")
+      pproduct = "chrome"
+    }
+    
+    return pproduct
   }
   
   app.use(async (req, res, next) => {
@@ -294,8 +304,10 @@ if (cluster.isMaster) {
     }
   })
 
-  // Create renderer and start server.
-  createRenderer(cluster.worker.id, pproduct).then(createdRenderer => {
+  // Parse arguments and create renderer
+  parseArgs().then(pproduct => {
+    return createRenderer(cluster.worker.id, pproduct)
+  }).then(createdRenderer => {
     renderer = createdRenderer
     console.info(prefix+'Initialized renderer.')
     const bindip = process.env.JSBRAIN_SERVER_BIND || 'localhost'

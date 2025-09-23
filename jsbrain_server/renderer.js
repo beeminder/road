@@ -1,6 +1,7 @@
 'use strict'
 
-const {v4: uuidv4} = require('uuid')
+// Dynamic import for uuid (ESM module)
+let uuidv4
 const fs = require('fs')
 const gm = require('gm').subClass({imageMagick: true})
 
@@ -508,6 +509,10 @@ class Renderer {
 }
 
 async function create( id, pproduct ) {
+  // Import uuid dynamically
+  const { v4 } = await import('uuid')
+  uuidv4 = v4
+  
   let puppeteer = require('puppeteer');
   
   try {
