@@ -336,12 +336,14 @@ hr {
   margin: 20px 0;
 }
 
-/* Knot hover effects */
-.knots:hover {
-  cursor: ew-resize;
-}
-
-/* Dot hover effects */
-.dots:hover {
-  cursor: ns-resize;
-}
+/* Knots (the draggable vertical lines) show a left/right arrow cursor on hover 
+   and the Dots (the draggable disks that sit on knots) show an up/down arrow 
+   cursor on hover */
+.knots:hover { cursor: ew-resize; }
+.dots:hover  { cursor: ns-resize; }
+/* SCHDEL: Ugh, utter confusion with codebuff and human editing at the same
+time and vscode tried to warn me of conflicts and I messed something up and 
+this change that i thought i was saving for a separate commit got included in
+the last one. So, yeah, whatever. I'm committing again now with this comment 
+here for now. But then I'll delete this and everything will end up as expected
+the end. */
