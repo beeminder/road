@@ -492,13 +492,25 @@ function hashextract(s) {
 // Whether datapoint comment string s has the magic string indicating it's when
 // a derailment happened (previously known as a recommit datapoint).
 function derailed(s) { 
-  return /(?:^|\s)[#@]DERAIL(?:$|\s)/.test(s) ||
-    s.startsWith("RECOMMITTED ON") // backward compatibility; see magic strings
+  return /(?:^|\s)[#@]DERAIL(?:$|\s)/.test(s)
 }
+
+// Note for the future: this regex is slightly better:
+// /(?<!\S)[#@]DERAIL(?!\S)/ 
 
 // Whether datapoint comment string s has the magic string indicating it's a
 // tare datapoint (odometer reset replacement)
 function tared(s) { return /(?:^|\s)[#@]TARE(?:$|\s)/.test(s) }
+
+// Whether datapoint comment string s has the magic string indicating it's a
+// PPR (self-destruct) datapoint
+// TODO: figure out how to call this from bgraph.js or else just copy it there
+/*
+function selfdestructing(s) {
+  return /(?:^|\s)[#@](?:SELFDESTRUCT|THISWILLSELFDESTRUCT)(?:$|\s)/.test(s) ||
+    s.startsWith("PESSIMISTIC PRESUMPTION") // backward compatibility
+}
+*/
 
 // Convenience function to extract values from datapoints
 function dval(d) { return d[1] }
@@ -1704,6 +1716,9 @@ this.hollow = hollow
 this.hashtags = hashtags
 
 } // END beebrain object constructor -------------------------------------------
+
+// Export utility functions as static methods
+// beebrain.selfdestructing = selfdestructing // TODO
 
 return beebrain
 

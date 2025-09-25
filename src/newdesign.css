@@ -341,9 +341,3 @@ hr {
    cursor on hover */
 .knots:hover { cursor: ew-resize; }
 .dots:hover  { cursor: ns-resize; }
-/* SCHDEL: Ugh, utter confusion with codebuff and human editing at the same
-time and vscode tried to warn me of conflicts and I messed something up and 
-this change that i thought i was saving for a separate commit got included in
-the last one. So, yeah, whatever. I'm committing again now with this comment 
-here for now. But then I'll delete this and everything will end up as expected
-the end. */
