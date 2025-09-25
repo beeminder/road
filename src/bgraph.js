@@ -122,7 +122,7 @@ let defaults = {
   razrline:     3, // trying thicker bright red line: 2 -> 4 (see also mobile)
   /** Visual parameters for text boxes shown during dragging */ 
   textBox:      { margin: 3 },
-  /** Visual parameters for odometer resets */ 
+  /** Visual parameters for #TARE datapoints nee odometer resets */ 
   taring:    { width: 0.5, dash: 8 },
   
   roadLineCol:  { valid: "black",    invalid:"#ca1212",  selected:"yellow" },

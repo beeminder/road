@@ -459,14 +459,12 @@ function computeRosy() {
 }
 
 // Magic strings in datapoint comments: (see beeminder/beeminder/issues/2423)
-// 1. "#SELFDESTRUCT" (and for backward compat: /^PESSIMISTIC PRESUMPTION/)
-//    ("#THISWILLSELFDESTRUCT" also allowed as a variant)
-// 2. "#DERAIL" (and for backward compatibility: /^RECOMMITTED ON/)
-// 3. "#RESTART" (and for backward compatibility: /^RESTARTED ON/)
+// 1. "#SELFDESTRUCT" and "#THISWILLSELFDESTRUCT"
+// 2. "#DERAIL"
+// 3. "#RESTART"
 // 4. "#TARE" (replaces/generalizes odometer resets; see gissue #216)
-// 5. (/^RESTART PLACEHOLDER/ has been thankfully killed)
-// Finally, @ signs are also allowed instead of #, which is useful if you don't
-// want the magic strings to show up as hashtags on the graph.
+// And @ signs are allowed instead of #, which is useful if you don't want the
+// magic strings to show up as hashtags on the graph.
 
 // Take, eg, "shark jumping #yolo :) #shark" and return {"#yolo", "#shark"}
 // Pro tip: use scriptular.com to test these regexes
