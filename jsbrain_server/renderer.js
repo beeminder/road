@@ -4,6 +4,20 @@ const {v4: uuidv4} = require('uuid')
 const fs = require('fs')
 const gm = require('gm').subClass({imageMagick: true})
 
+// Utility function to get Pacific timezone timestamp
+function getPacificTimestamp() {
+  return new Date().toLocaleString('en-US', {
+    timeZone: 'America/Los_Angeles',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).replace(/\//g, '-')
+}
+
 const pageTimeout = 40 // Seconds to wait until giving up on generate.html
 
 class Renderer {
@@ -15,29 +29,29 @@ class Renderer {
     this.pageCreatedCount = 0
     this.pageClosedCount = 0
     
-    console.log(`(${id}): 🟢 Renderer initialized with browser PID ${browser.process().pid}`)
+    console.log(`[${getPacificTimestamp()}] (${id}): Renderer initialized with browser PID ${browser.process().pid}`)
     
     // Clean up pages when browser disconnects
     browser.on('disconnected', () => {
-      console.log(`(${id}): 🔴 Browser disconnected! Cleaning up ${this.pages.length} active pages`)
-      console.log(`(${id}): 📊 Lifetime stats - Created: ${this.pageCreatedCount}, Closed: ${this.pageClosedCount}`)
+      console.log(`[${getPacificTimestamp()}] (${id}): 💀 Browser disconnected! Cleaning up ${this.pages.length} active pages`)
+      console.log(`[${getPacificTimestamp()}] (${id}): Lifetime stats - Created: ${this.pageCreatedCount}, Closed: ${this.pageClosedCount}`)
       this.pages.forEach((pageinfo, index) => {
-        console.log(`(${id}): 🧹 Cleaning up page slot ${index}, timeout: ${!!pageinfo.timeout}`)
+        console.log(`[${getPacificTimestamp()}] (${id}): Cleaning up page slot ${index}, timeout: ${!!pageinfo.timeout}`)
         if (pageinfo.timeout) {
           clearTimeout(pageinfo.timeout)
         }
       })
       this.pages = []
-      console.log(`(${id}): ✅ Browser disconnect cleanup complete`)
+      console.log(`[${getPacificTimestamp()}] (${id}): Browser disconnect cleanup complete`)
     })
     
     // Log browser events
     browser.on('targetcreated', (target) => {
-      console.log(`(${id}): 🎯 Browser target created: ${target.type()} - ${target.url()}`)
+      console.log(`[${getPacificTimestamp()}] (${id}): Browser target created: ${target.type()} - ${target.url()}`)
     })
     
     browser.on('targetdestroyed', (target) => {
-      console.log(`(${id}): 💥 Browser target destroyed: ${target.type()} - ${target.url()}`)
+      console.log(`[${getPacificTimestamp()}] (${id}): Browser target destroyed: ${target.type()} - ${target.url()}`)
     })
   }
 
@@ -65,33 +79,33 @@ class Renderer {
     const activePagesWithoutTimeout = this.pages.filter(p => p.page && !p.timeout).length
     const nullPages = this.pages.filter(p => !p.page).length
     
-    console.log(`(${this.id}): 📈 ${context} | Total: ${this.pages.length}, Busy: ${busyPages}, Active+timeout: ${activePagesWithTimeout}, Active-timeout: ${activePagesWithoutTimeout}, Null: ${nullPages} | Created: ${this.pageCreatedCount}, Closed: ${this.pageClosedCount}`)
+    console.log(`[${getPacificTimestamp()}] (${this.id}): ${context} | Total: ${this.pages.length}, Busy: ${busyPages}, Active+timeout: ${activePagesWithTimeout}, Active-timeout: ${activePagesWithoutTimeout}, Null: ${nullPages} | Created: ${this.pageCreatedCount}, Closed: ${this.pageClosedCount}`)
   }
 
   // Gracefully close all pages and clear timeouts
   async closeAllPages() {
-    console.log(`(${this.id}): 🔄 Starting graceful shutdown of ${this.pages.length} pages`)
+    console.log(`[${getPacificTimestamp()}] (${this.id}): Starting graceful shutdown of ${this.pages.length} pages`)
     this.logPageStatus('Pre-shutdown')
     
     for (const pageinfo of this.pages) {
       if (pageinfo.timeout) {
-        console.log(`(${this.id}): ⏰ Clearing timeout for page slot ${pageinfo.slot}`)
+        console.log(`[${getPacificTimestamp()}] (${this.id}): Clearing timeout for page slot ${pageinfo.slot}`)
         clearTimeout(pageinfo.timeout)
         pageinfo.timeout = null
       }
       if (pageinfo.page) {
         try {
-          console.log(`(${this.id}): 🚪 Closing page in slot ${pageinfo.slot}`)
+          console.log(`[${getPacificTimestamp()}] (${this.id}): Closing page in slot ${pageinfo.slot}`)
           await pageinfo.page.close()
           this.pageClosedCount++
         } catch (error) {
-          console.warn(`(${this.id}): ⚠️ Error closing page slot ${pageinfo.slot}:`, error.message)
+          console.warn(`[${getPacificTimestamp()}] (${this.id}): ⚠️ Error closing page slot ${pageinfo.slot}:`, error.message)
         }
         pageinfo.page = null
       }
     }
     this.pages = []
-    console.log(`(${this.id}): ✅ Graceful shutdown complete. Final stats - Created: ${this.pageCreatedCount}, Closed: ${this.pageClosedCount}`)
+    console.log(`[${getPacificTimestamp()}] (${this.id}): Graceful shutdown complete. Final stats - Created: ${this.pageCreatedCount}, Closed: ${this.pageClosedCount}`)
   }
   
   // Renders and returns an available page (tab) within the puppeteer
@@ -101,44 +115,44 @@ class Renderer {
     let gotoOptions = { timeout: pageTimeout * 1000, waitUntil: 'load' }
     const MAX_PAGES = 20; // Prevent unbounded page creation
 
-    console.log(`${tag}🔍 Starting renderPage for URL: ${url}`)
+    console.log(`[${getPacificTimestamp()}] ${tag}Starting renderPage for URL: ${url}`)
     this.logPageStatus('Pre-renderPage')
 
     try {
       var pageinfo = null, page = null;
       // Grab one of the unused tabs, create a new one if necessary
       var numpages = this.pages.length
-      console.log(`${tag}📋 Searching through ${numpages} existing pages for available slot`)
+      console.log(`[${getPacificTimestamp()}] ${tag}Searching through ${numpages} existing pages for available slot`)
       
       for (var i = 0; i < numpages; i++) {
         if (!this.pages[i].busy) {
           pageinfo = this.pages[i]
           pageinfo.busy = true
-          console.log(`${tag}♻️ Reusing page slot ${i} (was free)`)
+          console.log(`[${getPacificTimestamp()}] ${tag}Reusing page slot ${i} (was free)`)
           
           // Check if page was closed by timeout, recreate if necessary
           if (!pageinfo.page) {
-            console.log(`${tag}🔄 Reinstantiating page in slot ${i} (was null)`)
+            console.log(`[${getPacificTimestamp()}] ${tag}Reinstantiating page in slot ${i} (was null)`)
             pageinfo.page = await this.browser.newPage()
             this.pageCreatedCount++
-            console.log(`${tag}✅ Successfully reinstantiated page in slot ${i}`)
+            console.log(`[${getPacificTimestamp()}] ${tag}Successfully reinstantiated page in slot ${i}`)
           }
           page = pageinfo.page
           if (pageinfo.timeout) {
-            console.log(`${tag}⏰ Clearing existing timeout for slot ${i}`)
+            console.log(`[${getPacificTimestamp()}] ${tag}Clearing existing timeout for slot ${i}`)
             clearTimeout(pageinfo.timeout)
             pageinfo.timeout = null
           }
           break
         } else {
-          console.log(`${tag}⏳ Slot ${i} is busy, continuing search`)
+          console.log(`[${getPacificTimestamp()}] ${tag}Slot ${i} is busy, continuing search`)
         }
       }
       
       if (!pageinfo) {
         // Check if we've hit the page limit
         if (numpages >= MAX_PAGES) {
-          console.warn(`${tag}🚫 Hit page limit (${MAX_PAGES}), rejecting request`)
+          console.warn(`[${getPacificTimestamp()}] ${tag}💀 Hit page limit (${MAX_PAGES}), rejecting request`)
           this.logPageStatus('Page-limit-hit')
           return null
         }
@@ -157,45 +171,45 @@ class Renderer {
       // removed at the end of processing.
       var listeners = page.listenerCount('console')
       if (listeners != 0) {
-        console.log(`${tag}⚠️ Found ${listeners} unremoved console listeners - potential memory leak!`)
+        console.log(`[${getPacificTimestamp()}] ${tag}⚠️ Found ${listeners} unremoved console listeners - potential memory leak!`)
       }
       
-      console.log(`${tag}🎧 Installing event listeners on page slot ${pageinfo.slot}`)
+      console.log(`[${getPacificTimestamp()}] ${tag}Installing event listeners on page slot ${pageinfo.slot}`)
       page.on('console',   msglog)
       page.on('error',     errlog)
       page.on('pageerror', errlog)
       page.on('requestfailed', (request) => {
-        console.error(`${tag}💥 Request failed: ${request.url()} ${request.failure().errorText}`);
+        console.error(`[${getPacificTimestamp()}] ${tag}💀 Request failed: ${request.url()} ${request.failure().errorText}`);
       });
 
       // Render the page and return result
-      console.log(`${tag}🌐 Navigating to URL with ${pageTimeout}s timeout`)
+      console.log(`[${getPacificTimestamp()}] ${tag}Navigating to URL with ${pageTimeout}s timeout`)
       const startTime = Date.now()
       try {
         await page.goto(url, gotoOptions)
         const loadTime = Date.now() - startTime
-        console.log(`${tag}✅ Page loaded successfully in ${loadTime}ms on slot ${pageinfo.slot}`)
+        console.log(`[${getPacificTimestamp()}] ${tag}Page loaded successfully in ${loadTime}ms on slot ${pageinfo.slot}`)
       } catch (error) {
         const failTime = Date.now() - startTime
-        console.log(`${tag}❌ Page load failed after ${failTime}ms: ${error.message}`)
+        console.log(`[${getPacificTimestamp()}] ${tag}💀 Page load failed after ${failTime}ms: ${error.message}`)
         // Remove listeners to prevent accumulation of old listeners for reused 
         // pages. UPDATE: Remove listeners using off() instead of removeListener()
-        console.log(`${tag}🧹 Removing event listeners after failed navigation`)
+        console.log(`[${getPacificTimestamp()}] ${tag}Removing event listeners after failed navigation`)
         page.off('console',   msglog)
         page.off('error',     errlog)
         page.off('pageerror', errlog)
         pageinfo.busy = false
-        console.log(`${tag}🔓 Released page slot ${pageinfo.slot} after navigation failure`)
+        console.log(`[${getPacificTimestamp()}] ${tag}Released page slot ${pageinfo.slot} after navigation failure`)
         this.logPageStatus('Post-navigation-failure')
         return null
       } 
-      console.log(`${tag}🎯 Successfully allocated and loaded page slot ${pageinfo.slot}`)
+      console.log(`[${getPacificTimestamp()}] ${tag}Successfully allocated and loaded page slot ${pageinfo.slot}`)
       return pageinfo
     } catch (error) {
-      console.error(`${tag}💀 Critical error in renderPage:`, error.message);
+      console.error(`[${getPacificTimestamp()}] ${tag}💀 Critical error in renderPage:`, error.message);
       // Ensure page is released on any error
       if (pageinfo) {
-        console.log(`${tag}🔓 Emergency release of page slot ${pageinfo.slot} due to error`)
+        console.log(`[${getPacificTimestamp()}] ${tag}Emergency release of page slot ${pageinfo.slot} due to error`)
         pageinfo.busy = false
       }
       this.logPageStatus('Post-critical-error')
@@ -307,10 +321,10 @@ class Renderer {
         time_id = null
       
         // Extract goal stats from the JSON field and extend with file locations
-        console.log(`${tag}📋 Extracting JSON data from page element`)
+        console.log(`[${getPacificTimestamp()}] ${tag}Extracting JSON data from page element`)
         const jsonHandle = await page.$('#goaljson');
         jsonstr = await page.evaluate(json => json.innerHTML, jsonHandle);
-        console.log(`${tag}📊 JSON extracted (${jsonstr.length} chars)`)
+        console.log(`[${getPacificTimestamp()}] ${tag}JSON extracted (${jsonstr.length} chars)`)
         if (jsonstr == "" || jsonstr == null) {
           let err = "Could not extract JSON from page!"
           msgbuf += (tag+" renderer.js ERROR: "+err+"\n")
@@ -325,14 +339,14 @@ class Renderer {
         json.thumburl=this.BBURL()+thmf
 
         // Write to the goal JSON, using an intermediate temp file
-        console.log(`${tag}📊 Writing JSON output (${Object.keys(json).length} properties)`)
+        console.log(`[${getPacificTimestamp()}] ${tag}Writing JSON output (${Object.keys(json).length} properties)`)
         let jf = `${outpath}/${slug}.json`
         let jtmp = this.tempify(jf, newid)
         if (fs.existsSync(jf)) fs.renameSync(jf, jtmp )
         fs.writeFileSync(jtmp, JSON.stringify(json));  
         if (fs.existsSync(jtmp)) {
           fs.renameSync(jtmp, jf )
-          console.log(`${tag}✅ JSON file saved: ${jf}`)
+          console.log(`[${getPacificTimestamp()}] ${tag}JSON file saved: ${jf}`)
         }
         // Display statsum on node console
         //process.stdout.write(tag+json.statsum.replace(/\\n/g, '\n'+tag))
@@ -340,35 +354,35 @@ class Renderer {
         
         if (graphit) {
           // Extract and write the SVG file
-          console.log(`${tag}📄 Extracting SVG from rendered page`)
+          console.log(`[${getPacificTimestamp()}] ${tag}Extracting SVG from rendered page`)
           const svgHandle = await page.$('svg')
           svg = await page.evaluate(svg => svg.outerHTML, svgHandle)
           svg = '<?xml version="1.0" standalone="no"?>\n'+svg
-          console.log(`${tag}📝 SVG extracted (${svg.length} chars), writing to file`)
+          console.log(`[${getPacificTimestamp()}] ${tag}SVG extracted (${svg.length} chars), writing to file`)
           
           // write to the temp SVG file and rename
           fs.writeFileSync(svgftmp, svg);  
           if (fs.existsSync(svgftmp)) {
             fs.renameSync(svgftmp, svgf )
-            console.log(`${tag}✅ SVG file saved: ${svgf}`)
+            console.log(`[${getPacificTimestamp()}] ${tag}SVG file saved: ${svgf}`)
           }
 
           // Extract the bounding box for the zoom area to generate
           // the thumbnail cropping boundaries
-          console.log(`${tag}🔍 Extracting zoom area bounds for thumbnail cropping`)
+          console.log(`[${getPacificTimestamp()}] ${tag}Extracting zoom area bounds for thumbnail cropping`)
           var za = await page.$('.zoomarea')
           var zi = await page.evaluate(()=>{
             var z = document.getElementsByClassName('zoomarea')[0]
             var b = z.getBBox()
             return {x:Math.round(b.x+1), y:Math.round(b.y),
                     width:Math.round(b.width-2), height:Math.round(b.height)};})
-          console.log(`${tag}📐 Zoom area bounds: ${zi.width}x${zi.height}+${zi.x}+${zi.y}`)
+          console.log(`[${getPacificTimestamp()}] ${tag}Zoom area bounds: ${zi.width}x${zi.height}+${zi.x}+${zi.y}`)
           //console.info("Zoom area bounding box is "+JSON.stringify(zi))
         
           // Take a screenshot to generate PNG files
           time_id = tag+` Screenshot (${slug})`
           console.time(time_id)
-          console.log(`${tag}📸 Preparing to capture screenshot`)
+          console.log(`[${getPacificTimestamp()}] ${tag}Preparing to capture screenshot`)
 
           // Extract SVG boundaries on page
           const rect = await page.evaluate(s => {
@@ -376,15 +390,15 @@ class Renderer {
             const {x, y, width, height} = element.getBoundingClientRect();
             return {left: x, top: y, width, height, id: element.id};
           }, "svg");  
-          console.log(`${tag}📐 SVG bounds: ${rect.width}x${rect.height} at (${rect.left},${rect.top})`)
+          console.log(`[${getPacificTimestamp()}] ${tag}SVG bounds: ${rect.width}x${rect.height} at (${rect.left},${rect.top})`)
           
           png = await page.screenshot({path:imgftmp, 
                                        clip:{x:rect.left, y:rect.top, 
                                              width:rect.width, height:rect.height}})
-          console.log(`${tag}✅ Screenshot captured to: ${imgftmp}`)
+          console.log(`[${getPacificTimestamp()}] ${tag}Screenshot captured to: ${imgftmp}`)
 
           // Generate palette optimized thumbnail thru cropping with ImageMagick
-          console.log(`${tag}✂️ Cropping thumbnail from zoom area: ${zi.width}x${zi.height}+${zi.x}+${zi.y}`)
+          console.log(`[${getPacificTimestamp()}] ${tag}Cropping thumbnail from zoom area: ${zi.width}x${zi.height}+${zi.x}+${zi.y}`)
           //var thmratio = 140/zi.height
           //var thmw = 212-4 // = Math.round(zi.width*thmratio)-4
           //var thmh = 140-4 // = Math.round(zi.height*thmratio)-4
@@ -406,11 +420,11 @@ class Renderer {
           })
           if (fs.existsSync(thmftmp)) {
             fs.renameSync(thmftmp, thmf )
-            console.log(`${tag}✅ Thumbnail generated: ${thmf}`)
+            console.log(`[${getPacificTimestamp()}] ${tag}Thumbnail generated: ${thmf}`)
           }
           
           // Generate final graph PNG by palette remapping using ImageMagick
-          console.log(`${tag}🎨 Applying palette optimization to main PNG`)
+          console.log(`[${getPacificTimestamp()}] ${tag}Applying palette optimization to main PNG`)
           res = await new Promise( (resolve, reject) => {
             gm(imgftmp)
               .in('-filter').in('Box')
@@ -422,11 +436,11 @@ class Renderer {
                 resolve(null)
               })
           })
-          console.log(`${tag}✅ Palette optimization complete`)
+          console.log(`[${getPacificTimestamp()}] ${tag}Palette optimization complete`)
         }
         if (fs.existsSync(imgftmp)) {
           fs.renameSync(imgftmp, imgf )
-          console.log(`${tag}✅ Final PNG saved: ${imgf}`)
+          console.log(`[${getPacificTimestamp()}] ${tag}Final PNG saved: ${imgf}`)
         }
         if (time_id != null) msgbuf += this.timeEndMsg(time_id)
         time_id = null
@@ -444,34 +458,34 @@ class Renderer {
       }
     } finally {
       if (page) {
-        console.log(`${tag}🧹 Cleaning up page slot ${pageinfo.slot} - removing listeners and setting timeout`)
+        console.log(`[${getPacificTimestamp()}] ${tag}Cleaning up page slot ${pageinfo.slot} - removing listeners and setting timeout`)
         // UPDATE: Remove listeners using off() instead of removeListener()
         page.off('console',   msglog)
         page.off('error',     errlog)
         page.off('pageerror', errlog)
         pageinfo.busy = false
-        console.log(`${tag}🔓 Released page slot ${pageinfo.slot} (marked as not busy)`)
+        console.log(`[${getPacificTimestamp()}] ${tag}Released page slot ${pageinfo.slot} (marked as not busy)`)
         
         const timeoutMs = 10000
-        console.log(`${tag}⏰ Setting ${timeoutMs}ms cleanup timeout for page slot ${pageinfo.slot}`)
+        console.log(`[${getPacificTimestamp()}] ${tag}Setting ${timeoutMs}ms cleanup timeout for page slot ${pageinfo.slot}`)
         pageinfo.timeout
           = setTimeout(
             function(){
               if (pageinfo) {
                 if (pageinfo.page) {
-                  console.log(`${tag}🚪 Auto-closing page after ${timeoutMs}ms timeout in slot ${pageinfo.slot}`)
+                  console.log(`[${getPacificTimestamp()}] ${tag}Auto-closing page after ${timeoutMs}ms timeout in slot ${pageinfo.slot}`)
                   try {
                     pageinfo.page.close()
-                    console.log(`${tag}✅ Successfully closed page in slot ${pageinfo.slot}`)
+                    console.log(`[${getPacificTimestamp()}] ${tag}Successfully closed page in slot ${pageinfo.slot}`)
                   } catch (closeError) {
-                    console.warn(`${tag}⚠️ Error closing page in slot ${pageinfo.slot}:`, closeError.message)
+                    console.warn(`[${getPacificTimestamp()}] ${tag}⚠️ Error closing page in slot ${pageinfo.slot}:`, closeError.message)
                   }
                 }
                 pageinfo.page = null
                 pageinfo.timeout = null
-                console.log(`${tag}🗑️ Nullified page and timeout for slot ${pageinfo.slot}`)
+                console.log(`[${getPacificTimestamp()}] ${tag}Nullified page and timeout for slot ${pageinfo.slot}`)
               } else {
-                console.log(`${tag}⚠️ Warning: pageinfo=null in timeout callback - potential race condition`)
+                console.log(`[${getPacificTimestamp()}] ${tag}⚠️ Warning: pageinfo=null in timeout callback - potential race condition`)
               }
             }, timeoutMs)
       }
@@ -486,7 +500,7 @@ async function create( id, pproduct ) {
   let puppeteer = require('puppeteer');
   
   try {
-    console.log(`(${id}): 🚀 Attempting to launch Puppeteer with product ${pproduct}...`);
+    console.log(`[${getPacificTimestamp()}] (${id}): Attempting to launch Puppeteer with product ${pproduct}...`);
     const startTime = Date.now()
     
     const launchArgs = [
@@ -503,7 +517,7 @@ async function create( id, pproduct ) {
       '--disable-features=IsolateOrigins,site-per-process'
     ]
     
-    console.log(`(${id}): ⚙️ Launch args: ${launchArgs.join(' ')}`);
+    console.log(`[${getPacificTimestamp()}] (${id}): Launch args: ${launchArgs.join(' ')}`);
     
     const browser = await puppeteer.launch({ 
       product: pproduct,
@@ -516,18 +530,18 @@ async function create( id, pproduct ) {
     
     const launchTime = Date.now() - startTime
     const browserPid = browser.process().pid
-    console.log(`(${id}): ✅ Successfully started ${pproduct} browser in ${launchTime}ms with PID ${browserPid}`);
+    console.log(`[${getPacificTimestamp()}] (${id}): Successfully started ${pproduct} browser in ${launchTime}ms with PID ${browserPid}`);
 
     browser.on('disconnected', async () => { 
-      console.error(`(${id}): 🔴 Browser PID ${browserPid} disconnected unexpectedly! This may indicate a crash or resource issue.`);
+      console.error(`[${getPacificTimestamp()}] (${id}): 💀 Browser PID ${browserPid} disconnected unexpectedly! This may indicate a crash or resource issue.`);
       process.exit(1);
     });
 
-    console.log(`(${id}): 🎯 Browser event listeners installed, creating renderer...`);
+    console.log(`[${getPacificTimestamp()}] (${id}): Browser event listeners installed, creating renderer...`);
     return new Renderer(browser, id);
   } catch (error) {
-    console.error(`(${id}): 💀 Failed to initialize Puppeteer:`, error.message);
-    console.error(`(${id}): 🔍 Error details:`, error);
+    console.error(`[${getPacificTimestamp()}] (${id}): 💀 Failed to initialize Puppeteer:`, error.message);
+    console.error(`[${getPacificTimestamp()}] (${id}): Error details:`, error);
     throw error;
   }
 }

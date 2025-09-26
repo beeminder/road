@@ -6,6 +6,20 @@ const yargs = require('yargs')
 const { hideBin } = require('yargs/helpers')
 const bu = require('../src/butil.js')
 
+// Utility function to get Pacific timezone timestamp
+function getPacificTimestamp() {
+  return new Date().toLocaleString('en-US', {
+    timeZone: 'America/Los_Angeles',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).replace(/\//g, '-')
+}
+
 function compareJSON(stats, bbr) {
   let valid = true, numeric = false, summary = false, str = ""
   if (stats['error'] != "") {
@@ -48,36 +62,36 @@ function compareJSON(stats, bbr) {
 }
 
 if (cluster.isMaster) {
-  console.log(`🎯 Master process ${process.pid} starting up...`);
+  console.log(`[${getPacificTimestamp()}] Master process ${process.pid} starting up...`);
 
   // Count the machine's CPUs
   let cpuCount = os.cpus().length;
-  console.log(`💻 Detected ${cpuCount} CPU cores`);
+  console.log(`[${getPacificTimestamp()}] Detected ${cpuCount} CPU cores`);
 
   // Number of "parallel" renderer instances. Actual parallelism is
   // because chromium instances run as processes.
   cpuCount = 1;
-  console.log(`⚙️ Configured to use ${cpuCount} worker(s)`);
+  console.log(`[${getPacificTimestamp()}] Configured to use ${cpuCount} worker(s)`);
 
   // Create a worker for each CPU
   for (let i = 0; i < cpuCount; i += 1) {
-    console.log(`🚀 Forking worker ${i + 1}/${cpuCount}...`);
+    console.log(`[${getPacificTimestamp()}] Forking worker ${i + 1}/${cpuCount}...`);
     cluster.fork();
   }
 
   // Log when workers come online
   cluster.on('online', (worker) => {
-    console.log(`✅ Worker ${worker.id} (PID ${worker.process.pid}) is online`);
+    console.log(`[${getPacificTimestamp()}] Worker ${worker.id} (PID ${worker.process.pid}) is online`);
   });
 
   // Whenever a worker dies, create a new one.
   cluster.on('exit', (worker, code, signal) => {
-    console.log(`💀 Worker ${worker.id} (PID ${worker.process.pid}) died with code ${code} and signal ${signal}`);
-    console.log(`🔄 Restarting worker ${worker.id}...`);
+    console.log(`[${getPacificTimestamp()}] 💀 Worker ${worker.id} (PID ${worker.process.pid}) died with code ${code} and signal ${signal}`);
+    console.log(`[${getPacificTimestamp()}] Restarting worker ${worker.id}...`);
     cluster.fork();
   });
   
-  console.log(`🎉 Master process initialization complete. Managing ${cpuCount} worker(s).`);
+  console.log(`[${getPacificTimestamp()}] Master process initialization complete. Managing ${cpuCount} worker(s).`);
 
 } else {
 
@@ -157,8 +171,8 @@ if (cluster.isMaster) {
     pending++
     msgbuf[rid] = ""
     console.log(tag+"============================================")
-    console.log(tag+`🌐 Incoming request: ${req.method} ${req.url}`)
-    console.log(tag+`📊 Server stats - Pending requests: ${pending}, Worker ID: ${cluster.worker.id}`)
+    console.log(`[${getPacificTimestamp()}] ${tag}Incoming request: ${req.method} ${req.url}`)
+    console.log(`[${getPacificTimestamp()}] ${tag}Server stats - Pending requests: ${pending}, Worker ID: ${cluster.worker.id}`)
     if (renderer && renderer.logPageStatus) {
       renderer.logPageStatus(`Request-${rid}-start`)
     }
@@ -215,7 +229,7 @@ if (cluster.isMaster) {
       msgbuf[rid] += renderer.timeEndMsg(timeid)
       pending--;
       
-      console.log(tag+`✅ Request completed successfully. Files generated: ${Object.keys(json).filter(k => k.endsWith('svg') || k.endsWith('png') || k.endsWith('json')).length}`)
+      console.log(`[${getPacificTimestamp()}] ${tag}Request completed successfully. Files generated: ${Object.keys(json).filter(k => k.endsWith('svg') || k.endsWith('png') || k.endsWith('json')).length}`)
       if (renderer && renderer.logPageStatus) {
         renderer.logPageStatus(`Request-${rid}-success`)
       }
@@ -227,8 +241,8 @@ if (cluster.isMaster) {
 
       return res.status(200).send(JSON.stringify(json))
     } catch (e) {
-      console.error(tag+`💥 Request failed with error: ${e.message}`)
-      console.error(tag+`🔍 Error stack:`, e.stack)
+      console.error(`[${getPacificTimestamp()}] ${tag}💀 Request failed with error: ${e.message}`)
+      console.error(`[${getPacificTimestamp()}] ${tag}Error stack:`, e.stack)
       pending--;
       if (renderer && renderer.logPageStatus) {
         renderer.logPageStatus(`Request-${rid}-error`)
@@ -248,34 +262,34 @@ if (cluster.isMaster) {
   })
 
   // Create renderer and start server.
-  console.log(prefix+`🚀 Starting worker ${cluster.worker.id} with ${pproduct} browser...`)
+  console.log(`[${getPacificTimestamp()}] ${prefix}Starting worker ${cluster.worker.id} with ${pproduct} browser...`)
   const workerStartTime = Date.now()
   
   createRenderer(cluster.worker.id, pproduct).then(createdRenderer => {
     renderer = createdRenderer
     const initTime = Date.now() - workerStartTime
-    console.info(prefix+`✅ Initialized renderer in ${initTime}ms`)
+    console.info(`[${getPacificTimestamp()}] ${prefix}Initialized renderer in ${initTime}ms`)
     const bindip = process.env.JSBRAIN_SERVER_BIND || 'localhost'
       
     app.listen(port, bindip, () => {
       const totalStartTime = Date.now() - workerStartTime
-      console.info(prefix+`🌐 Server ready! Listening on ${bindip}:${port} (total startup: ${totalStartTime}ms)`)
-      console.info(prefix+`📊 Worker stats - PID: ${process.pid}, Memory: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`)
+      console.info(`[${getPacificTimestamp()}] ${prefix}Server ready! Listening on ${bindip}:${port} (total startup: ${totalStartTime}ms)`)
+      console.info(`[${getPacificTimestamp()}] ${prefix}Worker stats - PID: ${process.pid}, Memory: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`)
     })
   }).catch(e => {
     const failTime = Date.now() - workerStartTime
-    console.error(prefix+`💀 Failed to initialize renderer after ${failTime}ms:`, e.message)
-    console.error(prefix+`🔍 Error details:`, e)
+    console.error(`[${getPacificTimestamp()}] ${prefix}💀 Failed to initialize renderer after ${failTime}ms:`, e.message)
+    console.error(`[${getPacificTimestamp()}] ${prefix}Error details:`, e)
     // Exit with error code to ensure process manager restarts the service
     process.exit(1)
   })
 
   // Add process error handlers
   process.on('uncaughtException', (err) => {
-    console.error(prefix+`💀 UNCAUGHT EXCEPTION - Worker ${cluster.worker.id} crashing:`);
-    console.error(prefix+`🔍 Error:`, err.message);
-    console.error(prefix+`📋 Stack:`, err.stack);
-    console.error(prefix+`📊 Memory usage:`, process.memoryUsage());
+    console.error(`[${getPacificTimestamp()}] ${prefix}💀 UNCAUGHT EXCEPTION - Worker ${cluster.worker.id} crashing:`);
+    console.error(`[${getPacificTimestamp()}] ${prefix}Error:`, err.message);
+    console.error(`[${getPacificTimestamp()}] ${prefix}Stack:`, err.stack);
+    console.error(`[${getPacificTimestamp()}] ${prefix}Memory usage:`, process.memoryUsage());
     if (renderer && renderer.logPageStatus) {
       renderer.logPageStatus('UNCAUGHT-EXCEPTION');
     }
@@ -283,10 +297,10 @@ if (cluster.isMaster) {
   });
 
   process.on('unhandledRejection', (reason, promise) => {
-    console.error(prefix+`💀 UNHANDLED REJECTION - Worker ${cluster.worker.id}:`);
-    console.error(prefix+`🔍 Promise:`, promise);
-    console.error(prefix+`📋 Reason:`, reason);
-    console.error(prefix+`📊 Memory usage:`, process.memoryUsage());
+    console.error(`[${getPacificTimestamp()}] ${prefix}💀 UNHANDLED REJECTION - Worker ${cluster.worker.id}:`);
+    console.error(`[${getPacificTimestamp()}] ${prefix}Promise:`, promise);
+    console.error(`[${getPacificTimestamp()}] ${prefix}Reason:`, reason);
+    console.error(`[${getPacificTimestamp()}] ${prefix}Memory usage:`, process.memoryUsage());
     if (renderer && renderer.logPageStatus) {
       renderer.logPageStatus('UNHANDLED-REJECTION');
     }
@@ -296,7 +310,7 @@ if (cluster.isMaster) {
 
 // Terminate process
 process.on('SIGINT', async () => {
-  console.log(prefix+`🛑 Received SIGINT, starting graceful shutdown...`)
+  console.log(`[${getPacificTimestamp()}] ${prefix}Received SIGINT, starting graceful shutdown...`)
   if (renderer) {
     try {
       console.log(prefix+`🧹 Cleaning up renderer pages...`)
@@ -313,7 +327,7 @@ process.on('SIGINT', async () => {
 })
 
 process.on('SIGTERM', async () => {
-  console.log(prefix+`🛑 Received SIGTERM, starting graceful shutdown...`)
+  console.log(`[${getPacificTimestamp()}] ${prefix}Received SIGTERM, starting graceful shutdown...`)
   if (renderer) {
     try {
       console.log(prefix+`🧹 Cleaning up renderer pages...`)
