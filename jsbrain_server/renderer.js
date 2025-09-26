@@ -157,12 +157,13 @@ class Renderer {
           return null
         }
         // If all existing pages are found to be busy, create a new one
-        console.log(`${tag}🆕 All ${numpages} pages busy, creating new page in slot ${numpages}`)
+        const newSlot = this.pages.length  // Get the actual current length
+        console.log(`[${getPacificTimestamp()}] ${tag}All ${numpages} pages busy, creating new page in slot ${newSlot}`)
         page = await this.browser.newPage()
         this.pageCreatedCount++
-        pageinfo = {page: page, busy: true, slot: numpages}
+        pageinfo = {page: page, busy: true, slot: newSlot}
         this.pages.push( pageinfo )
-        console.log(`${tag}✅ Successfully created new page in slot ${numpages}`)
+        console.log(`[${getPacificTimestamp()}] ${tag}Successfully created new page in slot ${newSlot}`)
       }
       
       this.logPageStatus('Post-page-allocation')
