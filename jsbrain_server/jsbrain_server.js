@@ -48,24 +48,36 @@ function compareJSON(stats, bbr) {
 }
 
 if (cluster.isMaster) {
+  console.log(`🎯 Master process ${process.pid} starting up...`);
 
   // Count the machine's CPUs
   let cpuCount = os.cpus().length;
+  console.log(`💻 Detected ${cpuCount} CPU cores`);
 
   // Number of "parallel" renderer instances. Actual parallelism is
   // because chromium instances run as processes.
   cpuCount = 1;
+  console.log(`⚙️ Configured to use ${cpuCount} worker(s)`);
 
   // Create a worker for each CPU
-  for (let i = 0; i < cpuCount; i += 1)
+  for (let i = 0; i < cpuCount; i += 1) {
+    console.log(`🚀 Forking worker ${i + 1}/${cpuCount}...`);
     cluster.fork();
+  }
+
+  // Log when workers come online
+  cluster.on('online', (worker) => {
+    console.log(`✅ Worker ${worker.id} (PID ${worker.process.pid}) is online`);
+  });
 
   // Whenever a worker dies, create a new one.
   cluster.on('exit', (worker, code, signal) => {
-    console.log('Renderer worker %d died (%s). restarting...',
-      worker.process.pid, signal || code);
+    console.log(`💀 Worker ${worker.id} (PID ${worker.process.pid}) died with code ${code} and signal ${signal}`);
+    console.log(`🔄 Restarting worker ${worker.id}...`);
     cluster.fork();
   });
+  
+  console.log(`🎉 Master process initialization complete. Managing ${cpuCount} worker(s).`);
 
 } else {
 
@@ -145,7 +157,11 @@ if (cluster.isMaster) {
     pending++
     msgbuf[rid] = ""
     console.log(tag+"============================================")
-    console.log(tag+`Request url=${req.url}`)
+    console.log(tag+`🌐 Incoming request: ${req.method} ${req.url}`)
+    console.log(tag+`📊 Server stats - Pending requests: ${pending}, Worker ID: ${cluster.worker.id}`)
+    if (renderer && renderer.logPageStatus) {
+      renderer.logPageStatus(`Request-${rid}-start`)
+    }
 
     msgbuf[rid] += (tag+"<BEEBRAIN> ")
     process.umask(0)
@@ -199,6 +215,11 @@ if (cluster.isMaster) {
       msgbuf[rid] += renderer.timeEndMsg(timeid)
       pending--;
       
+      console.log(tag+`✅ Request completed successfully. Files generated: ${Object.keys(json).filter(k => k.endsWith('svg') || k.endsWith('png') || k.endsWith('json')).length}`)
+      if (renderer && renderer.logPageStatus) {
+        renderer.logPageStatus(`Request-${rid}-success`)
+      }
+      
       msgbuf[rid] += (tag+"</BEEBRAIN> (pending: "+pending+")\n")
 
       process.stdout.write(msgbuf[rid])
@@ -206,6 +227,12 @@ if (cluster.isMaster) {
 
       return res.status(200).send(JSON.stringify(json))
     } catch (e) {
+      console.error(tag+`💥 Request failed with error: ${e.message}`)
+      console.error(tag+`🔍 Error stack:`, e.stack)
+      pending--;
+      if (renderer && renderer.logPageStatus) {
+        renderer.logPageStatus(`Request-${rid}-error`)
+      }
       // Make sure we only send one response
       if (!res.headersSent)
         return res.status(500).send(JSON.stringify({error: e.message}))
@@ -221,53 +248,83 @@ if (cluster.isMaster) {
   })
 
   // Create renderer and start server.
+  console.log(prefix+`🚀 Starting worker ${cluster.worker.id} with ${pproduct} browser...`)
+  const workerStartTime = Date.now()
+  
   createRenderer(cluster.worker.id, pproduct).then(createdRenderer => {
     renderer = createdRenderer
-    console.info(prefix+'Initialized renderer.')
+    const initTime = Date.now() - workerStartTime
+    console.info(prefix+`✅ Initialized renderer in ${initTime}ms`)
     const bindip = process.env.JSBRAIN_SERVER_BIND || 'localhost'
       
     app.listen(port, bindip, () => {
-      console.info(prefix+`Listening on ${bindip}:${port}`)
+      const totalStartTime = Date.now() - workerStartTime
+      console.info(prefix+`🌐 Server ready! Listening on ${bindip}:${port} (total startup: ${totalStartTime}ms)`)
+      console.info(prefix+`📊 Worker stats - PID: ${process.pid}, Memory: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`)
     })
   }).catch(e => {
-    console.error('Failed to initialize renderer:', e)
+    const failTime = Date.now() - workerStartTime
+    console.error(prefix+`💀 Failed to initialize renderer after ${failTime}ms:`, e.message)
+    console.error(prefix+`🔍 Error details:`, e)
     // Exit with error code to ensure process manager restarts the service
     process.exit(1)
   })
 
   // Add process error handlers
   process.on('uncaughtException', (err) => {
-    console.error('Uncaught exception:', err);
+    console.error(prefix+`💀 UNCAUGHT EXCEPTION - Worker ${cluster.worker.id} crashing:`);
+    console.error(prefix+`🔍 Error:`, err.message);
+    console.error(prefix+`📋 Stack:`, err.stack);
+    console.error(prefix+`📊 Memory usage:`, process.memoryUsage());
+    if (renderer && renderer.logPageStatus) {
+      renderer.logPageStatus('UNCAUGHT-EXCEPTION');
+    }
     process.exit(1);
   });
 
   process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled rejection at:', promise, 'reason:', reason);
+    console.error(prefix+`💀 UNHANDLED REJECTION - Worker ${cluster.worker.id}:`);
+    console.error(prefix+`🔍 Promise:`, promise);
+    console.error(prefix+`📋 Reason:`, reason);
+    console.error(prefix+`📊 Memory usage:`, process.memoryUsage());
+    if (renderer && renderer.logPageStatus) {
+      renderer.logPageStatus('UNHANDLED-REJECTION');
+    }
     process.exit(1);
   });
 }
 
 // Terminate process
 process.on('SIGINT', async () => {
+  console.log(prefix+`🛑 Received SIGINT, starting graceful shutdown...`)
   if (renderer) {
     try {
-      console.log('Cleaning up renderer pages...')
+      console.log(prefix+`🧹 Cleaning up renderer pages...`)
+      const shutdownStart = Date.now()
       await renderer.closeAllPages()
+      const shutdownTime = Date.now() - shutdownStart
+      console.log(prefix+`✅ Cleanup completed in ${shutdownTime}ms`)
     } catch (error) {
-      console.warn('Error during cleanup:', error.message)
+      console.warn(prefix+`⚠️ Error during cleanup:`, error.message)
     }
   }
+  console.log(prefix+`👋 Worker ${cluster.worker.id} shutting down gracefully`)
   process.exit(0)
 })
 
 process.on('SIGTERM', async () => {
+  console.log(prefix+`🛑 Received SIGTERM, starting graceful shutdown...`)
   if (renderer) {
     try {
-      console.log('Cleaning up renderer pages...')
+      console.log(prefix+`🧹 Cleaning up renderer pages...`)
+      const shutdownStart = Date.now()
       await renderer.closeAllPages()
+      const shutdownTime = Date.now() - shutdownStart
+      console.log(prefix+`✅ Cleanup completed in ${shutdownTime}ms`)
     } catch (error) {
-      console.warn('Error during cleanup:', error.message)
+      console.warn(prefix+`⚠️ Error during cleanup:`, error.message)
     }
   }
+  console.log(prefix+`👋 Worker ${cluster.worker.id} shutting down gracefully`)
   process.exit(0)
 })
