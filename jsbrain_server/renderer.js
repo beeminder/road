@@ -12,6 +12,17 @@ class Renderer {
     this.browser = browser
     this.id = id
     this.pages = []
+    
+    // Clean up pages when browser disconnects
+    browser.on('disconnected', () => {
+      console.log(`(${id}): Browser disconnected, cleaning up ${this.pages.length} pages`)
+      this.pages.forEach(pageinfo => {
+        if (pageinfo.timeout) {
+          clearTimeout(pageinfo.timeout)
+        }
+      })
+      this.pages = []
+    })
   }
 
   // This method overrides stdout and captures the output of
@@ -30,12 +41,33 @@ class Renderer {
   
   prfinfo(r) { return [this.id,r] }
   prf(r) { return "("+this.id+":"+r+") " }
+
+  // Gracefully close all pages and clear timeouts
+  async closeAllPages() {
+    console.log(`(${this.id}): Closing ${this.pages.length} pages`)
+    for (const pageinfo of this.pages) {
+      if (pageinfo.timeout) {
+        clearTimeout(pageinfo.timeout)
+        pageinfo.timeout = null
+      }
+      if (pageinfo.page) {
+        try {
+          await pageinfo.page.close()
+        } catch (error) {
+          console.warn(`(${this.id}): Error closing page:`, error.message)
+        }
+        pageinfo.page = null
+      }
+    }
+    this.pages = []
+  }
   
   // Renders and returns an available page (tab) within the puppeteer
   // chrome instance. Creates one if all existing ones are found to be
   // busy
   async renderPage( url, tag, msglog, errlog ) {
     let gotoOptions = { timeout: pageTimeout * 1000, waitUntil: 'load' }
+    const MAX_PAGES = 20; // Prevent unbounded page creation
 
     try {
       var pageinfo = null, page = null;
@@ -59,6 +91,11 @@ class Renderer {
         }
       }
       if (!pageinfo) {
+        // Check if we've hit the page limit
+        if (numpages >= MAX_PAGES) {
+          console.warn(tag+"renderer.js: Hit page limit, waiting for available page")
+          return null
+        }
         // If all existing pages are found to be busy, create a new one
         console.log(tag+"renderer.js: Creating new page in slot "+numpages)
         page = await this.browser.newPage()
@@ -95,6 +132,10 @@ class Renderer {
       return pageinfo
     } catch (error) {
       console.error('Error in renderPage:', error);
+      // Ensure page is released on any error
+      if (pageinfo) {
+        pageinfo.busy = false
+      }
       throw error;
     }
   }
@@ -196,6 +237,7 @@ class Renderer {
           msgbuf += (tag+" renderer.js ERROR: "+err.message+"\n")
           if (time_id != null) msgbuf += this.timeEndMsg(time_id)
           time_id = null
+          // Page cleanup will be handled in finally block
           return { error: err.message, msgbuf: msgbuf }
         }
         if (time_id != null) msgbuf += this.timeEndMsg(time_id)
@@ -207,7 +249,7 @@ class Renderer {
         if (jsonstr == "" || jsonstr == null) {
           let err = "Could not extract JSON from page!"
           msgbuf += (tag+" renderer.js ERROR: "+err+"\n")
-
+          // Page cleanup will be handled in finally block
           return { error:err, msgbuf: msgbuf }
         }
         //console.log(`DEBUG:\n${jsonstr}\n`) // TODO
@@ -308,7 +350,7 @@ class Renderer {
         // Clean up leftover timing
         if (time_id != null) msgbuf += this.timeEndMsg(time_id)
         time_id = null
-        
+        // No page cleanup needed as no page was created
         return { error:err, msgbuf: msgbuf }
       }
     } finally {
@@ -325,7 +367,11 @@ class Renderer {
                 if (pageinfo.page) {
                   console.log(tag+"renderer.js: Closing page after timeout in slot "
                               +pageinfo.slot)
-                  pageinfo.page.close()
+                  try {
+                    pageinfo.page.close()
+                  } catch (closeError) {
+                    console.warn(tag+"renderer.js: Error closing page:", closeError.message)
+                  }
                 }
                 pageinfo.page = null
                 pageinfo.timeout = null

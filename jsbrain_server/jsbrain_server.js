@@ -248,6 +248,26 @@ if (cluster.isMaster) {
 }
 
 // Terminate process
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
+  if (renderer) {
+    try {
+      console.log('Cleaning up renderer pages...')
+      await renderer.closeAllPages()
+    } catch (error) {
+      console.warn('Error during cleanup:', error.message)
+    }
+  }
+  process.exit(0)
+})
+
+process.on('SIGTERM', async () => {
+  if (renderer) {
+    try {
+      console.log('Cleaning up renderer pages...')
+      await renderer.closeAllPages()
+    } catch (error) {
+      console.warn('Error during cleanup:', error.message)
+    }
+  }
   process.exit(0)
 })
