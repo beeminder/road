@@ -18,79 +18,89 @@
 <pre id="goaljson"></pre>
 
 <script>
-  var done = false; // IMPORTANT: This is monitored by renderer.js
-  
-  // Make sure to abort processing if an unreasonable amount of time has elapsed
-  setTimeout( function(){
-                 console.log("Aborting processing due to timeout!");done=true;},
-                 butil.MAXTIME)
-  try {
-  
-    function getParameterByName(name, url) {
-      if (!url) url = window.location.href
-      name = name.replace(/[\[\]]/g, "\\$&")
-      var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-          results = regex.exec(url)
-      if (!results) return null
-      if (!results[2]) return ''
-      return decodeURIComponent(results[2].replace(/\+/g, " "))
-    }
- 
-    var saveSVG = function() {
-      //console.debug('Done loading road')
-      var newroot = d3.select(document.body)
-      //newroot.selectAll(".zoomarea").remove() // Needed for extracting BBox
-      newroot.selectAll(".buttonarea").remove()
-      newroot.selectAll(".brush").remove()
-      newroot.selectAll("#brushclip1").remove()
-      newroot.selectAll(".zoomin").remove()
-      newroot.selectAll(".zoomout").remove()
-      //newroot.selectAll(".minor").remove()
-      //done = true  // Uluc: Not sure why this was here, was causing premature exit before xlink images were loaded. 2019.02.06
-     
-    }
-    var nograph = (getParameterByName('NOGRAPH') == "true")?true:false
-    async function process() {
-      if (!nograph && typeof d3loaded == 'undefined') await new Promise((r,j)=>setTimeout(r,1000))
-      if (!nograph && typeof d3loaded == 'undefined') {
-        console.log("ERROR (generate.html): Could not load d3! No internet?")
-        done = true
-        return
-      }
-      var graph = new bgraph({divGraph: (nograph?null:document.getElementById('goalgraph')),
-                           divJSON: document.getElementById('goaljson'),
-                           svgSize: { width: 696, height: 453 },
-                           focusRect: { x:0, y:0, width:696, height: 453 },
-                           ctxRect: { x:0, y:453, width:696, height: 32 },
-                           noGraph:nograph,
-                           roadEditor:false,
-                           headless:true,
-                           maxFutureDays: 365,
-                           showFocusRect: false,
-                           showContext: false,
-                           onRoadChange: saveSVG,
-                           onError: saveSVG
-      })
 
-      var bb = getParameterByName('bb');
-      if (bb) {
-        await graph.loadGoal(getParameterByName('bb'))
-      } else {
-        d3.select("#roadgraph").text("Usage: generate.html?bb=file:///path/to/file.bb")
-      }
-     
-      if (!nograph && graph.hasOwnProperty('xlinkLoaded')) {
-        while (!graph.xlinkLoaded()) {     
-          await (new Promise(resolve => (setTimeout(resolve, 10))))
-        }     
-      } 
-      done = true
+let done = false; // IMPORTANT: This is monitored by renderer.js
+
+// Make sure to abort processing if an unreasonable amount of time has elapsed
+setTimeout(function() {
+    console.log("Aborting due to timeout!");
+    done=true
+  },
+  butil.MAXTIME);
+
+try {
+
+  function getParameterByName(name, url) {
+    if (!url) url = window.location.href;
+    name = name.replace(/[\[\]]/g, "\\$&");
+    const regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)");
+    const results = regex.exec(url);
+    if (!results)    return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, " "))
+  }
+
+  const saveSVG = function() {
+    //console.debug('Done loading road')
+    const newroot = d3.select(document.body)
+    //newroot.selectAll(".zoomarea").remove() // needed for extracting BBox?
+    newroot.selectAll(".buttonarea").remove()
+    newroot.selectAll(".brush").remove()
+    newroot.selectAll("#brushclip1").remove()
+    newroot.selectAll(".zoomin").remove()
+    newroot.selectAll(".zoomout").remove()
+    //newroot.selectAll(".minor").remove()
+  }
+  const nograph = (getParameterByName('NOGRAPH') == "true") ? true : false;
+  async function process() {
+    if (!nograph && typeof d3loaded == 'undefined') 
+      await new Promise((r,j)=>setTimeout(r,1000));
+    if (!nograph && typeof d3loaded == 'undefined') {
+      console.log("ERROR (generate.html): Could not load d3! No internet?");
+      done = true;
+      return
     }
-    process().catch(function(err) {console.log("ERROR (generate.html): "+err.message); done = true})
-  } catch(err) {
-    console.log("ERROR (generate.html): "+err.message)
-    done = true // Make sure errors on this page do not cause timeouts in renderer.js
-  } 
+    const graph = new bgraph({
+      divGraph:      (nograph ? null : document.getElementById('goalgraph')),
+      divJSON:       document.getElementById('goaljson'),
+      svgSize:       { width: 696, height: 453 },
+      focusRect:     { x:0, y:0,   width:696, height: 453 },
+      ctxRect:       { x:0, y:453, width:696, height: 32 },
+      noGraph:       nograph,
+      roadEditor:    false,
+      headless:      true,
+      maxFutureDays: 365,
+      showFocusRect: false,
+      showContext:   false,
+      onRoadChange:  saveSVG,
+      onError:       saveSVG,
+    });
+
+    const bb = getParameterByName('bb');
+    if (bb) {
+      await graph.loadGoal(getParameterByName('bb'))
+    } else {
+      d3.select("#roadgraph")
+        .text("Usage: generate.html?bb=file:///path/to/file.bb")
+    }
+    
+    if (!nograph && graph.hasOwnProperty('xlinkLoaded')) {
+      while (!graph.xlinkLoaded()) {     
+        await (new Promise(resolve => (setTimeout(resolve, 10))))
+      }     
+    } 
+    done = true
+  }
+  process().catch(function(err) {
+    console.log("ERROR (generate.html): "+err.message);
+    done = true
+  })
+
+} catch(err) {
+  console.log("ERROR (generate.html): "+err.message);
+  done = true  // Ensure errors on this page don't cause timeouts in renderer.js
+} 
+
 </script>
 
 </body>
