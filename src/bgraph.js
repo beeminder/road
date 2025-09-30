@@ -442,7 +442,12 @@ let svg, defs, graphs, buttonarea, stathead, focus, focusclip, plot,
     zoomarea, axisZoom, zoomin, zoomout, // exportBtn,  
     brushObj, brush, focusrect, topLeft, dataTopLeft,
     scf = 1, oldscf = 0
-  
+
+// Guards to avoid infinite recursion when brush and zoom listeners 
+// programmatically update each other. GPT-5-Codex thinks we need this for D3v7.
+// let suppressBrush = false
+// let suppressZoom = false
+
 // These are svg defs that will created dynamically only when needed
  let beyegrp, beyepgrp, infgrp, sklgrp, smlgrp
 
@@ -761,7 +766,7 @@ function createGraph() {
   const oldscroll = zoomarea.on("wheel.scroll")
   const scrollinfo = {shown: false, timeout: null}
   
-  const onscroll = function() {
+  const onscroll = function() { // D3v7: pass in event, use instead of d3.event?
     if (scrollinfo.timeout != null) {
       clearTimeout(scrollinfo.timeout)
       scrollinfo.timeout = null
@@ -798,7 +803,7 @@ function createGraph() {
     .extent([[0, 0], [plotbox.width, plotbox.height]])
     .scaleExtent([1, Infinity])
     .translateExtent([[0, 0], [plotbox.width, plotbox.height]])
-    .filter(function(){ return (d3.event.type != "wheel" || d3.event.ctrlKey) })
+    .filter(() => !d3.event || d3.event.type !== "wheel" || d3.event.ctrlKey)
     .on("zoom", zoomed)
   zoomarea.call(axisZoom)
   if (onMobileOrTablet()) {
@@ -808,23 +813,32 @@ function createGraph() {
     const oldTouchEnd   = zoomarea.on("touchend.zoom")
     
     zoomarea
-      .on("touchstart.zoom", function(){ 
+      .on("touchstart.zoom", function() { // D3v7: pass in event?
         const bbox = this.getBoundingClientRect()
-        pressX = d3.event.touches.item(0).pageX - bbox.left
+        const touch = d3.event.touches.item(0)
+        pressX = touch.pageX - bbox.left
         const  newx = nXSc.invert(pressX)
         if (pressTimer == null && d3.event.touches.length == 1) 
           pressTimer = window.setTimeout(
             () => { if (newx != null) addNewDot(newx/SMS) }, 1000)
         oldTouchStart.apply(this, arguments)} )
-      .on("touchmove.zoom", function(){ window.clearTimeout(pressTimer); pressTimer = null; oldTouchMove.apply(this, arguments)})
-      .on("touchend.zoom", function(){ clearTimeout(pressTimer); pressTimer = null; oldTouchEnd.apply(this, arguments)} )
+      .on("touchmove.zoom", function() { // D3v7: pass in event?
+        window.clearTimeout(pressTimer); 
+        pressTimer = null; 
+        oldTouchMove.apply(this, arguments)
+      })
+      .on("touchend.zoom", function() { // D3v7: pass in event?
+        clearTimeout(pressTimer); 
+        pressTimer = null; 
+        oldTouchEnd.apply(this, arguments)
+      })
   }
-  function dotAdded() {
+  function dotAdded() { // D3v7: pass in event?
     const mouse = d3.mouse(svg.node())
     const newx = nXSc.invert(mouse[0]-plotpad.left)
     addNewDot(newx/SMS)
   }
-  function dotAddedShift() {
+  function dotAddedShift() { // D3v7: pass in event?
     if (d3.event.shiftKey) dotAdded()
     else clearSelection()  
   }
@@ -951,14 +965,17 @@ function createGraph() {
   ySc    = d3.scaleLinear().range([plotbox.height, 0])
   yAxis  = d3.axisLeft(ySc).ticks(8).tickSize(6).tickSizeOuter(0)
   yAxisR = d3.axisRight(ySc).ticks(8).tickSize(6).tickSizeOuter(0)
+
   yAxisObj = focus.append('g')        
     .attr("class", "axis")
     .attr("transform", "translate(" + plotpad.left + ","+plotpad.top+")")
     .call(yAxis)
+  hyphenizeAxisTicks(yAxisObj) //TODO-hyphens
   yAxisObjR = focus.append('g').attr("class", "axis")
     .attr("transform", "translate(" 
                        + (plotpad.left+plotbox.width) + ","+plotpad.top+")")
     .call(yAxisR)
+  hyphenizeAxisTicks(yAxisObjR) //TODO-hyphens
   yAxisLabel = focus.append('text')        
     .attr("class", "axislabel")
     .attr("transform", 
@@ -1051,10 +1068,12 @@ function resizeGraph() {
   nYSc.range([0, plotbox.height])
   yAxisObj.attr("transform", "translate("+plotpad.left+","+plotpad.top+")")
     .call(yAxis.scale(nYSc))
+  hyphenizeAxisTicks(yAxisObj) //TODO-hyphens
 
   yAxisObjR.attr("transform", "translate(" 
                            + (plotpad.left+plotbox.width) + ","+plotpad.top+")")
     .call(yAxisR.scale(nYSc))
+  hyphenizeAxisTicks(yAxisObjR) //TODO-hyphens
 
   yAxisLabel.attr("transform", 
                   "translate(15,"+(plotbox.height/2+plotpad.top)
@@ -1106,7 +1125,7 @@ function dsliderupdate(val) {
   updateDataTable()
   dsliderbusy = false
 }
-function dsliderscroll() {
+function dsliderscroll() { // D3v7: pass in event?
   if (dtableedit) return
   d3.event.preventDefault()
   if (d3.event.deltaY < 0) {
@@ -1166,26 +1185,31 @@ function createXhtmlEl(name) {
 }
 
 let dtablebusy = false, dtableedit = null
-function getDataRowId() {
+function getDataRowId() { // D3v7: pass in node?
   return event.currentTarget.parentElement.getAttribute('id')
 }
-function getDataInd() {
+function getDataInd() { // D3v7: pass in node?
   const id = getDataRowId()
   const ind = id.match(/drow(\d+)/)
   if (!ind || ind.length < 2) return null
   return ind[1]
 }
-function getDataId() {
+function getDataId() { // D3v7: pass in node?
   const ind = getDataInd()
   if (!ind) return null
   const d = rawdata[ind]
   return d[3]?d[3]:ind
 }
-function dataEdit() {
-  const ind = getDataInd()
+function dataEdit() { // D3v7: pass in event?
+  // D3v7 ideas from GPT-5-Codex:
+  // const node = event && event.currentTarget ? event.currentTarget :
+  //              this && this.nodeType === 1  ? this :
+  //                                             document.activeElement
+  if (!node) return
+  const ind = getDataInd() // D3v7: pass in node?
   if (!dtableedit) {
     // Starting edit
-    const id = getDataRowId()
+    const id = getDataRowId() // D3v7: pass in node?
     dtableedit = ind
     dataslider.attr("disabled", true)
     dataFocus.field = null
@@ -1195,7 +1219,7 @@ function dataEdit() {
     // Finishing edit
     if (dataFocus.changed) {
 
-      const did = getDataId()
+      const did = getDataId() // D3v7: pass in node?
       const parent = d3.select(event.currentTarget.parentNode)
       const date = bu.dayparse(parent.select(".dt").text(),'-')
       const value = parent.select(".vl").text()
@@ -1208,14 +1232,17 @@ function dataEdit() {
   }
   updateDataTable()
 }
-function dataDelete() {
+function dataDelete() { // D3v7: pass in event?
+  // D3v7 ideas from GPT-5-Codex:
+  // const node = event && event.currentTarget ? event.currentTarget : this
+  // if (!node) return
   const ind = getDataInd()
   const did = getDataId()
   if (dtableedit && dtableedit != ind) return 
   if (opts.onDataEdit) opts.onDataEdit(did, null)
   updateDataTable()
 }
-function dataCancel() {
+function dataCancel() { // D3v7: pass in event
   dataslider.attr("disabled", null)
   dtableedit = null
   updateDataTable()
@@ -1232,6 +1259,7 @@ function dataFocusIn( d, i ){
   if (!dtableedit) {
     // Starting editing
     dataEdit()
+    //dataEdit.call(this) // D3v7: GPT-5-Codex suggestion
   } else if (!d.edit) return
   
   //console.debug('dataFocusIn('+i+') for '+this.parentNode.id);
@@ -1266,9 +1294,9 @@ function dataFocusOut( d, i ){
   dataFocus.field = null
 }
   
-function dataKeyDown(d, i) {
+function dataKeyDown(d, i) { // D3v7: pass in event as first arg?
   if (!opts.onDataEdit || !d.edit || i == 0 || i > 3) return
-  if (d3.event.keyCode == 13) {
+  if (/*d3.event.key === 'Enter' ||*/ d3.event.keyCode === 13) {
     this.blur()
     const text = d3.select(this).text()
     const val = (i==1 ? bu.dayparse(text, '-') : text)
@@ -1281,6 +1309,7 @@ function dataKeyDown(d, i) {
     if (d3.event.ctrlKey) {
       // Ctrl-enter finishes editing
       dataEdit()
+      //dataEdit.call(event.currentTarget, event) // D3v7: GPT-5-Codex suggestn
     }
   }
 }
@@ -1330,6 +1359,9 @@ function updateDataTable() {
              .attr('class', (d,i)=>("dcell "+dcellclass[i]))
              .style("border", (d,i)=>( (i == 0)?"0":null))
              .style("text-align", (d,i)=>( (i == 0)?"right":null))
+             // GPT-5-Codex says to use regular (not arrow) function to preserve
+             // `this` as the clicked cell (and pass in event as first arg):
+             //.on('click',function(event,d){if(d.clk) d.clk.call(this,event)}),
              .on('click', d=>(d.clk?d.clk():null)),
              update=>update)
     .html(d=>{return d.txt})
@@ -1733,7 +1765,9 @@ function adjustYScale() {
         .translate(0, -ySc(yrange[0]))
   nYSc = newtr.rescaleY(ySc)
   yAxisObj.call(yAxis.scale(nYSc))
+  hyphenizeAxisTicks(yAxisObj) //TODO-hyphens
   yAxisObjR.call(yAxisR.scale(nYSc))
+  hyphenizeAxisTicks(yAxisObjR) //TODO-hyphens
 
   // Resize brush if dynamic y limits are beyond graph limits
   if (yrange[0] > gol.yMax) gol.yMax = yrange[0]
@@ -1761,12 +1795,18 @@ function resizeContext() {
  * updated X range */
 function resizeBrush() {
   if (opts.divGraph == null) return
+  //if (!brush) return // D3v7: GPT-5-Codex suggestion
   const limits = [xScB(nXSc.invert(0)), 
                 xScB(nXSc.invert(plotbox.width))]
   //console.debug("limits: "+limits);
   if (limits[0] < 0) limits[0] = 0
   if (limits[1] > brushbox.width) limits[1] = brushbox.width
+  //suppressBrush = true
+  //try {
   brush.call(brushObj.move, limits)
+  //} finally {
+  //  suppressBrush = false
+  //}
 }
 
 /** Update context graph by recomputing its limits & resizing the brush in it */
@@ -1774,16 +1814,21 @@ function reloadBrush() { resizeContext(); resizeBrush() }
 
 /** Gets called by d3.zoom when there has been a zoom event
  * associated with the focus graph */
-function zoomed() {
+function zoomed() { // D3v7: pass in event?
   //console.debug("id="+curid+", zoomed()")
   //console.trace()
   if (road.length == 0) return
+  // GPT-5-Codex suggestions:
+  //if (suppressZoom) return
+  //const evt = event || (typeof d3 !== 'undefined' ? d3.event : null)
   // Prevent recursive calls if this was initiated by a brush motion, resulting
   // in an updated zoom in the focus graph
   if (d3.event && d3.event.sourceEvent 
                && d3.event.sourceEvent.type === "brush") return
 
   // Inject the current transform into the plot element
+  // GPT-5-Codex suggestion:
+  //const tr = evt && evt.transform ? evt.transform : d3.zoomTransform(zoomarea.node())
   const tr = d3.zoomTransform(zoomarea.node())
   if (tr == null) return
   
@@ -1803,23 +1848,39 @@ function zoomed() {
 }
 
 /** Called by d3.brush whenever user modifies the brush on the context graph */
-function brushed() {
+function brushed() { // D3v7: pass in event?
   //console.debug("id="+curid+", brushed()")
   //console.trace()
   if (road.length == 0) return
+  // GPT-5-Codex suggestions:
+  //if (suppressBrush) return
+  //const evt = event || (typeof d3 !== 'undefined' ? d3.event : null)
   // Prevent recursive calls in case the change in the brush was triggered by a
   // zoom event
   if (d3.event.sourceEvent && d3.event.sourceEvent.type === "zoom") return
   const s = d3.event.selection || xScB.range()
+  // GPT-5-Codex suggestions:
+  //let s = evt && evt.selection
+  //if (!s && typeof d3 !== 'undefined' && d3.brushSelection) {
+  //  s = d3.brushSelection(this)
+  //}
+  //if (!s) s = xScB.range()
+  //if (!s || s.length < 2 || s[0] === s[1]) return
   
   nXSc.domain(s.map(xScB.invert, xScB))
   redrawXTicks()
   adjustYScale()
   handleYAxisWidth()
   
+  // GPT-5-Codex suggestions:
+  //suppressZoom = true
+  //try {
   zoomarea.call(axisZoom.transform, d3.zoomIdentity
                 .scale(brushbox.width / (s[1] - s[0]))
                 .translate(-s[0], 0))
+  //} finally {
+  //  suppressZoom = false
+  //}
   updateGraphData()
 }
 
@@ -2535,12 +2596,57 @@ function clearSelection() {
   unselect()
 }
 
+/* D3v7: stuff from GPT-5-Codex that might be garbage...
+function pointerXY(event, node) {
+  if (typeof d3 !== 'undefined' && typeof d3.pointer === 'function') {
+    return d3.pointer(event, node)
+  }
+  if (typeof d3 !== 'undefined' && typeof d3.mouse === 'function') {
+    return d3.mouse(node)
+  }
+  if (event && event.clientX !== undefined) {
+    const rect = node.getBoundingClientRect()
+    return [event.clientX - rect.left, event.clientY - rect.top]
+  }
+  return [0, 0]
+}
+
+function dragCoord(event, axis) {
+  if (!event) return null
+  if (axis === 'x') {
+    if (event.x !== undefined) return event.x
+    if (event.subject && event.subject.x !== undefined) return event.subject.x
+    if (event.sourceEvent && event.sourceEvent.x !== undefined) return event.sourceEvent.x
+  } else if (axis === 'y') {
+    if (event.y !== undefined) return event.y
+    if (event.subject && event.subject.y !== undefined) return event.subject.y
+    if (event.sourceEvent && event.sourceEvent.y !== undefined) return event.sourceEvent.y
+  }
+  return null
+}
+*/
+
+// Use proper math minus signs (U+2212) instead of hyphens for negative numbers.
+// In D3v7 it already does it right so we can drop this when we move to D3v7.
+//TODO-hyphens
+function hyphenizeAxisTicks(selection) {
+  const MMS = '\u2212'; // Unicode mathematical minus sign
+  const HYP = '-';      // Plain ascii hyphen  
+  selection.selectAll('.tick text').each(function() { // no arrow func cuz this
+    this.textContent = this.textContent?.replaceAll(HYP, MMS)
+  })
+}
+
 // --------------------- Functions for manipulating knots ----------------------
 
 let roadsave, knotind, knotdate, prevslopes
 
 let editingKnot = false
-function knotDragStarted(d,i) {
+function knotDragStarted(d, i) { // D3v7: pass event as first arg? no i?
+  // GPT-5-Codex suggestions:
+  //if (!event) return
+  //const src = event.sourceEvent || event
+  //if (src.stopPropagation) src.stopPropagation()
   d3.event.sourceEvent.stopPropagation()
   editingKnot = true
   pushUndoState()
@@ -2565,7 +2671,8 @@ function knotDragStarted(d,i) {
 
 }
 
-function knotDragged(d,i) {
+function knotDragged(d, i) { // D3v7: pass event as first arg? no i?
+  //if (!event) return
   unselect()
   // event coordinates are pre-scaled, so use normal scale
   let x = bu.daysnap(nXSc.invert(d3.event.x)/SMS)
@@ -2594,7 +2701,7 @@ function knotDragged(d,i) {
   updateDragPositions(kind, true)
   updateDragInfo(d.end)
 }
-function knotDragEnded(d,i) {
+function knotDragEnded(d,i) { // D3v7: pass event as first arg? no i?
   editingKnot = false
 
   if (selection == null) {
@@ -2654,7 +2761,11 @@ function knotEdited(d, id) {
 // ---------------------- Functions for manipulating dots ----------------------
 
 let editingDot = false
-function dotDragStarted(d, id) {
+function dotDragStarted(d, id) { // d3v7: pass event as first arg?
+  // GPT-5-Codex suggestions:
+  //if (!event) return
+  //const src = event.sourceEvent || event
+  //if (src.stopPropagation) src.stopPropagation()
   d3.event.sourceEvent.stopPropagation()
   editingDot = true
   pushUndoState()
@@ -2677,9 +2788,13 @@ function dotDragStarted(d, id) {
   } else createDragInfo(d.sta)
   dottext.grp.raise()
 };
-function dotDragged(d, id) {
+function dotDragged(d, id) { // d3v7: pass event as first arg?
+  //if (!event) return
   unselect()
   const now = gol.asof
+  // GPT-5-Codex suggestions:
+  //const ey = dragCoord(event, 'y')
+  //if (ey == null) return
   const y = nYSc.invert(d3.event.y)
   const kind = id
   const rd = road
@@ -2698,7 +2813,7 @@ function dotDragged(d, id) {
                             seg.slope*gol.siru])
   } else updateDragInfo(d.sta)
 };
-function dotDragEnded(d,id){
+function dotDragEnded(d, id) { // d3v7: pass event as first arg?
   editingDot = false
 
   if (selection == null) {
@@ -2757,10 +2872,18 @@ function dotEdited(d, id) {
 
 let editingRoad = false
 let roadedit_x
-function roadDragStarted(d, id) {
+function roadDragStarted(d, id) { // D3v7: pass event as first arg?
   //console.debug("roadDragStarted: "+id)
+  // GPT-5-Codex suggestions:
+  //if (!event) return
+  //const src = event.sourceEvent || event
+  //if (src.stopPropagation) src.stopPropagation()
   d3.event.sourceEvent.stopPropagation()
   editingRoad = true
+  // GPT-5-Codex suggestions:
+  //const kind = id
+  //const ex = dragCoord(event, 'x')
+  //if (ex == null) return
   roadedit_x = bu.daysnap(nXSc.invert(d3.event.x)/SMS)
   pushUndoState()
   roadsave = br.copyRoad(road)
@@ -2782,8 +2905,9 @@ function roadDragStarted(d, id) {
                          d.slope*gol.siru])
   slopetext.grp.raise()
 };
-function roadDragged(d, id) {
+function roadDragged(d, id) { // D3v7: pass event as first arg?
   //console.debug("roadDragged()")
+  //if (!event) return
   unselect()
   const now = gol.asof
   const x = bu.daysnap(nXSc.invert(d3.event.x)/SMS)
@@ -2807,7 +2931,7 @@ function roadDragged(d, id) {
   updateDragInfo(d.end, [slopex, d.sta[1]+d.slope*(slopex-d.sta[0]),
                          d.slope*gol.siru])
 }
-function roadDragEnded(d, id) {
+function roadDragEnded(d, id) { // D3v7: pass event as first arg?
   //console.debug("roadDragEnded()")
   editingRoad = false
 
@@ -4129,33 +4253,37 @@ function updateKnots() {
     .attr("x2", function(d){ return nXSc(d.end[0]*SMS)})
     .attr("stroke", "rgb(200,200,200)")
     .attr("stroke-width",opts.roadKnot.width)
-    .on('wheel', function(d) {
+    .on('wheel', function() { // D3v7: GPT-5-Codex says pass event, not d?
       // Redispatch a copy of the event to the zoom area
       const new_event = new d3.event.constructor(d3.event.type, d3.event)
       zoomarea.node().dispatchEvent(new_event)
       // Prevents mouse wheel event from bubbling up to the page
       d3.event.preventDefault()
     }, {passive:false})
-    .on("mouseover",function(d,i) {
+    .on("mouseover",function(d, i) { // D3v7: GPT-5 says pass event, not i?
+      // GPT-5-Codex suggestions:
+      //const kind = Number(this.id)
       if (!editingKnot && !editingDot && !editingRoad
          && !(selectType == br.RP.DATE && i == selection)) {
         highlightDate(i,true)
         d3.select(this)
           .attr("stroke-width",(opts.roadKnot.width+2))
       }})
-    .on("mouseout",function(d,i) {
+    .on("mouseout",function(d, i) { // D3v7: GPT-5 says pass event, not i?
+      // GPT-5-Codex suggestions:
+      //const kind = Number(this.id)
       if (!editingKnot && !editingDot && !editingRoad
          && !(selectType == br.RP.DATE && i == selection)) {
         highlightDate(i,false)
         d3.select(this)
           .attr("stroke-width",opts.roadKnot.width);
       }})
-    .on("click", function(d,i) { 
-      if (d3.event.ctrlKey) knotEdited(d,this.id);})
-    .call(d3.drag()
+    .on("click", function(d, i) { // D3v7: GPT-5 says pass event, not i?
+      if (d3.event.ctrlKey) knotEdited(d,this.id) })
+    .call(d3.drag()   // D3v7: GPT-5 had some hideousness below
           .on("start", knotDragStarted)
-          .on("drag", knotDragged)
-          .on("end", knotDragEnded))
+          .on("drag",  knotDragged)
+          .on("end",   knotDragEnded))
 
   // Create, update and delete removal icons for knots
   knotrmelt.exit().remove()
@@ -4988,8 +5116,8 @@ function tableFocusOut( d, i ){
   rdFocus.oldText = null
   rdFocus.field = null
 }
-function tableKeyDown( d, i ){
-  if (d3.event.keyCode == 13) {
+function tableKeyDown(d, i ) {
+  if (/*d3.event.key === 'Enter' ||*/ d3.event.keyCode === 13) {
     window.getSelection().removeAllRanges()
     var text = d3.select(this).text()
     var val = (i==0 ? bu.dayparse(text, '-') : text)
