@@ -117,7 +117,8 @@ function combine_jsmin(cb) {
 }
 
 function copy_vendor() {
-  return gulp.src(['src/moment.min.js', 'src/moment-timezone.min.js'])
+  return gulp.src(['src/moment.min.js', 'src/moment-timezone.min.js',
+                   'node_modules/d3/dist/d3.min.js'])
     .pipe(gulp.dest(LIBJS))
 }
 

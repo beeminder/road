@@ -83,6 +83,8 @@ app.use("/staticdesign", express.static("tests/generated/newdesign.html"));
 app.use("/tutorial",     express.static("tests/tutorial.html"));
 app.use("/newgoal",      express.static("tests/newgoal.html"));
 app.use("/src",          express.static("src"));       // js served through /src
+app.use("/tests",        express.static("tests"));     // for test pages
+app.use("/automon/data", express.static("automon/data")); // for test data
 app.use("/data",         express.static("data"));  // bb files served thru /data
 app.use("/lib",          express.static("lib"));  // js/css/etc served thru /lib
 
