@@ -796,8 +796,8 @@ function createGraph() {
   zoomarea.on("wheel.scroll", onscroll, {passive:false})
   zoomarea.on("mousedown.move", onmove)
   //zoomarea.on("touchstart", ()=>{console.log("touchstart")} )
-  //zoomarea.on("touchmove", ()=>{console.log("touchmove")} )
-  //zoomarea.on("touchend", ()=>{console.log("touchend")} )
+  //zoomarea.on("touchmove",  ()=>{console.log("touchmove")} )
+  //zoomarea.on("touchend",   ()=>{console.log("touchend")} )
 
   axisZoom = d3.zoom()
     .extent([[0, 0], [plotbox.width, plotbox.height]])
