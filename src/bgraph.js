@@ -663,7 +663,8 @@ function createGraph() {
   // Editor data :
   // Graph data  :
   // Graph hollow:
-  defs.insert('style').attr("id", "dynstyle"+curid).attr('type','text/css').text("")
+  defs.insert('style').attr("id", "dynstyle"+curid)
+                      .attr('type', 'text/css').text("")
   
   defs.append("clipPath")
     .attr("id", "plotclip"+curid)
@@ -927,7 +928,7 @@ function createGraph() {
                                        opts.zoomButton.factor) })
     .on("mouseover", function() {
       if (!mobileOrTablet) d3.select(this).style("fill", "red")})
-    .on("mouseout",function(event, d) { d3.select(this).style("fill", "black") })
+    .on("mouseout",function(e, d) { d3.select(this).style("fill", "black") })
   zoomout = focusclip.append("svg:use")
     .attr("class",      "zoomout")
     .attr("xlink:href", "#zoomoutbtn")
@@ -937,7 +938,7 @@ function createGraph() {
                                        1/opts.zoomButton.factor) })
     .on("mouseover", function() {
       if (!mobileOrTablet) d3.select(this).style("fill", "red") })
-    .on("mouseout", function(event, d) { d3.select(this).style("fill", "black") })
+    .on("mouseout", function(e, d) { d3.select(this).style("fill", "black") })
 
   // Create and initialize the x and y axes
   xSc   = d3.scaleUtc().range([0,plotbox.width])
@@ -1113,7 +1114,8 @@ function selectDataIndex(ind) {
   if (!databody.node().offsetParent) return
   dataselected = ind
   const midpt = Math.floor(opts.dataTableSize/2)
-  const tbindex = Math.max(0, Math.min(ind-midpt, rawdata.length-opts.dataTableSize))
+  const tbindex = Math.max(0, Math.min(ind - midpt, 
+                                       rawdata.length - opts.dataTableSize))
   dataindex = tbindex
   updateDataSliderValue()
   updateDataTable()
@@ -1163,7 +1165,8 @@ function createDataTable() {
 
   databody = divelt.append("div").attr("class", "dbody") /* Data table body */
   let datacolumns
-  datarange = Array(Math.min(rawdata.length, opts.dataTableSize)).fill().map((x,i)=>(i+dataindex))
+  datarange = Array(Math.min(rawdata.length, opts.dataTableSize)).fill()
+    .map((x,i)=>(i+dataindex))
   datacolumns = ['#', 'DATE', 'VALUE', 'COMMENT', '', ''];
   databody.append("div").attr('class', 'dhdrrow')
     .selectAll("span.dhdrcell").data(datacolumns)
@@ -1174,45 +1177,42 @@ function createDataTable() {
     .selectAll(".drow")
     .data(datarange)
     .join(enter => enter.append("div").attr('class', 'drow'))
-  dataslider = divelt.append("input").attr("type", "range").attr("class","dslider")
-    .attr("min",0).attr("max",15).attr("value",7).attr("step",1)
-    .on("input",function(){dsliderupdate(this.value)})
-    .on("change",function(){dsliderupdate(this.value)})
+  dataslider = divelt.append("input")
+    .attr("type", "range").attr("class", "dslider")
+    .attr("min", 0).attr("max", 15).attr("value", 7).attr("step", 1)
+    .on("input",  function() { dsliderupdate(this.value) })
+    .on("change", function() { dsliderupdate(this.value) })
 }
 
 function createSvgEl(name) {
-  return document.createElementNS("http://www.w3.org/2000/svg", name);
+  return document.createElementNS("http://www.w3.org/2000/svg", name)
 }
 function createXhtmlEl(name) {
-  return document.createElementNS("http://www.w3.org/1999/xhtml", name);
+  return document.createElementNS("http://www.w3.org/1999/xhtml", name)
 }
 
 let dtablebusy = false, dtableedit = null
-function getDataRowId() { // D3v7: pass in node?
+function getDataRowId(event) {
   return event.currentTarget.parentElement.getAttribute('id')
 }
-function getDataInd() { // D3v7: pass in node?
-  const id = getDataRowId()
+function getDataInd(event) {
+  const id = getDataRowId(event)
   const ind = id.match(/drow(\d+)/)
   if (!ind || ind.length < 2) return null
   return ind[1]
 }
-function getDataId() { // D3v7: pass in node?
-  const ind = getDataInd()
+function getDataId(event) {
+  const ind = getDataInd(event)
   if (!ind) return null
   const d = rawdata[ind]
   return d[3]?d[3]:ind
 }
-function dataEdit() { // D3v7: pass in event?
-  // D3v7 ideas from GPT-5-Codex:
-  // const node = event && event.currentTarget ? event.currentTarget :
-  //              this && this.nodeType === 1  ? this :
-  //                                             document.activeElement
-  if (!node) return
-  const ind = getDataInd() // D3v7: pass in node?
+function dataEdit(event) {
+  if (!event || !event.currentTarget) return
+  const ind = getDataInd(event)
   if (!dtableedit) {
     // Starting edit
-    const id = getDataRowId() // D3v7: pass in node?
+    const id = getDataRowId(event) // apparently unused?
     dtableedit = ind
     dataslider.attr("disabled", true)
     dataFocus.field = null
@@ -1222,7 +1222,7 @@ function dataEdit() { // D3v7: pass in event?
     // Finishing edit
     if (dataFocus.changed) {
 
-      const did = getDataId() // D3v7: pass in node?
+      const did = getDataId(event)
       const parent = d3.select(event.currentTarget.parentNode)
       const date = bu.dayparse(parent.select(".dt").text(),'-')
       const value = parent.select(".vl").text()
@@ -1235,17 +1235,15 @@ function dataEdit() { // D3v7: pass in event?
   }
   updateDataTable()
 }
-function dataDelete() { // D3v7: pass in event?
-  // D3v7 ideas from GPT-5-Codex:
-  // const node = event && event.currentTarget ? event.currentTarget : this
-  // if (!node) return
-  const ind = getDataInd()
-  const did = getDataId()
+function dataDelete(event) {
+  if (!event || !event.currentTarget) return
+  const ind = getDataInd(event)
+  const did = getDataId(event)
   if (dtableedit && dtableedit != ind) return 
   if (opts.onDataEdit) opts.onDataEdit(did, null)
   updateDataTable()
 }
-function dataCancel() { // D3v7: pass in event
+function dataCancel(event) {
   dataslider.attr("disabled", null)
   dtableedit = null
   updateDataTable()
@@ -1258,8 +1256,8 @@ const dataFocus = {
   changed : false
 }
 // D3 v7 Migration Note:
-// In D3 v5, event handlers received (d, i, nodes) where i was the element's index.
-// In D3 v7, event handlers receive (event, d) - no index parameter!
+// In v5, event handlers received (d, i, nodes) where i was the element's index.
+// In D3 v7, event handlers receive (event, d) -- no index parameter.
 // Solution: Calculate index from DOM using Array.indexOf on parent's children.
 function dataFocusIn(event, d){
   // D3 v7: Use datum's col property instead of DOM traversal
@@ -1303,13 +1301,12 @@ function dataFocusOut(event, d){
 }
   
 // D3 v7 Migration - THE ENTER KEY FIX:
-// In D3 v5: Used d3.event (global) and received (d, i) parameters
-// In D3 v7: Receive event as first parameter, d as second, NO index parameter
-// This is why Enter stopped working - we need to get 'i' from DOM and use 'event' param
+// In D3 v5: Used d3.event (global) and received (d, i) parameters.
+// In D3 v7: Receive event as first parameter, d as second, NO index parameter.
+// So, says Claude Code, we need to get 'i' from DOM and use 'event' param.
 function dataKeyDown(event, d) {
   // D3 v7: Use datum's col property (0-5) instead of DOM traversal
   // Columns: 0=index, 1=date, 2=value, 3=comment, 4=action, 5=delete
-
   if (!opts.onDataEdit || !d.edit || d.col === 0 || d.col > 3) return
 
   if (event.keyCode === 13 || event.key === 'Enter') {
@@ -1338,22 +1335,24 @@ function updateDataTable() {
   if (opts.divData === null) return
 
   if (!dsliderbusy) {
-    if (rawdata.length <= opts.dataTableSize) dataslider.style("visibility", "hidden")
-    else {
+    if (rawdata.length <= opts.dataTableSize) {
+      dataslider.style("visibility", "hidden")
+    } else {
       dataslider.style("visibility", "visible")
         .attr("max", rawdata.length-opts.dataTableSize)
         .attr("value", 0)
     }
   }
   
-  datarange = Array(Math.min(rawdata.length, opts.dataTableSize)).fill().map((x,i)=>(i+dataindex))
+  datarange = Array(Math.min(rawdata.length, opts.dataTableSize)).fill()
+    .map((x,i)=>(i+dataindex))
   const elts = databody.selectAll(".drow").data(datarange)
   elts.enter()
     .append("div")
     .attr('class', 'drow')
     .attr("id", d=>("drow"+(rawdata.length-d-1)))
   elts.exit().remove()
-  elts.style("box-shadow", (d) => (d==dataselected)?"0 0 0 4px yellow":null)
+  elts.style("box-shadow", (d) => (d==dataselected) ? "0 0 0 4px yellow" : null)
     .attr("id", d=>("drow"+(rawdata.length-d-1)))
   
   const cells = databody
@@ -1363,13 +1362,18 @@ function updateDataTable() {
       if (row >= rawdata.length) return [null, null, null, null, null, null]
       row = rawdata.length-row-1 // reverse table
       let date = bu.dayify(bu.dayparse(rawdata[row][0]), '-')
-      let editp = (dtableedit)?(row == dtableedit):false
-      return [{txt:row,clk:null,edit:editp,col:0},
-              {txt:date,clk:null,edit:editp,col:1},
-              {txt:rawdata[row][1],clk:null,edit:editp,col:2},
-              {txt:rawdata[row][2],clk:null,edit:editp,col:3},
-              {txt:editp?'<img class="dicon" src="../src/check.svg"></img>':'<img class="dicon" src="../src/edit.svg" ></img>',clk:dataEdit,edit:editp,col:4},
-              {txt:editp?'<img class="dicon" src="../src/cancel.svg" ></img>':'<img class="dicon" src="../src/trash.svg"></img>',clk:editp?dataCancel:dataDelete,edit:editp,col:5}]
+      let editp = (dtableedit) ? (row == dtableedit) : false
+      return [{txt:row,             clk:null,     edit:editp, col:0},
+              {txt:date,            clk:null,     edit:editp, col:1},
+              {txt:rawdata[row][1], clk:null,     edit:editp, col:2},
+              {txt:rawdata[row][2], clk:null,     edit:editp, col:3},
+              {txt:editp ? '<img class="dicon" src="../src/check.svg"></img>' : 
+                           '<img class="dicon" src="../src/edit.svg"></img>',
+                                    clk:dataEdit, edit:editp, col:4},
+              {txt:editp ? '<img class="dicon" src="../src/cancel.svg"></img>' :
+                           '<img class="dicon" src="../src/trash.svg"></img>',
+                                    clk:editp ? dataCancel : dataDelete,
+                                                  edit:editp, col:5}]
     })
 
   cells.join(enter=>
@@ -1377,11 +1381,15 @@ function updateDataTable() {
              .attr('class', (d,i)=>("dcell "+dcellclass[i]))
              .style("border", (d)=>( (d.col == 0)?"0":null))
              .style("text-align", (d)=>( (d.col == 0)?"right":null))
-             // D3 v7: Event handlers receive (event, d) - arrow function gets event first
-             .on('click', (event, d)=>(d.clk?d.clk():null)),
+             // D3 v7: Event handlers receive (event, d)
+             // arrow function gets event first
+             .on('click', (event, d)=>(d.clk?d.clk(event):null)),
              update=>update)
     .html(d=>{return d.txt})
-    .style('visibility', function(d){return (this.tagName==="BUTTON" && (dtableedit && !d.edit))?"hidden":null})
+    .style('visibility', 
+      function(d) { 
+        return this.tagName==="BUTTON" && (dtableedit && !d.edit) ?"hidden":null
+      })
     // D3 v7: Use d.col instead of i for consistency
     .attr('contenteditable', (d) => (opts.onDataEdit?(d.col>0&&d.col<4):false))
     .on('focusin', dataFocusIn)
@@ -1450,7 +1458,11 @@ function updateDueBy() {
   dbbody
     .selectAll(".dbrow")
     .selectAll(".dbcell")
-    .data((row, i) => {const inf = duebylabel(i,nowday), del = db[i][1]; return [inf, [(del > 0 || gol.dir < 0)?bu.shn(del):mark,inf[1]], [bu.shn(db[i][2]),inf[1]]]})
+    .data((row, i) => {
+      const inf = duebylabel(i,nowday), del = db[i][1]; 
+      return [inf, [(del > 0 || gol.dir < 0) ? bu.shn(del) : mark, inf[1]], 
+              [bu.shn(db[i][2]), inf[1]]]
+    })
     .join(enter=>enter.append("span").attr('class', 'dbcell'), update=>update)
     .html(d=>d[0])
     .style('color', d=>d[1])
@@ -1760,8 +1772,8 @@ function adjustYScale() {
                                 ? alldata : data,
                                 xtimes[0],xtimes[1],false)
     if (de != null) ae = mergeExtents(ae, de)
-    const p
-          = (opts.roadEditor)?{xmin:0.0,xmax:0.0,ymin:0.05,ymax:0.05}:{xmin:0.0,xmax:0.0,ymin:0.02,ymax:0.02}
+    const p = (opts.roadEditor) ? {xmin:0.0, xmax:0.0, ymin:0.05, ymax:0.05} : 
+                                  {xmin:0.0, xmax:0.0, ymin:0.02, ymax:0.02}
     enlargeExtent(ae, p)
     if ((ae.yMax - ae.yMin) < 2*margin) {
       ae.yMax += margin
@@ -1784,7 +1796,8 @@ function adjustYScale() {
     const scaleY0 = ySc(yrange[0])
     const scaleY1 = ySc(yrange[1])
     if (!isFinite(scaleY0) || !isFinite(scaleY1)) {
-      console.error("Invalid Y scale values:", scaleY0, scaleY1, "yrange:", yrange)
+      console.error("Invalid Y scale values:", scaleY0, scaleY1, 
+                    "yrange:", yrange)
       return
     }
     const newtr = d3.zoomIdentity
@@ -2419,7 +2432,8 @@ function addNewDot(x, y = null) {
     road.splice(found+1, 0, s)
     br.fixRoadArray(road, opts.keepSlopes ? br.RP.VALUE : br.RP.SLOPE, false)
     roadChanged()
-    let elt = d3.select(opts.divTable).select(".roadrow [name=endvalue"+(found+1)+"]")
+    let elt = d3.select(opts.divTable)
+                .select(".roadrow [name=endvalue"+(found+1)+"]")
     if (!elt.empty()) autoScroll(elt, false)
   }
   return found;
@@ -2440,8 +2454,10 @@ function removeKnot(kind, fromtable) {
 
   const oldslope = road[kind].slope
   road.splice(kind, 1)
-  if (!fromtable && opts.keepSlopes && !isNaN(oldslope)) road[kind].slope = oldslope
-  br.fixRoadArray(road, opts.keepSlopes && !fromtable ? br.RP.VALUE : br.RP.SLOPE, fromtable)
+  if (!fromtable && opts.keepSlopes && !isNaN(oldslope)) 
+    road[kind].slope = oldslope
+  br.fixRoadArray(road, opts.keepSlopes && !fromtable ? br.RP.VALUE : 
+                                                        br.RP.SLOPE, fromtable)
 
   roadChanged()
 }
@@ -3276,35 +3292,37 @@ function updateContextToday() {
 function createBullseyeDef() {
   beyegrp = defs.append("g").attr("id", "beye")
   beyegrp.append("ellipse")
-    .attr("cx",56.5).attr("cy",60).attr("rx",23).attr("ry",53).attr("fill", "red")
-  beyegrp.append("path").attr("d", "M41 7h15a23 53 0 0 1 0 106H41z").attr("fill","#fbb")
+    .attr("cx", 56.5).attr("cy", 60).attr("rx", 23).attr("ry", 53).attr("fill", "red")
+  beyegrp.append("path")
+    .attr("d", "M41 7h15a23 53 0 0 1 0 106H41z").attr("fill", "#fbb")
   beyegrp.append("ellipse")
-    .attr("cx",41).attr("cy",60).attr("rx",23).attr("ry",53).attr("fill", "red")
+    .attr("cx", 41).attr("cy", 60).attr("rx", 23).attr("ry", 53).attr("fill", "red")
   beyegrp.append("ellipse")
-    .attr("cx",40).attr("cy",60).attr("rx",17).attr("ry",41).attr("fill", "#fff")
+    .attr("cx", 40).attr("cy", 60).attr("rx", 17).attr("ry", 41).attr("fill", "#fff")
   beyegrp.append("ellipse")
-    .attr("cx",39).attr("cy",60).attr("rx",14).attr("ry",31).attr("fill", "red")
+    .attr("cx", 39).attr("cy", 60).attr("rx", 14).attr("ry", 31).attr("fill", "red")
   beyegrp.append("ellipse")
-    .attr("cx",38).attr("cy",60).attr("rx",9).attr("ry",20).attr("fill", "#fff")
+    .attr("cx", 38).attr("cy", 60).attr("rx", 9).attr("ry", 20).attr("fill", "#fff")
   beyegrp.append("ellipse")
-    .attr("cx",37.5).attr("cy",60).attr("rx",5).attr("ry",10).attr("fill", "red")
+    .attr("cx", 37.5).attr("cy", 60).attr("rx", 5).attr("ry", 10).attr("fill", "red")
 }
 
 function createBullseyePrevDef() {
   beyepgrp = defs.append("g").attr("id", "beyepre")
   beyepgrp.append("ellipse")
-    .attr("cx",56.5).attr("cy",60).attr("rx",23).attr("ry",53).attr("fill", "#ffe407")
-  beyepgrp.append("path").attr("d", "M41 7h15a23 53 0 0 1 0 106H41z").attr("fill","#fef7bc")
+    .attr("cx", 56.5).attr("cy", 60).attr("rx", 23).attr("ry", 53).attr("fill", "#ffe407")
+  beyepgrp.append("path")
+    .attr("d", "M41 7h15a23 53 0 0 1 0 106H41z").attr("fill", "#fef7bc")
   beyepgrp.append("ellipse")
-    .attr("cx",41).attr("cy",60).attr("rx",23).attr("ry",53).attr("fill", "#ffe407")
+    .attr("cx", 41).attr("cy", 60).attr("rx", 23).attr("ry", 53).attr("fill", "#ffe407")
   beyepgrp.append("ellipse")
-    .attr("cx",40).attr("cy",60).attr("rx",17).attr("ry",41).attr("fill", "#fff")
+    .attr("cx", 40).attr("cy", 60).attr("rx", 17).attr("ry", 41).attr("fill", "#fff")
   beyepgrp.append("ellipse")
-    .attr("cx",39).attr("cy",60).attr("rx",14).attr("ry",31).attr("fill", "#ffe407")
+    .attr("cx", 39).attr("cy", 60).attr("rx", 14).attr("ry", 31).attr("fill", "#ffe407")
   beyepgrp.append("ellipse")
-    .attr("cx",38).attr("cy",60).attr("rx",9).attr("ry",20).attr("fill", "#fff")
+    .attr("cx", 38).attr("cy", 60).attr("rx", 9).attr("ry", 20).attr("fill", "#fff")
   beyepgrp.append("ellipse")
-    .attr("cx",37.5).attr("cy",60).attr("rx",5).attr("ry",10).attr("fill", "#ffe407")
+    .attr("cx", 37.5).attr("cy", 60).attr("rx", 5).attr("ry", 10).attr("fill", "#ffe407")
 }
   
 // Creates or updates the Bullseye at the goal date
@@ -3686,26 +3704,26 @@ function updateYBHP() {
   //[  d,  D, fcolor,    scolor,    w,  op, xrange]
   //----------------------------------------------------------------------------
     [  0,  2, lyellow,   "none",    0, rfo, xrfull], // mimic old lanes
-  //[  0, -2, "#fff5f5", "none",    0,   1, xrakr ], // nozone/oinkzone
-    [inf, -1, llyellow,   "none",    0, rfo, xrfull], // infinitely safe region
+  //[  0, -2, "#fff5f5", "none",  0,   1, xrakr ], // nozone/oinkzone
+    [inf, -1, llyellow,   "none",   0, rfo, xrfull], // infinitely safe region
   ]
   const regionsNormal = [
   //[  d,  D, fcolor,    scolor,    w,  op, xrange]
   //----------------------------------------------------------------------------
-  //[  6, -1, "#b2e5b2", "none",    0, rfo, xrfull], // safe/gray region
+  //[  6, -1, "#b2e5b2", "none",  0, rfo, xrfull], // safe/gray region
     [  6,  6, "none",    bgreen,  gsw, gfo, xrfull], // 1-week isoline
-  //[  2,  6, "#cceecc", "none",    0, rfo, xrfull], // green region (not used)
+  //[  2,  6, "#cceecc", "none",  0, rfo, xrfull], // green region (not used)
     [  2,  2, "none",    bblue,   gsw, gfo, xrfull], // blue isoline
-  //[  1,  2, "#e5e5ff", "none",    0, rfo, xrfull], // blue region (not used)
+  //[  1,  2, "#e5e5ff", "none",  0, rfo, xrfull], // blue region (not used)
     [  1,  1, "none",    borange, gsw, gfo, xrfull], // orange isoline
-  //[  0,  1, "#fff1d8", "none",    0, rfo, xrfull], // orange region (not used)
+  //[  0,  1, "#fff1d8", "none",  0, rfo, xrfull], // orange region (not used)
     [  0,  2, lyellow,   "none",    0, rfo, xrfull], // mimic old lanes
   // Razor road currently in updateRedline because we can't define dashed lines
   // here; so the following doesn't work:
-  //[  0,  0, "#ff0000", "none",    1, gfo, xrfull], // bright red line
-  //[  0, -2, "#ffe5e5", "none",    0, rfo,   null], // whole bad half-plane
-  //[  0, -2, "#fff5f5", "none",    0,   1, xrakr ], // nozone/oinkzone
-    [inf, -1, llyellow,   "none",    0, rfo, xrfull], // infinitely safe region
+  //[  0,  0, "#ff0000", "none",   1, gfo, xrfull], // bright red line
+  //[  0, -2, "#ffe5e5", "none",   0, rfo,   null], // whole bad half-plane
+  //[  0, -2, "#fff5f5", "none",   0,   1, xrakr ], // nozone/oinkzone
+    [inf, -1, llyellow,    "none",   0, rfo, xrfull], // infinitely safe region
   ]
   let regions
   if (false) { // change to true for debugging
@@ -4296,7 +4314,8 @@ function updateKnots() {
           function(d){ 
             return "translate("+(nXSc(d.end[0]*SMS)
                                  +plotpad.left-14*opts.roadKnot.rmbtnscale)
-              +","+(plotpad.top-28*opts.roadKnot.rmbtnscale-3)+") scale("+opts.roadKnot.rmbtnscale+")";
+              +","+(plotpad.top-28*opts.roadKnot.rmbtnscale-3)
+              +") scale("+opts.roadKnot.rmbtnscale+")"
           })
     .style("visibility", function(d,i) {
       return (i > 0 && i < road.length-2)
@@ -4553,7 +4572,7 @@ var dotTimer = null, dotText = null
 function showDotText(d) {
   const ptx = nXSc(bu.daysnap(d[0])*SMS)
   const pty = nYSc(d[1])
-  const txt = ((d[7]!=null)?"#"+d[7]+": ":"")          // datapoint index
+  const txt = ((d[7]!=null)?"#"+d[7]+": ":"")        // datapoint index
       +moment.unix(d[0]).utc().format("YYYY-MM-DD")  // datapoint time
     +", "+((d[6] != null)?bu.shn(d[6]):bu.shn(d[1])) // datapoint original value
   if (dotText != null) rmTextBox(dotText)
@@ -4623,9 +4642,9 @@ function updateRosy() {
   if (processing || opts.divGraph == null || opts.roadEditor) return;
 
   var l = [nXSc.invert(0).getTime()/SMS, 
-           nXSc.invert(plotbox.width).getTime()/SMS];
+           nXSc.invert(plotbox.width).getTime()/SMS]
   var df = function(d) {
-    return ((d[0] >= l[0] && d[0] <= l[1]) || (d[4] >= l[0] && d[4] <= l[1]));
+    return ((d[0] >= l[0] && d[0] <= l[1]) || (d[4] >= l[0] && d[4] <= l[1]))
   }
 
   // *** Plot rosy lines ***
@@ -4805,18 +4824,22 @@ function updateDataPoints() {
     pts = pts.filter(df);
     if (gol.plotall && !opts.roadEditor) {
       // All points
-      updateDotGroup(gAllpts, alldataf.filter(adf), "ap", d=>("ap"+dpStyle(d)), true)
+      updateDotGroup(gAllpts, alldataf.filter(adf), "ap", 
+        d=>("ap"+dpStyle(d)), true)
       
     } else {
       var el = gAllpts.selectAll(".ap");
       el.remove();
     }
     if (opts.roadEditor)
-      updateDotGroup(gDpts, pts.concat(bbr.fuda), "dp", d=>("dp"+dpStyle(d)), true)
+      updateDotGroup(gDpts, pts.concat(bbr.fuda), "dp", 
+        d=>("dp"+dpStyle(d)), true)
     else {
-      updateDotGroup(gDpts, pts.concat(bbr.fuda), "dp", d=>("dp"+dpStyle(d)), true)
+      updateDotGroup(gDpts, pts.concat(bbr.fuda), "dp", 
+        d=>("dp"+dpStyle(d)), true)
       // hollow datapoints
-      updateDotGroup(gHollow, bbr.hollow.filter(df), "hp", d=>("hp"+dpStyle(d)), true)
+      updateDotGroup(gHollow, bbr.hollow.filter(df), "hp", 
+        d=>("hp"+dpStyle(d)), true)
     }
       
     // *** Plot flatlined datapoint ***
@@ -5018,7 +5041,8 @@ function destroyDatePicker() {
 }
 
 // flt: floating element that will contain the date picker
-// tl: absolutely positioned "topleft" element that will act as a reference for the floating element,
+// tl: absolutely positioned "topleft" element that will act as a reference for
+//     the floating element,
 // fld: d3 selection for the field that holds the date
 function createDatePicker(fld, min, max, flt, tl) {
   console.log("createDatePicker()"+min)
@@ -5090,7 +5114,8 @@ function tableFocusIn(event, d){
     var mindate = moment(moment.unix(knotmin).utc().format("YYYY-MM-DD"))
     var maxdate = moment(moment.unix(knotmax).utc().format("YYYY-MM-DD"))
     var floating = d3.select(opts.divTable).select('.floating');
-    createDatePicker(rdFocus.field, mindate.toDate(), maxdate.toDate(), floating, topLeft)
+    createDatePicker(rdFocus.field, mindate.toDate(), maxdate.toDate(), 
+      floating, topLeft)
   } else if (d.col === br.RP.VALUE) {
     selectDot(d.i, false)
   } else if (d.col === br.RP.SLOPE) {
@@ -5115,7 +5140,7 @@ function tableFocusOut(event, d){
     rdFocus.field = null
     return
   }
-  if (d.col === br.RP.DATE)  { tableDateChanged(d.i, val);  clearSelection() }
+  if (d.col === br.RP.DATE)  { tableDateChanged( d.i, val);  clearSelection() }
   if (d.col === br.RP.VALUE) { tableValueChanged(d.i, val);  clearSelection() }
   if (d.col === br.RP.SLOPE) { tableSlopeChanged(d.i, val);  clearSelection() }
   rdFocus.oldText = null
@@ -5300,10 +5325,16 @@ function updateTableButtons() {
           if (opts.reverseTable) kind = road.length-2-i
           else kind = i
           return [
-            {order: 8, row:kind, name: "btndel"+kind, evt: ()=>removeKnot(kind,true), 
-             type: 'button', txt: '<img class="ricon" src="../src/trash.svg" ></img>', auto: false},
-            {order: 9, row:kind, name: "btnadd"+kind, evt: ()=>addNewKnot(kind+1),
-             type: 'button', txt: '<img class="ricon" src="../src/plus.svg"></img>', auto: false},
+            {order: 8, row:kind, name: "btndel"+kind, 
+             evt: ()=>removeKnot(kind,true), 
+             type: 'button', 
+             txt: '<img class="ricon" src="../src/trash.svg" ></img>', 
+             auto: false},
+            {order: 9, row:kind, name: "btnadd"+kind, 
+             evt: ()=>addNewKnot(kind+1),
+             type: 'button', 
+             txt: '<img class="ricon" src="../src/plus.svg"></img>', 
+             auto: false},
           ];
         })
   
@@ -6033,7 +6064,7 @@ this.curState =
     @property {Boolean} hashtags Show annotations on graph for hashtags in comments 
 */
 const visualProps
-      = ['plotall','steppy','rosy','movingav','aura','hidey','stathead','hashtags']
+   = ['plotall','steppy','rosy','movingav','aura','hidey','stathead','hashtags']
 /** Returns visual properties for the currently loaded goal
     @returns {GoalVisuals} 
     @see {@link bgraph#getGoalConfig}
