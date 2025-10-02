@@ -1,11 +1,12 @@
 
 ## CHANGELOG
 
-* 2025.09.19 modernization of deprecated packages
-* 2025.09.18 lots of things we're forgetting to include in this changelog
-* 2025.09.17 tare tags
-* 2025.07.10 migrate from Glitch to Render and remember that a changelog exists
-* 2019.01.12 beebrain.js tutorials
+* 2025.10.02 More upgrades and cleanup and bugfixes
+* 2025.09.19 Modernization of deprecated packages
+* 2025.09.18 Lots of things we're forgetting to include in this changelog
+* 2025.09.17 Tare tags
+* 2025.07.10 Migrate from Glitch to Render and remember that a changelog exists
+* 2019.01.12 Something with beebrain.js tutorials
 * 2019.01.12 Static graph axis limits consistent with pybrain
 * 2019.01.11 Solved problems with goals for which tfin=null
 * 2019.01.10 Fixed minor ticks, solved subpixel line location problems
@@ -15,38 +16,38 @@
 * 2018.11.28 Restructured and unified directory structure for node servers
 * 2018.11.20 Fixed issues with various graph components
 * 2018.11.19 Improved testing facilities
-* 2018.11.18 jsbrain_server thumbnail generation
-* 2018.11.18 jsbrain_server palette optimized PNG output
-* 2018.11.17 implemented hashtags
-* 2018.11.16 rosy lines are finished
+* 2018.11.18 BBserver (jsbrain_server) thumbnail generation
+* 2018.11.18 BBserver (jsbrain_server) palette optimized PNG output
+* 2018.11.17 Implement hashtags
+* 2018.11.16 Rosy lines are finished
 * 2018.11.16 Visual testing output for all goals in testbb
 * 2018.11.15 JSON output to match python beebrain
 * 2018.11.15 Refactoring into separate js files done
-* 2018.11.15 node server for server-side graph generation using headless chrome
+* 2018.11.15 Node server for server-side graph generation using headless Chrome
 * 2018.03.25 Saving SVG through link generation
 * 2018.03.25 Incorporated style definitions into SVG
 * 2017.11.02 No YBR or guidelines to the left of tini
-* 2017.11.02 fixed Today's day name problem
-* 2017.10.28 fixed auto-scroll
-* 2017.10.28 highlight date when hovering over knot delete button
-* 2017.10.28 enable table field on click, eliminated checboxes (option)
-* 2017.10.28 rearranged interface groupings
-* 2017.10.28 separated table rows for start and goal nodes
-* 2017.10.13 implemented commit to (road dial) interface for slope
-* 2017.10.13 fixed incorrect x axis dates and timezone issue with breaks
-* 2017.10.13 fixed incorrect offset when adding new knots
-* 2017.10.13 implemented break scheduling functionality
-* 2017.10.13 fixed collapsing segments while dragging knots
-* 2017.07.17 fixed retroratcheting with fixed slopes
-* 2017.07.17 informative table display for duplicate road segments
-* 2017.07.17 implemented table update on drag and fixed x axis tick mark issues
-* 2017.07.17 implemented road matrix generation (auto eliminates duplicates)
-* 2017.07.16 implemented aura generation and drawing
-* 2017.07.15 implemented shn and changed all text generation to shn()
-* 2017.07.15 streamlined loading to prevent unnecessary refreshes
-* 2017.07.15 optimized datapoint, old road and guidelines display when zoomed in
+* 2017.11.02 Fixed Today's day name problem
+* 2017.10.28 Fixed auto-scroll
+* 2017.10.28 Highlight date when hovering over knot delete button
+* 2017.10.28 Enable table field on click, eliminated checboxes (option)
+* 2017.10.28 Rearranged interface groupings
+* 2017.10.28 Separated table rows for start and goal nodes
+* 2017.10.13 Implemented commit to (road dial) interface for slope
+* 2017.10.13 Fixed incorrect x axis dates and timezone issue with breaks
+* 2017.10.13 Fixed incorrect offset when adding new knots
+* 2017.10.13 Implemented break scheduling functionality
+* 2017.10.13 Fixed collapsing segments while dragging knots
+* 2017.07.17 Fixed retroratcheting with fixed slopes
+* 2017.07.17 Informative table display for duplicate road segments
+* 2017.07.17 Implemented table update on drag and fixed x axis tick mark issues
+* 2017.07.17 Implemented road matrix generation (auto eliminates duplicates)
+* 2017.07.16 Implemented aura generation and drawing
+* 2017.07.15 Implemented shn and changed all text generation to shn()
+* 2017.07.15 Streamlined loading to prevent unnecessary refreshes
+* 2017.07.15 Optimized datapoint, old road and guidelines display when zoomed in
 * 2017.07.15 Option to display only the latest 100 days (configurable) of data
-* 2017.07.15 moving average, fixed tini/vini, tfin/vfin issues
+* 2017.07.15 Moving average, fixed tini/vini, tfin/vfin issues
 * 2017.07.14 Default zoom consistent with beebrain, fixes for multiple graphs
 * 2017.07.13 Support for loading goals from the API
 * 2017.07.13 Noisy width, guidelines, plotall support
@@ -54,10 +55,10 @@
 * 2017.07.11 Normal graph generation, steppy lines
 * 2017.07.01 Fixed date picker placement oddities with a ghost element
 * 2017.07.01 Works on mobile, long press to add knots, larger components
-* 2017.06.30 onRoadChange callback
+* 2017.06.30 Did onRoadChange callback
 * 2017.06.30 Externalized undo/redo button and keyboard handling
 * 2017.06.30 Option to show/hide context graph
-* 2017.06.30 y axis label and auto graph resizing to fit y axis text
+* 2017.06.30 Y-axis label and auto graph resizing to fit y-axis text
 * 2017.06.30 Rate units are now supported on the table
 * 2017.06.29 Auto limit maximum graph range to 1 year (or maxFutureDays) into the future
 * 2017.06.28 Insta-derail indicator and colored datapoints
@@ -83,4 +84,3 @@
 * 2016.07.08 Dreev refactors the code a bit
 * 2016.07.07 Dreev moves it to Glitch (then known as HyperDev)
 * 2016.04.24 Uluc shows off http://www.ceng.metu.edu.tr/~saranli/road/vertical.html
-

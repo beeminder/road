@@ -221,6 +221,7 @@ const PRAF = .015 // Fraction of plot range that the axes extend beyond
  @constructs beebrain
  @param {Object} bbin JSON input "BB file" with goal details
 */
+
 const beebrain = function( bbin ) { // BEGIN beebrain object constructor -------
 
 //console.debug("beebrain constructor ("+gid+"): ");
@@ -230,17 +231,18 @@ gid++
 
 bbin = bu.deepcopy(bbin) // Make new copy of the input to prevent overwriting
 
-// Private variables holding goal, road, and datapoint info
+// Private variables holding goal, graph matrix, and datapoint info
 let roads = []      // Beebrain-style road data structure w/ sta/end/slope/auto
 let gol = {}        // Goal parameters passed to Beebrain
 let alldata = []    // Entire set of datapoints passed to Beebrain
 let data = []       // Past aggregated data
 let rosydata = []   // Derived data corresponding to the rosy line
 let fuda = []       // Future data
-let undoBuffer = [] // Array of previous roads for undo
-let redoBuffer = [] // Array of future roads for redo
+//let undoBuffer = [] // Array of previous graph matrices for undo
+//let redoBuffer = [] // Array of future graph matrices for redo (see bgraph.js)
 let tarings = []    // Timestamps of tarings (generalization of odometer resets)
-let derails = []    // Derailments
+let derails = []    // Derailment datapoints (sans comments, I think)
+let autophages = [] // Selfdestructing datapoints (also sans comments?)
 let hollow = []     // Hollow points
 let allvals = {}    // Hash mapping timestamps to list of datapoint values
 let aggval = {}     // Hash mapping timestamps to aggday'd value for that day
@@ -311,6 +313,7 @@ function initGlobals() {
   gol.siru = null
   tarings = []
   derails = []
+  autophages = []
   hashhash = {}
   
   // All the in and out params are also global, via the gol hash
@@ -466,6 +469,26 @@ function computeRosy() {
 // And @ signs are allowed instead of #, which is useful if you don't want the
 // magic strings to show up as hashtags on the graph.
 
+// Whether datapoint comment string s has the magic string indicating it's when
+// a derailment happened (previously known as a recommit datapoint).
+function derailed(s) { 
+  return /(?:^|\s)[#@]DERAIL(?:$|\s)/.test(s)
+}
+
+// Note for the future: this regex is slightly better:
+// /(?<!\S)[#@]DERAIL(?!\S)/ 
+
+// Whether datapoint comment string s has the magic string indicating it's a
+// tare datapoint (odometer reset replacement)
+function tared(s) { return /(?:^|\s)[#@]TARE(?:$|\s)/.test(s) }
+
+// Whether datapoint comment string s has the magic string indicating it's a
+// selfdestructing datapoint, typically because it's a PPR
+function autophagic(s) {
+  return /(?:^|\s)[#@](?:SELFDESTRUCT|THISWILLSELFDESTRUCT)(?:$|\s)/.test(s)
+  //|| s.startsWith("PESSIMISTIC PRESUMPTION") // backward compatibility #SCHDEL
+}
+
 // Take, eg, "shark jumping #yolo :) #shark" and return {"#yolo", "#shark"}
 // Pro tip: use scriptular.com to test these regexes
 let hashtagRE
@@ -486,29 +509,6 @@ function hashextract(s) {
   while ( (m = hashtagRE.exec(s)) != null ) if (m[1] != "") set.add(m[1])
   return set
 }
-
-// Whether datapoint comment string s has the magic string indicating it's when
-// a derailment happened (previously known as a recommit datapoint).
-function derailed(s) { 
-  return /(?:^|\s)[#@]DERAIL(?:$|\s)/.test(s)
-}
-
-// Note for the future: this regex is slightly better:
-// /(?<!\S)[#@]DERAIL(?!\S)/ 
-
-// Whether datapoint comment string s has the magic string indicating it's a
-// tare datapoint (odometer reset replacement)
-function tared(s) { return /(?:^|\s)[#@]TARE(?:$|\s)/.test(s) }
-
-// Whether datapoint comment string s has the magic string indicating it's a
-// PPR (self-destruct) datapoint
-// TODO: figure out how to call this from bgraph.js or else just copy it there
-/*
-function selfdestructing(s) {
-  return /(?:^|\s)[#@](?:SELFDESTRUCT|THISWILLSELFDESTRUCT)(?:$|\s)/.test(s) ||
-    s.startsWith("PESSIMISTIC PRESUMPTION") // backward compatibility
-}
-*/
 
 // Convenience function to extract values from datapoints
 function dval(d) { return d[1] }
@@ -598,7 +598,7 @@ function procData() {
     tarings = data.filter(e => e[1] == 0).map(e => e[0])
     br.odomify(data)
   }
-  const nonfuda = data.filter(e => e[0] <= gol.asof)
+  const nonfuda = data.filter(e => e[0] <= gol.asof) // non-future data
   if (gol.plotall) gol.numpts = nonfuda.length
   
   allvals = {}
@@ -654,8 +654,8 @@ function procData() {
       const vw = allvals[ct].map(e => e[1])
 
       // What we actually want for derailval is not this "worstval" but the
-      // agg'd value up to and including the derail (nee recommit) datapoint 
-      // (see the derailed() function) and nothing after that:
+      // agg'd value up to and including the derail datapoint (see the
+      // derailed() function) and nothing after that:
       derailval[ct] = gol.yaw < 0 ? bu.arrMax(vw) : bu.arrMin(vw)
       
       if (i < data.length) {
@@ -1675,6 +1675,9 @@ gol.thumburl = bu.BBURL
 // -----------------------------------------------------------------------------
 // -------------------------- BEEBRAIN OBJECT EXPORTS --------------------------
 
+// Apparently we can't export functions here? Maybe compare to how butil.js and
+// broad.js do it?
+
 /** beebrain object ID for the current instance */
 this.id = curid
   
@@ -1709,14 +1712,13 @@ this.flad = flad
 this.tarings = tarings //TODOT
 /** Holds an array of derailments */
 this.derails = derails
+/** Holds an array of selfdestructing datapoints */
+this.autophages = autophages
 
 this.hollow = hollow
 this.hashtags = hashtags
 
 } // END beebrain object constructor -------------------------------------------
-
-// Export utility functions as static methods
-// beebrain.selfdestructing = selfdestructing // TODO
 
 return beebrain
 

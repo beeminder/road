@@ -4146,9 +4146,8 @@ function updateGuidelines() {
 
 function updateRazrRoad() {
   if (processing || opts.divGraph == null || road.length == 0) return
-
   // Razor line differs between the editor (dashed) and the graph (solid). Also,
-  // the road editor shows the initial road as the razor road.
+  // the visual graph editor shows the initial red line as the razor road.
   if (opts.roadEditor) updateRedline(iroad, igoal, gRazr, "razr", 0, true)
   else                 updateRedline(road,  gol,   gRazr, "razr", 0, false)
 }
@@ -4158,15 +4157,14 @@ function updateMaxFluxline() {
 
   // Generate the maxflux line if maxflux!=0. Otherwise, remove existing one
   updateRedline(road, gol, gMaxflux, "maxflux", 
-    gol.maxflux != 0 ? gol.yaw*gol.maxflux : null, false)
+                gol.maxflux != 0 ? gol.yaw*gol.maxflux : null, false)
 }
 
 function updateStdFluxline() {
   if (processing || opts.divGraph == null || road.length == 0) return
-
   // Generate the maxflux line if maxflux!=0. Otherwise, remove existing one
   updateRedline(road, gol, gStdflux, "stdflux", 
-    gol.maxflux != 0 ? gol.yaw*gol.stdflux : null, true)
+                gol.maxflux != 0 ? gol.yaw*gol.stdflux : null, true)
 }
 
   
@@ -4202,33 +4200,6 @@ function updateContextOldRoad() {
       .style("stroke", !opts.roadEditor ? bu.BHUE.RAZR0
                                         : bu.BHUE.ORNG) // TODO: don't need this
   }
-}
-
-// Creates or updates vertical lines for tarings (including odometer resets)
-function updateTarings() {
-  if (processing || opts.divGraph == null || road.length == 0 
-      || bbr.tarings.length == 0) return
-
-  // Create, update, and delete vertical knot lines
-  const trelt = gTarings.selectAll(".tarings").data(bbr.tarings)
-  if (opts.roadEditor) { trelt.remove(); return }
-  trelt.exit().remove()
-  trelt
-    .attr("x1", function(d){ return nXSc(d*SMS) })
-    .attr("y1", 0)
-    .attr("x2", function(d){ return nXSc(d*SMS) })
-    .attr("y2", plotbox.height)
-  trelt.enter().append("svg:line")
-    .attr("class", "tarings")
-    .attr("id", function(d,i){ return i })
-    .attr("name", function(d,i) { return "taring"+i })
-    .attr("x1", function(d){ return nXSc(d*SMS) })
-    .attr("y1", 0)
-    .attr("x2", function(d){ return nXSc(d*SMS) })
-    .attr("y2", plotbox.height)
-    .attr("stroke", "rgb(200,200,200)") 
-      .style("stroke-dasharray", (opts.taring.dash)+","+(opts.taring.dash))
-    .attr("stroke-width", opts.taring.width)
 }
 
 function updateKnots() {
@@ -4553,7 +4524,7 @@ styleLookup[bu.BHUE.BLCK]   = " blk"
 
 function dpStyle( pt ) {
   let sty = ""
-  const col = br.dotcolor(road, gol, pt[0], pt[1], iso) 
+  const col = br.dotcolor(road, gol, pt[0], pt[1], iso)
   if (pt[3] != bbr.DPTYPE.AGGPAST) sty += " fuda"
   sty += styleLookup[col]
   return  sty
@@ -4601,14 +4572,13 @@ function updateDotGroup(grp,d,cls,nc=null,hov=true) {
   
   dpelt = grp.selectAll("."+cls).data(d)
   dpelt.exit().remove()
-  dpelt
-    .attr("cx", function(d) { return r1(nXSc((d[0])*SMS)) })
-    .attr("cy", function(d) { return r1(nYSc(d[1])) })
-    .attr("class", nc)
-  
+  dpelt.attr("cx", function(d) { return r1(nXSc((d[0])*SMS)) })
+       .attr("cy", function(d) { return r1(nYSc(d[1])) })
+       .attr("class", nc)
+
   var dots = dpelt.enter().append("svg:circle")
-  
-    dots.attr("class", nc)
+
+  dots.attr("class", nc)
       .attr("cx", function(d) { return r1(nXSc((d[0])*SMS)) })
       .attr("cy", function(d) { return r1(nYSc(d[1])) })
   if (!opts.headless) {
@@ -4798,7 +4768,34 @@ function updateDerails() {
   } else {
     drelt = gDerails.selectAll(".derails")
     drelt.remove()
-  }        
+  }
+}
+
+// Creates or updates vertical lines for tarings (including odometer resets)
+function updateTarings() {
+  if (processing || opts.divGraph == null || road.length == 0 
+      || bbr.tarings.length == 0) return
+
+  // Create, update, and delete vertical knot lines
+  const trelt = gTarings.selectAll(".tarings").data(bbr.tarings)
+  if (opts.roadEditor) { trelt.remove(); return }
+  trelt.exit().remove()
+  // should be safe to arrowify all these pure functions since they have no this
+  trelt.attr("x1",   function(d) { return nXSc(d*SMS) })
+       .attr("y1",   0)
+       .attr("x2",   function(d) { return nXSc(d*SMS) })
+       .attr("y2",   plotbox.height)
+  trelt.enter().append("svg:line")
+       .attr("class", "tarings")
+       .attr("id",   function(d,i) { return i })
+       .attr("name", function(d,i) { return "taring"+i })
+       .attr("x1",   function(d)   { return nXSc(d*SMS) })
+       .attr("y1",   0)
+       .attr("x2",   function(d)   { return nXSc(d*SMS) })
+       .attr("y2",   plotbox.height)
+       .attr("stroke", "rgb(200,200,200)") 
+       .style("stroke-dasharray", (opts.taring.dash)+","+(opts.taring.dash))
+       .attr("stroke-width",      opts.taring.width)
 }
 
 function updateDataPoints() {
@@ -4878,7 +4875,7 @@ function updateDataPoints() {
     } else {
       if (!fladelt.empty()) fladelt.remove()
     }
-    
+
   } else {
     dpelt = gDpts.selectAll(".dp");
     dpelt.remove();
@@ -5490,13 +5487,15 @@ function updateContextData() {
   }
 }
 
-
-// Updates style info embedded in the SVG element for datapoints.
-// This is called once at the beginning and whenever scf changes
+// Update style info embedded in the SVG element for datapoints.
+// This is called once at the beginning and whenever scf changes.
 function updateDynStyles() {
   let s = "", svgid = "#svg"+curid+" "
   let pe = "pointer-events:"+((opts.headless)?"none;":"all;")
   
+  // For later: make some constants to make what follows more compact.
+  // And switch to template literals.
+  //const SW = "stroke-width:"
   s += svgid+".rd {r:"+r3(opts.dataPoint.size*scf)+"px} "
   s += svgid+".std {r:"+r3((opts.dataPoint.size+2)*scf)+"px} "
   s += svgid+".ap {r:"+r3(0.7*(opts.dataPoint.size)*scf)+"px;"+pe+"} "
@@ -5509,7 +5508,7 @@ function updateDynStyles() {
   s += svgid+".stdflux {fill:none;stroke:"+bu.BHUE.BIGG+";stroke-width:"+r3(opts.stdfluxline*scf)+"px} "
   s += svgid+".axis text {font-size:"+opts.axis.font+"px;} "
   s += svgid+".axislabel {font-size:"+opts.axis.font+"px;} "
-  // Styles that depend on the road editor
+  // Styles that depend on the whether we're in the visual graph editor
   if (opts.roadEditor) {
     // Datapoints
     s += svgid+".dp {r:"+r3(opts.dataPoint.size*scf)+"px;stroke:"
@@ -5550,6 +5549,8 @@ function updateGraphData(force = false) {
   updateKnots()
   updateDataPoints()
   updateDerails()
+  updateTarings()
+  // updateAutophages()
   updateRosy()
   updateSteppy()
   updateHashtags()
@@ -5557,7 +5558,6 @@ function updateGraphData(force = false) {
   updateRoads()
   updateDots()
   updateHorizon()
-  updateTarings()
   updatePastText()
   updateAura()
   // Record current dot color so it can be retrieved from the SVG
@@ -5586,6 +5586,7 @@ this.showData = (flag) => {
   if (alldata.length != 0) {
     updateDataPoints()
     updateDerails()
+    // updateAutophages()
     updateRosy()
     updateSteppy()
     updateMovingAv()
@@ -5617,8 +5618,8 @@ this.keepIntervals = ( flag ) => {
   return opts.keepIntervals
 }
 
-/** Sets/gets the maxDataDays option. Updates the datapoint
- display if the option is changed. */
+/** Sets/gets the maxDataDays option. Updates the datapoint display if the 
+ *  option is changed. */
 this.maxDataDays = ( days ) => {
   if (arguments.length > 0) {
     opts.maxDataDays = days
@@ -5632,6 +5633,7 @@ this.maxDataDays = ( days ) => {
     if (alldata.length != 0) {
       updateDataPoints()
       updateDerails()
+      // updateAutophages()
       updateRosy()
       updateSteppy()
     }
@@ -5772,7 +5774,7 @@ this.scheduleBreak = ( start, days, insert ) => {
       firstseg = i; break
     }
   }
-  var added = false;
+  var added = false
   if (firstseg < 0) {addNewDot(begintime);added = true;}
   if (!added) pushUndoState()
   for (i = 1; i < road.length; i++) {
@@ -5813,9 +5815,7 @@ this.scheduleBreak = ( start, days, insert ) => {
       lastseg = br.findSeg( road, endtime )
     }
     // Delete segments in between
-    for (j = firstseg+1; j < lastseg; j++) {
-      road.splice(firstseg+1, 1)
-    }
+    for (j = firstseg+1; j < lastseg; j++) road.splice(firstseg+1, 1)
     road[firstseg].end = road[firstseg+1].sta.slice()
     var valdiff = road[firstseg+1].sta[1] - road[firstseg].sta[1]
     for (j = firstseg; j < road.length; j++) {
@@ -5885,7 +5885,8 @@ this.getRoad = function() {
       continue
     kd = moment.unix(seg.end[0]).utc()
     rd = [kd.format("YYYYMMDD"), seg.end[1], seg.slope*gol.siru]
-    if (seg.auto == br.RP.DATE) rd[2] = null // Exception here since roadall does not support null dates
+    // Exception here since roadall does not support null dates:
+    if (seg.auto == br.RP.DATE)  rd[2] = null 
     if (seg.auto == br.RP.VALUE) rd[1] = null
     if (seg.auto == br.RP.SLOPE) rd[2] = null
     //if (i == road.length-2) {
@@ -5898,11 +5899,10 @@ this.getRoad = function() {
   return r
 }
 
-/** Generates a data URI downloadable from the link element
- supplied as an argument. If the argument is empty or null,
- replaces page contents with a cleaned up graph suitable to be
- used with headless chrome --dump-dom to retrieve the contents as
- a simple SVG.
+/** Generate a data URI downloadable from the link element supplied as an 
+ * argument. If the argument is empty or null, replaces page contents with a 
+ * cleaned-up graph suitable to be used with headless chrome --dump-dom to 
+ * retrieve the contents as a simple SVG.
 @param {object} [linkelt=null] Element to provide a link for the SVG object to download. If null, current page contents are replaced. */
 this.saveGraph = ( linkelt = null ) => {
   // retrieve svg source as a string

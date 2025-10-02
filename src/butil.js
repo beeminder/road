@@ -61,31 +61,31 @@ const BBURL = "http://brain.beeminder.com/"
 // Handy: https://material.io/design/color/#tools-for-picking-colors
 //        http://tutorials.jenkov.com/svg/fill-patterns.html
 const BHUE = {
-  DYEL:   "#ffff44", // Dark yellow  (mma 1,1,.55; py 1,1,.4)
-  LYEL:   "#ffff88", // Light yellow (mma 1,1,.68; py 1,1,.6)
-  ROSE:   "#ff8080", // (originally 1,1/3,1/3 then 251,130,199)
-  AKRA:   "#4C4Cff", // (originally 1,1/3,1/3 then 251,130,199)
-  PURP:   "#B56bb5", // Moving average line and steppy line
-  LPURP:  "#E5BbE5", // Light purple for aura (previously blue/green)
-  BLUE:   "#EAEAFF", // Previously used for aura                      [NOT USED]
-  GRUE:   "#b5ffDE", // Aura overlap (m .832,1,.832; py .712,1,.872)  [NOT USED]
-  ORNG:   "#ff8000", // Dotted centerline of old non-YBHP YBR
-  WITE:   "#ffffff", // For hollow dots
-  BIGG:   "#ffe54c", // Bigger guiding line demarcating 7-day buffer
-  PINK:   "#ffe5e5", // Original pinkzone/oinkzone
-  PNKE:   "#ffcccc", // Darker pink for edge of pink zone             [NOT USED]
-  GRAY:   "#f0f0f0", // Watermarks (mma .9625; had .96 thru Nov 2014)
-  BLCK:   "#000000", // For edges of dots
-  REDDOT: "#ff0000", // Red dots for beemergencies
-  ORNDOT: "#ffa500", // Orange dots for 1 safe day
-  BLUDOT: "#3f3fff", // Blue dots for 2 safe days
-  GRNDOT: "#00aa00", // Green dots for 3+ safe days
-  GRADOT: "#228B22", // Forest green Grayson dots for 7+ safe days
-  ERRDOT: "#00FFFF", // Garish cyan dots to only show if something's fubar
-  RAZR0:  "#ff0000", // Bright red line for razor road; faded = #FF5436
-  RAZR1:  "#ffa500", // Orange line;                    faded = #FEB642
-  RAZR2:  "#3f3fff", // Blue line;                      faded = #8C7AFF
-  RAZR3:  "#6BC461", // Green line;                     faded = #6BC461
+DYEL:   "#ffff44", // Dark yellow  (mma 1,1,.55; py 1,1,.4)
+LYEL:   "#ffff88", // Light yellow (mma 1,1,.68; py 1,1,.6)
+ROSE:   "#ff8080", // (originally 1,1/3,1/3 then 251,130,199)
+AKRA:   "#4C4Cff", // (originally 1,1/3,1/3 then 251,130,199)
+PURP:   "#B56bb5", // Moving average line and steppy line
+LPURP:  "#E5BbE5", // Light purple for aura (previously blue/green)
+BLUE:   "#EAEAFF", // Previously used for aura                      [NOT USED]
+GRUE:   "#b5ffDE", // Aura overlap (m .832,1,.832; py .712,1,.872)  [NOT USED]
+ORNG:   "#ff8000", // Dotted centerline of old non-YBHP YBR
+WITE:   "#ffffff", // For hollow dots
+BIGG:   "#ffe54c", // Bigger guiding line demarcating 7-day buffer
+PINK:   "#ffe5e5", // Original pinkzone/oinkzone
+PNKE:   "#ffcccc", // Darker pink for edge of pink zone             [NOT USED]
+GRAY:   "#f0f0f0", // Watermarks (mma .9625; had .96 thru Nov 2014)
+BLCK:   "#000000", // For edges of dots
+REDDOT: "#ff0000", // Red dots for beemergencies
+ORNDOT: "#ffa500", // Orange dots for 1 safe day
+BLUDOT: "#3f3fff", // Blue dots for 2 safe days
+GRNDOT: "#00aa00", // Green dots for 3+ safe days
+GRADOT: "#228B22", // Forest green Grayson dots for 7+ safe days
+ERRDOT: "#00FFFF", // Garish cyan dots to only show if something's fubar
+RAZR0:  "#ff0000", // Bright red line for razor road; faded = #FF5436
+RAZR1:  "#ffa500", // Orange line;                    faded = #FEB642
+RAZR2:  "#3f3fff", // Blue line;                      faded = #8C7AFF
+RAZR3:  "#6BC461", // Green line;                     faded = #6BC461
 }
 
 
