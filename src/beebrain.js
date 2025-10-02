@@ -240,9 +240,10 @@ let rosydata = []   // Derived data corresponding to the rosy line
 let fuda = []       // Future data
 //let undoBuffer = [] // Array of previous graph matrices for undo
 //let redoBuffer = [] // Array of future graph matrices for redo (see bgraph.js)
-let tarings = []    // Timestamps of tarings (generalization of odometer resets)
-let derails = []    // Derailment datapoints (sans comments, I think)
-let autophages = [] // Selfdestructing datapoints (also sans comments?)
+let derails = []    // Derailment datapoints                             #DERAIL
+let autophages = [] // Selfdestructing datapoints                  #SELFDESTRUCT
+let restarts = []   // Timestamps of restarts datapoints                #RESTART
+let tarings = []    // Timestamps of tarings (generalized of odom resets)  #TARE
 let hollow = []     // Hollow points
 let allvals = {}    // Hash mapping timestamps to list of datapoint values
 let aggval = {}     // Hash mapping timestamps to aggday'd value for that day
@@ -311,9 +312,10 @@ function initGlobals() {
   
   gol = {}
   gol.siru = null
-  tarings = []
   derails = []
   autophages = []
+  restarts = []
+  tarings = []
   hashhash = {}
   
   // All the in and out params are also global, via the gol hash
@@ -462,32 +464,38 @@ function computeRosy() {
 }
 
 // Magic strings in datapoint comments: (see beeminder/beeminder/issues/2423)
-// 1. "#SELFDESTRUCT" and "#THISWILLSELFDESTRUCT"
-// 2. "#DERAIL"
+// 1. "#DERAIL"
+// 2. "#SELFDESTRUCT" and "#THISWILLSELFDESTRUCT" aka autophagic datapoints
 // 3. "#RESTART"
 // 4. "#TARE" (replaces/generalizes odometer resets; see gissue #216)
 // And @ signs are allowed instead of #, which is useful if you don't want the
 // magic strings to show up as hashtags on the graph.
+// More at blog.beeminder.com/magicdata
 
 // Whether datapoint comment string s has the magic string indicating it's when
-// a derailment happened (previously known as a recommit datapoint).
-function derailed(s) { 
+// a derailment happened (previously known as a recommit datapoint).     #DERAIL
+// This is silly but "derailic" is a more greppable/consistent adjectival form
+// than "derailed" and it keeps the magic string checkers themed.
+function derailic(s) { 
   return /(?:^|\s)[#@]DERAIL(?:$|\s)/.test(s)
 }
-
 // Note for the future: this regex is slightly better:
 // /(?<!\S)[#@]DERAIL(?!\S)/ 
 
 // Whether datapoint comment string s has the magic string indicating it's a
-// tare datapoint (odometer reset replacement)
-function tared(s) { return /(?:^|\s)[#@]TARE(?:$|\s)/.test(s) }
-
-// Whether datapoint comment string s has the magic string indicating it's a
-// selfdestructing datapoint, typically because it's a PPR
+// selfdestructing datapoint, typically because it's a PPR.        #SELFDESTRUCT
 function autophagic(s) {
   return /(?:^|\s)[#@](?:SELFDESTRUCT|THISWILLSELFDESTRUCT)(?:$|\s)/.test(s)
   //|| s.startsWith("PESSIMISTIC PRESUMPTION") // backward compatibility #SCHDEL
 }
+
+// Whether datapoint comment string s has the magic string indicating it's a 
+// restart datapoint.                                                   #RESTART
+function restartic(s) { return /(?:^|\s)[#@]RESTART(?:$|\s)/.test(s) }
+
+// Whether datapoint comment string s has the magic string indicating it's a
+// tare datapoint (odometer reset replacement).                            #TARE
+function taric(s)     { return /(?:^|\s)[#@]TARE(?:$|\s)/.test(s) }
 
 // Take, eg, "shark jumping #yolo :) #shark" and return {"#yolo", "#shark"}
 // Pro tip: use scriptular.com to test these regexes
@@ -582,17 +590,28 @@ function procData() {
   }
 
   // Identify derailments and construct a copied array
-  derails = data.filter(e => derailed(e[2]))
-  derails = derails.map(e => e.slice())
+  derails = data.filter(e => derailic(e[2]))
+  derails = derails.map(e => e.slice()) // make a shallow copy
+  // Nicer version combining the above two lines and using destructuring:
+  //derails = data.filter(([, , c]) => derailic(c)).map(row => row.slice())
+  // If/when we're not modifying the data in derails then this will suffice:
+  //derails = data.filter(([, , comment]) => derailic(comment))
   // Legacy adjustment for before we switched from defining derailment as today
   // and yesterday being in the red to just yesterday in the red. As of 2021
   // there are still current graphs that become messed up without this...
   for (i = 0; i < derails.length; i++)
     if (derails[i][0] < 1562299200/*2019-07-05*/) derails[i][0] -= SID
-  
-  br.tareify(data, tared)
-  tarings = data.filter(e => tared(e[2])).map(e => e[0])
-  
+
+  autophages = data.filter(([, , comment]) => autophagic(comment))
+  // more here, like making the datapoint value be the agg'd value or whatever 
+  // things we have to do to make the derail datapoints get plotted in the right
+  // places.
+
+  restarts = data.filter(([, , comment]) => restartic(comment)).map(e => e[0])
+
+  br.tareify(data, taric)
+  tarings = data.filter(e => taric(e[2])).map(e => e[0])
+
   // Safety net: if odom=true AND no tare-tagged datapoints, use old odomify
   if (gol.odom && tarings.length === 0) {
     tarings = data.filter(e => e[1] == 0).map(e => e[0])
@@ -655,7 +674,7 @@ function procData() {
 
       // What we actually want for derailval is not this "worstval" but the
       // agg'd value up to and including the derail datapoint (see the
-      // derailed() function) and nothing after that:
+      // derailic() function) and nothing after that:
       derailval[ct] = gol.yaw < 0 ? bu.arrMax(vw) : bu.arrMin(vw)
       
       if (i < data.length) {
@@ -1708,12 +1727,14 @@ this.allvals = allvals
 this.fuda = fuda
 /** Holds the flatlined datapoint */
 this.flad = flad
-/** Holds an array of taring timestamps (generalization of odometer resets) */
-this.tarings = tarings //TODOT
 /** Holds an array of derailments */
 this.derails = derails
 /** Holds an array of selfdestructing datapoints */
 this.autophages = autophages
+/** Holds an array of restart timestamps */
+this.restarts = restarts
+/** Holds an array of taring timestamps (generalization of odometer resets) */
+this.tarings = tarings //TODOT
 
 this.hollow = hollow
 this.hashtags = hashtags
