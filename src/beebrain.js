@@ -209,9 +209,17 @@ const ErrType = { NOBBFILE:0, BADBBFILE:1  }
 const ErrMsgs = [ "Could not find goal (.bb) file.", "Bad .bb file." ]
 
 /** Type of the last error */
-const LastError = null
+const LastError = null // seemingly never used?
 
-const PRAF = .015 // Fraction of plot range that the axes extend beyond
+//const PRAF = .015 // Fraction of plot range that the axes extend beyond
+
+// We do a legacy adjustment for derailments that happened before we switched to
+// the red-yesterday definition of derailments on 2019-07-05. Before that date,
+// we considered you derailed if *both* today and yesterday were in the red. As
+// of 2021, and probably still true in 2025 and beyond, there are still current
+// graphs that become messed up without adjusting the derailment dates before 
+// this date.
+const REDYESTERDAYDAY = 1562299200 // 2019-07-05
 
 /** beebrain object constructor. Processes the supplied goal information JSON
  * and computed derived goal parameters, summaries, and other details. These
@@ -247,7 +255,7 @@ let tarings = []    // Timestamps of tarings (generalized of odom resets)  #TARE
 let hollow = []     // Hollow points
 let allvals = {}    // Hash mapping timestamps to list of datapoint values
 let aggval = {}     // Hash mapping timestamps to aggday'd value for that day
-let derailval = {}  // Map timestamp to value as of DERAIL datapoint that day
+let derailval = {}  // Map timestamp to value(?) as of DERAIL datapoint that day
 let hashhash = {}   // Map timestamp to sets of hashtags to display on graph
 let hashtags = []   // Array of timestamp string pairs for hashtag lists
  
@@ -309,7 +317,7 @@ function initGlobals() {
   allvals = {}
   aggval = {}
   derailval = {}
-  
+
   gol = {}
   gol.siru = null
   derails = []
@@ -590,25 +598,12 @@ function procData() {
   }
 
   // Identify derailments and construct a copied array
-  derails = data.filter(e => derailic(e[2]))
-  derails = derails.map(e => e.slice()) // make a shallow copy
-  // Nicer version combining the above two lines and using destructuring:
-  //derails = data.filter(([, , c]) => derailic(c)).map(row => row.slice())
-  // If/when we're not modifying the data in derails then this will suffice:
-  //derails = data.filter(([, , comment]) => derailic(comment))
-  // Legacy adjustment for before we switched from defining derailment as today
-  // and yesterday being in the red to just yesterday in the red. As of 2021
-  // there are still current graphs that become messed up without this...
-  for (i = 0; i < derails.length; i++)
-    if (derails[i][0] < 1562299200/*2019-07-05*/) derails[i][0] -= SID
+  derails = data.filter(([, , c]) => derailic(c)).map(row => row.slice())
+  // Legacy adjustment for the before times:
+  for (const row of derails) if (row[0] < REDYESTERDAYDAY) row[0] -= SID
 
   // Identify selfdestructing datapoints and construct a copied array
-  autophages = data.filter(e => autophagic(e[2]))
-  autophages = autophages.map(e => e.slice()) // make a shallow copy
-  // Nicer version combining the above two lines and using destructuring:
-  //autophages = data.filter(([, , c]) => autophagic(c)).map(row => row.slice())
-  // If/when we're not modifying the data in autophages then this will suffice:
-  //autophages = data.filter(([, , comment]) => autophagic(comment))
+  autophages = data.filter(([, , c]) => autophagic(c)).map(row => row.slice())
 
   restarts = data.filter(([, , comment]) => restartic(comment)).map(e => e[0])
 
@@ -676,9 +671,10 @@ function procData() {
       const vw = allvals[ct].map(e => e[1])
 
       // What we actually want for derailval is not this "worstval" but the
-      // agg'd value up to and including the derail datapoint (see the
-      // derailic() function) and nothing after that:
-      derailval[ct] = gol.yaw < 0 ? bu.arrMax(vw) : bu.arrMin(vw)
+      // agg'd value up to and including the derail datapoint *and nothing after
+      // that*.
+      // derailval[ct] = gol.yaw < 0 ? bu.arrMax(vw) : bu.arrMin(vw) // but, no
+      derailval[ct] = true
       
       if (i < data.length) {
         ct = data[i][0]
@@ -720,14 +716,19 @@ function procData() {
   
   // Adjust derailment markers to indicate worst value for that day
   for (i = 0; i < derails.length; i++) {
-    const CHANGEDATE = 1562299200 // 2019-07-05 // yuck, DRY this up
-    if (derails[i][0] < CHANGEDATE) ct = derails[i][0]+SID
-    else                            ct = derails[i][0]
+    ct = derails[i][0]
+    if (derails[i][0] < REDYESTERDAYDAY) ct += SID // legacy adjustment
     if (ct in derailval)
       //derails[i][1] = derailval[ct] // see "What we actually want" above...
       derails[i][1] = aggval[ct]  // doing this until derailval is done right
   }
-  
+
+  // Set autophages to the agg'd value for that day
+  for (const row of autophages) {
+    const t = row[0], v = aggval[t]
+    if (v !== undefined) row[1] = v   // is it even possible v can be undefined?
+  }
+
   // Extract computed points that're different than any entered data
   hollow = data.filter(e => {
     if (!(e[0] in allvals)) return false
