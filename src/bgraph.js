@@ -4819,26 +4819,25 @@ function updateRestarts() {
   const zigzagPath = function(d) {
     const x = nXSc(d*SMS)
     const h = plotbox.height
-    const z = opts.restart.zigzag
-    const numZigs = Math.floor(h / (z * 2))
-    let path = `M ${x} 0`
-    for (let i = 0; i < numZigs; i++) {
-      const y1 = (i * 2 + 1) * z
-      const y2 = (i * 2 + 2) * z
-      path += ` L ${x + z} ${y1} L ${x} ${y2}`
+    const zw = opts.restart.zigzag // zigzag width aka amplitude
+    const parts = [`M ${x - zw} 0`]
+    for (let i = 0; ; i++) {
+      const y = i * zw
+      if (y >= h) break
+      parts.push(`L ${i % 2 === 0 ? x : x - zw} ${y}`)
     }
-    if (numZigs * z * 2 < h) path += ` L ${x} ${h}`
-    return path
+    parts.push(`L ${x} ${h}`)
+    return parts.join(' ')
   }
 
   rselt.attr("d", zigzagPath)
   rselt.enter().append("svg:path")
-       .attr("class", "restarts")
-       .attr("id",   function(d,i) { return i })
-       .attr("name", function(d,i) { return "restart"+i })
-       .attr("d",    zigzagPath)
-       .attr("stroke", opts.restartCol.dflt)
-       .attr("fill", "none")
+       .attr("class",        "restarts")
+       .attr("id",           function(d,i) { return i })
+       .attr("name",         function(d,i) { return "restart"+i })
+       .attr("d",            zigzagPath)
+       .attr("stroke",       opts.restartCol.dflt)
+       .attr("fill",         "none")
        .attr("stroke-width", opts.restart.width)
 }
 
