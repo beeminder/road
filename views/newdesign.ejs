@@ -106,10 +106,6 @@
     <div id="roadeditor"></div>
     <br/>
     <div class="graphtools">
-      <button class="bmdrbtn" id="submit" onclick="handleRoadSubmit();">Submit</button>
-      <span id="submitmsg">This is where submit msg goes</span>
-    </div>
-    <div class="graphtools">
       <button class="bmdrbtn" id="eundo" onclick="editor.undo();">Undo (0)</button>
       <button class="bmdrbtn" id="eredo" onclick="editor.redo();">Redo (0)</button>
       <button class="bmdrbtn" id="ereset" onclick="editor.undoAll();">Undo All</button>
@@ -123,6 +119,11 @@
       <button class="bmdrbtn" id="zoomdflt" onclick="editor.zoomDefault();">Reset Zoom</button>
       <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>
       <label>Show data</label>
+    </div>
+    <hr/>
+    <div class="graphtools">
+      <button class="bmdrbtn" id="submit" onclick="handleRoadSubmit();">Submit</button>
+      <span id="submitmsg">This is where submit msg goes</span>
     </div>
 
   </div>

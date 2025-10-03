@@ -890,9 +890,9 @@ function createGraph() {
   // Order here determines z-order...
   // (The commented z-values are to remember previous order for experimenting)
   gPB          = plot.append('g').attr('id', 'pastboxgrp')     // z = 01
-  gYBHP        = plot.append('g').attr('id', 'ybhpgrp')        // z = 03
-  gWatermark   = plot.append('g').attr('id', 'wmarkgrp')       // z = 04
-  gRestarts    = plot.append('g').attr('id', 'restartgrp')     // z = 02
+  gYBHP        = plot.append('g').attr('id', 'ybhpgrp')        // z = 02
+  gWatermark   = plot.append('g').attr('id', 'wmarkgrp')       // z = 03
+  gRestarts    = plot.append('g').attr('id', 'restartgrp')     // z = 04
   gGuides      = plot.append('g').attr('id', 'guidegrp')       // z = 05
   gMaxflux     = plot.append('g').attr('id', 'maxfluxgrp')     // z = 06
   gStdflux     = plot.append('g').attr('id', 'stdfluxgrp')     // z = 07
@@ -913,15 +913,15 @@ function createGraph() {
   gMovingAv    = plot.append('g').attr('id', 'movingavgrp')    // z = 22
   gSteppyPts   = plot.append('g').attr('id', 'steppyptsgrp')   // z = 23
   gDpts        = plot.append('g').attr('id', 'datapointgrp')   // z = 24
-  gAutophages  = plot.append('g').attr('id', 'autophagesgrp')  // z = 24.5
-  gHollow      = plot.append('g').attr('id', 'hollowgrp')      // z = 25
-  gFlat        = plot.append('g').attr('id', 'flatlinegrp')    // z = 26
-  gHashtags    = plot.append('g').attr('id', 'hashtaggrp')     // z = 27
-  gRoads       = plot.append('g').attr('id', 'roadgrp')        // z = 28
-  gDots        = plot.append('g').attr('id', 'dotgrp')         // z = 29
-  gHorizon     = plot.append('g').attr('id', 'horgrp')         // z = 30
-  gHorizonText = plot.append('g').attr('id', 'hortxtgrp')      // z = 31
-  gPastText    = plot.append('g').attr('id', 'pasttxtgrp')     // z = 32
+  gAutophages  = plot.append('g').attr('id', 'autophagesgrp')  // z = 25
+  gHollow      = plot.append('g').attr('id', 'hollowgrp')      // z = 26
+  gFlat        = plot.append('g').attr('id', 'flatlinegrp')    // z = 27
+  gHashtags    = plot.append('g').attr('id', 'hashtaggrp')     // z = 28
+  gRoads       = plot.append('g').attr('id', 'roadgrp')        // z = 29
+  gDots        = plot.append('g').attr('id', 'dotgrp')         // z = 30
+  gHorizon     = plot.append('g').attr('id', 'horgrp')         // z = 31
+  gHorizonText = plot.append('g').attr('id', 'hortxtgrp')      // z = 32
+  gPastText    = plot.append('g').attr('id', 'pasttxtgrp')     // z = 33
 
   gRedTape = plot.append('g').attr('visibility', 'hidden')
   // wwidth and height will be set by resizeGraph later
