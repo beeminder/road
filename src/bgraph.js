@@ -881,37 +881,37 @@ function createGraph() {
   // Order here determines z-order...
   // (The commented z-values are to remember previous order for experimenting)
   gPB          = plot.append('g').attr('id', 'pastboxgrp')     // z = 01
-  gYBHP        = plot.append('g').attr('id', 'ybhpgrp')        // z = 02
-  gWatermark   = plot.append('g').attr('id', 'wmarkgrp')       // z = 03
-  gGuides      = plot.append('g').attr('id', 'guidegrp')       // z = 04
-  gMaxflux     = plot.append('g').attr('id', 'maxfluxgrp')     // z = 05
-  gStdflux     = plot.append('g').attr('id', 'stdfluxgrp')     // z = 06
-  gYBHPlines   = plot.append('g').attr('id', 'ybhplinesgrp')   // z = 07
-  gRazr        = plot.append('g').attr('id', 'razrgrp')        // z = 08
-  gAura        = plot.append('g').attr('id', 'auragrp')        // z = 09
-  gPink        = plot.append('g').attr('id', 'pinkgrp')        // z = 10
-  gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp') // z = 11
-  gBullseye    = plot.append('g').attr('id', 'bullseyegrp')    // z = 12
-  gGrid        = plot.append('g').attr('id', 'grid')           // z = 13
-  gTarings     = plot.append('g').attr('id', 'taringgrp')      // z = 14
-  gRestarts    = plot.append('g').attr('id', 'restartgrp')     // z = 14.5
-  gKnots       = plot.append('g').attr('id', 'knotgrp')        // z = 15
-  gSteppy      = plot.append('g').attr('id', 'steppygrp')      // z = 16
-  gRosy        = plot.append('g').attr('id', 'rosygrp')        // z = 17
-  gRosyPts     = plot.append('g').attr('id', 'rosyptsgrp')     // z = 18
-  gDerails     = plot.append('g').attr('id', 'derailsgrp')     // z = 19
-  gAllpts      = plot.append('g').attr('id', 'allptsgrp')      // z = 20
-  gMovingAv    = plot.append('g').attr('id', 'movingavgrp')    // z = 21
-  gSteppyPts   = plot.append('g').attr('id', 'steppyptsgrp')   // z = 22
-  gDpts        = plot.append('g').attr('id', 'datapointgrp')   // z = 23
-  gHollow      = plot.append('g').attr('id', 'hollowgrp')      // z = 24
-  gFlat        = plot.append('g').attr('id', 'flatlinegrp')    // z = 25
-  gHashtags    = plot.append('g').attr('id', 'hashtaggrp')     // z = 26
-  gRoads       = plot.append('g').attr('id', 'roadgrp')        // z = 27
-  gDots        = plot.append('g').attr('id', 'dotgrp')         // z = 28
-  gHorizon     = plot.append('g').attr('id', 'horgrp')         // z = 29
-  gHorizonText = plot.append('g').attr('id', 'hortxtgrp')      // z = 30
-  gPastText    = plot.append('g').attr('id', 'pasttxtgrp')     // z = 31
+  gYBHP        = plot.append('g').attr('id', 'ybhpgrp')        // z = 03
+  gWatermark   = plot.append('g').attr('id', 'wmarkgrp')       // z = 04
+  gRestarts    = plot.append('g').attr('id', 'restartgrp')     // z = 02
+  gGuides      = plot.append('g').attr('id', 'guidegrp')       // z = 05
+  gMaxflux     = plot.append('g').attr('id', 'maxfluxgrp')     // z = 06
+  gStdflux     = plot.append('g').attr('id', 'stdfluxgrp')     // z = 07
+  gYBHPlines   = plot.append('g').attr('id', 'ybhplinesgrp')   // z = 08
+  gRazr        = plot.append('g').attr('id', 'razrgrp')        // z = 09
+  gAura        = plot.append('g').attr('id', 'auragrp')        // z = 10
+  gPink        = plot.append('g').attr('id', 'pinkgrp')        // z = 11
+  gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp') // z = 12
+  gBullseye    = plot.append('g').attr('id', 'bullseyegrp')    // z = 13
+  gGrid        = plot.append('g').attr('id', 'grid')           // z = 14
+  gTarings     = plot.append('g').attr('id', 'taringgrp')      // z = 15
+  gKnots       = plot.append('g').attr('id', 'knotgrp')        // z = 16
+  gSteppy      = plot.append('g').attr('id', 'steppygrp')      // z = 17
+  gRosy        = plot.append('g').attr('id', 'rosygrp')        // z = 18
+  gRosyPts     = plot.append('g').attr('id', 'rosyptsgrp')     // z = 19
+  gDerails     = plot.append('g').attr('id', 'derailsgrp')     // z = 20
+  gAllpts      = plot.append('g').attr('id', 'allptsgrp')      // z = 21
+  gMovingAv    = plot.append('g').attr('id', 'movingavgrp')    // z = 22
+  gSteppyPts   = plot.append('g').attr('id', 'steppyptsgrp')   // z = 23
+  gDpts        = plot.append('g').attr('id', 'datapointgrp')   // z = 24
+  gHollow      = plot.append('g').attr('id', 'hollowgrp')      // z = 25
+  gFlat        = plot.append('g').attr('id', 'flatlinegrp')    // z = 26
+  gHashtags    = plot.append('g').attr('id', 'hashtaggrp')     // z = 27
+  gRoads       = plot.append('g').attr('id', 'roadgrp')        // z = 28
+  gDots        = plot.append('g').attr('id', 'dotgrp')         // z = 29
+  gHorizon     = plot.append('g').attr('id', 'horgrp')         // z = 30
+  gHorizonText = plot.append('g').attr('id', 'hortxtgrp')      // z = 31
+  gPastText    = plot.append('g').attr('id', 'pasttxtgrp')     // z = 32
 
   gRedTape = plot.append('g').attr('visibility', 'hidden')
   // wwidth and height will be set by resizeGraph later
@@ -4805,7 +4805,7 @@ function updateTarings() {
        .attr("stroke-width",      opts.taring.width)
 }
 
-// Creates or updates zigzaggy vertical lines for restarts
+// Create or update zigzaggy vertical lines for restarts
 function updateRestarts() {
   if (processing || opts.divGraph == null || road.length == 0
       || bbr.restarts.length == 0) return
