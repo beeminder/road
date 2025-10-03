@@ -122,8 +122,10 @@ let defaults = {
   razrline:     3, // trying thicker bright red line: 2 -> 4 (see also mobile)
   /** Visual parameters for text boxes shown during dragging */ 
   textBox:      { margin: 3 },
-  /** Visual parameters for #TARE datapoints nee odometer resets */ 
-  taring:    { width: 0.5, dash: 8 },
+  /** Visual parameters for #TARE datapoints nee odometer resets */
+  taring:       { width: 0.5, dash: 8 },
+  /** Visual parameters for #RESTART datapoints */
+  restart:      { width: 1.5, zigzag: 5 },
   
   roadLineCol:  { valid: "black",    invalid:"#ca1212",  selected:"yellow" },
   roadDotCol:   { fixed: "darkgray", editable:"#c2c2c2", selected: "yellow" },
@@ -136,7 +138,8 @@ let defaults = {
   dataPointCol: { future: "#909090", stroke: "#eeeeee" },
   halfPlaneCol: { fill: "#ffffe8" },
   pastBoxCol:   { fill: "#f8f8f8", opacity:0.5 },
-  taringCol: { dflt: "#c2c2c2" },
+  taringCol:    { dflt: "#c2c2c2" },
+  restartCol:   { dflt: "#c2c2c2" },
                 
   /** Strips the graph of all details except what is needed for svg output */
   headless:     false,
@@ -259,7 +262,8 @@ const SVGStyle =
 + ".zoomarea{fill:none}"
 + "circle.ap{stroke:none}"
 + "circle.rd{stroke:none;pointer-events:none;fill:"+bu.BHUE.ROSE+"}"
-+ "circle.std{stroke:none;pointer-events:none;fill:"+(nosteppy?"#c0c0c0":bu.BHUE.PURP)+"}"
++ "circle.std{stroke:none;pointer-events:none;fill:"
++   (nosteppy?"#c0c0c0":bu.BHUE.PURP)+"}"
 + "circle.hp{stroke:none;fill:"+bu.BHUE.WITE+"}"
 + ".dp.gra,.ap.gra{fill:"+bu.BHUE.GRADOT+"}"
 + ".dp.grn,.ap.grn{fill:"+bu.BHUE.GRNDOT+"}"
@@ -271,8 +275,10 @@ const SVGStyle =
 + ".guides{pointer-events:none;fill:none;stroke:"+bu.BHUE.LYEL+"}"
 + ".ybhp{pointer-events:none}"
 + ".rosy{fill:none;stroke:"+bu.BHUE.ROSE+";pointer-events:none}"
-+ ".steppy{fill:none;stroke:"+(nosteppy?"#c0c0c0":bu.BHUE.PURP)+";pointer-events:none}"
-+ ".steppyppr{fill:none;stroke-opacity:0.8;stroke:"+bu.BHUE.LPURP+";pointer-events:none}"
++ ".steppy{fill:none;stroke:"+(nosteppy?"#c0c0c0":bu.BHUE.PURP)
++   ";pointer-events:none}"
++ ".steppyppr{fill:none;stroke-opacity:0.8;stroke:"+bu.BHUE.LPURP
++    ";pointer-events:none}"
 + ".derails{fill:"+bu.BHUE.REDDOT+";pointer-events:none}"
 + ".overlay .textbox{fill:#ffffcc;fill-opacity:0.5;stroke:black;"
 + "stroke-width:1;pointer-events:none;rx:5;ry:5}"
@@ -431,7 +437,7 @@ let svg, defs, graphs, buttonarea, stathead, focus, focusclip, plot,
     ySc, nYSc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel,
     xScB, xAxisB, xAxisObjB, yScB,
     gPB, gYBHP, gYBHPlines, gPink, gPinkPat, gTapePat, gGrid, gTarings,
-    gPastText,
+    gRestarts, gPastText,
     gGuides, gMaxflux, gStdflux, gRazr, gOldBullseye, 
     gKnots, gSteppy, gSteppyPts, gRosy, gRosyPts, gMovingAv,
     gAura, gDerails, gAllpts, gDpts, gHollow, gFlat, 
@@ -888,6 +894,7 @@ function createGraph() {
   gBullseye    = plot.append('g').attr('id', 'bullseyegrp')    // z = 12
   gGrid        = plot.append('g').attr('id', 'grid')           // z = 13
   gTarings     = plot.append('g').attr('id', 'taringgrp')      // z = 14
+  gRestarts    = plot.append('g').attr('id', 'restartgrp')     // z = 14.5
   gKnots       = plot.append('g').attr('id', 'knotgrp')        // z = 15
   gSteppy      = plot.append('g').attr('id', 'steppygrp')      // z = 16
   gRosy        = plot.append('g').attr('id', 'rosygrp')        // z = 17
@@ -4793,9 +4800,46 @@ function updateTarings() {
        .attr("y1",   0)
        .attr("x2",   function(d)   { return nXSc(d*SMS) })
        .attr("y2",   plotbox.height)
-       .attr("stroke", "rgb(200,200,200)") 
+       .attr("stroke", "rgb(200,200,200)")
        .style("stroke-dasharray", (opts.taring.dash)+","+(opts.taring.dash))
        .attr("stroke-width",      opts.taring.width)
+}
+
+// Creates or updates zigzaggy vertical lines for restarts
+function updateRestarts() {
+  if (processing || opts.divGraph == null || road.length == 0
+      || bbr.restarts.length == 0) return
+
+  // Create, update, and delete vertical restart lines
+  const rselt = gRestarts.selectAll(".restarts").data(bbr.restarts)
+  if (opts.roadEditor) { rselt.remove(); return }
+  rselt.exit().remove()
+
+  // Generate zigzag path for each restart
+  const zigzagPath = function(d) {
+    const x = nXSc(d*SMS)
+    const h = plotbox.height
+    const z = opts.restart.zigzag
+    const numZigs = Math.floor(h / (z * 2))
+    let path = `M ${x} 0`
+    for (let i = 0; i < numZigs; i++) {
+      const y1 = (i * 2 + 1) * z
+      const y2 = (i * 2 + 2) * z
+      path += ` L ${x + z} ${y1} L ${x} ${y2}`
+    }
+    if (numZigs * z * 2 < h) path += ` L ${x} ${h}`
+    return path
+  }
+
+  rselt.attr("d", zigzagPath)
+  rselt.enter().append("svg:path")
+       .attr("class", "restarts")
+       .attr("id",   function(d,i) { return i })
+       .attr("name", function(d,i) { return "restart"+i })
+       .attr("d",    zigzagPath)
+       .attr("stroke", opts.restartCol.dflt)
+       .attr("fill", "none")
+       .attr("stroke-width", opts.restart.width)
 }
 
 function updateDataPoints() {
@@ -5550,6 +5594,7 @@ function updateGraphData(force = false) {
   updateDataPoints()
   updateDerails()
   updateTarings()
+  updateRestarts()
   // updateAutophages()
   updateRosy()
   updateSteppy()

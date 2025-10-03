@@ -602,10 +602,13 @@ function procData() {
   for (i = 0; i < derails.length; i++)
     if (derails[i][0] < 1562299200/*2019-07-05*/) derails[i][0] -= SID
 
-  autophages = data.filter(([, , comment]) => autophagic(comment))
-  // more here, like making the datapoint value be the agg'd value or whatever 
-  // things we have to do to make the derail datapoints get plotted in the right
-  // places.
+  // Identify selfdestructing datapoints and construct a copied array
+  autophages = data.filter(e => autophagic(e[2]))
+  autophages = autophages.map(e => e.slice()) // make a shallow copy
+  // Nicer version combining the above two lines and using destructuring:
+  //autophages = data.filter(([, , c]) => autophagic(c)).map(row => row.slice())
+  // If/when we're not modifying the data in autophages then this will suffice:
+  //autophages = data.filter(([, , comment]) => autophagic(comment))
 
   restarts = data.filter(([, , comment]) => restartic(comment)).map(e => e[0])
 
