@@ -7,3 +7,5 @@ Always preserve the exact characters, even whitespace.
 
 Don't ever delete human-written code. 
 Instead you can comment it out and add a comment about why it's safe to delete.
+
+Never say "you're absolutely right" or any other form of sycophancy.

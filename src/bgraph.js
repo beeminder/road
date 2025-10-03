@@ -126,7 +126,9 @@ let defaults = {
   taring:       { width: 0.5, dash: 8 },
   /** Visual parameters for #RESTART datapoints */
   restart:      { width: 1.5, zigzag: 5 },
-  
+  /** Visual parameters for autophagic (self-destructing) datapoints */
+  autophage:    { mult: 1.5 },
+
   roadLineCol:  { valid: "black",    invalid:"#ca1212",  selected:"yellow" },
   roadDotCol:   { fixed: "darkgray", editable:"#c2c2c2", selected: "yellow" },
   roadKnotCol:  { dflt: "#c2c2c2", selected: "yellow",
@@ -247,7 +249,7 @@ const SVGStyle =
 + ".axis .minor line{stroke:#777;stroke-dasharray:0,2,4,3}"
 + ".grid line"
 + "{fill:none;stroke:#dddddd;stroke-width:1px;shape-rendering:crispEdges}"
-+ ".aura{fill-opacity:0.3;stroke-opacity:0.3;}"
++ ".aura{fill-opacity:0.3;stroke-opacity:0.3;}" // very unDRY 0.3
 + ".aurapast{fill-opacity:0.15;stroke-opacity:0.3}"
 + ".grid .minor line{stroke:none}"
 + ".axis text{font-family:sans-serif;font-size:11px;}"
@@ -271,7 +273,13 @@ const SVGStyle =
 + ".dp.orn,.ap.orn{fill:"+bu.BHUE.ORNDOT+"}"
 + ".dp.red,.ap.red{fill:"+bu.BHUE.REDDOT+"}"
 + ".dp.blk,.ap.blk{fill:"+bu.BHUE.BLCK+"}"
-+ ".dp.fuda,.ap.fuda{fill-opacity:0.3}"
++ ".dp.fuda,.ap.fuda,.autophages.fuda{fill-opacity:0.3}"
++ ".autophages.gra{fill:"+bu.BHUE.GRADOT+"}"
++ ".autophages.grn{fill:"+bu.BHUE.GRNDOT+"}"
++ ".autophages.blu{fill:"+bu.BHUE.BLUDOT+"}"
++ ".autophages.orn{fill:"+bu.BHUE.ORNDOT+"}"
++ ".autophages.red{fill:"+bu.BHUE.REDDOT+"}"
++ ".autophages.blk{fill:"+bu.BHUE.BLCK+"}"
 + ".guides{pointer-events:none;fill:none;stroke:"+bu.BHUE.LYEL+"}"
 + ".ybhp{pointer-events:none}"
 + ".rosy{fill:none;stroke:"+bu.BHUE.ROSE+";pointer-events:none}"
@@ -280,6 +288,8 @@ const SVGStyle =
 + ".steppyppr{fill:none;stroke-opacity:0.8;stroke:"+bu.BHUE.LPURP
 +    ";pointer-events:none}"
 + ".derails{fill:"+bu.BHUE.REDDOT+";pointer-events:none}"
++ ".autophages{pointer-events:none}"
++ ".autophage-slash{stroke:rgb(0,0,0);pointer-events:none}"
 + ".overlay .textbox{fill:#ffffcc;fill-opacity:0.5;stroke:black;"
 + "stroke-width:1;pointer-events:none;rx:5;ry:5}"
 
@@ -287,8 +297,7 @@ const SVGStyle =
 const PRAF = 0.015
 
 /** Seconds to milliseconds (Javascript unixtime is the latter) */
-const SMS = 1000 
-
+const SMS = 1000
 
 /** Enum object to identify error types */
 const ErrType = { NOBBFILE: 0, BADBBFILE: 1, BBERROR: 2 }
@@ -440,7 +449,7 @@ let svg, defs, graphs, buttonarea, stathead, focus, focusclip, plot,
     gRestarts, gPastText,
     gGuides, gMaxflux, gStdflux, gRazr, gOldBullseye, 
     gKnots, gSteppy, gSteppyPts, gRosy, gRosyPts, gMovingAv,
-    gAura, gDerails, gAllpts, gDpts, gHollow, gFlat, 
+    gAura, gDerails, gAutophages, gAllpts, gDpts, gHollow, gFlat, 
     gBullseye, gRoads, gDots, gWatermark, gHashtags, gHorizon, gHorizonText,
     gRedTape,
     zoomarea, axisZoom, zoomin, zoomout, // exportBtn,  
@@ -904,6 +913,7 @@ function createGraph() {
   gMovingAv    = plot.append('g').attr('id', 'movingavgrp')    // z = 22
   gSteppyPts   = plot.append('g').attr('id', 'steppyptsgrp')   // z = 23
   gDpts        = plot.append('g').attr('id', 'datapointgrp')   // z = 24
+  gAutophages  = plot.append('g').attr('id', 'autophagesgrp')  // z = 24.5
   gHollow      = plot.append('g').attr('id', 'hollowgrp')      // z = 25
   gFlat        = plot.append('g').attr('id', 'flatlinegrp')    // z = 26
   gHashtags    = plot.append('g').attr('id', 'hashtaggrp')     // z = 27
@@ -3153,6 +3163,11 @@ function animRosy(enable) {
   }
 }
 
+// Animates datapoints to 2× their normal size when enabled
+// NOTE (Claude): Mystery - this function is exported (see this.animData below) but
+// we can't find where it's actually called. It might be legacy code, or called
+// from external code outside this repo. User reports never seeing dots animate to
+// 2× size, so this might be unused or broken. Worth investigating later.
 function animData(enable) {
   if (opts.roadEditor) return
   var e = gDpts.selectAll(".dp")
@@ -3162,7 +3177,7 @@ function animData(enable) {
   if (enable) startAnim(e, 500, [], s, "data")
   else        stopAnim(e,  300, [], s, "data")
   e = gAllpts.selectAll(".ap")
-  s =[["r", r3(0.7*opts.dataPoint.size*scf*2)+"px", 
+  s =[["r", r3(0.7*opts.dataPoint.size*scf*2)+"px",
             r3(0.7*opts.dataPoint.size*scf)+"px"]]
   if (enable) startAnim(e, 500, [], s, "dataa")
   else        stopAnim(e,  300, [], s, "dataa")
@@ -4536,12 +4551,10 @@ function dpStyle( pt ) {
   sty += styleLookup[col]
   return  sty
 }
-function dpFill( pt ) {
-  return br.dotcolor(road, gol, pt[0], pt[1], iso)
-}
-function dpFillOp( pt ) {
-  return (pt[3] == bbr.DPTYPE.AGGPAST)?null:0.3
-}
+
+// Hmm, why aren't we actually using these functions?
+function dpFill( pt ) { return br.dotcolor(road, gol, pt[0], pt[1], iso) }
+function dpFillOp( pt ) { return (pt[3] == bbr.DPTYPE.AGGPAST)?null:0.3 }
 function dpStrokeWidth( pt ) {
   return (((pt[3] == bbr.DPTYPE.AGGPAST)?1:0.5)*scf)+"px"
 }
@@ -4731,7 +4744,24 @@ function updateSteppy() {
         } else stppprelt.remove()
         
       } else stpelt.remove()
-      // Steppy points
+      // Steppy points -- notes from Claude
+      // TODO: Make steppy rings adapt to autophage size
+      // Currently steppy dots are uniform size (dataPoint.size + 2) but autophage
+      // datapoints are scaled by autophage.mult. To make the purple ring properly
+      // encompass the larger autophage dots, we'd need to:
+      //   1. Create a helper to check if a timestamp matches an autophage:
+      //      const isAutophage = (t) => bbr.autophages.some(ap => ap[0] === t)
+      //   2. Split npts into two arrays based on whether they're autophages:
+      //      const normalPts = npts.filter(pt => !isAutophage(pt[0]))
+      //      const phagePts = npts.filter(pt => isAutophage(pt[0]))
+      //   3. Call updateDotGroup twice with different classes:
+      //      updateDotGroup(gSteppyPts, normalPts, "std", "std", true)
+      //      updateDotGroup(gSteppyPts, phagePts, "std-phage", "std-phage", true)
+      //   4. Add CSS rule in the dynamic styles section (around line 5584):
+      //      s += svgid+".std-phage {r:"+r3((opts.dataPoint.size*opts.autophage.mult+2)*scf)+"px} "
+      // This approach keeps the code relatively clean while allowing steppy rings
+      // to scale with autophage markers. The alternative would be per-element radius
+      // setting which is messier, or removing steppy rings from autophages entirely.
       updateDotGroup(gSteppyPts, bbr.flad ? npts.slice(0, npts.length-1) : npts,
                      "std", "std", true)
     } else {
@@ -4775,6 +4805,86 @@ function updateDerails() {
   } else {
     drelt = gDerails.selectAll(".derails")
     drelt.remove()
+  }
+}
+
+function updateAutophages() {
+  if (processing || opts.divGraph == null) return
+
+  const l = [nXSc.invert(0).getTime()/SMS,
+             nXSc.invert(plotbox.width).getTime()/SMS]
+
+  function adf(d) {// Filter to extract autophages
+    return (d[0] >= l[0] && d[0] <= l[1])
+  }
+
+  const now = gol.asof
+  let apelt, slashelt
+  // *** Plot autophages (self-destructing datapoints) ***
+  if (opts.showData || !opts.roadEditor) {
+    const appts = bbr.autophages.filter(adf)
+
+    // Update circles
+    apelt = gAutophages.selectAll(".autophages").data(appts)
+    apelt.exit().remove()
+    apelt
+      .attr("class", function(d) {
+        const col = br.dotcolor(road, gol, d[0], d[1], iso)
+        let cls = "autophages"
+        if (d[0] > now) cls += " fuda"
+        cls += styleLookup[col]
+        return cls
+      })
+      .attr("r", opts.dataPoint.size*opts.autophage.mult*scf)
+      .attr("cx", function(d) { return nXSc(d[0]*SMS) })
+      .attr("cy", function(d) { return nYSc(d[1]) })
+
+    apelt.enter().append("svg:circle")
+      .attr("class", function(d) {
+        const col = br.dotcolor(road, gol, d[0], d[1], iso)
+        let cls = "autophages"
+        if (d[0] > now) cls += " fuda"
+        cls += styleLookup[col]
+        return cls
+      })
+      .attr("r", opts.dataPoint.size*opts.autophage.mult*scf)
+      .attr("cx", function(d) { return nXSc(d[0]*SMS) })
+      .attr("cy", function(d) { return nYSc(d[1]) })
+      .on("mouseenter", function(event, d) {
+        if (dotTimer != null) window.clearTimeout(dotTimer)
+        dotTimer = window.setTimeout(function() {
+          showDotText(d); dotTimer = null
+        }, 500)
+      })
+      .on("mouseout", function(event, d) {
+        if (dotText != null) { removeDotText(); dotText = null }
+        window.clearTimeout(dotTimer)
+      })
+
+    // Update slash lines
+    const r = opts.dataPoint.size*opts.autophage.mult*scf
+    const offset = r * 0.707 // 1/sqrt(2) for 45-degree diagonal
+    slashelt = gAutophages.selectAll(".autophage-slash").data(appts)
+    slashelt.exit().remove()
+    slashelt
+      .attr("x1", function(d) { return nXSc(d[0]*SMS) - offset })
+      .attr("y1", function(d) { return nYSc(d[1]) - offset })
+      .attr("x2", function(d) { return nXSc(d[0]*SMS) + offset })
+      .attr("y2", function(d) { return nYSc(d[1]) + offset })
+      .attr("opacity", function(d) { return d[0] > now ? 0.3 : 1.0 }) // unDRY
+
+    slashelt.enter().append("svg:line")
+      .attr("class", "autophage-slash")
+      .attr("x1", function(d) { return nXSc(d[0]*SMS) - offset })
+      .attr("y1", function(d) { return nYSc(d[1]) - offset })
+      .attr("x2", function(d) { return nXSc(d[0]*SMS) + offset })
+      .attr("y2", function(d) { return nYSc(d[1]) + offset })
+      .attr("opacity", function(d) { return d[0] > now ? 0.3 : 1.0 }) // unDRY
+  } else {
+    apelt = gAutophages.selectAll(".autophages")
+    apelt.remove()
+    slashelt = gAutophages.selectAll(".autophage-slash")
+    slashelt.remove()
   }
 }
 
@@ -4858,24 +4968,27 @@ function updateDataPoints() {
   var dpelt
   if (opts.showData || !opts.roadEditor) {
     var pts = bbr.flad != null ? dataf.slice(0, dataf.length-1) : dataf
-    
+
     // *** Plot datapoints ***
     // Filter data to only include visible points
     pts = pts.filter(df);
+    // Filter autophages from bbr.fuda to avoid double-plotting future autophages
+    const autophageTimestamps = new Set(bbr.autophages.map(ap => ap[0]))
+    const fudaFiltered = bbr.fuda.filter(d => !autophageTimestamps.has(d[0]))
     if (gol.plotall && !opts.roadEditor) {
       // All points
-      updateDotGroup(gAllpts, alldataf.filter(adf), "ap", 
+      updateDotGroup(gAllpts, alldataf.filter(adf), "ap",
         d=>("ap"+dpStyle(d)), true)
-      
+
     } else {
       var el = gAllpts.selectAll(".ap");
       el.remove();
     }
     if (opts.roadEditor)
-      updateDotGroup(gDpts, pts.concat(bbr.fuda), "dp", 
+      updateDotGroup(gDpts, pts.concat(fudaFiltered), "dp",
         d=>("dp"+dpStyle(d)), true)
     else {
-      updateDotGroup(gDpts, pts.concat(bbr.fuda), "dp", 
+      updateDotGroup(gDpts, pts.concat(fudaFiltered), "dp",
         d=>("dp"+dpStyle(d)), true)
       // hollow datapoints
       updateDotGroup(gHollow, bbr.hollow.filter(df), "hp", 
@@ -5560,6 +5673,9 @@ function updateDynStyles() {
   } else {
     s += svgid+".dp {r:"+r3(opts.dataPoint.size*scf)+"px;stroke:rgb(0,0,0);stroke-width:"+r3(1*scf)+"px} "
     s += svgid+".dp.fuda {stroke-width:"+r3(0.5*scf)+"px} "
+    s += svgid+".autophages {stroke:rgb(0,0,0);stroke-width:"+r3(1*scf)+"px} "
+    s += svgid+".autophages.fuda {stroke-width:"+r3(0.5*scf)+"px} "
+    s += svgid+".autophage-slash {stroke-width:"+r3(1*scf)+"px} "
     s += svgid+".razr {fill:none;pointer-events:none;stroke-width:"+r3(opts.razrline*scf)+"px;stroke:"+bu.BHUE.REDDOT+"} "
   }
   d3.select("style#dynstyle"+curid).text(s)
@@ -5594,7 +5710,7 @@ function updateGraphData(force = false) {
   updateDerails()
   updateTarings()
   updateRestarts()
-  // updateAutophages()
+  updateAutophages()
   updateRosy()
   updateSteppy()
   updateHashtags()
@@ -5630,7 +5746,7 @@ this.showData = (flag) => {
   if (alldata.length != 0) {
     updateDataPoints()
     updateDerails()
-    // updateAutophages()
+    updateAutophages()
     updateRosy()
     updateSteppy()
     updateMovingAv()
@@ -5677,7 +5793,7 @@ this.maxDataDays = ( days ) => {
     if (alldata.length != 0) {
       updateDataPoints()
       updateDerails()
-      // updateAutophages()
+      updateAutophages()
       updateRosy()
       updateSteppy()
     }
