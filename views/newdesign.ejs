@@ -62,6 +62,18 @@
       <button class="bmdrbtn" id="zoomall" onclick="graph.zoomAll();">View All</button>
       <button class="bmdrbtn" id="zoomdflt" onclick="graph.zoomDefault();">Reset Zoom</button>
     </div>
+    <hr/>
+    <details style="margin:10px 0;">
+      <summary style="cursor:pointer;padding:5px 0;">Experimental features</summary>
+      <div class="graphtools">
+        <button class="bmdrbtn" id="savesvgold" onclick="var link = document.getElementById('graphdownload'); graph.saveGraph(link); link.style.display='inline'; link.textContent='Right-click to download SVG';">SVG (old)</button>
+        <a id="graphdownload" target="_blank" style="display:none;"></a>
+        <button class="bmdrbtn" id="savesvgdl" onclick="graph.saveGraphDownload();">SVG (download)</button>
+        <button class="bmdrbtn" id="savesvgblob" onclick="graph.saveGraphBlob();">SVG (blob)</button>
+        <button class="bmdrbtn" id="savesvgdoc" onclick="graph.saveGraphDocWrite();">SVG (doc.write)</button>
+      </div>
+    </details>
+
   </div>
 
   <div class="vtabcontainer">
@@ -125,6 +137,21 @@
       <button class="bmdrbtn" id="submit" onclick="handleRoadSubmit();">Submit</button>
       <span id="submitmsg">This is where submit msg goes</span>
     </div>
+    <hr/>
+    <details style="margin:10px 0;">
+      <summary style="cursor:pointer;padding:5px 0;">Experimental features</summary>
+      <div class="graphtools">
+        <button class="bmdrbtn" id="savesvgold" onclick="var link = document.getElementById('editordownload'); editor.saveGraph(link); link.style.display='inline'; link.textContent='Right-click to download SVG';">SVG (old)</button>
+        <a id="editordownload" target="_blank" style="display:none;"></a>
+        <button class="bmdrbtn" id="savesvgdl" onclick="editor.saveGraphDownload();">SVG (download)</button>
+        <button class="bmdrbtn" id="savesvgblob" onclick="editor.saveGraphBlob();">SVG (blob)</button>
+        <button class="bmdrbtn" id="savesvgdoc" onclick="editor.saveGraphDocWrite();">SVG (doc.write)</button>
+      </div>
+      <div class="graphtools">
+        <input id="showcontext" type="checkbox" onclick="editor.showContext(this.checked);" checked>
+        <label>Include scrubber</label>
+      </div>
+    </details>
 
   </div>
   
@@ -143,8 +170,23 @@
           <option value="604800">per week</option>
           <option value="2629800">per month</option>
           <option value="31557600">per year</option>
-        </select> 
+        </select>
         <button class="bmdrbtn" id="commit" onclick="commitTo(false)">UPDATE</button>
+      </div>
+      <div class="tooltitle">Ratchet</div>
+      <div>
+        Reduce safety buffer to:<br/>
+        <input type="number" value="0" min="0" id="ratchetdays" style="margin-bottom:10px;height:30px;width:5em;"> days
+        <button class="bmdrbtn" id="retroratchet" onclick="var val = document.getElementById('ratchetdays').value; if (!isNaN(val)) editor.retroRatchet(Number(val));">Ratchet</button>
+      </div>
+      <div class="tooltitle">Schedule Break</div>
+      <div>
+        Start date:<br/>
+        <input type="text" id="breakstart" style="margin-bottom:10px;height:30px;width:10em;" placeholder="YYYY-MM-DD"><br/>
+        Duration:<br/>
+        <input type="number" value="1" min="1" id="breakdays" style="margin-bottom:10px;height:30px;width:5em;"> days<br/>
+        <button class="bmdrbtn" id="insertbreak" onclick="scheduleBreak(true);">Insert</button>
+        <button class="bmdrbtn" id="overwritebreak" onclick="scheduleBreak(false);">Overwrite</button>
       </div>
     </div>
     <div id="edata" class="etabcontent">

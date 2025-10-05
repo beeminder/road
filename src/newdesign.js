@@ -519,6 +519,13 @@ function setEntryToday() {
   if (!dataDate.value.trim()) datePicker.setDate(today)
 }
 
+// Claude added this and it might be dumb but it seems to work
+function scheduleBreak(insert) {
+  let start = document.getElementById('breakstart').value
+  let days = document.getElementById('breakdays').value
+  if (!isNaN(days)) editor.scheduleBreak(start, days, insert)
+}
+
 function initialize() {
   roadSelect = document.getElementById('roadselect')
   
@@ -629,7 +636,15 @@ function initialize() {
 
   datePicker = new Pikaday({field: dataDate})
   setEntryToday()
-  
+
+  // Claude added this and it might be dumb (especially the part where we assign
+  // something to a variable we never use?) but it seems to work.
+  // This is the break scheduler in the Dial tab.
+  let breakStartField = document.getElementById('breakstart')
+  if (breakStartField) {
+    let breakPicker = new Pikaday({field: breakStartField})
+  }
+
   document.onkeydown = documentKeyDown;
 }
 

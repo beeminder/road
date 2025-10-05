@@ -6059,9 +6059,9 @@ this.getRoad = function() {
   return r
 }
 
-/** Generate a data URI downloadable from the link element supplied as an 
- * argument. If the argument is empty or null, replaces page contents with a 
- * cleaned-up graph suitable to be used with headless chrome --dump-dom to 
+/** Generate a data URI downloadable from the link element supplied as an
+ * argument. If the argument is empty or null, replace page contents with a
+ * cleaned-up graph suitable to be used with headless chrome --dump-dom to
  * retrieve the contents as a simple SVG.
 @param {object} [linkelt=null] Element to provide a link for the SVG object to download. If null, current page contents are replaced. */
 this.saveGraph = ( linkelt = null ) => {
@@ -6097,7 +6097,7 @@ this.saveGraph = ( linkelt = null ) => {
       source= source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"')
     }
     if (!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)) {
-      source = source.replace(/^<svg/, 
+      source = source.replace(/^<svg/,
                               '<svg xmlns:xlink="http://www.w3.org/1999/xlink"')
     }
 
@@ -6110,6 +6110,108 @@ this.saveGraph = ( linkelt = null ) => {
     //set url value to a element's href attribute.
     linkelt.href = url
   }
+}
+
+// These saveGraph* functions are a big ole AI-generated mess right now but at 
+// least it subsumes what we had in olddesign.js which I think we're about ready
+// to get rid of.
+this.saveGraphDownload = () => {
+  // retrieve svg source as a string
+  const svge = svg.node()
+  const serializer = new XMLSerializer()
+  let source = serializer.serializeToString(svge)
+
+  // add name spaces
+  if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
+    source= source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"')
+  }
+  if (!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)) {
+    source = source.replace(/^<svg/,
+                            '<svg xmlns:xlink="http://www.w3.org/1999/xlink"')
+  }
+
+  //add xml declaration
+  source = '<?xml version="1.0" standalone="no"?>\n' + source
+
+  // Create a temporary container to clean up the SVG
+  const tempDiv = document.createElement('div')
+  tempDiv.innerHTML = source
+  const tempRoot = d3.select(tempDiv)
+  tempRoot.selectAll(".zoomin").remove()
+  tempRoot.selectAll(".zoomout").remove()
+  source = tempDiv.innerHTML
+
+  const blob = new Blob([source], {type: 'image/svg+xml'})
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'goal.svg'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+this.saveGraphBlob = () => {
+  // retrieve svg source as a string
+  const svge = svg.node()
+  const serializer = new XMLSerializer()
+  let source = serializer.serializeToString(svge)
+
+  // add name spaces
+  if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
+    source= source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"')
+  }
+  if (!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)) {
+    source = source.replace(/^<svg/,
+                            '<svg xmlns:xlink="http://www.w3.org/1999/xlink"')
+  }
+
+  //add xml declaration
+  source = '<?xml version="1.0" standalone="no"?>\n' + source
+
+  // Create a temporary container to clean up the SVG
+  const tempDiv = document.createElement('div')
+  tempDiv.innerHTML = source
+  const tempRoot = d3.select(tempDiv)
+  tempRoot.selectAll(".zoomin").remove()
+  tempRoot.selectAll(".zoomout").remove()
+  source = tempDiv.innerHTML
+
+  const blob = new Blob([source], {type: 'image/svg+xml'})
+  const url = URL.createObjectURL(blob)
+  window.open(url, '_blank')
+}
+
+this.saveGraphDocWrite = () => {
+  // retrieve svg source as a string
+  const svge = svg.node()
+  const serializer = new XMLSerializer()
+  let source = serializer.serializeToString(svge)
+
+  // add name spaces
+  if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
+    source= source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"')
+  }
+  if (!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)) {
+    source = source.replace(/^<svg/,
+                            '<svg xmlns:xlink="http://www.w3.org/1999/xlink"')
+  }
+
+  //add xml declaration
+  source = '<?xml version="1.0" standalone="no"?>\n' + source
+
+  // Create a temporary container to clean up the SVG
+  const tempDiv = document.createElement('div')
+  tempDiv.innerHTML = source
+  const tempRoot = d3.select(tempDiv)
+  tempRoot.selectAll(".zoomin").remove()
+  tempRoot.selectAll(".zoomout").remove()
+  source = tempDiv.innerHTML
+
+  const newWindow = window.open('', '_blank')
+  newWindow.document.write(source)
+  newWindow.document.close()
 }
 
 /** Informs the module instance that the element containing the
