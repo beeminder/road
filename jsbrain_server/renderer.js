@@ -340,7 +340,9 @@ class Renderer {
 
 async function create( id, pproduct ) {
   let puppeteer = require('puppeteer');
-  
+
+  // BEGIN VERSION THAT WORKS FOR PUPPETEER VERSION 24.23.0
+  /* */
   try {
     console.log(`Attempting to launch Puppeteer with product ${pproduct}...`);
     const browser = await puppeteer.launch({ 
@@ -363,6 +365,87 @@ async function create( id, pproduct ) {
       // Add more detailed logging
       dumpio: true
     });
+  /* */
+  // END VERSION THAT WORKS FOR PUPPETEER VERSION 24.23.0
+  // BEGIN VERSION THAT WORKS FOR PUPPETEER VERSION 13.7.0
+  /*
+  const fs = require('fs');
+
+  // Find Chrome/Chromium executable for puppeteer 13.7.0
+  // On macOS Sequoia, bundled Chrome is incompatible (EBADARCH error)
+  // On Linux, bundled Chrome should work fine
+  function findChrome() {
+    const os = require('os');
+
+    // On Linux, prefer bundled Chrome (should work)
+    // On macOS, must use system Chrome (bundled is incompatible with Darwin 24+)
+    if (os.platform() === 'darwin') {
+      const paths = [
+        '/opt/homebrew/bin/chromium',           // macOS Homebrew (Apple Silicon)
+        '/usr/local/bin/chromium',              // macOS Homebrew (Intel)
+        '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      ];
+
+      for (const path of paths) {
+        if (fs.existsSync(path)) {
+          return path;
+        }
+      }
+
+      throw new Error('No compatible Chrome/Chromium found for macOS. Install with: brew install chromium');
+    }
+
+    // On Linux, let puppeteer use bundled Chrome (undefined = use bundled)
+    // But provide fallback to system Chrome if bundled fails
+    const linuxPaths = [
+      '/usr/bin/chromium-browser',            // Linux Chromium
+      '/usr/bin/chromium',                    // Linux Chromium alternative
+      '/usr/bin/google-chrome-stable',        // Linux Chrome
+      '/usr/bin/google-chrome',               // Linux Chrome alternative
+    ];
+
+    for (const path of linuxPaths) {
+      if (fs.existsSync(path)) {
+        return path;
+      }
+    }
+
+    // Let puppeteer use its bundled Chrome
+    return undefined;
+  }
+
+  try {
+    const chromePath = findChrome();
+    console.log(`Attempting to launch Puppeteer with product ${pproduct}...`);
+    if (chromePath) {
+      console.log(`Using Chrome at: ${chromePath}`);
+    } else {
+      console.log(`Using bundled Chromium`);
+    }
+
+    const browser = await puppeteer.launch({
+      product: pproduct,
+      executablePath: chromePath,
+      args: [
+        '--no-sandbox',
+        '--allow-file-access-from-files',
+        '--disable-web-security',
+        '--log-level=3',
+        // GPU-related flags to fix Vulkan warnings (according to claude)
+        '--disable-gpu',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-features=IsolateOrigins,site-per-process'
+      ],
+      // Add headless mode explicitly
+      headless: true, // Changed from 'new' for puppeteer 13.7.0 compatibility
+      // Add more detailed logging
+      dumpio: true
+    });
+    */
+    // END VERSION THAT WORKS FOR PUPPETEER VERSION 13.7.0
     
     console.log(`Successfully started Puppeteer with pid ${browser.process().pid} and product ${pproduct}`);
 
