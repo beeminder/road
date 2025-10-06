@@ -342,7 +342,7 @@ async function create( id, pproduct ) {
   let puppeteer = require('puppeteer');
 
   // BEGIN VERSION THAT WORKS FOR PUPPETEER VERSION 24.23.0
-  /* */
+  /* 
   try {
     console.log(`Attempting to launch Puppeteer with product ${pproduct}...`);
     const browser = await puppeteer.launch({ 
@@ -365,10 +365,10 @@ async function create( id, pproduct ) {
       // Add more detailed logging
       dumpio: true
     });
-  /* */
+  */
   // END VERSION THAT WORKS FOR PUPPETEER VERSION 24.23.0
   // BEGIN VERSION THAT WORKS FOR PUPPETEER VERSION 13.7.0
-  /*
+  /* */
   const fs = require('fs');
 
   // Find Chrome/Chromium executable for puppeteer 13.7.0
@@ -444,7 +444,7 @@ async function create( id, pproduct ) {
       // Add more detailed logging
       dumpio: true
     });
-    */
+    /* */
     // END VERSION THAT WORKS FOR PUPPETEER VERSION 13.7.0
     
     console.log(`Successfully started Puppeteer with pid ${browser.process().pid} and product ${pproduct}`);
