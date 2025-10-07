@@ -1,27 +1,32 @@
 #!/usr/bin/env python3
 # Reformat a bb file to be more human-parsable but still compact.
-# Usage: ./jsunnier.py input.bb > output.bb
-# HT GPT-5
+# Usage: ./jsunnier.py input.bb
+# Modifies the file in place and creates a backup at input.bb.bak
+# HT GPT-5 and Claude Code
 
-import sys, json
+import sys, json, shutil
 
 ORDER = [
-"yoog","gunits","yaxis","runits",
+"yoog","gunits","yaxis",
 "kyoom","odom",
 "yaw","dir",
 "hashtags",
 "rosy","steppy","movingav","aura",
+"maxflux",
 "deadline","aggday",
-"tmin","plotall","monotone",
+"tmin","tmax","vmin","vmax",
+"plotall","monotone",
 "hidey",
 "quantum","timey","ppr",
 "waterbux",
 "timezone",
 "asof",
+"runits",
 "tini","vini","road","tfin","vfin","rfin",
 "stathead",
 ]
 
+# Read from file or stdin. Not currently used. Use like: raw = readit().strip()
 def readit():
   if len(sys.argv) > 1 and sys.argv[1] != "-":
     with open(sys.argv[1], "r", encoding="utf-8") as f: return f.read()
@@ -31,14 +36,41 @@ def dumpit(x):
   # No spaces after separators; keep inner arrays on one line.
   return json.dumps(x, ensure_ascii=False, separators=(",", ":"))
 
-raw = readit().strip()
-obj = json.loads(raw)
+def usage():
+  print("Usage: jsunnier.py FILE")
+  print("Reformats a bb JSON file to be more human-parsable but still compact.")
+  print("Modifies FILE in place and creates a backup at FILE.bak")
+  sys.exit(1)
 
-params = obj.get("params", {})
-data   = obj.get("data",   [])
+if len(sys.argv) != 2: usage()
+filename = sys.argv[1]
+try:
+  with open(filename, "r", encoding="utf-8") as f: raw = f.read().strip()
+except FileNotFoundError:
+  print(f"Error: File '{filename}' not found", file=sys.stderr)
+  sys.exit(1)
+except Exception as e:
+  print(f"Error reading file: {e}", file=sys.stderr)
+  sys.exit(1)
 
-# Build ordered list of param keys: specified ORDER first, then any extras in 
-# original order.
+try:
+  obj = json.loads(raw) # parse the JSON or die trying
+except json.JSONDecodeError as e:
+  print(f"Error! File is not valid JSON: {e}", file=sys.stderr)
+  sys.exit(1)
+
+# If the JSON doesn't have the expected structure, leave it alone and abort
+if (not isinstance(obj, dict) or "params" not in obj or "data" not in obj or
+    not isinstance(obj["params"], dict) or not isinstance(obj["data"], list)):
+  print(f"Error! Not a bb file? Expected 'params' dict, 'data' list. Aborting.",
+        file=sys.stderr)
+  sys.exit(0)
+
+params = obj["params"]
+data   = obj["data"]
+
+# Build ordered list of param keys: specified ORDER first, then any extras in
+# their original order.
 extras = [k for k in params.keys() if k not in ORDER]
 keys   = [k for k in ORDER         if k     in params] + extras
 
@@ -62,6 +94,16 @@ out.append('"data":[')
 for i, row in enumerate(data):
   out.append(dumpit(row) + ("," if i < len(data)-1 else ""))
 
-out.append("]}")
+out.append("]}\n")
+formatted = "\n".join(out)
 
-sys.stdout.write("\n".join(out))
+backup_filename = filename + ".bak"      # safety net just in case we mess it up
+shutil.copy2(filename, backup_filename)
+
+# Write the formatted output back to the original file
+try:
+  with open(filename, "w", encoding="utf-8") as f: f.write(formatted)
+  print(f"Formatted {filename} (backup saved to {backup_filename})")
+except Exception as e:
+  print(f"Error writing file: {e}", file=sys.stderr)
+  sys.exit(1)
