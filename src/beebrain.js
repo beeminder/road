@@ -610,6 +610,9 @@ function procData() {
   br.tareify(data, taric)
   tarings = data.filter(e => taric(e[2])).map(e => e[0])
 
+  if (tarings.length > 0 && (gol.kyoom || gol.aggday !== "last"))
+    return "Tare tags only allowed when kyoom=false and aggday=last"
+
   // Safety net: if odom=true AND no tare-tagged datapoints, use old odomify
   if (gol.odom && tarings.length === 0) {
     tarings = data.filter(e => e[1] == 0).map(e => e[0])
