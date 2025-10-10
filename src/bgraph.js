@@ -126,6 +126,8 @@ let defaults = {
   taring:       { width: 0.5, dash: 8 },
   /** Visual parameters for #RESTART datapoints */
   restart:      { width: 1.5, zigzag: 5 },
+  /** Visual parameters for #ARCHIVE datapoints */
+  archive:      { width: 1.5, zigzag: 5 },
   /** Visual parameters for autophagic (self-destructing) datapoints */
   autophage:    { mult: 1.5 },
 
@@ -140,8 +142,10 @@ let defaults = {
   dataPointCol: { future: "#909090", stroke: "#eeeeee" },
   halfPlaneCol: { fill: "#ffffe8" },
   pastBoxCol:   { fill: "#f8f8f8", opacity:0.5 },
+  arcRegionCol: { fill: "#c2c2c2", opacity: 0.2 },
   taringCol:    { dflt: "#c2c2c2" },
   restartCol:   { dflt: "#c2c2c2" },
+  archiveCol:   { dflt: "#c2c2c2" },
                 
   /** Strips the graph of all details except what is needed for svg output */
   headless:     false,
@@ -446,7 +450,7 @@ let svg, defs, graphs, buttonarea, stathead, focus, focusclip, plot,
     ySc, nYSc, yAxis, yAxisR, yAxisObj, yAxisObjR, yAxisLabel,
     xScB, xAxisB, xAxisObjB, yScB,
     gPB, gYBHP, gYBHPlines, gPink, gPinkPat, gTapePat, gGrid, gTarings,
-    gRestarts, gPastText,
+    gRestarts, gArchives, gArcRegions, gPastText,
     gGuides, gMaxflux, gStdflux, gRazr, gOldBullseye, 
     gKnots, gSteppy, gSteppyPts, gRosy, gRosyPts, gMovingAv,
     gAura, gDerails, gAutophages, gAllpts, gDpts, gHollow, gFlat, 
@@ -893,6 +897,7 @@ function createGraph() {
   gYBHP        = plot.append('g').attr('id', 'ybhpgrp')        // z = 02
   gWatermark   = plot.append('g').attr('id', 'wmarkgrp')       // z = 03
   gRestarts    = plot.append('g').attr('id', 'restartgrp')     // z = 04
+  gArchives    = plot.append('g').attr('id', 'archivegrp')     // z = 04.5
   gGuides      = plot.append('g').attr('id', 'guidegrp')       // z = 05
   gMaxflux     = plot.append('g').attr('id', 'maxfluxgrp')     // z = 06
   gStdflux     = plot.append('g').attr('id', 'stdfluxgrp')     // z = 07
@@ -922,6 +927,7 @@ function createGraph() {
   gHorizon     = plot.append('g').attr('id', 'horgrp')         // z = 31
   gHorizonText = plot.append('g').attr('id', 'hortxtgrp')      // z = 32
   gPastText    = plot.append('g').attr('id', 'pasttxtgrp')     // z = 33
+  gArcRegions  = plot.append('g').attr('id', 'arcregionsgrp')  // z = 03.5
 
   gRedTape = plot.append('g').attr('visibility', 'hidden')
   // wwidth and height will be set by resizeGraph later
@@ -4915,7 +4921,8 @@ function updateTarings() {
        .attr("stroke-width",      opts.taring.width)
 }
 
-// Create or update zigzaggy vertical lines for restarts
+// Create or update zigzaggy vertical lines for restarts, with the RIGHT edge
+// of the zigzag on the restart time
 function updateRestarts() {
   if (processing || opts.divGraph == null || road.length == 0
       || bbr.restarts.length == 0) return
@@ -4949,6 +4956,81 @@ function updateRestarts() {
        .attr("stroke",       opts.restartCol.dflt)
        .attr("fill",         "none")
        .attr("stroke-width", opts.restart.width)
+}
+
+// Create or update zigzaggy vertical lines for archives, with the LEFT edge
+// of the zigzag on the archive time
+function updateArchives() {
+  if (processing || opts.divGraph == null || road.length == 0
+      || bbr.archives.length == 0) return
+
+  // Create, update, and delete vertical archive lines
+  const aselt = gArchives.selectAll(".archives").data(bbr.archives)
+  if (opts.roadEditor) { aselt.remove(); return }
+  aselt.exit().remove()
+
+  // Generate zigzag path for each archive [unDRY with updateRestarts]
+  const zigzagPath = function(d) {
+    const x = nXSc(d*SMS)
+    const h = plotbox.height
+    const zw = opts.archive.zigzag // zigzag width aka amplitude
+    const parts = [`M ${x} 0`]
+    for (let i = 0; ; i++) {
+      const y = i * zw
+      if (y >= h) break
+      parts.push(`L ${i % 2 === 1 ? x : x + zw} ${y}`)
+    }
+    parts.push(`L ${x} ${h}`)
+    return parts.join(' ')
+  }
+
+  aselt.attr("d", zigzagPath)
+  aselt.enter().append("svg:path")
+       .attr("class",        "archives")
+       .attr("id",           function(d,i) { return i })
+       .attr("name",         function(d,i) { return "archive"+i })
+       .attr("d",            zigzagPath)
+       .attr("stroke",       opts.archiveCol.dflt)
+       .attr("fill",         "none")
+       .attr("stroke-width", opts.archive.width)
+}
+
+// Create or update grayed-out regions between #ARCHIVE and #RESTART pairs
+function updateArchivedRegions() {
+  if (processing || opts.divGraph == null || road.length == 0) return
+
+  // Merge archives and restarts into a single sorted timeline
+  const events = [
+    ...bbr.archives.map(t => ({ time: t, type: 'archive' })),
+    ...bbr.restarts.map(t => ({ time: t, type: 'restart' }))
+  ].sort((a, b) => a.time - b.time)
+
+  // Find all [ARCHIVE, RESTART] pairs in the sequence
+  const regions = []
+  for (let i = 0; i < events.length - 1; i++) {
+    if (events[i].type === 'archive' && events[i + 1].type === 'restart') {
+      regions.push({ start: events[i].time, end: events[i + 1].time })
+    }
+  }
+
+  const rselt = gArcRegions.selectAll(".arcregion").data(regions)
+  if (opts.roadEditor) { rselt.remove(); return }
+  rselt.exit().remove()
+
+  rselt.attr("x",      d => nXSc(d.start*SMS))
+       .attr("width",  d => nXSc(d.end*SMS) - nXSc(d.start*SMS))
+       .attr("height", plotbox.height)
+
+  rselt.enter().append("svg:rect")
+       .attr("class",        "arcregion")
+       .attr("id",           (d,i) => i)
+       .attr("name",         (d,i) => "arcregion"+i)
+       .attr("x",            d => nXSc(d.start*SMS))
+       .attr("y",            0)
+       .attr("width",        d => nXSc(d.end*SMS) - nXSc(d.start*SMS))
+       .attr("height",       plotbox.height)
+       .attr("fill",         opts.arcRegionCol.fill)
+       .attr("fill-opacity", opts.arcRegionCol.opacity)
 }
 
 function updateDataPoints() {
@@ -5710,6 +5792,8 @@ function updateGraphData(force = false) {
   updateDerails()
   updateTarings()
   updateRestarts()
+  updateArchives()
+  updateArchivedRegions()
   updateAutophages()
   updateRosy()
   updateSteppy()

@@ -251,6 +251,7 @@ let fuda = []       // Future data
 let derails = []    // Derailment datapoints                             #DERAIL
 let autophages = [] // Selfdestructing datapoints                  #SELFDESTRUCT
 let restarts = []   // Timestamps of restarts datapoints                #RESTART
+let archives = []   // Timestamps of archives datapoints                #ARCHIVE
 let tarings = []    // Timestamps of tarings (generalized of odom resets)  #TARE
 let hollow = []     // Hollow points
 let allvals = {}    // Hash mapping timestamps to list of datapoint values
@@ -323,6 +324,7 @@ function initGlobals() {
   derails = []
   autophages = []
   restarts = []
+  archives = []
   tarings = []
   hashhash = {}
   
@@ -476,6 +478,7 @@ function computeRosy() {
 // 2. "#SELFDESTRUCT" or "#THISWILLSELFDESTRUCT" aka autophagic datapoints (PPR)
 // 3. "#RESTART"
 // 4. "#TARE" (replaces/generalizes odometer resets; see gissue #216)
+// 5. "#ARCHIVE" (this one isn't documented yet)
 // And @ signs are allowed instead of #, which is useful if you don't want the
 // magic strings to show up as hashtags on the graph.
 // Selfdestructing (autophagic) datapoints are generally used for PPRs but users
@@ -486,6 +489,7 @@ const DERAIL_REGEX  = /(?<!\S)[#@]DERAIL(?!\S)/
 const PHAGE_REGEX   = /(?<!\S)[#@](?:SELFDESTRUCT|THISWILLSELFDESTRUCT)(?!\S)/
 const RESTART_REGEX = /(?<!\S)[#@]RESTART(?!\S)/
 const TARE_REGEX    = /(?<!\S)[#@]TARE(?!\S)/
+const ARCHIVE_REGEX = /(?<!\S)[#@]ARCHIVE(?!\S)/
 
 // Beebody is still using these versions of the regexes which are functionally
 // equivalent but Claude says they take slightly longer to run:
@@ -500,6 +504,7 @@ function derailic(s)   { return DERAIL_REGEX.test(s) }          // #DERAIL
 function autophagic(s) { return PHAGE_REGEX.test(s) }           // #SELFDESTRUCT
 function restartic(s)  { return RESTART_REGEX.test(s) }         // #RESTART
 function taric(s)      { return TARE_REGEX.test(s) }            // #TARE
+function archaic(s)    { return ARCHIVE_REGEX.test(s) }         // #ARCHIVE
 
 //|| s.startsWith("PESSIMISTIC PRESUMPTION") // backward compatibility #SCHDEL
 
@@ -604,6 +609,7 @@ function procData() {
   autophages = data.filter(([, , c]) => autophagic(c)).map(row => row.slice())
 
   restarts = data.filter(([, , comment]) => restartic(comment)).map(e => e[0])
+  archives = data.filter(([, , comment]) => archaic(comment)).map(e => e[0])
 
   br.tareify(data, taric)
   tarings = data.filter(e => taric(e[2])).map(e => e[0])
@@ -1738,6 +1744,8 @@ this.derails = derails
 this.autophages = autophages
 /** Holds an array of restart timestamps */
 this.restarts = restarts
+/** Holds an array of archive timestamps */
+this.archives = archives
 /** Holds an array of taring timestamps (generalization of odometer resets) */
 this.tarings = tarings //TODOT
 
