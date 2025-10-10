@@ -896,38 +896,38 @@ function createGraph() {
   gPB          = plot.append('g').attr('id', 'pastboxgrp')     // z = 01
   gYBHP        = plot.append('g').attr('id', 'ybhpgrp')        // z = 02
   gWatermark   = plot.append('g').attr('id', 'wmarkgrp')       // z = 03
+  gGuides      = plot.append('g').attr('id', 'guidegrp')       // z = 06
+  gMaxflux     = plot.append('g').attr('id', 'maxfluxgrp')     // z = 07
+  gStdflux     = plot.append('g').attr('id', 'stdfluxgrp')     // z = 08
+  gYBHPlines   = plot.append('g').attr('id', 'ybhplinesgrp')   // z = 09
+  gRazr        = plot.append('g').attr('id', 'razrgrp')        // z = 10
   gRestarts    = plot.append('g').attr('id', 'restartgrp')     // z = 04
-  gArchives    = plot.append('g').attr('id', 'archivegrp')     // z = 04.5
-  gGuides      = plot.append('g').attr('id', 'guidegrp')       // z = 05
-  gMaxflux     = plot.append('g').attr('id', 'maxfluxgrp')     // z = 06
-  gStdflux     = plot.append('g').attr('id', 'stdfluxgrp')     // z = 07
-  gYBHPlines   = plot.append('g').attr('id', 'ybhplinesgrp')   // z = 08
-  gRazr        = plot.append('g').attr('id', 'razrgrp')        // z = 09
-  gAura        = plot.append('g').attr('id', 'auragrp')        // z = 10
-  gPink        = plot.append('g').attr('id', 'pinkgrp')        // z = 11
-  gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp') // z = 12
-  gBullseye    = plot.append('g').attr('id', 'bullseyegrp')    // z = 13
-  gGrid        = plot.append('g').attr('id', 'grid')           // z = 14
-  gTarings     = plot.append('g').attr('id', 'taringgrp')      // z = 15
-  gKnots       = plot.append('g').attr('id', 'knotgrp')        // z = 16
-  gSteppy      = plot.append('g').attr('id', 'steppygrp')      // z = 17
-  gRosy        = plot.append('g').attr('id', 'rosygrp')        // z = 18
-  gRosyPts     = plot.append('g').attr('id', 'rosyptsgrp')     // z = 19
-  gDerails     = plot.append('g').attr('id', 'derailsgrp')     // z = 20
-  gAllpts      = plot.append('g').attr('id', 'allptsgrp')      // z = 21
-  gMovingAv    = plot.append('g').attr('id', 'movingavgrp')    // z = 22
-  gSteppyPts   = plot.append('g').attr('id', 'steppyptsgrp')   // z = 23
-  gDpts        = plot.append('g').attr('id', 'datapointgrp')   // z = 24
-  gAutophages  = plot.append('g').attr('id', 'autophagesgrp')  // z = 25
-  gHollow      = plot.append('g').attr('id', 'hollowgrp')      // z = 26
-  gFlat        = plot.append('g').attr('id', 'flatlinegrp')    // z = 27
-  gHashtags    = plot.append('g').attr('id', 'hashtaggrp')     // z = 28
-  gRoads       = plot.append('g').attr('id', 'roadgrp')        // z = 29
-  gDots        = plot.append('g').attr('id', 'dotgrp')         // z = 30
-  gHorizon     = plot.append('g').attr('id', 'horgrp')         // z = 31
-  gHorizonText = plot.append('g').attr('id', 'hortxtgrp')      // z = 32
-  gPastText    = plot.append('g').attr('id', 'pasttxtgrp')     // z = 33
-  gArcRegions  = plot.append('g').attr('id', 'arcregionsgrp')  // z = 03.5
+  gArchives    = plot.append('g').attr('id', 'archivegrp')     // z = 05
+  gAura        = plot.append('g').attr('id', 'auragrp')        // z = 11
+  gPink        = plot.append('g').attr('id', 'pinkgrp')        // z = 12
+  gOldBullseye = plot.append('g').attr('id', 'oldbullseyegrp') // z = 13
+  gBullseye    = plot.append('g').attr('id', 'bullseyegrp')    // z = 14
+  gGrid        = plot.append('g').attr('id', 'grid')           // z = 15
+  gTarings     = plot.append('g').attr('id', 'taringgrp')      // z = 16
+  gKnots       = plot.append('g').attr('id', 'knotgrp')        // z = 17
+  gSteppy      = plot.append('g').attr('id', 'steppygrp')      // z = 18
+  gRosy        = plot.append('g').attr('id', 'rosygrp')        // z = 19
+  gRosyPts     = plot.append('g').attr('id', 'rosyptsgrp')     // z = 20
+  gDerails     = plot.append('g').attr('id', 'derailsgrp')     // z = 21
+  gAllpts      = plot.append('g').attr('id', 'allptsgrp')      // z = 22
+  gMovingAv    = plot.append('g').attr('id', 'movingavgrp')    // z = 23
+  gSteppyPts   = plot.append('g').attr('id', 'steppyptsgrp')   // z = 24
+  gDpts        = plot.append('g').attr('id', 'datapointgrp')   // z = 25
+  gAutophages  = plot.append('g').attr('id', 'autophagesgrp')  // z = 26
+  gHollow      = plot.append('g').attr('id', 'hollowgrp')      // z = 27
+  gFlat        = plot.append('g').attr('id', 'flatlinegrp')    // z = 28
+  gHashtags    = plot.append('g').attr('id', 'hashtaggrp')     // z = 29
+  gRoads       = plot.append('g').attr('id', 'roadgrp')        // z = 30
+  gDots        = plot.append('g').attr('id', 'dotgrp')         // z = 31
+  gHorizon     = plot.append('g').attr('id', 'horgrp')         // z = 32
+  gHorizonText = plot.append('g').attr('id', 'hortxtgrp')      // z = 33
+  gPastText    = plot.append('g').attr('id', 'pasttxtgrp')     // z = 34
+  gArcRegions  = plot.append('g').attr('id', 'arcregionsgrp')  // z = 35
 
   gRedTape = plot.append('g').attr('visibility', 'hidden')
   // wwidth and height will be set by resizeGraph later
@@ -4921,6 +4921,27 @@ function updateTarings() {
        .attr("stroke-width",      opts.taring.width)
 }
 
+// Helper function to generate zigzagy vertical line. Takes a timestamp d, 
+// zigzag width aka amplitude zw, and the direction dir (-1 for right-aligned
+// and +1 for left-aligned). The point of dir is so that opposite-aligned
+// zigzags on the same day (like if there's an archive and restart on the same
+// day (can that happen in real life, given the akrasia horizon for archiving?))
+// nicely spoon each other instead of aligning tip-to-tip to make diamonds.
+function makeZigzagPath(d, zw, dir) {
+  const x = nXSc(d*SMS)
+  const h = plotbox.height
+  const parts = [`M ${dir < 0 ? x - zw : x} 0`]
+  for (let i = 0; ; i++) {
+    const y = i * zw
+    if (y >= h) break
+    // Convoluted Claude logic here, probably refactorable:
+    const zigX = dir < 0 ? (i % 2 === 0 ? x : x-zw) : (i % 2 === 1 ? x : x+zw)
+    parts.push(`L ${zigX} ${y}`)
+  }
+  parts.push(`L ${x} ${h}`)
+  return parts.join(' ')
+}
+
 // Create or update zigzaggy vertical lines for restarts, with the RIGHT edge
 // of the zigzag on the restart time
 function updateRestarts() {
@@ -4932,19 +4953,9 @@ function updateRestarts() {
   if (opts.roadEditor) { rselt.remove(); return }
   rselt.exit().remove()
 
-  // Generate zigzag path for each restart
+  // Generate zigzag path for each restart (right-aligned: zigzags left from x)
   const zigzagPath = function(d) {
-    const x = nXSc(d*SMS)
-    const h = plotbox.height
-    const zw = opts.restart.zigzag // zigzag width aka amplitude
-    const parts = [`M ${x - zw} 0`]
-    for (let i = 0; ; i++) {
-      const y = i * zw
-      if (y >= h) break
-      parts.push(`L ${i % 2 === 0 ? x : x - zw} ${y}`)
-    }
-    parts.push(`L ${x} ${h}`)
-    return parts.join(' ')
+    return makeZigzagPath(d, opts.restart.zigzag, -1)
   }
 
   rselt.attr("d", zigzagPath)
@@ -4969,19 +4980,9 @@ function updateArchives() {
   if (opts.roadEditor) { aselt.remove(); return }
   aselt.exit().remove()
 
-  // Generate zigzag path for each archive [unDRY with updateRestarts]
+  // Generate zigzag path for each archive (left-aligned: zigzags right from x)
   const zigzagPath = function(d) {
-    const x = nXSc(d*SMS)
-    const h = plotbox.height
-    const zw = opts.archive.zigzag // zigzag width aka amplitude
-    const parts = [`M ${x} 0`]
-    for (let i = 0; ; i++) {
-      const y = i * zw
-      if (y >= h) break
-      parts.push(`L ${i % 2 === 1 ? x : x + zw} ${y}`)
-    }
-    parts.push(`L ${x} ${h}`)
-    return parts.join(' ')
+    return makeZigzagPath(d, opts.archive.zigzag, +1)
   }
 
   aselt.attr("d", zigzagPath)
