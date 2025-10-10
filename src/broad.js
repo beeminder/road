@@ -951,6 +951,23 @@ self.odomify = (d) => {
 // tarifunc is a function that takes a datapoint's comment and returns whether
 // it contains a tare tag.
 self.tareify = (data, tarifunc) => {
+  const n = data.length
+  if (!data || !n) return
+  let cumdelt = 0 // cumulative delta to subtract due to tarings
+  let prev = 0
+  for (let i = 0; i < n; i++) {
+    //const [ , v, c] = data[i] // daystamp, value, comment
+    // Ok, above is nicer but this is a critical loop so avoiding destructuring:
+    const row = data[i]
+    const v = row[1]
+    const c = row[2]
+    if (tarifunc(c)) cumdelt += v - prev
+    row[1] = v - cumdelt // update data in place
+    prev = v
+  }
+}
+// Old dumb version that did 4 separate passes of the data. #SCHDEL
+self.tareify0 = (data, tarifunc) => {
   if (!data || !data.length) return
   const values = data.map(e => e[1])
   const tareflags = values.map((_, i) => tarifunc(data[i][2]))

@@ -471,39 +471,37 @@ function computeRosy() {
   }
 }
 
-// Magic strings in datapoint comments: (see beeminder/beeminder/issues/2423)
-// 1. "#DERAIL"
-// 2. "#SELFDESTRUCT" and "#THISWILLSELFDESTRUCT" aka autophagic datapoints
+// Magic strings in datapoint comments:
+// 1. "#DERAIL" marks when a derailment happened (long ago known as a recommit)
+// 2. "#SELFDESTRUCT" or "#THISWILLSELFDESTRUCT" aka autophagic datapoints (PPR)
 // 3. "#RESTART"
 // 4. "#TARE" (replaces/generalizes odometer resets; see gissue #216)
 // And @ signs are allowed instead of #, which is useful if you don't want the
 // magic strings to show up as hashtags on the graph.
-// More at blog.beeminder.com/magicdata
+// Selfdestructing (autophagic) datapoints are generally used for PPRs but users
+// sometimes use them for other reasons. More at blog.beeminder.com/magicdata
 
-// Whether datapoint comment string s has the magic string indicating it's when
-// a derailment happened (previously known as a recommit datapoint).     #DERAIL
-// This is silly but "derailic" is a more greppable/consistent adjectival form
-// than "derailed" and it keeps the magic string checkers themed.
-function derailic(s) { 
-  return /(?:^|\s)[#@]DERAIL(?:$|\s)/.test(s)
-}
-// Note for the future: this regex is slightly better:
-// /(?<!\S)[#@]DERAIL(?!\S)/ 
+// Precompile the regexes for speed since we scan all datapoints checking these.
+const DERAIL_REGEX  = /(?<!\S)[#@]DERAIL(?!\S)/
+const PHAGE_REGEX   = /(?<!\S)[#@](?:SELFDESTRUCT|THISWILLSELFDESTRUCT)(?!\S)/
+const RESTART_REGEX = /(?<!\S)[#@]RESTART(?!\S)/
+const TARE_REGEX    = /(?<!\S)[#@]TARE(?!\S)/
 
-// Whether datapoint comment string s has the magic string indicating it's a
-// selfdestructing datapoint, typically because it's a PPR.        #SELFDESTRUCT
-function autophagic(s) {
-  return /(?:^|\s)[#@](?:SELFDESTRUCT|THISWILLSELFDESTRUCT)(?:$|\s)/.test(s)
-  //|| s.startsWith("PESSIMISTIC PRESUMPTION") // backward compatibility #SCHDEL
-}
+// Beebody is still using these versions of the regexes which are functionally
+// equivalent but Claude says they take slightly longer to run:
+// DERAIL_REGEX  = /(?:^|\s)[#@]DERAIL(?:$|\s)/
+// PHAGE_REGEX   = /(?:^|\s)[#@](?:SELFDESTRUCT|THISWILLSELFDESTRUCT)(?:$|\s)/
+// RESTART_REGEX = /(?:^|\s)[#@]RESTART(?:$|\s)/
+// TARE_REGEX    = /(?:^|\s)[#@]TARE(?:$|\s)/
 
-// Whether datapoint comment string s has the magic string indicating it's a 
-// restart datapoint.                                                   #RESTART
-function restartic(s) { return /(?:^|\s)[#@]RESTART(?:$|\s)/.test(s) }
+// (This is silly but "derailic" is a more greppable/consistent adjectival form
+// than "derailed" and it keeps the magic string checkers themed.)
+function derailic(s)   { return DERAIL_REGEX.test(s) }          // #DERAIL
+function autophagic(s) { return PHAGE_REGEX.test(s) }           // #SELFDESTRUCT
+function restartic(s)  { return RESTART_REGEX.test(s) }         // #RESTART
+function taric(s)      { return TARE_REGEX.test(s) }            // #TARE
 
-// Whether datapoint comment string s has the magic string indicating it's a
-// tare datapoint (odometer reset replacement).                            #TARE
-function taric(s)     { return /(?:^|\s)[#@]TARE(?:$|\s)/.test(s) }
+//|| s.startsWith("PESSIMISTIC PRESUMPTION") // backward compatibility #SCHDEL
 
 // Take, eg, "shark jumping #yolo :) #shark" and return {"#yolo", "#shark"}
 // Pro tip: use scriptular.com to test these regexes
