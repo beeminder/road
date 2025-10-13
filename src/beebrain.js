@@ -108,7 +108,6 @@ tmax     : null,   //   ((tmin,tmax), (vmin,vmax)) give the plot range, ie, they
 vmin     : null,   //   control zooming/panning; they default to the entire
 vmax     : null,   //   plot -- initial datapoint to past the akrasia horizon
 kyoom    : false,  // Cumulative; plot values as the sum of those entered so far
-odom     : false,  // Treat zeros as accidental odom resets (deprecated)
 maxflux  : 0,      // User-specified max daily fluctuation                      
 monotone : false,  // Whether the data is necessarily monotone (used in limsum) 
 aggday   : null,   // How to aggregate points on the same day, max/sum/last/etc
@@ -193,6 +192,7 @@ const pig = [ // In-params to ignore; complain about anything not here or in pin
 //'offparis', // Temporary thing related to red-yesterday
 'sadlhole', // Allowed the do-less loophole where you could eke back on the road
 'imgsz',    // Image size (default 760); width in pixels of graph image
+'odom',     // Treat zeros as accidental odom resets (replaced by tare tags)
 ]
 
 /** Enum object to identify different types of datapoints
@@ -552,7 +552,7 @@ function aggpt(vl, v) { // v is the aggregated value
 
 // WIP: This is the subset of procData that takes the raw datapoints -- a list
 // of timestamp, value, comment triples -- and returns what's actually plotted
-// on the y-axis, accounting for kyoom, odom, and aggday.
+// on the y-axis, accounting for kyoom, tares, and aggday.
 // UPDATE: Ugh, I'm not sure it's possible to refactor this part out as a 
 // separate function without taking an extra pass through the datapoints.
 // Regardless, it would be very nice to have this available as a separate thing,
@@ -618,10 +618,10 @@ function procData() {
     return "Tare tags only allowed when kyoom=false and aggday=last"
 
   // Safety net: if odom=true AND no tare-tagged datapoints, use old odomify
-  if (gol.odom && tarings.length === 0) {
-    tarings = data.filter(e => e[1] == 0).map(e => e[0])
-    br.odomify(data)
-  }
+  //if (gol.odom && tarings.length === 0) {
+  //  tarings = data.filter(e => e[1] == 0).map(e => e[0])
+  //  br.odomify(data)
+  //} #SCHDEL
   const nonfuda = data.filter(e => e[0] <= gol.asof) // non-future data
   if (gol.plotall) gol.numpts = nonfuda.length
   
@@ -993,7 +993,7 @@ tmax     : [torn,               "isn't a valid timestamp or null"],
 vmin     : [norn,               "isn't numeric or null"],
 vmax     : [norn,               "isn't numeric or null"],
 kyoom    : [torf,               "isn't boolean"],
-odom     : [torf,               "isn't boolean"],
+//odom     : [torf,               "isn't boolean"],
 monotone : [torf,               "isn't boolean"],
 aggday   : [v => v in br.AGGR,  "isn't one of max, sum, last, mean, etc"],
 plotall  : [torf,               "isn't boolean"],
@@ -1039,8 +1039,8 @@ function vetParams() {
       prev = row
     }
   }
-  if (gol.kyoom && gol.odom)
-    return "The odometer setting doesn't make sense for an auto-summing goal!"
+  //if (gol.kyoom && gol.odom)
+  //  return "The odometer setting doesn't make sense for an auto-summing goal!"
   if (gol.tmin > gol.asof)
     return "You can't set the graph bounds to be solely in the future!"
 

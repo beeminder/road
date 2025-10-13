@@ -918,9 +918,15 @@ self.rtf = (rd, t) => (rd[self.findSeg(rd, t)].slope)
 // add V to every element afterwards. This is what you want if you're reporting
 // odometer readings (eg, your page number in a book can be thought of that way)
 // and the odometer gets accidentally reset (or you start a new book but want to
-// track total pages read over a set of books). This should be done before
-// kyoomify and will have no effect on data that has actually been kyoomified
-// since kyoomification leaves no nonmonotonicities.
+// track total pages read over a set of books). 
+
+// Odomify/tareify should be done before kyoomify and will have no effect on 
+// data that has actually been kyoomified since kyoomification leaves no 
+// nonmonotonicities.
+// (Is that still true with tareify? That kyooming first makes tareify a no-op?)
+
+/* #SCHDEL stuff below, but comments above worth keeping around in case we want
+to support taring with kyoom'd data
 self.odomify = (d) => {
   if (!d || !d.length || d.length === 0) return
   let vdelt = 0 // current delta by which to shift everything given past resets
@@ -931,6 +937,7 @@ self.odomify = (d) => {
     d[i][1] += vdelt
   }
 }
+*/
 
 // NB: The odomify function above is being phased out in favor of tareify.
 
@@ -952,7 +959,7 @@ self.odomify = (d) => {
 // it contains a tare tag.
 self.tareify = (data, tarifunc) => {
   const n = data.length
-  if (!data || !n) return
+  if (!data || !n || n === 0) return
   let cumdelt = 0 // cumulative delta to subtract due to tarings
   let prev = 0
   for (let i = 0; i < n; i++) {
@@ -962,21 +969,9 @@ self.tareify = (data, tarifunc) => {
     const v = row[1]
     const c = row[2]
     if (tarifunc(c)) cumdelt += v - prev
-    row[1] = v - cumdelt // update data in place
+    row[1] = v - cumdelt  // update data in place (does row[1] -= cumdelt work?)
     prev = v
   }
-}
-// Old dumb version that did 4 separate passes of the data. #SCHDEL
-self.tareify0 = (data, tarifunc) => {
-  if (!data || !data.length) return
-  const values = data.map(e => e[1])
-  const tareflags = values.map((_, i) => tarifunc(data[i][2]))
-  let cd = 0 // cumulative delta to subtract
-  const yvalues = values.map((value, i) => {
-    if (tareflags[i]) cd += value - (i === 0 ? 0 : values[i-1])
-    return value - cd
-  })
-  data.forEach((e, i) => { e[1] = yvalues[i] }) // update data in place
 }
 
 // Utility function for stepify. Takes a list of datapoints sorted by x-value

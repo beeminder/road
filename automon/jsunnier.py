@@ -60,14 +60,25 @@ except json.JSONDecodeError as e:
   sys.exit(1)
 
 # If the JSON doesn't have the expected structure, leave it alone and abort
-if (not isinstance(obj, dict) or "params" not in obj or "data" not in obj or
-    not isinstance(obj["params"], dict) or not isinstance(obj["data"], list)):
+if (not isinstance(obj, dict) or 
+    "params" not in obj or 
+    "data"   not in obj or
+    not isinstance(obj["params"], dict) or 
+    not isinstance(obj["data"], list)):
   print(f"Error! Not a bb file? Expected 'params' dict, 'data' list. Aborting.",
         file=sys.stderr)
   sys.exit(0)
 
 params = obj["params"]
 data   = obj["data"]
+
+## Any temporary data conversion can go here...
+if params.get("odom"): # Add @TARE to comments of zero-value datapoints
+  for row in data:
+    if len(row) >= 2 and (row[1] == 0 or row[1] == 0.0):
+      if len(row) < 3: row.append("@TARE")    # in case comment field is missing
+      elif "@TARE" not in row[2]: row[2] = row[2] + " @TARE"
+## End temporary data conversion.
 
 # Build ordered list of param keys: specified ORDER first, then any extras in
 # their original order.
