@@ -11,3 +11,8 @@ lib/js/
 lib/images/
 lib/favicons/
 tests/generated/
+
+# Codebuff generated these
+logs/*.log
+codebuff.json
+knowledge.md
