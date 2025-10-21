@@ -5524,12 +5524,12 @@ function updateTableButtons() {
     ]
   })
   
-  //const newbtncells = btncells.enter().append("button")
-  //                                    .attr('class', d => 'rdbtn '+d.txt)
-  //                                    .attr('id',    d => d.row)
-  //                                    .attr('name',  d => d.name)
-  //                                    .html(d => d.txt)
-  //                                    .on('click', (event, d) => d.evt())
+  btncells.enter().append("button")
+    .attr('class', d => 'rdbtn')
+    .attr('id',    d => d.row)
+    .attr('name',  d => d.name)
+    .html(d => d.txt)
+    .on('click', (event, d) => d.evt())
 
   btncells.exit().remove()
   btncells = 
