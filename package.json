@@ -1,6 +1,6 @@
 {
   "name": "Beebrain",
-  "version": "2025.10.23-a",
+  "version": "2025.10.28-a",
   "description": "Beeminder Graph Generator and Visual Graph Editor",
   "main": "server.js",
   "scripts": {
@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@primer/octicons": "^19.19.0",
-    "axios": "^1.12.2",
+    "axios": "^1.13.1",
     "beeminder": "^2.0.1",
     "body-parser": "^2.2.0",
     "cluster": "^0.7.7",
@@ -24,7 +24,7 @@
     "express-session": "^1.18.1",
     "moment": "^2.30.1",
     "moment-timezone": "^0.6.0",
-    "selenium-webdriver": "^4.37.0",
+    "selenium-webdriver": "^4.38.0",
     "sequelize": "^6.37.7",
     "sqlite3": "^5.1.7"
   },
