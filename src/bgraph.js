@@ -6143,18 +6143,15 @@ this.saveGraph = ( linkelt = null ) => {
   }
 }
 
-// These saveGraph* functions are a big ole AI-generated mess right now but at 
-// least it subsumes what we had in olddesign.js which I think we're about ready
-// to get rid of.
-this.saveGraphDownload = () => {
-  // retrieve svg source as a string
+// Helper to prepare clean SVG source for download/preview
+function prepareSVGSource() {
   const svge = svg.node()
   const serializer = new XMLSerializer()
   let source = serializer.serializeToString(svge)
 
   // add name spaces
   if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
-    source= source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"')
+    source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"')
   }
   if (!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)) {
     source = source.replace(/^<svg/,
@@ -6170,50 +6167,31 @@ this.saveGraphDownload = () => {
   const tempRoot = d3.select(tempDiv)
   tempRoot.selectAll(".zoomin").remove()
   tempRoot.selectAll(".zoomout").remove()
-  source = tempDiv.innerHTML
+  
+  return tempDiv.innerHTML
+}
 
+this.saveGraphDownload = () => {
+  const source = prepareSVGSource()
   const blob = new Blob([source], {type: 'image/svg+xml'})
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
   a.download = 'goal.svg'
-  document.body.appendChild(a)
   a.click()
-  document.body.removeChild(a)
+  a.remove()
   URL.revokeObjectURL(url)
 }
 
 this.saveGraphBlob = () => {
-  // retrieve svg source as a string
-  const svge = svg.node()
-  const serializer = new XMLSerializer()
-  let source = serializer.serializeToString(svge)
-
-  // add name spaces
-  if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
-    source= source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"')
-  }
-  if (!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)) {
-    source = source.replace(/^<svg/,
-                            '<svg xmlns:xlink="http://www.w3.org/1999/xlink"')
-  }
-
-  //add xml declaration
-  source = '<?xml version="1.0" standalone="no"?>\n' + source
-
-  // Create a temporary container to clean up the SVG
-  const tempDiv = document.createElement('div')
-  tempDiv.innerHTML = source
-  const tempRoot = d3.select(tempDiv)
-  tempRoot.selectAll(".zoomin").remove()
-  tempRoot.selectAll(".zoomout").remove()
-  source = tempDiv.innerHTML
-
+  const source = prepareSVGSource()
   const blob = new Blob([source], {type: 'image/svg+xml'})
   const url = URL.createObjectURL(blob)
   window.open(url, '_blank')
 }
 
+// This is subsumed by saveGraphBlob for previewing the SVG graph: #SCHDEL
+/* 
 this.saveGraphDocWrite = () => {
   // retrieve svg source as a string
   const svge = svg.node()
@@ -6244,6 +6222,7 @@ this.saveGraphDocWrite = () => {
   newWindow.document.write(source)
   newWindow.document.close()
 }
+*/
 
 /** Informs the module instance that the element containing the
  visuals will be hidden. Internally, this prevents calls to

@@ -66,11 +66,8 @@
     <details style="margin:10px 0;">
       <summary style="cursor:pointer;padding:5px 0;">Experimental features</summary>
       <div class="graphtools">
-        <button class="bmdrbtn" id="savesvgold" onclick="var link = document.getElementById('graphdownload'); graph.saveGraph(link); link.style.display='inline'; link.textContent='Right-click to download SVG';">SVG (old)</button>
-        <a id="graphdownload" target="_blank" style="display:none;"></a>
-        <button class="bmdrbtn" id="savesvgdl" onclick="graph.saveGraphDownload();">SVG (download)</button>
-        <button class="bmdrbtn" id="savesvgblob" onclick="graph.saveGraphBlob();">SVG (blob)</button>
-        <button class="bmdrbtn" id="savesvgdoc" onclick="graph.saveGraphDocWrite();">SVG (doc.write)</button>
+        <button class="bmdrbtn" id="savesvgdl" onclick="graph.saveGraphDownload();">Download SVG</button>
+        <button class="bmdrbtn" id="savesvgblob" onclick="graph.saveGraphBlob();">Preview SVG</button>
       </div>
     </details>
 
@@ -141,11 +138,8 @@
     <details style="margin:10px 0;">
       <summary style="cursor:pointer;padding:5px 0;">Experimental features</summary>
       <div class="graphtools">
-        <button class="bmdrbtn" id="savesvgold" onclick="var link = document.getElementById('editordownload'); editor.saveGraph(link); link.style.display='inline'; link.textContent='Right-click to download SVG';">SVG (old)</button>
-        <a id="editordownload" target="_blank" style="display:none;"></a>
-        <button class="bmdrbtn" id="savesvgdl" onclick="editor.saveGraphDownload();">SVG (download)</button>
-        <button class="bmdrbtn" id="savesvgblob" onclick="editor.saveGraphBlob();">SVG (blob)</button>
-        <button class="bmdrbtn" id="savesvgdoc" onclick="editor.saveGraphDocWrite();">SVG (doc.write)</button>
+        <button class="bmdrbtn" id="savesvgdl" onclick="editor.saveGraphDownload();">Download SVG</button>
+        <button class="bmdrbtn" id="savesvgblob" onclick="editor.saveGraphBlob();">Preview SVG</button>
       </div>
       <div class="graphtools">
         <input id="showcontext" type="checkbox" onclick="editor.showContext(this.checked);" checked>
