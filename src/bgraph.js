@@ -6177,7 +6177,7 @@ this.saveGraphDownload = () => {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = 'goal.svg'
+  a.download = gol.yoog.replace('/', '-') + '.svg'
   a.click()
   a.remove()
   URL.revokeObjectURL(url)
