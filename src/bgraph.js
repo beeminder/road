@@ -2629,7 +2629,8 @@ function selectRoad(kind, scroll = true) {
   selectType = br.RP.SLOPE
   d3.select("[name=road"+kind+"]")
     .attr("shape-rendering", "geometricPrecision") // crispEdges
-    .attr("stroke-width",    (opts.roadLine.width,3)) // ???????????????????????
+    // we previously had "(opts.roadLine.width,3)" here for some reason:
+    .attr("stroke-width",    opts.roadLine.width) 
   selectelt = gRoads.append("svg:line")
     .attr("class",           "selectedroad")
     .attr("shape-rendering", "geometricPrecision") // crispEdges
