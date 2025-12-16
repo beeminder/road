@@ -5260,11 +5260,16 @@ function createDatePicker(fld, min, max, flt, tl) {
     fld: fld,
     oldText: fld.text()
   }
-  if (onMobileOrTablet()) {
-    // Some sort of workaround on mobile browser focus behavior?
-    fld.attr("contenteditable", false)
-    setTimeout(function() { fld.attr("contenteditable", true) }, 100)
-  }
+  // Commented out: This workaround is broken. Setting contenteditable=false
+  // triggers focusout, which calls destroyDatePicker(), nullifying datePicker
+  // before createDatePicker() finishes. The original purpose was unclear anyway
+  // ("Some sort of workaround?"). Safe to delete once confirmed fixed on mobile.
+  // #SCHDEL
+  // if (onMobileOrTablet()) {
+  //   // Some sort of workaround on mobile browser focus behavior?
+  //   fld.attr("contenteditable", false)
+  //   setTimeout(function() { fld.attr("contenteditable", true) }, 100)
+  // }
   let md = moment(datePicker.oldText)
   datePicker.picker = new Pikaday({
     keyboardInput: false,
