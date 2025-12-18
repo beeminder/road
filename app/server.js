@@ -250,7 +250,10 @@ app.post("/submitroad/:goal", async (req, resp) => {
     resp.send(body);
   } catch (error) {
     console.error("submit failed:", error);
-    resp.status(500).send("An error occurred.");
+    const status = error.response?.status || 500;
+    // Send the API's response body so client can check resp.error
+    const body = error.response?.data || {error: error.message || "Unknown error"};
+    resp.status(status).send(body);
   }
 });
 

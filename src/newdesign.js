@@ -416,7 +416,7 @@ function postJSON( url, data, callback ){
   xhr.open("POST", url, true);
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.onreadystatechange = function () {
-    if (xhr.readyState == 4 && xhr.status == "200") {
+    if (xhr.readyState == 4) {
       callback(JSON.parse(xhr.responseText));
     }
   };
@@ -471,8 +471,17 @@ function handleRoadSubmit() {
       submitButton.innerHTML = "Submit Changes"
       
       if (resp.error) {
-        submitMsg.innerHTML = "ERROR! \""
-          +resp.error+"\". Email support@beeminder.com for more help!";
+        if (resp.error == "graph matrix can't get easier in akrasia horizon") {
+          submitMsg.innerHTML = `\
+Oops! You've hit a known bug that we're working on.
+As a workaround, try having your change to the bright red line start one day later.\
+`;
+        } else {
+          submitMsg.innerHTML = `\
+Unexpected server error! Please paste this to support@beeminder.com:
+"${resp.error}"\
+`;
+        }
       } else {
         submitMsg.innerHTML = "(successfully submitted graph!)";
         loadGoals(currentGoal)

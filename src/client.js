@@ -168,7 +168,7 @@ function postJSON( url, data, callback ){
   xhr.open("POST", url, true);
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.onreadystatechange = function () {
-    if (xhr.readyState == 4 && xhr.status == "200") {
+    if (xhr.readyState == 4) {
       callback(JSON.parse(xhr.responseText));
     }
   };
@@ -246,8 +246,16 @@ function handleRoadSubmit() {
     postJSON("/submitroad/"+currentGoal, newRoad, function(resp) {
       
       if (resp.error) {
-        submitMsg.innerHTML = "ERROR! \""
-          +resp.error+"\". Email support@beeminder.com for more help!";
+        if (resp.error == "xgraph matrix can't get easier in akrasia horizon") {
+          submitMsg.innerHTML = `\
+ERROR: Bright red line can't be easier within the akrasia horizon!\
+`;
+        } else {
+          submitMsg.innerHTML = `\
+Unexpected server error! Please paste this to support@beeminder.com:
+"${resp.error}"\
+`;
+        }
       } else {
         submitMsg.innerHTML = "(successfully submitted bright red line!)";
         console.log("success!");
