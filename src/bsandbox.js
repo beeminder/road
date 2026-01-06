@@ -4,7 +4,7 @@
  * independent sandbox objects each with their own graph object, linked to
  * particular div element on the DOM.<br/>
 
- * <br/>Copyright 2017-2025 Uluc Saranli and Daniel Reeves and Bethany Soule
+ * <br/>Copyright 2017-2026 Uluc Saranli and Daniel Reeves and Bethany Soule
  @module bsandbox
  @requires d3
  @requires moment
@@ -224,6 +224,39 @@ function newData( v, c ) {
   reloadGoal()
 }
 
+// GPT-5.2 wrote this function
+function setRateUnits( runits ) {
+  if (["d", "w", "m", "y"].indexOf(runits) < 0) {
+    logger.error("bsandbox.setRateUnits: Invalid rate units!")
+    return
+  }
+  if (!gol.bb || !gol.bb.params || 
+      ["d", "w", "m", "y"].indexOf(gol.bb.params.runits) < 0) {
+    logger.error(
+      "bsandbox.setRateUnits: No goal loaded or invalid current runits!")
+    return
+  }
+
+  saveState()
+
+  const oldunits = gol.bb.params.runits
+  const factor = bu.SECS[runits] / bu.SECS[oldunits]
+  gol.bb.params.runits = runits
+  gol.runits = runits
+  if (bu.nummy(gol.bb.params.rfin)) 
+    gol.bb.params.rfin = Number(gol.bb.params.rfin) * factor
+
+  if (bu.listy(gol.bb.params.road)) {
+    gol.bb.params.road = gol.bb.params.road.map(row => {
+      if (!Array.isArray(row) || row.length !== 3) return row
+      if (!bu.norn(row[2])) return row
+      return [row[0], row[1], Number(row[2]) * factor]
+    })
+  }
+
+  reloadGoal()
+}
+
 // Rate should be in value/seconds
 function newRate( r ) {
   if (!bu.nummy(r)) return
@@ -237,8 +270,8 @@ function newRate( r ) {
   if (roadlast < nextweek) {
     road.push([bu.dayify(nextweek), null, gol.bb.params.rfin])
   }
-  
-  gol.bb.params.rfin = Number(r)  * bu.SECS[gol.bb.params.runits]
+
+  gol.bb.params.rfin = Number(r)
   reloadGoal()
 }
 
@@ -448,6 +481,7 @@ this.newData = newData
     @method 
     @param {Number} r New rate in runits */
 this.newRate = newRate
+this.setRateUnits = setRateUnits
 this.setVisualConfig = setVisualConfig
 this.getVisualConfig = function() {return gol.graph.getVisualConfig()}
 this.setGoalConfig = setGoalConfig

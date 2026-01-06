@@ -112,6 +112,7 @@ const UNAM = { 'y' : 'year',
 
 // Type-checking convenience functions
 function nummy(x)   { return !isNaN(parseFloat(x)) && isFinite(x) }
+function norn(x)    { return x === null || nummy(x) }
 function stringy(x) { return typeof x === "string" }
 function listy(x)   { return Array.isArray(x) }
 
@@ -949,7 +950,7 @@ function lineintersect(s1, e1, s2, e2) {
 // All the constants and functions butil exports
 return {
   MAXTIME, BBURL, BHUE, AKH, BDUSK, SECS, UNAM, 
-  nummy, stringy, listy,
+  nummy, norn, stringy, listy,
   arrMin, arrMax, extendo, deepcopy, partition, quantile, sum,
   accumulate, monotonize, zip, chop, clip, 
   searchLow, searchHigh, 

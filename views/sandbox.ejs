@@ -75,6 +75,7 @@
 
   <span style="margin:4px;">Change rate to:</span>
   <input id="rateval" type="number"  style="margin:4px;"></input>
+  per <span id="rateunitlabel"></span>
   <button onclick="bs.newRate(rateval.value)" style="margin:4px;">
     Commit!</button><br/>
 
@@ -209,9 +210,17 @@
     gdiv = document.getElementById("sandbox")
     dbdiv = document.getElementById("dueby")
     runits = document.getElementById("rateunit")
+    rateunitlabel = document.getElementById("rateunitlabel")
     dataval = document.getElementById("dataval")
     datacmt = document.getElementById("datacmt")
     download = document.getElementById("download")
+
+    function updateRateUnitLabel() {
+      const lut = { d: "day", w: "week", m: "month", y: "year" }
+      rateunitlabel.textContent = lut[runits.value] ?? runits.value
+    }
+    runits.addEventListener("change", ()=>{updateRateUnitLabel(); bs.setRateUnits(runits.value)})
+    updateRateUnitLabel()
 
     animdiv = {}
     const li = [
