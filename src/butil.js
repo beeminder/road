@@ -620,8 +620,9 @@ function median(a) {
 }
 
 /** Mode (commonest) of values in list a. Breaks ties in favor of whatever 
-    appears first in the lsit. (Mathematica-brain gave the median of the list of
-    commonest elements but literally no one cares about aggday=mode anyway.)
+    one's last occurrence appears first in the list. (Mathematica-brain
+    gave the median of the list of commonest elements but
+    literally no one cares about aggday=mode anyway.)
     @param {Number[]} a Input list*/
 function mode(a) {
   if (!a || !a.length) return NaN
