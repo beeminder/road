@@ -79,7 +79,7 @@ BLCK:   "#000000", // For edges of dots
 REDDOT: "#ff0000", // Red dots for beemergencies
 ORNDOT: "#ffa500", // Orange dots for 1 safe day
 BLUDOT: "#3f3fff", // Blue dots for 2 safe days
-GRNDOT: "#00aa00", // Green dots for 3+ safe days
+GRNDOT: "#00aa00", // Green dots for 3-6 safe days
 GRADOT: "#228B22", // Forest green Grayson dots for 7+ safe days
 ERRDOT: "#00FFFF", // Garish cyan dots to only show if something's fubar
 RAZR0:  "#ff0000", // Bright red line for razor road; faded = #FF5436
