@@ -24,23 +24,3 @@ If a symbol (variable, constant, field name, function, etc) is localized to a fe
 If, on the other hand, a symbol shows up across the codebase or carries business (in the "business logic" sense) meaning, treat it as vocabulary. Give it a name that's short but evocative and is both greppable and pronounceable. (E.g., whoever came up with "sqrt" did this perfectly. It's ubiquitous enough that it's worth abbreviating, and can be pronounced as "square root" or "squirt".) Think of the name as jargon, in the positive sense, and never use [pseudovernacular jargon](https://blog.beeminder.com/pseudovernacular). Of course define all jargon, with code comments, the first time it's used. 
 
 # Agent Scratchpad (human edits only above this line)
-
-# Beebrain Project Knowledge
-
-## Overview
-Beebrain is Beeminder's graph generator and visual graph editor. It consists of:
-- Client-side JavaScript graph visualization (bgraph.js, beebrain.js)
-- Server-side Node.js renderer (jsbrain_server/)
-- Visual graph editor (nee road editor)
-
-## Project Structure
-- `src/` - Client-side source files (JavaScript, CSS)
-- `jsbrain_server/` - Node.js server for rendering graphs
-- `tests/` - Test files and sandboxes
-- `views/` - EJS templates for web pages
-- `automon/` - Automated monitoring scripts
-
-## Development
-- Two separate Node projects: main app and jsbrain_server
-- Both use npm for package management
-- Server renders graphs using Puppeteer
