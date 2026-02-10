@@ -39,7 +39,7 @@ Beebrain is Beeminder's graph generator and visual graph editor. It consists of:
 ## Project Structure
 - `src/` - Client-side source files (JavaScript, CSS)
 - `jsbrain_server/` - Node.js server for rendering graphs
-- `tests/` - Test files and sandboxes
+- `quals/` - Qual files and sandboxes
 - `views/` - EJS templates for web pages
 - `automon/` - Automated monitoring scripts
 

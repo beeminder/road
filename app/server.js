@@ -79,9 +79,9 @@ sequelize
   });
 
 // Stuff in the pub directory is served statically
-app.use("/staticdesign", express.static("tests/generated/newdesign.html"));
-app.use("/tutorial",     express.static("tests/tutorial.html"));
-app.use("/newgoal",      express.static("tests/newgoal.html"));
+app.use("/staticdesign", express.static("quals/generated/newdesign.html"));
+app.use("/tutorial",     express.static("quals/tutorial.html"));
+app.use("/newgoal",      express.static("quals/newgoal.html"));
 app.use("/src",          express.static("src"));       // js served through /src
 app.use("/data",         express.static("data"));  // bb files served thru /data
 app.use("/lib",          express.static("lib"));  // js/css/etc served thru /lib

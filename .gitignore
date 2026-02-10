@@ -10,7 +10,8 @@ lib/css/
 lib/js/
 lib/images/
 lib/favicons/
-tests/generated/
+quals/generated/
+quals/*_screenshot.png
 
 # Codebuff generated these
 logs/*.log

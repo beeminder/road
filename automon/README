@@ -1,17 +1,17 @@
 Automon (as in "automatically monitor", pronounced "Ottomon") is a testing 
 utility for Beebrain that watches the directory the source code is in and runs
-tests whenever any source file changes. It tests every .bb file in a given
+quals whenever any source file changes. It qualifies every .bb file in a given
 directory and sounds an alert if the JSON output or the graph image change from
 their stored reference states. It even shows a visual diff of the graph images
 if the images change.
 
 Whenever we find a new bug, the protocol is that we put the .bb file in the 
 private suite -- github.com/beeminder/privatesuite -- and create a gissue 
-pointing to it. It should then stay in the test suite forever to serve as a 
-regression test.
+pointing to it. It should then stay in the qual suite (aka test suite) forever
+to serve as a regression qual.
 
 Automon works by storing baseline output files in the data/jsref directory, 
-assuming "data" is the specified test suite directory. Every time Automon runs 
+assuming "data" is the specified qual suite directory. Every time Automon runs 
 it puts the latest output in data/jsout.
 [TODO: change those to bbref and bbout]
 

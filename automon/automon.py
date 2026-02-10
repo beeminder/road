@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Automon: Test Suite Monitoring/Comparison Daemon
+# Automon: Qual Suite Monitoring/Comparison Daemon
 # NOTE: You have to run this from the automon directory.
 
 # NOTE: I've refactored this a bit so that the data directory with the bb files

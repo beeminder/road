@@ -42,9 +42,9 @@ Description of original Beebrain:
 - A Node server that duplicates the behaviors of sanity.py from pybrain
 - Various static HTML pages to test beebrain, graph, editor and sandbox functionality
 
-### Getting started with local tests for basic functionality
+### Getting started with local quals for basic functionality
 
-The directory `tests` has HTML files illustrating various Beebrain functionality:
+The directory `quals` has HTML files illustrating various Beebrain functionality:
 
 - `basic_test.html` : Showcases client-side graphs
 - `roadeditor_test.html` : Showcases client-side graphs and the graph editor
@@ -58,12 +58,12 @@ export BBPATH=/absolule/path/to/this/repository
 
 Then, if you are on Linux, you can load them in Chromium with the following example command:
 ```
-chromium-browser --allow-file-access-from-files --disable-web-security --user-data-dir=$BBPATH/chromium-data --remote-debugging-port=9222 --use-gl=osmesa file://$BBPATH/tests/basic_test.html file://$BBPATH/tests/roadeditor_test.html file://$BBPATH/tests/sandbox.html
+chromium-browser --allow-file-access-from-files --disable-web-security --user-data-dir=$BBPATH/chromium-data --remote-debugging-port=9222 --use-gl=osmesa file://$BBPATH/quals/basic_test.html file://$BBPATH/quals/roadeditor_test.html file://$BBPATH/quals/sandbox.html
 ```
 
 If you are on macOS, you can load them in Chrome with the following example command:
 ```
-open -na /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args --allow-file-access-from-files --disable-web-security --user-data-dir=$BBPATH/chromium-data --remote-debugging-port=9222 --use-gl=osmesa file://$BBPATH/tests/basic_test.html file://$BBPATH/tests/roadeditor_test.html file://$BBPATH/tests/sandbox.html
+open -na /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args --allow-file-access-from-files --disable-web-security --user-data-dir=$BBPATH/chromium-data --remote-debugging-port=9222 --use-gl=osmesa file://$BBPATH/quals/basic_test.html file://$BBPATH/quals/roadeditor_test.html file://$BBPATH/quals/sandbox.html
 ```
 
 The scary-looking arguments allow the browser to open local Beeminder files from within Javascript functions.
@@ -130,7 +130,7 @@ The directory structure for this repository is organized as follows
 - `lib` : Files generated and copied by gulp, served under `/lib` (Many projects use `dist` for this)
 - `data`: Example BB files, accessible through `/data`
 - `views`: express.js view templates
-- `tests`: HTML files for various local tests, loading scripts from `src`
+- `quals`: HTML files for various local quals, loading scripts from `src`
 - `jsbrain_server`: Local server to handle graph generation requests
 
 ### B. Emacs development notes:

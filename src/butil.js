@@ -374,12 +374,12 @@ function searchHigh(sa, df) {
 }
 
 // Automon is pretty great but sometimes it would also be nice to have unit
-// tests. I'm not sure how best to do that. We don't want crap like the
+// quals. I'm not sure how best to do that. We don't want crap like the
 // following in production... 
 /*
-const unit_test_1 = searchLow([7,7,7], x => x-7)
-if (unit_test_1 !== 0) {
-  console.log("TEST FAILED: searchHigh/Low edge case")
+const unit_qual_1 = searchLow([7,7,7], x => x-7)
+if (unit_qual_1 !== 0) {
+  console.log("QUAL FAILED: searchHigh/Low edge case")
   exit(1)
 } 
 */

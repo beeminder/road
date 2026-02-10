@@ -137,17 +137,17 @@ function favicons () { // Copy favicons from src to lib
   return gulp.src('src/favicons/*', { encoding: false }).pipe(gulp.dest(LIBFAV))
 }
 
-function generate_test_html() {
-  // Generate tests/generated/newdesign.html from views/newdesign.ejs
+function generate_qual_html() {
+  // Generate quals/generated/newdesign.html from views/newdesign.ejs
   const ejsTemplate = fs.readFileSync('views/newdesign.ejs', 'utf8')
   const html = ejs.render(ejsTemplate, { user: null })
-  
+
   // Ensure generated directory exists
-  if (!fs.existsSync('tests/generated')) {
-    fs.mkdirSync('tests/generated', { recursive: true })
+  if (!fs.existsSync('quals/generated')) {
+    fs.mkdirSync('quals/generated', { recursive: true })
   }
-  
-  fs.writeFileSync('tests/generated/newdesign.html', html)
+
+  fs.writeFileSync('quals/generated/newdesign.html', html)
   return Promise.resolve()
 }
 
@@ -157,5 +157,5 @@ exports.compile = gulp.series(
   compress_js,
   gulp.parallel(combine_js, combine_jsmin, clean_css),
   copy_vendor,
-  generate_test_html)
+  generate_qual_html)
 exports.jshint = linter

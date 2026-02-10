@@ -318,7 +318,7 @@ self.aok = (rd, g, t, v) => {
 // 0. PPR = 2r but just absolute 2 if r=0 (old status quo, gross discontinuity!)
 // 1. PPR = 2r but at least D (and special case to match status quo if D=0)
 // 2. PPR = r+D but at least 0
-// (See /tests/ppr_test.html for experimenting with these)
+// (See /quals/ppr_test.html for experimenting with these)
 self.pprtype = 1 // choose 0, 1, or 2
 self.dailymin = 0 // assumed to always be opposite sign of yaw
 
