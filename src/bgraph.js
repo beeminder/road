@@ -321,11 +321,11 @@ const onMobileOrTablet = function() {
 
 /** Configure functionality (private) */
 let config = (obj, options) => {
-  if (!obj.opts) obj.opts = bu.extendo({}, defaults, true)
-  
+  if (!obj.opts) obj.opts = bu.extendo({}, defaults)
+
   if (onMobileOrTablet()) bu.extendo(obj.opts, mobiledefaults)
-  
-  let opts = bu.extendo(obj.opts, options, true)
+
+  let opts = bu.extendo(obj.opts, options)
   
   opts.divGraph = opts.divGraph && opts.divGraph.nodeName ? opts.divGraph : null
   

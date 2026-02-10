@@ -110,38 +110,52 @@ const UNAM = { 'y' : 'year',
  *                                 FUNCTIONS                                  *
  ******************************************************************************/
 
+// Fail loudly and immediately if a condition is not met. Call one of two ways:
+// 1. assert(x > y, "Woeful error: x and y out of order")
+// 2. assert(x > y, ()=>`Woeful error: x=${x} and y=${y} out of order`)
+// The second way is for the case that the error message is nontrivial to
+// construct, so it's only constructed if the assertion actually fails.
+// The following version would also mostly work fine:
+//   if (!cond) throw new Error(typeof msg === "function" ? msg() : msg)
+function assert(cond, msg = "Assertion failed") {
+  if (cond) return
+  if (msg instanceof Error) throw msg
+  const err = new Error(String(typeof msg === "function" ? msg() : msg))
+  if (Error.captureStackTrace) Error.captureStackTrace(err, assert)
+  throw err
+}
+
 // Type-checking convenience functions
 function nummy(x)   { return !isNaN(parseFloat(x)) && isFinite(x) }
 function norn(x)    { return x === null || nummy(x) }
 function stringy(x) { return typeof x === "string" }
 function listy(x)   { return Array.isArray(x) }
 
-
 // Min/max of an array of numbers
 function arrMin(arr) { return min.apply(null, arr) } // use spread operator?
 function arrMax(arr) { return max.apply(null, arr) } 
 
-// TODO: Does not properly copy, especially for array properties. FIX
-// https://github.com/beeminder/road/issues/199
-// Extends a destination object with properties from a source object, optionally
-// overwriting existing elements.
-// @param {object}  fr Source object 
-// @param {object}  to Destination object
-// @param {boolean} ow Whether to overwrite existing properties of destination
-function extendo(to, fr, ow) {
-  let prop, hasProp
-  for (prop in fr) {
-    hasProp = to[prop] !== undefined
-    if (hasProp && typeof fr[prop] === 'object' &&
-        fr[prop] !== null  && fr[prop].nodeName === undefined ) {
-      if (listy(fr[prop])) { if (ow) to[prop] = fr[prop].slice(0) }
-      else to[prop] = extendo({}, fr[prop], ow)
-    } else if (ow || !hasProp) {
-      if (listy(fr[prop])) to[prop] = fr[prop].slice(0)
-      else to[prop] = fr[prop]
+// Some background at https://github.com/beeminder/road/issues/199
+// Deep-merge object properties from source object fro into destination object
+// yon. Source properties overwrite destination properties. For nested objects,
+// merges recursively, preserving destination sub-properties not in source.
+// Mutates and returns yon.
+// @param {object} yon Destination object
+// @param {object} fro Source object
+function extendo(yon, fro) {
+  for (const [key, val] of Object.entries(fro)) {
+    assert(!listy(val), ()=>
+      `extendo: fro[${key}] is an array; only objects are supported`)
+    if (val?.constructor === Object) { // fro[key] itself is a plain object
+      if (yon[key] === undefined) yon[key] = {}
+      assert(yon[key]?.constructor === Object, ()=>
+        `extendo: can't merge object fro[${key}] into non-object yon[${key}]`)
+      extendo(yon[key], val)
+    } else {
+      yon[key] = val
     }
   }
-  return to
+  return yon
 }
 
 // Make a deep copy of object x (simpler/better version of above?)

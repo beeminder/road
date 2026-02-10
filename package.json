@@ -1,6 +1,6 @@
 {
   "name": "Beebrain",
-  "version": "2026.01.27-a",
+  "version": "2026.02.09-a",
   "description": "Beeminder Graph Generator and Visual Graph Editor",
   "main": "server.js",
   "scripts": {
@@ -45,13 +45,13 @@
     }
   },
   "devDependencies": {
-    "dotenv": "^17.2.3",
-    "eslint": "^9.39.2",
+    "dotenv": "^17.2.4",
+    "eslint": "^10.0.0",
     "gulp": "^5.0.1",
     "gulp-changed": "^5.0.4",
     "gulp-clean-css": "^4.0.0",
     "gulp-concat": "^2.6.1",
-    "gulp-eslint-new": "^2.3.0",
+    "gulp-eslint-new": "^2.6.0",
     "gulp-rename": "^2.1.0",
     "gulp-terser": "^2.1.0",
     "nodemon": "^3.1.11",

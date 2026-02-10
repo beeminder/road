@@ -70,14 +70,12 @@ var logger = (debug && typeof console != 'undefined') ? console : {
     }
 logger.debug("beebrain constructor ("+gid+"): ");
 var self = this,
-    opts = bu.extendo({}, optsin),
+    opts = bu.extendo({roadEditor:false,
+                       maxFutureDays: 365,
+                       showFocusRect: false,
+                       showContext: false}, optsin),
     curid = gid
 gid++
-
-bu.extendo(opts, {roadEditor:false,
-                 maxFutureDays: 365,
-                 showFocusRect: false,
-                 showContext: false})
 var gol = {div: opts.divGraph}
 
 var pledges = [5, 10, 30, 90, 270, 810, 2430]

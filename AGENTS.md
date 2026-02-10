@@ -25,6 +25,7 @@ If a symbol (variable, constant, field name, function, etc) is localized to a fe
 If, on the other hand, a symbol shows up across the codebase or carries business (in the "business logic" sense) meaning, treat it as vocabulary. Give it a name that's short but evocative and is both greppable and pronounceable. (E.g., whoever came up with "sqrt" did this perfectly. It's ubiquitous enough that it's worth abbreviating, and can be pronounced as "square root" or "squirt".) Think of the name as jargon, in the positive sense, and never use [pseudovernacular jargon](https://blog.beeminder.com/pseudovernacular). Of course define all jargon, with code comments, the first time it's used. 
 18. You can probably pick this up from context but we give bug reports as _replicata_ (steps to replicate the bug ex nihilo), _expectata_ (what you expected to happen), and _resultata_ (what happened instead). A failing qual should also be framed that way.
 
+
 # Agent Scratchpad (human edits only above this line)
 
 # Beebrain Project Knowledge
