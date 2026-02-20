@@ -1,6 +1,6 @@
 {
   "name": "Beebrain",
-  "version": "2026.02.19-b",
+  "version": "2026.02.19-c",
   "description": "Beeminder Graph Generator and Visual Graph Editor",
   "main": "server.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "compile": "gulp compile",
     "postinstall": "gulp compile",
     "gendoc": "jsdoc -c jsdoc.json",
-    "quals": "node quals/qual_basic.js"
+    "quals": "node quals/claude_quals.js"
   },
   "dependencies": {
     "@primer/octicons": "^19.22.0",
