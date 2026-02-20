@@ -132,8 +132,8 @@ function stringy(x) { return typeof x === "string" }
 function listy(x)   { return Array.isArray(x) }
 
 // Min/max of an array of numbers
-function arrMin(arr) { return min.apply(null, arr) } // use spread operator?
-function arrMax(arr) { return max.apply(null, arr) } 
+function arrMin(arr) { return min(...arr) }
+function arrMax(arr) { return max(...arr) }
 
 // Some background at https://github.com/beeminder/road/issues/199
 // Deep-merge object properties from source object fro into destination object
@@ -246,28 +246,17 @@ function sum(l) { return l.reduce((a,b) => a+b, 0) }
 
 /** Return a list with the cumulative sum of the elements in l, left to right 
  * @param {Number[]} l */
-// TODO1605: what's the more functional way to do this?
-function accumulate(l) {
-  let ne = l.length
-  if (ne === 0) return l
-  let nl = [l[0]]
-  for (let i = 1; i < ne; i++) nl.push(nl[nl.length-1]+l[i])
-  return nl
-}
+function accumulate(l) { let s = 0; return l.map(x => s += x) }
 
-/** Takes a list like [1,2,1] and make it like [1,2,2] (monotone
-    increasing) Or if dir==-1 then min with the previous value to
-    make it monotone decreasing 
+/** Take a list like [1,2,1] and make it like [1,2,2] (monotone increasing) or
+ * if dir==-1 then min with the previous value to make it monotone decreasing
     @param {Number[]} l 
     @param {Number} [dir=1] Direction to monotonize: 1 or -1
 */
 function monotonize(l, dir=1) {
-  let lo = l.slice(), i
-  if (dir === 1) {
-    for (i = 1; i < lo.length; i++) lo[i] = max(lo[i-1],lo[i])
-  } else {
-    for (i = 1; i < lo.length; i++) lo[i] = min(lo[i-1],lo[i])
-  }
+  const maxormin = dir === 1 ? max : min
+  let lo = l.slice()
+  for (let i = 1; i < lo.length; i++) lo[i] = maxormin(lo[i-1], lo[i])
   return lo
 }
 
@@ -598,11 +587,7 @@ function orderedq(l) {
 
 /** AGGDAY: Whether all elements in a list are zero
     @param {Number[]} a Input list*/
-function unaryflat(a) {
-  let l = a.length, i
-  for (i = 0; i < l; i++) if (a[i] !== 0) return true
-  return false
-}
+function unaryflat(a) { return a.some(x => x !== 0) }
 
 /** AGGDAY: Sum of differences of pairs, eg, [1,2,6,9] -> 2-1 + 9-6 = 1+3 = 4
     If there's an odd number of elements then the last one is ignored.
@@ -613,15 +598,9 @@ function clocky(a) {
   return s
 }
 
-/** Arithmetic mean of values in list a
+/** Arithmetic mean of values in a list
     @param {Number[]} a Input list*/
-// Nicer version: average = (array) => array.reduce((s,x) => s+x) / array.length
-function mean(a) {
-  let s = 0, l = a.length, i
-  if (l == 0) return 0
-  for(i = 0; i < l; i++) s += a[i]
-  return s / a.length
-}
+function mean(a) { return a.length ? sum(a) / a.length : 0 }
 
 /** AGGDAY: Median, i.e., middle element of a sorted list, or mean of the two
  * middle elements if there are an even number of them.
