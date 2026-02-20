@@ -241,12 +241,12 @@ function quantile(l, q, qt=1, issorted=false) {
 }
 
 /** Return a list with the sum of the elements in l 
- @param {list} l Input array */
-function sum(l) { return l.reduce((a,b)=>(a+b), 0) }
+ * @param {list} l Input array */
+function sum(l) { return l.reduce((a,b) => a+b, 0) }
 
-/** Return a list with the cumulative sum of the elements in l,
-    left to right 
-    @param {Number[]} l*/
+/** Return a list with the cumulative sum of the elements in l, left to right 
+ * @param {Number[]} l */
+// TODO1605: what's the more functional way to do this?
 function accumulate(l) {
   let ne = l.length
   if (ne === 0) return l
@@ -596,15 +596,15 @@ function orderedq(l) {
   return true
 }
 
-/** Whether all elements in a list are zero
+/** AGGDAY: Whether all elements in a list are zero
     @param {Number[]} a Input list*/
-function nonzero(a) {
+function unaryflat(a) {
   let l = a.length, i
   for (i = 0; i < l; i++) if (a[i] !== 0) return true
   return false
 }
 
-/** Sum of differences of pairs, eg, [1,2,6,9] -> 2-1 + 9-6 = 1+3 = 4
+/** AGGDAY: Sum of differences of pairs, eg, [1,2,6,9] -> 2-1 + 9-6 = 1+3 = 4
     If there's an odd number of elements then the last one is ignored.
     @param {Number[]} a Input list*/
 function clocky(a) {
@@ -623,8 +623,9 @@ function mean(a) {
   return s / a.length
 }
 
-/** Median of values in list a
-    @param {Number[]} a Input list*/
+/** AGGDAY: Median, i.e., middle element of a sorted list, or mean of the two
+ * middle elements if there are an even number of them.
+ * @param {Number[]} a Input list */
 function median(a) {
   let m = 0, l = a.length
   a.sort((a,b)=>a-b)
@@ -633,11 +634,11 @@ function median(a) {
   return m
 }
 
-/** Mode (commonest) of values in list a. Breaks ties in favor of whatever 
-    one's last occurrence appears first in the list. (Mathematica-brain
-    gave the median of the list of commonest elements but
-    literally no one cares about aggday=mode anyway.)
-    @param {Number[]} a Input list*/
+/** AGGDAY: Mode (commonest) of values in list. Breaks ties in favor of whatever
+ * one's last occurrence appears first in the list. (Mathematica-brain gave the
+ * median of the list of commonest elements but literally no one cares about
+ * aggday=mode anyway. PS: see forum post from zzq.)
+ * @param {Number[]} a Input list */
 function mode(a) {
   if (!a || !a.length) return NaN
   let tally = {} // hash mapping each element of a to how many times it appears
@@ -653,7 +654,7 @@ function mode(a) {
   return maxitem
 }
 
-// Trimmed mean. Takes a list of numbers, a, and a fraction to trim.
+// AGGDAY: Trimmed mean. Takes a list of numbers, a, and a fraction to trim.
 function trimmean(a, trim) {
   const n = floor(a.length * trim)
   const ta = a.sort((a,b) => a-b).slice(n, a.length - n) // trimmed array
@@ -971,7 +972,7 @@ return {
   searchLow, searchHigh, 
   shn, shd, splur, 
   conservaround, 
-  linspace, rescale, deldups, orderedq, nonzero, 
+  linspace, rescale, deldups, orderedq, unaryflat, 
   clocky, mean, median, mode, trimmean, 
   nearEq, 
   daysnap, monthsnap, yearsnap, formatDate, dayparse, dayify, nowstamp, 

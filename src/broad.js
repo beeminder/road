@@ -60,42 +60,50 @@ var self = {}
 
 self.rsk8 = 0 // Hack for skatesum (should be current daily rate but isn't)
 
-/** Collection of functiont to perform datapoint aggregation
+/** Collection of functions to perform datapoint aggregation aka aggdays
     @enum {function} */
 self.AGGR = {
+sum      : bu.sum,
 last     : (x) => x[x.length-1],
 first    : (x) => x[0],
-min      : (x) => bu.arrMin(x),
-max      : (x) => bu.arrMax(x),
-truemean : (x) => bu.mean(x),   // deprecated alias for mean/average
-uniqmean : (x) => bu.mean(bu.deldups(x)), // deprecate? no one wants this
-average  : (x) => bu.mean(x),
-mean     : (x) => bu.mean(bu.deldups(x)), // to be changed later to normal mean
-median   : (x) => bu.median(x),
-mode     : (x) => bu.mode(x),
-trimmean : (x) => bu.trimmean(x, 0.1), // no one actually wants this
-sum      : (x) => bu.sum(x),
-jolly    : (x) => x.length > 0 ? 1 : 0, // deprecated alias for binary
-binary   : (x) => x.length > 0 ? 1 : 0,
-nonzero  : bu.nonzero,
+min      : bu.arrMin,
+max      : bu.arrMax,
+count    : (x) => x.length,
+mu       : bu.mean,
+truemean : bu.mean, // legacy alias for mu
+average  : bu.mean, // legacy alias for mu
+munique  : (x) => bu.mean(bu.deldups(x)), // deprecate? does anyone want this?
+uniqmean : (x) => bu.mean(bu.deldups(x)), // legacy alias for munique
+mean     : (x) => bu.mean(bu.deldups(x)), // legacy alias for munique (for now?)
+mutrim   : (x) => bu.trimmean(x, 0.1), // no one actually wants this
+trimmean : (x) => bu.trimmean(x, 0.1), // legacy alias for mutrim
+median   : bu.median,
+mode     : bu.mode,
+unary    : (x) => x.length > 0 ? 1 : 0,
+binary   : (x) => x.length > 0 ? 1 : 0, // legacy alias for unary
+jolly    : (x) => x.length > 0 ? 1 : 0, // legacy alias for unary
+unaryflat: bu.unaryflat,
+nonzero  : bu.unaryflat, // legacy alias for unaryflat
 triangle : (x) => bu.sum(x)*(bu.sum(x)+1)/2, // HT DRMcIver
 square   : (x) => pow(bu.sum(x),2),
 clocky   : bu.clocky, // sum of differences of pairs
-count    : (x) => x.length, // number of datapoints
-kyshoc   : (x) => min(2600, bu.sum(x)), // ad hoc, guineapigging; deprecated
 skatesum : (x) => min(self.rsk8, bu.sum(x)), // cap at daily rate
-cap1     : (x) => min(1, bu.sum(x)), // sum but capped at 1
+satsum   : (x) => min(1, bu.sum(x)), // sum but capped at 1
+cap1     : (x) => min(1, bu.sum(x)), // legacy alias for satsum
 sqrt     : (x) => sqrt(bu.sum(x)), // sqrt of sum
+countflat: (x) => x.filter(v => v !== 0).length, // number of nonzero datapoints
+muflat   : (x) => bu.mean(x.filter(v => v !== 0)), // mean of nonzero datapoints
+//kyshoc   : (x) => min(2600, bu.sum(x)), // ad hoc guineapiggage
 }
 
 /*
-For aggdays that pick one datapoint value (first, last, min, max), allvals 
-should be the raw values (plus the previous day's aggval if kyoomy). 
-For aggday=sum, you want to see the incremental sums. 
+For aggdays that pick one datapoint value (like first, last, min, max), allvals 
+should be the raw values (plus the previous day's aggval if kyoomy).
+For aggday=sum, you want to see the incremental sums.
 For exotic aggdays... it's super non-obvious what's best...
 
 One tiny improvement we could make to the current code though: 
-for aggday=sum, we want allvals to use the incremental sums regardless of 
+for aggday=sum, we want allvals to use the incremental sums regardless of
 whether the goal is kyoomy.
 */
 
