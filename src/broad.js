@@ -1127,7 +1127,7 @@ self.interpData = (d, xv) => {
   var interp = (bef, aft, atPt) =>(bef + (aft - bef) * atPt)
   var di = 0, dl = d.length, od = []
   if (dl === 0) return null
-  if (dl === 1) return xv.map((d)=>[d, d[0][1]])
+  if (dl === 1) return xv.map(xi => [xi, d[0][1]])
   for (let i = 0; i < xv.length; i++) {
     var xi = xv[i]
     if (xi <= d[0][0]) od.push([xi, d[0][1]])

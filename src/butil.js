@@ -607,7 +607,7 @@ function mean(a) { return a.length ? sum(a) / a.length : 0 }
  * @param {Number[]} a Input list */
 function median(a) {
   let m = 0, l = a.length
-  a.sort((a,b)=>a-b)
+  a = a.slice().sort((a,b)=>a-b)
   if (l % 2 === 0) m = (a[l/2-1] + a[l/2]) / 2
   else m = a[(l-1) / 2]
   return m
@@ -636,7 +636,7 @@ function mode(a) {
 // AGGDAY: Trimmed mean. Takes a list of numbers, a, and a fraction to trim.
 function trimmean(a, trim) {
   const n = floor(a.length * trim)
-  const ta = a.sort((a,b) => a-b).slice(n, a.length - n) // trimmed array
+  const ta = a.slice().sort((a,b) => a-b).slice(n, a.length-n) // trimmed array
   return ta.reduce((a,b) => a+b) / ta.length
 }
 

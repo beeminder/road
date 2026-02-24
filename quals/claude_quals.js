@@ -283,10 +283,20 @@ assert(bu.mean([5])     === 5, 'mean([5])')
 assert(bu.median([3,1,2])   === 2,   'median odd')
 assert(bu.median([4,1,3,2]) === 2.5, 'median even')
 assert(bu.median([5])        === 5,   'median single')
+;(function() { // median must not mutate its input
+  const a = [3,1,2]
+  bu.median(a)
+  assert(bu.arrayEquals(a, [3,1,2]), 'median does not mutate input')
+})()
 assert(bu.mode([1,2,2,3])   === 2,   'mode basic')
 assert(bu.mode([1,1,2,2,2]) === 2,   'mode tiebreaker')
 assert(bu.mode([5])          === 5,   'mode single')
 assert(bu.trimmean([1,2,3,4,5,6,7,8,9,10], 0.1) === 5.5, 'trimmean basic')
+;(function() { // trimmean must not mutate its input
+  const a = [10,1,5,3,8,2,7,4,9,6]
+  bu.trimmean(a, 0.1)
+  assert(bu.arrayEquals(a, [10,1,5,3,8,2,7,4,9,6]), 'trimmean does not mutate input')
+})()
 
 // --- butil: nearEq ---
 assert(bu.nearEq(1, 1.0001, 0.001) === true,  'nearEq close')
@@ -373,6 +383,138 @@ assert(br.AGGR.muflat([1,0,2,0,3])   === 2, 'aggday muflat')
 assert(br.AGGR.muflat([0,0,0])       === 0, 'aggday muflat all zero')
 assert(br.AGGR.muflat([])            === 0, 'aggday muflat empty')
 assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
+
+// --- broad: interpData (single datapoint case) ---
+;(function() {
+  const d = [[5, 10]]     // single datapoint at x=5, y=10
+  const xv = [1, 5, 9]    // interpolate at these x values
+  const result = br.interpData(d, xv)
+  assert(result.length === 3,    'interpData single-pt length')
+  assert(result[0][1] === 10,    'interpData single-pt y=10 at x=1')
+  assert(result[1][1] === 10,    'interpData single-pt y=10 at x=5')
+  assert(result[2][1] === 10,    'interpData single-pt y=10 at x=9')
+})()
+
+// --- broad: interpData (multi-point case) ---
+;(function() {
+  const d = [[0, 0], [10, 100]]
+  const xv = [0, 5, 10]
+  const result = br.interpData(d, xv)
+  assert(result[0][1] === 0,   'interpData multi start')
+  assert(result[1][1] === 50,  'interpData multi midpoint')
+  assert(result[2][1] === 100, 'interpData multi end')
+})()
+
+// --- broad: road segment helpers ---
+// A road segment has {sta: [t,v], end: [t,v], slope, auto}
+;(function() {
+  const seg = {sta: [0, 0], end: [100, 200], slope: 2, auto: 0}
+
+  // segSlope: (end_v - sta_v) / (end_t - sta_t)
+  assert(br.segSlope(seg) === 2, 'segSlope basic')
+
+  // segValue: sta_v + slope * (x - sta_t)
+  assert(br.segValue(seg, 0)   === 0,   'segValue at start')
+  assert(br.segValue(seg, 50)  === 100, 'segValue at midpoint')
+  assert(br.segValue(seg, 100) === 200, 'segValue at end')
+})()
+
+// --- broad: sameRoads, copyRoad ---
+;(function() {
+  const s = {sta: [0, 0], end: [100, 200], slope: 2, auto: 0}
+  const rd = [s]
+  const rd2 = br.copyRoad(rd)
+  assert(br.sameRoads(rd, rd2), 'sameRoads identical copy')
+  rd2[0].end[1] = 999
+  assert(!br.sameRoads(rd, rd2), 'sameRoads after mutation')
+  assert(rd[0].end[1] === 200, 'copyRoad is deep (original unaffected)')
+})()
+
+// --- broad: findSeg, rdf, rtf ---
+;(function() {
+  // Two segments: [0,0]->[100,100] slope 1, [100,100]->[200,300] slope 2
+  const rd = [
+    {sta: [0,   0], end: [100, 100], slope: 1, auto: 0},
+    {sta: [100,100], end: [200, 300], slope: 2, auto: 0},
+  ]
+  assert(br.findSeg(rd, 50) === 0,  'findSeg first segment')
+  assert(br.findSeg(rd, 150) === 1, 'findSeg second segment')
+  assert(br.rdf(rd, 0) === 0,       'rdf at start')
+  assert(br.rdf(rd, 50) === 50,     'rdf midpoint of seg 0')
+  assert(br.rdf(rd, 150) === 200,   'rdf midpoint of seg 1')
+  assert(br.rtf(rd, 50) === 1,      'rtf slope of seg 0')
+  assert(br.rtf(rd, 150) === 2,     'rtf slope of seg 1')
+})()
+
+// --- broad: tvr (given 2 of 3 of t/v/r, compute the 3rd) ---
+;(function() {
+  // tp=0, vp=0 (previous endpoint)
+  // If we know v=100 and r=2 (per second), then t = 0 + 100/2 = 50
+  // (tvr daysnaps so we test r=null and v=null cases instead)
+  assert(br.tvr(0, 0, 100, null, 2)  === 200,  'tvr solve for v')
+  assert(br.tvr(0, 0, 100, 200, null) === 2,   'tvr solve for r')
+  assert(br.tvr(0, 0, 0, 100, null)   === 0,   'tvr zero-length segment r=0')
+})()
+
+// --- broad: stepFunc, stepify ---
+;(function() {
+  const d = [[10, 1], [20, 2], [30, 3]]
+  assert(br.stepFunc(d, 5)  === 1, 'stepFunc before first')
+  assert(br.stepFunc(d, 10) === 1, 'stepFunc at first')
+  assert(br.stepFunc(d, 15) === 1, 'stepFunc between 1st and 2nd')
+  assert(br.stepFunc(d, 20) === 2, 'stepFunc at second')
+  assert(br.stepFunc(d, 25) === 2, 'stepFunc between 2nd and 3rd')
+  assert(br.stepFunc(d, 30) === 3, 'stepFunc at third')
+
+  const f = br.stepify(d)
+  assert(f(15) === 1, 'stepify returns working step function')
+  assert(f(25) === 2, 'stepify mid value')
+
+  const empty = br.stepify(null)
+  assert(empty(42) === 0, 'stepify null returns zero function')
+})()
+
+// --- broad: vertseg ---
+;(function() {
+  // Two segments that share the same start time = vertical
+  const rd = [
+    {sta: [0,  0], end: [100, 100], slope: 1, auto: 0},
+    {sta: [100,100], end: [100, 200], slope: Infinity, auto: 0},
+    {sta: [100,200], end: [200, 300], slope: 1, auto: 0},
+  ]
+  assert(br.vertseg(rd, 100) === true,  'vertseg at vertical')
+  assert(br.vertseg(rd, 0)   === false, 'vertseg at non-vertical')
+  assert(br.vertseg(rd, 200) === false, 'vertseg at unique boundary')
+})()
+
+// --- broad: gapFill ---
+;(function() {
+  const SID = 86400
+  const d = [[0, 0], [3*SID, 30]]  // 3 days apart, linear from 0 to 30
+  const filled = br.gapFill(d)
+  assert(filled.length === 4,      'gapFill fills 4 points (inclusive)')
+  assert(filled[0][0] === 0,       'gapFill day 0 time')
+  assert(filled[0][1] === 0,       'gapFill day 0 value')
+  assert(filled[1][0] === SID,     'gapFill day 1 time')
+  assert(filled[1][1] === 10,      'gapFill day 1 interpolated')
+  assert(filled[2][0] === 2*SID,   'gapFill day 2 time')
+  assert(filled[2][1] === 20,      'gapFill day 2 interpolated')
+  assert(filled[3][0] === 3*SID,   'gapFill day 3 time (endpoint)')
+  assert(filled[3][1] === 30,      'gapFill day 3 value (endpoint)')
+  assert(bu.arrayEquals(br.gapFill([]), []), 'gapFill empty')
+})()
+
+// --- broad: tareify ---
+// A tare resets the "zero" like taring a scale. After taring at value 0 when
+// previous was 70, cumdelt becomes -70, so subsequent values get +70 added.
+;(function() {
+  const data = [[1, 70, ''], [2, 70, ''], [3, 0, 'tare'], [4, 50, '']]
+  br.tareify(data, c => c === 'tare')
+  assert(data[0][1] === 70,  'tareify before tare unchanged')
+  assert(data[1][1] === 70,  'tareify before tare unchanged 2')
+  assert(data[2][1] === 70,  'tareify at tare preserves continuity')
+  assert(data[3][1] === 120, 'tareify after tare offset by 70')
+})()
 
 ;(async () => {
   const server = http.createServer(serve)
