@@ -55,7 +55,7 @@ const SID = 86400  // seconds in a day (not used: DIM=DIY/12, WIM=DIY/12/7)
 const MAXTIME = 60000
 
 // Base URL for images.
-const BBURL = "http://brain.beeminder.com/"
+const BBURL = "https://brain.beeminder.com/"
 
 // Beeminder colors (pro tip: paste this into Slack for swatches)
 // Handy: https://material.io/design/color/#tools-for-picking-colors

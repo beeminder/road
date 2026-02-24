@@ -120,14 +120,14 @@
       <button class="bmdrbtn" id="ereset" onclick="editor.undoAll();">Undo All</button>
       <input id="keepslopes" type="checkbox"
              onclick="editor.keepSlopes(this.checked)" checked>
-      <label>Propagate changes forward</label>
+      <label for="keepslopes">Propagate changes forward</label>
     </div>
     <hr/>
     <div class="graphtools">
-      <button class="bmdrbtn" id="zoomall" onclick="editor.zoomAll();">View All</button>
-      <button class="bmdrbtn" id="zoomdflt" onclick="editor.zoomDefault();">Reset Zoom</button>
+      <button class="bmdrbtn" id="ezoomall" onclick="editor.zoomAll();">View All</button>
+      <button class="bmdrbtn" id="ezoomdflt" onclick="editor.zoomDefault();">Reset Zoom</button>
       <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>
-      <label>Show data</label>
+      <label for="showdata">Show data</label>
     </div>
     <hr/>
     <div class="graphtools">
@@ -216,8 +216,8 @@
     </div>
     <hr/>
     <div class="graphtools">
-      <button class="bmdrbtn" id="zoomall" onclick="sandboxgr.zoomAll();">View All</button>
-      <button class="bmdrbtn" id="zoomdflt" onclick="sandboxgr.zoomDefault();">Reset Zoom</button>
+      <button class="bmdrbtn" id="szoomall" onclick="sandboxgr.zoomAll();">View All</button>
+      <button class="bmdrbtn" id="szoomdflt" onclick="sandboxgr.zoomDefault();">Reset Zoom</button>
     </div>
   </div>
   
@@ -236,7 +236,7 @@
         <option value="2629800">per month</option>
         <option value="31557600">per year</option>
       </select> 
-      <button class="bmdrbtn" id="commit" onclick="commitTo(true)">UPDATE</button>
+      <button class="bmdrbtn" id="scommit" onclick="commitTo(true)">UPDATE</button>
       <div class="tooltitle">Enter new data</div>
       Value:
       <input id="sdataval" type="number"  style="margin-bottom:10px;height:30px;width:5em;margin:4px;"></input>

@@ -1388,11 +1388,11 @@ function updateDataTable() {
               {txt:date,            clk:null,     edit:editp, col:1},
               {txt:rawdata[row][1], clk:null,     edit:editp, col:2},
               {txt:rawdata[row][2], clk:null,     edit:editp, col:3},
-              {txt:editp ? '<img class="dicon" src="../src/check.svg"></img>' : 
-                           '<img class="dicon" src="../src/edit.svg"></img>',
+              {txt:editp ? '<img class="dicon" src="../src/check.svg" alt="Confirm"></img>' :
+                           '<img class="dicon" src="../src/edit.svg" alt="Edit"></img>',
                                     clk:dataEdit, edit:editp, col:4},
-              {txt:editp ? '<img class="dicon" src="../src/cancel.svg"></img>' :
-                           '<img class="dicon" src="../src/trash.svg"></img>',
+              {txt:editp ? '<img class="dicon" src="../src/cancel.svg" alt="Cancel"></img>' :
+                           '<img class="dicon" src="../src/trash.svg" alt="Delete"></img>',
                                     clk:editp ? dataCancel : dataDelete,
                                                   edit:editp, col:5}]
     })
@@ -5097,7 +5097,7 @@ function updateDataPoints() {
   } else {
     dpelt = gDpts.selectAll(".dp")
     dpelt.remove()
-    fladelt = gDpts.selectAll(".fladp")
+    const fladelt = gDpts.selectAll(".fladp")
     fladelt.remove()
   }
 }
@@ -5520,12 +5520,12 @@ function updateTableButtons() {
       { order: 8, row: kind, name: "btndel"+kind,
         evt: () => removeKnot(kind,true),
         type: 'button',
-        txt: '<img class="ricon" src="../src/trash.svg" ></img>',
+        txt: '<img class="ricon" src="../src/trash.svg" alt="Delete"></img>',
         auto: false },
       { order: 9, row: kind, name: "btnadd"+kind,
         evt: () => addNewKnot(kind+1),
         type: 'button',
-        txt: '<img class="ricon" src="../src/plus.svg"></img>',
+        txt: '<img class="ricon" src="../src/plus.svg" alt="Add row"></img>',
         auto: false },
     ]
   })
