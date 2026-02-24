@@ -277,7 +277,7 @@ function dataEdited(id, data) {
       deleteJSON("/data/"+currentGoal+"/"+id, {}, function(resp) {
         
         if (resp.error) {
-          console.log("Deletion error")
+          reportDataActionError(resp)
         } else {
           
           loadGoals(currentGoal)
@@ -288,7 +288,7 @@ function dataEdited(id, data) {
       putJSON("/data/"+currentGoal+"/"+id, {timestamp:data[0], value:data[1], comment:data[2]}, function(resp) {
         
         if (resp.error) {
-          console.log("Update error")
+          reportDataActionError(resp)
         } else {
           loadGoals(currentGoal)
         }
@@ -411,14 +411,30 @@ function loadJSON( url, callback ) {
   xobj.send(null);  
 }
 
+function xhrJSONResponse(xhr) {
+  if (xhr.responseText == "") {
+    return xhr.status == "200" ? {} : {error: xhr.statusText || String(xhr.status)}
+  }
+  try {
+    return JSON.parse(xhr.responseText)
+  } catch (e) {
+    return {error: xhr.responseText || xhr.statusText || String(xhr.status)}
+  }
+}
+
+function reportDataActionError(resp) {
+  const msg = String(resp && resp.error != null ? resp.error : resp)
+  console.log(msg)
+  window.alert(msg)
+}
+
 function postJSON( url, data, callback ){
   let xhr = new XMLHttpRequest();
   xhr.open("POST", url, true);
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.onreadystatechange = function () {
-    if (xhr.readyState == 4) {
-      callback(JSON.parse(xhr.responseText));
-    }
+    if (xhr.readyState != 4) return
+    callback(xhrJSONResponse(xhr));
   };
   xhr.send(JSON.stringify(data));
 }
@@ -428,9 +444,8 @@ function putJSON( url, data, callback ){
   xhr.open("PUT", url, true);
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.onreadystatechange = function () {
-    if (xhr.readyState == 4 && xhr.status == "200") {
-      callback(JSON.parse(xhr.responseText));
-    }
+    if (xhr.readyState != 4) return
+    callback(xhrJSONResponse(xhr));
   }
   console.log(JSON.stringify(data))
   xhr.send(JSON.stringify(data));
@@ -441,9 +456,8 @@ function deleteJSON( url, data, callback ){
   xhr.open("DELETE", url, true);
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.onreadystatechange = function () {
-    if (xhr.readyState == 4 && xhr.status == "200") {
-      callback(JSON.parse(xhr.responseText));
-    }
+    if (xhr.readyState != 4) return
+    callback(xhrJSONResponse(xhr));
   };
   xhr.send(JSON.stringify(data));
 }
@@ -512,7 +526,8 @@ function handleDataSubmit() {
       dataAdd.innerHTML = "ADD PROGRESS"
       
       if (resp.error) {
-        console.log("ERROR! \""+resp.error)
+        dataAdd.disabled = false
+        reportDataActionError(resp)
       } else {
         loadGoals(currentGoal)
       }
