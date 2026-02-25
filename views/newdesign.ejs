@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <link id="favicon" rel="icon" href="/lib/favicons/bee-with-big-brain.png" 
-        type="image/png">
   <meta charset="utf-8">
+  <link id="favicon" rel="icon" href="/lib/favicons/bee-with-big-brain.png"
+        type="image/png">
+  <title>Beeminder Visual Graph Editor</title>
   <meta name="viewport" content="width=650, initial-scale=1">
   <link rel="stylesheet" href="../src/pikaday.css">
   <link rel="stylesheet" href="../src/jsbrain.css">
@@ -138,8 +139,8 @@
     <details style="margin:10px 0;">
       <summary style="cursor:pointer;padding:5px 0;">Experimental features</summary>
       <div class="graphtools">
-        <button class="bmdrbtn" id="savesvgdl" onclick="editor.saveGraphDownload();">Download SVG</button>
-        <button class="bmdrbtn" id="savesvgblob" onclick="editor.saveGraphBlob();">Preview SVG</button>
+        <button class="bmdrbtn" id="esavesvgdl" onclick="editor.saveGraphDownload();">Download SVG</button>
+        <button class="bmdrbtn" id="esavesvgblob" onclick="editor.saveGraphBlob();">Preview SVG</button>
       </div>
       <div class="graphtools">
         <input id="showcontext" type="checkbox" onclick="editor.showContext(this.checked);" checked>
