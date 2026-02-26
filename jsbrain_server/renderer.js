@@ -100,7 +100,7 @@ class Renderer {
   }
 
   /** Returns the base URL for graph and thumbnail links */
-  BBURL() { return "http://brain.beeminder.com/" }
+  BBURL() { return "https://brain.beeminder.com/" }
   
   /** Takes a filename and return a parallel temp filename, ie, with
       the directory and file extension the same but with the base file

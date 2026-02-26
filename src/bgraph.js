@@ -952,6 +952,7 @@ function createGraph() {
     .on("mouseover", function() {
       if (!mobileOrTablet) d3.select(this).style("fill", "red")})
     .on("mouseout",function(e, d) { d3.select(this).style("fill", "black") })
+  zoomin.append("title").text("Zoom in")
   zoomout = focusclip.append("svg:use")
     .attr("class",      "zoomout")
     .attr("xlink:href", "#zoomoutbtn")
@@ -962,6 +963,7 @@ function createGraph() {
     .on("mouseover", function() {
       if (!mobileOrTablet) d3.select(this).style("fill", "red") })
     .on("mouseout", function(e, d) { d3.select(this).style("fill", "black") })
+  zoomout.append("title").text("Zoom out")
 
   // Create and initialize the x and y axes
   xSc   = d3.scaleUtc().range([0,plotbox.width])
@@ -1388,11 +1390,11 @@ function updateDataTable() {
               {txt:date,            clk:null,     edit:editp, col:1},
               {txt:rawdata[row][1], clk:null,     edit:editp, col:2},
               {txt:rawdata[row][2], clk:null,     edit:editp, col:3},
-              {txt:editp ? '<img class="dicon" src="../src/check.svg" alt="Confirm"></img>' :
-                           '<img class="dicon" src="../src/edit.svg" alt="Edit"></img>',
+              {txt:editp ? '<img class="dicon" src="../src/check.svg" alt="Confirm" title="Confirm"></img>' :
+                           '<img class="dicon" src="../src/edit.svg" alt="Edit" title="Edit"></img>',
                                     clk:dataEdit, edit:editp, col:4},
-              {txt:editp ? '<img class="dicon" src="../src/cancel.svg" alt="Cancel"></img>' :
-                           '<img class="dicon" src="../src/trash.svg" alt="Delete"></img>',
+              {txt:editp ? '<img class="dicon" src="../src/cancel.svg" alt="Cancel" title="Cancel"></img>' :
+                           '<img class="dicon" src="../src/trash.svg" alt="Delete" title="Delete datapoint"></img>',
                                     clk:editp ? dataCancel : dataDelete,
                                                   edit:editp, col:5}]
     })
@@ -4278,6 +4280,7 @@ function updateKnots() {
           .on("start", knotDragStarted)
           .on("drag",  knotDragged)
           .on("end",   knotDragEnded))
+    .append("title").text("Drag to change date (x-value) of knot")
 
   // Create, update and delete removal icons for knots
   knotrmelt.exit().remove()
@@ -4294,7 +4297,7 @@ function updateKnots() {
     .style("visibility", function(d,i) {
       return (i > 0 && i<road.length-2)
         ?"visible":"hidden" })
-  knotrmelt.enter()
+  const knotrmnew = knotrmelt.enter()
     .append("use")
     .attr("class", "remove")
     .attr("xlink:href", "#removebutton")
@@ -4319,6 +4322,7 @@ function updateKnots() {
       d3.select(this).attr("fill",opts.roadKnotCol.rmbtns)
       highlightDate(i, false) })
     .on("click",knotDeleted)
+  knotrmnew.append("title").text("Remove knot")
 }
 
 function updateRoads() {
@@ -4394,6 +4398,7 @@ function updateRoads() {
             const i = Number(this.id)
             if (i > 0 && i < road.length-1)
               roadDragEnded(event, d, Number(this.id)) }))
+    .append("title").text("Drag to change slope")
 }
 
 function updateRoadData() {
@@ -4509,6 +4514,7 @@ function updateDots() {
             dotDragged(event, d, Number(this.id))})
           .on("end", function(event, d) {
             dotDragEnded(event, d, Number(this.id))}))
+    .append("title").text("Drag to change y-value of knot")
 }
   
 function updateContextDots() {
@@ -5520,12 +5526,12 @@ function updateTableButtons() {
       { order: 8, row: kind, name: "btndel"+kind,
         evt: () => removeKnot(kind,true),
         type: 'button',
-        txt: '<img class="ricon" src="../src/trash.svg" alt="Delete"></img>',
+        txt: '<img class="ricon" src="../src/trash.svg" alt="Delete row" title="Delete row"></img>',
         auto: false },
       { order: 9, row: kind, name: "btnadd"+kind,
         evt: () => addNewKnot(kind+1),
         type: 'button',
-        txt: '<img class="ricon" src="../src/plus.svg" alt="Add row"></img>',
+        txt: '<img class="ricon" src="../src/plus.svg" alt="Add below" title="Insert row below"></img>',
         auto: false },
     ]
   })
