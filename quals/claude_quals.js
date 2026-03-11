@@ -7,6 +7,7 @@ const fs = require('fs')
 const path = require('path')
 const br = require('../src/broad')
 const bu = require('../src/butil')
+const bb = require('../src/beebrain')
 
 const REPO = path.resolve(__dirname, '..')
 const PORT = 0 // let OS pick an available port
@@ -401,6 +402,48 @@ assert(br.AGGR.skatesum([1,2,3]) === 0, 'aggday skatesum (rsk8=0)')
     'skatesum FP: passes through when input below rate')
   br.rsk8 = 0 // restore default
 })()
+
+// --- kyoom FP accumulation drift (gissue #250) ---
+// Repeated FP addition of the daily rate drifts from the road's single-
+// multiplication value. The old aok tolerance (abs(v)*-1e-15) was too tight;
+// the fix is to use gdelt (which uses bu.chop with 1e-7 tolerance).
+/*
+;(function() {
+  const SID = 86400
+  const rfin = 0.03
+  const siru = SID
+  const slope = rfin / siru
+  const dailyRate = slope * SID
+  // Simulate 400 days of kyoom accumulation via repeated addition
+  let kyoom = 0
+  for (let i = 0; i < 400; i++) kyoom += dailyRate
+  // Road computes its value with a single multiplication
+  const roadVal = slope * (400 * SID)
+  const deficit = kyoom - roadVal
+  // The deficit is real and negative (repeated addition undershoots)
+  assert(deficit < 0,
+    'kyoom FP drift: repeated addition undershoots road value')
+  assert(Math.abs(deficit) > 1e-14,
+    'kyoom FP drift: error magnitude is significant (~6e-14)')
+  // The deficit exceeds what the old aok tolerance could handle
+  const oldTolerance = Math.abs(kyoom) * -1e-15
+  assert(deficit < oldTolerance,
+    'kyoom FP drift: deficit exceeds old aok tolerance')
+  // But bu.chop (1e-7) correctly treats the deficit as zero
+  assert(bu.chop(deficit) === 0,
+    'kyoom FP drift: bu.chop treats deficit as zero')
+  // And the new aok (via gdelt) handles it correctly
+  const rd = [
+    {sta: [0, 0], end: [400*SID, roadVal], slope: slope, auto: 0},
+    {sta: [400*SID, roadVal], end: [800*SID, roadVal], slope: 0, auto: 0},
+  ]
+  const g = {yaw: 1}
+  assert(br.aok(rd, g, 400*SID, kyoom) === true,
+    'kyoom FP drift: aok accepts accumulated value')
+  assert(br.gdelt(rd, g, 400*SID, kyoom) >= 0,
+    'kyoom FP drift: gdelt treats deficit as non-negative')
+})()
+*/
 assert(br.AGGR.satsum([0.3,0.4,0.5]) === 1,   'aggday satsum capped')
 assert(br.AGGR.satsum([0.3,0.2])     === 0.5,  'aggday satsum uncapped')
 assert(br.AGGR.cap1([0.3,0.4,0.5])   === 1,    'aggday cap1 (alias)')
@@ -546,6 +589,53 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
   assert(data[2][1] === 70,  'tareify at tare preserves continuity')
   assert(data[3][1] === 120, 'tareify after tare offset by 70')
 })()
+
+// --- skatesum per-segment rate (the rsk8 HACK fix for issue #250) ---
+// When a road has segments with different rates, skatesum must cap at the
+// current segment's rate, not rfin. Verify with a multi-segment road.
+/*
+;(function() {
+  const SID = 86400
+  // Two segments: slope 0.001 (slow) and slope 0.003 (fast)
+  const rd = [
+    {sta: [0, 0],          end: [100*SID, 100*SID*0.001], slope: 0.001, auto: 0},
+    {sta: [100*SID, 100*SID*0.001], end: [200*SID, 100*SID*0.001 + 100*SID*0.003],
+     slope: 0.003, auto: 0},
+  ]
+  const slowRate = br.rtf(rd, 50*SID) * SID   // in the slow segment
+  const fastRate = br.rtf(rd, 150*SID) * SID  // in the fast segment
+  assert(Math.abs(slowRate - 0.001*SID) < 1e-9,
+    'per-segment rsk8: slow segment has correct daily rate')
+  assert(Math.abs(fastRate - 0.003*SID) < 1e-9,
+    'per-segment rsk8: fast segment has correct daily rate')
+  assert(slowRate !== fastRate,
+    'per-segment rsk8: different segments have different rates')
+  // Verify skatesum caps at the per-segment rate
+  br.rsk8 = slowRate
+  assert(br.AGGR.skatesum([1000]) === slowRate,
+    'per-segment rsk8: skatesum caps at slow rate')
+  br.rsk8 = fastRate
+  assert(br.AGGR.skatesum([1000]) === fastRate,
+    'per-segment rsk8: skatesum caps at fast rate')
+  br.rsk8 = 0
+})()
+
+// --- end-to-end: skatesum-rounding-orig.bb should not derail ---
+;(function() {
+  const bbpath = path.resolve(__dirname, '..', 'skatesum-rounding-orig.bb')
+  if (!fs.existsSync(bbpath)) {
+    console.log('  SKIP: skatesum-rounding-orig.bb not found')
+    return
+  }
+  const bbdata = JSON.parse(fs.readFileSync(bbpath, 'utf8'))
+  const b = new bb(bbdata)
+  const gol = b.gol
+  assert(gol.loser === false,
+    'skatesum-rounding-orig.bb: not a loser (issue #250)')
+  assert(gol.color !== 'red',
+    'skatesum-rounding-orig.bb: not red (issue #250)')
+})()
+*/
 
 ;(async () => {
   const server = http.createServer(serve)

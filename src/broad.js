@@ -316,6 +316,8 @@ self.aok = (rd, g, t, v) => {
   // DRY: this check is basically the same code as isoside()
   return g.yaw * (v - self.rdf(rd, t)) >= abs(v)*-1e-15
 }
+// seems like this should be better, using the standard tolerance from chop:
+// self.gdelt(rd, g, t, v) >= 0
 
 // Experimenting with new PPR functions per gissue#239 in which we assume a new
 // parameter, D, which gives a minimum PPR, possibly specified by the user, and
@@ -825,6 +827,8 @@ self.isoside = (g, isoline, t, v) => {
   const iv = self.isoval(isoline, t)
   if (iv === null) return 0
   return (v - iv)*g.yaw >= abs(v)*-1e-15 ? +1 : -1
+  // seems like this should be better, using the standard tolerance from chop:
+  // bu.chop((v - iv)*g.yaw) >= 0 ? +1 : -1
 }
 
 /** Days To Derail: Count the integer days till you cross the razor road or hit

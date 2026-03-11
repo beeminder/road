@@ -638,9 +638,11 @@ function procData() {
 
   // HACK: aggday=skatesum needs to know rcur which we won't know until we do
   // procParams. We do know rfin so we're making do with that for now...
-  // NB: Operation order must match fillroad's (rate/siru then *SID) to avoid
-  // floating point mismatch. See github.com/beeminder/road/issues/250
-  br.rsk8 = (gol.rfin / gol.siru) * SID // convert rfin to daily rate
+  // NB: Operation order should match fillroad's (rate/siru then *SID) to avoid
+  // floating point mismatch.
+  // br.rsk8 = gol.rfin / gol.siru * SID // daily rate for skatesum
+  br.rsk8 = gol.rfin * SID / gol.siru // old version for now
+  //br.rsk8 = br.rtf(roads, gol.asof) * SID // would this not work?
 
   // Process all datapoints
   for (i = 0; i <= n; i++) {
