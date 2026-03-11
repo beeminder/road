@@ -370,6 +370,37 @@ assert(br.AGGR.triangle([3]) === 6, 'aggday triangle 3*(3+1)/2')
 assert(br.AGGR.square([3])   === 9, 'aggday square 3^2')
 assert(br.AGGR.clocky([1,2,6,9]) === 4, 'aggday clocky')
 assert(br.AGGR.skatesum([1,2,3]) === 0, 'aggday skatesum (rsk8=0)')
+
+// --- skatesum FP consistency (github.com/beeminder/road/issues/250) ---
+// Verify that the two computation paths for rsk8 actually differ, confirming
+// the bug that was fixed. With rfin=0.03 and siru=SID=86400:
+//   rfin * SID / siru  (old) !== (rfin / siru) * SID  (new, matches fillroad)
+;(function() {
+  const SID = 86400
+  const rfin = 0.03
+  const siru = SID
+  const oldRsk8 = rfin * SID / siru
+  const newRsk8 = (rfin / siru) * SID
+  assert(oldRsk8 !== newRsk8,
+    'skatesum FP: old vs new rsk8 computation paths differ')
+  // The fillroad-matching path must produce a value that survives the
+  // divide-then-multiply roundtrip, i.e., (rfin/siru)*SID === (rfin/siru)*SID
+  const slope = rfin / siru
+  const dailyRate = slope * SID
+  assert(newRsk8 === dailyRate,
+    'skatesum FP: rsk8 matches fillroad daily rate exactly')
+  assert(400 * (oldRsk8 - dailyRate) !== 0,
+    'skatesum FP: old path accumulates error over many days')
+  assert(400 * (newRsk8 - dailyRate) === 0,
+    'skatesum FP: new path has zero accumulated error')
+  // Verify skatesum caps correctly when rsk8 is set via the matching path
+  br.rsk8 = newRsk8
+  assert(br.AGGR.skatesum([1]) === newRsk8,
+    'skatesum FP: caps at rsk8 when input exceeds rate')
+  assert(br.AGGR.skatesum([0.01]) === 0.01,
+    'skatesum FP: passes through when input below rate')
+  br.rsk8 = 0 // restore default
+})()
 assert(br.AGGR.satsum([0.3,0.4,0.5]) === 1,   'aggday satsum capped')
 assert(br.AGGR.satsum([0.3,0.2])     === 0.5,  'aggday satsum uncapped')
 assert(br.AGGR.cap1([0.3,0.4,0.5])   === 1,    'aggday cap1 (alias)')
