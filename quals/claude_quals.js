@@ -308,6 +308,22 @@ assert(bu.dayify(bu.dayparse("20170531"))     === "20170531",   'dayparse/dayify
 assert(bu.formatDate(bu.dayparse("20170531")) === "2017.05.31", 'formatDate')
 assert(bu.dayparse(null) === null, 'dayparse(null)')
 
+// --- butil: dayify throws on invalid input (anti-robustness) ---
+;(function() {
+  assert(bu.dayify(null) === null, 'dayify(null) returns null')
+  assert(bu.dayify(0) === '19700101', 'dayify(0) is epoch')
+  let threw
+  threw = false
+  try { bu.dayify(NaN) } catch(e) { threw = true }
+  assert(threw, 'dayify(NaN) throws')
+  threw = false
+  try { bu.dayify(-1) } catch(e) { threw = true }
+  assert(threw, 'dayify(-1) throws')
+  threw = false
+  try { bu.dayify(Infinity) } catch(e) { threw = true }
+  assert(threw, 'dayify(Infinity) throws')
+})()
+
 // --- butil: daysnap, monthsnap, yearsnap ---
 ;(function() {
   const t = bu.dayparse("20170531")

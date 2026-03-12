@@ -801,8 +801,9 @@ function dayparse(s, sep='') {
     @param {Number} t Integer unix timestamp
     @param {String} [sep=''] Separator character to use */
 function dayify(t, sep = '') {
-  if (isNaN(t) || t < 0) { return "ERROR" }
   if (t == null) return null
+  // Anti-robustness: was silently returning "ERROR", now fails loudly
+  assert(isFinite(t) && t >= 0, ()=>`dayify: invalid timestamp: ${t}`)
   let mm = moment.unix(t).utc()
   let y = mm.year()
   let m = mm.month() + 1
@@ -861,7 +862,9 @@ function loadJSON(url) {
           // Possible parse error in loading the bb file
           console.log("butil.loadJSON: Could not parse JSON file in "+url)
           console.log(err.message)
-          resolve(null)
+          // Anti-robustness: was resolve(null), now rejects so parse errors
+          // propagate loudly instead of silently becoming null
+          reject(err)
         }
       } else if (xobj.readyState == 4) {
         resolve(null)
@@ -945,6 +948,7 @@ function lineintersect(s1, e1, s2, e2) {
 // All the constants and functions butil exports
 return {
   MAXTIME, BBURL, BHUE, AKH, BDUSK, SECS, UNAM, 
+  assert, // exported so broad.js, beebrain.js, etc can fail loudly per rule 11
   nummy, norn, stringy, listy,
   arrMin, arrMax, extendo, deepcopy, partition, quantile, sum,
   accumulate, monotonize, zip, chop, clip, 

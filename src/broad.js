@@ -883,6 +883,8 @@ const nextrow =  (or, nr) => {
   const v = nr[1]
   const r = nr[2]
   const x = self.tvr(tprev, vprev, t,v,r) // the missing t, v, or r
+  bu.assert(t === null || v === null || r === null,
+    ()=>`nextrow: expected exactly one null in [${[t,v,r]}]`)
   if (t === null) return [x, v, r, 0]
   if (v === null) return [t, x, r, 1]
   if (r === null) return [t, v, x, 2]
@@ -892,6 +894,7 @@ const nextrow =  (or, nr) => {
 /** Takes road matrix (with last row appended) and fills it in. Also adds a 
     column, n, giving the position (0, 1, or 2) of the original null. */
 self.fillroad = (rd, g) => {
+  bu.assert(rd && rd.length, "fillroad: graph matrix is empty")
   rd.forEach(e => e[2] = null===e[2] ? e[2] : e[2]/g.siru)
   rd[0] = nextrow([g.tini, g.vini, 0, 0], rd[0])
   for (let i = 1; i < rd.length; i++) rd[i] = nextrow(rd[i-1], rd[i])
@@ -903,6 +906,10 @@ self.fillroad = (rd, g) => {
   // with dates that are earlier than tini. Huge violation of the
   // anti-robustness principle [blog.beeminder.com/postel] to let Beebody send
   // broken graph matrices and clean them up here in Beebrain!
+  // Anti-robustness: was silent; now at least logs loudly (should be assert
+  // after database cleanup)
+  if (rd !== undefined && rd[0] !== undefined && rd[0][0] < g.tini)
+    console.error("fillroad: row date", rd[0][0], "is before tini", g.tini)
   while (rd !== undefined && rd[0] !== undefined && rd[0][0] < g.tini) 
     rd.shift()
 
@@ -1063,6 +1070,7 @@ self.stdflux = (rd, d) => {
    backwards to find the most recent one-day jump from right to wrong. That
    wrong point's deviation from the centerline is what to max the default road
    width with. */
+/* #SCHDEL
 self.autowiden = (rd, g, d, nw) => {
   let n = d  // pretty sure we meant n = d.length here killing this anyway, so.
   if (n <= 1) return 0
@@ -1075,6 +1083,7 @@ self.autowiden = (rd, g, d, nw) => {
   }
   return bu.chop(nw)
 }
+*/
 
 /** Whether the road has a vertical segment at time t */
 self.vertseg = (rd, t) => (rd.filter(e=>(e.sta[0] === t)).length > 1)
