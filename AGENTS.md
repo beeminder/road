@@ -28,6 +28,8 @@ If, on the other hand, a symbol shows up across the codebase or carries business
 
 # Agent Scratchpad (human edits only above this line)
 
+Start by running quals: npm run quals
+
 # Beebrain Project Knowledge
 
 ## Overview

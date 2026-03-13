@@ -1685,9 +1685,10 @@ this.getStats = function() { return bu.deepcopy(stats) }
 
 /**Set a new road object for Beebrain. Should be followed by a call to 
    {@link beebrain#reloadRoad reloadRoad()} to perform a recomputation of goal
-   stats. Used by the road editor implemented by the {@link bgraph} module.*/
+   stats. Used by the graph editor implemented by the {@link bgraph} module. */
 this.setRoadObj = function(newroad) {
   if (newroad.length == 0) {
+    // Should this be an assert?
     console.log("id="+curid+", setRoadObj(), null redline!")
     return
   }
@@ -1696,8 +1697,12 @@ this.setRoadObj = function(newroad) {
 
   // Update the internal road object in bb format so procParams can proceed
   gol.road = []
-  for (let i = 1; i < roads.length; i++)
-    gol.road.push([roads[i].sta[0], roads[i].sta[1], roads[i].slope])
+  for (let i = 1; i < roads.length; i++) {
+    const row = roads[i]
+    const bbrow = [row.sta[0], row.sta[1], row.slope]
+    bbrow[row.auto] = null
+    gol.road.push(bbrow)
+  }
   self.gol = gol
 
   self.reloadRoad()
