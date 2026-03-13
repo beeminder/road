@@ -209,7 +209,7 @@ const ErrType = { NOBBFILE:0, BADBBFILE:1  }
 const ErrMsgs = [ "Could not find goal (.bb) file.", "Bad .bb file." ]
 
 /** Type of the last error */
-const LastError = null // seemingly never used?
+const LastError = null // seemingly never used? (Codebuff agrees safe to remove)
 
 //const PRAF = .015 // Fraction of plot range that the axes extend beyond
 
@@ -925,12 +925,13 @@ function setDefaultRange() {
     minmin = bu.arrMin([minmin, a, b])        // below (the low) vini.
     maxmax = bu.arrMax([maxmax, a, b])
   } else if (gol.monotone && gol.dir<0) {     // Monotone down so no extra
-    minmin = bu.arrMin([minmin, a, b])        // padding above (the
-    maxmax = bu.arrMax([maxmax, a, b])        // high) vini.
-  } else {
-    minmin = bu.arrMin([minmin, a, b])
+    minmin = bu.arrMin([minmin, a, b])        // padding above (the high) vini.
     maxmax = bu.arrMax([maxmax, a, b])
-  }
+  } else {
+    minmin = bu.arrMin([minmin, a, b])        // Note that these are all
+    maxmax = bu.arrMax([maxmax, a, b])        // currently identical; currently
+  }                                           // no differentiated padding used.
+
   if (gol.plotall && gol.tmin<=gol.tini && gol.tini<=gol.tmax
       && gol.tini in allvals) {      
     // At tini, leave room for all non-agg'd datapoints
@@ -969,8 +970,8 @@ const validead = (d) => bu.nummy(d) && (6-24)*3600 <= d&&d <= 6*3600 // deadline
 const validate = (t) => bu.nummy(t) && 0 < t && t < bu.BDUSK         // tini etc
 const validyax = (s) => bu.stringy(s) && s.length<80                 // yaxis
 const torf     = (x) => typeof x === "boolean"      // True or False
-const born     = (x) => torf(x) || x === null       // Boolean or Null
-const norn     = (x) => bu.nummy(x) || x === null   // Numeric or Null
+//const born     = (x) => torf(x) || x === null       // Boolean or Null
+const norn     = bu.norn                            // Numeric or Null
 const torn     = (x) => validate(x) || x === null   // Timey or Null
 const sorn     = (x) => bu.stringy(x) || x === null // String or Null
 
@@ -1107,7 +1108,7 @@ function genRazr() {
     if (s.auto === 0) return [null,     s.end[1], s.slope*gol.siru]
     if (s.auto === 1) return [s.end[0], null,     s.slope*gol.siru]
     if (s.auto === 2) return [s.end[0], s.end[1], null   ]
-    return "ERROR"
+    bu.assert(false, ()=>`genRazr: unexpected auto value ${s.auto}`)
   })
 }
 

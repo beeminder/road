@@ -232,6 +232,18 @@ assert(bu.searchLow([8,8,9,12,13],  x => x-7) === -1,
 assert(bu.searchHigh([8,8,9,12,13], x => x-7) === 0,
   'searchHigh all too big')
 
+// --- butil: searchLow/searchHigh edge cases ---
+assert(bu.searchLow([],    x => x-7) === -1, 'searchLow empty array')
+assert(bu.searchHigh([],   x => x-7) === 0,  'searchHigh empty array')
+assert(bu.searchLow(null,  x => x-7) === -1, 'searchLow null')
+assert(bu.searchHigh(null, x => x-7) === 0,  'searchHigh null')
+assert(bu.searchLow([7],  x => x-7) === 0,  'searchLow single match')
+assert(bu.searchHigh([7], x => x-7) === 0,  'searchHigh single match')
+assert(bu.searchLow([7],  x => x-3) === -1, 'searchLow single too big')
+assert(bu.searchHigh([7], x => x-3) === 0,  'searchHigh single too big')
+assert(bu.searchLow([7],  x => x-10) === 0, 'searchLow single too small')
+assert(bu.searchHigh([7], x => x-10) === 1, 'searchHigh single too small')
+
 // --- butil: shn, splur ---
 assert(String(bu.shn(3.14159, 4, 2)) === '3.14', 'shn(3.14159,4,2)')
 assert(String(bu.shn(0))             === '0',     'shn(0)')
