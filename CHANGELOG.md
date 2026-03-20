@@ -1,6 +1,7 @@
 
 ## CHANGELOG
 
+* 2026.03.26 Polishing and bug fixes
 * 2026.01.10 Qual suite using Puppeteer
 * 2026.01.09 Fix extendo function (and more failure to update this changelog)
 * 2025.10.02 More upgrades and cleanup and bugfixes
