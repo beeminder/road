@@ -184,8 +184,8 @@ app.get("/connect", (req, resp) => {
       req.session.error_description = req.query.error_description;
     }
   } else {
-    console.log("Setting session", req.query.access_token, req.query.username);
-    console.log(process.env);
+    //console.log("Setting session", req.query.access_token, req.query.username);
+    //console.log(process.env);
     req.session.access_token = req.query.access_token;
     req.session.username     = req.query.username;
   }
