@@ -71,8 +71,15 @@ async function runQual(browser, port, name, urlPath, checkFn) {
     return
   }
 
-  // Wait for async graph rendering
-  await new Promise(r => setTimeout(r, 5000))
+  // Wait for async graph rendering (specifically for the bright red line, which
+  // is the last thing drawn and confirms the graph fully rendered)
+  try {
+    await page.waitForSelector('svg.bmndrsvg .razr', { timeout: 30000 })
+  } catch (e) {
+    failures.push(`${name}: graph never rendered (no .razr found)`)
+    await page.close()
+    return
+  }
 
   assert(pageErrors.length === 0,
     `${name}: page errors: ${pageErrors.join('; ')}`)
