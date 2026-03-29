@@ -1,6 +1,6 @@
 {
   "name": "Beebrain",
-  "version": "2026.03.28-a",
+  "version": "2026.03.28-b",
   "description": "Beeminder Graph Generator and Visual Graph Editor",
   "main": "server.js",
   "scripts": {
@@ -27,7 +27,7 @@
     "moment-timezone": "^0.6.1",
     "selenium-webdriver": "^4.41.0",
     "sequelize": "^6.37.8",
-    "sqlite3": "^6.0.1"
+    "sqlite3": "^5.1.7"
   },
   "engines": {
     "node": ">=22"
@@ -40,6 +40,12 @@
     "beeminder, beebrain, road, bright red line, graph editor"
   ],
   "license": "MIT",
+  "overrides": {
+    "sqlite3": {
+      "node-gyp": "^11.0.0",
+      "tar": "^7.5.13"
+    }
+  },
   "devDependencies": {
     "dotenv": "^17.3.1",
     "eslint": "^10.1.0",
