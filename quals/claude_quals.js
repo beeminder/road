@@ -20,11 +20,7 @@ const MIME = {
 function serve(req, res) {
   // Map URL paths to filesystem: the qual HTML uses relative ../src/ paths
   // and loads .bb files from absolute paths
-  let fpath = req.url.startsWith('/')
-    ? path.join(REPO, req.url)
-    : req.url
-  // basic_test.html hardcodes an absolute path to the .bb file
-  if (req.url.startsWith('/Users/')) fpath = req.url
+  const fpath = path.join(REPO, req.url)
 
   fs.readFile(fpath, (err, data) => {
     if (err) {
