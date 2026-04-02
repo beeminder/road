@@ -591,10 +591,18 @@ function unaryflat(a) { return a.some(x => x !== 0) }
 
 /** AGGDAY: Sum of differences of pairs, eg, [1,2,6,9] -> 2-1 + 9-6 = 1+3 = 4
     If there's an odd number of elements then the last one is ignored.
+    If a pair's difference is negative, we assume the times span midnight
+    and add 24 hours, eg, [22.5, 6] -> (6-22.5)+24 = 7.5
+    This allows e.g. a deadline of 14:00 to be used to log total time in
+    hours slept (see beebody gissue #4382)
     @param {Number[]} a Input list*/
 function clocky(a) {
   let s = 0
-  for (let i = 1; i < a.length; i += 2) s += a[i]-a[i-1]
+  for (let i = 1; i < a.length; i += 2) {
+    let d = a[i] - a[i-1]
+    if (d < 0) d += 24 // the pair spans midnight
+    s += d
+  }
   return s
 }
 
