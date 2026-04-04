@@ -291,6 +291,8 @@ assert(bu.unaryflat([])      === false, 'unaryflat empty')
 assert(bu.clocky([1,2,6,9]) === 4, 'clocky([1,2,6,9])')
 assert(bu.clocky([1,2,6])   === 1, 'clocky odd ignores last')
 assert(bu.clocky([])         === 0, 'clocky empty')
+assert(bu.clocky([22.5, 6]) === 7.5, 'clocky midnight crossing (#4382)')
+assert(bu.clocky([23, 1])   === 2,   'clocky midnight crossing 23->1')
 
 // --- butil: mean, median, mode, trimmean ---
 assert(bu.mean([1,2,3]) === 2, 'mean([1,2,3])')
@@ -401,6 +403,7 @@ assert(br.AGGR.nonzero([0,1])     === true,  'aggday nonzero (alias)')
 assert(br.AGGR.triangle([3]) === 6, 'aggday triangle 3*(3+1)/2')
 assert(br.AGGR.square([3])   === 9, 'aggday square 3^2')
 assert(br.AGGR.clocky([1,2,6,9]) === 4, 'aggday clocky')
+assert(br.AGGR.clocky([22.5, 6])  === 7.5, 'aggday clocky midnight (#4382)')
 assert(br.AGGR.skatesum([1,2,3]) === 0, 'aggday skatesum (rsk8=0)')
 
 // --- skatesum FP consistency (github.com/beeminder/road/issues/250) ---
