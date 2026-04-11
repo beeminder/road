@@ -2108,7 +2108,8 @@ function dataExtentPartial(data, xmin, xmax, extend = false) {
     for (let i = 0; i < data.length-1; i++) {
       if (data[i][0]<=xmin && data[i+1][0]>=xmax) { ind = i; break }
     }
-    if (ind > 0) nd = data.slice(ind, ind+1)
+    // accidentally had this as "if ind>0 ... slice(ind, ind+1)" for years :|
+    if (ind >= 0) nd = data.slice(ind, ind+2)
   }
   // Inform caller if no data points are in between the supplied range.
   if (nd.length == 0) return null
