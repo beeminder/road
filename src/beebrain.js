@@ -636,13 +636,8 @@ function procData() {
   let pre = 0 // Current cumulative sum
   let prevpt
 
-  // HACK: aggday=skatesum needs to know rcur which we won't know until we do
-  // procParams. We do know rfin so we're making do with that for now...
-  // NB: Operation order should match fillroad's (rate/siru then *SID) to avoid
-  // floating point mismatch.
-  // br.rsk8 = gol.rfin / gol.siru * SID // daily rate for skatesum
-  br.rsk8 = gol.rfin * SID / gol.siru // old version for now
-  //br.rsk8 = br.rtf(roads, gol.asof) * SID // would this not work?
+  // Default rsk8 (daily rate for skatesum) from rfin as fallback
+  br.rsk8 = gol.rfin * SID / gol.siru
 
   // Process all datapoints
   for (i = 0; i <= n; i++) {
@@ -652,6 +647,10 @@ function procData() {
     if (i >= data.length || data[i][0] != ct) {
       // Done recording all data for today
       let vlv = vl.map(dval)              // extract all values for today
+      // Update rsk8 per-day for skatesum: use actual road rate for this day
+      // so weekends-off (and other road rate changes) are respected (#5451)
+      if (gol.aggday === "skatesum" && roads.length > 0)
+        br.rsk8 = br.rtf(roads, ct) * SID
       let ad  = br.AGGR[gol.aggday](vlv)  // compute aggregated value
       // Find previous point to record its info in the aggregated point
       if (newpts.length > 0) prevpt = newpts[newpts.length-1]
@@ -1661,11 +1660,13 @@ function genStats(p, d, tm=null) {
     // after filling in road in procParams.
     if (bu.listy(gol.road)) gol.road.push([gol.tfin, gol.vfin, gol.rfin])
     if (gol.error == "") gol.error = vetParams()
-    if (gol.error == "") gol.error = procData()
     
     // Extract road info into our internal format consisting of road segments:
     // [ [startt, startv], [endt, endv], slope, autofield ]
+    // NB: procRoad moved before procData so that skatesum aggregation can use
+    // per-day road rates (gissue #5451: weekends-off support)
     if (gol.error == "") gol.error = procRoad(p.road)
+    if (gol.error == "") gol.error = procData()
     if (gol.error == "") gol.error = self.reloadRoad() // does procParams here
 
     computeRosy()
