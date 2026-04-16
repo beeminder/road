@@ -313,11 +313,9 @@ const ErrMsgs = [ "Could not find goal (.bb) file.",
 
 // For making larger touch targets, long-press for some interactions, and maybe
 // other workarounds for mobile or when using a touchscreen rather than a mouse.
-const onMobileOrTablet = function() {
-  if (typeof navigator === 'undefined' && typeof window === 'undefined')
-    return false
-  return 'maxTouchPoints' in navigator && navigator.maxTouchPoints > 0
-}
+// Technically this just checks for touch capability; a laptop might have this
+const onMobileOrTablet = () =>
+  typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0
 
 /** Configure functionality (private) */
 let config = (obj, options) => {
@@ -325,10 +323,19 @@ let config = (obj, options) => {
 
   if (onMobileOrTablet()) bu.extendo(obj.opts, mobiledefaults)
 
+  // Claude says this is more anti-Postel:
+  if (options != null) {
+    for (const k of ['divGraph','divTable','divPoints',
+                     'divDueby','divData', 'divJSON']) {
+      if (!(k in options)) continue
+      const v = options[k]
+      bu.assert(v === null || (v != null && v.nodeName),
+                () => `opts.${k} must be a DOM node or null`)
+    }
+  }
+
   let opts = bu.extendo(obj.opts, options)
-  
-  opts.divGraph = opts.divGraph && opts.divGraph.nodeName ? opts.divGraph : null
-  
+
   if (opts.headless) {                        // Override options for svg output
     opts.divTable      = null
     opts.divPoints     = null
@@ -338,13 +345,8 @@ let config = (obj, options) => {
     opts.roadEditor    = false
     opts.showContext   = false
     opts.showFocusRect = false
-  } else {
-    opts.divTable = 
-      opts.divTable && opts.divTable.nodeName ? opts.divTable : null
-    opts.divPoints = 
-      opts.divPoints && opts.divPoints.nodeName ? opts.divPoints : null
   }
-  
+
   return opts
 }
 

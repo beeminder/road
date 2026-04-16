@@ -686,6 +686,50 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         `${name}: road table populated (${extras.tableHTML} chars)`)
       assert(extras.jsonHTML > 100,
         `${name}: JSON dump populated (${extras.jsonHTML} chars)`)
+
+      // --- config() assertion quals (rule 14: fail loudly on bad div opts) ---
+      // The basic_test page has bgraph loaded as a global. Reuse it to verify
+      // that config() accepts valid forms and crashes on garbage.
+      const cfg = await page.evaluate(() => {
+        const results = {}
+        const tryConstruct = (opts) => {
+          try { new bgraph(opts); return null }
+          catch (e) { return e.message }
+        }
+        // Happy: all div* omitted → headless-ish, no crash
+        results.omitted = tryConstruct({headless: true})
+        // Happy: explicit null for every div*
+        results.allNull = tryConstruct({
+          headless: true,
+          divGraph: null, divTable: null, divPoints: null,
+          divDueby: null, divData:  null, divJSON:  null,
+        })
+        // Sad: explicit undefined is caller confusion (null is the right way)
+        results.undef = tryConstruct({headless: true, divGraph: undefined})
+        // Sad: string where a DOM node belongs
+        results.strGraph  = tryConstruct({divGraph: "not a node"})
+        results.strTable  = tryConstruct({divTable: "not a node"})
+        results.strPoints = tryConstruct({divPoints: "not a node"})
+        results.strDueby  = tryConstruct({divDueby: "not a node"})
+        results.strData   = tryConstruct({divData:  "not a node"})
+        results.strJSON   = tryConstruct({divJSON:  "not a node"})
+        // Sad: plain object (no nodeName)
+        results.objGraph  = tryConstruct({divGraph: {}})
+        // Sad: number
+        results.numGraph  = tryConstruct({divGraph: 42})
+        // Sad: even in headless mode, garbage still crashes (no silent ignore)
+        results.hlGarbage = tryConstruct({headless: true, divTable: "nope"})
+        return results
+      })
+      assert(cfg.omitted === null,
+        `${name}: config accepts omitted div opts (got: ${cfg.omitted})`)
+      assert(cfg.allNull === null,
+        `${name}: config accepts explicit nulls (got: ${cfg.allNull})`)
+      for (const k of ['undef','strGraph','strTable','strPoints','strDueby',
+                       'strData','strJSON','objGraph','numGraph','hlGarbage']) {
+        assert(cfg[k] && /must be a DOM node or null/.test(cfg[k]),
+          `${name}: config rejects bad ${k} (got: ${cfg[k]})`)
+      }
     })
 
   // --- 2. roadeditor_test.html: editor + read-only graph, loads testroad0 ---
