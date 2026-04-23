@@ -494,14 +494,13 @@ function getiso(val) {
 
 function getisopath( val, xr ) {
   const isoline = getiso(val)
-  if (xr == null) xr = [-Infinity, Infinity]
-  let x = isoline[0][0]
-  let y = isoline[0][1]
-  if (x < xr[0]) { x = xr[0]; y = br.isoval(isoline, x) }
+  // br.isoval clamps to the isoline endpoints outside the covered x-range
+  const x = max(isoline[0][0], xr[0])
+  const y = br.isoval(isoline, x)
   let d = "M"+r1(nXSc(x*SMS))+" "+r1(nYSc(y))
-  let a = bu.searchHigh(isoline, p => p[0] < xr[0] ? -1 : 1)
-  let b = bu.searchHigh(isoline, p => p[0] < xr[1] ? -1 : 1)
-  if (b > isoline.length - 1) b = isoline.length - 1
+  const a =     bu.searchHigh(isoline, p => p[0] < xr[0] ? -1 : 1)
+  const b = min(bu.searchHigh(isoline, p => p[0] < xr[1] ? -1 : 1),
+                isoline.length - 1)
   for (let i = a; i <= b; i++) {
     d += " L"+r1(nXSc(isoline[i][0]*SMS))+" "+r1(nYSc(isoline[i][1]))
   }
@@ -512,23 +511,14 @@ function getisopath( val, xr ) {
 // isolines on the left or right border for the graph depending on dir*yaw. If
 // dir*yaw > 0 (like do-more), the left side is considered, otherwise the right
 // side. The average lane width is computed by computing isolines for dtd=0 and
-// dtd=365 and dividing it by 365 to overcome isolines coinciding for flat
-// regions.
+// dtd=numdays and dividing it by numdays to overcome isolines coinciding for
+// flat regions.
 function isolnwborder(xr) {
-  let lnw = 0
   const numdays = min(opts.maxFutureDays, ceil((gol.tfin-gol.tini)/SID))
-  const center = getiso(0)
-  const oneday = getiso(numdays)
-//TODO: switch to this version
-//const edge = gol.yaw*gol.dir > 0 ? 0 : 1 // left edge for MOAR/PHAT
-//return abs(br.isoval(center, xr[edge])-br.isoval(oneday, xr[edge])) / numdays
-
-  if (gol.yaw*gol.dir > 0) {
-    lnw = abs(br.isoval(center, xr[0])-br.isoval(oneday, xr[0])) / numdays
-  } else {
-    lnw = abs(br.isoval(center, xr[1])-br.isoval(oneday, xr[1])) / numdays
-  }
-  return lnw
+  const center  = getiso(0)
+  const oneday  = getiso(numdays)
+  const edge = gol.yaw*gol.dir > 0 ? 0 : 1 // left edge for MOAR/PHAT
+  return abs(br.isoval(center, xr[edge])-br.isoval(oneday, xr[edge])) / numdays
 }
 
 /** Limits an svg coordinate to 1 or 3 digits after the decimal 
@@ -1354,10 +1344,14 @@ function dataKeyDown(event, d) {
   }
 }
 function updateDataTable() {
-  if (dtablebusy) return
-  dtablebusy = true
+  // Claude opines that cheap no-op conditions must be checked *before* the
+  // reentrancy flag is set; otherwise an early return here would leave 
+  // dtablebusy stuck true, wedging every subsequent call. Originally the 
+  // if(dtablebusy) return and dtablebusy = true were the first two lines.
   if (processing) return
   if (opts.divData === null) return
+  if (dtablebusy) return
+  dtablebusy = true
 
   if (!dsliderbusy) {
     if (rawdata.length <= opts.dataTableSize) {
@@ -1658,7 +1652,6 @@ function computeXTicks() {
  * {@link bgraph~computeXTicks computeXTicks()} function. */
 function redrawXTicks() {
   //console.debug("redrawXTicks()")
-  try {
   const xr = [nXSc.invert(0).getTime(),
             nXSc.invert(plotbox.width).getTime()]
 
@@ -1671,7 +1664,7 @@ function redrawXTicks() {
   // * majorSkip is the number of ticks to skip for the annotated
   // "major" ticks. Remaining ticks are drawn as unlabeled small
   // indicators
-  if (diff < 10)           { tickType = 0; majorSkip = 1 }
+  if      (diff < 10)      { tickType = 0; majorSkip = 1 }
   else if (diff < 20)      { tickType = 0; majorSkip = 2 }
   else if (diff < 45)      { tickType = 0; majorSkip = 7 }
   else if (diff < 120)     { tickType = 1; majorSkip = 7 }
@@ -1723,9 +1716,6 @@ function redrawXTicks() {
   // Shift top tick marks downwards to ensure they point inwards
   xAxisObjT.selectAll("g").selectAll(".tick line")
     .attr("transform", "translate(0,6)")
-  } catch(e) {
-    console.error("Error in redrawXTicks:", e)
-  }
 }
 
 /** Check the widths of y-axis labels and tick marks, resizing the graph
