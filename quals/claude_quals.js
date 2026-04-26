@@ -1,4 +1,4 @@
-/* This file is all Claude */
+/* This file is all Claude, but it's just quals, not code users run */
 
 // Puppeteer quals: load graph pages and verify they render correctly
 const puppeteer = require('puppeteer')
@@ -492,6 +492,28 @@ assert(br.AGGR.muflat([0,0,0])       === 0, 'aggday muflat all zero')
 assert(br.AGGR.muflat([])            === 0, 'aggday muflat empty')
 assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
 
+// --- broad: isoval endpoint clamping (bgraph getisopath depends on this) ---
+// An isoline is a list of [x,y] pairs. Outside the covered x-range isoval
+// clamps to the endpoint y. bgraph.getisopath simplifies to "always call
+// isoval, clamped via max" — that only works if isoval(isoline, isoline[0][0])
+// returns isoline[0][1] exactly (not NaN, not interpolated).
+;(function() {
+  const iso = [[10, 100], [20, 200], [30, 300]]
+  assert(br.isoval(iso, 10) === 100, 'isoval at left endpoint returns y0')
+  assert(br.isoval(iso, 30) === 300, 'isoval at right endpoint returns yN')
+  assert(br.isoval(iso, 5)  === 100, 'isoval left of range clamps to y0')
+  assert(br.isoval(iso, 35) === 300, 'isoval right of range clamps to yN')
+  assert(br.isoval(iso, 15) === 150, 'isoval interpolates midpoint')
+  assert(br.isoval(iso, 25) === 250, 'isoval interpolates midpoint 2')
+  assert(br.isoval([],   5) === null, 'isoval empty returns null')
+  assert(br.isoval(null, 5) === null, 'isoval null returns null')
+  // Single-point isoline: both endpoints are the same point
+  const iso1 = [[10, 100]]
+  assert(br.isoval(iso1, 5)  === 100, 'isoval single-point clamps left')
+  assert(br.isoval(iso1, 10) === 100, 'isoval single-point at point')
+  assert(br.isoval(iso1, 15) === 100, 'isoval single-point clamps right')
+})()
+
 // --- broad: interpData (single datapoint case) ---
 ;(function() {
   const d = [[5, 10]]     // single datapoint at x=5, y=10
@@ -689,6 +711,75 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         `${name}: road table populated (${extras.tableHTML} chars)`)
       assert(extras.jsonHTML > 100,
         `${name}: JSON dump populated (${extras.jsonHTML} chars)`)
+
+      // --- config() assertion quals (rule 14: fail loudly on bad div opts) ---
+      // The basic_test page has bgraph loaded as a global. Reuse it to verify
+      // that config() accepts valid forms and crashes on garbage.
+      const cfg = await page.evaluate(() => {
+        const results = {}
+        const tryConstruct = (opts) => {
+          try { new bgraph(opts); return null }
+          catch (e) { return e.message }
+        }
+        // Happy: all div* omitted → headless-ish, no crash
+        results.omitted = tryConstruct({headless: true})
+        // Happy: explicit null for every div*
+        results.allNull = tryConstruct({
+          headless: true,
+          divGraph: null, divTable: null, divPoints: null,
+          divDueby: null, divData:  null, divJSON:  null,
+        })
+        // Sad: explicit undefined is caller confusion (null is the right way)
+        results.undef = tryConstruct({headless: true, divGraph: undefined})
+        // Sad: string where a DOM node belongs
+        results.strGraph  = tryConstruct({divGraph: "not a node"})
+        results.strTable  = tryConstruct({divTable: "not a node"})
+        results.strPoints = tryConstruct({divPoints: "not a node"})
+        results.strDueby  = tryConstruct({divDueby: "not a node"})
+        results.strData   = tryConstruct({divData:  "not a node"})
+        results.strJSON   = tryConstruct({divJSON:  "not a node"})
+        // Sad: plain object (no nodeName)
+        results.objGraph  = tryConstruct({divGraph: {}})
+        // Sad: number
+        results.numGraph  = tryConstruct({divGraph: 42})
+        // Sad: even in headless mode, garbage still crashes (no silent ignore)
+        results.hlGarbage = tryConstruct({headless: true, divTable: "nope"})
+        return results
+      })
+      assert(cfg.omitted === null,
+        `${name}: config accepts omitted div opts (got: ${cfg.omitted})`)
+      assert(cfg.allNull === null,
+        `${name}: config accepts explicit nulls (got: ${cfg.allNull})`)
+      for (const k of ['undef','strGraph','strTable','strPoints','strDueby',
+                       'strData','strJSON','objGraph','numGraph','hlGarbage']) {
+        assert(cfg[k] && /must be a DOM node or null/.test(cfg[k]),
+          `${name}: config rejects bad ${k} (got: ${cfg[k]})`)
+      }
+
+      // --- redrawXTicks small-focusRect scaling (was masked by try/catch) ---
+      // focusRect.width < 600 triggers the diff *= 1.{2,4,6} scaling. Before
+      // fixing the `const diff` bug and removing the swallowing try/catch,
+      // this path threw a TypeError every frame and was invisible. Now any
+      // throw in redrawXTicks surfaces as a pageerror.
+      const smallBb = await fetch(`http://localhost:${port}/quals/basic_test.bb`)
+        .then(r => r.text())
+      const smallErr = await page.evaluate((bbtext) => {
+        try {
+          const g = document.createElement('div')
+          g.style.width = '400px'; g.style.height = '300px'
+          document.body.appendChild(g)
+          const bg = new bgraph({
+            divGraph:  g,
+            svgSize:   {width: 400, height: 300},
+            focusRect: {x: 0, y: 0, width: 400, height: 240}, // < 500 branch
+            ctxRect:   {x: 0, y: 240, width: 400, height: 60},
+          })
+          bg.loadGoalJSON(JSON.parse(bbtext))
+          return null
+        } catch (e) { return e.message }
+      }, smallBb)
+      assert(smallErr === null,
+        `${name}: small-focusRect bgraph renders without throwing (got: ${smallErr})`)
     })
 
   // --- 2. roadeditor_test.html: editor + read-only graph, loads testroad0 ---

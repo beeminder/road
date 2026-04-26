@@ -90,6 +90,10 @@ const listener = app.listen(process.env.PORT, () => {
   console.log(`Graph Editor app is running on port ${listener.address().port}`);
   console.log(`AUTH_REDIRECT_URI is ${process.env.AUTH_REDIRECT_URI}`);
 });
+listener.on("error", (err) => {
+  console.error(`FATAL: failed to bind port ${process.env.PORT}: ${err.code || err.message}`);
+  process.exit(1);
+});
 
 app.get("/login", (req, resp) => {
   //setsession(req);
