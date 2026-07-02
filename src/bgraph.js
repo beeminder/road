@@ -1655,9 +1655,9 @@ function redrawXTicks() {
   const xr = [nXSc.invert(0).getTime(),
             nXSc.invert(plotbox.width).getTime()]
 
-  const diff = ((xr[1] - xr[0])/(SMS*SID))
+  let diff = ((xr[1] - xr[0])/(SMS*SID))
   // Adjust tick mark separation if the graph is too small
-  if (opts.focusRect.width < 500) diff = diff*1.6
+  if      (opts.focusRect.width < 500) diff = diff*1.6
   else if (opts.focusRect.width < 550) diff = diff*1.4
   else if (opts.focusRect.width < 600) diff = diff*1.2
   // * tickType identifies the separation and text of ticks
