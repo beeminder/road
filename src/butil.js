@@ -132,8 +132,9 @@ function stringy(x) { return typeof x === "string" }
 function listy(x)   { return Array.isArray(x) }
 
 // Min/max of an array of numbers
-function arrMin(arr) { return min(...arr) }
-function arrMax(arr) { return max(...arr) }
+// (Apparently this is better than just min(...a) and max(...a))
+function arrMin(a) { let m= Infinity;  for(const x of a) m=min(m, x); return m }
+function arrMax(a) { let m= -Infinity; for(const x of a) m=max(m, x); return m }
 
 // Some background at https://github.com/beeminder/road/issues/199
 // Deep-merge object properties from source object fro into destination object

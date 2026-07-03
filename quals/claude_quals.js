@@ -143,6 +143,13 @@ assert(bu.arrMin([5])        === 5,  'arrMin([5])')
 assert(bu.arrMax([5])        === 5,  'arrMax([5])')
 assert(bu.arrMin([-3,-1,-2]) === -3, 'arrMin([-3,-1,-2])')
 assert(bu.arrMax([-3,-1,-2]) === -1, 'arrMax([-3,-1,-2])')
+;(function() { // spread-based min(...a) blows the call stack on huge arrays
+  const big = Array.from({length: 200000}, (_, i) => i % 1000)
+  big[123456] = -1
+  big[654]    = 1001
+  assert(bu.arrMin(big) === -1,   'arrMin on 200k-element array')
+  assert(bu.arrMax(big) === 1001, 'arrMax on 200k-element array')
+})()
 
 // --- butil: extendo ---
 ;(function() {
