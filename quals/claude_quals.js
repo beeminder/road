@@ -298,8 +298,22 @@ assert(bu.unaryflat([])      === false, 'unaryflat empty')
 assert(bu.clocky([1,2,6,9]) === 4, 'clocky([1,2,6,9])')
 assert(bu.clocky([1,2,6])   === 1, 'clocky odd ignores last')
 assert(bu.clocky([])         === 0, 'clocky empty')
-assert(bu.clocky([22.5, 6]) === 7.5, 'clocky midnight crossing (#4382)')
-assert(bu.clocky([23, 1])   === 2,   'clocky midnight crossing 23->1')
+// CLOCKYFIX (beebody gissue #4382, reverted for now -- see butil.js): clocky
+// takes strict differences, negative when the second element of a pair is
+// smaller. If the midnight-wrapping behavior ships as its own aggday (per
+// the recommendation in butil.js), these expectations apply to THAT aggday,
+// not to clocky:
+//   clocky([22.5, 6]) === 7.5  midnight crossing (#4382): (6-22.5)+24
+//   clocky([23, 1])   === 2    midnight crossing 23->1:   (1-23)+24
+assert(bu.clocky([22.5, 6]) === -16.5,
+  'clocky strict difference, no midnight wrap (CLOCKYFIX)')
+assert(bu.clocky([23, 1])   === -22,
+  'clocky strict difference 23->1 (CLOCKYFIX)')
+// A real goal shape the midnight wrap must never apply to: a daily pair of
+// (actual wake time, alarm time), where a negative difference means "woke up
+// late", not "spans midnight". Eg, woke at 4:00 against a 3:45 alarm:
+assert(bu.clocky([4, 3.75]) === -0.25,
+  'clocky (measurement, reference) pair stays negative (CLOCKYFIX)')
 
 // --- butil: mean, median, mode, trimmean ---
 assert(bu.mean([1,2,3]) === 2, 'mean([1,2,3])')
@@ -410,7 +424,10 @@ assert(br.AGGR.nonzero([0,1])     === true,  'aggday nonzero (alias)')
 assert(br.AGGR.triangle([3]) === 6, 'aggday triangle 3*(3+1)/2')
 assert(br.AGGR.square([3])   === 9, 'aggday square 3^2')
 assert(br.AGGR.clocky([1,2,6,9]) === 4, 'aggday clocky')
-assert(br.AGGR.clocky([22.5, 6])  === 7.5, 'aggday clocky midnight (#4382)')
+// CLOCKYFIX (reverted #4382 midnight wrap, see butil.js): strict difference.
+// Under the reverted behavior this was 7.5, ie, (6-22.5)+24.
+assert(br.AGGR.clocky([22.5, 6])  === -16.5,
+  'aggday clocky strict difference (CLOCKYFIX)')
 assert(br.AGGR.skatesum([1,2,3]) === 0, 'aggday skatesum (rsk8=0)')
 
 // --- skatesum FP consistency (github.com/beeminder/road/issues/250) ---
@@ -651,6 +668,93 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
   assert(data[1][1] === 70,  'tareify before tare unchanged 2')
   assert(data[2][1] === 70,  'tareify at tare preserves continuity')
   assert(data[3][1] === 120, 'tareify after tare offset by 70')
+})()
+
+// --- SK8FIX: skatesum caps every day at the constant rfin-based rsk8 ---
+// Pins the current behavior that gissue #5451 (per-day road-rate capping,
+// reverted for now -- see the SK8FIX comment in beebrain.js procData) would
+// change. Two cases that per-day capping would retroactively rewrite:
+
+// Case 1: a day falling on a flat (rate 0) road segment still caps at rfin.
+;(function() {
+  // Do-more kyoom goal, rate 65/day, with a flat break day 20251223->24.
+  const bbdata = {
+    params: {
+      tini: "20251220", vini: 0,
+      road: [["20251223", null, 65], ["20251224", null, 0]],
+      tfin: "20260113", rfin: 65, runits: "d",
+      yaw: -1, dir: 1, kyoom: true, aggday: "skatesum",
+      yoog: "qual/sk8fix-break", asof: "20251226",
+    },
+    data: [
+      ["20251221", 80, ""], ["20251222", 50, ""], ["20251223", 70, ""],
+      ["20251224", 90, ""], ["20251225", 55, ""],
+    ],
+  }
+  const b = new bb(bbdata)
+  const vals = b.data.slice(0, 5).map(p => p[1])
+  // Daily sums 80,50,70,90,55 capped at rfin=65 give 65,50,65,65,55, which
+  // cumulate to the values below. In particular 20251223 caps at 65 even
+  // though it falls on the flat road segment. (Under #5451 per-day capping
+  // it would aggregate to 0 and every later value would drop by 65.)
+  assert(bu.arrayEquals(vals, [65, 115, 180, 245, 300]),
+    `SK8FIX flat break day caps at rfin, got [${vals}]`)
+})()
+
+// Case 2: datapoints before tini (restarted road keeping old data) still cap
+// at rfin, not at the rate of the synthetic flat pre-road segment (slope 0)
+// that procRoad prepends.
+;(function() {
+  const bbdata = {
+    params: {
+      tini: "20220108", vini: 0,
+      road: [["20220608", null, 1]],
+      tfin: "20220608", rfin: 1, runits: "d",
+      yaw: 1, dir: 1, kyoom: true, aggday: "skatesum",
+      yoog: "qual/sk8fix-pretini", asof: "20220110",
+    },
+    data: [
+      ["20220101", 5, ""], ["20220102", 5, ""], ["20220103", 5, ""],
+      ["20220109", 5, ""],
+    ],
+  }
+  const b = new bb(bbdata)
+  const vals = b.data.slice(0, 4).map(p => p[1])
+  // Each day's sum (5) caps at rfin (1/day), including the three days that
+  // predate tini, cumulating to 1,2,3,4. (Under #5451 per-day capping the
+  // pre-tini days would cap at the pre-road segment's rate, 0, giving
+  // 0,0,0,1.)
+  assert(bu.arrayEquals(vals, [1, 2, 3, 4]),
+    `SK8FIX pre-tini days cap at rfin, got [${vals}]`)
+})()
+
+// --- CLOCKYFIX end-to-end: negative pair differences aggregate as-is ---
+// A wake-up-time goal logging (actual wake time, alarm time) pairs. Waking
+// late gives a negative difference that must pass through to the aggregate,
+// not get +24'd by the reverted #4382 midnight wrap (see CLOCKYFIX in
+// butil.js).
+;(function() {
+  const bbdata = {
+    params: {
+      tini: "20220101", vini: 0,
+      road: [["20220601", null, 0]],
+      tfin: "20220601", rfin: 0, runits: "d",
+      yaw: -1, dir: -1, kyoom: true, aggday: "clocky",
+      yoog: "qual/clockyfix-riseup", asof: "20220104",
+    },
+    data: [
+      ["20220101", 7,   "woke at 7:00"], ["20220101", 6.5, "alarm was 6:30"],
+      ["20220102", 6,   "woke at 6:00"], ["20220102", 6.5, "alarm was 6:30"],
+      ["20220103", 6.5, "woke at 6:30"], ["20220103", 6.5, "alarm was 6:30"],
+    ],
+  }
+  const b = new bb(bbdata)
+  const vals = b.data.slice(0, 3).map(p => p[1])
+  // Daily clocky aggregates: 6.5-7 = -0.5 (late), 6.5-6 = 0.5 (early),
+  // 6.5-6.5 = 0 (on time), cumulating to -0.5, 0, 0. (Under the reverted
+  // midnight wrap the first day would become +23.5.)
+  assert(bu.arrayEquals(vals, [-0.5, 0, 0]),
+    `CLOCKYFIX late wake-up stays negative, got [${vals}]`)
 })()
 
 // --- skatesum per-segment rate (the rsk8 HACK fix for issue #250) ---

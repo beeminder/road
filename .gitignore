@@ -4,6 +4,8 @@
 node_modules
 chromium-data/*
 automon/debug.log
+tmp*.bb
+.tmp*.bb.swp
 
 # Generated files (created by gulp compile)
 lib/css/

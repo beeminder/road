@@ -636,8 +636,13 @@ function procData() {
   let pre = 0 // Current cumulative sum
   let prevpt
 
-  // Default rsk8 (daily rate for skatesum) from rfin as fallback
-  br.rsk8 = gol.rfin * SID / gol.siru
+  // HACK: aggday=skatesum needs to know rcur which we won't know until we do
+  // procParams. We do know rfin so we're making do with that for now...
+  // NB: Operation order should match fillroad's (rate/siru then *SID) to avoid
+  // floating point mismatch.
+  // br.rsk8 = gol.rfin / gol.siru * SID // daily rate for skatesum
+  br.rsk8 = gol.rfin * SID / gol.siru // old version for now
+  //br.rsk8 = br.rtf(roads, gol.asof) * SID // would this not work?
 
   // Process all datapoints
   for (i = 0; i <= n; i++) {
@@ -647,10 +652,37 @@ function procData() {
     if (i >= data.length || data[i][0] != ct) {
       // Done recording all data for today
       let vlv = vl.map(dval)              // extract all values for today
-      // Update rsk8 per-day for skatesum: use actual road rate for this day
-      // so weekends-off (and other road rate changes) are respected (#5451)
-      if (gol.aggday === "skatesum" && roads.length > 0)
-        br.rsk8 = br.rtf(roads, ct) * SID
+      // SK8FIX: Intended new behavior for skatesum (gissue #5451), reverted
+      // for now: recompute rsk8 for each day being aggregated as the road's
+      // actual rate on that day, so weekends-off and other rate changes are
+      // respected. (procRoad was moved before procData in genStats to make
+      // roads available here; that reordering is kept so this is one
+      // uncomment away from working.)
+      //   if (gol.aggday === "skatesum" && roads.length > 0)
+      //     br.rsk8 = br.rtf(roads, ct) * SID
+      // WHY REVERTED: Beebrain re-aggregates all data from scratch on every
+      // load, so per-day capping retroactively rewrites the history of every
+      // existing skatesum goal:
+      // 1. Any past day whose road rate was below rfin (slow-start weeks,
+      //    scheduled breaks, flat ratchet days) gets its sum re-capped at
+      //    the lower rate. The qualsuite found a real goal that this flips
+      //    from safebuf 1 to derailed-today: 13 such days over 14 months
+      //    summing to -0.347 hours, carried forward forever by kyoom.
+      // 2. Datapoints before tini -- common on restarted roads that keep
+      //    their old data -- land on the synthetic flat segment that
+      //    procRoad prepends (slope 0, extending back 100 years), so rtf is
+      //    0 there and every pre-tini day gets capped at 0. The qualsuite
+      //    found a real goal that this collapses from a cumulative total of
+      //    11.8 to 0.51, with 380 of its 430 days re-capped.
+      // RECOMMENDATIONS before re-attempting:
+      // * Case 2 is a plain bug: the pre-road segment is an artifact, not a
+      //   user-scheduled break, so per-day capping must not use its rate.
+      // * Case 1 is the intended behavior of #5451, but shipping it changes
+      //   users' current safety buffers overnight. That needs a product
+      //   decision and server-side identification of affected goals first,
+      //   not just a beebrain deploy.
+      // * The skatesum quals in quals/claude_quals.js pin the current
+      //   (constant rfin-based cap) behavior for both cases.
       let ad  = br.AGGR[gol.aggday](vlv)  // compute aggregated value
       // Find previous point to record its info in the aggregated point
       if (newpts.length > 0) prevpt = newpts[newpts.length-1]
@@ -1664,7 +1696,11 @@ function genStats(p, d, tm=null) {
     // Extract road info into our internal format consisting of road segments:
     // [ [startt, startv], [endt, endv], slope, autofield ]
     // NB: procRoad moved before procData so that skatesum aggregation can use
-    // per-day road rates (gissue #5451: weekends-off support)
+    // per-day road rates (gissue #5451: weekends-off support). That per-day
+    // capping is currently reverted -- see the SK8FIX comment in procData --
+    // but the reordering is kept and is otherwise behavior-neutral: procRoad
+    // doesn't touch gol.rfin/gol.siru (those are set in procParams, which
+    // still runs after procData).
     if (gol.error == "") gol.error = procRoad(p.road)
     if (gol.error == "") gol.error = procData()
     if (gol.error == "") gol.error = self.reloadRoad() // does procParams here

@@ -135,6 +135,9 @@ function listy(x)   { return Array.isArray(x) }
 // (Apparently this is better than just min(...a) and max(...a))
 function arrMin(a) { let m= Infinity;  for(const x of a) m=min(m, x); return m }
 function arrMax(a) { let m= -Infinity; for(const x of a) m=max(m, x); return m }
+// or try this:
+// const arrMin = arr.reduce((m, x) => (x < m ? x : m), Infinity);
+// const arrMax = arr.reduce((m, x) => (x > m ? x : m), -Infinity);
 
 // Some background at https://github.com/beeminder/road/issues/199
 // Deep-merge object properties from source object fro into destination object
@@ -389,6 +392,29 @@ if (unit_qual_1 !== 0) {
 function shn(x, t=10, d=5, e=0) {
   if (isNaN(x)) return x.toString()
   x = chop(x)
+  // SHNFIX: shn misrounds many positive numbers while formatting the same
+  // negatives correctly: shn(0.46,3,1)->"0.4" vs shn(-0.46,3,1)->"-0.5", and
+  // shn(9.01,4,2)->"9" vs shn(-9.01,4,2)->"-9.01". Since shn(-x) must equal
+  // "-"+shn(x), one of each pair is provably wrong (always the positive one).
+  // User-visible via ratesum etc in beebrain.js. The fix is 3 edits, marked
+  // SHNFIX EDIT A (here), B, and C below. Apply all 3 together -- A alone
+  // makes negatives as wrong as positives. Verified 2026-07-02 on a patched
+  // copy, scanning x = 0.01..999.99 in increments of .01:
+  //  * sign asymmetries: 9275 (t=4,d=2) and 2757 (t=3,d=1) before; 0 after
+  //  * zero output changes at the t=10,d=5 defaults (datapoint hover text,
+  //    road table, etc); 284 outputs change at t=4,d=2 and 5225 at t=3,d=1,
+  //    mostly exact halves like 0.45, which today is the lone value that
+  //    rounds down (0.35 and 0.55 etc already round up) and after the fix
+  //    rounds up like the rest
+  //  * NOT fixed: for e!=0 the conservarounding can be undone by the final
+  //    toPrecision (~77k violations on that grid, before and after; the
+  //    "Crappy conservaround" check below runs before final formatting and
+  //    would need to run after)
+  // SHNFIX EDIT A: insert the following line right here, making symmetry
+  // structural by handling the sign in one place. The error direction e
+  // flips because rounding toward +infinity for x means rounding toward
+  // -infinity for -x:
+  //   if (x < 0) return '-' + shn(-x, t, d, -e)
   let i = floor(abs(x)), k, fmt, ostr
   i = i===0 ? 0 : i.toString().length // # of digits left of the decimal
   if (abs(x) > pow(10,i)-0.5) i += 1
@@ -400,6 +426,12 @@ function shn(x, t=10, d=5, e=0) {
   let v = x * pow(10, k), vm = v % 10
   if (vm < 0) vm += 10
 
+  // SHNFIX EDIT B: delete the if-statement below (and its comment line and
+  // this comment). Its window is ~0.5 wide, so it catches far more than
+  // floating-point noise: any value whose scaled fractional last digit lands
+  // in [4.5, 5) -- which should round up to 5 -- gets floored to 4 instead.
+  // That's the shn(0.46,3,1)->"0.4" bug. Negatives dodge the window because
+  // of the vm += 10 above, hence the sign asymmetry.
   // Hack to prevent incorrect rounding with the decimal digits:
   if (vm >= 4.5 && vm < 4.9999999) v = floor(v)
   let xn = round(v) / pow(10, k) + 1e-10
@@ -415,6 +447,21 @@ function shn(x, t=10, d=5, e=0) {
     xn = pow(10, i-1)
   t = clip(t, i, i+d)
   
+  // SHNFIX EDIT C: replace the if-else below with:
+  //   if (abs(xn) < 1e-4) {
+  //     ostr = parseFloat(x.toPrecision(k)).toString()
+  //   } else {
+  //     ostr = parseFloat(xn.toPrecision(t))
+  //   }
+  // The floor(xn)===9/99/999 clauses exist to stop toPrecision emitting
+  // "1e+1"-style strings at the 9->10, 99->100, 999->1000 rollovers, but they
+  // reformat from scratch with x.toPrecision(k), which treats k (a count of
+  // DECIMAL digits) as SIGNIFICANT figures: shn(9.01,4,2)->"9", 99.9->"100",
+  // 999.13->"1000". Unconditionally parseFloating the else branch handles the
+  // rollovers instead, since parseFloat("1e+1") -> 10 -> "10". (Side effect:
+  // shn(1e21) becomes "1e+21" rather than "1.000000000e+21".) The abs(xn) <
+  // 1e-4 branch must keep using x, not xn: xn carries the +1e-10 fudge from
+  // above, so eg shn(0) would return "1e-10".
   // If the magnitude <= 1e-4, prevent scientific notation
   if (abs(xn) < 1e-4 || floor(xn) === 9 ||
       floor(xn) === 99 || floor(xn) === 999) {
@@ -592,20 +639,73 @@ function unaryflat(a) { return a.some(x => x !== 0) }
 
 /** AGGDAY: Sum of differences of pairs, eg, [1,2,6,9] -> 2-1 + 9-6 = 1+3 = 4
     If there's an odd number of elements then the last one is ignored.
-    If a pair's difference is negative, we assume the times span midnight
-    and add 24 hours, eg, [22.5, 6] -> (6-22.5)+24 = 7.5
-    This allows e.g. a deadline of 14:00 to be used to log total time in
-    hours slept (see beebody gissue #4382)
     @param {Number[]} a Input list*/
 function clocky(a) {
   let s = 0
-  for (let i = 1; i < a.length; i += 2) {
-    let d = a[i] - a[i-1]
-    if (d < 0) d += 24 // the pair spans midnight
-    s += d
-  }
+  for (let i = 1; i < a.length; i += 2) s += a[i]-a[i-1]
   return s
 }
+// Fable opines...
+// CLOCKYFIX: Intended new behavior for clocky, from beebody gissue #4382,
+// reverted for now. The function above is the original strict-difference
+// version, matching production. The new version was:
+//
+//    If a pair's difference is negative, we assume the times span midnight
+//    and add 24 hours, eg, [22.5, 6] -> (6-22.5)+24 = 7.5
+//    This allows e.g. a deadline of 14:00 to be used to log total time in
+//    hours slept (see beebody gissue #4382)
+//
+//   function clocky(a) {
+//     let s = 0
+//     for (let i = 1; i < a.length; i += 2) {
+//       let d = a[i] - a[i-1]
+//       if (d < 0) d += 24 // the pair spans midnight
+//       s += d
+//     }
+//     return s
+//   }
+//
+// The original bug report, from gissue #4382:
+//
+// ## Replicata
+//
+// 1. Create a custom goal to record length of sleep.
+// 2. Use clocky as the aggregation method, and Times as the data display type.
+// 3. Set the deadline for the goal to 14:00.
+// 4. Create a datapoint after the deadline - "22:30 went to bed".
+// 5. The next morning, before the deadline, create another record - "06:00 got up"
+//
+// ## Expectata
+//
+// The data value recording the delta between the two times, reflecting the before/after midnight that's indicated by the them both being after the 14:00 deadline, so +7.5 in this case.
+//
+// ## Resultata
+//
+// A strick difference between the numbers, in this case 6-22.5 = -16.5
+//
+// WHY REVERTED: Running the qualsuite against the new version found a real
+// goal (a wake-up-time goal) whose daily pair of datapoints is (actual wake
+// time, alarm time) -- a measurement and a reference, not the two endpoints
+// of a duration. For that goal a negative difference means "woke up N
+// minutes late", not "the times span midnight", and the +24 converts, eg,
+// waking 15 minutes late (-0.25) into +23.75. Three such days inflated that
+// goal's cumulative total by 72 phantom hours. Since beebrain re-aggregates
+// all data from scratch on every load, changing clocky in place
+// retroactively rewrites the history of every existing clocky goal whose
+// pair differences can legitimately go negative (out-of-order entry,
+// corrections, comparison-to-reference patterns like the above).
+//
+// RECOMMENDATION: Add the midnight-wrapping version as a separate aggday
+// (eg, "clockymod") instead of changing clocky in place. The aggday menu is
+// already an enumerated set with variants (satsum, unaryflat, etc) so a new
+// entry is opt-in for the gissue #4382 use case and leaves every existing
+// clocky goal's history untouched. Bonus: it needs no if-statement --
+//   s += mod(a[i] - a[i-1], 24)
+// with a positive mod, mod(x, m) = ((x % m) + m) % m. (No such helper exists
+// in butil yet.) Requires coordinating with the Beeminder side to expose the
+// new aggday in goal settings. The quals in quals/claude_quals.js pin the
+// current strict-difference behavior; the midnight-wrapping expectations are
+// recorded there in comments for whenever the new aggday materializes.
 
 /** Arithmetic mean of values in a list
     @param {Number[]} a Input list*/
