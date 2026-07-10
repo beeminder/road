@@ -363,7 +363,7 @@ async function create( id, pproduct ) {
       // Add headless mode explicitly
       headless: 'new',
       // Add more detailed logging
-      dumpio: true
+      dumpio: false
     });
   /* */
   // END VERSION THAT WORKS FOR PUPPETEER VERSION 24.23.0
@@ -446,7 +446,16 @@ async function create( id, pproduct ) {
     });
     */
     // END VERSION THAT WORKS FOR PUPPETEER VERSION 13.7.0
-    
+
+    // Route Chromium's stdio into our stdout (not split into stdout+stderr as
+    // dumpio:true would) so [MMDD/HHMMSS:INFO:CONSOLE] page-console lines land
+    // in the pm2 out log rather than the pm2 error log.
+    const bp = browser.process();
+    if (bp) {
+      if (bp.stdout) bp.stdout.pipe(process.stdout);
+      if (bp.stderr) bp.stderr.pipe(process.stdout);
+    }
+
     console.log(`Successfully started Puppeteer with pid ${browser.process().pid} and product ${pproduct}`);
 
     browser.on('disconnected', async () => { 

@@ -206,6 +206,12 @@ if (cluster.isMaster) {
 
       return res.status(200).send(JSON.stringify(json))
     } catch (e) {
+      pending--;
+      msgbuf[rid] += (tag+"jsbrain_server.js ERROR: "+e.message+"\n")
+      msgbuf[rid] += (tag+"</BEEBRAIN> (pending: "+pending+")\n")
+      process.stdout.write(msgbuf[rid])
+      delete msgbuf[rid]
+      console.error(tag+"Exception in request handler:", e)
       // Make sure we only send one response
       if (!res.headersSent)
         return res.status(500).send(JSON.stringify({error: e.message}))
