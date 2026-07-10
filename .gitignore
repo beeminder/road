@@ -12,6 +12,7 @@ lib/css/
 lib/js/
 lib/images/
 lib/favicons/
+tests/generated/
 quals/generated/
 quals/*_screenshot.png
 
@@ -19,3 +20,18 @@ quals/*_screenshot.png
 logs/*.log
 codebuff.json
 knowledge.md
+
+# Machine-local config (asdf pins; differ per branch/machine, prod uses nvm)
+.tool-versions
+
+# Local paste-buffer / scratch notes
+.scratch
+
+# Junk in tmp folder
+tmp/*
+
+# Render outputs from local testing
+automon/data/*.json
+automon/data/*.png
+automon/data/*.svg
+automon/data/*-thumb.png
