@@ -372,7 +372,11 @@ async function create( id, pproduct ) {
         '--disable-features=IsolateOrigins,site-per-process'
       ],
       // Add headless mode explicitly
-      headless: 'new',
+      // 'shell' = old headless (chrome-headless-shell binary). New headless
+      // ('new'/true) deadlocks under concurrent page.screenshot() on headless
+      // Linux with --disable-gpu; confirmed by A/B loadtest, see DEBUG_PLAN.md
+      // Phase 2 (2026-07-10).
+      headless: 'shell',
       // Add more detailed logging
       dumpio: false
     });
