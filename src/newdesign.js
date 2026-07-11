@@ -352,15 +352,21 @@ function editorChanged() {
   updateSummary(divEditorSummary, editor)
 }
 
-/* Captures Ctrl-Z and Ctrl-Y and routes them to the currently active tab */
+/* Captures Ctrl-Z and Ctrl-Y and routes them to the currently active tab.
+   The meta (command) key counts too, for Macs, where redo is
+   shift-command-Z. (Command-Y is off-limits: browsers use it for History.) */
 function documentKeyDown(e) {
   let evtobj = window.event? window.event : e;
+  const mod = evtobj.ctrlKey || evtobj.metaKey
+  const undoKey = mod && evtobj.keyCode == 90 && !evtobj.shiftKey
+  const redoKey = (mod && evtobj.keyCode == 89) ||
+                  (mod && evtobj.keyCode == 90 && evtobj.shiftKey)
   if (curMainTab == "editor") {
-    if (evtobj.keyCode == 89 && evtobj.ctrlKey) editor.redo()
-    if (evtobj.keyCode == 90 && evtobj.ctrlKey) editor.undo()
+    if (redoKey) editor.redo()
+    if (undoKey) editor.undo()
   } else if (curMainTab == "sandbox") {
-    if (evtobj.keyCode == 89 && evtobj.ctrlKey) sandbox.redo()
-    if (evtobj.keyCode == 90 && evtobj.ctrlKey) sandbox.undo()
+    if (redoKey) sandbox.redo()
+    if (undoKey) sandbox.undo()
   }
 }
 
@@ -622,6 +628,13 @@ function initialize() {
                        onRoadChange: editorChanged})
   editor.showData(document.getElementById("showdata").checked);
   editor.keepSlopes(document.getElementById("keepslopes").checked);
+  editor.keepIntervals(document.getElementById("keepintervals").checked);
+
+  // The help popup stays open only while clicks land inside it
+  const hintDetails = document.querySelector("details.hint");
+  document.addEventListener("click", (e) => {
+    hintDetails.open &&= hintDetails.contains(e.target);
+  });
 
   // Create the sandbox
   sandbox = new bsandbox( {divGraph: divSandbox,

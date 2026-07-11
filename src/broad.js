@@ -70,30 +70,30 @@ min      : bu.arrMin,
 max      : bu.arrMax,
 count    : (x) => x.length,
 mu       : bu.mean,
-truemean : bu.mean, // legacy alias for mu
-average  : bu.mean, // legacy alias for mu
 munique  : (x) => bu.mean(bu.deldups(x)), // deprecate? does anyone want this?
-uniqmean : (x) => bu.mean(bu.deldups(x)), // legacy alias for munique
-mean     : (x) => bu.mean(bu.deldups(x)), // legacy alias for munique (for now?)
 mutrim   : (x) => bu.trimmean(x, 0.1), // no one actually wants this
-trimmean : (x) => bu.trimmean(x, 0.1), // legacy alias for mutrim
 median   : bu.median,
 mode     : bu.mode,
 unary    : (x) => x.length > 0 ? 1 : 0,
-binary   : (x) => x.length > 0 ? 1 : 0, // legacy alias for unary
-jolly    : (x) => x.length > 0 ? 1 : 0, // legacy alias for unary
 unaryflat: bu.unaryflat,
-nonzero  : bu.unaryflat, // legacy alias for unaryflat
 triangle : (x) => bu.sum(x)*(bu.sum(x)+1)/2, // HT DRMcIver
 square   : (x) => pow(bu.sum(x),2),
 clocky   : bu.clocky, // sum of differences of pairs
 skatesum : (x) => min(self.rsk8, bu.sum(x)), // cap at daily rate
 satsum   : (x) => min(1, bu.sum(x)), // sum but capped at 1
-cap1     : (x) => min(1, bu.sum(x)), // legacy alias for satsum
 sqrt     : (x) => sqrt(bu.sum(x)), // sqrt of sum
 countflat: (x) => x.filter(v => v !== 0).length, // number of nonzero datapoints
 muflat   : (x) => bu.mean(x.filter(v => v !== 0)), // mean of nonzero datapoints
 //kyshoc   : (x) => min(2600, bu.sum(x)), // ad hoc guineapiggage
+truemean : bu.mean, // legacy alias for mu
+average  : bu.mean, // legacy alias for mu
+uniqmean : (x) => bu.mean(bu.deldups(x)), // legacy alias for munique
+mean     : (x) => bu.mean(bu.deldups(x)), // legacy alias for munique (for now?)
+trimmean : (x) => bu.trimmean(x, 0.1), // legacy alias for mutrim
+binary   : (x) => x.length > 0 ? 1 : 0, // legacy alias for unary
+jolly    : (x) => x.length > 0 ? 1 : 0, // legacy alias for unary
+nonzero  : bu.unaryflat, // legacy alias for unaryflat
+cap1     : (x) => min(1, bu.sum(x)), // legacy alias for satsum
 }
 
 /*

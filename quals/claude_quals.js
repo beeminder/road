@@ -1000,6 +1000,46 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         await page.evaluate(() => graph.zoomDefault())
       }
 
+      // Experimental-features markup is single-sourced (DRY partial), and
+      // the graph tab gets its own scrubber toggle like the editor's
+      const expfDry = {
+        summaries: (NEWDESIGN_TEMPLATE.match(/>Experimental features</g) || [])
+          .length,
+        scrubbers: (NEWDESIGN_TEMPLATE.match(/>Include scrubber</g) || [])
+          .length,
+      }
+      assert(expfDry.summaries === 1 && expfDry.scrubbers === 1,
+        `${name}: experimental-features markup is single-sourced ` +
+        JSON.stringify(expfDry))
+      const gsc = await page.evaluate(() => {
+        const el = document.getElementById('gshowcontext')
+        return {exists: !!el, checked: el ? el.checked : false,
+                inDetails: el ? !!el.closest('details') : false}
+      })
+      assert(gsc.exists && gsc.checked && gsc.inDetails,
+        `${name}: graph tab has a scrubber toggle, on by default, in ` +
+        `experimental features (${JSON.stringify(gsc)})`)
+      if (gsc.exists) {
+        await page.evaluate(() => {
+          window.qualGSCCalls = []
+          const orig = graph.showContext
+          graph.showContext = f => { window.qualGSCCalls.push(f)
+                                     return orig(f) }
+          document.getElementById('gshowcontext')
+            .closest('details').open = true
+        })
+        await page.click('#gshowcontext')
+        await page.click('#gshowcontext')
+        const gscCalls = await page.evaluate(() => {
+          document.getElementById('gshowcontext')
+            .closest('details').open = false
+          return window.qualGSCCalls
+        })
+        assert(JSON.stringify(gscCalls) === '[false,true]',
+          `${name}: scrubber toggle drives graph.showContext ` +
+          `(got ${JSON.stringify(gscCalls)})`)
+      }
+
       await page.click('#editortab')
       await page.waitForSelector('#editor', {visible: true})
       await page.waitForSelector('#roadeditor svg.bmndrsvg .razr',
@@ -1117,8 +1157,8 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       assert(/ui-sans-serif|-apple-system|BlinkMacSystemFont|Segoe UI/.test(
         wide.bodyFont),
         `${name}: application typography replaces browser defaults`)
-      assert(wide.graphRadius >= 8,
-        `${name}: graph surface has intentional corners (${wide.graphRadius}px)`)
+      assert(wide.graphRadius >= 2 && wide.graphRadius <= 6,
+        `${name}: graph surface has crisp, modest corners (${wide.graphRadius}px)`)
       assert(wide.copyCasePreserved,
         `${name}: CSS preserves authored UI copy casing`)
       assert(wide.editorLoaded,
@@ -1130,14 +1170,32 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         const road = editor.getRoad()
         const rd = road.road
         const logo = document.querySelector('#header a')
+        const mainBtn = document.querySelector('.tab button.active')
+        const vtabBtn = document.querySelector('#editor .vtab button.active')
+        // Kill in-flight border-color transitions so we measure end state
+        mainBtn.style.transition = 'none'
+        vtabBtn.style.transition = 'none'
+        const mainActive = getComputedStyle(mainBtn)
+        const vtabActive = getComputedStyle(vtabBtn)
         return {
           siru: String(road.siru),
           slopeType: document.getElementById('slopetype').value,
           endSlope: parseFloat(document.getElementById('endslope').value),
           rawSlope: rd[rd.length - 1][2],
           logoName: logo.getAttribute('aria-label') || logo.textContent.trim(),
+          mainActiveShadow: mainActive.boxShadow,
+          activeUnderlines: [
+            mainActive.borderBottomWidth + ' ' + mainActive.borderBottomColor,
+            vtabActive.borderBottomWidth + ' ' + vtabActive.borderBottomColor,
+          ],
         }
       })
+      assert(chrome.mainActiveShadow === 'none',
+        `${name}: active main tab is flat, no drop shadow ` +
+        `(got ${chrome.mainActiveShadow})`)
+      assert(chrome.activeUnderlines.every(u => u === '3px rgb(255, 203, 6)'),
+        `${name}: main and tool tabs share the amber-underline active ` +
+        `language (got ${JSON.stringify(chrome.activeUnderlines)})`)
       assert(chrome.slopeType === chrome.siru,
         `${name}: rate-unit menu reflects the goal's own unit ` +
         `(${chrome.slopeType} vs ${chrome.siru})`)
@@ -1147,6 +1205,200 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         `(${chrome.endSlope} vs ${chrome.rawSlope})`)
       assert(chrome.logoName.length > 0,
         `${name}: header logo link has an accessible name`)
+
+      // PDP vs olddesign: dragging instructions, keyboard-shortcut
+      // tooltips, and the keepIntervals toggle must all survive the redesign
+      assert(NEWDESIGN_TEMPLATE.includes(
+        'Drag the bright red line or double-click for new segments'),
+        `${name}: editor instructions survive verbatim`)
+      const pdp = await page.evaluate(() => {
+        const ki = document.getElementById('keepintervals')
+        const hint = [...document.querySelectorAll('#editor *')].find(el =>
+          el.children.length === 0 && /Drag the bright red line/.test(
+            el.textContent))
+        return {
+          tips: ['eundo', 'eredo', 'sundo', 'sredo'].map(id =>
+            document.getElementById(id).dataset.tip || ''),
+          hovertexts: ['eundo', 'eredo', 'sundo', 'sredo'].map(id =>
+            document.getElementById(id).title).join(''),
+          kiExists: !!ki,
+          kiUnchecked: ki ? !ki.checked : false,
+          kiTucked: ki ? !!ki.closest('details') : false,
+          kiLabel: ki ? document.querySelector(
+            'label[for="keepintervals"]')?.textContent : null,
+          // checkVisibility, not rects: closed-details content keeps
+          // layout boxes in Chromium even though it isn't painted
+          hintVisible: hint ? hint.checkVisibility() : false,
+        }
+      })
+      assert(pdp.tips.join('|') ===
+        'Ctrl-Z / ⌘Z|Ctrl-Y / ⇧⌘Z|' +
+        'Ctrl-Z / ⌘Z|Ctrl-Y / ⇧⌘Z' && pdp.hovertexts === '',
+        `${name}: undo/redo buttons advertise shortcuts via data-tip, ` +
+        `not title hovertext (got ${pdp.tips.join('|')})`)
+      const tipHidden = await page.evaluate(() => getComputedStyle(
+        document.getElementById('eundo'), '::after').opacity)
+      await page.hover('#eundo')
+      await page.evaluate(() => new Promise(r => setTimeout(r, 600)))
+      const tipShown = await page.evaluate(() => ({
+        opacity: getComputedStyle(
+          document.getElementById('eundo'), '::after').opacity,
+        content: getComputedStyle(
+          document.getElementById('eundo'), '::after').content,
+      }))
+      assert(tipHidden === '0' && tipShown.opacity === '1' &&
+             tipShown.content.includes('Ctrl-Z'),
+        `${name}: tooltips render on hover ` +
+        JSON.stringify({tipHidden, tipShown}))
+      assert(!pdp.hintVisible,
+        `${name}: editor instructions tucked away by default`)
+      const hintGeom = await page.evaluate(() => ({
+        chipPosition: getComputedStyle(
+          document.querySelector('#editor details.hint')).position,
+        roadTop: document.getElementById('roadeditor')
+          .getBoundingClientRect().top,
+      }))
+      assert(hintGeom.chipPosition === 'absolute',
+        `${name}: help chip floats in the panel corner, not in the flow ` +
+        `(got ${hintGeom.chipPosition})`)
+      await page.click('#editor details.hint > summary')
+      const hintOpen = await page.evaluate(() => {
+        const pop = document.querySelector('#editor details.hint > .hintpop')
+        return {
+          visible: pop.checkVisibility(),
+          popup: getComputedStyle(pop).position === 'absolute',
+          items: pop.querySelectorAll('li').length,
+          roadTop: document.getElementById('roadeditor')
+            .getBoundingClientRect().top,
+        }
+      })
+      assert(hintOpen.visible, `${name}: help chip reveals the instructions`)
+      assert(hintOpen.items >= 5,
+        `${name}: help popup documents the editor's gestures ` +
+        `(${hintOpen.items} items)`)
+      assert(hintOpen.popup && hintOpen.roadTop === hintGeom.roadTop,
+        `${name}: help text is a popup and does not reflow the graph ` +
+        JSON.stringify({popup: hintOpen.popup, before: hintGeom.roadTop,
+                        after: hintOpen.roadTop}))
+      await page.click('#esummary')
+      const hintDismissed = await page.evaluate(() =>
+        !document.querySelector('#editor details.hint').open)
+      assert(hintDismissed,
+        `${name}: clicking away dismisses the help popup`)
+      assert(pdp.kiExists && pdp.kiUnchecked && pdp.kiTucked &&
+             pdp.kiLabel === 'Fixed intervals',
+        `${name}: Fixed intervals toggle exists, unchecked, exact label, ` +
+        `tucked in experimental features (got ${JSON.stringify(pdp)})`)
+      if (pdp.kiExists) {
+        await page.evaluate(() => {
+          window.qualKICalls = []
+          const orig = editor.keepIntervals
+          editor.keepIntervals = f => { window.qualKICalls.push(f)
+                                        return orig(f) }
+          const d = document.getElementById('keepintervals')
+            .closest('details')
+          if (d) d.open = true
+        })
+        await page.click('#keepintervals')
+        await page.click('#keepintervals')
+        const kiCalls = await page.evaluate(() => {
+          const d = document.getElementById('keepintervals')
+            .closest('details')
+          if (d) d.open = false
+          return window.qualKICalls
+        })
+        assert(JSON.stringify(kiCalls) === '[true,false]',
+          `${name}: Fixed intervals checkbox drives editor.keepIntervals ` +
+          `(got ${JSON.stringify(kiCalls)})`)
+      }
+
+      // Undo/redo keyboard shortcuts, including the Mac variants: mod-Z
+      // undoes; mod-Y and shift-mod-Z redo
+      await page.evaluate(() => {
+        window.qualKeys = []
+        const u = editor.undo, r = editor.redo
+        editor.undo = () => { window.qualKeys.push('undo'); return u() }
+        editor.redo = () => { window.qualKeys.push('redo'); return r() }
+      })
+      await page.keyboard.down('Control')
+      await page.keyboard.press('KeyZ')
+      await page.keyboard.press('KeyY')
+      await page.keyboard.up('Control')
+      await page.keyboard.down('Meta')
+      await page.keyboard.press('KeyZ')
+      await page.keyboard.down('Shift')
+      await page.keyboard.press('KeyZ')
+      await page.keyboard.up('Shift')
+      await page.keyboard.up('Meta')
+      const qualKeys = await page.evaluate(() => window.qualKeys)
+      assert(qualKeys.join() === 'undo,redo,undo,redo',
+        `${name}: Ctrl-Z/Ctrl-Y and Cmd-Z/Shift-Cmd-Z drive undo/redo ` +
+        `(got ${qualKeys.join()})`)
+
+      // The due-by table speaks the design system: right-aligned tabular
+      // numbers, muted header, hairline row separators
+      await page.click('#editor .vtab button[onclick*="estats"]')
+      const dueby = await page.evaluate(() => {
+        const hdr = document.querySelectorAll('#edueby .dbhdrcell')
+        const lastHdr = getComputedStyle(hdr[hdr.length - 1])
+        const cell2 = getComputedStyle(document.querySelector(
+          '#edueby .dbrow:nth-child(3) .dbcell:nth-child(2)'))
+        return {
+          nHdr: hdr.length,
+          numbersRight: lastHdr.textAlign === 'right' &&
+                        cell2.textAlign === 'right',
+          hdrMuted: lastHdr.color === 'rgb(109, 106, 97)',
+          tabular: cell2.fontVariantNumeric === 'tabular-nums',
+          rowRule: getComputedStyle(document.querySelector(
+            '#edueby .dbrow:nth-child(3) .dbcell')).borderTopWidth === '1px',
+        }
+      })
+      assert(dueby.nHdr === 3 && dueby.numbersRight && dueby.hdrMuted &&
+             dueby.tabular && dueby.rowRule,
+        `${name}: due-by table has aligned numbers and hairline rows ` +
+        JSON.stringify(dueby))
+      await page.screenshot({path: path.resolve(__dirname,
+        'qual_newdesign_dueby_screenshot.png')})
+      await page.click('#editor .vtab button[onclick*="eroad"]')
+
+      // The graph matrix and data table speak the design system too:
+      // no more hard black borders and default browser button chrome
+      const tables = await page.evaluate(() => {
+        const rd = getComputedStyle(
+          document.querySelector('#editorroad .rdcell'))
+        const goal = getComputedStyle(
+          document.querySelector('#editorroad .rtbgoal'))
+        const btn = getComputedStyle(
+          document.querySelector('#editorroad button.rdbtn'))
+        return {
+          cellBorder: rd.borderTopColor,
+          cellRadius: rd.borderTopLeftRadius,
+          goalBorder: goal.borderTopColor,
+          btnRadius: btn.borderTopLeftRadius,
+        }
+      })
+      assert(tables.cellBorder === 'rgb(193, 188, 174)' &&
+             tables.cellRadius === '3px' &&
+             tables.goalBorder === 'rgb(193, 188, 174)' &&
+             tables.btnRadius === '3px',
+        `${name}: matrix cells and buttons speak the design system ` +
+        JSON.stringify(tables))
+      await page.click('#editor .vtab button[onclick*="edata"]')
+      const dtable = await page.evaluate(() => {
+        const cell = getComputedStyle(
+          document.querySelector('#editordata div.dcell'))
+        const hdr = getComputedStyle(
+          document.querySelector('#editordata .dhdrcell'))
+        return {cellBorder: cell.borderTopColor,
+                cellRadius: cell.borderTopLeftRadius,
+                hdrColor: hdr.color}
+      })
+      assert(dtable.cellBorder === 'rgb(193, 188, 174)' &&
+             dtable.cellRadius === '3px' &&
+             dtable.hdrColor === 'rgb(109, 106, 97)',
+        `${name}: data table speaks the design system ` +
+        JSON.stringify(dtable))
+      await page.click('#editor .vtab button[onclick*="eroad"]')
 
       await page.screenshot({
         path: path.resolve(__dirname,
@@ -1234,7 +1486,7 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         return rows
       })
       const strays = checkpairs.filter(p => !p.onOneLine).map(p => p.id)
-      assert(checkpairs.length === 3 && strays.length === 0,
+      assert(checkpairs.length === 4 && strays.length === 0,
         `${name}: checkboxes share a line with their labels at 390px ` +
         `(${checkpairs.length} pairs, strays: ${JSON.stringify(strays)})`)
 

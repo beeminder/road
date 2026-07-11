@@ -1,6 +1,12 @@
 
 ## CHANGELOG
 
+* 2026.07.11 Matrix/data-table restyle, more in help popup, better tooltips
+* 2026.07.11 Click-away dismisses help popup; due-by table restyled
+* 2026.07.11 Help popup in the corner, scrubber toggle on graph tab
+* 2026.07.11 Cmd-Z on Macs, etc
+* 2026.07.11 Better CSS
+* 2026.07.11 Fixed-intervals toggle, editor instructions, undo/redo tooltips
 * 2026.07.11 Scrubber for zooming works on the graph tab, not just the editor
 * 2026.07.10 Graph editor CSS up-sprucing
 * 2026.03.26 Polishing and bug fixes

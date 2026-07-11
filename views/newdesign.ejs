@@ -56,6 +56,25 @@
     <button id="sandboxtab" class="bmdrbtn tablinks" onclick="openMainTab(event, 'sandbox')">Sandbox</button>
   </nav>
   
+<%
+/* The per-tab "Experimental features" section. p prefixes the element ids,
+   obj names the tab's bgraph object in newdesign.js, and extras holds any
+   tab-specific toggle rows. */
+const expFeatures = (p, obj, extras = '') => `
+    <details>
+      <summary>Experimental features</summary>
+      <div class="graphtools">
+        <button class="bmdrbtn" id="${p}savesvgdl" onclick="${obj}.saveGraphDownload();">Download SVG</button>
+        <button class="bmdrbtn" id="${p}savesvgblob" onclick="${obj}.saveGraphBlob();">Preview SVG</button>
+      </div>
+      <div class="graphtools">
+        <span class="checkpair">
+          <input id="${p}showcontext" type="checkbox" onclick="${obj}.showContext(this.checked);" checked>
+          <label for="${p}showcontext">Include scrubber</label>
+        </span>${extras}
+      </div>
+    </details>`
+%>
 <!-- Tab content -->
 <section id="graph" class="tabcontent" aria-labelledby="graphtab">
   <div id="gsummary" class="summary"></div>
@@ -68,13 +87,7 @@
       <button class="bmdrbtn" id="zoomdflt" onclick="graph.zoomDefault();">Reset Zoom</button>
     </div>
     <hr/>
-    <details>
-      <summary>Experimental features</summary>
-      <div class="graphtools">
-        <button class="bmdrbtn" id="savesvgdl" onclick="graph.saveGraphDownload();">Download SVG</button>
-        <button class="bmdrbtn" id="savesvgblob" onclick="graph.saveGraphBlob();">Preview SVG</button>
-      </div>
-    </details>
+    <%- expFeatures('g', 'graph') %>
 
   </div>
 
@@ -119,11 +132,24 @@
   <div id="esummary" class="summary"></div>
   <div class="workspace">
   <div class="graphcontainer panel">
+    <details class="hint">
+      <summary aria-label="Help">?</summary>
+      <div class="hintpop">
+        <p>Drag the bright red line or double-click for new segments</p>
+        <p>Knots (shown with vertical lines) are segment boundaries</p>
+        <p>Edit numbers directly in the graph matrix</p>
+        <p>Use the scrubber below the graph to zoom and pan</p>
+        <p>You can also pan by dragging the graph itself</p>
+        <p>Nothing takes effect till you hit Submit</p>
+        <p>(Placeholder for "Propagate changes forward")</p>
+        <p>(Placeholder for "Fixed intervals")</p>
+      </div>
+    </details>
     <div id="roadeditor"></div>
     <br/>
     <div class="graphtools">
-      <button class="bmdrbtn" id="eundo" onclick="editor.undo();">Undo (0)</button>
-      <button class="bmdrbtn" id="eredo" onclick="editor.redo();">Redo (0)</button>
+      <button class="bmdrbtn" id="eundo" data-tip="Ctrl-Z / ⌘Z" aria-keyshortcuts="Control+Z Meta+Z" onclick="editor.undo();">Undo (0)</button>
+      <button class="bmdrbtn" id="eredo" data-tip="Ctrl-Y / ⇧⌘Z" aria-keyshortcuts="Control+Y Shift+Meta+Z" onclick="editor.redo();">Redo (0)</button>
       <button class="bmdrbtn" id="ereset" onclick="editor.undoAll();">Undo All</button>
       <span class="checkpair">
         <input id="keepslopes" type="checkbox"
@@ -146,19 +172,12 @@
       <span id="submitmsg"></span>
     </div>
     <hr/>
-    <details>
-      <summary>Experimental features</summary>
-      <div class="graphtools">
-        <button class="bmdrbtn" id="esavesvgdl" onclick="editor.saveGraphDownload();">Download SVG</button>
-        <button class="bmdrbtn" id="esavesvgblob" onclick="editor.saveGraphBlob();">Preview SVG</button>
-      </div>
-      <div class="graphtools">
+    <%- expFeatures('e', 'editor', `
         <span class="checkpair">
-          <input id="showcontext" type="checkbox" onclick="editor.showContext(this.checked);" checked>
-          <label for="showcontext">Include scrubber</label>
-        </span>
-      </div>
-    </details>
+          <input id="keepintervals" type="checkbox"
+                 onclick="editor.keepIntervals(this.checked)">
+          <label for="keepintervals">Fixed intervals</label>
+        </span>`) %>
 
   </div>
   
@@ -225,8 +244,8 @@
       <button class="bmdrbtn" id="snextday" onclick="sandbox.nextDay();">Next Day</button>
     </div>
     <div class="graphtools">
-      <button class="bmdrbtn" id="sundo" onclick="sandbox.undo();">Undo (0)</button>
-      <button class="bmdrbtn" id="sredo" onclick="sandbox.redo();">Redo (0)</button>
+      <button class="bmdrbtn" id="sundo" data-tip="Ctrl-Z / ⌘Z" aria-keyshortcuts="Control+Z Meta+Z" onclick="sandbox.undo();">Undo (0)</button>
+      <button class="bmdrbtn" id="sredo" data-tip="Ctrl-Y / ⇧⌘Z" aria-keyshortcuts="Control+Y Shift+Meta+Z" onclick="sandbox.redo();">Redo (0)</button>
       <button class="bmdrbtn" id="sreset" onclick="sandbox.undoAll();">Undo All</button>
     </div>
     <hr/>

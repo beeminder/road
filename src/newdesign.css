@@ -8,7 +8,8 @@
   --amber: #ffcb06;
   --amber-soft: #fff3b0;
   --focus: #6b4f00;
-  --radius: 12px;
+  --radius: 4px;     /* surfaces: panels, cards */
+  --radius-ctl: 3px; /* controls: buttons, inputs, chips */
 }
 
 * {
@@ -70,7 +71,7 @@ button.bmdrbtn, select {
   min-height: 38px;
   padding: 8px 13px;
   border: 1px solid var(--line-strong);
-  border-radius: 7px;
+  border-radius: var(--radius-ctl);
   background-color: #f8f7f4;
   color: var(--ink);
   font-size: .875rem;
@@ -155,34 +156,31 @@ label {
 .tab {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
+  gap: 8px;
   width: 100%;
   margin-top: 16px;
-  padding: 4px;
   overflow: visible;
   border: none;
-  border-radius: 10px;
-  background: #dfdcd4;
 }
 
+/* Main tabs share the amber-underline active language with the tool tabs */
 .tab button.bmdrbtn {
   width: auto;
   min-height: 42px;
   padding: 8px;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  color: #5f5b52;
-}
-
-.tab button.bmdrbtn:hover {
-  background: rgba(255, 255, 255, .55);
+  border-bottom: 3px solid transparent;
+  color: var(--muted);
 }
 
 .tab button.bmdrbtn.active {
+  /* Longhands only: a border-color shorthand holding var() fails to
+     cascade over other rules' longhands in Chromium */
+  border-top-color: var(--line-strong);
+  border-left-color: var(--line-strong);
+  border-right-color: var(--line-strong);
+  border-bottom-color: var(--amber);
   background: var(--paper);
   color: var(--ink);
-  box-shadow: 0 1px 2px rgba(45, 42, 34, .14);
 }
 
 /* Style the tab content */
@@ -220,6 +218,7 @@ label {
 }
 
 .graphcontainer {
+  position: relative; /* anchors the corner help chip */
   width: 100%;
   max-width: none;
   padding: 12px;
@@ -268,6 +267,65 @@ label {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+}
+
+/* Usage hint: a help chip floating in the panel corner; the text opens
+   as a popup so nothing reflows */
+details.hint {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  padding: 0;
+  border-top: none;
+  color: var(--muted);
+  font-size: .875rem;
+}
+
+details.hint > .hintpop {
+  position: absolute;
+  top: 30px;
+  right: 0;
+  width: min(320px, 80vw);
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--paper);
+  box-shadow: 0 2px 10px rgba(45, 42, 34, .18);
+}
+
+details.hint > .hintpop > ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+details.hint > .hintpop li {
+  margin: 4px 0;
+}
+
+details.hint > summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-ctl);
+  background: #f8f7f4;
+  color: var(--muted);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+details.hint > summary::-webkit-details-marker {
+  display: none;
+}
+
+details.hint > summary:hover {
+  border-color: #b49000;
+  background: var(--amber-soft);
 }
 
 #roadgraph, #roadeditor, #roadsandbox {
@@ -328,11 +386,33 @@ label {
 
 /***** Misc components *****/
 
-.dbhdrcell { border-bottom:1px solid var(--line-strong); } /* Due-by table header */
-
+/* Due-by table: hairline rows, right-aligned tabular numbers */
 .duebytable {
   display: table;
-  border: 1px solid var(--line);
+}
+
+.duebytable .dbhdrcell {
+  padding: 4px 0 6px;
+  border-bottom: 1px solid var(--line-strong);
+  color: var(--muted);
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+}
+
+.duebytable .dbcell {
+  padding: 6px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.duebytable .dbrow + .dbrow .dbcell {
+  border-top: 1px solid var(--line);
+}
+
+.duebytable .dbhdrcell:nth-child(n+2),
+.duebytable .dbcell:nth-child(n+2) {
+  padding-left: 18px;
+  text-align: right;
 }
 
 /* Progress indicators */
@@ -351,7 +431,7 @@ label {
   margin: 8px 0;
   overflow: hidden;
   border: 1px solid var(--line-strong);
-  border-radius: 999px;
+  border-radius: var(--radius-ctl);
   background: #eceae5;
 }
 .progbar { 
@@ -376,7 +456,7 @@ label {
 }
 .baremin,.doom, .pledge {
   padding: 4px 8px;
-  border-radius: 5px;
+  border-radius: var(--radius-ctl);
   background-color: #3b3b3b;
   color: var(--amber);
 }
@@ -422,7 +502,7 @@ button.bmdrbtn:disabled {
   margin: 4px 0 9px;
   padding: 7px 9px;
   border: 1px solid var(--line-strong);
-  border-radius: 7px;
+  border-radius: var(--radius-ctl);
   background: var(--paper);
   color: var(--ink);
   font-size: 16px;
@@ -489,7 +569,7 @@ button.bmdrbtn:disabled {
   display: inline-block;
   width: 100%;
   min-height: 40px;
-  border-radius: 7px;
+  border-radius: var(--radius-ctl);
   font-size: 1rem;
 }
 
@@ -519,6 +599,87 @@ select:hover { border-color: #bbb; }
 
 hr {
   border: 0;
+}
+
+/* Tooltips via data-tip: styled bubbles that also appear on keyboard
+   focus, and on press-and-hold where hover doesn't exist */
+[data-tip] {
+  position: relative;
+}
+
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  padding: 4px 8px;
+  border-radius: var(--radius-ctl);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: .75rem;
+  font-weight: 400;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 80ms ease;
+}
+
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after {
+  opacity: 1;
+  transition-delay: 350ms;
+}
+
+@media (hover: none) {
+  [data-tip]:active::after {
+    opacity: 1;
+    transition-delay: 350ms;
+  }
+}
+
+/* Graph matrix and data table: design-system borders and buttons
+   instead of jsbrain.css's hard black defaults */
+.vtabcontainer .rdcell,
+.vtabcontainer div.dcell,
+.vtabcontainer span.dcell {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-ctl);
+  background-color: var(--paper);
+}
+
+.vtabcontainer .rdhdrcell,
+.vtabcontainer .dhdrcell {
+  color: var(--muted);
+  font-size: .75rem;
+  font-weight: 700;
+}
+
+.vtabcontainer .rtbgoal {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background-color: #eef5e3;
+}
+
+.vtabcontainer button.rdbtn,
+.vtabcontainer button.dcell {
+  padding: 2px 7px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-ctl);
+  background-color: #f8f7f4;
+  cursor: pointer;
+}
+
+.vtabcontainer button.rdbtn:hover,
+.vtabcontainer button.dcell:hover {
+  border-color: #b49000;
+  background-color: var(--amber-soft);
+}
+
+.vtabcontainer .dcell.cmt,
+.vtabcontainer .dhdrcell.cmt {
+  max-width: 160px;
 }
 
 /* Knots (the draggable vertical lines) show a left/right arrow cursor on hover 
