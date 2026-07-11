@@ -5,6 +5,8 @@ const puppeteer = require('puppeteer')
 const http = require('http')
 const fs = require('fs')
 const path = require('path')
+const ejs = require('ejs')
+const nodeAssert = require('assert')
 const br = require('../src/broad')
 const bu = require('../src/butil')
 const bb = require('../src/beebrain')
@@ -14,10 +16,40 @@ const PORT = 0 // let OS pick an available port
 
 const MIME = {
   '.html': 'text/html', '.js': 'application/javascript',
-  '.css': 'text/css', '.bb': 'text/plain',
+  '.css': 'text/css', '.bb': 'text/plain', '.svg': 'image/svg+xml',
+}
+
+const NEWDESIGN_PATH = '/quals/newdesign.html'
+const NEWDESIGN_TEMPLATE = fs.readFileSync(
+  path.join(REPO, 'views/newdesign.ejs'), 'utf8')
+const EDITOR_START = NEWDESIGN_TEMPLATE.indexOf('<section id="editor"')
+const EDITOR_END = NEWDESIGN_TEMPLATE.indexOf('<section id="sandbox"')
+nodeAssert(EDITOR_START >= 0)
+nodeAssert(EDITOR_END > EDITOR_START)
+const EDITOR_MARKUP = NEWDESIGN_TEMPLATE.slice(EDITOR_START, EDITOR_END)
+const QUAL_ROUTES = {
+  [NEWDESIGN_PATH]: {
+    contentType: MIME['.html'],
+    body: ejs.render(NEWDESIGN_TEMPLATE, {user: {username: 'qual'}}),
+  },
+  '/getusergoals': {
+    contentType: 'application/json',
+    body: JSON.stringify(['testroad0']),
+  },
+  '/getgoaljson/testroad0': {
+    contentType: 'application/json',
+    body: fs.readFileSync(path.join(REPO, 'automon/data/testroad0.bb')),
+  },
 }
 
 function serve(req, res) {
+  const route = QUAL_ROUTES[req.url]
+  if (route) {
+    res.writeHead(200, { 'Content-Type': route.contentType })
+    res.end(route.body)
+    return
+  }
+
   // Map URL paths to filesystem: the qual HTML uses relative ../src/ paths
   // and loads .bb files from absolute paths
   const fpath = path.join(REPO, req.url)
@@ -44,9 +76,11 @@ function assert(condition, msg) {
 }
 
 // Load a page, collect errors, wait for rendering, then run checks
-async function runQual(browser, port, name, urlPath, checkFn) {
+async function runQual(browser, port, name, urlPath, checkFn,
+                       viewport = {width: 800, height: 600}) {
   console.log(`\n--- ${name} ---`)
   const page = await browser.newPage()
+  await page.setViewport(viewport)
 
   const pageErrors = []
   page.on('pageerror', err => { pageErrors.push(err.message) })
@@ -81,6 +115,9 @@ async function runQual(browser, port, name, urlPath, checkFn) {
     `${name}: page errors: ${pageErrors.join('; ')}`)
 
   await checkFn(page, name)
+
+  assert(pageErrors.length === 0,
+    `${name}: page errors after interaction: ${pageErrors.join('; ')}`)
 
   // Screenshot for visual verification
   const shotPath = path.resolve(__dirname,
@@ -920,6 +957,366 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       assert(editorChecks.hasDuebyTable,
         `${name}: dueby table div exists`)
     })
+
+  // Replicata: load the production UI, activate Graph Editor, and resize it.
+  // Expectata: a deliberate two-panel workbench that stacks without overflow.
+  // Resultata: generic boxed sections, rotated tool tabs, and a fixed viewport.
+  await runQual(browser, port, 'newdesign_editor', NEWDESIGN_PATH,
+    async (page, name) => {
+      await page.click('#editortab')
+      await page.waitForSelector('#editor', {visible: true})
+      await page.waitForSelector('#roadeditor svg.bmndrsvg .razr',
+        {visible: true})
+
+      const wide = await page.evaluate(() => {
+        const workspace = document.querySelector('#editor .workspace')
+        const graph = document.querySelector('#editor .graphcontainer')
+        const tools = document.querySelector('#editor .vtabcontainer')
+        const submit = document.getElementById('submit')
+        const secondary = document.getElementById('ezoomdflt')
+        const submitWasDisabled = submit.disabled
+        const submitTransition = submit.style.transition
+        submit.style.transition = 'none'
+        submit.disabled = false
+        const graphRect = graph.getBoundingClientRect()
+        const toolsRect = tools.getBoundingClientRect()
+        const workspaceStyle = workspace && getComputedStyle(workspace)
+        const submitStyle = getComputedStyle(submit)
+        const secondaryStyle = getComputedStyle(secondary)
+        const result = {
+          semanticShell: !!document.querySelector('body > header#header') &&
+            !!document.querySelector('body > main.app-shell') &&
+            !!document.querySelector('main > nav.tab') &&
+            !!document.querySelector(
+              'main section#editor[aria-labelledby="editortab"]'),
+          goalLabel: document.querySelector('.goalbar > label')?.textContent,
+          goalLabelHasControl:
+            !!document.querySelector('.goalbar > label')?.control,
+          workspaceDisplay: workspaceStyle && workspaceStyle.display,
+          panelsShareRow: Math.abs(graphRect.top - toolsRect.top) < 2,
+          panelsArePanels: graph.classList.contains('panel') &&
+            tools.classList.contains('panel'),
+          panelGap: toolsRect.left - graphRect.right,
+          panelSurface: getComputedStyle(graph).backgroundColor ===
+              getComputedStyle(tools).backgroundColor &&
+            getComputedStyle(graph).backgroundColor !== 'rgba(0, 0, 0, 0)' &&
+            getComputedStyle(graph).borderStyle !== 'none' &&
+            getComputedStyle(tools).borderStyle !== 'none',
+          toolTabTransform: getComputedStyle(
+            document.querySelector('#editor .vtab')).transform,
+          primaryIsDistinct:
+            document.querySelectorAll(
+              '#editor button.primary-action').length === 1 &&
+            submit.classList.contains('primary-action') &&
+            submitStyle.backgroundColor !== secondaryStyle.backgroundColor,
+          primarySharesGeometry:
+            submitStyle.height === secondaryStyle.height &&
+            submitStyle.borderRadius === secondaryStyle.borderRadius &&
+            submitStyle.fontFamily === secondaryStyle.fontFamily,
+          primaryDetails: {
+            count: document.querySelectorAll(
+              '#editor button.primary-action').length,
+            submitDisabled: submit.disabled,
+            submitBackground: submitStyle.backgroundColor,
+            secondaryBackground: secondaryStyle.backgroundColor,
+          },
+          bodyFont: getComputedStyle(document.body).fontFamily,
+          graphRadius: parseFloat(getComputedStyle(graph).borderRadius),
+          copyCasePreserved: [
+            document.querySelector('#editor .vtabtitle'),
+            document.querySelector('#editor .tooltitle'),
+          ].every(el => getComputedStyle(el).textTransform === 'none'),
+          focusContainersVisible:
+            getComputedStyle(document.querySelector('.tab')).overflow ===
+              'visible' &&
+            getComputedStyle(document.querySelector('#editor .vtab')).overflow ===
+              'visible',
+          editorLoaded:
+            document.getElementById('esummary').textContent.trim().length > 0 &&
+            document.getElementById('editorroad').children.length > 0,
+        }
+        submit.disabled = submitWasDisabled
+        submit.getBoundingClientRect()
+        submit.style.transition = submitTransition
+        return result
+      })
+
+      const inlineStyleCount = (EDITOR_MARKUP.match(/\sstyle\s*=/g) || []).length
+      assert(inlineStyleCount === 0,
+        `${name}: authored editor has no inline styles (found ${inlineStyleCount})`)
+      const voidCloses = (NEWDESIGN_TEMPLATE.match(/<\/input>/g) || []).length
+      assert(voidCloses === 0,
+        `${name}: void <input> elements have no closing tags (found ${voidCloses})`)
+      const editableInputs =
+        (NEWDESIGN_TEMPLATE.match(/<input[^>]*contenteditable/g) || []).length
+      assert(editableInputs === 0,
+        `${name}: no contenteditable attributes on inputs (found ${editableInputs})`)
+      const selectedSelects =
+        (NEWDESIGN_TEMPLATE.match(/<select[^>]* selected[ =>]/g) || []).length
+      assert(selectedSelects === 0,
+        `${name}: no selected attributes on select tags (found ${selectedSelects})`)
+      assert(/<span id="submitmsg"><\/span>/.test(NEWDESIGN_TEMPLATE),
+        `${name}: submit message span starts empty in the markup`)
+      assert(wide.semanticShell,
+        `${name}: app shell uses header, main, nav, and editor section`)
+      assert(wide.goalLabel === 'Beeminder goal:' && wide.goalLabelHasControl,
+        `${name}: goal picker has its exact visible label (got ${JSON.stringify(wide.goalLabel)})`)
+      assert(wide.workspaceDisplay === 'grid',
+        `${name}: editor workspace uses a grid (got ${wide.workspaceDisplay})`)
+      assert(wide.panelsShareRow,
+        `${name}: graph and tools share a row at 1360px`)
+      assert(wide.panelsArePanels,
+        `${name}: graph and tools share the panel vocabulary`)
+      assert(wide.panelGap >= 16,
+        `${name}: wide panels have at least 16px separation (${wide.panelGap}px)`)
+      assert(wide.panelSurface,
+        `${name}: wide panels share a bordered surface treatment`)
+      assert(wide.toolTabTransform === 'none',
+        `${name}: tool tabs are not rotated (got ${wide.toolTabTransform})`)
+      assert(wide.primaryIsDistinct,
+        `${name}: Submit has distinct primary emphasis (${JSON.stringify(wide.primaryDetails)})`)
+      assert(wide.primarySharesGeometry,
+        `${name}: primary and secondary actions share geometry`)
+      assert(/ui-sans-serif|-apple-system|BlinkMacSystemFont|Segoe UI/.test(
+        wide.bodyFont),
+        `${name}: application typography replaces browser defaults`)
+      assert(wide.graphRadius >= 8,
+        `${name}: graph surface has intentional corners (${wide.graphRadius}px)`)
+      assert(wide.copyCasePreserved,
+        `${name}: CSS preserves authored UI copy casing`)
+      assert(wide.editorLoaded,
+        `${name}: editor summary and graph matrix are populated`)
+      assert(wide.focusContainersVisible,
+        `${name}: tab containers do not clip focus outlines`)
+
+      const chrome = await page.evaluate(() => {
+        const road = editor.getRoad()
+        const rd = road.road
+        const logo = document.querySelector('#header a')
+        return {
+          siru: String(road.siru),
+          slopeType: document.getElementById('slopetype').value,
+          endSlope: parseFloat(document.getElementById('endslope').value),
+          rawSlope: rd[rd.length - 1][2],
+          logoName: logo.getAttribute('aria-label') || logo.textContent.trim(),
+        }
+      })
+      assert(chrome.slopeType === chrome.siru,
+        `${name}: rate-unit menu reflects the goal's own unit ` +
+        `(${chrome.slopeType} vs ${chrome.siru})`)
+      assert(Math.abs(chrome.endSlope - chrome.rawSlope) <=
+             1e-9 * Math.max(1, Math.abs(chrome.rawSlope)),
+        `${name}: goal-rate field shows the current end slope ` +
+        `(${chrome.endSlope} vs ${chrome.rawSlope})`)
+      assert(chrome.logoName.length > 0,
+        `${name}: header logo link has an accessible name`)
+
+      await page.screenshot({
+        path: path.resolve(__dirname,
+          'qual_newdesign_editor_wide_screenshot.png'),
+        fullPage: true,
+      })
+
+      await page.focus('#graphtab')
+      await page.keyboard.press('Tab')
+      const focus = await page.evaluate(() => {
+        const style = getComputedStyle(document.activeElement)
+        return {
+          id: document.activeElement.id,
+          style: style.outlineStyle,
+          width: parseFloat(style.outlineWidth),
+          offset: parseFloat(style.outlineOffset),
+          color: style.outlineColor,
+        }
+      })
+      assert(focus.id === 'editortab' && focus.style !== 'none' &&
+             focus.width > 0 && focus.offset >= 2 &&
+             focus.color === 'rgb(107, 79, 0)',
+        `${name}: keyboard focus is visible on main tabs`)
+
+      await page.hover('#submit')
+      await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 150)))
+      const disabledHover = await page.evaluate(() => ({
+        submit: getComputedStyle(document.getElementById('submit'))
+          .backgroundColor,
+        undo: getComputedStyle(document.getElementById('eundo'))
+          .backgroundColor,
+      }))
+      assert(disabledHover.submit === disabledHover.undo,
+        `${name}: disabled Submit stays visually disabled on hover`)
+
+      await page.setViewport({width: 390, height: 844})
+      await page.evaluate(() => new Promise(resolve =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve))))
+      const narrow = await page.evaluate(() => {
+        const workspaceRect = document.querySelector(
+          '#editor .workspace').getBoundingClientRect()
+        const graphRect = document.querySelector(
+          '#editor .graphcontainer').getBoundingClientRect()
+        const toolsRect = document.querySelector(
+          '#editor .vtabcontainer').getBoundingClientRect()
+        const toolbars = [...document.querySelectorAll(
+          '#editor .graphtools')]
+        return {
+          panelsStack: Math.abs(toolsRect.left - graphRect.left) < 2 &&
+            toolsRect.top >= graphRect.bottom + 16,
+          panelsFit: graphRect.right <= workspaceRect.right + 1 &&
+            toolsRect.right <= workspaceRect.right + 1,
+          pageFits: document.documentElement.scrollWidth <= innerWidth,
+          toolbarCount: toolbars.length,
+          toolbarsWrap: toolbars.every(el => {
+              const style = getComputedStyle(el)
+              return style.display === 'flex' && style.flexWrap === 'wrap'
+            }),
+        }
+      })
+      assert(narrow.panelsStack,
+        `${name}: graph and tools stack at 390px`)
+      assert(narrow.panelsFit,
+        `${name}: stacked panels fit inside the workspace`)
+      assert(narrow.pageFits,
+        `${name}: 390px viewport has no horizontal page overflow`)
+      assert(narrow.toolbarCount === 5 && narrow.toolbarsWrap,
+        `${name}: narrow editor toolbars wrap`)
+
+      // Wrapping toolbars may only break between checkbox+label pairs, never
+      // inside one: each checkbox must stay on the same line as its label
+      const checkpairs = await page.evaluate(() => {
+        document.querySelectorAll('#editor details')
+          .forEach(d => { d.open = true })
+        const boxes = [...document.querySelectorAll(
+          '#editor input[type="checkbox"]')]
+        const rows = boxes.map(box => {
+          const label = document.querySelector(`label[for="${box.id}"]`)
+          const b = box.getBoundingClientRect()
+          const l = label.getBoundingClientRect()
+          return {id: box.id, onOneLine: l.top < b.bottom && l.bottom > b.top}
+        })
+        document.querySelectorAll('#editor details')
+          .forEach(d => { d.open = false })
+        return rows
+      })
+      const strays = checkpairs.filter(p => !p.onOneLine).map(p => p.id)
+      assert(checkpairs.length === 3 && strays.length === 0,
+        `${name}: checkboxes share a line with their labels at 390px ` +
+        `(${checkpairs.length} pairs, strays: ${JSON.stringify(strays)})`)
+
+      // The graph matrix is wider than a phone; its pane must scroll so the
+      // row buttons stay reachable rather than getting clipped
+      const matrix = await page.evaluate(() => {
+        const pane = document.getElementById('eroad')
+        const buttons = [...pane.querySelectorAll('button')]
+        pane.scrollLeft = pane.scrollWidth
+        const paneRight = pane.getBoundingClientRect().right
+        const reachable = buttons.every(b =>
+          b.getBoundingClientRect().right <= paneRight + 1)
+        pane.scrollLeft = 0
+        return {overflowX: getComputedStyle(pane).overflowX,
+                nButtons: buttons.length, reachable}
+      })
+      assert(matrix.overflowX === 'auto',
+        `${name}: graph matrix pane scrolls sideways (got ${matrix.overflowX})`)
+      assert(matrix.nButtons > 0 && matrix.reachable,
+        `${name}: all ${matrix.nButtons} matrix buttons reachable by scrolling`)
+
+      // The graph and sandbox tabs share the cleaned-up markup and CSS with
+      // the editor, so drive them at phone width too
+      await page.click('#graphtab')
+      await page.waitForSelector('#graph', {visible: true})
+      // Focusing the empty date field auto-fills today via Pikaday
+      await page.click('#datadate')
+      await page.type('#datavalue', '5')
+      await page.type('#datacmt', 'abc')
+      const graphNarrow = await page.evaluate(() => ({
+        date: document.getElementById('datadate').value,
+        value: document.getElementById('datavalue').value,
+        cmt: document.getElementById('datacmt').value,
+        pageFits: document.documentElement.scrollWidth <= innerWidth,
+      }))
+      assert(/^\d{4}-\d{2}-\d{2}$/.test(graphNarrow.date) &&
+             graphNarrow.value === '5' && graphNarrow.cmt === 'abc',
+        `${name}: entry form date auto-fills and inputs accept typed text ` +
+        JSON.stringify(graphNarrow))
+      assert(graphNarrow.pageFits,
+        `${name}: graph tab fits a 390px viewport`)
+      await page.screenshot({
+        path: path.resolve(__dirname,
+          'qual_newdesign_graph_mobile_screenshot.png'),
+        fullPage: true,
+      })
+
+      await page.click('#sandboxtab')
+      await page.waitForSelector('#roadsandbox svg.bmndrsvg .razr',
+        {visible: true})
+      await page.type('#sdataval', '1')
+      await page.click('#sedit button[onclick*="newData"]')
+      await page.waitForFunction(
+        () => document.getElementById('sundo').innerHTML === 'Undo (1)')
+      const sandboxNarrow = await page.evaluate(() => ({
+        undoEnabled: !document.getElementById('sundo').disabled,
+        rateShown: Number.isFinite(
+          parseFloat(document.getElementById('sendslope').value)),
+        pageFits: document.documentElement.scrollWidth <= innerWidth,
+        activeTabs: [...document.querySelectorAll('.tablinks.active')]
+          .map(el => el.id),
+      }))
+      assert(sandboxNarrow.activeTabs.length === 1 &&
+             sandboxNarrow.activeTabs[0] === 'sandboxtab',
+        `${name}: exactly the sandbox tab is active after switching ` +
+        JSON.stringify(sandboxNarrow.activeTabs))
+      assert(sandboxNarrow.undoEnabled,
+        `${name}: sandbox accepts a datapoint and enables undo`)
+      assert(sandboxNarrow.rateShown,
+        `${name}: sandbox dial shows a numeric rate`)
+      assert(sandboxNarrow.pageFits,
+        `${name}: sandbox tab fits a 390px viewport`)
+      await page.screenshot({
+        path: path.resolve(__dirname,
+          'qual_newdesign_sandbox_mobile_screenshot.png'),
+        fullPage: true,
+      })
+
+      // The 1041-1279px band keeps the two-column workspace with no
+      // horizontal page overflow
+      await page.setViewport({width: 1100, height: 800})
+      await page.click('#editortab')
+      await page.evaluate(() => new Promise(resolve =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve))))
+      const mid = await page.evaluate(() => {
+        const graphRect = document.querySelector(
+          '#editor .graphcontainer').getBoundingClientRect()
+        const toolsRect = document.querySelector(
+          '#editor .vtabcontainer').getBoundingClientRect()
+        return {
+          panelsShareRow: Math.abs(graphRect.top - toolsRect.top) < 2,
+          pageFits: document.documentElement.scrollWidth <= innerWidth,
+        }
+      })
+      assert(mid.panelsShareRow && mid.pageFits,
+        `${name}: two-column layout intact at 1100px ` + JSON.stringify(mid))
+
+      // Park back where the closing checks and final screenshot expect us
+      await page.setViewport({width: 390, height: 844})
+      await page.evaluate(() => new Promise(resolve =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve))))
+
+      const labels = await page.evaluate(() => ({
+        main: [...document.querySelectorAll('.tablinks')]
+          .map(el => el.textContent).join('|'),
+        editor: [...document.querySelectorAll('.etablinks')]
+          .map(el => el.textContent).join('|'),
+        actions: ['eundo', 'eredo', 'ereset', 'ezoomall', 'ezoomdflt',
+                  'submit'].map(id => document.getElementById(id).textContent)
+                           .join('|'),
+      }))
+      assert(labels.main === 'Graph|Graph Editor|Sandbox',
+        `${name}: main-tab copy is unchanged`)
+      assert(labels.editor === 'Red Line|Stats|Data|Dial',
+        `${name}: editor-tool copy is unchanged`)
+      assert(labels.actions ===
+        'Undo (0)|Redo (0)|Undo All|View All|Reset Zoom|Submit',
+        `${name}: editor-action copy is unchanged`)
+    }, {width: 1360, height: 900})
 
   // --- 3. sandbox.html: creates a new goal from scratch ---
   await runQual(browser, port, 'sandbox', '/quals/sandbox.html',

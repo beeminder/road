@@ -1,22 +1,61 @@
+:root {
+  --ink: #282721;
+  --muted: #6d6a61;
+  --line: #d8d5cc;
+  --line-strong: #c1bcae;
+  --paper: #fff;
+  --canvas: #f4f2ed;
+  --amber: #ffcb06;
+  --amber-soft: #fff3b0;
+  --focus: #6b4f00;
+  --radius: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--canvas);
+}
+
 body {
-  font-size:130%;
-  min-width:620px;
+  min-width: 0;
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+button, input, select {
+  font: inherit;
 }
 .dslider{
-  width:340px;
+  width:280px;
 }
 #header {
-  background-color: #FFCB06;
-  padding: 8px 2%;
-  margin-bottom:10px;
+  margin: 0;
+  border-bottom: 1px solid #d9ad00;
+  background-color: var(--amber);
+}
+
+.headerinner {
+  display: flex;
+  align-items: center;
+  width: min(calc(100% - 32px), 1220px);
+  min-height: 64px;
+  margin: 0 auto;
 }
 
 .logo {
-  height: 59px;
-  width: 260px;
+  width: 215px;
+  height: 54px;
   /* background: url(https://www.beeminder.com/assets/website_logo_mid_type.png) no-repeat; */
   background: url(https://www.beeminder.com/legacy_images/logo_hi.png) no-repeat;
-  background-size: 205px;
+  background-position: left center;
+  background-size: 190px;
   
   /* temporary version till we fix the above URL 
   background: url(/lib/favicons/bee-with-big-brain.png) no-repeat;
@@ -28,278 +67,430 @@ body {
 /***** Common Element styles *****/
 
 button.bmdrbtn, select {
-  color:black;
-  background-color: #ddd;
-  padding: 10px 16px;
-  transition: 0.2s;
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background-color: #f8f7f4;
+  color: var(--ink);
+  font-size: .875rem;
+  font-weight: 650;
+  line-height: 1.2;
   cursor: pointer;
-  outline: none;
-  border: 1px solid #ccc;
-  font-size:90%;
-  /* border-radius: 4px; */
+  transition: background-color 120ms ease, border-color 120ms ease,
+              box-shadow 120ms ease;
 }
 
 button.bmdrbtn:hover {
-  background-color: #FFD949;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-color: #b49000;
+  background-color: var(--amber-soft);
 }
 
 button.bmdrbtn.active {
-  background-color: #FFD949;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+  border-color: #d0a600;
+  background-color: var(--amber-soft);
 }
 
-button.bmdrbtn:disabled {
-  color: #999;
-  cursor: not-allowed;
-  transform: none;
+:where(button, input, select, summary):focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
 }
 
 input[type=checkbox] {
-  width:20px;
-  height:20px;
-  vertical-align:middle;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--amber);
+  vertical-align: middle;
   cursor: pointer;
 }
 
 label {
-  vertical-align:middle;
-  font-size:110%;
+  vertical-align: middle;
+  font-size: .9375rem;
   cursor: pointer;
 }
 
 .tooltitle {
-  border-bottom:2px solid #bbb;
-  margin: 10px 0px 10px 0px;
-  font-weight:bold;
-  /* padding-bottom: 5px; */
+  margin: 22px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: .75rem;
+  font-weight: 750;
+  letter-spacing: .08em;
+}
+
+.etabcontent > .tooltitle:first-child,
+.gtabcontent > .tooltitle:first-child,
+.stabcontent > .tooltitle:first-child {
+  margin-top: 0;
 }
 
 
 
 /***** MAIN TABS AND CONTAINERS *****/
 /* Horizontal container for main tabs */
+.app-shell {
+  width: min(calc(100% - 32px), 1220px);
+  margin: 20px auto 48px;
+}
+
+.goalbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 62px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+
+.goalbar label {
+  flex: 0 0 auto;
+  font-weight: 700;
+}
+
 .tab {
-  margin-top:10px;
-  overflow: hidden;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  width: 100%;
+  margin-top: 16px;
+  padding: 4px;
+  overflow: visible;
   border: none;
-  width : 100%;
-  max-width:1024px;
+  border-radius: 10px;
+  background: #dfdcd4;
 }
 
 .tab button.bmdrbtn {
-  width : 33.333%;
-  height: 45px;
-  float: left;
-  border-bottom: none;
+  width: auto;
+  min-height: 42px;
+  padding: 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #5f5b52;
+}
+
+.tab button.bmdrbtn:hover {
+  background: rgba(255, 255, 255, .55);
+}
+
+.tab button.bmdrbtn.active {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(45, 42, 34, .14);
 }
 
 /* Style the tab content */
-.tabcontent {  
-  /*white-space:nowrap;*/
-  box-shadow: 0 0 6px #ccc;
+.tabcontent {
   display: none;
-  padding: 6px 12px;
-  border: 1px solid #ccc;
-  /*width:709px;*/
+  padding: 18px 0 0;
+}
+
+#graph, #entry, #eroad, #sedit {
+  display: block;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 696px) minmax(360px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.panel {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
 }
 
 .etabcontent, .gtabcontent, .stabcontent {
-  box-shadow: 0 0 6px #ccc;
   display: none;
-  margin-left:45px;
-  position:relative;
-  top:-45px;
-  width:90%;
-  height:90%;
-  padding: 6px 6px;
-  border: 1px solid #ccc;
+  position: static;
+  width: 100%;
+  min-height: 360px;
+  margin: 0;
+  padding: 18px;
   overflow-x: auto;
 }
 
 .graphcontainer {
   width: 100%;
-  max-width:694px;
-  display:block;
+  max-width: none;
+  padding: 12px;
+  display: block;
+  overflow: hidden;
   /* vertical-align:top; -- ignored with display:block apparently */
 }
 .graphtools {
-  margin: 10px;
-  margin-left: 10px;
-  font-size:90%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 4px;
+  font-size: .875rem;
+}
+
+.graphcontainer > .graphtools {
+  border-top: 1px solid var(--line);
+}
+
+.graphcontainer > br,
+.graphcontainer > hr {
+  display: none;
+}
+
+.graphcontainer > details {
+  padding: 12px 4px 4px;
+  border-top: 1px solid var(--line);
+}
+
+.graphcontainer > details > summary {
+  padding: 2px 0;
+  color: var(--muted);
+  font-size: .875rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.graphcontainer > details .graphtools {
+  padding: 10px 0 0;
+}
+
+/* A checkbox and its label move as one unit when toolbars wrap */
+.checkpair {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 #roadgraph, #roadeditor, #roadsandbox {
   width: 100%;
-  margin-right:10px;
-  vertical-align:top;
+  margin: 0;
+  vertical-align: top;
 }
 /***** VERTICAL SECONDARY TABS *****/
 .vtab {
-  width:360px;
-  white-space:nowrap;
-  transform:translate(-9);
-  overflow: hidden;
-  border: none;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: 100%;
+  padding: 0 12px;
+  white-space: nowrap;
+  overflow: visible;
+  border-bottom: 1px solid var(--line);
 }
 
 .vtab button.bmdrbtn {
-  display: inline-block;
-  width:90px;
-  height:45px;
-  border-bottom: none;
-  /* margin: 0; */
+  display: block;
+  width: auto;
+  min-width: 0;
+  min-height: 43px;
+  padding: 10px 5px 8px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: .8125rem;
 }
+
+.vtab button.bmdrbtn:hover {
+  background: #faf7eb;
+}
+
+.vtab button.bmdrbtn.active {
+  border-bottom-color: var(--amber);
+  background: #fffaf0;
+  color: var(--ink);
+  box-shadow: none;
+}
+
 .vtabtitle {
-  padding: 2px;
-  font-size:120%;
-  font-weight:bold;
-}
-
-/* original was like so before codebuff DRY'd it up a bit:
-#graph .vtab {
-  transform-origin:0 0;
-  transform:rotate(-90deg) translate(-360px, 0px);
-}
-#editor .vtab {
-  transform-origin:0 0;
-  transform:rotate(-90deg) translate(-360px, 0px);
-}
-#sandbox .vtab {
-  transform-origin:0 0;
-  transform:rotate(-90deg) translate(-360px, 0px);
-}
-*/
-
-#graph .vtab,
-#editor .vtab,
-#sandbox .vtab {
-  transform-origin: 0 0;
-  transform: rotate(-90deg) translate(-360px, 0px);
+  padding: 16px 18px 11px;
+  color: var(--muted);
+  font-size: .75rem;
+  font-weight: 750;
+  letter-spacing: .08em;
 }
 
 .vtabcontainer {
-  width:90%;
-  height:553px;
-  vertical-align:top;
+  width: 100%;
+  height: auto;
+  overflow: hidden;
+  vertical-align: top;
 }
 
 /***** Misc components *****/
 
-.dbhdrcell { border-bottom:1px solid black; } /* Due-by table header */
+.dbhdrcell { border-bottom:1px solid var(--line-strong); } /* Due-by table header */
+
+.duebytable {
+  display: table;
+  border: 1px solid var(--line);
+}
 
 /* Progress indicators */
 .progrow { display: table-row; }
 .proghdr {
   display: table-cell;
-  font-size: 80%;
+  color: var(--muted);
+  font-size: .75rem;
+  font-weight: 700;
   padding: 4px 15px 4px 4px;
 }
 .progcell { display: table-cell; }
 .progcont {
-  width:300px;
-  height:20px;
-  border: 1px solid black;
-  margin:5px;
-  border-radius: 3px;
+  width: min(300px, 100%);
+  height: 12px;
+  margin: 8px 0;
   overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: #eceae5;
 }
 .progbar { 
   height:100%; 
-  background-color: #FFD949; 
+  background-color: var(--amber);
   transition: width 0.3s ease; 
 }
 
 /* Top summary line and components */
 .summary {
-  margin:10px 0 5px 50px;
+  min-height: 54px;
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
 }
 .yoog,.baremin,.doom-modifier,.doom,.pledgepre,.pledge {
-  display:inline-block;
-  font-size:24px;
-  margin:0 5px 0 5px;
+  display: inline-block;
+  margin: 0 4px;
+  font-size: 1.125rem;
 }
 .baremin,.doom, .pledge {
-  padding:5px 10px;
+  padding: 4px 8px;
+  border-radius: 5px;
   background-color: #3b3b3b;
-  color:#ffcb06;
+  color: var(--amber);
 }
 .doom {
-  color:white;
+  color: white;
 }
 
 /* Submission result for the editor */
 #submitmsg {
-  margin-left:5px;
+  margin-left: 4px;
+  color: #8a4029;
+  font-size: .8125rem;
+}
+
+button.primary-action {
+  border-color: #c99f00;
+  background: var(--amber);
+  color: var(--ink);
+  font-weight: 750;
+}
+
+button.primary-action:hover {
+  border-color: #9f7e00;
+  background: #f2c000;
+}
+
+button.bmdrbtn:disabled {
+  border-color: #dedbd3;
+  background: #f0efec;
+  color: #99968e;
+  cursor: not-allowed;
 }
 
 /* New data entry form */
-/*
-.data-entry-form {
-  padding: 20px;
-  box-shadow: 0 0 6px #ccc;
-  background-color: #f9f9f9;
-  border-radius: 4px;
+.entryform {
+  padding: 0;
 }
-*/
 
-.dateentry, .valueentry, .cmtentry {
-  border: 1px solid #ccc;
+.dateentry, .valueentry, .cmtentry, .toolinput {
   width: 100%;
   max-width: 250px;
-  height: 30px;
-  margin-top: 4px;
-  margin-bottom: 4px;
-  /* margin: 8px 0; */
-  /* padding: 5px 10px; */
-  border-radius: 4px;
+  min-height: 38px;
+  margin: 4px 0 9px;
+  padding: 7px 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: var(--paper);
+  color: var(--ink);
   font-size: 16px;
 }
 
-.dateentry:focus, .valueentry:focus, .cmtentry:focus {
-  outline: none;
-  border-color: #FFD949;
+.dateentry:focus, .valueentry:focus, .cmtentry:focus, .toolinput:focus {
+  border-color: #ba9400;
   box-shadow: 0 0 0 2px rgba(255, 217, 73, 0.2);
 }
 
-/* Relax width limits for wider screens */
-@media (min-width: 1280px) {  
+.rateinput {
+  width: 10em;
+}
+
+.daysinput {
+  width: 5em;
+}
+
+.inlinecontrol {
+  margin: 4px;
+}
+
+@media (max-width: 1040px) {
+  .app-shell,
+  .headerinner {
+    width: calc(100% - 20px);
+  }
+
+  .goalbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .workspace {
+    grid-template-columns: minmax(0, 696px);
+    gap: 20px;
+  }
+
   .graphcontainer {
-    width: unset; /* was "width:unset" pre-codebuff, 696px post-codebuff */
-    max-width: 696px;
-    display:inline-block;
+    padding: 4px;
   }
-  #roadgraph, #roadeditor, #roadsandbox {
-    width: 696px;
-    display:inline-block;
-  }  
+
+  .summary {
+    padding: 9px 10px;
+  }
+
+  .yoog,.baremin,.doom-modifier,.doom,.pledgepre,.pledge {
+    margin: 2px;
+    font-size: 1rem;
+  }
+
   .etabcontent, .gtabcontent, .stabcontent {
-    height:100%;
-    width:430px;
+    min-height: 0;
+    padding: 14px;
   }
-  .vtabcontainer {
-    width:unset; /* was "width:unset" pre-codebuff, 430px post-codebuff */
-    height:453px;
-    display:inline-block;
-  }
-  body{
-    /* was max-width:1280px pre-codebuff */
-    font-size:100%;
-  }
-  .tab {
-    width : 1024px;
-  }
-  .dslider{
-    width:280px;
+
+  .vtab {
+    padding: 0 4px;
   }
 }
 
 .ts-control.roadselect {
   display: inline-block;
-  font-size: 120%;
-  width: 250px;
-  border-radius: 4px;
+  width: 100%;
+  min-height: 40px;
+  border-radius: 7px;
+  font-size: 1rem;
 }
 
 /* Increase font size for dropdown options (HT Codebuff) */
@@ -318,23 +509,16 @@ label {
 /* Improve form styling */
 input[type="number"],
 input[type="text"],
-select { transition: all 0.2s ease; }
+select {
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
 
 input[type="number"]:hover,
 input[type="text"]:hover,
 select:hover { border-color: #bbb; }
 
-/* Better spacing for inline elements */
-/*
-.graphtools input[type="checkbox"] {
-  margin-right: 5px;
-.graphtools label {
-  margin-right: 15px;
-*/
 hr {
-  border: none;
-  border-top: 1px solid #e0e0e0;
-  margin: 20px 0;
+  border: 0;
 }
 
 /* Knots (the draggable vertical lines) show a left/right arrow cursor on hover 
