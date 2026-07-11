@@ -1,6 +1,7 @@
 
 ## CHANGELOG
 
+* 2026.07.11 Scrubber for zooming works on the graph tab, not just the editor
 * 2026.07.10 Graph editor CSS up-sprucing
 * 2026.03.26 Polishing and bug fixes
 * 2026.01.10 Qual suite using Puppeteer

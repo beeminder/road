@@ -963,6 +963,43 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
   // Resultata: generic boxed sections, rotated tool tabs, and a fixed viewport.
   await runQual(browser, port, 'newdesign_editor', NEWDESIGN_PATH,
     async (page, name) => {
+      // The graph tab has a working scrubber (context graph) for zooming,
+      // like the editor's
+      const scrubber = await page.evaluate(() => {
+        const svg = document.querySelector('#roadgraph svg.bmndrsvg')
+        return {
+          contextVisible: getComputedStyle(
+            svg.querySelector('.brush')).visibility === 'visible',
+          focusrectVisible: getComputedStyle(
+            svg.querySelector('.focusrect')).visibility === 'visible',
+        }
+      })
+      assert(scrubber.contextVisible,
+        `${name}: graph-tab scrubber is visible`)
+      assert(scrubber.focusrectVisible,
+        `${name}: graph-tab scrubber shows the zoom window`)
+
+      // Dragging the scrubber's selection pans the graph: the focus x-axis
+      // ticks (first .axis in document order) move
+      const xAxisTicks = () => page.evaluate(() =>
+        document.querySelector('#roadgraph svg.bmndrsvg .axis').innerHTML)
+      const axisBefore = await xAxisTicks()
+      const sel = await page.$('#roadgraph .brush .selection')
+      const selBox = sel && await sel.boundingBox()
+      assert(selBox && selBox.width > 0,
+        `${name}: graph-tab scrubber has a draggable selection`)
+      if (selBox) {
+        await page.mouse.move(selBox.x + selBox.width / 2,
+                              selBox.y + selBox.height / 2)
+        await page.mouse.down()
+        await page.mouse.move(selBox.x + selBox.width / 2 - 60,
+                              selBox.y + selBox.height / 2, {steps: 5})
+        await page.mouse.up()
+        assert(await xAxisTicks() !== axisBefore,
+          `${name}: dragging the scrubber pans the graph`)
+        await page.evaluate(() => graph.zoomDefault())
+      }
+
       await page.click('#editortab')
       await page.waitForSelector('#editor', {visible: true})
       await page.waitForSelector('#roadeditor svg.bmndrsvg .razr',

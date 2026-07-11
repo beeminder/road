@@ -596,14 +596,14 @@ function initialize() {
                       divTable: divGraphRoad,
                       divDueby: divGraphDueBy,
                       divData: divGraphData,
-                      svgSize: { width: 696, height: 453 },
+                      svgSize: { width: 696, height: 553 },
                       focusRect: { x:0, y:0, width:696, height: 453 },
-                      ctxRect: { x:0, y:453, width:696, height: 32 },
+                      ctxRect: { x:0, y:453, width:696, height: 100 },
                       roadEditor:false,
                       tableHeight:212,
                       maxFutureDays: 365,
-                      showFocusRect: false,
-                      showContext: false,
+                      showFocusRect: true,
+                      showContext: true,
                       onDataEdit: dataEdited,
                       onRoadChange: graphChanged})
   // Create the editor
