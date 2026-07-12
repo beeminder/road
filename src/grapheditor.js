@@ -342,7 +342,7 @@ function editorChanged() {
     submitMsg.innerHTML = "Bright red line can't be easier within the akrasia horizon!"
   } else if (newRoad.loser) {
     submitButton.disabled = true
-    submitMsg.innerHTML = "Submitting this bright red line would insta-derail!"
+    submitMsg.innerHTML = "Submitting would insta-derail (we can't let you do that, Dave)"
   } else {
     submitMsg.innerHTML = ""
   }

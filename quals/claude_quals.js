@@ -1379,6 +1379,48 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
           `(got ${JSON.stringify(kiCalls)})`)
       }
 
+      // Replicata: enable Fixed intervals and drag a knot to the right.
+      // Expectata: all later knots slide along with it, keeping the time
+      // between them (the point of the toggle). Resultata (pre-fix): a
+      // var->const sweep (a9cf6e4) left knotDragged assigning to a const
+      // when keepIntervals is on, so every drag event threw a TypeError
+      // and the knot wouldn't budge at all.
+      const kiBefore = await page.evaluate(() => {
+        editor.keepIntervals(true)
+        return editor.getRoad().road.map(r => r[0])
+      })
+      const kiKnot = await page.evaluate(() => {
+        const svgr = document.querySelector('#roadeditor svg.bmndrsvg')
+          .getBoundingClientRect()
+        const ks = [...document.querySelectorAll('#roadeditor .knots')]
+          .map(k => { const r = k.getBoundingClientRect()
+                      return {x: r.x + r.width / 2, y: r.y + r.height / 2} })
+          .filter(p => p.x > svgr.x + 60 && p.x < svgr.right - 20)
+        return ks[ks.length - 1]
+      })
+      await page.mouse.move(kiKnot.x, kiKnot.y)
+      await page.mouse.down()
+      for (let i = 1; i <= 10; i++) {
+        await page.mouse.move(kiKnot.x + 6 * i, kiKnot.y)
+        await page.evaluate(() => new Promise(r => setTimeout(r, 20)))
+      }
+      await page.mouse.up()
+      const kiAfter = await page.evaluate(() => {
+        const dates = editor.getRoad().road.map(r => r[0])
+        if (editor.undoBufferState().undo > 0) editor.undoAll()
+        editor.keepIntervals(false)
+        return dates
+      })
+      const day = s => Date.UTC(+s.slice(0, 4), +s.slice(4, 6) - 1,
+                                +s.slice(6, 8)) / 86400000
+      const kiShift = day(kiAfter[1]) - day(kiBefore[1])
+      const kiGoalShift = day(kiAfter[kiAfter.length - 1]) -
+                          day(kiBefore[kiBefore.length - 1])
+      assert(kiShift > 0 && kiGoalShift === kiShift,
+        `${name}: with Fixed intervals on, dragging a knot slides later ` +
+        `knots along, keeping the time between them (knot moved ` +
+        `${kiShift} days, goal date moved ${kiGoalShift})`)
+
       // Undo/redo keyboard shortcuts, including the Mac variants: mod-Z
       // undoes; mod-Y and shift-mod-Z redo
       await page.evaluate(() => {

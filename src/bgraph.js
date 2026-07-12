@@ -2716,7 +2716,7 @@ function knotDragged(event, d) {
   if (x > rd[kind+1].end[0]) x = rd[kind+1].end[0]
 
   // If keepIntervals is enabled, shift all future segments as well
-  const maxind = kind+1
+  let maxind = kind+1
   if (opts.keepIntervals) maxind = rd.length
   for (let ii = kind; ii < maxind; ii++) {
     rd[ii].end[0] = x + roadsave[ii].end[0] 
