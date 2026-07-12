@@ -22,7 +22,7 @@
   hypotenuse = squareInverse(square(verticalLeg) + square(horizontalLeg))
 If a symbol (variable, constant, field name, function, etc) is localized to a few lines then either extreme is fine. Long names can be nicely self-documenting but often i or x are fine variable names if the code itself makes clear what they mean. If, on the other hand, a symbol shows up across the codebase or carries business (in the "business logic" sense) meaning, treat it as vocabulary. Give it a name that's short but evocative and is both greppable and pronounceable. (E.g., whoever came up with "sqrt" did this perfectly. It's ubiquitous enough that it's worth abbreviating, and can be pronounced as "square root" or "squirt".) Think of the name as jargon, in the positive sense, and never use [pseudovernacular jargon](https://blog.beeminder.com/pseudovernacular). Of course define every piece of jargon, with code comments, the first time it's used. 
 18. Replicata/Expectata/Resultata. Those are the three parts of a [proper bug report](https://blog.beeminder.com/bugreports): (1) steps to replicate the bug ex nihilo, (2) what you expected to happen, and (3) what happened instead. A failing qual should also be framed that way.
-
+19. My workflow is to always stay on the main/master branch, let the AI make edits, review those in my IDE, and then manually, as the human, type a commit message and push and sync to master. So you can use git diff and git log as needed but don't do other things with git that might mess up my workflow.
 
 # Agent Scratchpad (human edits only above this line)
 
