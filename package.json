@@ -1,6 +1,6 @@
 {
   "name": "Beebrain",
-  "version": "2026.07.12-c",
+  "version": "2026.07.12-d",
   "description": "Beeminder Graph Generator and Visual Graph Editor",
   "main": "server.js",
   "scripts": {
@@ -23,7 +23,7 @@
     "moment": "^2.30.1",
     "moment-timezone": "^0.6.2",
     "sequelize": "^6.37.8",
-    "sqlite3": "^6.0.1"
+    "sqlite3": "^5.1.7"
   },
   "engines": {
     "node": ">=22"

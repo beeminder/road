@@ -5,6 +5,9 @@ const fs = require('fs')
 const gm = require('gm').subClass({imageMagick: true})
 
 const pageTimeout = 40 // Seconds to wait until giving up on generate.html
+const pageIdle = 600   // Seconds an unused page (tab) stays warm before
+                       // closing. A cold page costs ~800ms of navigation and
+                       // script parsing on the next render vs ~20ms warm.
 
 class Renderer {
   
@@ -331,7 +334,7 @@ class Renderer {
                 pageinfo.timeout = null
               } else
                 console.log("Warning: pageinfo=null in timeout to close page")
-            }, 10000)
+            }, pageIdle * 1000)
       }
     }
     return {html: html, png: png, svg: svg, json: json, error:null, msgbuf: msgbuf}

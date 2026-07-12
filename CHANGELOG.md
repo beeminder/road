@@ -1,6 +1,7 @@
 
 ## CHANGELOG
 
+* 2026.07.12 Graph renderer keeps pages warm 10min not 10sec; d3 served locally
 * 2026.07.11 SVG buttons & scrubber toggle out of experimental
 * 2026.07.11 Killed olddesign; newdesign renamed grapheditor
 * 2026.07.11 Matrix/data-table restyle, more in help popup, better tooltips
