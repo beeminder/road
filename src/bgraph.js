@@ -4688,7 +4688,7 @@ function updateSteppy() {
   let stpdelt = gSteppyPts.selectAll(".std")
   if (opts.showData || !opts.roadEditor) {
     if (!opts.roadEditor && gol.steppy && dataf.length !== 0) {
-      const npts = dataf.filter(df)
+      let npts = dataf.filter(df)
       let i
       if (npts.length === 0) {
         // no points are in range, find enclosing two

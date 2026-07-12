@@ -155,6 +155,54 @@ async function checkGraph(page, name) {
 }
 
 // ---------------------------------------------------------------------------
+// Static-analysis quals: correctness-only lint over all first-party js
+// ---------------------------------------------------------------------------
+// Three separate crashes have come from assigning to a const in a rarely-hit
+// branch (`const diff` in redrawXTicks, `const maxind` in knotDragged,
+// `const npts` in updateSteppy), each dormant until someone hit the branch.
+// These rules are deterministic single-file correctness checks with no style
+// component. no-unmodified-loop-condition is deliberately absent: it
+// false-positives on broad.js loops whose conditions change via mutation.
+console.log('\n--- static-analysis quals ---')
+;(() => {
+  const { Linter } = require('eslint')
+  const linter = new Linter()
+  const files = [
+    'src/butil.js', 'src/broad.js', 'src/beebrain.js', 'src/bgraph.js',
+    'src/bsandbox.js', 'src/btest.js', 'src/grapheditor.js',
+    'app/server.js', 'jsbrain_server/jsbrain_server.js',
+    'jsbrain_server/renderer.js',
+  ]
+  const rules = {
+    'no-const-assign':               'error',
+    'no-dupe-args':                  'error',
+    'no-dupe-keys':                  'error',
+    'no-dupe-else-if':               'error',
+    'no-func-assign':                'error',
+    'no-self-assign':                'error',
+    'no-self-compare':               'error',
+    'use-isnan':                     'error',
+    'valid-typeof':                  'error',
+    'no-unreachable':                'error',
+    'no-compare-neg-zero':           'error',
+    'no-constant-binary-expression': 'error',
+    'for-direction':                 'error',
+    'no-setter-return':              'error',
+    'getter-return':                 'error',
+  }
+  for (const f of files) {
+    const code = fs.readFileSync(path.join(REPO, f), 'utf8')
+    const msgs = linter.verify(code, {
+      languageOptions: { ecmaVersion: 2022, sourceType: 'script' },
+      rules,
+    })
+    for (const m of msgs)
+      assert(false,
+        `static ${f}:${m.line}:${m.column} [${m.ruleId}] ${m.message}`)
+  }
+})()
+
+// ---------------------------------------------------------------------------
 // Unit quals: pure functions, no browser needed
 // ---------------------------------------------------------------------------
 
@@ -928,6 +976,47 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       }, smallBb)
       assert(smallErr === null,
         `${name}: small-focusRect bgraph renders without throwing (got: ${smallErr})`)
+
+      // Replicata: load a steppy goal with a multi-month gap in its data
+      // (quals/steppygap_test.bb) and zoom in so the visible window sits
+      // inside the gap with datapoints on both sides. Expectata: the graph
+      // redraws fine, steppy line intact. Resultata (pre-fix): updateSteppy
+      // assigned to a const (npts, from 2caea8c in 2020 -- the third
+      // const-assignment crash of this kind, see also `const diff` above
+      // and `const maxind` in knotDragged) and threw "Assignment to
+      // constant variable" on every redraw once zoomed into the gap.
+      const gapBb = await fetch(
+        `http://localhost:${port}/quals/steppygap_test.bb`).then(r => r.text())
+      const gap = await page.evaluate(async (bbtext) => {
+        const g = document.createElement('div')
+        g.style.width = '696px'; g.style.height = '453px'
+        g.id = 'steppygap'
+        document.body.appendChild(g)
+        const bg = new bgraph({
+          divGraph:  g,
+          svgSize:   {width: 696, height: 453},
+          focusRect: {x: 0, y: 0, width: 696, height: 453},
+          ctxRect:   {x: 0, y: 453, width: 696, height: 32},
+          roadEditor: false,
+          showContext: false,
+        })
+        await bg.loadGoalJSON(JSON.parse(bbtext))
+        await new Promise(r => setTimeout(r, 300))
+        let uncaught = null
+        const onerr = e => { uncaught = e.message }
+        window.addEventListener('error', onerr)
+        document.querySelector('#steppygap svg .zoomin')
+          .dispatchEvent(new MouseEvent('click', {bubbles: true}))
+        await new Promise(r => setTimeout(r, 300))
+        window.removeEventListener('error', onerr)
+        const path = document.querySelector('#steppygap svg .steppy')
+        return {uncaught, d: path ? (path.getAttribute('d') || '') : ''}
+      }, gapBb)
+      assert(gap.uncaught === null,
+        `${name}: zooming a steppy graph into a data gap doesn't throw ` +
+        `(got: ${gap.uncaught})`)
+      assert(gap.d.length > 0,
+        `${name}: steppy line still drawn when zoomed inside a data gap`)
     })
 
   // --- 2. roadeditor_test.html: editor + read-only graph, loads testroad0 ---
@@ -1420,6 +1509,106 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         `${name}: with Fixed intervals on, dragging a knot slides later ` +
         `knots along, keeping the time between them (knot moved ` +
         `${kiShift} days, goal date moved ${kiGoalShift})`)
+
+      // Replicata: drag a road dot upward with "Propagate changes forward"
+      // on (the default), then again with it off. Expectata: with it on,
+      // every later segment keeps its slope, so the rest of the line
+      // translates by the drag delta; with it off, the rest of the line
+      // stays pinned and only the adjacent segments re-slope. (This is the
+      // keepSlopes toggle; until now nothing pinned its effect on the
+      // road, only that the checkbox calls it.)
+      const roadEnds = () => page.evaluate(() =>
+        editor.getRoadObj().slice(0, -1).map(s => [s.end[0], s.end[1]]))
+      const dragDotUp = async () => {
+        const pt = await page.evaluate(() => {
+          const svgr = document.querySelector('#roadeditor svg.bmndrsvg')
+            .getBoundingClientRect()
+          const ds = [...document.querySelectorAll('#roadeditor .dots')]
+            .map(k => { const r = k.getBoundingClientRect()
+                        return {x: r.x + r.width / 2,
+                                y: r.y + r.height / 2} })
+            .filter(p => p.x > svgr.x + 60 && p.x < svgr.right - 20)
+          return ds[ds.length - 1]
+        })
+        await page.mouse.move(pt.x, pt.y)
+        await page.mouse.down()
+        for (let i = 1; i <= 10; i++) {
+          await page.mouse.move(pt.x, pt.y - 6 * i)
+          await page.evaluate(() => new Promise(r => setTimeout(r, 20)))
+        }
+        await page.mouse.up()
+      }
+      const undoAllSafe = () => page.evaluate(() => {
+        if (editor.undoBufferState().undo > 0) editor.undoAll()
+      })
+
+      let ksBefore = await roadEnds()
+      await dragDotUp()
+      let ksAfter = await roadEnds()
+      const moved = ksAfter.findIndex((e, i) =>
+        Math.abs(e[1] - ksBefore[i][1]) > 1e-9)
+      const ksDelta = moved >= 0 ? ksAfter[moved][1] - ksBefore[moved][1] : 0
+      const translated = moved >= 0 &&
+        ksAfter.slice(moved).every((e, i) =>
+          Math.abs(e[1] - ksBefore[moved + i][1] - ksDelta) < 1e-6 &&
+          e[0] === ksBefore[moved + i][0])
+      assert(moved >= 0 && Math.abs(ksDelta) > 0 && translated,
+        `${name}: with Propagate changes forward on, the rest of the ` +
+        `line translates with a dragged dot (delta ${ksDelta})`)
+      await undoAllSafe()
+
+      await page.evaluate(() => editor.keepSlopes(false))
+      ksBefore = await roadEnds()
+      await dragDotUp()
+      ksAfter = await roadEnds()
+      const lastind = ksBefore.length - 1
+      const dotMoved = ksAfter.some((e, i) =>
+        Math.abs(e[1] - ksBefore[i][1]) > 1e-9)
+      assert(dotMoved &&
+             ksAfter[lastind][0] === ksBefore[lastind][0] &&
+             Math.abs(ksAfter[lastind][1] - ksBefore[lastind][1]) < 1e-9,
+        `${name}: with Propagate changes forward off, the goal endpoint ` +
+        `stays pinned while the dragged dot moves`)
+      await undoAllSafe()
+      await page.evaluate(() => editor.keepSlopes(true))
+
+      // Replicata: click the row-1 slope cell in the graph matrix, type 2,
+      // hit Enter. Expectata: the road's row-1 slope becomes 2, the edit
+      // lands in the undo buffer, and (for this goal, where that rate
+      // change puts today on the wrong side of the line) Submit disables
+      // with the insta-derail message. Exercises the tableKeyDown ->
+      // tableSlopeChanged -> editorChanged path, which no qual drove
+      // before.
+      await page.click('#editorroad [name=slope1]')
+      await page.evaluate(() => {
+        const cell = document.querySelector('#editorroad [name=slope1]')
+        const sel = window.getSelection()
+        const range = document.createRange()
+        range.selectNodeContents(cell)
+        sel.removeAllRanges()
+        sel.addRange(range)
+      })
+      await page.keyboard.type('2')
+      await page.keyboard.press('Enter')
+      await page.evaluate(() => new Promise(r => setTimeout(r, 400)))
+      const matrixEdit = await page.evaluate(() => ({
+        slope: editor.getRoad().road[1][2],
+        undo: document.getElementById('eundo').textContent,
+        submitDisabled: document.getElementById('submit').disabled,
+        submitmsg: document.getElementById('submitmsg').textContent,
+      }))
+      assert(matrixEdit.slope === 2,
+        `${name}: typing in a matrix slope cell edits the road ` +
+        `(got ${matrixEdit.slope})`)
+      assert(matrixEdit.undo === 'Undo (1)',
+        `${name}: matrix edit lands in the undo buffer ` +
+        `(got ${matrixEdit.undo})`)
+      assert(matrixEdit.submitDisabled &&
+             /insta-derail/.test(matrixEdit.submitmsg),
+        `${name}: insta-derailing edit disables Submit with the derail ` +
+        `message (disabled=${matrixEdit.submitDisabled}, ` +
+        `msg="${matrixEdit.submitmsg}")`)
+      await undoAllSafe()
 
       // Undo/redo keyboard shortcuts, including the Mac variants: mod-Z
       // undoes; mod-Y and shift-mod-Z redo
