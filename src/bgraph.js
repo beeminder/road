@@ -793,8 +793,8 @@ function createGraph() {
                   "zoominfo", false, true, plot)
       scrollinfo.shown = true
     }
-    scrollinfo.timeout= setTimeout(() => { removeOverlay("zoominfo", true);
-                                           scrollinfo.shown = false }, 1000) 
+    scrollinfo.timeout= setTimeout(() => { removeOverlay("zoominfo", true)
+                                           scrollinfo.shown = false }, 1000)
   }
   const onmove = function() {
     if (scrollinfo.timeout != null) {
@@ -6095,6 +6095,12 @@ this.getRoad = function() {
   return r
 }
 
+// --------------------------------------------------------------------------
+// #SCHDEL: Legacy SVG export, superseded by saveGraphDownload/saveGraphBlob.
+// Nothing in this repo calls it anymore; it's kept only until we confirm no
+// external consumer of the public /lib bundles (e.g. the graph editor embed
+// on beeminder.com) still calls it. Delete this whole block when confirmed.
+// --------------------------------------------------------------------------
 /** Generate a data URI downloadable from the link element supplied as an
  * argument. If the argument is empty or null, replace page contents with a
  * cleaned-up graph suitable to be used with headless chrome --dump-dom to
@@ -6147,12 +6153,17 @@ this.saveGraph = ( linkelt = null ) => {
     linkelt.href = url
   }
 }
+// ------------------------------------------------------- end #SCHDEL block
 
 // Helper to prepare clean SVG source for download/preview
 function prepareSVGSource() {
-  const svge = svg.node()
-  const serializer = new XMLSerializer()
-  let source = serializer.serializeToString(svge)
+  // Strip the interactive zoom buttons from a copy of the SVG, then
+  // serialize. (Cleaning up the DOM copy before serializing keeps the xml
+  // declaration below intact; an innerHTML round trip would mangle it.)
+  const svgcopy = d3.select(svg.node().cloneNode(true))
+  svgcopy.selectAll(".zoomin").remove()
+  svgcopy.selectAll(".zoomout").remove()
+  let source = new XMLSerializer().serializeToString(svgcopy.node())
 
   // add name spaces
   if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
@@ -6164,16 +6175,7 @@ function prepareSVGSource() {
   }
 
   //add xml declaration
-  source = '<?xml version="1.0" standalone="no"?>\n' + source
-
-  // Create a temporary container to clean up the SVG
-  const tempDiv = document.createElement('div')
-  tempDiv.innerHTML = source
-  const tempRoot = d3.select(tempDiv)
-  tempRoot.selectAll(".zoomin").remove()
-  tempRoot.selectAll(".zoomout").remove()
-  
-  return tempDiv.innerHTML
+  return '<?xml version="1.0" standalone="no"?>\n' + source
 }
 
 this.saveGraphDownload = () => {
@@ -6194,40 +6196,6 @@ this.saveGraphBlob = () => {
   const url = URL.createObjectURL(blob)
   window.open(url, '_blank')
 }
-
-// This is subsumed by saveGraphBlob for previewing the SVG graph: #SCHDEL
-/* 
-this.saveGraphDocWrite = () => {
-  // retrieve svg source as a string
-  const svge = svg.node()
-  const serializer = new XMLSerializer()
-  let source = serializer.serializeToString(svge)
-
-  // add name spaces
-  if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
-    source= source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"')
-  }
-  if (!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)) {
-    source = source.replace(/^<svg/,
-                            '<svg xmlns:xlink="http://www.w3.org/1999/xlink"')
-  }
-
-  //add xml declaration
-  source = '<?xml version="1.0" standalone="no"?>\n' + source
-
-  // Create a temporary container to clean up the SVG
-  const tempDiv = document.createElement('div')
-  tempDiv.innerHTML = source
-  const tempRoot = d3.select(tempDiv)
-  tempRoot.selectAll(".zoomin").remove()
-  tempRoot.selectAll(".zoomout").remove()
-  source = tempDiv.innerHTML
-
-  const newWindow = window.open('', '_blank')
-  newWindow.document.write(source)
-  newWindow.document.close()
-}
-*/
 
 /** Informs the module instance that the element containing the
  visuals will be hidden. Internally, this prevents calls to

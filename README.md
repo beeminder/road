@@ -93,7 +93,7 @@ This starts a web server on `localhost`, with different features available throu
 This server should also be embeddable in Glitch.
 The following paths are available:
 
-- `/editor` : Client-side graph and interactive graph editor for example goals
+- `/editor` : Client-side graph and interactive graph editor for example goals [not working]
 - `/sandbox` : Client-side sandbox to create and experiment with dummy goals
 - `/login` : Authorizes these pages to access your Beeminder goals
 - `/logout` : De-authorizes access to your Beeminder goals

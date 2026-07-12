@@ -79,7 +79,7 @@ sequelize
   });
 
 // Stuff in the pub directory is served statically
-app.use("/staticdesign", express.static("quals/generated/newdesign.html"));
+app.use("/staticdesign", express.static("quals/generated/grapheditor.html"));
 app.use("/tutorial",     express.static("quals/tutorial.html"));
 app.use("/newgoal",      express.static("quals/newgoal.html"));
 app.use("/src",          express.static("src"));       // js served through /src
@@ -121,23 +121,12 @@ app.get("/road", (req, resp) => {
       username:     req.session.username,
       access_token: req.session.access_token,
     };
-    resp.render("newdesign.ejs", { user: user });
+    resp.render("grapheditor.ejs", { user: user });
   }
 });
-app.get("/olddesign", (req, resp) => {
-  //setsession(req);
-  if (typeof req.session.access_token === "undefined" ||
-      req.session.access_token === null) {
-    resp.redirect("/login");
-  } else {
-    const user = {
-      username:     req.session.username,
-      access_token: req.session.access_token,
-    };
-    resp.render("road.ejs", { user: user });
-  }
-});
-app.get("/editor", (req, resp) => { resp.render("road.ejs", { user: null }) });
+// Retired pages (the pre-2026 "olddesign" UI) redirect to the graph editor
+app.get("/olddesign", (req, resp) => { resp.redirect("/") });
+app.get("/editor",    (req, resp) => { resp.redirect("/") });
 app.get("/sandbox", (req, resp) => { resp.render("sandbox.ejs") });
 app.get("/", (req, resp) => {
   //setsession(req);
@@ -168,7 +157,7 @@ app.get("/", (req, resp) => {
     return resp.redirect('/login');   // humans hit the normal flow
   }
 
-  resp.render('newdesign.ejs', {
+  resp.render('grapheditor.ejs', {
     user: {
       username:     req.session.username,
       access_token: req.session.access_token,

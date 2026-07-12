@@ -110,6 +110,8 @@ road associated with a beeminder goal.
   * {@link bgraph#isLoser isLoser()}: Returns whether the current (possibly edited) road is a loser or not 
   * {@link bgraph#curState curState()}: Returns the state [t,v,r,rdf(t)] of the goal for today (asof).
   * {@link bgraph#saveGraph saveGraph(linkelt)}: Generates a downloadable URI from the current SVG and links the supplied linkelt to it. If linkelt is null (default), replaces the current page with the SVG content alone.
+  * {@link bgraph#saveGraphDownload saveGraphDownload()}: Downloads the current graph as a cleaned-up standalone SVG file named after the goal.
+  * {@link bgraph#saveGraphBlob saveGraphBlob()}: Opens the same cleaned-up standalone SVG in a new browser tab for previewing.
   * {@link bgraph#getVisualConfig getVisualConfig()}: Returns current settings for visual properties, as captured by the {@link GoalVisuals} datatype.
   * {@link bgraph#getGoalConfig getGoalConfig()}: Returns current non-visual goal properties as captured by the {@link GoalProperties} datatype.
 

@@ -1,6 +1,8 @@
 
 ## CHANGELOG
 
+* 2026.07.11 SVG buttons & scrubber toggle out of experimental
+* 2026.07.11 Killed olddesign; newdesign renamed grapheditor
 * 2026.07.11 Matrix/data-table restyle, more in help popup, better tooltips
 * 2026.07.11 Click-away dismisses help popup; due-by table restyled
 * 2026.07.11 Help popup in the corner, scrubber toggle on graph tab

@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="../src/pikaday.css">
   <link rel="stylesheet" href="../src/jsbrain.css">
   <link rel="stylesheet" href="../src/tom-select.css">
-  <link rel="stylesheet" href="../src/newdesign.css">
+  <link rel="stylesheet" href="../src/grapheditor.css">
   <script src = "https://d3js.org/d3.v7.js"></script>
   <script src = "../src/moment.js"></script>
   <script src = "../src/moment-timezone.js"></script>
@@ -57,23 +57,23 @@
   </nav>
   
 <%
-/* The per-tab "Experimental features" section. p prefixes the element ids,
-   obj names the tab's bgraph object in newdesign.js, and extras holds any
-   tab-specific toggle rows. */
-const expFeatures = (p, obj, extras = '') => `
-    <details>
-      <summary>Experimental features</summary>
-      <div class="graphtools">
-        <button class="bmdrbtn" id="${p}savesvgdl" onclick="${obj}.saveGraphDownload();">Download SVG</button>
-        <button class="bmdrbtn" id="${p}savesvgblob" onclick="${obj}.saveGraphBlob();">Preview SVG</button>
-      </div>
-      <div class="graphtools">
-        <span class="checkpair">
-          <input id="${p}showcontext" type="checkbox" onclick="${obj}.showContext(this.checked);" checked>
-          <label for="${p}showcontext">Include scrubber</label>
-        </span>${extras}
-      </div>
-    </details>`
+/* Per-tab tool rows shared by the graph and editor tabs. p prefixes the
+   element ids, obj names the tab's bgraph object in grapheditor.js, and
+   extras holds any tab-specific toggles for the zoom row. */
+const zoomTools = (p, obj, extras = '') => `
+    <div class="graphtools">
+      <button class="bmdrbtn" id="${p}zoomall" onclick="${obj}.zoomAll();">View All</button>
+      <button class="bmdrbtn" id="${p}zoomdflt" onclick="${obj}.zoomDefault();">Reset Zoom</button>${extras}
+    </div>`
+const svgTools = (p, obj) => `
+    <div class="graphtools">
+      <button class="bmdrbtn" id="${p}savesvgblob" onclick="${obj}.saveGraphBlob();">Preview SVG</button>
+      <button class="bmdrbtn" id="${p}savesvgdl" onclick="${obj}.saveGraphDownload();">Download SVG</button>
+      <span class="checkpair">
+        <input id="${p}showcontext" type="checkbox" onclick="${obj}.showContext(this.checked);" checked>
+        <label for="${p}showcontext">Include scrubber</label>
+      </span>
+    </div>`
 %>
 <!-- Tab content -->
 <section id="graph" class="tabcontent" aria-labelledby="graphtab">
@@ -82,12 +82,9 @@ const expFeatures = (p, obj, extras = '') => `
   <div class="graphcontainer panel">
     <div id="roadgraph"></div>
     <hr/>
-    <div class="graphtools">
-      <button class="bmdrbtn" id="zoomall" onclick="graph.zoomAll();">View All</button>
-      <button class="bmdrbtn" id="zoomdflt" onclick="graph.zoomDefault();">Reset Zoom</button>
-    </div>
+    <%- zoomTools('g', 'graph') %>
     <hr/>
-    <%- expFeatures('g', 'graph') %>
+    <%- svgTools('g', 'graph') %>
 
   </div>
 
@@ -158,26 +155,29 @@ const expFeatures = (p, obj, extras = '') => `
       </span>
     </div>
     <hr/>
-    <div class="graphtools">
-      <button class="bmdrbtn" id="ezoomall" onclick="editor.zoomAll();">View All</button>
-      <button class="bmdrbtn" id="ezoomdflt" onclick="editor.zoomDefault();">Reset Zoom</button>
+    <%- zoomTools('e', 'editor', `
       <span class="checkpair">
         <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>
         <label for="showdata">Show data</label>
-      </span>
-    </div>
+      </span>`) %>
+    <hr/>
+    <%- svgTools('e', 'editor') %>
     <hr/>
     <div class="graphtools">
       <button class="bmdrbtn primary-action" id="submit" onclick="handleRoadSubmit();">Submit</button>
       <span id="submitmsg"></span>
     </div>
     <hr/>
-    <%- expFeatures('e', 'editor', `
+    <details>
+      <summary>Experimental features</summary>
+      <div class="graphtools">
         <span class="checkpair">
           <input id="keepintervals" type="checkbox"
                  onclick="editor.keepIntervals(this.checked)">
           <label for="keepintervals">Fixed intervals</label>
-        </span>`) %>
+        </span>
+      </div>
+    </details>
 
   </div>
   
@@ -298,7 +298,7 @@ const expFeatures = (p, obj, extras = '') => `
 </section>
 </main>
 
-<script src = "../src/newdesign.js"></script>
+<script src = "../src/grapheditor.js"></script>
 <script>
   initialize()
 </script>

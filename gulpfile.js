@@ -26,8 +26,7 @@ gulp.task('clean', function(cb) { clean().then(cb) });
 
 function clean_css() {
   return gulp.src(['src/jsbrain.css',
-                   'src/newdesign.css',
-                   'src/editorpage.css',
+                   'src/grapheditor.css',
                    'src/pikaday.css']).pipe(changed(LIBCSS))
                                       .pipe(cleancss())
                                       .pipe(gulp.dest(LIBCSS))
@@ -42,8 +41,7 @@ function compress_js() {
                    'src/bgraph.js',
                    'src/bsandbox.js',
                    'src/btest.js',
-                   'src/client.js',
-                   'src/newdesign.js'])
+                   'src/grapheditor.js'])
     .pipe(changed(LIBJS, { extension: '.min.js' }))
     .pipe(terser())
     .pipe(rename({ extname: '.min.js' }))
@@ -122,8 +120,8 @@ function copy_vendor() {
 }
 
 function linter() {
-  return gulp.src(['src/butil.js', 'src/broad.js', 'src/bgraph.js', 
-                   'src/bsandbox.js', 'src/newdesign.js'])
+  return gulp.src(['src/butil.js', 'src/broad.js', 'src/bgraph.js',
+                   'src/bsandbox.js', 'src/grapheditor.js'])
     .pipe(eslint())
     .pipe(eslint.format())
 }
@@ -138,8 +136,8 @@ function favicons () { // Copy favicons from src to lib
 }
 
 function generate_qual_html() {
-  // Generate quals/generated/newdesign.html from views/newdesign.ejs
-  const ejsTemplate = fs.readFileSync('views/newdesign.ejs', 'utf8')
+  // Generate quals/generated/grapheditor.html from views/grapheditor.ejs
+  const ejsTemplate = fs.readFileSync('views/grapheditor.ejs', 'utf8')
   const html = ejs.render(ejsTemplate, { user: null })
 
   // Ensure generated directory exists
@@ -147,7 +145,7 @@ function generate_qual_html() {
     fs.mkdirSync('quals/generated', { recursive: true })
   }
 
-  fs.writeFileSync('quals/generated/newdesign.html', html)
+  fs.writeFileSync('quals/generated/grapheditor.html', html)
   return Promise.resolve()
 }
 

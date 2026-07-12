@@ -8,7 +8,7 @@ export default [
       "no-unused-vars": "warn"
     },
     languageOptions: {
-      ecmaVersion: 2017,
+      ecmaVersion: 2022,
       sourceType: "script"
     }
   }

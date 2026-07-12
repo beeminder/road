@@ -96,9 +96,8 @@ new node, Ctrl-z to undo, Ctrl-y to redo</li>
     Submit</button>
 </div>
 <div style="margin: 10px 0px 10px 0px;">
-  <button id="savesvg" onclick="editor.saveGraph(document.getElementById('download'));">
-    Generate SVG
-  </button><a id="download">Right click to download</a>
+  <button id="savesvgdl" onclick="editor.saveGraphDownload();">Download SVG</button>
+  <button id="savesvgblob" onclick="editor.saveGraphBlob();">Preview SVG</button>
 </div>
 <div id="curroad" style="margin: 10px 0px 10px 0px;">
 </div>
@@ -146,8 +145,8 @@ new node, Ctrl-z to undo, Ctrl-y to redo</li>
   <button id="zoomall2" onclick="graph.zoomAll();">View All</button>
   <button id="zoomdflt2" onclick="graph.zoomDefault();">Default Zoom</button>
 </div>
-<button id="savesvg" onclick="graph.saveGraph(document.getElementById('download2'));">
-  Generate SVG</button> <a id="download2">Right click to download</a>
+<button id="savesvgdl2" onclick="graph.saveGraphDownload();">Download SVG</button>
+<button id="savesvgblob2" onclick="graph.saveGraphBlob();">Preview SVG</button>
 </td>
 <td valign="top">
   <div id="roadtable2"></div>

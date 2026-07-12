@@ -19,18 +19,18 @@ const MIME = {
   '.css': 'text/css', '.bb': 'text/plain', '.svg': 'image/svg+xml',
 }
 
-const NEWDESIGN_PATH = '/quals/newdesign.html'
-const NEWDESIGN_TEMPLATE = fs.readFileSync(
-  path.join(REPO, 'views/newdesign.ejs'), 'utf8')
-const EDITOR_START = NEWDESIGN_TEMPLATE.indexOf('<section id="editor"')
-const EDITOR_END = NEWDESIGN_TEMPLATE.indexOf('<section id="sandbox"')
+const GRAPHEDITOR_PATH = '/quals/grapheditor.html'
+const GRAPHEDITOR_TEMPLATE = fs.readFileSync(
+  path.join(REPO, 'views/grapheditor.ejs'), 'utf8')
+const EDITOR_START = GRAPHEDITOR_TEMPLATE.indexOf('<section id="editor"')
+const EDITOR_END = GRAPHEDITOR_TEMPLATE.indexOf('<section id="sandbox"')
 nodeAssert(EDITOR_START >= 0)
 nodeAssert(EDITOR_END > EDITOR_START)
-const EDITOR_MARKUP = NEWDESIGN_TEMPLATE.slice(EDITOR_START, EDITOR_END)
+const EDITOR_MARKUP = GRAPHEDITOR_TEMPLATE.slice(EDITOR_START, EDITOR_END)
 const QUAL_ROUTES = {
-  [NEWDESIGN_PATH]: {
+  [GRAPHEDITOR_PATH]: {
     contentType: MIME['.html'],
-    body: ejs.render(NEWDESIGN_TEMPLATE, {user: {username: 'qual'}}),
+    body: ejs.render(GRAPHEDITOR_TEMPLATE, {user: {username: 'qual'}}),
   },
   '/getusergoals': {
     contentType: 'application/json',
@@ -961,7 +961,7 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
   // Replicata: load the production UI, activate Graph Editor, and resize it.
   // Expectata: a deliberate two-panel workbench that stacks without overflow.
   // Resultata: generic boxed sections, rotated tool tabs, and a fixed viewport.
-  await runQual(browser, port, 'newdesign_editor', NEWDESIGN_PATH,
+  await runQual(browser, port, 'grapheditor', GRAPHEDITOR_PATH,
     async (page, name) => {
       // The graph tab has a working scrubber (context graph) for zooming,
       // like the editor's
@@ -1000,45 +1000,111 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         await page.evaluate(() => graph.zoomDefault())
       }
 
-      // Experimental-features markup is single-sourced (DRY partial), and
-      // the graph tab gets its own scrubber toggle like the editor's
-      const expfDry = {
-        summaries: (NEWDESIGN_TEMPLATE.match(/>Experimental features</g) || [])
+      // Tool-row markup is single-sourced (DRY partials): the zoom row with
+      // its scrubber toggle and the SVG download/preview row each appear
+      // once in the template and are stamped out per tab
+      const toolsDry = {
+        summaries: (GRAPHEDITOR_TEMPLATE.match(/>Experimental features</g) || [])
           .length,
-        scrubbers: (NEWDESIGN_TEMPLATE.match(/>Include scrubber</g) || [])
+        scrubbers: (GRAPHEDITOR_TEMPLATE.match(/>Include scrubber</g) || [])
+          .length,
+        downloads: (GRAPHEDITOR_TEMPLATE.match(/>Download SVG</g) || [])
+          .length,
+        previews: (GRAPHEDITOR_TEMPLATE.match(/>Preview SVG</g) || [])
           .length,
       }
-      assert(expfDry.summaries === 1 && expfDry.scrubbers === 1,
-        `${name}: experimental-features markup is single-sourced ` +
-        JSON.stringify(expfDry))
-      const gsc = await page.evaluate(() => {
-        const el = document.getElementById('gshowcontext')
-        return {exists: !!el, checked: el ? el.checked : false,
-                inDetails: el ? !!el.closest('details') : false}
+      assert(toolsDry.summaries === 1 && toolsDry.scrubbers === 1 &&
+             toolsDry.downloads === 1 && toolsDry.previews === 1,
+        `${name}: tool-row markup is single-sourced ` +
+        JSON.stringify(toolsDry))
+      // Replicata: load the graph and editor tabs. Expectata: the SVG
+      // download/preview buttons and the scrubber toggle sit right in the
+      // tool rows, not tucked inside the experimental-features section, and
+      // the graph tab's are visible without expanding anything.
+      const svgtools = await page.evaluate(() =>
+        ['gshowcontext', 'gsavesvgdl', 'gsavesvgblob',
+         'eshowcontext', 'esavesvgdl', 'esavesvgblob'].map(id => {
+          const el = document.getElementById(id)
+          return {id, exists: !!el,
+                  checked: el ? el.checked : false,
+                  inDetails: el ? !!el.closest('details') : false,
+                  visible: el ? el.checkVisibility() : false}
+        }))
+      assert(svgtools.every(t => t.exists && !t.inDetails),
+        `${name}: SVG buttons and scrubber toggles graduated out of ` +
+        `experimental features (${JSON.stringify(svgtools)})`)
+      assert(svgtools[0].checked && svgtools[3].checked,
+        `${name}: scrubber toggles on by default ` +
+        `(${JSON.stringify(svgtools)})`)
+      assert(svgtools.slice(0, 3).every(t => t.visible),
+        `${name}: graph-tab SVG buttons and scrubber toggle visible ` +
+        `without expanding anything (${JSON.stringify(svgtools)})`)
+      await page.evaluate(() => {
+        window.qualGSCCalls = []
+        const orig = graph.showContext
+        graph.showContext = f => { window.qualGSCCalls.push(f)
+                                   return orig(f) }
       })
-      assert(gsc.exists && gsc.checked && gsc.inDetails,
-        `${name}: graph tab has a scrubber toggle, on by default, in ` +
-        `experimental features (${JSON.stringify(gsc)})`)
-      if (gsc.exists) {
-        await page.evaluate(() => {
-          window.qualGSCCalls = []
-          const orig = graph.showContext
-          graph.showContext = f => { window.qualGSCCalls.push(f)
-                                     return orig(f) }
-          document.getElementById('gshowcontext')
-            .closest('details').open = true
-        })
-        await page.click('#gshowcontext')
-        await page.click('#gshowcontext')
-        const gscCalls = await page.evaluate(() => {
-          document.getElementById('gshowcontext')
-            .closest('details').open = false
-          return window.qualGSCCalls
-        })
-        assert(JSON.stringify(gscCalls) === '[false,true]',
-          `${name}: scrubber toggle drives graph.showContext ` +
-          `(got ${JSON.stringify(gscCalls)})`)
-      }
+      await page.click('#gshowcontext')
+      await page.click('#gshowcontext')
+      const gscCalls = await page.evaluate(() => window.qualGSCCalls)
+      assert(JSON.stringify(gscCalls) === '[false,true]',
+        `${name}: scrubber toggle drives graph.showContext ` +
+        `(got ${JSON.stringify(gscCalls)})`)
+
+      // Replicata: click Download SVG and Preview SVG on the graph tab
+      // (with the anchor click and window.open stubbed to capture their
+      // payloads). Expectata: a standalone well-formed SVG blob named
+      // after the goal, xml declaration and namespaces included, zoom
+      // buttons stripped. Resultata (before these buttons): only a
+      // right-click-this-data-URI flow buried in experimental features.
+      const svgdl = await page.evaluate(async () => {
+        let blob = null, dlname = null, openedUrl = null
+        const origClick = HTMLAnchorElement.prototype.click
+        const origCreate = URL.createObjectURL
+        const origOpen = window.open
+        HTMLAnchorElement.prototype.click = function() {
+          dlname = this.download }
+        URL.createObjectURL = b => { blob = b; return origCreate(b) }
+        window.open = (u) => { openedUrl = u; return null }
+        try {
+          graph.saveGraphDownload()
+          const dltext = await blob.text()
+          const dltype = blob.type
+          graph.saveGraphBlob()
+          const pvtext = await (await fetch(openedUrl)).text()
+          const parseErr = new DOMParser()
+            .parseFromString(dltext, 'image/svg+xml')
+            .querySelector('parsererror')
+          return {dlname, dltype, dltext, pvtext,
+                  parseErr: parseErr ? parseErr.textContent : null,
+                  yoog: graph.getGoalObj().yoog}
+        } finally {
+          HTMLAnchorElement.prototype.click = origClick
+          URL.createObjectURL = origCreate
+          window.open = origOpen
+        }
+      })
+      assert(svgdl.dlname === svgdl.yoog.replace('/', '-') + '.svg',
+        `${name}: downloaded SVG is named after the goal ` +
+        `(${svgdl.dlname} vs yoog ${svgdl.yoog})`)
+      assert(svgdl.dltype === 'image/svg+xml',
+        `${name}: downloaded SVG has the right MIME type (${svgdl.dltype})`)
+      assert(svgdl.parseErr === null,
+        `${name}: downloaded SVG parses as XML (${svgdl.parseErr})`)
+      assert(svgdl.dltext.startsWith(
+               '<?xml version="1.0" standalone="no"?>') &&
+             /<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/
+               .test(svgdl.dltext) &&
+             /<svg[^>]+xmlns:xlink="http:\/\/www\.w3\.org\/1999\/xlink"/
+               .test(svgdl.dltext),
+        `${name}: downloaded SVG is standalone (xml declaration + ` +
+        `namespaces)`)
+      assert(!svgdl.dltext.includes('class="zoomin"') &&
+             !svgdl.dltext.includes('class="zoomout"'),
+        `${name}: downloaded SVG has the interactive zoom buttons stripped`)
+      assert(svgdl.pvtext === svgdl.dltext,
+        `${name}: Preview SVG serves the same SVG the download saves`)
 
       await page.click('#editortab')
       await page.waitForSelector('#editor', {visible: true})
@@ -1121,18 +1187,18 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       const inlineStyleCount = (EDITOR_MARKUP.match(/\sstyle\s*=/g) || []).length
       assert(inlineStyleCount === 0,
         `${name}: authored editor has no inline styles (found ${inlineStyleCount})`)
-      const voidCloses = (NEWDESIGN_TEMPLATE.match(/<\/input>/g) || []).length
+      const voidCloses = (GRAPHEDITOR_TEMPLATE.match(/<\/input>/g) || []).length
       assert(voidCloses === 0,
         `${name}: void <input> elements have no closing tags (found ${voidCloses})`)
       const editableInputs =
-        (NEWDESIGN_TEMPLATE.match(/<input[^>]*contenteditable/g) || []).length
+        (GRAPHEDITOR_TEMPLATE.match(/<input[^>]*contenteditable/g) || []).length
       assert(editableInputs === 0,
         `${name}: no contenteditable attributes on inputs (found ${editableInputs})`)
       const selectedSelects =
-        (NEWDESIGN_TEMPLATE.match(/<select[^>]* selected[ =>]/g) || []).length
+        (GRAPHEDITOR_TEMPLATE.match(/<select[^>]* selected[ =>]/g) || []).length
       assert(selectedSelects === 0,
         `${name}: no selected attributes on select tags (found ${selectedSelects})`)
-      assert(/<span id="submitmsg"><\/span>/.test(NEWDESIGN_TEMPLATE),
+      assert(/<span id="submitmsg"><\/span>/.test(GRAPHEDITOR_TEMPLATE),
         `${name}: submit message span starts empty in the markup`)
       assert(wide.semanticShell,
         `${name}: app shell uses header, main, nav, and editor section`)
@@ -1208,7 +1274,7 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
 
       // PDP vs olddesign: dragging instructions, keyboard-shortcut
       // tooltips, and the keepIntervals toggle must all survive the redesign
-      assert(NEWDESIGN_TEMPLATE.includes(
+      assert(GRAPHEDITOR_TEMPLATE.includes(
         'Drag the bright red line or double-click for new segments'),
         `${name}: editor instructions survive verbatim`)
       const pdp = await page.evaluate(() => {
@@ -1267,7 +1333,8 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         return {
           visible: pop.checkVisibility(),
           popup: getComputedStyle(pop).position === 'absolute',
-          items: pop.querySelectorAll('li').length,
+          // the popup's items have been both <li>s and <p>s in their time:
+          items: pop.querySelectorAll('p, li').length,
           roadTop: document.getElementById('roadeditor')
             .getBoundingClientRect().top,
         }
@@ -1358,7 +1425,7 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         `${name}: due-by table has aligned numbers and hairline rows ` +
         JSON.stringify(dueby))
       await page.screenshot({path: path.resolve(__dirname,
-        'qual_newdesign_dueby_screenshot.png')})
+        'qual_grapheditor_dueby_screenshot.png')})
       await page.click('#editor .vtab button[onclick*="eroad"]')
 
       // The graph matrix and data table speak the design system too:
@@ -1402,7 +1469,7 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
 
       await page.screenshot({
         path: path.resolve(__dirname,
-          'qual_newdesign_editor_wide_screenshot.png'),
+          'qual_grapheditor_editor_wide_screenshot.png'),
         fullPage: true,
       })
 
@@ -1530,7 +1597,7 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         `${name}: graph tab fits a 390px viewport`)
       await page.screenshot({
         path: path.resolve(__dirname,
-          'qual_newdesign_graph_mobile_screenshot.png'),
+          'qual_grapheditor_graph_mobile_screenshot.png'),
         fullPage: true,
       })
 
@@ -1561,7 +1628,7 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         `${name}: sandbox tab fits a 390px viewport`)
       await page.screenshot({
         path: path.resolve(__dirname,
-          'qual_newdesign_sandbox_mobile_screenshot.png'),
+          'qual_grapheditor_sandbox_mobile_screenshot.png'),
         fullPage: true,
       })
 

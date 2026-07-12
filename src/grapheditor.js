@@ -508,8 +508,6 @@ Unexpected server error! Please paste this to support@beeminder.com:
       }
     })
   } else {
-    submitMsg.innerHTML = "<a id=\"download\">Right-click to download SVG</a>";
-    editor.saveGraph(document.getElementById('download'));
     window.alert('new graph matrix:\n'+JSON.stringify(editor.getRoad()))
   }
 }
@@ -539,7 +537,6 @@ function handleDataSubmit() {
       }
     })
   } else {
-    submitMsg.innerHTML = "<a id=\"download\">Right-click to download SVG</a>";
     window.alert('new datapoint: \n'+JSON.stringify(params))
   }
 }
@@ -622,6 +619,7 @@ function initialize() {
                        ctxRect: { x:0, y:453, width:696, height: 100 },
                        roadEditor:true,
                        tableHeight:212,
+                       tableUpdateOnDrag: true,
                        maxFutureDays: 365,
                        showFocusRect: true,
                        showContext: true,
