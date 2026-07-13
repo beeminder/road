@@ -1688,6 +1688,25 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         `msg="${matrixEdit.submitmsg}")`)
       await undoAllSafe()
 
+      // Replicata: the matrix cell above was committed with Enter (so it
+      // still has focus), then undoAll ran; now click somewhere else,
+      // moving focus out of the cell. Expectata: nothing happens; the
+      // undo buffer stays empty. Resultata (pre-fix): tableFocusOut
+      // compared the cell's post-undo text against its stale pre-undo
+      // cache (rdFocus.oldText) and re-committed, pushing a ghost undo
+      // state for an edit the user never made.
+      await page.click('#esummary')
+      await page.evaluate(() => new Promise(r => setTimeout(r, 300)))
+      const ghost = await page.evaluate(() => ({
+        undocnt: document.getElementById('eundocnt').textContent,
+        undoDisabled: document.getElementById('eundo').disabled,
+        slope: editor.getRoad().road[1][2],
+      }))
+      assert(ghost.undocnt === '0' && ghost.undoDisabled &&
+             ghost.slope === 0,
+        `${name}: no ghost edit after undoAll while a matrix cell still ` +
+        `has focus (${JSON.stringify(ghost)})`)
+
       // Undo/redo keyboard shortcuts, including the Mac variants: mod-Z
       // undoes; mod-Y and shift-mod-Z redo
       await page.evaluate(() => {

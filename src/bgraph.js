@@ -5634,6 +5634,13 @@ function updateTableWidths() {
 
 function updateTableValues() {
   if (opts.divTable == null) return
+  // Rewriting the table's cell texts voids any in-progress cell edit: the
+  // cached oldText no longer reflects what's on screen, and a later
+  // focusout comparing against it would commit a ghost edit (e.g. a stale
+  // focus lingering after undoAll used to re-push an undo state). The
+  // Enter-commit path in tableKeyDown re-arms oldText after this runs.
+  rdFocus.field = null
+  rdFocus.oldText = null
   const reversetable = opts.reverseTable
 
   updateRowValues( stbody, 0, 1, false )

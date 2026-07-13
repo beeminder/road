@@ -1,6 +1,7 @@
 
 ## CHANGELOG
 
+* 2026.07.12 Fix ghost edit when undoing while a graphmatrix cell still has focus
 * 2026.07.12 Camera & Zoom buttons to gate some UI clutter
 * 2026.07.12 Nicer undo/redo buttons
 * 2026.07.12 Rename scrubber to minimap
