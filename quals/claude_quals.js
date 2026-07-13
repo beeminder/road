@@ -40,6 +40,12 @@ const QUAL_ROUTES = {
     contentType: 'application/json',
     body: fs.readFileSync(path.join(REPO, 'automon/data/testroad0.bb')),
   },
+  // What a dead session actually serves: the XHR gets 302ed to the login
+  // page, so the goal-JSON request comes back as an HTML document
+  '/getgoaljson/htmlgoal': {
+    contentType: MIME['.html'],
+    body: '<!DOCTYPE html>\n<html><body>Pretend login page</body></html>',
+  },
 }
 
 function serve(req, res) {
@@ -1903,6 +1909,28 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       assert(labels.actions ===
         'Undo (0)|Redo (0)|Undo All|View All|Reset Zoom|Submit',
         `${name}: editor-action copy is unchanged`)
+
+      // Replicata: load a goal whose /getgoaljson response is an HTML page
+      // instead of JSON, which is what a dead session serves (the server
+      // 302s the XHR to the login page). Expectata: loadGoals survives:
+      // logs the failure, clears the loading overlays, and the page
+      // recovers on the next goal load. Resultata (pre-fix): 480ab4a made
+      // butil.loadJSON reject on parse failure without updating its
+      // callers, so the rejection escaped as an uncaught SyntaxError (the
+      // "Unexpected token '<'" console error) and the "loading..."
+      // overlays were stranded forever.
+      const badLoad = await page.evaluate(() =>
+        loadGoals('htmlgoal').then(() => 'resolved', e => 'rejected: ' + e))
+      assert(badLoad === 'resolved',
+        `${name}: loadGoals survives an HTML (non-JSON) goal response ` +
+        `(got: ${badLoad})`)
+      const stuckOverlays = await page.evaluate(() =>
+        document.querySelectorAll('svg.bmndrsvg g.overlay').length)
+      assert(stuckOverlays === 0,
+        `${name}: no loading overlays stranded after a failed goal load ` +
+        `(found ${stuckOverlays})`)
+      await page.evaluate(() => loadGoals('testroad0'))
+      await page.waitForSelector('#roadgraph svg.bmndrsvg .razr')
     }, {width: 1360, height: 900})
 
   // --- 3. sandbox.html: creates a new goal from scratch ---

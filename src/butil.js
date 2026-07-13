@@ -971,9 +971,14 @@ function loadJSON(url) {
           // Possible parse error in loading the bb file
           console.log("butil.loadJSON: Could not parse JSON file in "+url)
           console.log(err.message)
-          // Anti-robustness: was resolve(null), now rejects so parse errors
-          // propagate loudly instead of silently becoming null
-          reject(err)
+          // Contract: resolve null, never reject. A non-JSON response is a
+          // normal runtime event (e.g. a dead session 302s the XHR to the
+          // login page, an HTML document) and callers have designed error
+          // paths for null (loadGoalFromURL's "Could not load goal file."
+          // overlay, loadGoals' failed-load logging). Rejecting here
+          // (tried in 480ab4a) escaped those callers as an uncaught
+          // SyntaxError and stranded their loading overlays.
+          resolve(null)
         }
       } else if (xobj.readyState == 4) {
         resolve(null)

@@ -1,6 +1,7 @@
 
 ## CHANGELOG
 
+* 2026.07.12 Fix stranded loading overlay & console error when goal-JSON fetch gets HTML (dead session)
 * 2026.07.12 Thumbnail + PNG palette-remap run concurrently: ~200ms faster renders
 * 2026.07.12 Graph renderer keeps pages warm 10min not 10sec; d3 served locally
 * 2026.07.11 SVG buttons & scrubber toggle out of experimental
