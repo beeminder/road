@@ -121,13 +121,13 @@ app.get("/road", (req, resp) => {
       username:     req.session.username,
       access_token: req.session.access_token,
     };
-    resp.render("grapheditor.ejs", { user: user });
+    resp.render("grapheditor.ejs", { user: user, version: ver });
   }
 });
 // Retired pages (the pre-2026 "olddesign" UI) redirect to the graph editor
 app.get("/olddesign", (req, resp) => { resp.redirect("/") });
 app.get("/editor",    (req, resp) => { resp.redirect("/") });
-app.get("/sandbox", (req, resp) => { resp.render("sandbox.ejs") });
+app.get("/sandbox", (req, resp) => { resp.render("sandbox.ejs", { version: ver }) });
 app.get("/", (req, resp) => {
   //setsession(req);
   
@@ -161,7 +161,8 @@ app.get("/", (req, resp) => {
     user: {
       username:     req.session.username,
       access_token: req.session.access_token,
-    }
+    },
+    version: ver,
   });
 });
 

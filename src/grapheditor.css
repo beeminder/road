@@ -139,6 +139,7 @@ label {
 
 .goalbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 14px;
   min-height: 62px;
@@ -148,31 +149,60 @@ label {
   background: var(--paper);
 }
 
-.goalbar label {
+/* While a goal loads, the numbers still on screen are the old goal's:
+   gray them out and stop taking clicks until the swap completes */
+.goalloading .summary.inbar,
+.goalloading .vtabcontainer,
+.goalloading .graphcontainer .graphtools {
+  opacity: .35;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+/* The summary rides in the goalbar between the picker and the mode
+   switch: no panel chrome of its own, and it flexes to fill the middle */
+.summary.inbar {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+/* username/, then the goalname dropdown, reading as one yoog */
+.goalpicker {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  gap: 2px;
+  max-width: 34em;
+}
+
+.yooguser {
   flex: 0 0 auto;
   font-weight: 700;
 }
 
-.tab {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+/* The view/edit mode switch lives at the right end of the goalbar and
+   shares the amber-underline active language with the tool tabs */
+.modeswitch {
+  display: inline-flex;
   gap: 8px;
-  width: 100%;
-  margin-top: 16px;
   overflow: visible;
   border: none;
 }
 
-/* Main tabs share the amber-underline active language with the tool tabs */
-.tab button.bmdrbtn {
-  width: auto;
+
+.modeswitch button.bmdrbtn {
+  min-width: 72px;
   min-height: 42px;
-  padding: 8px;
+  padding: 8px 14px;
   border-bottom: 3px solid transparent;
   color: var(--muted);
 }
 
-.tab button.bmdrbtn.active {
+.modeswitch button.bmdrbtn.active {
   /* Longhands only: a border-color shorthand holding var() fails to
      cascade over other rules' longhands in Chromium */
   border-top-color: var(--line-strong);
@@ -191,6 +221,26 @@ label {
 
 #graph, #entry, #eroad, #sedit {
   display: block;
+}
+
+/* Footer: the other destinations plus the version tag, quiet and centered */
+.pagefoot {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 24px;
+  padding: 18px 0 24px;
+  color: var(--muted);
+  font-size: .875rem;
+}
+
+.pagefoot a {
+  color: var(--muted);
+}
+
+.pagefoot .versiontag {
+  opacity: .7;
+  font-size: .75rem;
 }
 
 .workspace {
@@ -318,6 +368,8 @@ details.gchip > summary {
   color: var(--muted);
   font-weight: 750;
   cursor: pointer;
+  -webkit-user-select: none; /* clicking the chip shouldn't select its glyph */
+  user-select: none;
 }
 
 details.hint > summary::-webkit-details-marker,
@@ -531,11 +583,12 @@ details.gchip > .chippop {
   border-radius: var(--radius);
   background: var(--paper);
 }
-.yoog,.baremin,.doom-modifier,.doom,.pledgepre,.pledge {
+.baremin,.doom-modifier,.doom,.pledgepre,.pledge {
   display: inline-block;
   margin: 0 4px;
   font-size: 1.125rem;
 }
+
 .baremin,.doom, .pledge {
   padding: 4px 8px;
   border-radius: var(--radius-ctl);
@@ -632,7 +685,7 @@ button.bmdrbtn:disabled {
     padding: 9px 10px;
   }
 
-  .yoog,.baremin,.doom-modifier,.doom,.pledgepre,.pledge {
+  .baremin,.doom-modifier,.doom,.pledgepre,.pledge {
     margin: 2px;
     font-size: 1rem;
   }
@@ -649,7 +702,7 @@ button.bmdrbtn:disabled {
 
 .ts-control.roadselect {
   display: inline-block;
-  width: 100%;
+  flex: 1; /* fill the .goalpicker wrapper, which caps the width */
   min-height: 40px;
   border-radius: var(--radius-ctl);
   font-size: 1rem;

@@ -41,7 +41,9 @@ function compress_js() {
                    'src/bgraph.js',
                    'src/bsandbox.js',
                    'src/btest.js',
-                   'src/grapheditor.js'])
+                   'src/pagekit.js',
+                   'src/grapheditor.js',
+                   'src/sandboxpage.js'])
     .pipe(changed(LIBJS, { extension: '.min.js' }))
     .pipe(terser())
     .pipe(rename({ extname: '.min.js' }))
@@ -122,7 +124,8 @@ function copy_vendor() {
 
 function linter() {
   return gulp.src(['src/butil.js', 'src/broad.js', 'src/bgraph.js',
-                   'src/bsandbox.js', 'src/grapheditor.js'])
+                   'src/bsandbox.js', 'src/pagekit.js', 'src/grapheditor.js',
+                   'src/sandboxpage.js'])
     .pipe(eslint())
     .pipe(eslint.format())
 }
@@ -139,7 +142,7 @@ function favicons () { // Copy favicons from src to lib
 function generate_qual_html() {
   // Generate quals/generated/grapheditor.html from views/grapheditor.ejs
   const ejsTemplate = fs.readFileSync('views/grapheditor.ejs', 'utf8')
-  const html = ejs.render(ejsTemplate, { user: null })
+  const html = ejs.render(ejsTemplate, { user: null, version: 'dev' })
 
   // Ensure generated directory exists
   if (!fs.existsSync('quals/generated')) {

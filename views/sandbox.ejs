@@ -1,326 +1,141 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Beeminder Sandbox</title>
-  <link id="favicon" rel="icon" href="/lib/favicons/bee-with-big-brain.png" 
-        type="image/png">
   <meta charset="utf-8">
-  <link rel="stylesheet" href="/src/pikaday.css">
-  <link rel="stylesheet" href="/src/jsbrain.css">
+  <link id="favicon" rel="icon" href="/lib/favicons/bee-with-big-brain.png"
+        type="image/png">
+  <title>Beeminder Sandbox</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../src/pikaday.css">
+  <link rel="stylesheet" href="../src/jsbrain.css">
+  <link rel="stylesheet" href="../src/grapheditor.css">
   <script src = "https://d3js.org/d3.v7.js"></script>
-  <script src = "/src/moment.js"></script>
-  <script src = "/src/moment-timezone.js"></script>
-  <script src = "/src/pikaday.js"></script>
-  <script src = "/src/polyfit.js"></script>
-  <script src = "/src/butil.js"></script>
-  <script src = "/src/broad.js"></script>
-  <script src = "/src/beebrain.js"></script>
-  <script src = "/src/bgraph.js"></script>
-  <script src = "/src/bsandbox.js"></script>
+  <script src = "../src/moment.js"></script>
+  <script src = "../src/moment-timezone.js"></script>
+  <script src = "../src/pikaday.js"></script>
+  <script src = "../src/polyfit.js"></script>
+  <script src = "../src/butil.js"></script>
+  <script src = "../src/broad.js"></script>
+  <script src = "../src/beebrain.js"></script>
+  <script src = "../src/bgraph.js"></script>
+  <script src = "../src/bsandbox.js"></script>
 </head>
 
 <body>
-  <h1>Beeminder Sandbox: Create and experiment with goals</h1>
-  
-  <hr/>
-  <span>Select goal type:</span>
-  <select id="typeselect" class="typeselect" onchange="setDefaults()">
-    <option value="hustler">Do More</option>
-    <option value="fatloser">Lose Weight</option>
-    <option value="biker">Use an Odometer</option>
-    <option value="drinker">Do Less</option>
-    <option value="gainer">Gain Weight</option>
-    <option value="inboxer">Whittle Down</option>
-  </select> 
-  at a rate of
-  <input type = "number" value="1" id="rate" style="width:4em;text-align:center;">
-  </input>
-  per 
-  <select id="rateunit" class="typeselect">
-    <option value="d">day</option>
-    <option value="w">week</option>
-    <option value="m">month</option>
-    <option value="y">year</option>
-  </select>
-  starting today at
-  <input type = "number" value="0" id="value" style="width:4em;text-align:center;">
-  </input>
-  <br/>
-  <input type = "checkbox" id="buffer" checked></input>
-  Start one week from today
-
-  <br/>
-  <br/>
-  <button id="newgoal"
-          onclick="bs.newGoal(gtype.options[gtype.selectedIndex].value,
-                   runits.options[runits.selectedIndex].value,
-                   rfin.value, vini.value, buffer.checked);
-                   graph = bs.getGraphObj();
-                   updateConfigInput()">
-    Create New Goal!</button>
-  <br/>
-
-  <hr/>
-  <table>
-  <tr>
-  <td valign="top"><div id="sandbox" style="width:696px; height:453px"></div><br/>
-  <button style="margin:4px;" onclick="bs.nextDay()">Next Day</button><br/>
-
-  <span style="margin:4px;">New data:</span>
-  <input id="dataval" type="number"  style="width:5em;margin:4px;"></input>
-  <span style="margin:4px;">Comment:</span>
-  <input id="datacmt" type="text"  style="margin:4px;"></input>
-  <button onclick="bs.newData(dataval.value, datacmt.value)" style="margin:4px;">
-    Add</button><br/>
-
-  <span style="margin:4px;">Change rate to:</span>
-  <input id="rateval" type="number"  style="margin:4px;"></input>
-  per <span id="rateunitlabel"></span>
-  <button onclick="bs.newRate(rateval.value)" style="margin:4px;">
-    Commit!</button><br/>
-
-  <button style="margin:4px;" onclick="bs.undo();updateConfigInput()">Undo</button><br/>
-
-  <hr/>
-  Visual graph configuration:<br/>
-  <input type="checkbox" id="plotall" onclick="setVisualConfig()" checked></input>
-  Show all points
-  <input type="checkbox" id="steppy" onclick="setVisualConfig()" checked></input>
-  Show steppy data lines
-  <input type="checkbox" id="rosy" onclick="setVisualConfig()" checked></input>
-  Show rosy points
-  <input type="checkbox" id="movingav" onclick="setVisualConfig()" checked></input>
-  Show moving average<br/>
-  <input type="checkbox" id="aura" onclick="setVisualConfig()" checked></input>
-  Show aura
-  <input type="checkbox" id="hidey" onclick="setVisualConfig()" checked></input>
-  Hide y-axis labels0
-  <input type="checkbox" id="stathead" onclick="setVisualConfig()" checked></input>
-  Show title with statistics
-  <input type="checkbox" id="hashtags" onclick="setVisualConfig()" checked></input>
-  Show hashtags
-  <hr/>
-  Goal configuration (change with CAUTION!):<br/>
-  <input type="checkbox" id="yaw"checked></input> yaw
-  <input type="checkbox" id="dir"checked></input> dir
-  <input type="checkbox" id="kyoom"checked></input> kyoom
-  <input type="checkbox" id="odom"checked></input> odom
-  <input type="checkbox" id="monotone"checked></input> monotone<br/>
-  aggday:
-  <select id="aggday" class="typeselect">
-    <option value="last">last</option>
-    <option value="first">first</option>
-    <option value="min">min</option>
-    <option value="max">max</option>
-    <option value="mu">mu</option>
-    <option value="median">median</option>
-    <option value="mode">mode</option>
-    <option value="mutrim">mutrim</option>
-    <option value="sum">sum</option>
-    <option value="unary">unary</option>
-    <option value="unaryflat">unaryflat</option>
-    <option value="triangle">triangle</option>
-    <option value="square">square</option>
-    <option value="clocky">clocky</option>
-    <option value="count">count</option>
-    <option value="countflat">countflat</option>
-    <option value="muflat">muflat</option>
-    <option value="skatesum">skatesum</option>
-    <option value="satsum">satsum</option>
-  </select><br/>
-  <button onclick="setGoalConfig()" style="margin:4px;">SET!</button>
-  <hr/>
-  <a target="_blank" id="download" download="sandbox.bb">Right click to download BB file</a>
-  </td>
-  <td valign="top">
-    <h3>Graph Legend:</h3>
-
-    <div id="datadiv"
-         onmouseover="this.style.background='#cccccc';"
-         onmouseout="this.style.background='white';">
-    <b>Datapoints</b>: Your actual reported data. The color shows
-    how much safety buffer you have.<br/>
-    <b style="margin-left:2em;color:#00aa00">Green</b>: 7+ days of safety buffer, <br/>
-    <b style="margin-left:2em;color:#3f3fff">Blue</b>: 2 days of safety buffer,<br/>
-    <b style="margin-left:2em;color:#ffa500">Orange</b>: 1 day of safety buffer,<br/>
-    <b style="margin-left:2em;color:#ff0000">Red</b>: beemergency!
+  <header id="header">
+    <div class="headerinner">
+      <a href="https://www.beeminder.com" target="_blank" aria-label="Beeminder">
+        <div class="logo"></div>
+      </a>
     </div>
+  </header>
+  <main class="app-shell">
+  <div class="goalbar">
+    <label for="typeselect">Select goal type:</label>
+    <select id="typeselect" class="typeselect" onchange="setDefaults()">
+      <option value="hustler">Do More</option>
+      <option value="fatloser">Lose Weight</option>
+      <option value="biker">Use an Odometer</option>
+      <option value="drinker">Do Less</option>
+      <option value="gainer">Gain Weight</option>
+      <option value="inboxer">Whittle Down</option>
+    </select>
+    <span class="checkpair">at a rate of
+    <input type="number" value="1" id="rate" class="toolinput daysinput">
+    per
+    <select id="rateunit" class="typeselect">
+      <option value="d">day</option>
+      <option value="w">week</option>
+      <option value="m">month</option>
+      <option value="y">year</option>
+    </select>
+    </span>
+    <span class="checkpair">starting today at
+    <input type="number" value="0" id="value" class="toolinput daysinput">
+    </span>
+    <span class="checkpair">
+      <input type="checkbox" id="buffer" checked>
+      <label for="buffer">Start one week from today</label>
+    </span>
+    <button class="bmdrbtn primary-action" id="newgoal" onclick="newGoal();">Create New Goal!</button>
+  </div>
 
-    <div id="hordiv"
-         onmouseover="this.style.background='#cccccc';"
-         onmouseout="this.style.background='white';">         
-    <b>Akrasia Horizon</b>: This line is a week away from now. You can
-    only make changes in the steepness of the bright red line beyond the akrasia
-    horizon.
+<section id="sandbox">
+  <div id="ssummary" class="summary"></div>
+  <div class="workspace">
+  <div class="graphcontainer panel">
+    <div class="graphbox">
+    <details class="gchip zoom">
+      <summary aria-label="Zoom">🔍</summary>
+      <div class="chippop">
+        <button class="bmdrbtn" id="szoomall" onclick="sandboxgr.zoomAll();">View All</button>
+        <button class="bmdrbtn" id="szoomdflt" onclick="sandboxgr.zoomDefault();">Reset Zoom</button>
+      </div>
+    </details>
+      <div id="roadsandbox">
+      </div>
     </div>
-
-    <div id="rosydiv"
-         onmouseover="this.style.background='#cccccc';"
-         onmouseout="this.style.background='white';">
-    <b>Optimistic projection</b>: An optimistic view of progress,
-    i.e., a view of your data through rose-colored glasses.  It shows
-    your inexorable march towards your goal.  If you're bouncing
-    around it just shows you flat.  When you go down (or whichever
-    direction your goal is), it shows you that right away.
+    <div class="graphtools">
+      <button class="bmdrbtn iconbtn" id="sundo" aria-label="Undo" data-tip="Ctrl-Z / ⌘Z" aria-keyshortcuts="Control+Z Meta+Z" onclick="sandbox.undo();"><svg class="uicon" viewBox="0 -960 960 960" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M280-200v-80h284q63 0 109.5-40T720-420q0-60-46.5-100T564-560H312l104 104-56 56-200-200 200-200 56 56-104 104h252q97 0 166.5 63T800-420q0 94-69.5 157T564-200H280Z"/></svg><span id="sundocnt" class="ucnt">0</span></button>
+      <button class="bmdrbtn iconbtn" id="sredo" aria-label="Redo" data-tip="Ctrl-Y / ⇧⌘Z" aria-keyshortcuts="Control+Y Shift+Meta+Z" onclick="sandbox.redo();"><svg class="uicon" viewBox="0 -960 960 960" width="15" height="15" fill="currentColor" aria-hidden="true"><g transform="translate(960 0) scale(-1 1)"><path d="M280-200v-80h284q63 0 109.5-40T720-420q0-60-46.5-100T564-560H312l104 104-56 56-200-200 200-200 56 56-104 104h252q97 0 166.5 63T800-420q0 94-69.5 157T564-200H280Z"/></g></svg><span id="sredocnt" class="ucnt">0</span></button>
+      <button class="bmdrbtn" id="snextday" onclick="sandbox.nextDay();">Next Day</button>
     </div>
+  </div>
 
-    <div id="mavdiv"
-         onmouseover="this.style.background='#cccccc';"
-         onmouseout="this.style.background='white';">
-    <b>Moving average</b>: This is an exponentially weighted moving
-    average with smoothing constant 0.25. It shows the overall trend
-    of your data, but lagged. If most of your daily numbers are below
-    this trend line then you are inexorably dragging it down.
+  <div class="vtabcontainer panel">
+    <div class="vtabtitle">Sandbox Tools</div>
+    <div class="vtab">
+      <button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sroad')">Red Line</button><button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sstats')">Stats</button><button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sdata')">Data</button><button class="bmdrbtn stablinks active" onclick="openSandboxTab(event, 'sedit')">Edit</button> <!-- Warning, these elements should be on the same line to prevent inline spacing -->
     </div>
-
-    <div id="auradiv"
-         onmouseover="this.style.background='#cccccc';"
-         onmouseout="this.style.background='white';">
-    <b>Polynomial fit trend</b>: Think of this as a very thick line
-    charting your progress or an aura around your actual
-    data. (Technically it's a polynomial fit of your data.) It gives
-    you a sense of your true trend.
+    <div id="sedit" class="stabcontent">
+      <div class="tooltitle">Dial Graph</div>
+      Goal rate:<br/>
+      <input type = "number" id="sendslope" class="toolinput rateinput" step="any"><br/>
+      <select id="sslopetype" onchange="updateCommitFields()">
+        <option value="86400">per day</option>
+        <option value="604800">per week</option>
+        <option value="2629800">per month</option>
+        <option value="31557600">per year</option>
+      </select>
+      <button class="bmdrbtn" id="scommit" onclick="commitTo()">UPDATE</button>
+      <div class="tooltitle">Enter new data</div>
+      Value:
+      <input id="sdataval" class="toolinput daysinput inlinecontrol" type="number">
+      Comment:
+      <input id="sdatacmt" class="toolinput inlinecontrol" type="text">
+      <button class="bmdrbtn inlinecontrol" onclick="sandbox.newData(sdataval.value, sdatacmt.value);">Add</button>
     </div>
-
-    <div id="guidediv"
-         onmouseover="this.style.background='#cccccc';"
-         onmouseout="this.style.background='white';">
-    <b>Yellow guidelines</b>: These thin yellow lines indicate the
-    good side of the bright red line. The green line demarcates 7
-    days of safety buffer. (If you keep your safety buffer at 7 days
-    or higher then you're immune to being stung. If anything comes
-    up, just flatten your bright red line.  It will take effect
-    after the 7-day akrasia horizon but since you have that much
-    safety buffer, you're golden!)
+    <div id="sdata" class="stabcontent">
+      <div class="tooltitle">View past data</div>
+      <div id="sandboxdata">
+      </div>
     </div>
-    <div style="font-size:120%; font-weight: bold; margin-top:10px">Amounts Due By Day</div>
-    <div style="display: inline-block; border:1px solid black;" id="dueby"></div>
-  </td>
-  </tr>
-  </table>
-  
-  <script>
-    const visualProps
-      = ['plotall','steppy','rosy','movingav','aura','hidey','stathead','hashtags']
-    const goalProps
-      = ['yaw','dir','kyoom','odom','monotone','aggday']
+    <div id="sstats" class="stabcontent">
+      <div class="tooltitle">Amounts Due By Day</div>
+      <div class="duebytable" id="sdueby"></div>
+      <div class="tooltitle">Goal Progress</div>
+      <div id="sprogress"></div>
+    </div>
+    <div id="sroad" class="stabcontent">
+      <div class="tooltitle">Graph Matrix</div>
+      <div id="sandboxroad"></div>
+    </div>
+  </div>
+  </div>
+</section>
+</main>
 
-    gtype = document.getElementById("typeselect")
-    rfin = document.getElementById("rate")
-    vini = document.getElementById("value")
-    buffer = document.getElementById("buffer")
-    gdiv = document.getElementById("sandbox")
-    dbdiv = document.getElementById("dueby")
-    runits = document.getElementById("rateunit")
-    rateunitlabel = document.getElementById("rateunitlabel")
-    dataval = document.getElementById("dataval")
-    datacmt = document.getElementById("datacmt")
-    download = document.getElementById("download")
+<footer class="pagefoot">
+  <a href="/">Beeminder Visual Graph Editor</a>
+  <a href="/tutorial">Tutorial</a>
+  <span class="versiontag">v<%= version %></span>
+</footer>
 
-    function updateRateUnitLabel() {
-      const lut = { d: "day", w: "week", m: "month", y: "year" }
-      rateunitlabel.textContent = lut[runits.value] ?? runits.value
-    }
-    runits.addEventListener("change", ()=>{updateRateUnitLabel(); bs.setRateUnits(runits.value)})
-    updateRateUnitLabel()
-
-    animdiv = {}
-    const li = [
-      ["datadiv",  (e)=>(()=>graph.animData(e)), null],
-      ["hordiv",   (e)=>(()=>graph.animHor(e)), null],
-      ["rosydiv",  (e)=>(()=>graph.animRosy(e)), "rosy"],
-      ["mavdiv",   (e)=>(()=>graph.animMav(e)), "movingav"],
-      ["auradiv",  (e)=>(()=>graph.animAura(e)), "aura"],
-      ["guidediv", (e)=>(()=>graph.animGuides(e)), null]
-    ]
-    for (let i = 0; i<li.length; i++) {
-      e = document.getElementById(li[i][0])  
-      animdiv[li[i][0]] = e
-      if (e != null) {
-        e.addEventListener("mouseover", li[i][1](true))
-        e.addEventListener("mouseout", li[i][1](false))
-      }
-    }
-    
-    function updateLegend( curconfig ) {    
-      for (let i = 0; i<li.length; i++) {
-        if (li[i][2] != null) {
-          if (curconfig[li[i][2]]) {
-            animdiv[li[i][0]].style.opacity = 1.0
-          } else {
-            animdiv[li[i][0]].style.opacity = 0.3
-          }
-        }
-      }
-    }
-
-    function updateConfigInput() {
-      var curconfig = bs.getVisualConfig()
-      visualProps.map(e=>{document.getElementById(e).checked = curconfig[e]})
-      updateLegend( curconfig )
-
-      var curconfig = bs.getGoalConfig()
-      goalProps.map(e=>{
-        if (e=='yaw' || e=='dir')
-          document.getElementById(e).checked = (curconfig[e]==1)
-        else if (e=='aggday' || e=='dir')
-          document.getElementById(e).value = curconfig[e]
-        else
-          document.getElementById(e).checked = curconfig[e]
-      })
-    }
-    
-    const defaults = {
-      hustler: {r:1, v:0}, 
-      fatloser: {r:-1, v:70}, 
-      biker: {r:1, v:0}, 
-      drinker: {r:1, v:0}, 
-      gainer: {r:1, v:70},
-      inboxer: {r:-1, v:1000}
-    }
-    
-    function setDefaults() {
-      const sel = gtype.options[gtype.selectedIndex].value
-      const dflt = defaults[sel]
-      rfin.value = dflt.r
-      vini.value = dflt.v
-    }
-    setDefaults()
-    bs = new bsandbox({divGraph: gdiv,
-                       divDueby: dbdiv,
-                       svgSize: { width: 696, height: 453 },
-                       focusRect: { x:0, y:0, width:696, height: 453 },
-                       ctxRect: { x:0, y:453, width:696, height: 100 }})
-    bs.newGoal(gtype.options[gtype.selectedIndex].value,
-              runits.options[runits.selectedIndex].value,
-              rfin.value, vini.value, buffer.checked);
-    var graph = bs.getGraphObj()
-    bs.saveBB(download)
-    updateConfigInput()
-    
-    function setVisualConfig() {
-      var newconfig = {}
-      visualProps.map(e=>{newconfig[e] = document.getElementById(e).checked})
-      bs.setVisualConfig(newconfig)
-      bs.saveBB(download)
-      updateLegend(newconfig)    
-    }
-    function setGoalConfig() {
-      var newconfig = {}
-      goalProps.map(e=>{
-        if (e=='yaw' || e=='dir')
-          newconfig[e] = document.getElementById(e).checked?1:-1
-        else if (e=='aggday')
-          newconfig[e] = document.getElementById(e).value
-        else
-          newconfig[e] = document.getElementById(e).checked
-      })
-      bs.setGoalConfig(newconfig)
-      bs.saveBB(download)
-    }
-    
-  </script>
+<script src = "../src/pagekit.js"></script>
+<script src = "../src/sandboxpage.js"></script>
+<script>
+  initialize()
+</script>
 
 </body>
-  
 </html>

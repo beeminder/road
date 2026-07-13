@@ -19,7 +19,6 @@
   <script src = "../src/broad.js"></script>
   <script src = "../src/beebrain.js"></script>
   <script src = "../src/bgraph.js"></script>
-  <script src = "../src/bsandbox.js"></script>
   <script src = "../src/tom-select.js"></script>
   <script>
     const username = <%- JSON.stringify(user ? user.username : null) %>;
@@ -36,8 +35,9 @@
   </header>
   <main class="app-shell">
   <div class="goalbar">
-    <label for="roadselect">Beeminder goal:</label>
-    <select id="roadselect" class="roadselect" onchange="eload=true;gload = true;loadGoals(this.value);">
+    <span class="goalpicker">
+      <% if (user) { %><span class="yooguser"><%= user.username %>/</span><% } %>
+      <select id="roadselect" class="roadselect" aria-label="Beeminder goal:" onchange="eload=true;gload = true;loadGoals(this.value);">
       <option value="../automon/data/testroad0.bb">Test 0</option>
       <option value="../../privatesuite/data/afcuttin+gmailzero.bb">Test 1</option>
       <option value="../../privatesuite/data/b+coffee2.bb">Test 2</option>
@@ -47,14 +47,14 @@
       <option value="../automon/data/testroad5.bb">Test 6</option>
       <option value="../../privatesuite/data/bugroad3.bb">Test 7</option>
       <option value="../../privatesuite/data/ybhp-weight-start.bb">Test 8</option>
-    </select>
+      </select>
+    </span>
+    <div id="goalsummary" class="summary inbar"></div>
+    <nav class="modeswitch">
+      <button id="graphtab" class="bmdrbtn modelinks active" onclick="setMode(event, 'graph');">View</button>
+      <button id="editortab" class="bmdrbtn modelinks" onclick="setMode(event, 'editor')">Edit</button>
+    </nav>
   </div>
-  <!-- Tab links -->
-  <nav class="tab">
-    <button id="graphtab" class="bmdrbtn tablinks active" onclick="openMainTab(event, 'graph');">Graph</button>
-    <button id="editortab" class="bmdrbtn tablinks" onclick="openMainTab(event, 'editor')">Graph Editor</button>
-    <button id="sandboxtab" class="bmdrbtn tablinks" onclick="openMainTab(event, 'sandbox')">Sandbox</button>
-  </nav>
   
 <%
 /* Corner chips floating over each tab's graph, like the editor's help chip:
@@ -94,7 +94,6 @@ const zoomChip = (p, obj) => `
 %>
 <!-- Tab content -->
 <section id="graph" class="tabcontent" aria-labelledby="graphtab">
-  <div id="gsummary" class="summary"></div>
   <div class="workspace">
   <div class="graphcontainer panel">
     <%- shotChip('g', 'graph') %>
@@ -142,7 +141,6 @@ const zoomChip = (p, obj) => `
 </section>
 
 <section id="editor" class="tabcontent" aria-labelledby="editortab">
-  <div id="esummary" class="summary"></div>
   <div class="workspace">
   <div class="graphcontainer panel">
     <details class="hint">
@@ -201,13 +199,13 @@ const zoomChip = (p, obj) => `
       <div>
         Goal rate:<br/>
         <input type = "number" id="endslope" class="toolinput rateinput" step="any"><br/>
-        <select id="slopetype" onchange="updateCommitFields(false)">
+        <select id="slopetype" onchange="updateCommitFields()">
           <option value="86400">per day</option>
           <option value="604800">per week</option>
           <option value="2629800">per month</option>
           <option value="31557600">per year</option>
         </select>
-        <button class="bmdrbtn" id="commit" onclick="commitTo(false)">UPDATE</button>
+        <button class="bmdrbtn" id="commit" onclick="commitTo()">UPDATE</button>
       </div>
       <div class="tooltitle">Ratchet</div>
       <div>
@@ -244,65 +242,15 @@ const zoomChip = (p, obj) => `
   </div>
 </section>
 
-<section id="sandbox" class="tabcontent" aria-labelledby="sandboxtab">
-  <div id="ssummary" class="summary"></div>
-  <div class="workspace">
-  <div class="graphcontainer panel">
-    <div class="graphbox">
-      <%- zoomChip('s', 'sandboxgr') %>
-      <div id="roadsandbox">
-      </div>
-    </div>
-    <div class="graphtools">
-      <button class="bmdrbtn iconbtn" id="sundo" aria-label="Undo" data-tip="Ctrl-Z / ⌘Z" aria-keyshortcuts="Control+Z Meta+Z" onclick="sandbox.undo();"><%- undoSvg %><span id="sundocnt" class="ucnt">0</span></button>
-      <button class="bmdrbtn iconbtn" id="sredo" aria-label="Redo" data-tip="Ctrl-Y / ⇧⌘Z" aria-keyshortcuts="Control+Y Shift+Meta+Z" onclick="sandbox.redo();"><%- redoSvg %><span id="sredocnt" class="ucnt">0</span></button>
-      <button class="bmdrbtn" id="snextday" onclick="sandbox.nextDay();">Next Day</button>
-    </div>
-  </div>
-  
-  <div class="vtabcontainer panel">
-    <div class="vtabtitle">Sandbox Tools</div>
-    <div class="vtab">
-      <button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sroad')">Red Line</button><button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sstats')">Stats</button><button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sdata')">Data</button><button class="bmdrbtn stablinks active" onclick="openSandboxTab(event, 'sedit')">Edit</button> <!-- Warning, these elements should be on the same line to prevent inline spacing -->
-    </div>
-    <div id="sedit" class="stabcontent">
-      <div class="tooltitle">Dial Graph</div>
-      Goal rate:<br/>
-      <input type = "number" id="sendslope" class="toolinput rateinput" step="any"><br/>
-      <select id="sslopetype" onchange="updateCommitFields(true)">
-        <option value="86400">per day</option>
-        <option value="604800">per week</option>
-        <option value="2629800">per month</option>
-        <option value="31557600">per year</option>
-      </select> 
-      <button class="bmdrbtn" id="scommit" onclick="commitTo(true)">UPDATE</button>
-      <div class="tooltitle">Enter new data</div>
-      Value:
-      <input id="sdataval" class="toolinput daysinput inlinecontrol" type="number">
-      Comment:
-      <input id="sdatacmt" class="toolinput inlinecontrol" type="text">
-      <button class="bmdrbtn inlinecontrol" onclick="sandbox.newData(sdataval.value, sdatacmt.value);">Add</button>
-    </div>
-    <div id="sdata" class="stabcontent">
-      <div class="tooltitle">View past data</div>
-      <div id="sandboxdata">
-      </div>
-    </div>
-    <div id="sstats" class="stabcontent">
-      <div class="tooltitle">Amounts Due By Day</div>
-      <div class="duebytable" id="sdueby"></div>
-      <div class="tooltitle">Goal Progress</div>
-      <div id="sprogress"></div>
-    </div>
-    <div id="sroad" class="stabcontent">
-      <div class="tooltitle">Graph Matrix</div>
-      <div id="sandboxroad"></div>
-    </div>
-  </div>
-  </div>
-</section>
 </main>
 
+<footer class="pagefoot">
+  <a href="/sandbox">Sandbox</a>
+  <a href="/tutorial">Tutorial</a>
+  <span class="versiontag">v<%= version %></span>
+</footer>
+
+<script src = "../src/pagekit.js"></script>
 <script src = "../src/grapheditor.js"></script>
 <script>
   initialize()

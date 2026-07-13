@@ -23,14 +23,20 @@ const GRAPHEDITOR_PATH = '/quals/grapheditor.html'
 const GRAPHEDITOR_TEMPLATE = fs.readFileSync(
   path.join(REPO, 'views/grapheditor.ejs'), 'utf8')
 const EDITOR_START = GRAPHEDITOR_TEMPLATE.indexOf('<section id="editor"')
-const EDITOR_END = GRAPHEDITOR_TEMPLATE.indexOf('<section id="sandbox"')
+const EDITOR_END = GRAPHEDITOR_TEMPLATE.indexOf('</main>')
 nodeAssert(EDITOR_START >= 0)
 nodeAssert(EDITOR_END > EDITOR_START)
 const EDITOR_MARKUP = GRAPHEDITOR_TEMPLATE.slice(EDITOR_START, EDITOR_END)
 const QUAL_ROUTES = {
   [GRAPHEDITOR_PATH]: {
     contentType: MIME['.html'],
-    body: ejs.render(GRAPHEDITOR_TEMPLATE, {user: {username: 'qual'}}),
+    body: ejs.render(GRAPHEDITOR_TEMPLATE, {user: {username: 'qual'},
+                                            version: 'qual'}),
+  },
+  '/quals/sandboxpage.html': {
+    contentType: MIME['.html'],
+    body: ejs.render(fs.readFileSync(
+      path.join(REPO, 'views/sandbox.ejs'), 'utf8'), {version: 'qual'}),
   },
   '/getusergoals': {
     contentType: 'application/json',
@@ -49,6 +55,14 @@ const QUAL_ROUTES = {
 }
 
 function serve(req, res) {
+  // A goal that takes its time arriving, for the loading-state qual
+  if (req.url === '/getgoaljson/slowgoal') {
+    setTimeout(() => {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(fs.readFileSync(path.join(REPO, 'automon/data/testroad0.bb')))
+    }, 800)
+    return
+  }
   const route = QUAL_ROUTES[req.url]
   if (route) {
     res.writeHead(200, { 'Content-Type': route.contentType })
@@ -175,7 +189,8 @@ console.log('\n--- static-analysis quals ---')
   const linter = new Linter()
   const files = [
     'src/butil.js', 'src/broad.js', 'src/beebrain.js', 'src/bgraph.js',
-    'src/bsandbox.js', 'src/btest.js', 'src/grapheditor.js',
+    'src/bsandbox.js', 'src/btest.js', 'src/pagekit.js',
+    'src/grapheditor.js', 'src/sandboxpage.js',
     'app/server.js', 'jsbrain_server/jsbrain_server.js',
     'jsbrain_server/renderer.js',
   ]
@@ -1267,8 +1282,36 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       assert(svgdl.pvtext === svgdl.dltext,
         `${name}: Preview SVG serves the same SVG the download saves`)
 
+      // Replicata: flip the goalbar's mode switch to Edit, back to View,
+      // then to Edit again. Expectata: the editor swaps in for the graph,
+      // the URL hash tracks the mode (deep-linkable #edit), and exactly
+      // one mode button is active at a time.
       await page.click('#editortab')
       await page.waitForSelector('#editor', {visible: true})
+      const modeEdit = await page.evaluate(() => ({
+        graphHidden: getComputedStyle(
+          document.getElementById('graph')).display === 'none',
+        editorShown: getComputedStyle(
+          document.getElementById('editor')).display !== 'none',
+        hash: location.hash,
+        active: [...document.querySelectorAll('.modelinks.active')]
+          .map(e => e.id),
+      }))
+      assert(modeEdit.graphHidden && modeEdit.editorShown &&
+             modeEdit.hash === '#edit' &&
+             modeEdit.active.join() === 'editortab',
+        `${name}: Edit mode swaps the editor in and sets #edit ` +
+        JSON.stringify(modeEdit))
+      await page.click('#graphtab')
+      await page.waitForSelector('#graph', {visible: true})
+      const modeView = await page.evaluate(() => ({
+        hash: location.hash,
+        active: [...document.querySelectorAll('.modelinks.active')]
+          .map(e => e.id),
+      }))
+      assert(modeView.hash === '' && modeView.active.join() === 'graphtab',
+        `${name}: View mode clears the hash ` + JSON.stringify(modeView))
+      await page.click('#editortab')
       await page.waitForSelector('#roadeditor svg.bmndrsvg .razr',
         {visible: true})
 
@@ -1294,12 +1337,12 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         const result = {
           semanticShell: !!document.querySelector('body > header#header') &&
             !!document.querySelector('body > main.app-shell') &&
-            !!document.querySelector('main > nav.tab') &&
+            !!document.querySelector('.goalbar > nav.modeswitch') &&
             !!document.querySelector(
               'main section#editor[aria-labelledby="editortab"]'),
-          goalLabel: document.querySelector('.goalbar > label')?.textContent,
-          goalLabelHasControl:
-            !!document.querySelector('.goalbar > label')?.control,
+          goalLabel: document.getElementById('roadselect')
+            .getAttribute('aria-label'),
+          goalUser: document.querySelector('.goalbar .yooguser')?.textContent,
           workspaceDisplay: workspaceStyle && workspaceStyle.display,
           panelsShareRow: Math.abs(graphRect.top - toolsRect.top) < 2,
           panelsArePanels: graph.classList.contains('panel') &&
@@ -1335,12 +1378,12 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
             document.querySelector('#editor .tooltitle'),
           ].every(el => getComputedStyle(el).textTransform === 'none'),
           focusContainersVisible:
-            getComputedStyle(document.querySelector('.tab')).overflow ===
+            getComputedStyle(document.querySelector('.modeswitch')).overflow ===
               'visible' &&
             getComputedStyle(document.querySelector('#editor .vtab')).overflow ===
               'visible',
           editorLoaded:
-            document.getElementById('esummary').textContent.trim().length > 0 &&
+            document.getElementById('goalsummary').textContent.trim().length > 0 &&
             document.getElementById('editorroad').children.length > 0,
         }
         submit.disabled = submitWasDisabled
@@ -1368,8 +1411,9 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         `${name}: submit message span starts empty in the markup`)
       assert(wide.semanticShell,
         `${name}: app shell uses header, main, nav, and editor section`)
-      assert(wide.goalLabel === 'Beeminder goal:' && wide.goalLabelHasControl,
-        `${name}: goal picker has its exact visible label (got ${JSON.stringify(wide.goalLabel)})`)
+      assert(wide.goalLabel === 'Beeminder goal:' && wide.goalUser === 'qual/',
+        `${name}: goal picker keeps its accessible name and shows the ` +
+        `username prefix (got ${JSON.stringify([wide.goalLabel, wide.goalUser])})`)
       assert(wide.workspaceDisplay === 'grid',
         `${name}: editor workspace uses a grid (got ${wide.workspaceDisplay})`)
       assert(wide.panelsShareRow,
@@ -1402,7 +1446,7 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         const road = editor.getRoad()
         const rd = road.road
         const logo = document.querySelector('#header a')
-        const mainBtn = document.querySelector('.tab button.active')
+        const mainBtn = document.querySelector('.modeswitch button.active')
         const vtabBtn = document.querySelector('#editor .vtab button.active')
         // Kill in-flight border-color transitions so we measure end state
         mainBtn.style.transition = 'none'
@@ -1449,9 +1493,9 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
           el.children.length === 0 && /Drag the bright red line/.test(
             el.textContent))
         return {
-          tips: ['eundo', 'eredo', 'sundo', 'sredo'].map(id =>
+          tips: ['eundo', 'eredo'].map(id =>
             document.getElementById(id).dataset.tip || ''),
-          hovertexts: ['eundo', 'eredo', 'sundo', 'sredo'].map(id =>
+          hovertexts: ['eundo', 'eredo'].map(id =>
             document.getElementById(id).title).join(''),
           kiExists: !!ki,
           kiUnchecked: ki ? !ki.checked : false,
@@ -1463,9 +1507,8 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
           hintVisible: hint ? hint.checkVisibility() : false,
         }
       })
-      assert(pdp.tips.join('|') ===
-        'Ctrl-Z / ⌘Z|Ctrl-Y / ⇧⌘Z|' +
-        'Ctrl-Z / ⌘Z|Ctrl-Y / ⇧⌘Z' && pdp.hovertexts === '',
+      assert(pdp.tips.join('|') === 'Ctrl-Z / ⌘Z|Ctrl-Y / ⇧⌘Z' &&
+             pdp.hovertexts === '',
         `${name}: undo/redo buttons advertise shortcuts via data-tip, ` +
         `not title hovertext (got ${pdp.tips.join('|')})`)
       const tipHidden = await page.evaluate(() => getComputedStyle(
@@ -1513,7 +1556,7 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         `${name}: help text is a popup and does not reflow the graph ` +
         JSON.stringify({popup: hintOpen.popup, before: hintGeom.roadTop,
                         after: hintOpen.roadTop}))
-      await page.click('#esummary')
+      await page.click('#goalsummary')
       const hintDismissed = await page.evaluate(() =>
         !document.querySelector('#editor details.hint').open)
       assert(hintDismissed,
@@ -1674,6 +1717,7 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         undoEnabled: !document.getElementById('eundo').disabled,
         submitDisabled: document.getElementById('submit').disabled,
         submitmsg: document.getElementById('submitmsg').textContent,
+        badge: document.getElementById('editortab').textContent,
       }))
       assert(matrixEdit.slope === 2,
         `${name}: typing in a matrix slope cell edits the road ` +
@@ -1681,6 +1725,9 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       assert(matrixEdit.undocnt === '1' && matrixEdit.undoEnabled,
         `${name}: matrix edit lands in the undo buffer, count beside the ` +
         `undo button (got ${matrixEdit.undocnt})`)
+      assert(matrixEdit.badge === 'Edit (1)',
+        `${name}: pending-edit count badges the Edit mode button ` +
+        `(got ${matrixEdit.badge})`)
       assert(matrixEdit.submitDisabled &&
              /insta-derail/.test(matrixEdit.submitmsg),
         `${name}: insta-derailing edit disables Submit with the derail ` +
@@ -1695,7 +1742,7 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       // compared the cell's post-undo text against its stale pre-undo
       // cache (rdFocus.oldText) and re-committed, pushing a ghost undo
       // state for an edit the user never made.
-      await page.click('#esummary')
+      await page.click('#goalsummary')
       await page.evaluate(() => new Promise(r => setTimeout(r, 300)))
       const ghost = await page.evaluate(() => ({
         undocnt: document.getElementById('eundocnt').textContent,
@@ -1706,6 +1753,24 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
              ghost.slope === 0,
         `${name}: no ghost edit after undoAll while a matrix cell still ` +
         `has focus (${JSON.stringify(ghost)})`)
+
+      // The shared summary bar tracks the active mode's engine: pending
+      // edits show while editing, the committed truth shows in view mode
+      await page.evaluate(() => editor.retroRatchet(0))
+      await page.evaluate(() => new Promise(r => setTimeout(r, 300)))
+      const sumEdit = await page.evaluate(() =>
+        document.getElementById('goalsummary').textContent)
+      await page.click('#graphtab')
+      const sumView = await page.evaluate(() =>
+        document.getElementById('goalsummary').textContent)
+      await page.click('#editortab')
+      const sumBack = await page.evaluate(() =>
+        document.getElementById('goalsummary').textContent)
+      assert(sumView.includes('4 days') && sumEdit !== sumView &&
+             sumBack === sumEdit,
+        `${name}: summary bar tracks the active mode's engine ` +
+        JSON.stringify({sumEdit, sumView, sumBack}))
+      await undoAllSafe()
 
       // Undo/redo keyboard shortcuts, including the Mac variants: mod-Z
       // undoes; mod-Y and shift-mod-Z redo
@@ -1905,13 +1970,25 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       assert(matrix.nButtons > 0 && matrix.reachable,
         `${name}: all ${matrix.nButtons} matrix buttons reachable by scrolling`)
 
-      // The graph and sandbox tabs share the cleaned-up markup and CSS with
-      // the editor, so drive them at phone width too
+      // The graph view shares the cleaned-up markup and CSS with the
+      // editor, so drive it at phone width too
       await page.click('#graphtab')
       await page.waitForSelector('#graph', {visible: true})
-      // Focusing the empty date field auto-fills today via Pikaday
+      // Focusing the empty date field auto-fills today via Pikaday. Wait
+      // for the picker and for focus to actually land on each field before
+      // typing: puppeteer can otherwise outrace the picker's open handler
+      // (no human clicks two fields in the same tick), and if Pikaday ever
+      // steals focus back these waits fail loudly instead of letting the
+      // keystrokes corrupt the date field.
       await page.click('#datadate')
+      await page.waitForSelector('.pika-single:not(.is-hidden)')
+      await page.click('#datavalue')
+      await page.waitForFunction(() =>
+        document.activeElement === document.getElementById('datavalue'))
       await page.type('#datavalue', '5')
+      await page.click('#datacmt')
+      await page.waitForFunction(() =>
+        document.activeElement === document.getElementById('datacmt'))
       await page.type('#datacmt', 'abc')
       const graphNarrow = await page.evaluate(() => ({
         date: document.getElementById('datadate').value,
@@ -1928,37 +2005,6 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       await page.screenshot({
         path: path.resolve(__dirname,
           'qual_grapheditor_graph_mobile_screenshot.png'),
-        fullPage: true,
-      })
-
-      await page.click('#sandboxtab')
-      await page.waitForSelector('#roadsandbox svg.bmndrsvg .razr',
-        {visible: true})
-      await page.type('#sdataval', '1')
-      await page.click('#sedit button[onclick*="newData"]')
-      await page.waitForFunction(
-        () => document.getElementById('sundocnt').textContent === '1')
-      const sandboxNarrow = await page.evaluate(() => ({
-        undoEnabled: !document.getElementById('sundo').disabled,
-        rateShown: Number.isFinite(
-          parseFloat(document.getElementById('sendslope').value)),
-        pageFits: document.documentElement.scrollWidth <= innerWidth,
-        activeTabs: [...document.querySelectorAll('.tablinks.active')]
-          .map(el => el.id),
-      }))
-      assert(sandboxNarrow.activeTabs.length === 1 &&
-             sandboxNarrow.activeTabs[0] === 'sandboxtab',
-        `${name}: exactly the sandbox tab is active after switching ` +
-        JSON.stringify(sandboxNarrow.activeTabs))
-      assert(sandboxNarrow.undoEnabled,
-        `${name}: sandbox accepts a datapoint and enables undo`)
-      assert(sandboxNarrow.rateShown,
-        `${name}: sandbox dial shows a numeric rate`)
-      assert(sandboxNarrow.pageFits,
-        `${name}: sandbox tab fits a 390px viewport`)
-      await page.screenshot({
-        path: path.resolve(__dirname,
-          'qual_grapheditor_sandbox_mobile_screenshot.png'),
         fullPage: true,
       })
 
@@ -1987,30 +2033,30 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         requestAnimationFrame(() => requestAnimationFrame(resolve))))
 
       const labels = await page.evaluate(() => ({
-        main: [...document.querySelectorAll('.tablinks')]
+        main: [...document.querySelectorAll('.modelinks')]
           .map(el => el.textContent).join('|'),
         editor: [...document.querySelectorAll('.etablinks')]
           .map(el => el.textContent).join('|'),
         actions: ['ezoomall', 'ezoomdflt',
                   'submit'].map(id => document.getElementById(id).textContent)
                            .join('|'),
-        undoLabels: ['eundo', 'eredo', 'sundo', 'sredo'].map(id =>
+        undoLabels: ['eundo', 'eredo'].map(id =>
           document.getElementById(id).getAttribute('aria-label')).join('|'),
-        undoIcons: ['eundo', 'eredo', 'sundo', 'sredo'].map(id =>
+        undoIcons: ['eundo', 'eredo'].map(id =>
           document.getElementById(id).querySelectorAll('svg.uicon').length)
           .join('|'),
       }))
-      assert(labels.main === 'Graph|Graph Editor|Sandbox',
-        `${name}: main-tab copy is unchanged`)
+      assert(labels.main === 'View|Edit',
+        `${name}: mode-switch copy as designed (got ${labels.main})`)
       assert(labels.editor === 'Red Line|Stats|Data|Dial',
         `${name}: editor-tool copy is unchanged`)
       assert(labels.actions === 'View All|Reset Zoom|Submit',
         `${name}: editor-action copy is unchanged ` +
         `(got ${labels.actions})`)
-      assert(labels.undoIcons === '1|1|1|1',
+      assert(labels.undoIcons === '1|1',
         `${name}: undo/redo buttons each carry one inline svg icon ` +
         `(got ${labels.undoIcons})`)
-      assert(labels.undoLabels === 'Undo|Redo|Undo|Redo',
+      assert(labels.undoLabels === 'Undo|Redo',
         `${name}: icon-only undo/redo buttons keep accessible names ` +
         `(got ${labels.undoLabels})`)
 
@@ -2035,7 +2081,105 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         `(found ${stuckOverlays})`)
       await page.evaluate(() => loadGoals('testroad0'))
       await page.waitForSelector('#roadgraph svg.bmndrsvg .razr')
+
+      // Replicata: pick a goal that takes a while to arrive. Expectata:
+      // the numbers still on screen belong to the old goal, so the
+      // summary and tools gray out and stop taking clicks until the new
+      // goal's numbers land (the graph area shows its own loading
+      // overlay). Resultata (pre-fix): the old safebuf and pledge kept
+      // showing full-strength against the newly picked goal's name.
+      const during = await page.evaluate(() => {
+        loadGoals('slowgoal') // deliberately not awaited: sample mid-load
+        return new Promise(resolve => setTimeout(() => resolve({
+          classed: document.body.classList.contains('goalloading'),
+          summaryOp: getComputedStyle(
+            document.querySelector('.summary.inbar')).opacity,
+          toolsPe: getComputedStyle(
+            document.querySelector('#graph .vtabcontainer')).pointerEvents,
+        }), 250))
+      })
+      assert(during.classed && parseFloat(during.summaryOp) < 1 &&
+             during.toolsPe === 'none',
+        `${name}: stale numbers gray out while a goal loads ` +
+        JSON.stringify(during))
+      await page.waitForFunction(() =>
+        !document.body.classList.contains('goalloading'))
+      const loaded = await page.evaluate(() => getComputedStyle(
+        document.querySelector('.summary.inbar')).opacity)
+      assert(loaded === '1',
+        `${name}: numbers back to full strength after the load ` +
+        `(opacity ${loaded})`)
     }, {width: 1360, height: 900})
+
+  // --- the standalone /sandbox page: new-design port of the in-page
+  // sandbox plus the goal-type creation bar ---
+  await runQual(browser, port, 'sandboxpage', '/quals/sandboxpage.html',
+    async (page, name) => {
+      await checkGraph(page, name)
+      const creation = await page.evaluate(() => ({
+        types: [...document.querySelectorAll('#typeselect option')]
+          .map(o => o.textContent).join('|'),
+        dueby: !!document.getElementById('sdueby').innerHTML,
+        undoLabels: ['sundo', 'sredo'].map(id =>
+          document.getElementById(id).getAttribute('aria-label')).join('|'),
+        undoIcons: ['sundo', 'sredo'].map(id =>
+          document.getElementById(id).querySelectorAll('svg.uicon').length)
+          .join('|'),
+        zoomChip: !!document.getElementById('szoomall')
+          .closest('details.gchip.zoom'),
+        rateShown: Number.isFinite(
+          parseFloat(document.getElementById('sendslope').value)),
+      }))
+      assert(creation.types ===
+        'Do More|Lose Weight|Use an Odometer|Do Less|Gain Weight|' +
+        'Whittle Down',
+        `${name}: goal-type menu copy is unchanged (got ${creation.types})`)
+      assert(creation.dueby, `${name}: dueby table populated`)
+      assert(creation.rateShown, `${name}: sandbox dial shows a numeric rate`)
+      assert(creation.undoLabels === 'Undo|Redo' &&
+             creation.undoIcons === '1|1',
+        `${name}: icon undo/redo buttons with accessible names ` +
+        JSON.stringify(creation))
+      assert(creation.zoomChip, `${name}: magnifier chip present`)
+
+      // Add a datapoint through the Edit tool tab
+      await page.type('#sdataval', '1')
+      await page.click('#sedit button[onclick*="newData"]')
+      await page.waitForFunction(
+        () => document.getElementById('sundocnt').textContent === '1')
+      const afterAdd = await page.evaluate(() => ({
+        undoEnabled: !document.getElementById('sundo').disabled,
+        summary: document.getElementById('ssummary').textContent.trim(),
+      }))
+      assert(afterAdd.undoEnabled,
+        `${name}: sandbox accepts a datapoint and enables undo`)
+      assert(afterAdd.summary.length > 0,
+        `${name}: summary line populated`)
+
+      // Create a fresh goal of another type: defaults apply, graph rebuilds
+      await page.select('#typeselect', 'fatloser')
+      const dflt = await page.evaluate(() => ({
+        rate: document.getElementById('rate').value,
+        value: document.getElementById('value').value,
+      }))
+      assert(dflt.rate === '-1' && dflt.value === '70',
+        `${name}: type defaults apply on selection ` + JSON.stringify(dflt))
+      await page.click('#newgoal')
+      await page.waitForSelector('#roadsandbox svg.bmndrsvg .razr')
+
+      // Phone width: page still fits
+      await page.setViewport({width: 390, height: 844})
+      await page.evaluate(() => new Promise(resolve =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve))))
+      const fits = await page.evaluate(() =>
+        document.documentElement.scrollWidth <= innerWidth)
+      assert(fits, `${name}: sandbox page fits a 390px viewport`)
+      await page.screenshot({
+        path: path.resolve(__dirname,
+          'qual_sandboxpage_mobile_screenshot.png'),
+        fullPage: true,
+      })
+    })
 
   // --- 3. sandbox.html: creates a new goal from scratch ---
   await runQual(browser, port, 'sandbox', '/quals/sandbox.html',

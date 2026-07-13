@@ -1,6 +1,9 @@
 
 ## CHANGELOG
 
+* 2026.07.13 Stale stuff grays out briefly while a new goal's loading
+* 2026.07.13 Links in footer
+* 2026.07.13 View/Edit toggle in the goalbar, sandbox moved to /sandbox
 * 2026.07.12 Fix ghost edit when undoing while a graphmatrix cell still has focus
 * 2026.07.12 Camera & Zoom buttons to gate some UI clutter
 * 2026.07.12 Nicer undo/redo buttons
