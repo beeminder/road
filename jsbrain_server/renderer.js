@@ -264,40 +264,48 @@ class Renderer {
                                        clip:{x:rect.left, y:rect.top, 
                                              width:rect.width, height:rect.height}})
 
-          // Generate palette optimized thumbnail thru cropping with ImageMagick
-          //var thmratio = 140/zi.height
-          //var thmw = 212-4 // = Math.round(zi.width*thmratio)-4
-          //var thmh = 140-4 // = Math.round(zi.height*thmratio)-4
-          var res = await new Promise( (resolve, reject) => {
-            gm(imgftmp)
-              .in('-crop').in(zi.width+"x"+zi.height+"+"+zi.x+"+"+zi.y)
-              .in('-resize').in('208x136!')
-              .in('-bordercolor').in(json.color)
-              .in('-border').in('2x2')
-              .in('-filter').in('Box')
-              .in('-remap').in('palette.png')
-              .in('-colors').in('256')
-              .in('+dither')
-              .in('+repage')
-              .write(thmftmp, (err) => {
-                if (err) reject(err)
-                resolve(null)
-              })
-          })
-          if (fs.existsSync(thmftmp)) fs.renameSync(thmftmp, thmf )
-          
-          // Generate final graph PNG by palette remapping using ImageMagick
-          res = await new Promise( (resolve, reject) => {
-            gm(imgftmp)
-              .in('-filter').in('Box')
-              .in('-remap').in('palette.png')
-              .in('-colors').in('256')
-              .in('+dither')
-              .write(imgftmp, (err) => {
-                if (err) reject(err)
-                resolve(null)
-              })
-          })
+          // The thumbnail and the final PNG are independent transforms of
+          // the same screenshot, so run the two (gm) subprocesses
+          // concurrently. The remap writes to its own temp file (rather
+          // than onto imgftmp, which the thumbnail is concurrently
+          // reading) and replaces imgftmp once both are done.
+          const remapftmp = this.tempify(imgf, newid+"r")
+          await Promise.all([
+            // Generate palette optimized thumbnail thru cropping with ImageMagick
+            //var thmratio = 140/zi.height
+            //var thmw = 212-4 // = Math.round(zi.width*thmratio)-4
+            //var thmh = 140-4 // = Math.round(zi.height*thmratio)-4
+            new Promise( (resolve, reject) => {
+              gm(imgftmp)
+                .in('-crop').in(zi.width+"x"+zi.height+"+"+zi.x+"+"+zi.y)
+                .in('-resize').in('208x136!')
+                .in('-bordercolor').in(json.color)
+                .in('-border').in('2x2')
+                .in('-filter').in('Box')
+                .in('-remap').in('palette.png')
+                .in('-colors').in('256')
+                .in('+dither')
+                .in('+repage')
+                .write(thmftmp, (err) => {
+                  if (err) reject(err)
+                  resolve(null)
+                })
+            }),
+            // Generate final graph PNG by palette remapping using ImageMagick
+            new Promise( (resolve, reject) => {
+              gm(imgftmp)
+                .in('-filter').in('Box')
+                .in('-remap').in('palette.png')
+                .in('-colors').in('256')
+                .in('+dither')
+                .write(remapftmp, (err) => {
+                  if (err) reject(err)
+                  resolve(null)
+                })
+            }),
+          ])
+          if (fs.existsSync(thmftmp))   fs.renameSync(thmftmp,   thmf)
+          if (fs.existsSync(remapftmp)) fs.renameSync(remapftmp, imgftmp)
         }
         if (fs.existsSync(imgftmp)) fs.renameSync(imgftmp, imgf )
         if (time_id != null) msgbuf += this.timeEndMsg(time_id)
