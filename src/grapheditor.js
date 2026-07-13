@@ -41,9 +41,20 @@ function setMode(evt, mode) {
   // may hold pending edits that view mode shouldn't show, and vice versa)
   if (mode == "graph"  && !gload) updateSummary(divSummary, graph)
   if (mode == "editor" && !eload) updateSummary(divSummary, editor)
-  // Deep-linkable mode: reflect it in the URL hash
-  history.replaceState(null, "", mode == "editor"
-    ? "#edit" : location.pathname + location.search)
+  updateURL()
+} 
+
+// Keeps the address bar pointing at the current goal and mode:
+// /username/goalname plus #edit in edit mode. Local pages (no server;
+// goal values are file paths) just keep the mode hash on their own path.
+function updateURL() {
+  const hash = curMode == "editor" ? "#edit" : ""
+  let path = location.pathname + location.search
+  if (!local && username && roadSelect.value &&
+      roadSelect.value.indexOf("/") < 0)
+    path = "/" + encodeURIComponent(username) +
+           "/" + encodeURIComponent(roadSelect.value)
+  history.replaceState(null, "", path + hash)
 } 
 
 let roadSelect
@@ -100,6 +111,7 @@ async function loadGoals(url) {
     }
     await graph.loadGoalJSON( resp )
     await editor.loadGoalJSON( resp )
+    updateURL()
   } finally {
     document.body.classList.remove("goalloading")
   }
@@ -258,10 +270,25 @@ function prepareGoalSelect(goals) {
     roadSelect.add(opt);
   });
 
+  const landed = goals.includes(initgoal) ? initgoal : goals[0]
+  if (wanted)
+    showURLBanner("Error: Not your graph. Redirecting from "
+      + wanted + " to " // wanted is the URL's original username/goalname
+      + username + "/" + landed)
+  else if (initgoal && !goals.includes(initgoal))
+    showURLBanner("Error: No such graph, \"" + initgoal + "\". Redirecting to "
+      + username + "/" + landed)
+  roadSelect.value = landed;
+  // Tom Select reads the <select> only at creation, so it gets created
+  // after the landing goal is selected above, not before
   initTomSelect()
-
-  roadSelect.value = goals[0];
   loadGoals(roadSelect.value)
+}
+
+// Shows the can't-show-what-the-URL-asked-for banner above the goalbar
+function showURLBanner(msg) {
+  document.getElementById('urlbannermsg').textContent = msg
+  document.getElementById('urlbanner').hidden = false
 }
 
 // Helper Functions. Something about function hoisting?

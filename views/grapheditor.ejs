@@ -6,22 +6,38 @@
         type="image/png">
   <title>Beeminder Visual Graph Editor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="../src/pikaday.css">
-  <link rel="stylesheet" href="../src/jsbrain.css">
-  <link rel="stylesheet" href="../src/tom-select.css">
-  <link rel="stylesheet" href="../src/grapheditor.css">
+  <%
+  /* Asset URLs are absolute: the page is served at /, /road, and
+     /username/goalname, and relative URLs resolve against whichever of
+     those the visitor is on (404ing outright on a trailing-slash deep
+     link like /username/goalname/) */
+  %>
+  <link rel="stylesheet" href="/src/pikaday.css">
+  <link rel="stylesheet" href="/src/jsbrain.css">
+  <link rel="stylesheet" href="/src/tom-select.css">
+  <link rel="stylesheet" href="/src/grapheditor.css">
   <script src = "https://d3js.org/d3.v7.js"></script>
-  <script src = "../src/moment.js"></script>
-  <script src = "../src/moment-timezone.js"></script>
-  <script src = "../src/pikaday.js"></script>
-  <script src = "../src/polyfit.js"></script>
-  <script src = "../src/butil.js"></script>
-  <script src = "../src/broad.js"></script>
-  <script src = "../src/beebrain.js"></script>
-  <script src = "../src/bgraph.js"></script>
-  <script src = "../src/tom-select.js"></script>
+  <script src = "/src/moment.js"></script>
+  <script src = "/src/moment-timezone.js"></script>
+  <script src = "/src/pikaday.js"></script>
+  <script src = "/src/polyfit.js"></script>
+  <script src = "/src/butil.js"></script>
+  <script src = "/src/broad.js"></script>
+  <script src = "/src/beebrain.js"></script>
+  <script src = "/src/bgraph.js"></script>
+  <script src = "/src/tom-select.js"></script>
+  <%
+  /* Emits a value as a JS literal inside an inline <script>. JSON.stringify
+     alone is NOT enough: it leaves "</script>" intact, so a value carrying
+     that (eg a goalname from the URL, which arrives decoded) would close
+     the script tag and run whatever followed. Escaping < as < keeps
+     every such value an inert string. */
+  const jsval = v => JSON.stringify(v ?? null).replace(/</g, '\\u003c')
+  %>
   <script>
-    const username = <%- JSON.stringify(user ? user.username : null) %>;
+    const username = <%- jsval(user ? user.username : null) %>;
+    const initgoal = <%- jsval(goal) %>;
+    const wanted = <%- jsval(wanted) %>;
   </script>
 </head>
 
@@ -34,6 +50,11 @@
     </div>
   </header>
   <main class="app-shell">
+  <div id="urlbanner" class="urlbanner" hidden>
+    <span id="urlbannermsg"></span>
+    <button class="bmdrbtn iconbtn" aria-label="Dismiss"
+            onclick="document.getElementById('urlbanner').hidden = true">×</button>
+  </div>
   <div class="goalbar">
     <span class="goalpicker">
       <% if (user) { %><span class="yooguser"><%= user.username %>/</span><% } %>
@@ -250,8 +271,8 @@ const zoomChip = (p, obj) => `
   <span class="versiontag">v<%= version %></span>
 </footer>
 
-<script src = "../src/pagekit.js"></script>
-<script src = "../src/grapheditor.js"></script>
+<script src = "/src/pagekit.js"></script>
+<script src = "/src/grapheditor.js"></script>
 <script>
   initialize()
 </script>

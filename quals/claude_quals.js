@@ -31,7 +31,42 @@ const QUAL_ROUTES = {
   [GRAPHEDITOR_PATH]: {
     contentType: MIME['.html'],
     body: ejs.render(GRAPHEDITOR_TEMPLATE, {user: {username: 'qual'},
-                                            version: 'qual'}),
+                                            version: 'qual', goal: null,
+                                            wanted: null}),
+  },
+  '/quals/grapheditor-deeplink.html': {
+    contentType: MIME['.html'],
+    body: ejs.render(GRAPHEDITOR_TEMPLATE, {user: {username: 'qual'},
+                                            version: 'qual',
+                                            goal: 'othergoal',
+                                            wanted: null}),
+  },
+  // Deep link to a goal that isn't among the user's goals
+  '/quals/grapheditor-badgoal.html': {
+    contentType: MIME['.html'],
+    body: ejs.render(GRAPHEDITOR_TEMPLATE, {user: {username: 'qual'},
+                                            version: 'qual',
+                                            goal: 'nosuchgoal',
+                                            wanted: null}),
+  },
+  // A hostile deep link: /username/<goalname> arrives URL-decoded, so a
+  // goalname carrying </script> would break out of the inline script that
+  // hands the goal to the client, and run as the logged-in user
+  '/quals/grapheditor-xss.html': {
+    contentType: MIME['.html'],
+    body: ejs.render(GRAPHEDITOR_TEMPLATE, {
+      user: {username: 'qual'}, version: 'qual',
+      goal: '</script><script>window.pwned = 1</script>',
+      wanted: null}),
+  },
+  // Deep link to some other user's goal (the server denied it and asks
+  // the client to explain rather than silently teleport)
+  '/quals/grapheditor-mismatch.html': {
+    contentType: MIME['.html'],
+    body: ejs.render(GRAPHEDITOR_TEMPLATE, {user: {username: 'qual'},
+                                            version: 'qual',
+                                            goal: null,
+                                            wanted: 'alice/foo'}),
   },
   '/quals/sandboxpage.html': {
     contentType: MIME['.html'],
@@ -40,9 +75,13 @@ const QUAL_ROUTES = {
   },
   '/getusergoals': {
     contentType: 'application/json',
-    body: JSON.stringify(['testroad0']),
+    body: JSON.stringify(['testroad0', 'othergoal']),
   },
   '/getgoaljson/testroad0': {
+    contentType: 'application/json',
+    body: fs.readFileSync(path.join(REPO, 'automon/data/testroad0.bb')),
+  },
+  '/getgoaljson/othergoal': {
     contentType: 'application/json',
     body: fs.readFileSync(path.join(REPO, 'automon/data/testroad0.bb')),
   },
@@ -67,6 +106,20 @@ function serve(req, res) {
   if (route) {
     res.writeHead(200, { 'Content-Type': route.contentType })
     res.end(route.body)
+    return
+  }
+
+  // The live server renders the editor for GET /username/goalname (with or
+  // without a trailing slash); mirror that for the qual user so the URLs
+  // the client writes into the address bar are themselves loadable --
+  // reloading /qual/<goalname> has to land back on that goal
+  const deeplink = req.url.match(/^\/qual\/(\w+)\/?$/)
+  if (deeplink) {
+    res.writeHead(200, { 'Content-Type': MIME['.html'] })
+    res.end(ejs.render(GRAPHEDITOR_TEMPLATE, {user: {username: 'qual'},
+                                              version: 'qual',
+                                              goal: deeplink[1],
+                                              wanted: null}))
     return
   }
 
@@ -1302,6 +1355,10 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
              modeEdit.active.join() === 'editortab',
         `${name}: Edit mode swaps the editor in and sets #edit ` +
         JSON.stringify(modeEdit))
+      const modePath = await page.evaluate(() => location.pathname)
+      assert(modePath === '/qual/testroad0',
+        `${name}: address bar names the current goal ` +
+        `(got ${modePath})`)
       await page.click('#graphtab')
       await page.waitForSelector('#graph', {visible: true})
       const modeView = await page.evaluate(() => ({
@@ -2138,6 +2195,214 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         `${name}: numbers back to full strength after the load ` +
         `(opacity ${loaded})`)
     }, {width: 1360, height: 900})
+
+  // Replicata: land on /username/goalname (the server hands the client
+  // the goal from the URL). Expectata: that goal is selected and loaded,
+  // the address bar keeps naming it, and switching goals through the
+  // picker retargets the URL.
+  await runQual(browser, port, 'deeplink', '/quals/grapheditor-deeplink.html',
+    async (page, name) => {
+      const landed = await page.evaluate(() => ({
+        slug: roadSelect.value,
+        path: location.pathname,
+        summary: document.getElementById('goalsummary').textContent.trim(),
+      }))
+      assert(landed.slug === 'othergoal' && landed.path === '/qual/othergoal',
+        `${name}: deep-linked goal selected and URL kept ` +
+        JSON.stringify(landed))
+      assert(landed.summary.length > 0,
+        `${name}: deep-linked goal actually loaded`)
+      // Visually hidden, not just hidden=true: a CSS display rule on the
+      // banner can override the hidden attribute and leave an empty red
+      // strip on every page
+      const bannerbox = await page.evaluate(() => getComputedStyle(
+        document.getElementById('urlbanner')).display)
+      assert(bannerbox === 'none',
+        `${name}: no banner box when the deep link is fine ` +
+        `(display: ${bannerbox})`)
+      // The picker the user actually sees: Tom Select renders its own
+      // control and reads the underlying <select> only at init time, so
+      // its display can disagree with the graph, URL, and raw select
+      const picker = await page.evaluate(() => ({
+        internal: roadTomSelect.getValue(),
+        shown: document.querySelector('.ts-input .item')?.textContent,
+      }))
+      assert(picker.internal === 'othergoal' && picker.shown === 'othergoal',
+        `${name}: the visible goal picker names the deep-linked goal ` +
+        JSON.stringify(picker))
+      await page.evaluate(() => roadTomSelect.setValue('testroad0'))
+      await page.waitForFunction(() =>
+        location.pathname === '/qual/testroad0')
+      const switched = await page.evaluate(() => ({
+        slug: roadSelect.value,
+        path: location.pathname,
+      }))
+      assert(switched.slug === 'testroad0',
+        `${name}: picker switch retargets the URL ` +
+        JSON.stringify(switched))
+      // The address bar's whole promise is that its URL is loadable:
+      // reloading after the rewrite has to land back on the same goal
+      await page.reload({waitUntil: 'networkidle0'})
+      await page.waitForSelector('svg.bmndrsvg .razr')
+      const reloaded = await page.evaluate(() => ({
+        slug: roadSelect.value,
+        path: location.pathname,
+        shown: document.querySelector('.ts-input .item')?.textContent,
+      }))
+      assert(reloaded.slug === 'testroad0' &&
+             reloaded.path === '/qual/testroad0' &&
+             reloaded.shown === 'testroad0',
+        `${name}: reloading the rewritten URL lands on the same goal ` +
+        JSON.stringify(reloaded))
+    })
+
+  // Replicata: a deep link carrying the mode hash too: /username/goalname
+  // plus #edit. Expectata: both halves take effect -- the editor is up,
+  // the deep-linked goal is loaded, and the URL keeps both. Toggling back
+  // to View still works even though the view graph loaded while hidden.
+  await runQual(browser, port, 'deeplinkedit',
+    '/quals/grapheditor-deeplink.html#edit',
+    async (page, name) => {
+      const combo = await page.evaluate(() => ({
+        editorShown: getComputedStyle(
+          document.getElementById('editor')).display !== 'none',
+        active: [...document.querySelectorAll('.modelinks.active')]
+          .map(e => e.id),
+        slug: roadSelect.value,
+        path: location.pathname,
+        hash: location.hash,
+      }))
+      assert(combo.editorShown && combo.active.join() === 'editortab',
+        `${name}: #edit at load time lands in edit mode ` +
+        JSON.stringify(combo))
+      assert(combo.slug === 'othergoal' && combo.path === '/qual/othergoal'
+             && combo.hash === '#edit',
+        `${name}: goal deep link and mode deep link coexist ` +
+        JSON.stringify(combo))
+      await page.click('#graphtab')
+      await page.waitForSelector('#roadgraph svg.bmndrsvg .razr',
+        {visible: true})
+      const view = await page.evaluate(() => ({
+        hash: location.hash,
+        path: location.pathname,
+      }))
+      assert(view.hash === '' && view.path === '/qual/othergoal',
+        `${name}: back to View keeps the goal URL and drops #edit ` +
+        JSON.stringify(view))
+    })
+
+  // Replicata: the same deep link with a trailing slash, which the live
+  // server also matches. Expectata: the page still works (asset URLs are
+  // absolute, so nothing resolves relative to the extra path segment; any
+  // 404ing asset shows up as a page error) and the address bar
+  // canonicalizes to the slashless form once the goal loads.
+  await runQual(browser, port, 'deeplinkslash', '/qual/othergoal/',
+    async (page, name) => {
+      const slashed = await page.evaluate(() => ({
+        slug: roadSelect.value,
+        path: location.pathname,
+        shown: document.querySelector('.ts-input .item')?.textContent,
+      }))
+      assert(slashed.slug === 'othergoal' &&
+             slashed.path === '/qual/othergoal' &&
+             slashed.shown === 'othergoal',
+        `${name}: trailing-slash deep link loads and canonicalizes ` +
+        JSON.stringify(slashed))
+    })
+
+  // Replicata: deep-link to a goal you don't have, and to another user's
+  // goal. Expectata: you land on your own first goal with a loud banner
+  // saying what was asked and where you ended up; dismissing hides it.
+  // Resultata (pre-banner): a silent teleport to your first goal.
+  await runQual(browser, port, 'urlbanner', '/quals/grapheditor-badgoal.html',
+    async (page, name) => {
+      const bad = await page.evaluate(() => ({
+        hidden: document.getElementById('urlbanner').hidden,
+        msg: document.getElementById('urlbannermsg').textContent,
+        slug: roadSelect.value,
+        path: location.pathname,
+      }))
+      assert(!bad.hidden && bad.msg.includes('nosuchgoal') &&
+             bad.msg.includes('qual/testroad0'),
+        `${name}: bad-goal banner names the request and the landing spot ` +
+        JSON.stringify(bad))
+      assert(bad.slug === 'testroad0' && bad.path === '/qual/testroad0',
+        `${name}: landed on the first goal with a truthful URL ` +
+        JSON.stringify(bad))
+      const badshown = await page.evaluate(() =>
+        document.querySelector('.ts-input .item')?.textContent)
+      assert(badshown === 'testroad0',
+        `${name}: the visible picker agrees with where you landed ` +
+        `(shows ${badshown})`)
+      await page.click('#urlbanner button')
+      const dismissed = await page.evaluate(() =>
+        document.getElementById('urlbanner').hidden)
+      assert(dismissed, `${name}: banner dismisses`)
+      const gone = await page.evaluate(() => getComputedStyle(
+        document.getElementById('urlbanner')).display)
+      assert(gone === 'none',
+        `${name}: dismissed banner is actually gone (display: ${gone})`)
+    })
+
+  await runQual(browser, port, 'urlbanner2',
+    '/quals/grapheditor-mismatch.html',
+    async (page, name) => {
+      const mm = await page.evaluate(() => ({
+        hidden: document.getElementById('urlbanner').hidden,
+        msg: document.getElementById('urlbannermsg').textContent,
+        slug: roadSelect.value,
+        path: location.pathname,
+      }))
+      assert(!mm.hidden && mm.msg.includes('alice/foo') &&
+             mm.msg.includes('qual'),
+        `${name}: mismatch banner names the denied goal and who you are ` +
+        JSON.stringify(mm))
+      assert(mm.slug === 'testroad0' && mm.path === '/qual/testroad0',
+        `${name}: landed on your own goal with a truthful URL ` +
+        JSON.stringify(mm))
+    })
+
+  // Replicata: visit a deep link whose goalname contains </script> plus
+  // script of the attacker's choosing (a link like this could be mailed
+  // to any logged-in user). Expectata: it's inert -- the goalname is just
+  // a string that names no goal, so you get the no-such-graph banner.
+  // Resultata (pre-fix): JSON.stringify doesn't escape </script>, so the
+  // payload broke out of the inline script and executed with the victim's
+  // session.
+  await runQual(browser, port, 'xss', '/quals/grapheditor-xss.html',
+    async (page, name) => {
+      const xss = await page.evaluate(() => ({
+        pwned: typeof window.pwned,
+        injected: document.querySelectorAll('script').length,
+        goalIsString: typeof initgoal === 'string' &&
+                      initgoal.includes('</script>'),
+        bannerShown: !document.getElementById('urlbanner').hidden,
+      }))
+      assert(xss.pwned === 'undefined',
+        `${name}: script in a deep-linked goalname does not execute ` +
+        JSON.stringify(xss))
+      assert(xss.goalIsString,
+        `${name}: the payload stays an inert string ` + JSON.stringify(xss))
+      assert(xss.bannerShown,
+        `${name}: hostile goalname just gets the no-such-graph banner`)
+    })
+
+  // Every value the template drops into an inline <script> has to go
+  // through jsval(): JSON.stringify alone leaves </script> intact
+  const rawEmits = (GRAPHEDITOR_TEMPLATE.match(
+    /<%-\s*JSON\.stringify/g) || []).length
+  assert(rawEmits === 0,
+    `template: no raw JSON.stringify emissions into inline scripts ` +
+    `(found ${rawEmits}; use jsval())`)
+
+  // The page now lives at /username/goalname, and with a trailing slash
+  // (/username/goalname/) a relative ../src/x resolves to /username/src/x,
+  // which is a 404 -- so asset URLs in the template have to be absolute
+  const relAssets = (GRAPHEDITOR_TEMPLATE.match(
+    /(?:src|href)\s*=\s*"\.\./g) || []).length
+  assert(relAssets === 0,
+    `template: no relative asset URLs ` +
+    `(found ${relAssets}; a trailing-slash deep link 404s them all)`)
 
   // --- the standalone /sandbox page: new-design port of the in-page
   // sandbox plus the goal-type creation bar ---

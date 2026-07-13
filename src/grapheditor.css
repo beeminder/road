@@ -137,6 +137,27 @@ label {
   margin: 20px auto 48px;
 }
 
+/* Loud strip above the goalbar when the URL asked for something we
+   can't show (someone else's goal, or a goal that doesn't exist) */
+.urlbanner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 10px;
+  padding: 10px 14px;
+  border: 1px solid #d43f3f;
+  border-radius: var(--radius);
+  background: #fdf0f0;
+  color: #8f1f1f;
+}
+
+.urlbanner span { flex: 1; }
+
+/* The display:flex above beats the browser's [hidden]{display:none}
+   (author rules outrank the UA sheet), so restate it or the banner shows
+   as an empty red strip on every page */
+.urlbanner[hidden] { display: none; }
+
 .goalbar {
   display: flex;
   flex-wrap: wrap;

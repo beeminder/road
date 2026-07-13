@@ -107,7 +107,11 @@ app.get("/login", (req, resp) => {
       version: ver,
     });
   } else {
-    resp.redirect("/");
+    // Land wherever the visitor was originally headed (e.g. a deep link
+    // to /username/goalname stashed below), defaulting to the editor
+    const dest = req.session.wanted || "/";
+    delete req.session.wanted;
+    resp.redirect(dest);
   }
 });
 app.get("/newdesign", (req, resp) => { resp.redirect("/") });
@@ -121,7 +125,8 @@ app.get("/road", (req, resp) => {
       username:     req.session.username,
       access_token: req.session.access_token,
     };
-    resp.render("grapheditor.ejs", { user: user, version: ver });
+    resp.render("grapheditor.ejs", { user: user, version: ver, goal: null,
+                                     wanted: null });
   }
 });
 // Retired pages (the pre-2026 "olddesign" UI) redirect to the graph editor
@@ -163,6 +168,8 @@ app.get("/", (req, resp) => {
       access_token: req.session.access_token,
     },
     version: ver,
+    goal: null,
+    wanted: null,
   });
 });
 
@@ -315,6 +322,43 @@ app.put("/data/:goal/:id", async (req, resp) => {
     console.error("update point failed:", error);
     resp.status(500).send("An error occurred.");
   }
+});
+
+// Deep link to a specific goal (graph.beeminder.com/username/goalname) or
+// to a user's goals generally (graph.beeminder.com/username, which lands
+// on their first goal). Registered after every other route so real paths
+// always win. The username has to match the session (this tool only holds
+// your own token); anyone else -- including logged-out visitors -- goes
+// to login.
+app.get(["/:username", "/:username/:goalname"], (req, resp, next) => {
+  // Usernames and goalnames are alphanumeric plus underscore (no dots or
+  // hyphens), so a path that can't be a name -- like any file request,
+  // which has a dot in it -- is not a deep link and 404s just like it did
+  // before this route existed
+  const namepat = /^[a-zA-Z0-9_]+$/;
+  const { username, goalname } = req.params; // goalname undefined on /username
+  const names = goalname ? [username, goalname] : [username];
+  if (!names.every(n => namepat.test(n))) return next();
+  if (!req.session?.access_token) {
+    // Come back here after logging in. Rebuilt from the route params --
+    // just proved to be plain names -- so what we later redirect to is
+    // always a local path and never, say, an absolute URL off to someone
+    // else's site.
+    req.session.wanted = "/" + names.join("/");
+    return resp.redirect("/login");
+  }
+  const mismatch = username !== req.session.username;
+  resp.render("grapheditor.ejs", {
+    user: {
+      username:     req.session.username,
+      access_token: req.session.access_token,
+    },
+    version: ver,
+    // Signed in as someone else: show their own goals with a banner
+    // explaining what was asked for, instead of a silent teleport
+    goal:   mismatch ? null : goalname ?? null,
+    wanted: mismatch ? names.join("/") : null,
+  });
 });
 
 // helper functions

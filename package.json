@@ -1,6 +1,6 @@
 {
   "name": "Beebrain",
-  "version": "2026.07.13-b",
+  "version": "2026.07.13-c",
   "description": "Beeminder Graph Generator and Visual Graph Editor",
   "main": "server.js",
   "scripts": {
