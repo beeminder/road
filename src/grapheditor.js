@@ -76,13 +76,13 @@ let dataDate, dataValue, dataComment, dataAdd
 // DOM components for the editor tab
 let divEditor,divEditorTable,divEditorDueBy,divEditorData
 let divEditorProgress,divEditorSummary
-let editorTab, undoBtn, redoBtn
+let editorTab, undoBtn, redoBtn, undoCnt, redoCnt
 let endSlope, slopeType, submitButton, submitMsg
 
 // DOM components for the sandboxtab
 let divSandbox,divSandboxTable,divSandboxDueBy,divSandboxData
 let divSandboxProgress,divSandboxSummary
-let sandboxTab, undoBtnSandbox, redoBtnSandbox
+let sandboxTab, undoBtnSandbox, redoBtnSandbox, undoCntSandbox, redoCntSandbox
 let endSlopeSandbox, slopeTypeSandbox
 
 // Variables for data submission
@@ -228,18 +228,12 @@ function sandboxChanged() {
   let bufStates = sandbox.undoBufferState();
   if (bufStates.undo === 0)  {
     undoBtnSandbox.disabled = true
-    undoBtnSandbox.innerHTML = "Undo (0)"
   } else {
     undoBtnSandbox.disabled = false;
-    undoBtnSandbox.innerHTML = "Undo ("+bufStates.undo+")";
   }
-  if (bufStates.redo === 0)  {
-    redoBtnSandbox.disabled = true;
-    redoBtnSandbox.innerHTML = "Redo (0)";
-  } else {
-    redoBtnSandbox.disabled = false;
-    redoBtnSandbox.innerHTML = "Redo ("+bufStates.redo+")";
-  }
+  undoCntSandbox.textContent = String(bufStates.undo)
+  redoCntSandbox.textContent = String(bufStates.redo)
+  redoBtnSandbox.disabled = (bufStates.redo === 0)
   updateCommitFields(true);
   updateProgress(divSandboxProgress, sandbox.getGraphObj())
   updateSummary(divSandboxSummary, sandbox.getGraphObj() )
@@ -313,23 +307,15 @@ function editorChanged() {
     d3.select(editorTab).style('color', 'black').text("Graph Editor")
     submitButton.disabled=true
     undoBtn.disabled = true
-    resetBtn.disabled = true
-    undoBtn.innerHTML = "Undo (0)"
   } else {
     window.addEventListener('beforeunload', editorBeforeUnload);
     d3.select(editorTab).style('color', 'red').text("Graph Editor ("+bufStates.undo+")")
     submitButton.disabled=false
     undoBtn.disabled = false
-    resetBtn.disabled = false
-    undoBtn.innerHTML = "Undo ("+bufStates.undo+")";
   }
-  if (bufStates.redo === 0)  {
-    redoBtn.disabled = true;
-    redoBtn.innerHTML = "Redo (0)";
-  } else {
-    redoBtn.disabled = false;
-    redoBtn.innerHTML = "Redo ("+bufStates.redo+")";
-  }
+  undoCnt.textContent = String(bufStates.undo)
+  redoCnt.textContent = String(bufStates.redo)
+  redoBtn.disabled = (bufStates.redo === 0)
   updateProgress(divEditorProgress, editor)
 
   let newRoad = editor.getRoad()
@@ -574,7 +560,8 @@ function initialize() {
   editorTab = document.getElementById("editortab")
   undoBtn = document.getElementById("eundo")
   redoBtn = document.getElementById("eredo")
-  resetBtn = document.getElementById("ereset")
+  undoCnt = document.getElementById("eundocnt")
+  redoCnt = document.getElementById("eredocnt")
   endSlope = document.getElementById("endslope")
   slopeType = document.getElementById("slopetype");
   submitButton = document.getElementById("submit");
@@ -590,7 +577,8 @@ function initialize() {
   sandboxTab = document.getElementById("sandboxtab")
   undoBtnSandbox = document.getElementById("sundo")
   redoBtnSandbox = document.getElementById("sredo")
-  resetBtnSandbox = document.getElementById("sreset")
+  undoCntSandbox = document.getElementById("sundocnt")
+  redoCntSandbox = document.getElementById("sredocnt")
   endSlopeSandbox = document.getElementById("sendslope")
   slopeTypeSandbox = document.getElementById("sslopetype");
 
@@ -624,15 +612,20 @@ function initialize() {
                        showFocusRect: true,
                        showContext: true,
                        onRoadChange: editorChanged})
-  editor.showData(document.getElementById("showdata").checked);
+  graph.showData(document.getElementById("gshowdata").checked);
+  editor.showData(document.getElementById("eshowdata").checked);
   editor.keepSlopes(document.getElementById("keepslopes").checked);
   editor.keepIntervals(document.getElementById("keepintervals").checked);
 
-  // The help popup stays open only while clicks land inside it
-  const hintDetails = document.querySelector("details.hint");
+  // The help popup and corner chips stay open only while clicks land
+  // inside, and opening one closes the others
+  const chips = document.querySelectorAll("details.hint, details.gchip");
   document.addEventListener("click", (e) => {
-    hintDetails.open &&= hintDetails.contains(e.target);
+    chips.forEach(d => { d.open &&= d.contains(e.target) });
   });
+  chips.forEach(d => d.addEventListener("toggle", () => {
+    if (d.open) chips.forEach(o => { if (o !== d) o.open = false });
+  }));
 
   // Create the sandbox
   sandbox = new bsandbox( {divGraph: divSandbox,

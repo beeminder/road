@@ -1058,9 +1058,9 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
   // Resultata: generic boxed sections, rotated tool tabs, and a fixed viewport.
   await runQual(browser, port, 'grapheditor', GRAPHEDITOR_PATH,
     async (page, name) => {
-      // The graph tab has a working scrubber (context graph) for zooming,
+      // The graph tab has a working minimap (context graph) for zooming,
       // like the editor's
-      const scrubber = await page.evaluate(() => {
+      const minimap = await page.evaluate(() => {
         const svg = document.querySelector('#roadgraph svg.bmndrsvg')
         return {
           contextVisible: getComputedStyle(
@@ -1069,12 +1069,12 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
             svg.querySelector('.focusrect')).visibility === 'visible',
         }
       })
-      assert(scrubber.contextVisible,
-        `${name}: graph-tab scrubber is visible`)
-      assert(scrubber.focusrectVisible,
-        `${name}: graph-tab scrubber shows the zoom window`)
+      assert(minimap.contextVisible,
+        `${name}: graph-tab minimap is visible`)
+      assert(minimap.focusrectVisible,
+        `${name}: graph-tab minimap shows the zoom window`)
 
-      // Dragging the scrubber's selection pans the graph: the focus x-axis
+      // Dragging the minimap's selection pans the graph: the focus x-axis
       // ticks (first .axis in document order) move
       const xAxisTicks = () => page.evaluate(() =>
         document.querySelector('#roadgraph svg.bmndrsvg .axis').innerHTML)
@@ -1082,7 +1082,7 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       const sel = await page.$('#roadgraph .brush .selection')
       const selBox = sel && await sel.boundingBox()
       assert(selBox && selBox.width > 0,
-        `${name}: graph-tab scrubber has a draggable selection`)
+        `${name}: graph-tab minimap has a draggable selection`)
       if (selBox) {
         await page.mouse.move(selBox.x + selBox.width / 2,
                               selBox.y + selBox.height / 2)
@@ -1091,49 +1091,96 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
                               selBox.y + selBox.height / 2, {steps: 5})
         await page.mouse.up()
         assert(await xAxisTicks() !== axisBefore,
-          `${name}: dragging the scrubber pans the graph`)
+          `${name}: dragging the minimap pans the graph`)
         await page.evaluate(() => graph.zoomDefault())
       }
 
-      // Tool-row markup is single-sourced (DRY partials): the zoom row with
-      // its scrubber toggle and the SVG download/preview row each appear
-      // once in the template and are stamped out per tab
+      // Chip markup is single-sourced (DRY partials): the camera chip
+      // (screenshot kit) and magnifier chip (zoom resets) each appear once
+      // in the template and are stamped out per tab
       const toolsDry = {
         summaries: (GRAPHEDITOR_TEMPLATE.match(/>Experimental features</g) || [])
           .length,
-        scrubbers: (GRAPHEDITOR_TEMPLATE.match(/>Include scrubber</g) || [])
+        minimaps: (GRAPHEDITOR_TEMPLATE.match(/>Include minimap</g) || [])
+          .length,
+        showdatas: (GRAPHEDITOR_TEMPLATE.match(/>Show data</g) || [])
           .length,
         downloads: (GRAPHEDITOR_TEMPLATE.match(/>Download SVG</g) || [])
           .length,
         previews: (GRAPHEDITOR_TEMPLATE.match(/>Preview SVG</g) || [])
           .length,
       }
-      assert(toolsDry.summaries === 1 && toolsDry.scrubbers === 1 &&
+      assert(toolsDry.summaries === 1 && toolsDry.minimaps === 1 &&
+             toolsDry.showdatas === 1 &&
              toolsDry.downloads === 1 && toolsDry.previews === 1,
-        `${name}: tool-row markup is single-sourced ` +
+        `${name}: chip markup is single-sourced ` +
         JSON.stringify(toolsDry))
-      // Replicata: load the graph and editor tabs. Expectata: the SVG
-      // download/preview buttons and the scrubber toggle sit right in the
-      // tool rows, not tucked inside the experimental-features section, and
-      // the graph tab's are visible without expanding anything.
-      const svgtools = await page.evaluate(() =>
-        ['gshowcontext', 'gsavesvgdl', 'gsavesvgblob',
-         'eshowcontext', 'esavesvgdl', 'esavesvgblob'].map(id => {
+      // Replicata: load the graph and editor tabs. Expectata: both tabs
+      // carry a camera chip (Preview/Download SVG plus the WYSIWYG
+      // composition toggles: Include minimap, Show data) and a magnifier
+      // chip (View All, Reset Zoom) floating over the graph's top-left
+      // corner, closed by default, opening on click.
+      const chipkit = await page.evaluate(() =>
+        ['gshowcontext', 'gshowdata', 'gsavesvgdl', 'gsavesvgblob',
+         'eshowcontext', 'eshowdata', 'esavesvgdl', 'esavesvgblob'].map(id => {
           const el = document.getElementById(id)
           return {id, exists: !!el,
                   checked: el ? el.checked : false,
-                  inDetails: el ? !!el.closest('details') : false,
+                  inShot: el ? !!el.closest('details.gchip.shot') : false,
                   visible: el ? el.checkVisibility() : false}
-        }))
-      assert(svgtools.every(t => t.exists && !t.inDetails),
-        `${name}: SVG buttons and scrubber toggles graduated out of ` +
-        `experimental features (${JSON.stringify(svgtools)})`)
-      assert(svgtools[0].checked && svgtools[3].checked,
-        `${name}: scrubber toggles on by default ` +
-        `(${JSON.stringify(svgtools)})`)
-      assert(svgtools.slice(0, 3).every(t => t.visible),
-        `${name}: graph-tab SVG buttons and scrubber toggle visible ` +
-        `without expanding anything (${JSON.stringify(svgtools)})`)
+        }).concat(['gzoomall', 'gzoomdflt', 'ezoomall', 'ezoomdflt'].map(id => {
+          const el = document.getElementById(id)
+          return {id, exists: !!el,
+                  inZoom: el ? !!el.closest('details.gchip.zoom') : false,
+                  visible: el ? el.checkVisibility() : false}
+        })))
+      assert(chipkit.every(t => t.exists && (t.inShot || t.inZoom)),
+        `${name}: screenshot kit and zoom resets live in the corner chips ` +
+        `(${JSON.stringify(chipkit)})`)
+      assert(chipkit.every(t => !t.visible),
+        `${name}: chips closed by default, controls tucked away ` +
+        `(${JSON.stringify(chipkit)})`)
+      assert(chipkit[0].checked && chipkit[1].checked &&
+             chipkit[4].checked && chipkit[5].checked,
+        `${name}: minimap and show-data toggles on by default ` +
+        `(${JSON.stringify(chipkit)})`)
+      const shotOpen = await page.evaluate(() => {
+        document.querySelector('#graph details.gchip.shot').open = true
+        return ['gshowcontext', 'gshowdata', 'gsavesvgdl', 'gsavesvgblob']
+          .every(id => document.getElementById(id).checkVisibility())
+      })
+      assert(shotOpen,
+        `${name}: opening the camera chip reveals the screenshot kit`)
+
+      // Chip geometry: camera floats over the graph's top-left corner,
+      // magnifier over its bottom-right (by the on-graph zoom buttons),
+      // and the magnifier's popover opens upward, staying inside the panel
+      const chipGeom = await page.evaluate(() => {
+        const graph = document.querySelector('#graph .graphbox')
+          .getBoundingClientRect()
+        const cam = document.querySelector('#graph details.gchip.shot')
+          .getBoundingClientRect()
+        const mag = document.querySelector(
+          '#graph details.gchip.zoom > summary').getBoundingClientRect()
+        const zoomd = document.querySelector('#graph details.gchip.zoom')
+        zoomd.open = true
+        const pop = document.querySelector(
+          '#graph details.gchip.zoom > .chippop').getBoundingClientRect()
+        zoomd.open = false
+        return {
+          camTopLeft: cam.left - graph.left < 60 && cam.top - graph.top < 60,
+          magBotRight: graph.right - mag.right < 60 &&
+                       graph.bottom - mag.bottom < 60,
+          popAboveChip: pop.bottom <= mag.top + 1,
+          popInPanel: pop.top >= graph.top - 1 && pop.right <= graph.right + 1,
+        }
+      })
+      assert(chipGeom.camTopLeft && chipGeom.magBotRight,
+        `${name}: camera top-left, magnifier bottom-right of the graph ` +
+        JSON.stringify(chipGeom))
+      assert(chipGeom.popAboveChip && chipGeom.popInPanel,
+        `${name}: magnifier popover opens upward within the panel ` +
+        JSON.stringify(chipGeom))
       await page.evaluate(() => {
         window.qualGSCCalls = []
         const orig = graph.showContext
@@ -1144,8 +1191,27 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       await page.click('#gshowcontext')
       const gscCalls = await page.evaluate(() => window.qualGSCCalls)
       assert(JSON.stringify(gscCalls) === '[false,true]',
-        `${name}: scrubber toggle drives graph.showContext ` +
+        `${name}: minimap toggle drives graph.showContext ` +
         `(got ${JSON.stringify(gscCalls)})`)
+
+      // Replicata: uncheck Show data on the plain graph tab (not the
+      // editor). Expectata: the datapoints and steppy line disappear, and
+      // reappear when rechecked. Resultata (pre-change): bgraph hardcoded
+      // non-editor graphs to always draw data (opts.showData ||
+      // !opts.roadEditor), so the toggle only ever worked in the editor.
+      const steppyOn = await page.evaluate(() =>
+        !!document.querySelector('#roadgraph svg.bmndrsvg .steppy'))
+      await page.click('#gshowdata')
+      const steppyOff = await page.evaluate(() =>
+        !!document.querySelector('#roadgraph svg.bmndrsvg .steppy'))
+      await page.click('#gshowdata')
+      const steppyBack = await page.evaluate(() => {
+        document.querySelector('#graph details.gchip.shot').open = false
+        return !!document.querySelector('#roadgraph svg.bmndrsvg .steppy')
+      })
+      assert(steppyOn && !steppyOff && steppyBack,
+        `${name}: Show data toggle works on the graph tab ` +
+        JSON.stringify({steppyOn, steppyOff, steppyBack}))
 
       // Replicata: click Download SVG and Preview SVG on the graph tab
       // (with the anchor click and window.open stubbed to capture their
@@ -1211,6 +1277,10 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         const graph = document.querySelector('#editor .graphcontainer')
         const tools = document.querySelector('#editor .vtabcontainer')
         const submit = document.getElementById('submit')
+        // The secondary reference button lives in the (closed) zoom chip;
+        // open it so its computed style reflects a rendered button
+        const zoomchip = document.querySelector('#editor details.gchip.zoom')
+        zoomchip.open = true
         const secondary = document.getElementById('ezoomdflt')
         const submitWasDisabled = submit.disabled
         const submitTransition = submit.style.transition
@@ -1276,6 +1346,7 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         submit.disabled = submitWasDisabled
         submit.getBoundingClientRect()
         submit.style.transition = submitTransition
+        zoomchip.open = false
         return result
       })
 
@@ -1599,16 +1670,17 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       await page.evaluate(() => new Promise(r => setTimeout(r, 400)))
       const matrixEdit = await page.evaluate(() => ({
         slope: editor.getRoad().road[1][2],
-        undo: document.getElementById('eundo').textContent,
+        undocnt: document.getElementById('eundocnt').textContent,
+        undoEnabled: !document.getElementById('eundo').disabled,
         submitDisabled: document.getElementById('submit').disabled,
         submitmsg: document.getElementById('submitmsg').textContent,
       }))
       assert(matrixEdit.slope === 2,
         `${name}: typing in a matrix slope cell edits the road ` +
         `(got ${matrixEdit.slope})`)
-      assert(matrixEdit.undo === 'Undo (1)',
-        `${name}: matrix edit lands in the undo buffer ` +
-        `(got ${matrixEdit.undo})`)
+      assert(matrixEdit.undocnt === '1' && matrixEdit.undoEnabled,
+        `${name}: matrix edit lands in the undo buffer, count beside the ` +
+        `undo button (got ${matrixEdit.undocnt})`)
       assert(matrixEdit.submitDisabled &&
              /insta-derail/.test(matrixEdit.submitmsg),
         `${name}: insta-derailing edit disables Submit with the derail ` +
@@ -1769,8 +1841,10 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         `${name}: stacked panels fit inside the workspace`)
       assert(narrow.pageFits,
         `${name}: 390px viewport has no horizontal page overflow`)
-      assert(narrow.toolbarCount === 5 && narrow.toolbarsWrap,
-        `${name}: narrow editor toolbars wrap`)
+      assert(narrow.toolbarCount === 3 && narrow.toolbarsWrap,
+        `${name}: narrow editor toolbars wrap (the action row, the ` +
+        `propagate-forward row, and the experimental row; got ` +
+        `${narrow.toolbarCount})`)
 
       // Wrapping toolbars may only break between checkbox+label pairs, never
       // inside one: each checkbox must stay on the same line as its label
@@ -1844,7 +1918,7 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       await page.type('#sdataval', '1')
       await page.click('#sedit button[onclick*="newData"]')
       await page.waitForFunction(
-        () => document.getElementById('sundo').innerHTML === 'Undo (1)')
+        () => document.getElementById('sundocnt').textContent === '1')
       const sandboxNarrow = await page.evaluate(() => ({
         undoEnabled: !document.getElementById('sundo').disabled,
         rateShown: Number.isFinite(
@@ -1898,17 +1972,28 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
           .map(el => el.textContent).join('|'),
         editor: [...document.querySelectorAll('.etablinks')]
           .map(el => el.textContent).join('|'),
-        actions: ['eundo', 'eredo', 'ereset', 'ezoomall', 'ezoomdflt',
+        actions: ['ezoomall', 'ezoomdflt',
                   'submit'].map(id => document.getElementById(id).textContent)
                            .join('|'),
+        undoLabels: ['eundo', 'eredo', 'sundo', 'sredo'].map(id =>
+          document.getElementById(id).getAttribute('aria-label')).join('|'),
+        undoIcons: ['eundo', 'eredo', 'sundo', 'sredo'].map(id =>
+          document.getElementById(id).querySelectorAll('svg.uicon').length)
+          .join('|'),
       }))
       assert(labels.main === 'Graph|Graph Editor|Sandbox',
         `${name}: main-tab copy is unchanged`)
       assert(labels.editor === 'Red Line|Stats|Data|Dial',
         `${name}: editor-tool copy is unchanged`)
-      assert(labels.actions ===
-        'Undo (0)|Redo (0)|Undo All|View All|Reset Zoom|Submit',
-        `${name}: editor-action copy is unchanged`)
+      assert(labels.actions === 'View All|Reset Zoom|Submit',
+        `${name}: editor-action copy is unchanged ` +
+        `(got ${labels.actions})`)
+      assert(labels.undoIcons === '1|1|1|1',
+        `${name}: undo/redo buttons each carry one inline svg icon ` +
+        `(got ${labels.undoIcons})`)
+      assert(labels.undoLabels === 'Undo|Redo|Undo|Redo',
+        `${name}: icon-only undo/redo buttons keep accessible names ` +
+        `(got ${labels.undoLabels})`)
 
       // Replicata: load a goal whose /getgoaljson response is an HTML page
       // instead of JSON, which is what a dead session serves (the server

@@ -303,7 +303,8 @@ details.hint > .hintpop li {
   margin: 4px 0;
 }
 
-details.hint > summary {
+details.hint > summary,
+details.gchip > summary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -319,14 +320,95 @@ details.hint > summary {
   cursor: pointer;
 }
 
-details.hint > summary::-webkit-details-marker {
+details.hint > summary::-webkit-details-marker,
+details.gchip > summary::-webkit-details-marker {
   display: none;
 }
 
-details.hint > summary:hover {
+details.hint > summary:hover,
+details.gchip > summary:hover {
   border-color: #b49000;
   background: var(--amber-soft);
 }
+
+/* Corner chips over the graph, generalizing the help chip: the camera
+   chip (screenshot kit) and magnifier chip (zoom resets) stack in the
+   top-left corner and open inward as popovers */
+details.gchip {
+  position: absolute;
+  z-index: 2;
+  padding: 0;
+  border-top: none;
+  color: var(--muted);
+  font-size: .875rem;
+}
+
+details.gchip.shot { top: 10px; left: 10px; }
+
+/* The magnifier chip sits in the graph's lower-right corner, by the
+   on-graph zoom buttons, and its popover opens upward. The .graphbox
+   wrapper anchors it to the graph itself rather than the whole panel. */
+.graphbox { position: relative; }
+
+details.gchip.zoom { right: 8px; bottom: 8px; }
+
+details.gchip.zoom > .chippop {
+  top: auto;
+  bottom: 30px;
+  left: auto;
+  right: 0;
+}
+
+/* An open chip's popover paints over its sibling chip */
+details.gchip[open] { z-index: 3; }
+
+details.gchip > summary {
+  font-size: .8rem;
+  filter: grayscale(1); /* mute the emoji glyphs to match the ? chip */
+}
+
+details.gchip > .chippop {
+  position: absolute;
+  top: 30px;
+  left: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  width: max-content;
+  padding: 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--paper);
+  box-shadow: 0 2px 10px rgba(45, 42, 34, .18);
+}
+
+/* Icon-sized undo/redo buttons, each with a whisper of a buffer count
+   tucked in its top-right corner */
+.bmdrbtn.iconbtn {
+  position: relative;
+  min-width: 36px;
+  padding: 6px 8px;
+  line-height: 1;
+}
+
+.bmdrbtn.iconbtn .uicon {
+  display: block; /* no baseline gap under the inline svg */
+}
+
+.ucnt {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  color: var(--muted);
+  font-size: .6rem;
+  line-height: 1;
+  opacity: .65;
+}
+
+/* Flush the marked control to the row's right edge */
+.graphtools > .pushright { margin-left: auto; }
 
 #roadgraph, #roadeditor, #roadsandbox {
   width: 100%;

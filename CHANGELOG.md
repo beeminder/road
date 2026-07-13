@@ -1,6 +1,9 @@
 
 ## CHANGELOG
 
+* 2026.07.12 Camera & Zoom buttons to gate some UI clutter
+* 2026.07.12 Nicer undo/redo buttons
+* 2026.07.12 Rename scrubber to minimap
 * 2026.07.12 Fix stranded loading overlay & console error when goal-JSON fetch gets HTML (dead session)
 * 2026.07.12 Thumbnail + PNG palette-remap run concurrently: ~200ms faster renders
 * 2026.07.12 Graph renderer keeps pages warm 10min not 10sec; d3 served locally

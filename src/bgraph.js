@@ -4638,7 +4638,7 @@ function updateRosy() {
   // *** Plot rosy lines ***
   const rosyelt  = gRosy.selectAll(".rosy")
   const rosydelt = gRosyPts.selectAll(".rd")
-  if (opts.showData || !opts.roadEditor) {
+  if (opts.showData) {
     if (gol.rosy) {
       const pts = bbr.flad != null ? bbr.rosydata.slice(0,bbr.rosydata.length-1)
                                    : bbr.rosydata
@@ -4686,7 +4686,7 @@ function updateSteppy() {
   // *** Plot steppy lines ***
   let stpelt  = gSteppy.selectAll(".steppy")
   let stpdelt = gSteppyPts.selectAll(".std")
-  if (opts.showData || !opts.roadEditor) {
+  if (opts.showData) {
     if (!opts.roadEditor && gol.steppy && dataf.length !== 0) {
       let npts = dataf.filter(df)
       let i
@@ -4781,7 +4781,7 @@ function updateDerails() {
 
   let drelt
   // *** Plot derailments ***
-  if (opts.showData || !opts.roadEditor) {
+  if (opts.showData) {
     const drpts = bbr.derails.filter(ddf)
     const arrow = gol.yaw>0 ? "#downarrow" : "#uparrow"
     drelt = gDerails.selectAll(".derails").data(drpts)
@@ -4816,7 +4816,7 @@ function updateAutophages() {
   const now = gol.asof
   let apelt, slashelt
   // *** Plot autophages (self-destructing datapoints) ***
-  if (opts.showData || !opts.roadEditor) {
+  if (opts.showData) {
     const appts = bbr.autophages.filter(adf)
 
     // Update circles
@@ -5028,7 +5028,7 @@ function updateDataPoints() {
   const adf = function(d) { return (d[0] >= l[0] && d[0] <= l[1]) }
   //var now = gol.asof // not used?
   let dpelt
-  if (opts.showData || !opts.roadEditor) {
+  if (opts.showData) {
     let pts = bbr.flad != null ? dataf.slice(0, dataf.length-1) : dataf
 
     // *** Plot datapoints ***

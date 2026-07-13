@@ -57,35 +57,51 @@
   </nav>
   
 <%
-/* Per-tab tool rows shared by the graph and editor tabs. p prefixes the
-   element ids, obj names the tab's bgraph object in grapheditor.js, and
-   extras holds any tab-specific toggles for the zoom row. */
-const zoomTools = (p, obj, extras = '') => `
-    <div class="graphtools">
-      <button class="bmdrbtn" id="${p}zoomall" onclick="${obj}.zoomAll();">View All</button>
-      <button class="bmdrbtn" id="${p}zoomdflt" onclick="${obj}.zoomDefault();">Reset Zoom</button>${extras}
-    </div>`
-const svgTools = (p, obj) => `
-    <div class="graphtools">
-      <button class="bmdrbtn" id="${p}savesvgblob" onclick="${obj}.saveGraphBlob();">Preview SVG</button>
-      <button class="bmdrbtn" id="${p}savesvgdl" onclick="${obj}.saveGraphDownload();">Download SVG</button>
-      <span class="checkpair">
-        <input id="${p}showcontext" type="checkbox" onclick="${obj}.showContext(this.checked);" checked>
-        <label for="${p}showcontext">Include scrubber</label>
-      </span>
-    </div>`
+/* Corner chips floating over each tab's graph, like the editor's help chip:
+   the camera chip holds the screenshot kit (export buttons plus the WYSIWYG
+   composition toggles) and the magnifier chip holds the zoom resets. p
+   prefixes the element ids and obj names the tab's bgraph object in
+   grapheditor.js. */
+const shotChip = (p, obj) => `
+    <details class="gchip shot">
+      <summary aria-label="Screenshot">📷</summary>
+      <div class="chippop">
+        <button class="bmdrbtn" id="${p}savesvgblob" onclick="${obj}.saveGraphBlob();">Preview SVG</button>
+        <button class="bmdrbtn" id="${p}savesvgdl" onclick="${obj}.saveGraphDownload();">Download SVG</button>
+        <span class="checkpair">
+          <input id="${p}showcontext" type="checkbox" onclick="${obj}.showContext(this.checked);" checked>
+          <label for="${p}showcontext">Include minimap</label>
+        </span>
+        <span class="checkpair">
+          <input id="${p}showdata" type="checkbox" onclick="${obj}.showData(this.checked);" checked>
+          <label for="${p}showdata">Show data</label>
+        </span>
+      </div>
+    </details>`
+/* Inline SVG undo arrow (the Material Symbols undo shape, Apache 2.0) and
+   its geometric mirror for redo; fill follows the button's text color so
+   the disabled state grays them out for free */
+const undoSvg = `<svg class="uicon" viewBox="0 -960 960 960" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M280-200v-80h284q63 0 109.5-40T720-420q0-60-46.5-100T564-560H312l104 104-56 56-200-200 200-200 56 56-104 104h252q97 0 166.5 63T800-420q0 94-69.5 157T564-200H280Z"/></svg>`
+const redoSvg = `<svg class="uicon" viewBox="0 -960 960 960" width="15" height="15" fill="currentColor" aria-hidden="true"><g transform="translate(960 0) scale(-1 1)"><path d="M280-200v-80h284q63 0 109.5-40T720-420q0-60-46.5-100T564-560H312l104 104-56 56-200-200 200-200 56 56-104 104h252q97 0 166.5 63T800-420q0 94-69.5 157T564-200H280Z"/></g></svg>`
+const zoomChip = (p, obj) => `
+    <details class="gchip zoom">
+      <summary aria-label="Zoom">🔍</summary>
+      <div class="chippop">
+        <button class="bmdrbtn" id="${p}zoomall" onclick="${obj}.zoomAll();">View All</button>
+        <button class="bmdrbtn" id="${p}zoomdflt" onclick="${obj}.zoomDefault();">Reset Zoom</button>
+      </div>
+    </details>`
 %>
 <!-- Tab content -->
 <section id="graph" class="tabcontent" aria-labelledby="graphtab">
   <div id="gsummary" class="summary"></div>
   <div class="workspace">
   <div class="graphcontainer panel">
-    <div id="roadgraph"></div>
-    <hr/>
-    <%- zoomTools('g', 'graph') %>
-    <hr/>
-    <%- svgTools('g', 'graph') %>
-
+    <%- shotChip('g', 'graph') %>
+    <div class="graphbox">
+      <%- zoomChip('g', 'graph') %>
+      <div id="roadgraph"></div>
+    </div>
   </div>
 
   <div class="vtabcontainer panel">
@@ -135,34 +151,28 @@ const svgTools = (p, obj) => `
         <p>Drag the bright red line or double-click for new segments.</p>
         <p>Knots (shown with vertical lines) are segment boundaries aka kinks in the red line.</p>
         <p>Edit numbers directly in the graph matrix when eyeballing isn't enough.</p>
-        <p>Use the scrubber below the graph to zoom and pan.</p>
+        <p>Use the minimap below the graph to zoom and pan.</p>
         <p>You can also pan by dragging the graph itself.</p>
         <p>"Propagate changes forward" is self-explanatory, or will be if you try dragging the red line around with and without it checked.</p>
         <p>("Fixed intervals" is too hard to explain and maybe no one wants or needs it anyway?)</p>
         <p>Nothing takes effect till you hit Submit.</p>
       </div>
     </details>
-    <div id="roadeditor"></div>
+    <%- shotChip('e', 'editor') %>
+    <div class="graphbox">
+      <%- zoomChip('e', 'editor') %>
+      <div id="roadeditor"></div>
+    </div>
     <br/>
     <div class="graphtools">
-      <button class="bmdrbtn" id="eundo" data-tip="Ctrl-Z / ⌘Z" aria-keyshortcuts="Control+Z Meta+Z" onclick="editor.undo();">Undo (0)</button>
-      <button class="bmdrbtn" id="eredo" data-tip="Ctrl-Y / ⇧⌘Z" aria-keyshortcuts="Control+Y Shift+Meta+Z" onclick="editor.redo();">Redo (0)</button>
-      <button class="bmdrbtn" id="ereset" onclick="editor.undoAll();">Undo All</button>
-      <span class="checkpair">
+      <button class="bmdrbtn iconbtn" id="eundo" aria-label="Undo" data-tip="Ctrl-Z / ⌘Z" aria-keyshortcuts="Control+Z Meta+Z" onclick="editor.undo();"><%- undoSvg %><span id="eundocnt" class="ucnt">0</span></button>
+      <button class="bmdrbtn iconbtn" id="eredo" aria-label="Redo" data-tip="Ctrl-Y / ⇧⌘Z" aria-keyshortcuts="Control+Y Shift+Meta+Z" onclick="editor.redo();"><%- redoSvg %><span id="eredocnt" class="ucnt">0</span></button>
+      <span class="checkpair pushright">
         <input id="keepslopes" type="checkbox"
                onclick="editor.keepSlopes(this.checked)" checked>
         <label for="keepslopes">Propagate changes forward</label>
       </span>
     </div>
-    <hr/>
-    <%- zoomTools('e', 'editor', `
-      <span class="checkpair">
-        <input id="showdata" type="checkbox" onclick="editor.showData(this.checked);" checked>
-        <label for="showdata">Show data</label>
-      </span>`) %>
-    <hr/>
-    <%- svgTools('e', 'editor') %>
-    <hr/>
     <div class="graphtools">
       <button class="bmdrbtn primary-action" id="submit" onclick="handleRoadSubmit();">Submit</button>
       <span id="submitmsg"></span>
@@ -238,20 +248,15 @@ const svgTools = (p, obj) => `
   <div id="ssummary" class="summary"></div>
   <div class="workspace">
   <div class="graphcontainer panel">
-    <div id="roadsandbox">
+    <div class="graphbox">
+      <%- zoomChip('s', 'sandboxgr') %>
+      <div id="roadsandbox">
+      </div>
     </div>
     <div class="graphtools">
+      <button class="bmdrbtn iconbtn" id="sundo" aria-label="Undo" data-tip="Ctrl-Z / ⌘Z" aria-keyshortcuts="Control+Z Meta+Z" onclick="sandbox.undo();"><%- undoSvg %><span id="sundocnt" class="ucnt">0</span></button>
+      <button class="bmdrbtn iconbtn" id="sredo" aria-label="Redo" data-tip="Ctrl-Y / ⇧⌘Z" aria-keyshortcuts="Control+Y Shift+Meta+Z" onclick="sandbox.redo();"><%- redoSvg %><span id="sredocnt" class="ucnt">0</span></button>
       <button class="bmdrbtn" id="snextday" onclick="sandbox.nextDay();">Next Day</button>
-    </div>
-    <div class="graphtools">
-      <button class="bmdrbtn" id="sundo" data-tip="Ctrl-Z / ⌘Z" aria-keyshortcuts="Control+Z Meta+Z" onclick="sandbox.undo();">Undo (0)</button>
-      <button class="bmdrbtn" id="sredo" data-tip="Ctrl-Y / ⇧⌘Z" aria-keyshortcuts="Control+Y Shift+Meta+Z" onclick="sandbox.redo();">Redo (0)</button>
-      <button class="bmdrbtn" id="sreset" onclick="sandbox.undoAll();">Undo All</button>
-    </div>
-    <hr/>
-    <div class="graphtools">
-      <button class="bmdrbtn" id="szoomall" onclick="sandboxgr.zoomAll();">View All</button>
-      <button class="bmdrbtn" id="szoomdflt" onclick="sandboxgr.zoomDefault();">Reset Zoom</button>
     </div>
   </div>
   
