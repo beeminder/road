@@ -1943,12 +1943,10 @@ function brushed(event) {
   updateGraphData()
 }
 
-/** Update both the context and focus graphs to include default zoom range */
-function zoomDefault() {
+/** Zoom/pan the focus graph so the visible x-axis covers [ta, tb] (unix
+ * time), letting the y-axis auto-scale as usual */
+function zoomToRange(ta, tb) {
   if (opts.divGraph == null) return
-  //console.debug("id="+curid+", zoomDefault()")
-  const ta = gol.tmin - PRAF*(gol.tmax-gol.tmin)
-  const tb = gol.tmax + PRAF*(gol.tmax-gol.tmin)
   const newdom = [new Date(ta*SMS),new Date(tb*SMS)]
   nXSc.domain(newdom)
   const s = newdom.map(xScB)
@@ -1958,6 +1956,15 @@ function zoomDefault() {
   zoomarea.call(axisZoom.transform, d3.zoomIdentity
                 .scale(brushbox.width / (s[1] - s[0]))
                 .translate(-s[0], 0))
+}
+
+/** Update both the context and focus graphs to include default zoom range */
+function zoomDefault() {
+  if (opts.divGraph == null) return
+  //console.debug("id="+curid+", zoomDefault()")
+  const ta = gol.tmin - PRAF*(gol.tmax-gol.tmin)
+  const tb = gol.tmax + PRAF*(gol.tmax-gol.tmin)
+  zoomToRange(ta, tb)
 }
 
 /** Update both the context and focus graphs to zoom out, including the entire
@@ -5928,8 +5935,24 @@ this.zoomAll = () => { if (road.length == 0) return; else zoomAll() }
 
 /** Brings the zoom level to include the range from tini to
  slightly beyond the akrasia horizon. This is expected to be
- consistent with beebrain generated graphs. */ 
+ consistent with beebrain generated graphs. */
 this.zoomDefault = () => { if (road.length == 0) return; else zoomDefault() }
+
+/** Returns the currently visible x-axis range as [t1, t2] in unix time.
+ Mirror it onto another graph instance of the same goal with
+ {@link bgraph#setZoomRange setZoomRange()} to carry the zoom/pan position
+ across instances. */
+this.getZoomRange = () => nXSc.domain().map(d => d.getTime()/SMS)
+
+/** Zooms/pans the graph so the visible x-axis covers [t1, t2] in unix
+ time, as returned by {@link bgraph#getZoomRange getZoomRange()}; the
+ y-axis auto-scales as usual.
+@param {Number} t1 Left edge of the visible range (unix time)
+@param {Number} t2 Right edge of the visible range (unix time) */
+this.setZoomRange = (t1, t2) => {
+  if (road.length == 0) return
+  zoomToRange(t1, t2)
+}
 
 /** Initiates loading a new goal from the indicated url.
  Expected input format is the same as beebrain. Once the input

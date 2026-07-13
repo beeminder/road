@@ -1311,6 +1311,34 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       }))
       assert(modeView.hash === '' && modeView.active.join() === 'graphtab',
         `${name}: View mode clears the hash ` + JSON.stringify(modeView))
+
+      // Replicata: zoom the view-mode graph somewhere distinctive, then
+      // toggle to Edit; fiddle the zoom there and toggle back. Expectata:
+      // the zoom/pan position carries across the mode switch both ways.
+      // Resultata (pre-fix): each mode kept its own zoom, so toggling
+      // yanked you back to wherever that mode's graph last was.
+      const closeEnough = (a, b) =>
+        a.every((v, i) => Math.abs(v - b[i]) < (a[1] - a[0]) * 0.01)
+      await page.evaluate(() => graph.zoomAll())
+      const zAll = await page.evaluate(() => graph.getZoomRange())
+      await page.click('#editortab')
+      await page.waitForSelector('#roadeditor svg.bmndrsvg .razr',
+        {visible: true})
+      const zEdit = await page.evaluate(() => editor.getZoomRange())
+      assert(closeEnough(zAll, zEdit),
+        `${name}: zoom position carries from View into Edit ` +
+        JSON.stringify({zAll, zEdit}))
+      await page.evaluate(() => editor.zoomDefault())
+      const zDflt = await page.evaluate(() => editor.getZoomRange())
+      await page.click('#graphtab')
+      await page.waitForSelector('#roadgraph svg.bmndrsvg .razr',
+        {visible: true})
+      const zBack = await page.evaluate(() => graph.getZoomRange())
+      assert(closeEnough(zDflt, zBack),
+        `${name}: zoom position carries from Edit back into View ` +
+        JSON.stringify({zDflt, zBack}))
+      await page.evaluate(() => graph.zoomDefault())
+
       await page.click('#editortab')
       await page.waitForSelector('#roadeditor svg.bmndrsvg .razr',
         {visible: true})

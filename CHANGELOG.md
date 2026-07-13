@@ -1,6 +1,7 @@
 
 ## CHANGELOG
 
+* 2026.07.13 Zoom/pan position no longer lost when toggling between View/Edit
 * 2026.07.13 Stale stuff grays out briefly while a new goal's loading
 * 2026.07.13 Links in footer
 * 2026.07.13 View/Edit toggle in the goalbar, sandbox moved to /sandbox

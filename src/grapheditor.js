@@ -31,6 +31,11 @@ function setMode(evt, mode) {
     if (graph) graph.hide()
     if (editor) editor.show()
   }
+  // Carry the zoom/pan position across the mode switch (same load-flag
+  // guards as the summary refresh below: nothing to carry before a goal
+  // has loaded)
+  if (mode == "graph"  && !eload) graph.setZoomRange(...editor.getZoomRange())
+  if (mode == "editor" && !gload) editor.setZoomRange(...graph.getZoomRange())
   curMode = mode
   // The shared summary bar reflects the active mode's engine (the editor
   // may hold pending edits that view mode shouldn't show, and vice versa)
