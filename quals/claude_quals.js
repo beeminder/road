@@ -73,6 +73,13 @@ const QUAL_ROUTES = {
     body: ejs.render(fs.readFileSync(
       path.join(REPO, 'views/sandbox.ejs'), 'utf8'), {version: 'qual'}),
   },
+  '/quals/login.html': {
+    contentType: MIME['.html'],
+    body: ejs.render(fs.readFileSync(
+      path.join(REPO, 'views/login.ejs'), 'utf8'),
+      {BEEMINDER_CLIENT_ID: 'qual', AUTH_REDIRECT_URI: 'qual',
+       version: 'qual'}),
+  },
   '/getusergoals': {
     contentType: 'application/json',
     body: JSON.stringify(['testroad0', 'othergoal']),
@@ -150,7 +157,8 @@ function assert(condition, msg) {
 
 // Load a page, collect errors, wait for rendering, then run checks
 async function runQual(browser, port, name, urlPath, checkFn,
-                       viewport = {width: 800, height: 600}) {
+                       viewport = {width: 800, height: 600},
+                       waitSel = 'svg.bmndrsvg .razr') {
   console.log(`\n--- ${name} ---`)
   const page = await browser.newPage()
   await page.setViewport(viewport)
@@ -174,12 +182,13 @@ async function runQual(browser, port, name, urlPath, checkFn,
     return
   }
 
-  // Wait for async graph rendering (specifically for the bright red line, which
-  // is the last thing drawn and confirms the graph fully rendered)
+  // Wait for async rendering; the default selector is the bright red line,
+  // which is the last thing drawn and confirms the graph fully rendered
+  // (graphless pages pass their own waitSel)
   try {
-    await page.waitForSelector('svg.bmndrsvg .razr', { timeout: 30000 })
+    await page.waitForSelector(waitSel, { timeout: 30000 })
   } catch (e) {
-    failures.push(`${name}: graph never rendered (no .razr found)`)
+    failures.push(`${name}: page never rendered (no ${waitSel} found)`)
     await page.close()
     return
   }
@@ -2483,6 +2492,21 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       }))
       assert(extras.hasDueby, `${name}: dueby table populated`)
     })
+
+  // --- the login page: phone-width fit ---
+  // Replicata: the login page at 320px, the narrowest common phone width.
+  // Expectata: everything fits, no horizontal scroll. Resultata (pre-fix):
+  // the 625px-wide screenshot image forced sideways scrolling at every
+  // phone width.
+  await runQual(browser, port, 'loginmobile', '/quals/login.html',
+    async (page, name) => {
+      const m = await page.evaluate(() => ({
+        clientWidth: document.documentElement.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+      }))
+      assert(m.scrollWidth <= m.clientWidth,
+        `${name}: login page fits a 320px viewport ` + JSON.stringify(m))
+    }, {width: 320, height: 700}, 'img')
 
   // --- Done ---
   await browser.close()
