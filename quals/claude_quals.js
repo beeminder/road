@@ -2469,6 +2469,24 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
   await runQual(browser, port, 'sandboxpage', '/quals/sandboxpage.html',
     async (page, name) => {
       await checkGraph(page, name)
+      // Same header lockup as the editor: bee + BEEMINDER SANDBOX in
+      // Trueno, wordmark linking to the Beeminder dashboard
+      const lockup = await page.evaluate(async () => {
+        await document.fonts.ready
+        return {
+          logoHref: document.querySelector('#header a').href,
+          title: document.querySelector('.apptitle')?.textContent,
+          font: document.querySelector('.apptitle') ? getComputedStyle(
+            document.querySelector('.apptitle')).fontFamily : null,
+        }
+      })
+      assert(lockup.logoHref === 'https://www.beeminder.com/home',
+        `${name}: header logo goes to beeminder.com/home ` +
+        `(got ${lockup.logoHref})`)
+      assert(lockup.title === 'Sandbox',
+        `${name}: header names the page (got ${JSON.stringify(lockup)})`)
+      assert(/^"?Trueno/.test(lockup.font || ''),
+        `${name}: header lockup set in Trueno ` + JSON.stringify(lockup))
       const creation = await page.evaluate(() => ({
         types: [...document.querySelectorAll('#typeselect option')]
           .map(o => o.textContent).join('|'),
