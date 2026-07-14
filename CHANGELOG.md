@@ -1,6 +1,7 @@
 
 ## CHANGELOG
 
+* 2026.07.14 Nicer header and footer HT @aad
 * 2026.07.13 Better page title for the browser tab, with indicator of unsaved changes
 * 2026.07.13 Better header
 * 2026.07.13 Fix horizontal scroll on login page

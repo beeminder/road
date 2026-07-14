@@ -44,10 +44,13 @@ button, input, select {
 
 .headerinner {
   display: flex;
+  flex-wrap: wrap; /* lockup row, then the nav row, on narrow screens */
   align-items: center;
+  row-gap: 2px;
   width: min(calc(100% - 32px), 1220px);
   min-height: 64px;
   margin: 0 auto;
+  padding: 8px 0;
 }
 
 .logo {
@@ -103,6 +106,39 @@ button, input, select {
 .apptitle {
   margin-left: .3em; /* reads as the space in BEEMINDER GRAPH EDITOR */
   color: #3a3a3c;
+}
+
+/* Right-side header nav, echoing beeminder.com's own: small uppercase
+   charcoal links, with Beeminder proper inverted into a charcoal pill so
+   the way back to the mothership is the most obvious thing here */
+.headnav {
+  display: flex;
+  flex-wrap: wrap; /* narrowest phones get the pill and links on 2 rows */
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px 20px;
+  margin-left: auto;
+  padding-left: 16px;
+}
+
+.headnav a {
+  color: #3a3a3c;
+  font-family: Trueno, ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
+  font-size: .8rem;
+  font-weight: bold;
+  letter-spacing: .05em;
+  text-decoration: none;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.headnav a:hover { text-decoration: underline; }
+
+.headnav a.propernav {
+  padding: 8px 14px;
+  border-radius: var(--radius-ctl);
+  background: #3a3a3c;
+  color: var(--amber);
 }
 
 /***** Common Element styles *****/
@@ -284,23 +320,43 @@ label {
   display: block;
 }
 
-/* Footer: the other destinations plus the version tag, quiet and centered */
+/* Footer: beeminder.com's visual language -- charcoal band, amber
+   uppercase links, amber baseboard -- leading with the escape hatch to
+   Beeminder proper so nobody mistakes this satellite for the mothership */
 .pagefoot {
   display: flex;
-  justify-content: center;
-  align-items: baseline;
-  gap: 24px;
-  padding: 18px 0 24px;
-  color: var(--muted);
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 28px 16px 22px;
+  border-bottom: 6px solid var(--amber);
+  background: #3a3a3c; /* the wordmark charcoal */
   font-size: .875rem;
 }
 
 .pagefoot a {
-  color: var(--muted);
+  color: var(--amber);
+  font-family: Trueno, ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
+  font-weight: bold;
+  letter-spacing: .06em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.pagefoot a:hover { text-decoration: underline; }
+
+.pagefoot .primefoot { font-size: 1rem; }
+
+.footlinks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 28px;
 }
 
 .pagefoot .versiontag {
-  opacity: .7;
+  opacity: .55;
+  color: #fff;
   font-size: .75rem;
 }
 

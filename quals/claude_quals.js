@@ -1155,6 +1155,35 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         `${name}: footer links to Beeminder proper ` +
         JSON.stringify(hdrftr.footLinks))
 
+      // Aligned with Beeminder proper's chrome: an uppercase right-nav in
+      // the header and the footer as beeminder.com's charcoal band with
+      // amber links, both leading with a link literally reading BEEMINDER
+      // PROPER so nobody mistakes this satellite for the mothership
+      const aligned = await page.evaluate(() => ({
+        headnav: [...document.querySelectorAll('.headnav a')].map(a =>
+          a.textContent.trim()),
+        firstHref: document.querySelector('.headnav a')?.href,
+        footBg: getComputedStyle(
+          document.querySelector('.pagefoot')).backgroundColor,
+        primefoot: document.querySelector('.pagefoot .primefoot')
+          ?.textContent.trim(),
+        footLinkColor: getComputedStyle(
+          document.querySelector('.pagefoot a')).color,
+      }))
+      assert(aligned.headnav[0] === 'Beeminder proper' &&
+             aligned.firstHref === 'https://www.beeminder.com/' &&
+             aligned.headnav.includes('Sandbox') &&
+             aligned.headnav.includes('Tutorial'),
+        `${name}: header nav leads with Beeminder proper ` +
+        JSON.stringify(aligned.headnav))
+      assert(aligned.footBg === 'rgb(58, 58, 60)' &&
+             aligned.footLinkColor === 'rgb(255, 203, 6)',
+        `${name}: footer is the charcoal band with amber links ` +
+        JSON.stringify(aligned))
+      assert(aligned.primefoot === 'Beeminder proper',
+        `${name}: footer leads with Beeminder proper ` +
+        `(got ${JSON.stringify(aligned.primefoot)})`)
+
       // The wordmark is real text in the brand font (Trueno, the font of
       // the beeminder.com logo), so it has to actually load and apply
       const brandfont = await page.evaluate(async () => {
@@ -2249,10 +2278,12 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       const tiny = await page.evaluate(() => ({
         lockupRight: Math.round(document.querySelector('.apptitle')
           .getBoundingClientRect().right),
+        headerFits: document.getElementById('header').scrollWidth <=
+          innerWidth,
         viewport: innerWidth,
       }))
-      assert(tiny.lockupRight <= tiny.viewport,
-        `${name}: header lockup fits a 320px viewport ` +
+      assert(tiny.lockupRight <= tiny.viewport && tiny.headerFits,
+        `${name}: header lockup and nav fit a 320px viewport ` +
         JSON.stringify(tiny))
     }, {width: 1360, height: 900})
 
@@ -2517,6 +2548,11 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         `${name}: header names the page (got ${JSON.stringify(lockup)})`)
       assert(/^"?Trueno/.test(lockup.font || ''),
         `${name}: header lockup set in Trueno ` + JSON.stringify(lockup))
+      const sandfoot = await page.evaluate(() =>
+        document.querySelector('.pagefoot .primefoot')?.textContent.trim())
+      assert(sandfoot === 'Beeminder proper',
+        `${name}: footer leads with Beeminder proper ` +
+        `(got ${JSON.stringify(sandfoot)})`)
       const creation = await page.evaluate(() => ({
         types: [...document.querySelectorAll('#typeselect option')]
           .map(o => o.textContent).join('|'),

@@ -49,6 +49,11 @@
         <span>Beeminder</span>
       </a>
       <span class="apptitle">Graph Editor</span>
+      <nav class="headnav">
+        <a class="propernav" href="https://www.beeminder.com" target="_blank">Beeminder proper</a>
+        <a href="/sandbox">Sandbox</a>
+        <a href="/tutorial">Tutorial</a>
+      </nav>
     </div>
   </header>
   <main class="app-shell">
@@ -268,9 +273,11 @@ const zoomChip = (p, obj) => `
 </main>
 
 <footer class="pagefoot">
-  <a href="https://www.beeminder.com" target="_blank">Beeminder proper</a>
-  <a href="/sandbox">Sandbox</a>
-  <a href="/tutorial">Tutorial</a>
+  <a class="primefoot" href="https://www.beeminder.com" target="_blank">Beeminder proper</a>
+  <nav class="footlinks">
+    <a href="/sandbox">Sandbox</a>
+    <a href="/tutorial">Tutorial</a>
+  </nav>
   <span class="versiontag">v<%= version %></span>
 </footer>
 
