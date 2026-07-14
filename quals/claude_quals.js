@@ -1135,6 +1135,43 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
   // Resultata: generic boxed sections, rotated tool tabs, and a fixed viewport.
   await runQual(browser, port, 'grapheditor', GRAPHEDITOR_PATH,
     async (page, name) => {
+      // Header and footer chrome: the wordmark links to the Beeminder
+      // dashboard, the header names the app, and the footer links back
+      // to Beeminder proper
+      const hdrftr = await page.evaluate(() => ({
+        logoHref: document.querySelector('#header a').href,
+        headerText: document.getElementById('header').textContent.trim(),
+        footLinks: [...document.querySelectorAll('.pagefoot a')].map(a =>
+          [a.textContent.trim(), a.href]),
+      }))
+      assert(hdrftr.logoHref === 'https://www.beeminder.com/home',
+        `${name}: header logo goes to beeminder.com/home ` +
+        `(got ${hdrftr.logoHref})`)
+      assert(hdrftr.headerText.includes('Graph Editor'),
+        `${name}: header names the app (got "${hdrftr.headerText}")`)
+      assert(hdrftr.footLinks.some(([txt, href]) =>
+               txt === 'Beeminder proper' &&
+               href === 'https://www.beeminder.com/'),
+        `${name}: footer links to Beeminder proper ` +
+        JSON.stringify(hdrftr.footLinks))
+
+      // The wordmark is real text in the brand font (Trueno, the font of
+      // the beeminder.com logo), so it has to actually load and apply
+      const brandfont = await page.evaluate(async () => {
+        await document.fonts.ready
+        return {
+          loaded: [...document.fonts].some(f =>
+            f.family.replace(/['"]/g, '') === 'Trueno' &&
+            f.status === 'loaded'),
+          applied: getComputedStyle(
+            document.querySelector('.apptitle')).fontFamily,
+        }
+      })
+      assert(brandfont.loaded,
+        `${name}: Trueno webfont loads ` + JSON.stringify(brandfont))
+      assert(/^"?Trueno/.test(brandfont.applied),
+        `${name}: header lockup set in Trueno ` + JSON.stringify(brandfont))
+
       // The graph tab has a working minimap (context graph) for zooming,
       // like the editor's
       const minimap = await page.evaluate(() => {
@@ -2203,6 +2240,20 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       assert(loaded === '1',
         `${name}: numbers back to full strength after the load ` +
         `(opacity ${loaded})`)
+
+      // Narrower still: the header lockup (bee + BEEMINDER GRAPH EDITOR)
+      // has to fit the smallest common phone
+      await page.setViewport({width: 320, height: 700})
+      await page.evaluate(() => new Promise(resolve =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve))))
+      const tiny = await page.evaluate(() => ({
+        lockupRight: Math.round(document.querySelector('.apptitle')
+          .getBoundingClientRect().right),
+        viewport: innerWidth,
+      }))
+      assert(tiny.lockupRight <= tiny.viewport,
+        `${name}: header lockup fits a 320px viewport ` +
+        JSON.stringify(tiny))
     }, {width: 1360, height: 900})
 
   // Replicata: land on /username/goalname (the server hands the client

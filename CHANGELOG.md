@@ -1,6 +1,8 @@
 
 ## CHANGELOG
 
+* 2026.07.13 Better header
+* 2026.07.13 Fix horizontal scroll on login page
 * 2026.07.13 URL shows username/goalname, plus errors for hitting others' goals
 * 2026.07.13 Zoom/pan position no longer lost when toggling between View/Edit
 * 2026.07.13 Stale stuff grays out briefly while a new goal's loading

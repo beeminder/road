@@ -65,6 +65,46 @@ button, input, select {
   */
 }
 
+/* Trueno is the font of the beeminder.com wordmark. Self-hosted since
+   beeminder.com's copy (/assets/trueno/*) sends no CORS header, which
+   cross-origin font loads require. */
+@font-face {
+  font-family: 'Trueno';
+  src: url(fonts/TruenoBd.otf) format("opentype");
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* The wordmark, rebuilt as bee icon plus live text so the app's name can
+   ride along: BEEMINDER GRAPH EDITOR as one lockup, matching the logo
+   image this replaced (letters #3a3a3c, sampled from it) */
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #3a3a3c;
+  text-decoration: none;
+}
+
+.beelogo { height: 42px; }
+
+.wordmark span, .apptitle {
+  font-family: Trueno, ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
+  /* Fluid: full 1.3rem down to ~510px wide, then shrinks so the whole
+     lockup still fits a 320px phone */
+  font-size: clamp(1rem, 0.55rem + 2.35vw, 1.3rem);
+  font-weight: bold;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.apptitle {
+  margin-left: .3em; /* reads as the space in BEEMINDER GRAPH EDITOR */
+  color: #3a3a3c;
+}
+
 /***** Common Element styles *****/
 
 button.bmdrbtn, select {
