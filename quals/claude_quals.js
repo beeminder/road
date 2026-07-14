@@ -2265,11 +2265,16 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       const landed = await page.evaluate(() => ({
         slug: roadSelect.value,
         path: location.pathname,
+        title: document.title,
         summary: document.getElementById('goalsummary').textContent.trim(),
       }))
       assert(landed.slug === 'othergoal' && landed.path === '/qual/othergoal',
         `${name}: deep-linked goal selected and URL kept ` +
         JSON.stringify(landed))
+      // The tab title leads with the yoog so even a truncated tab names
+      // the goal
+      assert(landed.title === 'qual/othergoal · Beeminder Visual Graph Editor',
+        `${name}: tab title names the goal (got "${landed.title}")`)
       assert(landed.summary.length > 0,
         `${name}: deep-linked goal actually loaded`)
       // Visually hidden, not just hidden=true: a CSS display rule on the
@@ -2296,10 +2301,14 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       const switched = await page.evaluate(() => ({
         slug: roadSelect.value,
         path: location.pathname,
+        title: document.title,
       }))
       assert(switched.slug === 'testroad0',
         `${name}: picker switch retargets the URL ` +
         JSON.stringify(switched))
+      assert(switched.title ===
+               'qual/testroad0 · Beeminder Visual Graph Editor',
+        `${name}: tab title tracks the goal switch (got "${switched.title}")`)
       // The address bar's whole promise is that its URL is loadable:
       // reloading after the rewrite has to land back on the same goal
       await page.reload({waitUntil: 'networkidle0'})
@@ -2307,11 +2316,14 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       const reloaded = await page.evaluate(() => ({
         slug: roadSelect.value,
         path: location.pathname,
+        title: document.title,
         shown: document.querySelector('.ts-input .item')?.textContent,
       }))
       assert(reloaded.slug === 'testroad0' &&
              reloaded.path === '/qual/testroad0' &&
-             reloaded.shown === 'testroad0',
+             reloaded.shown === 'testroad0' &&
+             reloaded.title ===
+               'qual/testroad0 · Beeminder Visual Graph Editor',
         `${name}: reloading the rewritten URL lands on the same goal ` +
         JSON.stringify(reloaded))
     })
@@ -2349,6 +2361,24 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       assert(view.hash === '' && view.path === '/qual/othergoal',
         `${name}: back to View keeps the goal URL and drops #edit ` +
         JSON.stringify(view))
+
+      // Replicata: dial the goal to a new rate (an editor edit), then undo
+      // it. Expectata: the tab title grows a bullet while the edit is
+      // pending -- the same condition that arms the are-you-sure
+      // beforeunload warning -- and sheds it on undo, so you can spot the
+      // tab with unsaved changes without clicking through your tabs.
+      await page.evaluate(() => editor.commitTo(2 / 604800))
+      const dirtied = await page.waitForFunction(() =>
+        document.title.startsWith('● '), {timeout: 10000})
+        .then(() => true).catch(() => false)
+      assert(dirtied,
+        `${name}: pending edit puts the unsaved bullet on the tab title`)
+      await page.evaluate(() => editor.undo())
+      const cleaned = await page.waitForFunction(() =>
+        document.title === 'qual/othergoal · Beeminder Visual Graph Editor',
+        {timeout: 10000}).then(() => true).catch(() => false)
+      assert(cleaned,
+        `${name}: undoing the edit takes the bullet back off`)
     })
 
   // Replicata: the same deep link with a trailing slash, which the live

@@ -50,12 +50,33 @@ function setMode(evt, mode) {
 function updateURL() {
   const hash = curMode == "editor" ? "#edit" : ""
   let path = location.pathname + location.search
-  if (!local && username && roadSelect.value &&
-      roadSelect.value.indexOf("/") < 0)
+  if (curYoog())
     path = "/" + encodeURIComponent(username) +
            "/" + encodeURIComponent(roadSelect.value)
   history.replaceState(null, "", path + hash)
-} 
+  updateTitle()
+}
+
+// The current username/goalname aka yoog, or null on local pages (whose
+// goal values are file paths, not names)
+function curYoog() {
+  if (local || !username || !roadSelect.value ||
+      roadSelect.value.indexOf("/") >= 0) return null
+  return username + "/" + roadSelect.value
+}
+
+// Names the browser tab: yoog first, so even a truncated tab names the
+// goal, with a bullet while the editor holds unsaved edits -- the same
+// condition that arms the editorBeforeUnload warning. Cheap enough to
+// call on every edit, unlike history.replaceState, which Safari
+// rate-limits.
+const BASETITLE = document.title
+function updateTitle() {
+  const unsaved = !eload && editor.undoBufferState().undo > 0
+  const yoog = curYoog()
+  document.title = (unsaved ? "● " : "") + (yoog ? yoog + " · " : "") +
+                   BASETITLE
+}
 
 let roadSelect
 let roadTomSelect
@@ -229,6 +250,7 @@ function editorChanged() {
   slopeType.value = newRoad.siru;
   updateCommitFields();
   updateSummary(divSummary, editor)
+  updateTitle()
 }
 
 /* Captures Ctrl-Z and Ctrl-Y and routes them to the currently active tab.
