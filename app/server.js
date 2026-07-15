@@ -52,11 +52,16 @@ const sequelize = new Sequelize(
   }
 );
 
-// Set up session parameters
+// Set up session parameters. SESSION_MEMSTORE swaps in express-session's
+// default in-process store (synchronous, so cross-request session state is
+// immediately durable) for the routing quals, which test redirects, not
+// how sessions are persisted; production always gets the sqlite store.
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
-    store: new SequelizeStore({ db: sequelize }),
+    store: process.env.SESSION_MEMSTORE
+      ? undefined
+      : new SequelizeStore({ db: sequelize }),
     saveUninitialized: false,
     resave: false,
     cookie: { secure: process.env.NODE_ENV !== "development" },

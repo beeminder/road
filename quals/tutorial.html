@@ -8,7 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="/src/jsbrain.css">
 <link rel="stylesheet" href="/src/grapheditor.css">
-<script src = "/src/d3.v7.js"></script>
+<script src = "/src/d3.v7.min.js"></script>
 <script src = "/src/moment.js"></script>
 <script src = "/src/moment-timezone.js"></script>
 <script src = "/src/polyfit.js"></script>
@@ -349,11 +349,12 @@ PAUSE,
 
 // Chapters: the runs of steps between PAUSEs, as [start, end) ranges
 const chap = []
-for (let start = 0, i = 0; i <= anim.length; i++)
+for (let start = 0, i = 0; i <= anim.length; i++) {
   if (i == anim.length || anim[i] === PAUSE) {
     chap.push([start, i])
     start = i+1
   }
+}
 
 // A chapter is a run of steps between PAUSEs -- typically a caption,
 // its illustration, and pulse housekeeping. The buttons only move

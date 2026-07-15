@@ -2934,6 +2934,7 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
     const srv = spawn('node', ['app/server.js'], { cwd: REPO, env: {
       ...process.env,
       PORT: '0', DB_STORAGE: dbfile, NODE_ENV: 'development',
+      SESSION_MEMSTORE: '1', // sync session store: no async-persist race
       SESSION_SECRET: 'qualsecret', BEEMINDER_CLIENT_ID: 'qual',
       AUTH_REDIRECT_URI: 'http://localhost/connect',
     }})
@@ -2968,7 +2969,10 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
           .map(([k, v]) => `${k}=${v}`).join('; ')
         if (cookieHdr) headers.Cookie = cookieHdr
         const req = http.request(
-          { host: 'localhost', port: srvport, path: p, method, headers },
+          // agent:false -> a fresh socket per request. Reusing keep-alive
+          // sockets races the server closing idle ones ("socket hang up")
+          { host: 'localhost', port: srvport, path: p, method, headers,
+            agent: false },
           res => {
             for (const c of res.headers['set-cookie'] || []) {
               const [k, v] = c.split(';')[0].split('=')
@@ -3044,7 +3048,7 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       // Real routes and static assets, including the newly vendored libs,
       // still serve
       for (const [p, want] of [['/src/grapheditor.js', 200],
-                               ['/src/d3.v7.js', 200],
+                               ['/src/d3.v7.min.js', 200],
                                ['/tutorial', 200], ['/sandbox', 200]]) {
         r = await hit('auth', jars, p)
         assert(r.status === want,
@@ -3056,6 +3060,10 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       r = await hit('auth', jars, '/alice/mygoal/')
       assert(r.status === 200 && /const initgoal = "mygoal"/.test(r.body),
         `server: trailing-slash deep link still renders the goal`)
+    } catch (e) {
+      // A transport error (rather than an assertion) is itself a failure
+      // to record, not a reason to abort the whole suite
+      assert(false, `server routing: request threw (${e.code || e.message})`)
     } finally {
       srv.kill('SIGKILL')
       try { require('fs').unlinkSync(dbfile) } catch {}
