@@ -53,21 +53,6 @@ button, input, select {
   padding: 8px 0;
 }
 
-.logo {
-  width: 215px;
-  height: 54px;
-  /* background: url(https://www.beeminder.com/assets/website_logo_mid_type.png) no-repeat; */
-  background: url(https://www.beeminder.com/legacy_images/logo_hi.png) no-repeat;
-  background-position: left center;
-  background-size: 190px;
-  
-  /* temporary version till we fix the above URL 
-  background: url(/lib/favicons/bee-with-big-brain.png) no-repeat;
-  background-size: 59px;
-  background-position: left center;
-  */
-}
-
 /* Trueno is the font of the beeminder.com wordmark. Self-hosted since
    beeminder.com's copy (/assets/trueno/*) sends no CORS header, which
    cross-origin font loads require. */
