@@ -290,6 +290,28 @@ console.log('\n--- static-analysis quals ---')
 // ---------------------------------------------------------------------------
 
 // --- butil: type checks ---
+// Every page ships its own dependencies: no CDN scripts or stylesheets,
+// so a CDN outage (or a user behind a firewall) can't blank the app, and
+// this qual suite runs hermetically offline. (Vendored libs live in src/
+// next to moment.js and friends.)
+;(() => {
+  const pages = [
+    'views/grapheditor.ejs', 'views/sandbox.ejs', 'views/login.ejs',
+    'quals/tutorial.html', 'quals/newgoal.html', 'quals/sandbox.html',
+    'quals/basic_test.html', 'quals/roadeditor_test.html',
+    'quals/beebrain_test.html', 'quals/ppr_test.html',
+    'quals/compare_graph.html',
+  ]
+  for (const page of pages) {
+    const src = fs.readFileSync(path.join(REPO, page), 'utf8')
+    const external = src.split('\n').filter(l =>
+      /<script[^>]*src\s*=\s*"https?:/.test(l) ||
+      /"https?:\/\/[^"]*\.(css|js)"/.test(l))
+    assert(external.length === 0,
+      `${page}: no CDN scripts or stylesheets ` + JSON.stringify(external))
+  }
+})()
+
 console.log('\n--- butil unit quals ---')
 assert(bu.nummy(3)        === true,  'nummy(3)')
 assert(bu.nummy('3.14')   === true,  'nummy("3.14")')
@@ -2885,12 +2907,162 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       }))
       assert(m.scrollWidth <= m.clientWidth,
         `${name}: login page fits a 320px viewport ` + JSON.stringify(m))
+      // The tutorial works logged out, and logged-out people land here
+      const tutlink = await page.evaluate(() =>
+        [...document.querySelectorAll('a')].some(a =>
+          a.getAttribute('href') === '/tutorial' &&
+          a.textContent.trim() === 'Tutorial'))
+      assert(tutlink, `${name}: login page links to the tutorial`)
     }, {width: 320, height: 700}, 'img')
 
-  // --- Done ---
   await browser.close()
   server.close()
 
+  // --- app/server.js routing: boot the real Express app and drive it ---
+  // The puppeteer quals render templates via ejs.render, which never
+  // exercises server.js's routes -- login round-trips, deep links, the
+  // name-grammar guard, static serving. This spawns the actual server
+  // (hermetic: a throwaway sqlite db, an ephemeral port, dummy secrets)
+  // and hits it over HTTP, the curl matrix from the deep-link work made
+  // permanent.
+  console.log('\n--- server routing quals ---')
+  await (async () => {
+    const { spawn } = require('child_process')
+    const os = require('os')
+    const dbfile = path.join(os.tmpdir(),
+      `qualdb-${process.pid}-${Date.now()}.sqlite`)
+    const srv = spawn('node', ['app/server.js'], { cwd: REPO, env: {
+      ...process.env,
+      PORT: '0', DB_STORAGE: dbfile, NODE_ENV: 'development',
+      SESSION_SECRET: 'qualsecret', BEEMINDER_CLIENT_ID: 'qual',
+      AUTH_REDIRECT_URI: 'http://localhost/connect',
+    }})
+    let srvport
+    try {
+      // The app logs "running on port N" once it's listening
+      srvport = await new Promise((resolve, reject) => {
+        let buf = ''
+        const to = setTimeout(() =>
+          reject(new Error('server never started; output: ' + buf)), 15000)
+        srv.stdout.on('data', d => {
+          buf += d
+          const m = buf.match(/running on port (\d+)/)
+          if (m) { clearTimeout(to); resolve(Number(m[1])) }
+        })
+        srv.stderr.on('data', d => { buf += d })
+        srv.on('exit', c =>
+          reject(new Error(`server exited (${c}); output: ` + buf)))
+      })
+    } catch (e) {
+      assert(false, `server routing: ${e.message}`)
+      srv.kill('SIGKILL')
+      return
+    }
+
+    // One request, tracking cookies per jar so a jar carries a session
+    const hit = (jarName, jars, p, method = 'GET') => new Promise(
+      (resolve, reject) => {
+        const jar = jars[jarName] ??= {}
+        const headers = {}
+        const cookieHdr = Object.entries(jar)
+          .map(([k, v]) => `${k}=${v}`).join('; ')
+        if (cookieHdr) headers.Cookie = cookieHdr
+        const req = http.request(
+          { host: 'localhost', port: srvport, path: p, method, headers },
+          res => {
+            for (const c of res.headers['set-cookie'] || []) {
+              const [k, v] = c.split(';')[0].split('=')
+              jar[k] = v
+            }
+            let body = ''
+            res.on('data', d => { body += d })
+            res.on('end', () => resolve(
+              { status: res.statusCode, loc: res.headers.location, body }))
+          })
+        req.on('error', reject)
+        req.end()
+      })
+
+    try {
+      const jars = {}
+
+      // Logged out, a deep link stashes where you were headed and sends
+      // you to login; logging in (via /connect, which the OAuth callback
+      // uses) returns you there exactly once, then falls back to /
+      let r = await hit('flow', jars, '/alice/mygoal')
+      assert(r.status === 302 && r.loc === '/login',
+        `server: logged-out deep link redirects to login ` +
+        `(${r.status} -> ${r.loc})`)
+      await hit('flow', jars, '/connect?access_token=tok&username=alice')
+      r = await hit('flow', jars, '/login')
+      assert(r.status === 302 && r.loc === '/alice/mygoal',
+        `server: login returns you to the stashed deep link ` +
+        `(${r.status} -> ${r.loc})`)
+      r = await hit('flow', jars, '/login')
+      assert(r.status === 302 && r.loc === '/',
+        `server: the stash is one-shot; next login goes to / ` +
+        `(${r.status} -> ${r.loc})`)
+
+      // Logged in as alice: the page carries the goal from the URL; a bare
+      // username lands on your goals with no particular one; someone
+      // else's goal comes through as a banner request, never their data
+      await hit('auth', jars, '/connect?access_token=tok&username=alice')
+      r = await hit('auth', jars, '/alice/mygoal')
+      assert(r.status === 200 && /const initgoal = "mygoal"/.test(r.body) &&
+             /const wanted = null/.test(r.body),
+        `server: your own deep link hands the goal to the client`)
+      r = await hit('auth', jars, '/alice')
+      assert(r.status === 200 && /const initgoal = null/.test(r.body) &&
+             /const wanted = null/.test(r.body),
+        `server: a bare username lands with no particular goal`)
+      r = await hit('auth', jars, '/bob/theirgoal')
+      assert(r.status === 200 && /const initgoal = null/.test(r.body) &&
+             /const wanted = "bob\/theirgoal"/.test(r.body),
+        `server: someone else's goal comes through as a banner request`)
+
+      // A goalname carrying </script> never reaches the template at all:
+      // its < and / fail the name-grammar guard, so the route 404s before
+      // any rendering. (The jsval escaping that would neutralize such a
+      // value if it slipped through is exercised directly by the 'xss'
+      // qual above, which renders the template out of band.)
+      r = await hit('auth', jars,
+        '/alice/' + encodeURIComponent('</script><script>x=1</script>'))
+      assert(r.status === 404,
+        `server: a hostile goalname is rejected by the grammar guard, ` +
+        `not rendered (got ${r.status})`)
+
+      // The name-grammar guard: paths that can't be a username/goalname
+      // (anything with a dot, so every asset request) 404 like they did
+      // before the deep-link route existed, instead of rendering an app
+      for (const p of ['/favicon.ico', '/x.y', '/wp-admin/setup.php',
+                       '/alice/has.dot']) {
+        r = await hit('auth', jars, p)
+        assert(r.status === 404,
+          `server: non-name path ${p} 404s (got ${r.status})`)
+      }
+
+      // Real routes and static assets, including the newly vendored libs,
+      // still serve
+      for (const [p, want] of [['/src/grapheditor.js', 200],
+                               ['/src/d3.v7.js', 200],
+                               ['/tutorial', 200], ['/sandbox', 200]]) {
+        r = await hit('auth', jars, p)
+        assert(r.status === want,
+          `server: ${p} serves ${want} (got ${r.status})`)
+      }
+
+      // A trailing-slash deep link still renders (its absolute asset URLs
+      // don't resolve against the extra segment)
+      r = await hit('auth', jars, '/alice/mygoal/')
+      assert(r.status === 200 && /const initgoal = "mygoal"/.test(r.body),
+        `server: trailing-slash deep link still renders the goal`)
+    } finally {
+      srv.kill('SIGKILL')
+      try { require('fs').unlinkSync(dbfile) } catch {}
+    }
+  })()
+
+  // --- Done ---
   if (failures.length) {
     console.log(`\n${failures.length} FAILURE(S)`)
     process.exit(1)

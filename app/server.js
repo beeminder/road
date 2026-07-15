@@ -47,7 +47,8 @@ const sequelize = new Sequelize(
     // Security note: the database is saved to the file `database.sqlite` in
     // the local filesystem. It's deliberately placed in the `.data` directory
     // which doesn't get copied if someone remixes the project on Glitch.
-    storage: ".data/database.sqlite",
+    // (DB_STORAGE lets the quals point it at a throwaway file instead.)
+    storage: process.env.DB_STORAGE || ".data/database.sqlite",
   }
 );
 

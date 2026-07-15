@@ -6,13 +6,11 @@
       type="image/png">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="/src/pikaday.css">
 <link rel="stylesheet" href="/src/jsbrain.css">
 <link rel="stylesheet" href="/src/grapheditor.css">
-<script src = "https://d3js.org/d3.v7.js"></script>
+<script src = "/src/d3.v7.js"></script>
 <script src = "/src/moment.js"></script>
 <script src = "/src/moment-timezone.js"></script>
-<script src = "/src/pikaday.js"></script>
 <script src = "/src/polyfit.js"></script>
 <script src = "/src/butil.js"></script>
 <script src = "/src/broad.js"></script>
@@ -140,12 +138,12 @@ PAUSE,
 [1000, ()=>gr.msg("This is what derailing looks like...")],
 [ 600, ()=>bs.newData(0,"")],
 [ 600, bs.nextDay],
-//[s*9999, ()=>gr.msg("DEBUG")],
+//[9999, ()=>gr.msg("DEBUG")],
 [ 600, bs.nextDay], // derail
 PAUSE,
 [1000, ()=>gr.msg("You pay that $5 at this point, and get a weeklong buffer")],
 [ 300, bs.nextDay],
-//[s* 0, ()=>gr.msg("Oops! That's ok, you're now given a weeklong buffer")],
+//[ 0, ()=>gr.msg("Oops! That's ok, you're now given a weeklong buffer")],
 [   0, ()=>gr.animYBR(true)],   // idea: show off ratcheting around here?
 PAUSE,
 [   0, ()=>gr.animYBR(false)],
