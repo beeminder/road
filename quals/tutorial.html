@@ -1,27 +1,84 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <title>Beeminder Tutorial</title>
-<link id="favicon" rel="icon" href="https://www.beeminder.com/favicon.ico" 
-      type="image/x-icon">
+<link id="favicon" rel="icon" href="/lib/favicons/bee-with-big-brain.png"
+      type="image/png">
 <meta charset="utf-8">
-<link rel="stylesheet" href="../src/pikaday.css">
-<link rel="stylesheet" href="../src/jsbrain.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="/src/pikaday.css">
+<link rel="stylesheet" href="/src/jsbrain.css">
+<link rel="stylesheet" href="/src/grapheditor.css">
 <script src = "https://d3js.org/d3.v7.js"></script>
-<script src = "../src/moment.js"></script>
-<script src = "../src/moment-timezone.js"></script>
-<script src = "../src/pikaday.js"></script>
-<script src = "../src/polyfit.js"></script>
-<script src = "../src/butil.js"></script>
-<script src = "../src/broad.js"></script>
-<script src = "../src/beebrain.js"></script>
-<script src = "../src/bgraph.js"></script>
-<script src = "../src/bsandbox.js"></script>
+<script src = "/src/moment.js"></script>
+<script src = "/src/moment-timezone.js"></script>
+<script src = "/src/pikaday.js"></script>
+<script src = "/src/polyfit.js"></script>
+<script src = "/src/butil.js"></script>
+<script src = "/src/broad.js"></script>
+<script src = "/src/beebrain.js"></script>
+<script src = "/src/bgraph.js"></script>
+<script src = "/src/bsandbox.js"></script>
+<style>
+  /* Kiosk layout: the graph gets every pixel the viewport has, minus a
+     slim control bar; nothing scrolls */
+  html { height: 100%; }
+  body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    height: 100dvh; /* mobile browsers with collapsing toolbars */
+    overflow: hidden;
+  }
+  #stage { flex: 1; min-height: 0; position: relative; }
+  #sandbox { width: 100%; height: 100%; }
+  /* The caption banner is HTML floating above the svg, where graph
+     redraws can't wipe it (and where phones get readable type) */
+  #caption {
+    position: absolute;
+    /* Ride on the graph's drawn area: the svg (696x553 viewBox) centers
+       vertically in the stage on portrait screens, so its top edge sits
+       at 50% minus half its rendered height (79.45vw tall when width-
+       constrained); on landscape the graph fills the stage and 3% wins */
+    top: max(3%, calc(50% - 37.3vw));
+    left: 50%;
+    transform: translateX(-50%);
+    padding: .45em 1em;
+    border: 1px solid #b8a94a;
+    border-radius: 8px;
+    background: #fffbd8f0;
+    color: var(--ink);
+    /* Track the graph's scale, like the svg caption this replaced (the
+       graph renders at min(width, height*aspect)); every caption fit on
+       one line at this ratio in the svg, so it fits here too */
+    font-size: min(2.9vw, 3.6vh);
+    line-height: 1.3;
+    white-space: nowrap;
+    text-align: center;
+    pointer-events: none;
+  }
+  #caption:empty { display: none; }
+  /* The svg has a viewBox, so freeing both dimensions scales the graph
+     to fit whatever box the flexbox hands it */
+  #sandbox svg.bmndrsvg { display: block; width: 100%; height: 100%; }
+  .tutorialbar { display: flex; justify-content: center;
+                 align-items: center; gap: 14px; padding: 10px; }
+  /* Fixed width so the buttons don't shift as the numbers change */
+  .slidepos { min-width: 4.5em; text-align: center; color: var(--muted);
+              font-size: .9rem; }
+  .tutorialbar .bmdrbtn { min-width: 96px; min-height: 44px; }
+</style>
 </head>
 <body>
-<div id="sandbox" style="width:696px; height:453px"></div><br/>
-<button id="pause" onclick="if (paused) resume(); else pause()">Pause</button>
-<button id="next" onclick="next()" disabled>Next</button>
+  <div id="stage">
+    <div id="sandbox"></div>
+    <div id="caption"></div>
+  </div>
+  <div class="tutorialbar">
+    <button id="prev" class="bmdrbtn" onclick="prev()" disabled>Prev</button>
+    <span id="slidepos" class="slidepos"></span>
+    <button id="next" class="bmdrbtn" onclick="next()">Next</button>
+  </div>
 
 <script>
 
@@ -32,177 +89,194 @@ bs = new bsandbox({divGraph:  document.getElementById("sandbox"),
                    ctxRect:   { x: 0, y: 453, width: 696, height: 100 }})
 bs.newGoal("hustler", "d", 1, 0, true)
 var gr = bs.getGraphObj()
-const SID = 86400
-const s = 100 // speed of the animation: 0 is no delay at all; 100 is normal
+// Each [x, f] entry means run f, then wait x milliseconds. PAUSE waits for user
+// to press Next or Prev.
+const PAUSE = "pause"
 const anim = [
 
-[s*20, ()=>gr.msg("Beeminder is reminders with a sting")],
-[s* 0, ()=>gr.msg("Mind the Bright Red Line")],
-[s*30, ()=>gr.animYBR(true)],
-[s* 0, ()=>gr.animYBR(false)],
-[s* 0, ()=>gr.msg("Add new data for what you're beeminding")],
-[s* 3, ()=>bs.newData(1.25,"")],
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(1,"")],
-[s* 3, bs.nextDay],
-[s* 3, bs.nextDay],
-[s* 3, bs.nextDay],
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(1,"")],
-[s* 0, ()=>gr.msg("These are your datapoints")],
-[s*30, ()=>gr.animData(true)],
-[s* 0, ()=>gr.animData(false)],
-[s* 0, ()=>gr.msg("If you don't keep up, you'll derail")],
-[s* 3, bs.nextDay],
-[s* 3, bs.nextDay],
-[s* 3, bs.nextDay],
-[s* 0, ()=>bs.newData(0,"")],
-[s* 3, bs.nextDay],
-[s* 0, ()=>gr.msg("This is how much time you have until that happens")],
-[s*30, ()=>gr.animBuf(true)],
-[s* 0, ()=>gr.animBuf(false)],
-[s* 0, ()=>gr.msg("And this is the pledge amount you're risking")],
-[s*30, ()=>gr.animBux(true)],
-[s* 0, ()=>gr.animBux(false)],
-[s* 0, ()=>bs.newData(0,"")],
-[s* 3, bs.nextDay],
-[s*30, ()=>gr.msg("This is what derailing looks like...")],
-[s* 3, ()=>bs.newData(0,"")],
-[s* 3, bs.nextDay],
+[   0, ()=>gr.msg("Beeminder is reminders with a sting")],
+PAUSE,
+[   0, ()=>gr.msg("Mind the Bright Red Line")],
+[   0, ()=>gr.animYBR(true)],
+PAUSE,
+[   0, ()=>gr.animYBR(false)],
+[   0, ()=>gr.msg("Add new data for what you're beeminding")],
+[ 300, ()=>bs.newData(1.25,"")],
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(1,"")],
+[ 300, bs.nextDay],
+[ 300, bs.nextDay],
+[ 300, bs.nextDay],
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(1,"")],
+PAUSE,
+[   0, ()=>gr.msg("These are your datapoints")],
+[   0, ()=>gr.animData(true)],
+PAUSE,
+[   0, ()=>gr.animData(false)],
+[   0, ()=>gr.msg("If you don't keep up, you'll derail")],
+[ 300, bs.nextDay],
+[ 300, bs.nextDay],
+[ 300, bs.nextDay],
+[   0, ()=>bs.newData(0,"")],
+[ 300, bs.nextDay],
+PAUSE,
+[   0, ()=>gr.msg("This is how much time you have until that happens")],
+[   0, ()=>gr.animBuf(true)],
+PAUSE,
+[   0, ()=>gr.animBuf(false)],
+[   0, ()=>gr.msg("And this is the pledge amount you're risking")],
+[   0, ()=>bs.newData(0,"")],
+[ 300, bs.nextDay],
+[   0, ()=>gr.animBux(true)],
+PAUSE,
+[   0, ()=>gr.animBux(false)],
+[1000, ()=>gr.msg("This is what derailing looks like...")],
+[ 600, ()=>bs.newData(0,"")],
+[ 600, bs.nextDay],
 //[s*9999, ()=>gr.msg("DEBUG")],
-[s* 0, bs.nextDay], // derail
-[s*30, ()=>gr.msg("You pay that $5 at this point, and get a weeklong buffer")],
-[s* 3, bs.nextDay],
+[ 600, bs.nextDay], // derail
+PAUSE,
+[1000, ()=>gr.msg("You pay that $5 at this point, and get a weeklong buffer")],
+[ 300, bs.nextDay],
 //[s* 0, ()=>gr.msg("Oops! That's ok, you're now given a weeklong buffer")],
-[s*30, ()=>gr.animYBR(true)],   // idea: show off ratcheting around here?
-[s* 0, ()=>gr.animYBR(false)],
-[s* 0, ()=>gr.msg("Also your pledge amount has increased")],
-[s*30, ()=>gr.animBux(true)],
-[s* 0, ()=>gr.animBux(false)],
-[s*10, ()=>gr.msg("So keep moving up and to the right!")],
-[s* 3, bs.nextDay], 
-[s* 3, ()=>bs.newData(.5,"")],
-[s* 3, bs.nextDay], 
-[s* 3, ()=>bs.newData(1,"")],
-[s* 3, bs.nextDay], 
-[s* 3, bs.nextDay], 
-[s* 3, ()=>bs.newData(.5,"")],
-[s* 3, bs.nextDay], 
-[s* 3, ()=>bs.newData(1,"")],
-[s* 3, ()=>bs.newData(.5,"")],
-[s* 3, ()=>bs.newData(1,"")],
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(1,"")],
-[s* 3, ()=>bs.newData(.5,"")],
-[s* 3, bs.nextDay],
-[s* 0, ()=>gr.msg("This is the Akrasia Horizon")],
-[s*30, ()=>gr.animHor(true)],
-[s* 0, ()=>gr.animHor(false)],
-[s*10, ()=>gr.msg("You can only change your commitment beyond that horizon")],
-[s* 1, ()=>bs.newRate(0.9/SID)],
-[s* 1, ()=>bs.newRate(0.8/SID)],
-[s* 1, ()=>bs.newRate(0.7/SID)],
-[s* 1, ()=>bs.newRate(0.6/SID)],
-[s* 1, ()=>bs.newRate(0.5/SID)],
-[s* 1, ()=>bs.newRate(0.4/SID)],
-[s* 1, ()=>bs.newRate(0.3/SID)],
-[s* 1, ()=>bs.newRate(0.2/SID)],
-[s*10, ()=>bs.newRate(0.1/SID)],  // nadir
-[s* 1, ()=>bs.newRate(0.2/SID)],
-[s* 1, ()=>bs.newRate(0.3/SID)],
-[s* 1, ()=>bs.newRate(0.4/SID)],
-[s* 1, ()=>bs.newRate(0.5/SID)],
-[s* 1, ()=>bs.newRate(0.6/SID)],
-[s* 1, ()=>bs.newRate(0.8/SID)],
-[s* 1, ()=>bs.newRate(1.0/SID)],
-[s* 1, ()=>bs.newRate(1.2/SID)],
-[s* 1, ()=>bs.newRate(1.4/SID)],
-[s* 1, ()=>bs.newRate(1.6/SID)],
-[s* 1, ()=>bs.newRate(1.8/SID)],
-[s* 1, ()=>bs.newRate(2.2/SID)],
-[s* 1, ()=>bs.newRate(2.4/SID)],
-[s* 1, ()=>bs.newRate(2.6/SID)],
-[s* 1, ()=>bs.newRate(2.8/SID)],
-[s* 1, ()=>bs.newRate(3.2/SID)],
-[s* 1, ()=>bs.newRate(3.4/SID)],
-[s* 1, ()=>bs.newRate(3.6/SID)],
-[s* 1, ()=>bs.newRate(3.8/SID)],
-[s* 1, ()=>bs.newRate(4.0/SID)], // apogee
-[s* 1, ()=>bs.newRate(3.8/SID)],
-[s* 1, ()=>bs.newRate(3.6/SID)],
-[s* 1, ()=>bs.newRate(3.4/SID)],
-[s* 1, ()=>bs.newRate(3.2/SID)],
-[s* 1, ()=>bs.newRate(3.0/SID)],
-[s* 1, ()=>bs.newRate(2.8/SID)],
-[s* 1, ()=>bs.newRate(2.6/SID)],
-[s* 1, ()=>bs.newRate(2.4/SID)],
-[s* 1, ()=>bs.newRate(2.2/SID)],
-[s*10, ()=>bs.newRate(2/SID)],
-[s*30, ()=>gr.msg("So you can never give up today, only next week")],
-[s* 3, ()=>bs.newData(1,"")], 
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(.5,"")], 
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(1,"")], 
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(.5,"")], 
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(1.5,"")],
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(2,"")], 
-[s* 3, bs.nextDay],
-//[s*30, ()=>gr.msg(
+[   0, ()=>gr.animYBR(true)],   // idea: show off ratcheting around here?
+PAUSE,
+[   0, ()=>gr.animYBR(false)],
+[   0, ()=>gr.msg("Also your pledge amount has increased")],
+[   0, ()=>gr.animBux(true)],
+PAUSE,
+[   0, ()=>gr.animBux(false)],
+[ 500, ()=>gr.msg("So keep moving up and to the right!")],
+[ 300, bs.nextDay], 
+[ 300, ()=>bs.newData(.5,"")],
+[ 300, bs.nextDay], 
+[ 300, ()=>bs.newData(1,"")],
+[ 300, bs.nextDay], 
+[ 300, bs.nextDay], 
+[ 300, ()=>bs.newData(.5,"")],
+[ 300, bs.nextDay], 
+[ 300, ()=>bs.newData(1,"")],
+[ 300, ()=>bs.newData(.5,"")],
+[ 300, ()=>bs.newData(1,"")],
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(1,"")],
+[ 300, ()=>bs.newData(.5,"")],
+[ 300, bs.nextDay],
+PAUSE,
+[   0, ()=>gr.msg("This is the Akrasia Horizon")],
+[   0, ()=>gr.animHor(true)],
+PAUSE,
+[   0, ()=>gr.animHor(false)],
+[ 500, ()=>gr.msg("You can only change your commitment beyond that horizon")],
+[ 100, ()=>bs.newRate(0.9)],
+[ 100, ()=>bs.newRate(0.8)],
+[ 100, ()=>bs.newRate(0.7)],
+[ 100, ()=>bs.newRate(0.6)],
+[ 100, ()=>bs.newRate(0.5)],
+[ 100, ()=>bs.newRate(0.4)],
+[ 100, ()=>bs.newRate(0.3)],
+[ 100, ()=>bs.newRate(0.2)],
+[1000, ()=>bs.newRate(0.1)],  // nadir
+[ 100, ()=>bs.newRate(0.2)],
+[ 100, ()=>bs.newRate(0.3)],
+[ 100, ()=>bs.newRate(0.4)],
+[ 100, ()=>bs.newRate(0.5)],
+[ 100, ()=>bs.newRate(0.6)],
+[ 100, ()=>bs.newRate(0.8)],
+[ 100, ()=>bs.newRate(1.0)],
+[ 100, ()=>bs.newRate(1.2)],
+[ 100, ()=>bs.newRate(1.4)],
+[ 100, ()=>bs.newRate(1.6)],
+[ 100, ()=>bs.newRate(1.8)],
+[ 100, ()=>bs.newRate(2.2)],
+[ 100, ()=>bs.newRate(2.4)],
+[ 100, ()=>bs.newRate(2.6)],
+[ 100, ()=>bs.newRate(2.8)],
+[ 100, ()=>bs.newRate(3.2)],
+[ 100, ()=>bs.newRate(3.4)],
+[ 100, ()=>bs.newRate(3.6)],
+[ 100, ()=>bs.newRate(3.8)],
+[ 100, ()=>bs.newRate(4.0)], // apogee
+[ 100, ()=>bs.newRate(3.8)],
+[ 100, ()=>bs.newRate(3.6)],
+[ 100, ()=>bs.newRate(3.4)],
+[ 100, ()=>bs.newRate(3.2)],
+[ 100, ()=>bs.newRate(3.0)],
+[ 100, ()=>bs.newRate(2.8)],
+[ 100, ()=>bs.newRate(2.6)],
+[ 100, ()=>bs.newRate(2.4)],
+[ 100, ()=>bs.newRate(2.2)],
+[1000, ()=>bs.newRate(2)],
+PAUSE,
+[1000, ()=>gr.msg("So you can never give up today, only next week")],
+[ 300, ()=>bs.newData(1,"")], 
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(.5,"")], 
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(1,"")], 
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(.5,"")], 
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(1.5,"")],
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(2,"")], 
+[ 300, bs.nextDay],
+//[ 300, ()=>gr.msg(
 //            "Keep going until you're a svelte, productive ninja warrior...")],
-[s* 3, ()=>bs.newData(1,"")], 
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(.5,"")], 
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(0,"")],   // random shallow spot
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newRate(.5/SID)],
-[s* 3, ()=>bs.newData(1.5,"")], 
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(1.5,"")], 
-[s* 3, bs.nextDay],
-[s*30, ()=>gr.msg("This is what edge-skating looks like")],
-[s* 3, ()=>bs.newData(1,"")], 
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(2,"")], 
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(1,"")], 
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newRate(2/SID)],   // end of random shallow spot
-[s* 3, ()=>bs.newData(2,"")], 
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(2,"")], 
-[s*30, ()=>gr.msg("Fortunately we scheduled a shallow section here")],
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(1,"")], 
-[s* 3, bs.nextDay],
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(4,"")], 
-[s* 3, bs.nextDay], 
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(1,5,"")], 
-[s* 3, bs.nextDay],
-[s*30, ()=>gr.msg("Keep going! You're a svelte, productive ninja warrior!")],
-[s* 3, ()=>bs.newData(1,"")], 
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(3,"")], 
-[s* 3, bs.nextDay], 
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(8,"")], 
-[s* 3, bs.nextDay], 
-[s* 3, bs.nextDay], 
-[s* 3, bs.nextDay], 
-[s* 3, ()=>bs.newData(.1,"")], 
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(1.5,"")], 
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(2,"")], 
-[s* 3, bs.nextDay],
-[s* 3, ()=>bs.newData(2,"")], 
-[s* 3, bs.nextDay],
+[ 300, ()=>bs.newData(1,"")], 
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(.5,"")], 
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(0,"")],
+[ 300, bs.nextDay],
+PAUSE,
+[ 500, ()=>gr.msg("This is what edge-skating looks like")],
+[ 300, ()=>bs.newRate(.5)],   // random shallow spot
+[ 300, ()=>bs.newData(1,"")],
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(1,"")],
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(2,"")],
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(2,"")],
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(2,"")],
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(2,"")],
+[ 300, bs.nextDay],
+PAUSE,
+[ 500, ()=>gr.msg("Fortunately we scheduled a shallow section here")],
+[ 300, ()=>bs.newRate(2)],   // end of random shallow spot
+[ 3000, ()=>bs.newData(1,"")],
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(1.5,"")],
+[ 300, bs.nextDay],
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(1,"")],
+[ 300, bs.nextDay],
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(1.5,"")],
+[ 300, bs.nextDay],
+PAUSE,
+[ 500, ()=>gr.msg("Keep going! You're a svelte, productive ninja warrior!")],
+[ 300, ()=>bs.newData(1,"")], 
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(3,"")], 
+[ 300, bs.nextDay], 
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(8,"")], 
+[ 300, bs.nextDay], 
+[ 300, bs.nextDay], 
+[ 300, bs.nextDay], 
+[ 300, ()=>bs.newData(.1,"")], 
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(1.5,"")], 
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(2,"")], 
+[ 300, bs.nextDay],
+[ 300, ()=>bs.newData(2,"")], 
+[ 300, bs.nextDay],
 //[s*30, ()=>gr.msg("Beeminder: Mind the Bright Red Line")],
 //[s*30, ()=>gr.msg("Beeminder: Automated accountability")],
 //[s*30, ()=>gr.msg("Beeminder: Make a beeline for your goal")],
@@ -264,60 +338,134 @@ const anim = [
 //[s*30, ()=>gr.msg("Beeminder: A robotic bee that you sic on yourself")],
 //[s*30, ()=>gr.msg("Beeminder: Put your money where your piehole is")],
 //[s*30, ()=>gr.msg("Beeminder: Robotic kibitzing for goal tracking")],
-[s* 0, ()=>gr.msg("And that's Beeminder! Refresh the page to see it again.")],
+PAUSE,
+[   0, ()=>gr.msg("And that's Beeminder!")],
 
 ]
 
-
-var curto, curres, paused = false
-const timeout = (ms) => new Promise((res) => {
-  curres = res; curto = setTimeout(res, ms); return curto })
-
-var bpause = document.getElementById("pause"),
-    bnext  = document.getElementById("next")
-
-function pause() { 
-  paused = true
-  clearTimeout(curto)
-  curres("skipped")
-  bpause.innerHTML = "Resume"
-  if (curanim < anim.length-1) { bnext.disabled = false }
-}
-function resume() { 
-  paused = false
-  bpause.innerHTML = "Pause"
-  bnext.disabled = true
-}
-function waitForResume() {
-  return new Promise(function (resolve, reject) {
-    (function _waitForResume(){
-      if (!paused) return resolve();
-      setTimeout(_waitForResume, 30);
-    })();
-  });
-}  
-function next() {
-  var nxt = false                    
-  do {
-    nxt = false
-    anim[curanim][1]()
-    if (anim[curanim][0] == 0) nxt = true
-    curanim++
-  } while (nxt)
-}
-                
-var curanim = 0
-
-async function animate() {
-  for (; curanim < anim.length;) {
-    anim[curanim][1]()
-    if (anim[curanim][0] > 0) await timeout(anim[curanim][0])
-    curanim++
-    if (paused) await waitForResume()
+// Chapters: the runs of steps between PAUSEs, as [start, end) ranges
+const chap = []
+for (let start = 0, i = 0; i <= anim.length; i++)
+  if (i == anim.length || anim[i] === PAUSE) {
+    chap.push([start, i])
+    start = i+1
   }
+
+// A chapter is a run of steps between PAUSEs -- typically a caption,
+// its illustration, and pulse housekeeping. The buttons only move
+// dest, the chapter the user wants to be on, and a single driver seeks
+// it: forward by playing chapters in order (rushing every queued chapter
+// except the last, which performs at the authored pace), backward -- 
+// since bsandbox can't rewind -- by starting the goal over, replaying
+// instantly to just before dest, then performing it. Going back means
+// "show me that again". Either button aborts whatever's mid-flight, so
+// mashing moves one chapter per click in either direction.
+let cur = 0         // the chapter on screen
+let dest = 0        // the chapter the user wants to be on
+let playing = false // the driver is mid-run
+let rush = false    // skip the current chapter's delays
+let staging = false // rebuilding history: presentation calls are moot
+
+const bprev = document.getElementById("prev")
+const bnext = document.getElementById("next")
+const slidepos = document.getElementById("slidepos")
+
+// The score does all its presentation through gr: captions and highlight
+// pulses. Captions render into the HTML banner, out of reach of graph
+// redraws; pulses pass through to the live bgraph; and everything goes
+// quiet while staging, since replaying history shouldn't flash stale
+// captions or strand pulses.
+const capdiv = document.getElementById("caption")
+const pulse = (a) => (b) => { if (!staging) bs.getGraphObj()[a](b) }
+gr = {
+  msg:      (m) => { if (!staging) capdiv.textContent = m ?? "" },
+  animYBR:  pulse("animYBR"),
+  animData: pulse("animData"),
+  animBuf:  pulse("animBuf"),
+  animBux:  pulse("animBux"),
+  animHor:  pulse("animHor"),
 }
 
-animate()
+// The buttons gray out only at the ends of the show: they're always
+// live to move dest
+function refreshControls() {
+  bprev.disabled = dest == 0
+  bnext.disabled = dest == chap.length-1
+  slidepos.textContent = (Math.max(cur, 0)+1) + "/" + chap.length
+}
+
+// bgraph anchors its drawing top-left (xMinYMin); recenter it in
+// whatever box the viewport gives us
+function fitGraph() {
+  document.querySelector("#sandbox svg.bmndrsvg")
+    .setAttribute("preserveAspectRatio", "xMidYMid meet")
+}
+
+// Naps are cancellable so a fast-forward can cut the one in flight
+// short: rushing resolves the pending nap via curres
+let curres = null
+const nap = (ms) => new Promise((res) => {
+  curres = res
+  setTimeout(res, ms)
+})
+
+// Play chapter k at the authored pace, or instantly once rush is set
+async function play(k) {
+  const [from, to] = chap[k]
+  for (let i = from; i < to; i++) {
+    anim[i][1]()
+    if (anim[i][0] > 0 && !rush) await nap(anim[i][0])
+  }
+  cur = k
+  refreshControls() // the counter flips the moment the chapter lands
+}
+
+// Seek dest: chapters play toward it and clicks landing mid-run just
+// move it (play() always runs to a chapter boundary first, so state is
+// coherent whenever this loop checks)
+async function drive() {
+  playing = true
+  refreshControls()
+  while (cur != dest) {
+    if (dest < cur) { // backward: start over, instantly to just before dest
+      staging = true
+      bs.newGoal("hustler", "d", 1, 0, true)
+      fitGraph()
+      for (let k = 0; k < dest; k++)
+        for (let i = chap[k][0]; i < chap[k][1]; i++) anim[i][1]()
+      staging = false
+      cur = dest-1
+      await nap(300) // a beat for the replay's redraws to land, so the
+                     // target chapter's pulse starts on a settled graph
+    }
+    while (cur < dest) { // the forward leg; overshoot loops back around
+      rush = dest - cur > 1 // rush every queued chapter but the last
+      await play(cur+1)
+    }
+    rush = false
+  }
+  playing = false
+  refreshControls()
+}
+
+// The buttons just move dest and poke: abort the delay in flight, or
+// wake the driver if it's idle
+function poke() {
+  if (playing) { rush = true; curres?.() }
+  else drive()
+}
+function next() { if (dest < chap.length-1) { dest++; poke() } }
+function prev() { if (dest > 0)             { dest--; poke() } }
+
+// Slideshows get arrow keys
+document.onkeydown = (e) => {
+  if (e.keyCode == 39) next()
+  if (e.keyCode == 37) prev()
+}
+
+fitGraph()
+cur = -1 // nothing on screen yet; seek the title card
+drive()
 
 </script>
 </body>

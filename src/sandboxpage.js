@@ -53,7 +53,10 @@ function commitTo() {
   if (isNaN(endSlopeSandbox.value)) return;
   const siru = parseInt(slopeTypeSandbox.value);
   const slope = parseFloat(endSlopeSandbox.value);
-  sandbox.newRate(slope / siru);
+  // newRate wants the rate per the goal's own rate units (road.siru
+  // seconds), not per second, so convert from the dial's chosen unit
+  const road = sandbox.getGraphObj().getRoad();
+  sandbox.newRate(slope / siru * road.siru);
 }
 
 function sandboxChanged() {

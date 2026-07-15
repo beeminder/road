@@ -2593,6 +2593,23 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       assert(afterAdd.summary.length > 0,
         `${name}: summary line populated`)
 
+      // Replicata: dial the rate to 3 per day and hit UPDATE. Expectata:
+      // the road's final segment becomes 3/day. Resultata (pre-fix):
+      // commitTo fed a per-second rate into bsandbox.newRate, whose rfin
+      // is per the goal's rate units, so the dial silently set the rate
+      // to roughly zero.
+      await page.evaluate(() => {
+        document.getElementById('sendslope').value = '3'
+      })
+      await page.click('#scommit')
+      const dialed = await page.waitForFunction(() => {
+        const road = sandbox.getGraphObj().getRoad()
+        const rd = road.road
+        return Math.abs(rd[rd.length-1][2] * (86400 / road.siru) - 3) < 1e-9
+      }, {timeout: 5000}).then(() => true).catch(() => false)
+      assert(dialed,
+        `${name}: the rate dial actually redials the road to 3/day`)
+
       // Create a fresh goal of another type: defaults apply, graph rebuilds
       await page.select('#typeselect', 'fatloser')
       const dflt = await page.evaluate(() => ({
@@ -2626,6 +2643,233 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         hasDueby: !!document.getElementById('dueby')?.innerHTML,
       }))
       assert(extras.hasDueby, `${name}: dueby table populated`)
+    })
+
+  // --- the tutorial: chaptered slideshow, no autoplay ---
+  // Replicata: open /tutorial and wait. Expectata: it sits on the title
+  // card until you press Next; Next steps a chapter forward (playing that
+  // chapter's little vignette); Prev steps back; the ends gray out their
+  // buttons; and the graph fills the screen -- any screen -- with no
+  // scrolling. Resultata (pre-revamp): the whole show autoplayed on
+  // timers with only Pause/Resume, in an unstyled 696px-wide page.
+  await runQual(browser, port, 'tutorial', '/quals/tutorial.html',
+    async (page, name) => {
+      const slidepos = () => page.evaluate(() =>
+        document.getElementById('slidepos')?.textContent)
+      const caption = () => page.evaluate(() =>
+        document.getElementById('caption')?.textContent ||
+        [...document.querySelectorAll('#sandbox svg text')]
+          .map(t => t.textContent).join(' '))
+      assert(/^1\/\d\d$/.test(await slidepos()),
+        `${name}: opens on the title card (slidepos ${await slidepos()})`)
+      assert(await page.evaluate(() =>
+               document.getElementById('prev')?.disabled),
+        `${name}: Prev grayed out on the title card`)
+      await page.evaluate(() => new Promise(r => setTimeout(r, 2000)))
+      assert(/^1\//.test(await slidepos()),
+        `${name}: no autoplay -- still on the title card after 2s ` +
+        `(slidepos ${await slidepos()})`)
+      // Watch the caption for flicker: once one is up, it must never
+      // blank out from under the reader
+      await page.evaluate(() => {
+        window.fades = 0
+        const capnow = () => document.getElementById('caption')
+          ?.textContent ||
+          document.querySelector('#sandbox svg g.message text')
+            ?.textContent || ''
+        let last = capnow()
+        new MutationObserver(() => {
+          const t = capnow()
+          if (!t && last) window.fades++
+          last = t
+        }).observe(document.getElementById('sandbox').parentElement,
+                   {childList: true, subtree: true, attributes: true,
+                    characterData: true})
+      })
+      await page.click('#next')
+      await page.waitForFunction(() => document.getElementById('slidepos')
+        .textContent.startsWith('2/'), {timeout: 10000})
+      await page.evaluate(() => new Promise(r => setTimeout(r, 600)))
+      assert((await caption()).includes('Mind the Bright Red Line'),
+        `${name}: Next advances to the second caption ` +
+        `(got "${await caption()}")`)
+      const fades = await page.evaluate(() => window.fades)
+      assert(fades === 0,
+        `${name}: the caption never blanks out -- no flicker ` +
+        `(counted ${fades} blanks)`)
+      // The chapter's highlight keeps pulsing at the stop point, for as
+      // long as its caption is up (it used to switch itself off after 3
+      // seconds, autoplay-style, leaving the caption pointing at nothing)
+      const pulsing = await page.evaluate(() => new Promise(res => {
+        let n = 0
+        const mo = new MutationObserver(muts => { n += muts.length })
+        mo.observe(document.querySelector('#sandbox svg'),
+                   {childList: true, subtree: true, attributes: true})
+        setTimeout(() => { mo.disconnect(); res(n) }, 600)
+      }))
+      assert(pulsing > 0,
+        `${name}: the red-line pulse persists at the stop point ` +
+        `(${pulsing} svg mutations in 600ms)`)
+      // Replicata: while a chapter's illustration is mid-flight, click
+      // Next. Expectata: the illustration aborts (skips to its end state)
+      // and the show moves on to the next chapter, which performs at the
+      // authored pace -- impatient mashing flips through, one chapter per
+      // click. Resultata (the regression this guards): a mid-flight click
+      // merely fast-forwarded the current chapter, so moving on always
+      // took two clicks.
+      await page.click('#next') // starts chapter 3's ~2.1s illustration
+      await page.evaluate(() => new Promise(r => setTimeout(r, 200)))
+      const midflight = await page.evaluate(() =>
+        !document.getElementById('next').disabled)
+      assert(midflight, `${name}: Next stays clickable mid-illustration`)
+      await page.click('#next') // abort it and move straight on
+      const movedOn = await page.waitForFunction(() =>
+        document.getElementById('slidepos').textContent.startsWith('4/'),
+        {timeout: 1200}).then(() => true).catch(() => false)
+      assert(movedOn,
+        `${name}: mid-illustration click aborts and moves on in one ` +
+        `click (un-aborted, the chapter had ~1.9s left to play)`)
+
+      // Prev means "show me that chapter again", so the target chapter
+      // performs at the authored pace (~2.1s of data entry here), not an
+      // instant teleport: a second in, it should still be playing
+      await page.waitForFunction(() =>
+        !document.getElementById('prev').disabled, {timeout: 10000})
+      await page.click('#prev')
+      await page.evaluate(() => new Promise(r => setTimeout(r, 1000)))
+      const replaying = await page.evaluate(() => playing)
+      assert(replaying,
+        `${name}: Prev replays the chapter's illustration at pace`)
+      await page.waitForFunction(() => document.getElementById('slidepos')
+        .textContent.startsWith('3/'), {timeout: 10000})
+      assert((await caption()).includes('Add new data'),
+        `${name}: Prev lands back on the previous caption ` +
+        `(got "${await caption()}")`)
+
+      // Replicata: while a chapter's illustration plays, click Prev
+      // ("wait, I want to go back"). Expectata: the illustration aborts
+      // and the show backs up one chapter, re-performing it. Resultata
+      // (pre-fix): Prev was grayed out until the illustration finished.
+      await page.click('#next') // heads to chapter 4's ~3s pulse
+      await page.evaluate(() => new Promise(r => setTimeout(r, 300)))
+      const prevLive = await page.evaluate(() =>
+        !document.getElementById('prev').disabled)
+      assert(prevLive, `${name}: Prev stays clickable mid-illustration`)
+      // Log every caption that shows during the backward seek: the
+      // prefix replay must not flash its own last caption (a stale
+      // chapter's) in the beat before the target chapter performs
+      await page.evaluate(() => {
+        window.capslog = []
+        const capnow = () => document.getElementById('caption')
+          ?.textContent ||
+          document.querySelector('#sandbox svg g.message text')
+            ?.textContent || ''
+        new MutationObserver(() => {
+          const t = capnow()
+          if (window.capslog[window.capslog.length-1] !== t)
+            window.capslog.push(t)
+        }).observe(document.getElementById('sandbox').parentElement,
+                   {childList: true, subtree: true, characterData: true})
+      })
+      await page.click('#prev')
+      const wentBack = await page.waitForFunction(() =>
+        !playing && document.getElementById('slidepos')
+          .textContent.startsWith('3/'), {timeout: 15000})
+        .then(() => true).catch(() => false)
+      assert(wentBack && (await caption()).includes('Add new data'),
+        `${name}: mid-illustration Prev aborts and goes back a chapter ` +
+        `(got "${await caption()}")`)
+      const capslog = await page.evaluate(() => window.capslog)
+      assert(!capslog.includes('Mind the Bright Red Line') &&
+             !capslog.includes(''),
+        `${name}: no stale caption and no blank gap during the backward ` +
+        `seek ` + JSON.stringify(capslog))
+
+      // Replicata: rush to the pledge chapter and rest there. Expectata:
+      // its $5 pulse (animBux) is running -- a chapter's pulse has to
+      // survive that chapter's own later redraws. Resultata (pre-fix):
+      // the datapoint entered after animBux(true) rebuilt the watermark
+      // and silently killed the pulse.
+      await page.evaluate(() => {
+        while (dest < 6) { next(); rush = true; if (curres) curres() }
+      })
+      await page.waitForFunction(() => !playing && cur == 6,
+        {timeout: 30000})
+      await page.evaluate(() => new Promise(r => setTimeout(r, 400)))
+      const buxAlive = await page.evaluate(() => new Promise(res => {
+        let n = 0
+        const mo = new MutationObserver(muts => { n += muts.length })
+        mo.observe(document.querySelector('#sandbox svg'),
+                   {childList: true, subtree: true, attributes: true})
+        setTimeout(() => { mo.disconnect(); res(n) }, 600)
+      }))
+      assert(buxAlive > 0,
+        `${name}: the pledge chapter's pulse survives its own redraws ` +
+        `(${buxAlive} svg mutations at rest)`)
+      // Kiosk layout: the graph plus the control bar fill the viewport
+      // with no scrolling, from desktop down to the smallest phones.
+      // Measured with the show's longest caption up, since the banner
+      // must always be a single line.
+      await page.evaluate(() => gr.msg(
+        "You pay that $5 at this point, and get a weeklong buffer"))
+      for (const vp of [{width: 1200, height: 800},
+                        {width: 390, height: 844},
+                        {width: 320, height: 568}]) {
+        await page.setViewport(vp)
+        await page.evaluate(() => new Promise(resolve =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve))))
+        const fit = await page.evaluate(() => {
+          const de = document.documentElement
+          const stage = document.getElementById('sandbox')
+            .getBoundingClientRect()
+          const bar = document.querySelector('.tutorialbar')
+            .getBoundingClientRect()
+          return {
+            w: innerWidth, h: innerHeight,
+            noScroll: de.scrollWidth <= innerWidth &&
+                      bar.bottom <= innerHeight + 1,
+            wholeScreen: stage.height + bar.height >= innerHeight * .9 &&
+                         stage.width >= innerWidth * .95,
+            capPx: parseFloat(getComputedStyle(
+              document.getElementById('caption')).fontSize),
+            capH: document.getElementById('caption')
+              .getBoundingClientRect().height,
+            // Vertical gap between the banner and the graph's drawn area
+            // (the svg letterboxes inside the stage on portrait screens)
+            capAboveGraph: (() => {
+              const svg = document.querySelector('#sandbox svg.bmndrsvg')
+              const r = svg.getBoundingClientRect()
+              const [, , vw, vh] = svg.getAttribute('viewBox')
+                .split(' ').map(Number)
+              const drawnTop = r.top +
+                Math.max(0, (r.height - r.width * vh / vw) / 2)
+              return drawnTop - document.getElementById('caption')
+                .getBoundingClientRect().top
+            })(),
+          }
+        })
+        assert(fit.noScroll,
+          `${name}: no scrolling at ${fit.w}x${fit.h} ` +
+          JSON.stringify(fit))
+        assert(fit.wholeScreen,
+          `${name}: graph stage plus control bar use the whole screen ` +
+          `at ${fit.w}x${fit.h} ` + JSON.stringify(fit))
+        // The banner scales with the graph like the svg caption it
+        // replaced (~29px on a 1200x800 desktop) and never wraps: one
+        // line at every size, even for the longest caption
+        const wantCap = Math.min(.029 * fit.w, .036 * fit.h)
+        assert(Math.abs(fit.capPx - wantCap) < 2,
+          `${name}: caption banner scales with the graph at ` +
+          `${fit.w}x${fit.h} (want ~${wantCap.toFixed(1)}px, got ` +
+          `${fit.capPx}px)`)
+        assert(fit.capH < fit.capPx * 2.7,
+          `${name}: longest caption stays on one line at ` +
+          `${fit.w}x${fit.h} (height ${fit.capH.toFixed(1)}px at font ` +
+          `${fit.capPx}px)`)
+        assert(fit.capAboveGraph < fit.capPx * 2,
+          `${name}: banner rides on the graph, not the stage top, at ` +
+          `${fit.w}x${fit.h} (gap ${fit.capAboveGraph.toFixed(0)}px)`)
+      }
     })
 
   // --- the login page: phone-width fit ---
