@@ -27,7 +27,11 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    height: 100dvh; /* mobile browsers with collapsing toolbars */
+    /* svh, not dvh: the small viewport height is what's visible with all
+       browser toolbars up, and since this page never scrolls, mobile
+       toolbars never collapse -- dvh would park the buttons under them
+       (observed on iOS Safari) */
+    height: 100svh;
     overflow: hidden;
   }
   #stage { flex: 1; min-height: 0; position: relative; }
@@ -61,8 +65,10 @@
   /* The svg has a viewBox, so freeing both dimensions scales the graph
      to fit whatever box the flexbox hands it */
   #sandbox svg.bmndrsvg { display: block; width: 100%; height: 100%; }
-  .tutorialbar { display: flex; justify-content: center;
-                 align-items: center; gap: 14px; padding: 10px; }
+  .tutorialbar { display: flex; flex: none; justify-content: center;
+                 align-items: center; gap: 14px;
+                 /* keep clear of the iPhone home indicator */
+                 padding: 10px 10px max(10px, env(safe-area-inset-bottom)); }
   /* Fixed width so the buttons don't shift as the numbers change */
   .slidepos { min-width: 4.5em; text-align: center; color: var(--muted);
               font-size: .9rem; }
