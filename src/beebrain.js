@@ -1610,16 +1610,19 @@ this.reloadRoad = function() {
   // when this function is called from bgraph as a result of an edited road.
   gol.fullroad = gol.road.slice()
   gol.fullroad.unshift( [gol.tini, gol.vini, 0, 0] )
+  // CONSISTENT_AKRASIA_HORIZON
+  const akh = gol.asof+bu.AKH   // OLD ALGORITHM
+  //const akh = gol.horizon     // NEW ALGORITHM
   if (gol.error == "") {
     gol.pinkzone = [[gol.asof, br.rdf(roads, gol.asof), 0]]
     gol.road.forEach(
       function(r) {
-        if (r[0] > gol.asof && r[0] < gol.asof+bu.AKH) {
+        if (r[0] > gol.asof && r[0] < akh) {
           gol.pinkzone.push([r[0], r[1], null])
         }
       }
     )
-    gol.pinkzone.push([gol.asof+bu.AKH, br.rdf(roads, gol.asof+bu.AKH),
+    gol.pinkzone.push([akh, br.rdf(roads, akh),
                         null])
     gol.pinkzone = br.fillroadall(gol.pinkzone, gol)
   }
@@ -1683,7 +1686,6 @@ function genStats(p, d, tm=null) {
     if (!('aggday' in p)) p.aggday = gol.kyoom ? "sum" : "last"
     
     gol.siru = bu.SECS[gol.runits]
-    gol.horizon = gol.asof+bu.AKH-SID // draw the akrasia horizon 6 days out
     // Save initial waterbuf value for comparison in bgraph.js because we don't
     // want to keep recomputing it there as the red line is edited 
     gol.waterbuf0 = gol.waterbuf
@@ -1692,6 +1694,14 @@ function genStats(p, d, tm=null) {
     // after filling in road in procParams.
     if (bu.listy(gol.road)) gol.road.push([gol.tfin, gol.vfin, gol.rfin])
     if (gol.error == "") gol.error = vetParams()
+    // Horizon comes after vetParams so a bb file with a missing or bogus asof
+    // yields the graceful error above instead of tripping butil.horizon's
+    // assert. (Error'd goals never render a horizon; bgraph resetGoal's
+    // placeholder takes over on that path.)
+    // CONSISTENT_AKRASIA_HORIZON
+    //gol.horizon = gol.asof+bu.AKH-SID // draw the akrasia horizon 6 days out
+    if (gol.error == "")
+      gol.horizon = bu.horizon(gol.proctm, gol.timezone, gol.asof)
     
     // Extract road info into our internal format consisting of road segments:
     // [ [startt, startv], [endt, endv], slope, autofield ]

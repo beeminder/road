@@ -536,7 +536,8 @@ function resetGoal() {
   const now = moment.utc()
   now.hour(0); now.minute(0); now.second(0); now.millisecond(0)
   gol.asof = now.unix()
-  gol.horizon = gol.asof + bu.AKH - SID
+  // CONSISTENT_AKRASIA_HORIZON
+  gol.horizon = 0 // gol.asof+bu.AKH // - SID // placeholder; recomputed on load
   gol.xMin = gol.asof;  gol.xMax = gol.horizon
   gol.tmin = gol.asof;  gol.tmax = gol.horizon
   gol.yMin = -1;        gol.yMax = 1
@@ -2035,11 +2036,19 @@ function pushUndoState(fromredo = false) {
 
 // Determine whether given road is valid (ie, clear of the pinkzone)
 // TODO: Must rethink this check, probably a general segment intersection
-// algorithm will be best
+// algorithm will be best.
+// CONSISTENT_AKRASIA_HORIZON
+// Or: Not easier comparied to the initial red line (iroad) on any of the 7 days
+// before the akrasia horizon.
+// The akrasia horizon date itself is the first date the red line is allowed to
+// get easier, i.e., the end of the pinkzone.
+// This mirrors Beebody's legal_road_change_or_err(), which samples those same
+// dates, so the editor forbids exactly what the server rejects (gissue #232).
 function isRoadValid(rd) {
   const ir = iroad
   const EPS = 0.000001 // dang floating point comparisons
-  
+
+  /* CONSISTENT_AKRASIA_HORIZON -- OLD ALGORITHM */
   const now = gol.asof
   const hor = gol.horizon
   // Check left/right boundaries of the pinkzone. This should handle the case
@@ -2060,6 +2069,13 @@ function isRoadValid(rd) {
     if (gol.yaw*br.rdf(rd, ir[i].end[0]) < 
         gol.yaw*br.rdf(ir, ir[i].end[0]) - EPS) return false
   }
+  /* */ 
+  /* CONSISTENT_AKRASIA_HORIZON -- NEW ALGORITHM 
+  for (let t = gol.horizon - bu.AKH; t < gol.horizon; t += SID) {
+    if (gol.yaw*br.rdf(rd, t) < gol.yaw*br.rdf(ir, t) - EPS) return false
+  }
+  */
+
   return true
 }
 
@@ -3712,7 +3728,8 @@ function updateYBHP() {
   // it to. If xrange=null, use [-infinity, infinity].
 
   const xrfull   = [gol.tini, gol.tfin]       // x-axis range tini to tfin
-  const xrakr    = [gol.asof, gol.asof+7*SID] // now to akrasia horizon
+  // CONSISTENT_AKRASIA_HORIZON -- previously gol.asof+7*SID
+  const xrakr    = [gol.asof, gol.horizon]    // now to akrasia horizon
   const bgreen   = bu.BHUE.RAZR3 // bu.BHUE.GRNDOT // was RAZR3
   const bblue    = bu.BHUE.RAZR2
   const borange  = bu.BHUE.RAZR1

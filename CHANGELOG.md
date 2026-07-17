@@ -33,9 +33,9 @@
 * 2026.01.09 Fix extendo function (and more failure to update this changelog)
 * 2025.10.02 More upgrades and cleanup and bugfixes
 * 2025.09.19 Modernization of deprecated packages
-* 2025.09.18 Lots of things we're forgetting to include in this changelog
+* 2025.09.18 [[Lots of things we're forgetting to include in this changelog]]
 * 2025.09.17 Tare tags
-* 2025.07.10 Migrate from Glitch to Render and remember that a changelog exists
+* 2025.07.10 [[Migrate from Glitch to Render & remember the changelog exists]]
 * 2019.01.12 Something with beebrain.js tutorials
 * 2019.01.12 Static graph axis limits consistent with pybrain
 * 2019.01.11 Solved problems with goals for which tfin=null
@@ -114,3 +114,5 @@
 * 2016.07.08 Dreev refactors the code a bit
 * 2016.07.07 Dreev moves it to Glitch (then known as HyperDev)
 * 2016.04.24 Uluc shows off http://www.ceng.metu.edu.tr/~saranli/road/vertical.html
+* 2008+      Port to Python and later to Javascript
+* 2008       Very first version of the yellow brick road in Mathematica

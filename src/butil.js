@@ -949,6 +949,46 @@ function nowstamp(tz, deadline, asof) {
   return d.format("YYYYMMDD")
 }
 
+// CONSISTENT_AKRASIA_HORIZON
+/** The akrasia horizon: the first date the bright red line may legally get
+    easier, namely 7 days after today's calendar date in the goal's timezone.
+    Note that this is deliberately NOT keyed to asof, which flips to
+    tomorrow's daystamp the moment the goal's deadline passes. Beebody's
+    legal_road_change_or_err() and take-a-break both key off the calendar
+    date, so for a goal viewed after its deadline the horizon is 6 days
+    after asof, not 7 (road gissue #232). Exception: a bb file can set asof
+    to a bygone date ("compute everything as if it were this date"), in
+    which case today is taken to be asof; live bb files keep asof within a
+    day of today (see the 2*SID threshold in nowstamp), so anything farther
+    out is time travel. Returns unixtime of midnight UTC on the horizon
+    date, i.e., a dayparse-style timestamp like asof itself.
+    @param {Number} now Current unixtime in seconds (e.g. gol.proctm)
+    @param {String} tz Goal timezone like "America/Los_Angeles"
+    @param {Number} asof Dayparse-style timestamp of the goal's asof date */
+function horizon(now, tz, asof) {
+  assert(nummy(now) && nummy(asof),
+         ()=>`horizon: invalid now=${now} or asof=${asof}`)
+  return asof + AKH - SID // CONSISTENT_AKRASIA_HORIZON -- OLD ALGORITHM
+
+  // CONSISTENT_AKRASIA_HORIZON -- NEW ALGORITHM
+  let today
+  if (tz) {
+    // The en-CA locale formats dates as YYYY-MM-DD. We use Intl rather than
+    // moment-timezone because Intl draws on the environment's own timezone
+    // data, which stays current; the vendored moment-timezone's data ends in
+    // 2025, after which it gets DST wrong. A bogus timezone throws.
+    today = dayparse(new Date(now*1000)
+      .toLocaleDateString('en-CA', {timeZone: tz}).replace(/-/g, ''))
+  } else {
+    console.log("butil.horizon: no timezone available, using local time")
+    today = dayparse(moment.unix(now).format("YYYYMMDD"))
+  }
+  assert(nummy(today), ()=>`horizon: unparseable date for timezone ${tz}`)
+  // Time-traveled bb file; daysnap in case of a legacy mid-day asof
+  if (abs(today - asof) > 2*SID) today = daysnap(asof)
+  return today + AKH
+}
+
 // Convert a number to an integer string.
 function sint(x) { return round(x).toString() }
 
@@ -1072,7 +1112,8 @@ return {
   linspace, rescale, deldups, orderedq, unaryflat, 
   clocky, mean, median, mode, trimmean, 
   nearEq, 
-  daysnap, monthsnap, yearsnap, formatDate, dayparse, dayify, nowstamp, 
+  daysnap, monthsnap, yearsnap, formatDate, dayparse, dayify, nowstamp,
+  horizon,
   loadJSON, toTitleCase, arrayEquals,
   lineintersect, lineval
 }

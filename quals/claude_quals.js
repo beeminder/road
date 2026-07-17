@@ -82,7 +82,7 @@ const QUAL_ROUTES = {
   },
   '/getusergoals': {
     contentType: 'application/json',
-    body: JSON.stringify(['testroad0', 'othergoal']),
+    body: JSON.stringify(['testroad0', 'othergoal', 'postdl', 'predl']),
   },
   '/getgoaljson/testroad0': {
     contentType: 'application/json',
@@ -100,7 +100,35 @@ const QUAL_ROUTES = {
   },
 }
 
+// CONSISTENT_AKRASIA_HORIZON
+// Live bb files for the akrasia-horizon quals (gissue #232), generated
+// per-request so "today" really is today in the goal's timezone. postdl
+// mimics a goal whose 6pm deadline has passed, so its asof has rolled over
+// to tomorrow's daystamp; predl one whose deadline hasn't, so asof is
+// today's. Both must agree that the horizon is calendar-today + 7 days.
+function akrasiaBB(asofdays) {
+  const SID = 86400
+  const laToday = new Date().toLocaleDateString('en-CA',
+    {timeZone: 'America/Los_Angeles'}).replace(/-/g, '')
+  const T = bu.dayparse(laToday)
+  return JSON.stringify({
+    params: {
+      yoog: 'qual/akrasia', timezone: 'America/Los_Angeles',
+      deadline: -21600, asof: bu.dayify(T + asofdays*SID),
+      tini: bu.dayify(T - 30*SID), vini: 0, road: [],
+      tfin: bu.dayify(T + 180*SID), vfin: null, rfin: 1,
+      runits: 'd', yaw: 1, dir: 1, aggday: 'last', stathead: false,
+    },
+    data: [[bu.dayify(T - SID), 100, 'plenty of safety buffer']],
+  })
+}
+
 function serve(req, res) {
+  if (req.url === '/getgoaljson/postdl' || req.url === '/getgoaljson/predl') {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(akrasiaBB(req.url.endsWith('postdl') ? 1 : 0))
+    return
+  }
   // A goal that takes its time arriving, for the loading-state qual
   if (req.url === '/getgoaljson/slowgoal') {
     setTimeout(() => {
@@ -559,6 +587,89 @@ assert(bu.dayparse(null) === null, 'dayparse(null)')
   assert(bu.daysnap(t + 3600)  === t,                     'daysnap rounds down')
   assert(bu.monthsnap(t)       === bu.dayparse("20170501"), 'monthsnap to 1st')
   assert(bu.yearsnap(t)        === bu.dayparse("20170101"), 'yearsnap to Jan 1')
+})()
+
+// --- butil: horizon (gissue #232) ---
+// CONSISTENT_AKRASIA_HORIZON
+// The akrasia horizon is calendar-today in the goal's timezone + 7 days,
+// NOT asof + 7: asof rolls over to tomorrow's daystamp once the goal's
+// deadline passes, but the horizon must not move with it. (Mirrors
+// Beebody's legal_road_change_or_err.) LA is UTC-8 in January and UTC-7
+// in July (DST).
+;(function() {
+  const dp = bu.dayparse
+  const LA = 'America/Los_Angeles'
+  // 09:00 PST Jan 14, 6pm deadline not yet passed, so asof = today
+  assert(bu.horizon(dp('20260114') + 17*3600, LA, dp('20260114'))
+         === dp('20260121'),
+    'horizon: pre-deadline, today + 7 = asof + 7')
+  // 20:00 PST Jan 14, 6pm deadline passed, so asof = tomorrow's daystamp
+  assert(bu.horizon(dp('20260115') + 4*3600, LA, dp('20260115'))
+         === dp('20260121'),
+    'horizon: post-deadline, still today + 7, ie, asof + 6')
+  // 01:00 PST Jan 15, 3am nightowl deadline not yet passed, so asof =
+  // Jan 14 even though the calendar says Jan 15
+  assert(bu.horizon(dp('20260115') + 9*3600, LA, dp('20260114'))
+         === dp('20260122'),
+    'horizon: nightowl post-midnight, today + 7 = asof + 8')
+  // 00:30 PDT Jul 16: getting this right requires current DST data, which
+  // is why horizon uses Intl; the vendored moment-timezone's data ends in
+  // 2025, making it think this instant is still Jul 15, which would put
+  // the horizon (and the first legal break date) a day early
+  assert(bu.horizon(dp('20260716') + 7*3600 + 1800, LA, dp('20260716'))
+         === dp('20260723'),
+    'horizon: half past midnight during DST, today + 7')
+  // Time travel: bb files can set asof way in the past ("compute
+  // everything as if it were this date"), and then today is taken as asof
+  const now = Math.floor(Date.now()/1000)
+  assert(bu.horizon(now, LA, dp('20170710')) === dp('20170717'),
+    'horizon: time-traveled bb file gets asof + 7 days')
+  assert(bu.horizon(now, null, dp('20991231')) === dp('21000107'),
+    'horizon: far-future asof also snaps to asof + 7 days')
+  let threw = false
+  try { bu.horizon(NaN, null, dp('20170710')) } catch(e) { threw = true }
+  assert(threw, 'horizon: NaN now throws (anti-robustness)')
+  threw = false
+  try { bu.horizon(now, null, null) } catch(e) { threw = true }
+  assert(threw, 'horizon: null asof throws (anti-robustness)')
+  threw = false
+  try { bu.horizon(now, 'Neverland/Neverwhere', dp('20260101')) }
+  catch(e) { threw = true }
+  assert(threw, 'horizon: bogus timezone throws (anti-robustness)')
+})()
+
+// --- beebrain: a degenerate bb file yields the graceful error, no crash ---
+// Replicata: run beebrain on {"params":{},"data":[]}. Expectata: gol.error
+// reports the invalid asof, same as before the horizon change. Resultata
+// (pre-fix): butil.horizon's assert on the null asof threw out of the
+// beebrain constructor before vetParams could pronounce judgment. Hence the
+// horizon computation now comes after vetParams in genStats.
+;(function() {
+  let b = null, threw = false
+  try { b = new bb({params: {}, data: []}) } catch(e) { threw = true }
+  assert(!threw, 'beebrain: paramless bb file does not throw')
+  assert(b && /asof/.test(b.gol.error),
+    'beebrain: paramless bb file gets the graceful asof error')
+})()
+
+// --- beebrain end-to-end: gol.horizon and the pinkzone output agree ---
+// Process a live post-deadline bb file (asof = tomorrow's daystamp) and
+// check that the computed horizon is calendar-today + 7 days and that the
+// pinkzone's right edge sits exactly on it.
+;(function() {
+  const SID = 86400
+  const T = bu.dayparse(new Date().toLocaleDateString('en-CA',
+    {timeZone: 'America/Los_Angeles'}).replace(/-/g, ''))
+  const b = new bb(JSON.parse(akrasiaBB(1)))
+  br.rsk8 = 0 // beebrain sets this global on every load; the aggday quals
+              // below assume the default
+  assert(b.gol.horizon === T + 7*SID,
+    `beebrain: post-deadline horizon is calendar-today + 7 days ` +
+    `(got ${bu.dayify(b.gol.horizon)}, want ${bu.dayify(T + 7*SID)})`)
+  const pz = b.gol.pinkzone
+  assert(pz[pz.length-1][0] === b.gol.horizon,
+    `beebrain: pinkzone right edge sits on the horizon ` +
+    `(got ${pz[pz.length-1][0]}, want ${b.gol.horizon})`)
 })()
 
 // --- butil: toTitleCase ---
@@ -2451,6 +2562,107 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
              slashed.shown === 'othergoal',
         `${name}: trailing-slash deep link loads and canonicalizes ` +
         JSON.stringify(slashed))
+    })
+
+  // --- Akrasia horizon (gissue #232) ---
+  // The horizon is the first date the red line may legally get easier:
+  // calendar-today in the goal's timezone + 7 days, matching Beebody's
+  // legal_road_change_or_err. It is NOT asof + 7: asof rolls over to
+  // tomorrow's daystamp when the deadline passes, but the horizon must not
+  // move with it. Replicata from the gissue: extend a flat spot so the red
+  // line gets easier starting exactly at the horizon (e.g. schedule a break
+  // starting there, which take-a-break allows). Expectata: valid. Resultata
+  // (pre-fix): "can't get easier in akrasia horizon" even though the server
+  // accepts the change.
+  //
+  // Flattens the red line from the given date onward: values unchanged
+  // through that date, easier at every date after it.
+  const flattenFromSrc = `(t) => {
+    const rd = editor.getRoadObj()
+    const i = broad.findSeg(rd, t)
+    const v = broad.rdf(rd, t)
+    const seg = rd[i]
+    const head = {sta: seg.sta.slice(), end: [t, v], slope: seg.slope, auto: 0}
+    const tail = {sta: [t, v], end: seg.end.slice(), slope: 0, auto: 0}
+    rd.splice(i, 1, head, tail)
+    broad.fixRoadArray(rd, broad.RP.VALUE, false)
+    editor.setRoadObj(rd)
+    const r = editor.getRoad()
+    editor.undo()
+    return {valid: r.valid, loser: r.loser}
+  }`
+
+  // Post-deadline: asof is tomorrow's daystamp, so horizon = asof + 6 days
+  await runQual(browser, port, 'akrasiapostdl', '/qual/postdl/',
+    async (page, name) => {
+      const SID = 86400
+      const res = await page.evaluate((ffs) => {
+        const flattenFrom = eval(ffs)
+        const r0 = editor.getRoad()
+        return {
+          asof: r0.asof, horizon: r0.horizon, valid0: r0.valid,
+          // easier from the horizon date onward: legal
+          atHorizon:    flattenFrom(r0.horizon - 86400),
+          // easier from the day before the horizon onward: violation
+          insideWindow: flattenFrom(r0.horizon - 2*86400),
+        }
+      }, flattenFromSrc)
+      assert(res.horizon === res.asof + 6*SID,
+        `${name}: post-deadline horizon is asof + 6 days, ie, ` +
+        `calendar-today + 7 (asof ${res.asof}, horizon ${res.horizon})`)
+      assert(res.valid0 === true, `${name}: unedited road is valid`)
+      assert(res.atHorizon.valid === true,
+        `${name}: red line may get easier starting AT the horizon ` +
+        JSON.stringify(res.atHorizon))
+      assert(res.insideWindow.valid === false,
+        `${name}: red line may NOT get easier inside the horizon ` +
+        JSON.stringify(res.insideWindow))
+    })
+
+  // CONSISTENT_AKRASIA_HORIZON
+  // Pre-deadline: asof is today's daystamp, so horizon = asof + 7 days
+  // (the old code drew it at asof + 6, one day early -- gissue #232)
+  await runQual(browser, port, 'akrasiapredl', '/qual/predl/',
+    async (page, name) => {
+      const SID = 86400
+      const res = await page.evaluate((ffs) => {
+        const flattenFrom = eval(ffs)
+        const r0 = editor.getRoad()
+        // Deterministic spot-checks of butil.horizon itself in the page
+        // context. LA is UTC-8 in January.
+        const dp = butil.dayparse
+        const LA = 'America/Los_Angeles'
+        return {
+          asof: r0.asof, horizon: r0.horizon, valid0: r0.valid,
+          atHorizon:    flattenFrom(r0.horizon - 86400),
+          insideWindow: flattenFrom(r0.horizon - 2*86400),
+          // 09:00 PST Jan 14, deadline not yet passed: asof = today
+          hpre:  butil.horizon(dp('20260114') + 17*3600, LA, dp('20260114')),
+          // 20:00 PST Jan 14, 6pm deadline passed: asof = tomorrow
+          hpost: butil.horizon(dp('20260115') +  4*3600, LA, dp('20260115')),
+          // 01:00 PST Jan 15, 3am nightowl deadline not yet passed:
+          // asof = Jan 14 even though the calendar says Jan 15
+          howl:  butil.horizon(dp('20260115') +  9*3600, LA, dp('20260114')),
+        }
+      }, flattenFromSrc)
+      assert(res.horizon === res.asof + 7*SID,
+        `${name}: pre-deadline horizon is asof + 7 days ` +
+        `(asof ${res.asof}, horizon ${res.horizon})`)
+      assert(res.valid0 === true, `${name}: unedited road is valid`)
+      assert(res.atHorizon.valid === true,
+        `${name}: red line may get easier starting AT the horizon ` +
+        JSON.stringify(res.atHorizon))
+      assert(res.insideWindow.valid === false,
+        `${name}: red line may NOT get easier inside the horizon ` +
+        JSON.stringify(res.insideWindow))
+      assert(res.hpre === bu.dayparse('20260121'),
+        `${name}: butil.horizon pre-deadline: today + 7 (got ${res.hpre})`)
+      assert(res.hpost === bu.dayparse('20260121'),
+        `${name}: butil.horizon post-deadline: still today + 7, ie, ` +
+        `asof + 6 (got ${res.hpost})`)
+      assert(res.howl === bu.dayparse('20260122'),
+        `${name}: butil.horizon nightowl post-midnight: today + 7, ie, ` +
+        `asof + 8 (got ${res.howl})`)
     })
 
   // Replicata: deep-link to a goal you don't have, and to another user's
