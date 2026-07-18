@@ -71,12 +71,16 @@
   .slidepos { min-width: 4.5em; text-align: center; color: var(--muted);
               font-size: .9rem; }
   .tutorialbar .bmdrbtn { min-width: 96px; min-height: 44px; }
+  /* Auto-play perches in the stage's top right corner */
+  #auto { position: absolute; top: 10px; right: 10px;
+          min-width: 96px; min-height: 44px; }
 </style>
 </head>
 <body>
   <div id="stage">
     <div id="sandbox"></div>
     <div id="caption"></div>
+    <button id="auto" class="bmdrbtn" onclick="autoplay()">Auto-play</button>
   </div>
   <div class="tutorialbar">
     <button id="prev" class="bmdrbtn" onclick="prev()" disabled>Prev</button>
@@ -92,311 +96,221 @@ bs = new bsandbox({divGraph:  document.getElementById("sandbox"),
                    focusRect: { x: 0, y:   0, width: 696, height: 453 },
                    ctxRect:   { x: 0, y: 453, width: 696, height: 100 }})
 bs.newGoal("hustler", "d", 1, 0, true)
-var gr = bs.getGraphObj()
-// Each [x, f] entry means run f, then wait x milliseconds. PAUSE waits for user
-// to press Next or Prev.
-const PAUSE = "pause"
+// This is like a screenplay. Vocabulary:
+//   HUP         hold up for the human; Next and Prev move between HUPs
+//   300         bare numbers are beats: pause that many milliseconds
+//   banner(s)   show caption s in the HTML banner over the graph
+//   anim*       turn various graph highlight pulses on or off
+//   data(x)     add a datapoint to the live graph
+//   day         advance the graph by one day
+//   rate(r)     dial the red line to a new rate
+//   DEBUG       start the show here, instantly skipping everything before
+//               it -- a temporary mark for fussing with timings without
+//               replaying from the beginning (note anything before the
+//               mark is suppressed, including its own chapter's banner)
+// The prev button has to replay history from the beginning. Banners, pulses,
+// and beats are all suppressed so that happens ~instantly.
+const HUP    = () => HUP   // HUP() works too
+const DEBUG  = () => DEBUG // recognized at load; a no-op when played over
+const zzz    = (ms) => async () => { if (!rush && !staging) await nap(ms) }
+const banner = (s) => () => { if (!staging) capdiv.textContent = s ?? "" }
+const pulse  = (a) => (on) => () => { if (!staging) bs.getGraphObj()[a](on) }
+const animYBR  = pulse("animYBR")
+const animData = pulse("animData")
+const animBuf  = pulse("animBuf")
+const animBux  = pulse("animBux")
+const animHor  = pulse("animHor")
+const data = (x) => () => bs.newData(x, "")
+const day  = () => bs.nextDay()
+const rate = (r) => () => bs.newRate(r)
+const riffle = (beat, acts) => acts.flatMap((a) => [a, beat])
+
+// CONSISTENT_AKRASIA_HORIZON: adjust so edge-skating is still edge-skating
+
 const anim = [
 
-[   0, ()=>gr.msg("Beeminder is reminders with a sting")],
-PAUSE,
-[   0, ()=>gr.msg("Mind the Bright Red Line")],
-[   0, ()=>gr.animYBR(true)],
-PAUSE,
-[   0, ()=>gr.animYBR(false)],
-[   0, ()=>gr.msg("Add new data for what you're beeminding")],
-[ 300, ()=>bs.newData(1.25,"")],
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(1,"")],
-[ 300, bs.nextDay],
-[ 300, bs.nextDay],
-[ 300, bs.nextDay],
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(1,"")],
-PAUSE,
-[   0, ()=>gr.msg("These are your datapoints")],
-[   0, ()=>gr.animData(true)],
-PAUSE,
-[   0, ()=>gr.animData(false)],
-[   0, ()=>gr.msg("If you don't keep up, you'll derail")],
-[ 300, bs.nextDay],
-[ 300, bs.nextDay],
-[ 300, bs.nextDay],
-[   0, ()=>bs.newData(0,"")],
-[ 300, bs.nextDay],
-PAUSE,
-[   0, ()=>gr.msg("This is how much time you have until that happens")],
-[   0, ()=>gr.animBuf(true)],
-PAUSE,
-[   0, ()=>gr.animBuf(false)],
-[   0, ()=>gr.msg("And this is the pledge amount you're risking")],
-[   0, ()=>bs.newData(0,"")],
-[ 300, bs.nextDay],
-[   0, ()=>gr.animBux(true)],
-PAUSE,
-[   0, ()=>gr.animBux(false)],
-[1000, ()=>gr.msg("This is what derailing looks like...")],
-[ 600, ()=>bs.newData(0,"")],
-[ 600, bs.nextDay],
-//[9999, ()=>gr.msg("DEBUG")],
-[ 600, bs.nextDay], // derail
-PAUSE,
-[1000, ()=>gr.msg("You pay that $5 at this point, and get a weeklong buffer")],
-[ 300, bs.nextDay],
-//[ 0, ()=>gr.msg("Oops! That's ok, you're now given a weeklong buffer")],
-[   0, ()=>gr.animYBR(true)],   // idea: show off ratcheting around here?
-PAUSE,
-[   0, ()=>gr.animYBR(false)],
-[   0, ()=>gr.msg("Also your pledge amount has increased")],
-[   0, ()=>gr.animBux(true)],
-PAUSE,
-[   0, ()=>gr.animBux(false)],
-[ 500, ()=>gr.msg("So keep moving up and to the right!")],
-[ 300, bs.nextDay], 
-[ 300, ()=>bs.newData(.5,"")],
-[ 300, bs.nextDay], 
-[ 300, ()=>bs.newData(1,"")],
-[ 300, bs.nextDay], 
-[ 300, bs.nextDay], 
-[ 300, ()=>bs.newData(.5,"")],
-[ 300, bs.nextDay], 
-[ 300, ()=>bs.newData(1,"")],
-[ 300, ()=>bs.newData(.5,"")],
-[ 300, ()=>bs.newData(1,"")],
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(1,"")],
-[ 300, ()=>bs.newData(.5,"")],
-[ 300, bs.nextDay],
-PAUSE,
-[   0, ()=>gr.msg("This is the Akrasia Horizon")],
-[   0, ()=>gr.animHor(true)],
-PAUSE,
-[   0, ()=>gr.animHor(false)],
-[ 500, ()=>gr.msg("You can only change your commitment beyond that horizon")],
-[ 100, ()=>bs.newRate(0.9)],
-[ 100, ()=>bs.newRate(0.8)],
-[ 100, ()=>bs.newRate(0.7)],
-[ 100, ()=>bs.newRate(0.6)],
-[ 100, ()=>bs.newRate(0.5)],
-[ 100, ()=>bs.newRate(0.4)],
-[ 100, ()=>bs.newRate(0.3)],
-[ 100, ()=>bs.newRate(0.2)],
-[1000, ()=>bs.newRate(0.1)],  // nadir
-[ 100, ()=>bs.newRate(0.2)],
-[ 100, ()=>bs.newRate(0.3)],
-[ 100, ()=>bs.newRate(0.4)],
-[ 100, ()=>bs.newRate(0.5)],
-[ 100, ()=>bs.newRate(0.6)],
-[ 100, ()=>bs.newRate(0.8)],
-[ 100, ()=>bs.newRate(1.0)],
-[ 100, ()=>bs.newRate(1.2)],
-[ 100, ()=>bs.newRate(1.4)],
-[ 100, ()=>bs.newRate(1.6)],
-[ 100, ()=>bs.newRate(1.8)],
-[ 100, ()=>bs.newRate(2.2)],
-[ 100, ()=>bs.newRate(2.4)],
-[ 100, ()=>bs.newRate(2.6)],
-[ 100, ()=>bs.newRate(2.8)],
-[ 100, ()=>bs.newRate(3.2)],
-[ 100, ()=>bs.newRate(3.4)],
-[ 100, ()=>bs.newRate(3.6)],
-[ 100, ()=>bs.newRate(3.8)],
-[ 100, ()=>bs.newRate(4.0)], // apogee
-[ 100, ()=>bs.newRate(3.8)],
-[ 100, ()=>bs.newRate(3.6)],
-[ 100, ()=>bs.newRate(3.4)],
-[ 100, ()=>bs.newRate(3.2)],
-[ 100, ()=>bs.newRate(3.0)],
-[ 100, ()=>bs.newRate(2.8)],
-[ 100, ()=>bs.newRate(2.6)],
-[ 100, ()=>bs.newRate(2.4)],
-[ 100, ()=>bs.newRate(2.2)],
-[1000, ()=>bs.newRate(2)],
-PAUSE,
-[1000, ()=>gr.msg("So you can never give up today, only next week")],
-[ 300, ()=>bs.newData(1,"")], 
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(.5,"")], 
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(1,"")], 
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(.5,"")], 
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(1.5,"")],
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(2,"")], 
-[ 300, bs.nextDay],
-//[ 300, ()=>gr.msg(
-//            "Keep going until you're a svelte, productive ninja warrior...")],
-[ 300, ()=>bs.newData(1,"")], 
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(.5,"")], 
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(0,"")],
-[ 300, bs.nextDay],
-PAUSE,
-[ 500, ()=>gr.msg("This is what edge-skating looks like")],
-[ 300, ()=>bs.newRate(.5)],   // random shallow spot
-[ 300, ()=>bs.newData(1,"")],
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(1,"")],
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(2,"")],
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(2,"")],
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(2,"")],
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(2,"")],
-[ 300, bs.nextDay],
-PAUSE,
-[ 500, ()=>gr.msg("Fortunately we scheduled a shallow section here")],
-[ 300, ()=>bs.newRate(2)],   // end of random shallow spot
-[ 3000, ()=>bs.newData(1,"")],
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(1.5,"")],
-[ 300, bs.nextDay],
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(1,"")],
-[ 300, bs.nextDay],
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(1.5,"")],
-[ 300, bs.nextDay],
-PAUSE,
-[ 500, ()=>gr.msg("Keep going! You're a svelte, productive ninja warrior!")],
-[ 300, ()=>bs.newData(1,"")], 
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(3,"")], 
-[ 300, bs.nextDay], 
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(8,"")], 
-[ 300, bs.nextDay], 
-[ 300, bs.nextDay], 
-[ 300, bs.nextDay], 
-[ 300, ()=>bs.newData(.1,"")], 
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(1.5,"")], 
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(2,"")], 
-[ 300, bs.nextDay],
-[ 300, ()=>bs.newData(2,"")], 
-[ 300, bs.nextDay],
-//[s*30, ()=>gr.msg("Beeminder: Mind the Bright Red Line")],
-//[s*30, ()=>gr.msg("Beeminder: Automated accountability")],
-//[s*30, ()=>gr.msg("Beeminder: Make a beeline for your goal")],
-//[s*30, ()=>gr.msg("Beeminder: In-your-face goal tracking")],
-//[s*30, ()=>gr.msg("Beeminder brings long-term consequences near")],
-//[s*30, ()=>gr.msg("Beeminder: Gradual results, instant gratification")],
-//[s*30, ()=>gr.msg("Beeminder: Make the important urgent")],
-//[s*30, ()=>gr.msg("Beeminder: Reminders with a sting")],
-//[s*30, ()=>gr.msg("Beeminder: The akrasia antidote")],
-//[s*30, ()=>gr.msg("Beeminder: If you can quantify it, you can beemind it")],
-//[s*30, ()=>gr.msg("Beeminder: Have your cake and don't have it too")],
-//[s*30, ()=>gr.msg("Beeminder: Beehave yourself")],
-//[s*30, ()=>gr.msg("Beeminder: Take some Funky Goal Medina")],
-//[s*30, ()=>gr.msg("Turn long-term commitments into daily commitments")],
-//[s*30, ()=>gr.msg("Beeminder: A kick in the pants")],
-//[s*30, ()=>gr.msg("Beeminder: Goal guidance")],
-//[s*30, ()=>gr.msg("Beeminder: Don't flake out on yourself")],
-//[s*30, ()=>gr.msg("Beeminder: Safety rope for slippery slopes")],
-//[s*30, ()=>gr.msg("Beeminder: Mind your goals")],
-//[s*30, ()=>gr.msg("Beeminder: Incentivize yourself")],
-//[s*30, ()=>gr.msg("Beeminder: It reminds you and binds you")],
-//[s*30, ()=>gr.msg("Beeminder: Be a slave to your second-order desires")],
-//[s*30, ()=>gr.msg("Beeminder: Solving the self-control problem")],
-//[s*30, ()=>gr.msg("Beeminder: Be minded")],
-//[s*30, ()=>gr.msg("Beeminder: Hyperrational goal tracking")],
-//[s*30, ()=>gr.msg("Beeminder: Light a fire under your own butt")],
-//[s*30, ()=>gr.msg("Beeminder: Track It, Back It")],
-//[s*30, ()=>gr.msg("Beeminder: Data-oriented commitment devices")],
-//[s*30, ()=>gr.msg("Beeminder: Salvation for akratic data nerds")],
-//[s*30, ()=>gr.msg("Beeminder: Enforced goal tracking")],
-//[s*30, ()=>gr.msg("Beeminder: Keep your long-term goals in focus")],
-//[s*30, ()=>gr.msg("Beeminder: Up in your beeswax, making you better")],
-//[s*30, ()=>gr.msg("Beeminder: Stick to your goals")],
-//[s*30, ()=>gr.msg("Beeminder: The me-binder")],
-//[s*30, ()=>gr.msg("Beeminder: The bee is a harsh mistress")],
-//[s*30, ()=>gr.msg("Beeminder: Flexible self-control")],
-//[s*30, ()=>gr.msg("Beeminder: Corrective lenses for psychic myopia")],
-//[s*30, ()=>gr.msg("Beeminder: Be mindful of your goals")],
-//[s*30, ()=>gr.msg("Beeminder: Odyssean goal tracking")],
-//[s*30, ()=>gr.msg("Beeminder: Fighting irrationality with irrationality")],
-//[s*30, ()=>gr.msg("Beeminder: Quantified Self + commitment contracts")],
-//[s*30, ()=>gr.msg("Beeminder: Self-quantifying + self-binding")],
-//[s*30, ()=>gr.msg("Track progress toward goals; pay if you go off track")],
-//[s*30, ()=>gr.msg("Beeminder: Engineer yourself")],
-//[s*30, ()=>gr.msg("Beeminder: Damoclean goal tracking")],
-//[s*30, ()=>gr.msg("Beeminder: Be minded, reminded, and binded")],
-//[s*30, ()=>gr.msg("Internalize the externalities of your myopic decisions")],
-//[s*30, ()=>gr.msg("Beeminder: It minds you, binds you, and reminds you")],
-//[s*30, ()=>gr.msg("Beeminder: Follow through or pay the price")],
-//[s*30, ()=>gr.msg("Beeminder: Keep your data on track or pay the price")],
-//[s*30, ()=>gr.msg("Beeminder: Willpower as a Service")],
-//[s*30, ()=>gr.msg("Beeminder: Data-driven goal tracking")],
-//[s*30, ()=>gr.msg("Beeminder: Seize the day after tomorrow")],
-//[s*30, ()=>gr.msg("Beeminder: Constrained behavioral optimization")],
-//[s*30, ()=>gr.msg("Beeminder: Live deliberately")],
-//[s*30, ()=>gr.msg("Align your utility function with your long-term goals")],
-//[s*30, ()=>gr.msg("Beeminder: Mind the bee")],
-//[s*30, ()=>gr.msg("Beeminder: Mr Hyde, meet Dr Jekyll's fist")],
-//[s*30, ()=>gr.msg("Beeminder: A robotic bee that you sic on yourself")],
-//[s*30, ()=>gr.msg("Beeminder: Put your money where your piehole is")],
-//[s*30, ()=>gr.msg("Beeminder: Robotic kibitzing for goal tracking")],
-PAUSE,
-[   0, ()=>gr.msg("And that's Beeminder!")],
+banner("Beeminder is reminders with a sting"), 3000, HUP,
+banner("Mind the Bright Red Line, representing what you committed to"), 
+animYBR(true), 3000, HUP, animYBR(false),
+banner("Add new data for what you're beeminding"), 
+data(1.25), 600, day, 500, data(1), 400, day, 300, day, 300, day, 300, day, 300,
+data(1), 3000, HUP,
+banner("These are your datapoints"), animData(true), 3000, HUP, animData(false),
+banner("If you don't keep up, you'll derail"),
+day, 700, day, 700, day, 700,
+data(0), day, 3000, HUP,
+banner("This is how much time you have until that happens"),
+animBuf(true), 3000, HUP, animBuf(false),
+banner("And this is the pledge amount aka stakes you're risking"),
+data(0), day, 300, animBux(true), 3000, HUP, animBux(false),
+banner("This is what derailing looks like..."), 
+1000, data(0), 1000, day, 1000, day, 3000, HUP,
+banner("You pay that $5 at this point, and get a weeklong buffer"),
+1000, day, 300,
+//banner("Oops! That's ok, you're now given a weeklong buffer"),
+animYBR(true),   // idea: show off ratcheting around here?
+3000, HUP,
+animYBR(false),
+banner("Also your stakes have increased"), 
+animBux(true), 3000, HUP, animBux(false),
+banner("So keep moving up and to the right!"), 500,
+riffle(300, [day, data(.5), day, data(1), day, day, data(.5), day,
+             data(1), data(.5), data(1), day, data(1), data(.5), day]),
+3000, HUP,
 
-]
+banner("This is the Akrasia Horizon"),
+animHor(true),
+3000, HUP,
 
-// Chapters: the runs of steps between PAUSEs, as [start, end) ranges
+animHor(false),
+banner("You can only change your commitment beyond that horizon"),
+500,
+riffle(100, [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2].map(rate)),
+rate(0.1), 1000,  // nadir
+riffle(100, [0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6,
+             1.8, 2.2, 2.4, 2.6, 2.8, 3.2, 3.4, 3.6, 3.8].map(rate)),
+rate(4.0), 100,   // apogee
+riffle(100, [3.8, 3.6, 3.4, 3.2, 3.0, 2.8, 2.6, 2.4, 2.2].map(rate)),
+rate(2), 3000,
+HUP,
+
+banner("So you can never give up today, only next week"), 1000,
+riffle(300, [data(1), day, data(.5), day, data(1), day, data(.5),
+             day, data(1.5), day, data(2), day]),
+//banner("Keep going until you're a svelte, productive ninja warrior..."),
+riffle(300, [data(1), day, data(.5), day, data(0), day]),
+3000, HUP,
+banner("This is what edge-skating looks like"), 600,
+rate(.5), 600,   // random shallow spot
+riffle(300, [data(1), day, data(1), day, data(2), day, data(2), day,
+             data(2), day, data(2), day]),
+banner("Eep!"),
+3000, HUP,
+
+banner("Fortunately we scheduled a shallow section here"), 500,
+rate(2), 300,   // end of random shallow spot
+data(1), 600,
+riffle(300, [day, data(1.5), day, day, data(1), day, day,
+             data(1.5), day]),
+3000, HUP,
+
+banner("Keep being a busy, productive bee"), 500,
+riffle(300, [data(1), day, data(3), day, day, data(8), day, day,
+             day, data(.1), day, data(1.5), day, data(2), day,
+             data(2), day]),
+3000, HUP,
+banner("And that's Beeminder 🐝 Ad astra per aspergera 🚀"),
+
+// Tagline stash, once a rotating outro:
+//banner("Beeminder: Mind the Bright Red Line"),
+//banner("Beeminder: Automated accountability"),
+//banner("Beeminder: Make a beeline for your goal"),
+//banner("Beeminder: In-your-face goal tracking"),
+//banner("Beeminder brings long-term consequences near"),
+//banner("Beeminder: Gradual results, instant gratification"),
+//banner("Beeminder: Make the important urgent"),
+//banner("Beeminder: Reminders with a sting"),
+//banner("Beeminder: The akrasia antidote"),
+//banner("Beeminder: If you can quantify it, you can beemind it"),
+//banner("Beeminder: Have your cake and don't have it too"),
+//banner("Beeminder: Beehave yourself"),
+//banner("Beeminder: Take some Funky Goal Medina"),
+//banner("Turn long-term commitments into daily commitments"),
+//banner("Beeminder: A kick in the pants"),
+//banner("Beeminder: Goal guidance"),
+//banner("Beeminder: Don't flake out on yourself"),
+//banner("Beeminder: Safety rope for slippery slopes"),
+//banner("Beeminder: Mind your goals"),
+//banner("Beeminder: Incentivize yourself"),
+//banner("Beeminder: It reminds you and binds you"),
+//banner("Beeminder: Be a slave to your second-order desires"),
+//banner("Beeminder: Solving the self-control problem"),
+//banner("Beeminder: Be minded"),
+//banner("Beeminder: Hyperrational goal tracking"),
+//banner("Beeminder: Light a fire under your own butt"),
+//banner("Beeminder: Track It, Back It"),
+//banner("Beeminder: Data-oriented commitment devices"),
+//banner("Beeminder: Salvation for akratic data nerds"),
+//banner("Beeminder: Enforced goal tracking"),
+//banner("Beeminder: Keep your long-term goals in focus"),
+//banner("Beeminder: Up in your beeswax, making you better"),
+//banner("Beeminder: Stick to your goals"),
+//banner("Beeminder: The me-binder"),
+//banner("Beeminder: The bee is a harsh mistress"),
+//banner("Beeminder: Flexible self-control"),
+//banner("Beeminder: Corrective lenses for psychic myopia"),
+//banner("Beeminder: Be mindful of your goals"),
+//banner("Beeminder: Odyssean goal tracking"),
+//banner("Beeminder: Fighting irrationality with irrationality"),
+//banner("Beeminder: Quantified Self + commitment contracts"),
+//banner("Beeminder: Self-quantifying + self-binding"),
+//banner("Track progress toward goals; pay if you go off track"),
+//banner("Beeminder: Engineer yourself"),
+//banner("Beeminder: Damoclean goal tracking"),
+//banner("Beeminder: Be minded, reminded, and binded"),
+//banner("Internalize the externalities of your myopic decisions"),
+//banner("Beeminder: It minds you, binds you, and reminds you"),
+//banner("Beeminder: Follow through or pay the price"),
+//banner("Beeminder: Keep your data on track or pay the price"),
+//banner("Beeminder: Willpower as a Service"),
+//banner("Beeminder: Data-driven goal tracking"),
+//banner("Beeminder: Seize the day after tomorrow"),
+//banner("Beeminder: Constrained behavioral optimization"),
+//banner("Beeminder: Live deliberately"),
+//banner("Align your utility function with your long-term goals"),
+//banner("Beeminder: Mind the bee"),
+//banner("Beeminder: Mr Hyde, meet Dr Jekyll's fist"),
+//banner("Beeminder: A robotic bee that you sic on yourself"),
+//banner("Beeminder: Put your money where your piehole is"),
+//banner("Beeminder: Robotic kibitzing for goal tracking"),
+
+// flat splices the riffled runs in; the map desugars bare numbers to beats
+].flat().map((a) => typeof a == "number" ? zzz(a) : a)
+
+// Chapters: the runs of actions between HUPs, as [start, end) ranges
 const chap = []
 for (let start = 0, i = 0; i <= anim.length; i++) {
-  if (i == anim.length || anim[i] === PAUSE) {
+  if (i == anim.length || anim[i] === HUP) {
     chap.push([start, i])
     start = i+1
   }
 }
 
-// A chapter is a run of steps between PAUSEs -- typically a caption,
+// A chapter is a run of actions between HUPs -- typically a caption,
 // its illustration, and pulse housekeeping. The buttons only move
 // dest, the chapter the user wants to be on, and a single driver seeks
 // it: forward by playing chapters in order (rushing every queued chapter
-// except the last, which performs at the authored pace), backward -- 
+// except the last, which performs at the authored pace), backward --
 // since bsandbox can't rewind -- by starting the goal over, replaying
 // instantly to just before dest, then performing it. Going back means
 // "show me that again". Either button aborts whatever's mid-flight, so
-// mashing moves one chapter per click in either direction.
+// mashing moves one chapter per click in either direction. Auto-play
+// makes the driver roll on through HUPs at the authored pace -- the
+// dwell at each boundary is whatever beats the screenplay puts before
+// the HUP -- and any other control hands the reins back to the human.
 let cur = 0         // the chapter on screen
 let dest = 0        // the chapter the user wants to be on
 let playing = false // the driver is mid-run
-let rush = false    // skip the current chapter's delays
+let rush = false    // make the pending beats no-ops
 let staging = false // rebuilding history: presentation calls are moot
+let auto = false    // roll on through HUPs instead of holding
 
 const bprev = document.getElementById("prev")
 const bnext = document.getElementById("next")
 const slidepos = document.getElementById("slidepos")
-
-// The score does all its presentation through gr: captions and highlight
-// pulses. Captions render into the HTML banner, out of reach of graph
-// redraws; pulses pass through to the live bgraph; and everything goes
-// quiet while staging, since replaying history shouldn't flash stale
-// captions or strand pulses.
 const capdiv = document.getElementById("caption")
-const pulse = (a) => (b) => { if (!staging) bs.getGraphObj()[a](b) }
-gr = {
-  msg:      (m) => { if (!staging) capdiv.textContent = m ?? "" },
-  animYBR:  pulse("animYBR"),
-  animData: pulse("animData"),
-  animBuf:  pulse("animBuf"),
-  animBux:  pulse("animBux"),
-  animHor:  pulse("animHor"),
-}
+const bauto = document.getElementById("auto")
 
-// The buttons gray out only at the ends of the show: they're always
+// The whole bar tracks dest, the chapter the user asked for: the
+// counter flips at click time (the graph catches up on its own) and
+// the buttons gray out only at the ends of the show -- they're always
 // live to move dest
 function refreshControls() {
   bprev.disabled = dest == 0
   bnext.disabled = dest == chap.length-1
-  slidepos.textContent = (Math.max(cur, 0)+1) + "/" + chap.length
+  bauto.disabled = dest == chap.length-1
+  bauto.textContent = auto ? "Stop" : "Auto-play"
+  slidepos.textContent = (dest+1) + "/" + chap.length
 }
 
 // bgraph anchors its drawing top-left (xMinYMin); recenter it in
@@ -414,15 +328,12 @@ const nap = (ms) => new Promise((res) => {
   setTimeout(res, ms)
 })
 
-// Play chapter k at the authored pace, or instantly once rush is set
-async function play(k) {
-  const [from, to] = chap[k]
-  for (let i = from; i < to; i++) {
-    anim[i][1]()
-    if (anim[i][0] > 0 && !rush) await nap(anim[i][0])
-  }
+// Play chapter k: run its actions in order, awaiting the beats.
+// `from` lets a jump-start begin mid-chapter.
+async function play(k, from = chap[k][0]) {
+  const to = chap[k][1]
+  for (let i = from; i < to; i++) await anim[i]()
   cur = k
-  refreshControls() // the counter flips the moment the chapter lands
 }
 
 // Seek dest: chapters play toward it and clicks landing mid-run just
@@ -430,34 +341,64 @@ async function play(k) {
 // coherent whenever this loop checks)
 async function drive() {
   playing = true
-  refreshControls()
-  while (cur != dest) {
-    if (dest < cur) { // backward: start over, instantly to just before dest
-      staging = true
-      bs.newGoal("hustler", "d", 1, 0, true)
-      fitGraph()
-      for (let k = 0; k < dest; k++)
-        for (let i = chap[k][0]; i < chap[k][1]; i++) anim[i][1]()
-      staging = false
-      cur = dest-1
-      await nap(300) // a beat for the replay's redraws to land, so the
-                     // target chapter's pulse starts on a settled graph
+  do {
+    refreshControls()
+    while (cur != dest) {
+      if (dest < cur) { // backward: start over, instantly to just before dest
+        staging = true
+        bs.newGoal("hustler", "d", 1, 0, true)
+        fitGraph()
+        for (let k = 0; k < dest; k++)
+          for (let i = chap[k][0]; i < chap[k][1]; i++) anim[i]()
+        staging = false
+        cur = dest-1
+        await nap(300) // a beat for the replay's redraws to land, so the
+                       // target chapter's pulse starts on a settled graph
+      }
+      while (cur < dest) { // the forward leg; overshoot loops back around
+        rush = dest - cur > 1 // rush every queued chapter but the last
+        await play(cur+1)
+      }
+      rush = false
     }
-    while (cur < dest) { // the forward leg; overshoot loops back around
-      rush = dest - cur > 1 // rush every queued chapter but the last
-      await play(cur+1)
-    }
-    rush = false
-  }
+  } while (auto && dest < chap.length-1 && ++dest) // auto-play rolls on
+  auto = false // the show's over, or Stop was pressed
   playing = false
   refreshControls()
 }
 
-// The buttons just move dest and poke: abort the delay in flight, or
-// wake the driver if it's idle
+// A DEBUG mark in the score jump-starts the show there at load time:
+// instantly replay everything before the mark (same suppressed staging
+// as a backward seek), then perform the rest of the mark's chapter at
+// the authored pace and hold at its HUP as usual
+async function jumpstart(i) {
+  const k = chap.findIndex(([a, b]) => i >= a && i < b)
+  playing = true
+  cur = dest = k
+  refreshControls()
+  staging = true
+  for (let j = 0; j < i; j++) anim[j]() // staged HUPs are harmless no-ops
+  staging = false
+  await nap(300) // a beat for the replay's redraws to land
+  await play(k, i+1)
+  drive() // normally a no-op; chases any clicks that landed mid-flight
+}
+
+// The buttons just move dest and poke: take back the reins from
+// auto-play, reflect the click right away, then abort the delay in
+// flight, or wake the driver if it's idle
 function poke() {
+  auto = false
+  refreshControls()
   if (playing) { rush = true; curres?.() }
   else drive()
+}
+// The Auto-play button toggles auto and wakes the driver, which rolls
+// on through HUPs until the show ends or the human intervenes
+function autoplay() {
+  auto = !auto
+  refreshControls()
+  if (auto && !playing) drive()
 }
 function next() { if (dest < chap.length-1) { dest++; poke() } }
 function prev() { if (dest > 0)             { dest--; poke() } }
@@ -469,8 +410,9 @@ document.onkeydown = (e) => {
 }
 
 fitGraph()
-cur = -1 // nothing on screen yet; seek the title card
-drive()
+cur = -1 // nothing on screen yet
+const dbg = anim.indexOf(DEBUG) // the first DEBUG mark, if any
+if (dbg >= 0) jumpstart(dbg); else drive() // seek the mark or the title card
 
 </script>
 </body>
