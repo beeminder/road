@@ -71,21 +71,37 @@
   .slidepos { min-width: 4.5em; text-align: center; color: var(--muted);
               font-size: .9rem; }
   .tutorialbar .bmdrbtn { min-width: 96px; min-height: 44px; }
-  /* Auto-play perches in the stage's top right corner */
-  #auto { position: absolute; top: 10px; right: 10px;
+  /* Auto-play rides the control bar, lined up with Prev/Next but flush
+     right (absolute, so the centered trio doesn't shift). The centered
+     trio spans 285px, so below ~520px a right-flushed button would sit
+     on top of Next; on screens that narrow Auto-play instead perches
+     just above the bar, in the letterboxed dead space under the graph */
+  .tutorialbar { position: relative; }
+  #auto { position: absolute; right: 10px; bottom: calc(100% + 10px);
           min-width: 96px; min-height: 44px; }
+  @media (min-width: 540px) { #auto { bottom: auto; top: 10px; } }
+  /* The kiosk outro's stunt bee and its trail of fading honey-drops */
+  #bee { position: absolute; left: 0; top: 0; width: 14vmin;
+         pointer-events: none; will-change: transform; }
+  .beedrop { position: absolute; width: 10px; height: 10px;
+             margin: -5px 0 0 -5px; border-radius: 50%;
+             background: #fbb339; pointer-events: none;
+             animation: beedropfade 1.8s ease-out forwards; }
+  @keyframes beedropfade { from { opacity: .9; }
+                           to   { opacity: 0; transform: scale(.15); } }
 </style>
 </head>
 <body>
   <div id="stage">
     <div id="sandbox"></div>
     <div id="caption"></div>
-    <button id="auto" class="bmdrbtn" onclick="autoplay()">Auto-play</button>
+    <img id="bee" src="/lib/favicons/beelogo.png" alt="" hidden>
   </div>
   <div class="tutorialbar">
     <button id="prev" class="bmdrbtn" onclick="prev()" disabled>Prev</button>
     <span id="slidepos" class="slidepos"></span>
     <button id="next" class="bmdrbtn" onclick="next()">Next</button>
+    <button id="auto" class="bmdrbtn" onclick="autoplay()">Auto-play</button>
   </div>
 
 <script>
@@ -288,6 +304,9 @@ for (let start = 0, i = 0; i <= anim.length; i++) {
 // makes the driver roll on through HUPs at the authored pace -- the
 // dwell at each boundary is whatever beats the screenplay puts before
 // the HUP -- and any other control hands the reins back to the human.
+// In auto mode the show never ends: after the last chapter the bee
+// flies a victory lap (see beeflight) and the whole thing starts over,
+// forever -- kiosk mode.
 let cur = 0         // the chapter on screen
 let dest = 0        // the chapter the user wants to be on
 let playing = false // the driver is mid-run
@@ -300,6 +319,8 @@ const bnext = document.getElementById("next")
 const slidepos = document.getElementById("slidepos")
 const capdiv = document.getElementById("caption")
 const bauto = document.getElementById("auto")
+const stage = document.getElementById("stage")
+const bee = document.getElementById("bee")
 
 // The whole bar tracks dest, the chapter the user asked for: the
 // counter flips at click time (the graph catches up on its own) and
@@ -308,7 +329,6 @@ const bauto = document.getElementById("auto")
 function refreshControls() {
   bprev.disabled = dest == 0
   bnext.disabled = dest == chap.length-1
-  bauto.disabled = dest == chap.length-1
   bauto.textContent = auto ? "Stop" : "Auto-play"
   slidepos.textContent = (dest+1) + "/" + chap.length
 }
@@ -336,12 +356,54 @@ async function play(k, from = chap[k][0]) {
   cur = k
 }
 
+// The kiosk intermission: the bee flies two laps of a big figure 8 over
+// the graph -- the lemniscate x = sin th, y = sin 2th, the same shape
+// its own wings make (and the waggle dance, if we're being entomological
+// about it). Nose along the flight path, so it banks and loops like an
+// airshow; a crosswise flutter for the buzz; a trail of honey-drops that
+// fade behind it (each drop cleans itself up when its CSS fade ends).
+// The whole flight eases in and out, popping in from nothing at the
+// crossover point and shrinking away there at the end. Like every other
+// performance it defers to the human: any control click clears auto and
+// the flight bows out on the next frame.
+function beeflight() { return new Promise((done) => {
+  const T = 10000, LAPS = 2, t0 = performance.now()
+  let nextdrop = 0 // when to shed the next honey-drop
+  bee.hidden = false
+  const frame = (now) => {
+    const u = Math.min((now - t0) / T, 1) // flight progress, 0 to 1
+    if (!auto || u == 1) { bee.hidden = true; done(); return }
+    const s = u < .5 ? 4*u**3 : 1 - (-2*u + 2)**3/2 // easeInOutCubic
+    const th = 2*Math.PI*LAPS*s
+    const w = stage.clientWidth, h = stage.clientHeight
+    const x = w/2 + .36*w*Math.sin(th)
+    const y = h/2 + .28*h*Math.sin(2*th)
+    const ang = Math.atan2(2*.28*h*Math.cos(2*th), .36*w*Math.cos(th))
+    const buzz = 2*Math.sin(now/45) // a gentle crosswise flutter
+    const bx = x - buzz*Math.sin(ang), by = y + buzz*Math.cos(ang)
+    const pop = Math.min(1, 10*u, 10*(1 - u)) // grow in, shrink out
+    bee.style.transform = `translate(${bx}px, ${by}px) ` +
+      `translate(-50%, -50%) rotate(${ang + Math.PI/2}rad) scale(${pop})`
+    if (now >= nextdrop) {
+      nextdrop = now + 30
+      const d = document.createElement("div")
+      d.className = "beedrop"
+      d.style.left = bx + "px"
+      d.style.top = by + "px"
+      d.onanimationend = () => d.remove()
+      stage.insertBefore(d, bee) // under the bee, over everything else
+    }
+    requestAnimationFrame(frame)
+  }
+  requestAnimationFrame(frame)
+})}
+
 // Seek dest: chapters play toward it and clicks landing mid-run just
 // move it (play() always runs to a chapter boundary first, so state is
 // coherent whenever this loop checks)
 async function drive() {
   playing = true
-  do {
+  while (cur != dest || auto) {
     refreshControls()
     while (cur != dest) {
       if (dest < cur) { // backward: start over, instantly to just before dest
@@ -361,8 +423,12 @@ async function drive() {
       }
       rush = false
     }
-  } while (auto && dest < chap.length-1 && ++dest) // auto-play rolls on
-  auto = false // the show's over, or Stop was pressed
+    // Auto-play rolls on; wrapping past the end is the kiosk loop, with
+    // the bee's victory lap as the intermission. A click mid-flight
+    // clears auto (and may move dest), so re-check before wrapping.
+    if (auto && dest == chap.length-1) await beeflight()
+    if (auto) dest = (dest+1) % chap.length
+  }
   playing = false
   refreshControls()
 }
@@ -394,7 +460,8 @@ function poke() {
   else drive()
 }
 // The Auto-play button toggles auto and wakes the driver, which rolls
-// on through HUPs until the show ends or the human intervenes
+// on through HUPs -- and around past the end, forever -- until the
+// human intervenes
 function autoplay() {
   auto = !auto
   refreshControls()

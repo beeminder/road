@@ -3044,8 +3044,8 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       // with no scrolling, from desktop down to the smallest phones.
       // Measured with the show's longest caption up, since the banner
       // must always be a single line.
-      await page.evaluate(() => gr.msg(
-        "You pay that $5 at this point, and get a weeklong buffer"))
+      await page.evaluate(() => capdiv.textContent =
+        "You pay that $5 at this point, and get a weeklong buffer")
       for (const vp of [{width: 1200, height: 800},
                         {width: 390, height: 844},
                         {width: 320, height: 568}]) {
@@ -3080,6 +3080,16 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
               return drawnTop - document.getElementById('caption')
                 .getBoundingClientRect().top
             })(),
+            // Auto-play must never sit on top of Next: right-flushed in
+            // the bar on wide screens, perched above it on narrow ones
+            autoOnNext: (() => {
+              const a = document.getElementById('auto')
+                .getBoundingClientRect()
+              const n = document.getElementById('next')
+                .getBoundingClientRect()
+              return a.left < n.right && n.left < a.right &&
+                     a.top < n.bottom && n.top < a.bottom
+            })(),
           }
         })
         assert(fit.noScroll,
@@ -3103,7 +3113,84 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         assert(fit.capAboveGraph < fit.capPx * 2,
           `${name}: banner rides on the graph, not the stage top, at ` +
           `${fit.w}x${fit.h} (gap ${fit.capAboveGraph.toFixed(0)}px)`)
+        assert(!fit.autoOnNext,
+          `${name}: Auto-play stays clear of Next at ${fit.w}x${fit.h}`)
       }
+
+      // Replicata: reach the final chapter and press Auto-play.
+      // Expectata: kiosk mode -- the bee takes a figure-8 victory lap
+      // over the graph (shedding a trail of honey-drops) and the show
+      // wraps to the title card with auto still engaged, looping
+      // forever; any control click mid-flight aborts the lap and hands
+      // back the reins. Resultata (pre-kiosk): Auto-play was grayed out
+      // at the end and auto switched itself off when the show ended.
+      await page.setViewport({width: 1200, height: 800})
+      await page.evaluate(() => {
+        while (dest < chap.length-1) { next(); rush = true; if (curres) curres() }
+      })
+      await page.waitForFunction(() => !playing && cur == chap.length-1,
+        {timeout: 30000})
+      assert(await page.evaluate(() =>
+               !document.getElementById('auto').disabled),
+        `${name}: Auto-play stays live at the end -- it loops`)
+      // The button rides the control bar: same row as Prev/Next,
+      // flush right
+      const row = await page.evaluate(() => {
+        const a = document.getElementById('auto').getBoundingClientRect()
+        const n = document.getElementById('next').getBoundingClientRect()
+        return {misalign: Math.abs((a.top + a.bottom)/2 -
+                                   (n.top + n.bottom)/2),
+                fromRight: innerWidth - a.right}
+      })
+      assert(row.misalign < 3 && row.fromRight >= 0 && row.fromRight < 60,
+        `${name}: Auto-play lines up with Prev/Next, flush right ` +
+        JSON.stringify(row))
+      await page.click('#auto')
+      const aloft = await page.waitForFunction(() =>
+        !document.getElementById('bee').hidden, {timeout: 3000})
+        .then(() => true).catch(() => false)
+      assert(aloft, `${name}: the bee takes flight when the show wraps`)
+      await page.evaluate(() => new Promise(r => setTimeout(r, 2500)))
+      const spot1 = await page.evaluate(() =>
+        document.getElementById('bee').style.transform)
+      await page.evaluate(() => new Promise(r => setTimeout(r, 200)))
+      const spot2 = await page.evaluate(() =>
+        document.getElementById('bee').style.transform)
+      assert(spot1 && spot2 && spot1 !== spot2,
+        `${name}: the bee is on the move ("${spot1}" vs "${spot2}")`)
+      const drops = await page.evaluate(() =>
+        document.querySelectorAll('.beedrop').length)
+      assert(drops > 5,
+        `${name}: the bee sheds a trail of honey-drops (${drops} live)`)
+      await page.screenshot({path: path.resolve(__dirname,
+        'qual_tutorial_beeflight_screenshot.png')})
+      // A click mid-flight: the lap bows out, the human has the reins.
+      // The bee hides on the very next frame, but the backward seek's
+      // staging replay then blocks the main thread for a second or so,
+      // and no observer sees the flag until that finishes -- hence a
+      // timeout well past the replay yet well short of the ~6s the
+      // flight would keep flying if the abort were broken.
+      await page.click('#prev')
+      const bowed = await page.waitForFunction(() =>
+        document.getElementById('bee').hidden, {timeout: 3000})
+        .then(() => true).catch(() => false)
+      assert(bowed && await page.evaluate(() => !auto),
+        `${name}: a mid-flight click aborts the lap and clears auto`)
+      await page.waitForFunction(() => !playing, {timeout: 30000})
+      // Round two, uninterrupted: the flight ends and the show starts
+      // over with auto still engaged -- the kiosk loop
+      await page.evaluate(() => {
+        while (dest < chap.length-1) { next(); rush = true; if (curres) curres() }
+      })
+      await page.waitForFunction(() => !playing && cur == chap.length-1,
+        {timeout: 30000})
+      await page.click('#auto')
+      const wrapped = await page.waitForFunction(() =>
+        auto && document.getElementById('slidepos').textContent
+          .startsWith('1/'), {timeout: 15000})
+        .then(() => true).catch(() => false)
+      assert(wrapped, `${name}: after the victory lap the show starts ` +
+        `over with auto still engaged`)
     })
 
   // --- the login page: phone-width fit ---
