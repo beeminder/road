@@ -65,12 +65,7 @@
   <!-- Initial welcome screen -->
 <div class="welcome"
       ng-if="currentStage == 'initialScreen'">
-  <a class="loginbtn" href=
-     "https://www.beeminder.com/apps/authorize?client_id=<%= 
-       BEEMINDER_CLIENT_ID 
-     %>&redirect_uri=<%= 
-       AUTH_REDIRECT_URI 
-     %>&response_type=token">
+  <a class="loginbtn" href="<%= AUTHURL %>">
   Log in with your Beeminder account
   </a>
 </div>

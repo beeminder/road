@@ -1,6 +1,7 @@
 
 ## CHANGELOG
 
+* 2026.07.18 Logged-out deep links skip the login page (invisible OAuth bounce)
 * 2026.07.14 Revamped tutorial
 * 2026.07.14 Nicer header and footer HT @aad
 * 2026.07.13 Better page title for the browser tab, with indicator of unsaved changes

@@ -77,8 +77,7 @@ const QUAL_ROUTES = {
     contentType: MIME['.html'],
     body: ejs.render(fs.readFileSync(
       path.join(REPO, 'views/login.ejs'), 'utf8'),
-      {BEEMINDER_CLIENT_ID: 'qual', AUTH_REDIRECT_URI: 'qual',
-       version: 'qual'}),
+      {AUTHURL: 'qual', version: 'qual'}),
   },
   '/getusergoals': {
     contentType: 'application/json',
@@ -3289,13 +3288,20 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
     try {
       const jars = {}
 
-      // Logged out, a deep link stashes where you were headed and sends
-      // you to login; logging in (via /connect, which the OAuth callback
-      // uses) returns you there exactly once, then falls back to /
+      // Logged out, a deep link stashes where you were headed and bounces
+      // straight to Beeminder's OAuth page -- no stop at our login page,
+      // since for a logged-in Beeminder user who's authorized this app
+      // before, the OAuth page redirects right back with a token and the
+      // whole round trip is invisible. Coming back (via /connect, which
+      // the OAuth callback uses, then /login) returns you to the stash
+      // exactly once, then falls back to /
+      const authurl = 'https://www.beeminder.com/apps/authorize' +
+        '?client_id=qual&redirect_uri=http://localhost/connect' +
+        '&response_type=token'
       let r = await hit('flow', jars, '/alice/mygoal')
-      assert(r.status === 302 && r.loc === '/login',
-        `server: logged-out deep link redirects to login ` +
-        `(${r.status} -> ${r.loc})`)
+      assert(r.status === 302 && r.loc === authurl,
+        `server: logged-out deep link bounces straight to Beeminder ` +
+        `OAuth (${r.status} -> ${r.loc})`)
       await hit('flow', jars, '/connect?access_token=tok&username=alice')
       r = await hit('flow', jars, '/login')
       assert(r.status === 302 && r.loc === '/alice/mygoal',
@@ -3305,6 +3311,19 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       assert(r.status === 302 && r.loc === '/',
         `server: the stash is one-shot; next login goes to / ` +
         `(${r.status} -> ${r.loc})`)
+
+      // A bare visit (no deep link to auto-bounce through OAuth) still
+      // gets the landing page: / sends you to /login, whose button
+      // carries the same OAuth URL (&-escaped by ejs since it's rendered
+      // into an href)
+      r = await hit('landing', jars, '/')
+      assert(r.status === 302 && r.loc === '/login',
+        `server: logged-out bare visit redirects to login ` +
+        `(${r.status} -> ${r.loc})`)
+      r = await hit('landing', jars, '/login')
+      assert(r.status === 200 &&
+             r.body.includes(authurl.replace(/&/g, '&amp;')),
+        `server: login page still serves the OAuth button for bare visits`)
 
       // Logged in as alice: the page carries the goal from the URL; a bare
       // username lands on your goals with no particular one; someone

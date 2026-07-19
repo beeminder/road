@@ -13,6 +13,14 @@ const axios = require("axios");
 
 const ver = require("../package.json").version; // version string
 
+// Beeminder's OAuth page for this app. For a logged-in Beeminder user who
+// has authorized the app before, it redirects straight back (to
+// AUTH_REDIRECT_URI, ie, /connect) with a token -- no interaction needed.
+const AUTHURL = `https://${BHOST}/apps/authorize` +
+                `?client_id=${process.env.BEEMINDER_CLIENT_ID}` +
+                `&redirect_uri=${process.env.AUTH_REDIRECT_URI}` +
+                `&response_type=token`;
+
 // Set session store to Sequelize
 const SequelizeStore = require("connect-session-sequelize")(session.Store);
 
@@ -107,11 +115,7 @@ app.get("/login", (req, resp) => {
   console.log(req.session);
   if (typeof req.session.access_token === "undefined" ||
       req.session.access_token === null) {
-    resp.render("login.ejs", {
-      BEEMINDER_CLIENT_ID: process.env.BEEMINDER_CLIENT_ID,
-      AUTH_REDIRECT_URI:   process.env.AUTH_REDIRECT_URI,
-      version: ver,
-    });
+    resp.render("login.ejs", { AUTHURL: AUTHURL, version: ver });
   } else {
     // Land wherever the visitor was originally headed (e.g. a deep link
     // to /username/goalname stashed below), defaulting to the editor
@@ -157,11 +161,7 @@ app.get("/", (req, resp) => {
   const isBot = socialCrawlers.some(sig => ua.includes(sig));
 
   if (isBot) { // 200 OK with card tags
-    return resp.render('login.ejs', {
-      BEEMINDER_CLIENT_ID: process.env.BEEMINDER_CLIENT_ID,
-      AUTH_REDIRECT_URI:   process.env.AUTH_REDIRECT_URI,
-      version:             ver,
-    });
+    return resp.render('login.ejs', { AUTHURL: AUTHURL, version: ver });
   }
 
   if (!req.session?.access_token) {
@@ -334,8 +334,9 @@ app.put("/data/:goal/:id", async (req, resp) => {
 // to a user's goals generally (graph.beeminder.com/username, which lands
 // on their first goal). Registered after every other route so real paths
 // always win. The username has to match the session (this tool only holds
-// your own token); anyone else -- including logged-out visitors -- goes
-// to login.
+// your own token). Logged-out visitors bounce through Beeminder's OAuth
+// page -- an invisible round trip if they're logged in over there and
+// have authorized this app before -- and land back here.
 app.get(["/:username", "/:username/:goalname"], (req, resp, next) => {
   // Usernames and goalnames are alphanumeric plus underscore (no dots or
   // hyphens), so a path that can't be a name -- like any file request,
@@ -346,12 +347,12 @@ app.get(["/:username", "/:username/:goalname"], (req, resp, next) => {
   const names = goalname ? [username, goalname] : [username];
   if (!names.every(n => namepat.test(n))) return next();
   if (!req.session?.access_token) {
-    // Come back here after logging in. Rebuilt from the route params --
-    // just proved to be plain names -- so what we later redirect to is
-    // always a local path and never, say, an absolute URL off to someone
-    // else's site.
+    // Come back here after the OAuth round trip. Rebuilt from the route
+    // params -- just proved to be plain names -- so what we later
+    // redirect to is always a local path and never, say, an absolute URL
+    // off to someone else's site.
     req.session.wanted = "/" + names.join("/");
-    return resp.redirect("/login");
+    return resp.redirect(AUTHURL);
   }
   const mismatch = username !== req.session.username;
   resp.render("grapheditor.ejs", {
