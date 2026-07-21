@@ -60,6 +60,25 @@
     pointer-events: none;
   }
   #caption:empty { display: none; }
+  /* A literal footnote: a banner can carry a numbered credit line that
+     tucks into the bottom-left corner of the page -- small muted italic
+     type, bare, like a footnote at the foot of a book page; hidden when
+     empty, easing in when a banner brings one */
+  #capfoot {
+    position: absolute;
+    left: 12px;
+    bottom: 6px;
+    color: var(--muted);
+    /* Small print: shrinks along with the caption's viewport scaling on
+       small screens but never grows past bookish footnote size */
+    font-size: min(.8rem, 2.6vw, 3.2vh);
+    font-style: italic;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  #capfoot:empty { display: none; }
+  #capfoot:not(:empty) { animation: footfade .8s ease-out; }
+  @keyframes footfade { from { opacity: 0; } }
   /* The svg has a viewBox, so freeing both dimensions scales the graph
      to fit whatever box the flexbox hands it */
   #sandbox svg.bmndrsvg { display: block; width: 100%; height: 100%; }
@@ -95,6 +114,7 @@
   <div id="stage">
     <div id="sandbox"></div>
     <div id="caption"></div>
+    <div id="capfoot"></div>
     <img id="bee" src="/lib/favicons/beelogo.png" alt="" hidden>
   </div>
   <div class="tutorialbar">
@@ -116,6 +136,7 @@ bs.newGoal("hustler", "d", 1, 0, true)
 //   HUP         hold up for the human; Next and Prev move between HUPs
 //   300         bare numbers are beats: pause that many milliseconds
 //   banner(s)   show caption s in the HTML banner over the graph
+//   banner(s,f) same, plus footnote f in small type at the page bottom
 //   anim*       turn various graph highlight pulses on or off
 //   data(x)     add a datapoint to the live graph
 //   day         advance the graph by one day
@@ -129,7 +150,10 @@ bs.newGoal("hustler", "d", 1, 0, true)
 const HUP    = () => HUP   // HUP() works too
 const DEBUG  = () => DEBUG // recognized at load; a no-op when played over
 const zzz    = (ms) => async () => { if (!rush && !staging) await nap(ms) }
-const banner = (s) => () => { if (!staging) capdiv.textContent = s ?? "" }
+const banner = (s, f) => () => { if (!staging) {
+  capdiv.textContent = s ?? ""
+  capfoot.textContent = f ?? ""
+} }
 const pulse  = (a) => (on) => () => { if (!staging) bs.getGraphObj()[a](on) }
 const animYBR  = pulse("animYBR")
 const animData = pulse("animData")
@@ -215,7 +239,8 @@ riffle(300, [data(1), day, data(3), day, day, data(8), day, day,
              day, data(.1), day, data(1.5), day, data(2), day,
              data(2), day]),
 3000, HUP,
-banner("And that's Beeminder 🐝 Ad astra per aspergera 🚀"),
+banner("And that's Beeminder 🐝 Ad astra per aspergera¹ 🚀",
+       "¹ Credit for this line to Maciej Cegłowski"),
 
 // Tagline stash, once a rotating outro:
 //banner("Beeminder: Mind the Bright Red Line"),
@@ -318,6 +343,7 @@ const bprev = document.getElementById("prev")
 const bnext = document.getElementById("next")
 const slidepos = document.getElementById("slidepos")
 const capdiv = document.getElementById("caption")
+const capfoot = document.getElementById("capfoot")
 const bauto = document.getElementById("auto")
 const stage = document.getElementById("stage")
 const bee = document.getElementById("bee")

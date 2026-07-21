@@ -10,7 +10,7 @@
 8. Beeminder's [Anti-Magic Principle](https://blog.beeminder.com/magic). "If-statements considered harmful." Minimize cyclomatic complexity. If you're fixing a bug like "when X happens the app does Y instead of Z", resist the urge to add "if X then Z" to the code. Fastidiously mention every if-statement you think you need. Constant vigilance to minimize code paths! When we do add an if-statement (again, don't assume we should) we want to change the program's behavior as little as possible. Like add an error banner if there's an error, don't render a different page. And always prefer to conditionally gray something out rather than conditionally suppress it. We can't overemphasize anti-magic enough. We've yet to find the limit beyond which being more dogmatic about it stops bearing fruit.
 9. Beeminder's [Anti-Settings Principle](https://blog.beeminder.com/choices). Not that a coding agent would add settings without asking, but it's a good principle to have in mind in planning mode.
 10. Beeminder's [Anti-Robustness Principle](https://blog.beeminder.com/postel) aka Anti-Postel. Fail loudly and immediately. Never silently fix inputs. Instead of "fallback handling", do asserts that force a crash. In fact, use asserts everywhere you can think to. See also the branch of defensive programming known as offensive programming. Anti-robustness is huge, on par with anti-magic.
-11. Naming as language design. Decades ago programmers became infamous for opaque variable names and they've been overcompensating almost as long. As a silly example of the two extremes:
+11. Nominology. Decades ago programmers became infamous for opaque variable names and they've been overcompensating almost as long. As a silly example of the two extremes:
   c = sqrt(a^2 + b^2)
   vs
   hypotenuse = squareInverse(square(verticalLeg) + square(horizontalLeg))
@@ -18,7 +18,7 @@ If a symbol (variable, constant, field name, function) is localized to a few lin
 12. Replicata/Expectata/Resultata. Those are the three parts of a [proper bug report](https://blog.beeminder.com/bugreports): (1) steps to replicate the bug ex nihilo, (2) what you expected to happen, and (3) what happened instead. A failing qual should also be framed that way.
 13. Git off my lawn. My workflow is to always stay on the main/master branch, let the AI make edits, review those in my IDE, and then manually, as the human, type a commit message and push and sync to master. So you, the AI, can use git diff and git log as needed but don't do other things with git that might mess up my workflow. [This should be enforced directly in settings.json too.]
 
-Recap: Epistemic humility, anti-sycophancy, QDD, prose persnicketiness, latin microcopy, PDP, code smells, anti-magic, anti-settings, anti-postel, onomastics, proper bug reports, and git workflow.
+Recap: Epistemic humility, anti-sycophancy, QDD, prose persnicketiness, latin microcopy, PDP, code smells, anti-magic, anti-settings, anti-postel, nominology, proper bug reports, and git workflow.
 
 ## Cutting Room Floor
 

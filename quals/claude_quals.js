@@ -2926,6 +2926,17 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       assert((await caption()).includes('Mind the Bright Red Line'),
         `${name}: Next advances to the second caption ` +
         `(got "${await caption()}")`)
+      // Replicata: any ordinary chapter (here, the second). Expectata:
+      // no footnote -- the credit line belongs to the outro banner only,
+      // and banner() clears it on every slide change.
+      const strayfoot = await page.evaluate(() => {
+        const f = document.getElementById('capfoot')
+        return f && getComputedStyle(f).display != 'none' &&
+               f.textContent
+      })
+      assert(!strayfoot,
+        `${name}: no footnote under ordinary captions ` +
+        `(got "${strayfoot}")`)
       const fades = await page.evaluate(() => window.fades)
       assert(fades === 0,
         `${name}: the caption never blanks out -- no flicker ` +
@@ -3129,6 +3140,44 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       })
       await page.waitForFunction(() => !playing && cur == chap.length-1,
         {timeout: 30000})
+      // Replicata: the outro banner ("And that's Beeminder..."). Expectata:
+      // a literal footnote: superscript marker on the caption's ad-astra
+      // line ("aspergera¹") and the matching numbered line, "¹ Credit for
+      // this line to Maciej Cegłowski", tucked in the bottom-left corner
+      // of the page -- small muted type, no box around it, well clear of
+      // the caption banner up top. Resultata (pre-footnote): no footnote
+      // anywhere -- banner() only handled the caption itself.
+      const foot = await page.evaluate(() => {
+        const f = document.getElementById('capfoot')
+        const c = document.getElementById('caption')
+        if (!f || !c) return null
+        const fr = f.getBoundingClientRect()
+        const cr = c.getBoundingClientRect()
+        const sr = document.getElementById('stage').getBoundingClientRect()
+        return {text: f.textContent,
+                marked: c.textContent.includes('aspergera¹'),
+                shown: getComputedStyle(f).display != 'none',
+                boxed: getComputedStyle(f).borderStyle != 'none' ||
+                       getComputedStyle(f).backgroundColor !=
+                         'rgba(0, 0, 0, 0)',
+                fpx: parseFloat(getComputedStyle(f).fontSize),
+                cpx: parseFloat(getComputedStyle(c).fontSize),
+                clearOfCaption: fr.top >= cr.bottom,
+                inCorner: fr.left < 40 && sr.bottom - fr.bottom < 30}
+      })
+      assert(foot && foot.shown &&
+             foot.text == '¹ Credit for this line to Maciej Cegłowski',
+        `${name}: the outro credits Maciej Cegłowski in a numbered ` +
+        `footnote ` + JSON.stringify(foot))
+      assert(foot && foot.marked,
+        `${name}: the ad-astra line carries the footnote's superscript ` +
+        `marker ` + JSON.stringify(foot))
+      assert(foot && foot.fpx < foot.cpx * .75 && !foot.boxed,
+        `${name}: the footnote is small bare type, no pill around it ` +
+        JSON.stringify(foot))
+      assert(foot && foot.inCorner && foot.clearOfCaption,
+        `${name}: the footnote tucks into the bottom-left corner ` +
+        JSON.stringify(foot))
       assert(await page.evaluate(() =>
                !document.getElementById('auto').disabled),
         `${name}: Auto-play stays live at the end -- it loops`)
