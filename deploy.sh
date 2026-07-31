@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# One-command deploy of jsbrain to the production fleet, pinned by prod-* tags.
+# One-command deploy of bbserver aka jsbrain to production, pinned by prod-* 
+# tags.
 #
 # Usage:
 #   ./deploy.sh                        tag local master as prod-<UTC stamp>, push

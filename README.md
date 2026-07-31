@@ -58,12 +58,25 @@ export BBPATH=/absolule/path/to/this/repository
 
 Then, if you are on Linux, you can load them in Chromium with the following example command:
 ```
-chromium-browser --allow-file-access-from-files --disable-web-security --user-data-dir=$BBPATH/chromium-data --remote-debugging-port=9222 --use-gl=osmesa file://$BBPATH/quals/basic_test.html file://$BBPATH/quals/roadeditor_test.html file://$BBPATH/quals/sandbox.html
+chromium-browser --allow-file-access-from-files \
+                 --disable-web-security \
+                 --user-data-dir=$BBPATH/chromium-data \
+                 --remote-debugging-port=9222 \
+                 --use-gl=osmesa file://$BBPATH/quals/basic_test.html \
+                                 file://$BBPATH/quals/roadeditor_test.html \
+                                 file://$BBPATH/quals/sandbox.html
 ```
 
 If you are on macOS, you can load them in Chrome with the following example command:
 ```
-open -na /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args --allow-file-access-from-files --disable-web-security --user-data-dir=$BBPATH/chromium-data --remote-debugging-port=9222 --use-gl=osmesa file://$BBPATH/quals/basic_test.html file://$BBPATH/quals/roadeditor_test.html file://$BBPATH/quals/sandbox.html
+open -na /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args \
+  --allow-file-access-from-files \
+  --disable-web-security \
+  --user-data-dir=$BBPATH/chromium-data \
+  --remote-debugging-port=9222 \
+  --use-gl=osmesa file://$BBPATH/quals/basic_test.html \
+                  file://$BBPATH/quals/roadeditor_test.html \
+                  file://$BBPATH/quals/sandbox.html
 ```
 
 The scary-looking arguments allow the browser to open local Beeminder files from within Javascript functions.
@@ -133,29 +146,29 @@ The directory structure for this repository is organized as follows
 - `quals`: HTML files for various local quals, loading scripts from `src`
 - `jsbrain_server`: Local server to handle graph generation requests
 
-### B. Emacs development notes:
+### B. Emacs development notes
 
 - indium works well
 - sr-speedbar is docked
 - imenu requires _rescan_ from the top menu
-- M-x indium-connect connects to a running chrom instance configured in the .indium file
+- M-x indium-connect connects to a running Chrome instance configured in the .indium file
 - Had to rename menu names in js2 and indium el files to shorten their names
 - purpose-mode is useful to keep windows with what they are for
-- For development, the following fonts seem to be good options:
+- For development, the following fonts seem good:
   - Hack: https://github.com/source-foundry/Hack
   - OfficeCodePro: https://github.com/nathco/Office-Code-Pro
   - Font rendering: https://wiki.manjaro.org/index.php?title=Improve_Font_Rendering
 
-### C. Deployment to Glitch (or similar)
+### C. Deploying (currently on Render.com)
 
 1. Import from https://github.com/beeminder/road
 2. Create a new Beeminder client at https://www.beeminder.com/apps/new
-3. Set the redirect URI in the .env file to `https://[project].glitch.me/connect`
+3. Set the redirect URI in the .env file to `https://graph.beeminder.com/connect`
 4. Add the client ID Beeminder assigns you to the .env file
 5. Same with the redirect URI, add it to the .env file
-6. Open the Glitch console and do `mkdir .data` and `cd .data`
+6. Open a server console and do `mkdir .data` and `cd .data`
 7. Create an empty SQLite file for the session store: `touch database.sqlite`
 
 ## Credits
 
-[Uluç Saranlı](http://www.ceng.metu.edu.tr/~saranli/)
+[Uluç Saranlı](http://www.ceng.metu.edu.tr/~saranli/) and Daniel Reeves and the rest of the Bee Team
