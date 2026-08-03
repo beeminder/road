@@ -263,6 +263,7 @@ label {
 
 .yooguser {
   flex: 0 0 auto;
+  font-size: 1.125rem; /* one text scale for picker and connector words */
   font-weight: 700;
 }
 
@@ -691,14 +692,18 @@ details.gchip > .chippop {
   font-size: 1.125rem;
 }
 
+/* The summary chips are a matched set at WCAG large-text metrics
+   (>= 18.66px at weight >= 700): the countdown's white text on the
+   standard red (4.00:1) and green (3.11:1) fills is AA only as large
+   text. The countdown's fill and text colors come inline from pagekit's
+   cols map; the fills are the standard dot hues and don't get darkened */
 .baremin,.doom, .pledge {
   padding: 4px 8px;
   border-radius: var(--radius-ctl);
   background-color: #3b3b3b;
   color: var(--amber);
-}
-.doom {
-  color: white;
+  font-size: 1.25rem;
+  font-weight: 700;
 }
 
 /* Submission result for the editor */
@@ -789,6 +794,12 @@ button.bmdrbtn:disabled {
 
   .baremin,.doom-modifier,.doom,.pledgepre,.pledge {
     margin: 2px;
+  }
+
+  /* Connector words shrink on phones; the chips (baremin/doom/pledge)
+     don't -- below 18.66px bold the red and green fills' white text
+     would lose its WCAG AA-large allowance */
+  .doom-modifier,.pledgepre {
     font-size: 1rem;
   }
 
@@ -807,7 +818,15 @@ button.bmdrbtn:disabled {
   flex: 1; /* fill the .goalpicker wrapper, which caps the width */
   min-height: 40px;
   border-radius: var(--radius-ctl);
-  font-size: 1rem;
+  font-size: 1.125rem;
+}
+
+/* The classless <input> tom-select nests in the control (inside its
+   .ts-input wrapper) renders the text a user types to filter goals;
+   inherit outranks tom-select.css's 13px so typed text matches the item
+   text at every width */
+.ts-control.roadselect input {
+  font-size: inherit;
 }
 
 /* Increase font size for dropdown options (HT Codebuff) */
@@ -817,8 +836,10 @@ button.bmdrbtn:disabled {
 }
 
 /* Also increase font size for the control input (HT Codebuff) */
+/* (inherit rather than a fixed size: the .ts-input wrapper tracks the
+   control, whose size the responsive block switches at 1040px) */
 .ts-control.roadselect .ts-input {
-  font-size: 16px;
+  font-size: inherit;
 }
 
 /* Stuff below is all from Codebuff */
@@ -924,3 +945,13 @@ hr {
    cursor on hover */
 .knots:hover { cursor: ew-resize; }
 .dots:hover  { cursor: ns-resize; }
+
+/* Phones: picker text drops to the connector-word scale, mirroring the
+   main responsive block above (the typing input tracks the control via
+   font-size: inherit, so only the control needs resizing) */
+@media (max-width: 1040px) {
+  .yooguser,
+  .ts-control.roadselect {
+    font-size: 1rem;
+  }
+}

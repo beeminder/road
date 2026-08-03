@@ -2,10 +2,17 @@
    standalone sandbox page (sandboxpage.js). */
 
 // Maps graph colors to fot colors
-const cols = {"red":butil.BHUE.REDDOT,
-              "green":butil.BHUE.GRNDOT,
-              "blue":butil.BHUE.BLUDOT,
-              "orange":butil.BHUE.ORNDOT}
+// Each entry is a [fill, text] pair: the fill stays the standard dot hue
+// (brand vocabulary, never darkened) and the text is white except on
+// orange, the one fill too light for white text even at large size.
+// White on red (4.00:1) and green (3.11:1) is WCAG AA only for large
+// text, so .doom renders at large-text metrics (>= 18.66px at weight
+// >= 700); see grapheditor.css. Guarded by the contrast quals in the
+// grapheditor page qual.
+const cols = {"red":    [butil.BHUE.REDDOT, butil.BHUE.WITE],
+              "green":  [butil.BHUE.GRNDOT, butil.BHUE.WITE],
+              "blue":   [butil.BHUE.BLUDOT, butil.BHUE.WITE],
+              "orange": [butil.BHUE.ORNDOT, butil.BHUE.BLCK]}
 
 /* Common function for both main and vertical tabs */
 function openTab(evt, tabName, contid, linkid) {
@@ -84,7 +91,9 @@ function updateSummary( div, gr ) {
   }
   divObj.append('div').attr('class','baremin').text(matches[1])
   divObj.append('div').attr('class','doom-modifier').text(doommod)
-  divObj.append('div').attr('class','doom').text(matches[2]).style('background-color', cols[goal.color])
+  divObj.append('div').attr('class','doom').text(matches[2])
+    .style('background-color', cols[goal.color][0])
+    .style('color', cols[goal.color][1])
   divObj.append('div').attr('class','pledgepre').text("or pay")
   divObj.append('div').attr('class','pledge').text(goal.waterbux)
 

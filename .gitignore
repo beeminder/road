@@ -35,5 +35,3 @@ automon/data/*.json
 automon/data/*.png
 automon/data/*.svg
 automon/data/*-thumb.png
-
-sourcery.html

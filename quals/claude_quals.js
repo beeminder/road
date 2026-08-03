@@ -2417,6 +2417,146 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       assert(tiny.lockupRight <= tiny.viewport && tiny.headerFits,
         `${name}: header lockup and nav fit a 320px viewport ` +
         JSON.stringify(tiny))
+
+      // Countdown chip and due-by table stay in the standard safety-buffer
+      // hues AND pass WCAG AA (AGENTS.md [CAG]). The hues are brand
+      // vocabulary (they're the graph's dot colors, BHUE.REDDOT & co), so
+      // instead of darkening them the text flips per state: white on
+      // red/blue/green, black on orange (the one hue too light for white
+      // even at large size). Red+white is 4.00:1 and green+white 3.11:1,
+      // which AA admits only for large text (>= 18.66px at weight >= 700,
+      // or >= 24px), so the chip must actually render at large-text
+      // metrics -- at every viewport. The due-by table's hue rides on a
+      // dot marker (.dbdot) while its text stays ink.
+      // Goalbar typography is two scales: the summary chips (baremin,
+      // doom, pledge) as a matched set at the large-text size, and
+      // everything else (picker, connector words) one step down.
+      // Replicata: load the editor on testroad0 at desktop, phone, and
+      // narrowest-phone widths; read computed styles of the goalbar chip
+      // (.doom), its siblings, the picker, every [fill, text] pair the
+      // chip can take (pagekit's cols map), and the due-by cells/dots;
+      // measure horizontal overflow.
+      // Expectata: at every width: all text/fill pairs clear the AA
+      // threshold for the chip's rendered size; chip fills and due-by
+      // dots are exactly the standard hues (dots may also be black, the
+      // far-out-row color); due-by text on white clears 4.5:1; dots
+      // exist; the three chips share font size and weight; the chip
+      // renders at large-text metrics; picker text (username and goal
+      // dropdown) matches the connector-word scale and stays >= 16px
+      // (below 16px iOS zooms on focus); no horizontal page scroll.
+      // Resultata (pre-fix): white on all four fills (down to 1.97:1 on
+      // orange), colored due-by day names (down to 2.52:1), no dots, and
+      // the chip at 20px/700 vs siblings at 18px/400.
+      const contrastEval = () => {
+        const lum = rgb => { // relative luminance of a css rgb(...) string
+          const c = rgb.match(/\d+/g).slice(0, 3).map(v => v/255)
+            .map(v => v <= .04045 ? v/12.92 : ((v+.055)/1.055)**2.4)
+          return .2126*c[0] + .7152*c[1] + .0722*c[2]
+        }
+        const ratio = (a, b) => {
+          const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x)
+          return (hi+.05) / (lo+.05)
+        }
+        const hex2rgb = h => `rgb(${h.match(/[0-9a-f]{2}/gi)
+          .map(x => parseInt(x, 16)).join(', ')})`
+        // The standard safety-buffer hues: BHUE.{RED,ORN,BLU,GRN}DOT
+        const STDHUES = ['#ff0000', '#ffa500', '#3f3fff', '#00aa00']
+          .map(hex2rgb)
+        const BLACK = 'rgb(0, 0, 0)'
+        const style = sel => getComputedStyle(document.querySelector(sel))
+        const chip = style('#goalsummary .doom')
+        // WCAG large text: >= 24px, or bold (>= 700) at >= 18.66px (14pt)
+        const large = parseFloat(chip.fontSize) >= 24 ||
+          (parseFloat(chip.fontSize) >= 18.66 && +chip.fontWeight >= 700)
+        return {
+          need: large ? 3 : 4.5,
+          large: large,
+          chip: ratio(chip.color, chip.backgroundColor),
+          chipBgStd: STDHUES.includes(chip.backgroundColor),
+          chipBg: chip.backgroundColor,
+          // cols is pagekit.js's goal-color -> [fill, text] map
+          chipAll: Object.entries(cols).map(([k, [bg, fg]]) =>
+            [k, ratio(hex2rgb(bg), hex2rgb(fg)),
+             STDHUES.includes(hex2rgb(bg))]),
+          chipset: ['baremin', 'doom', 'pledge'].map(c => {
+            const s = style('#goalsummary .' + c)
+            return [c, s.fontSize, s.fontWeight]
+          }),
+          picker: [
+            ['yooguser', style('.yooguser').fontSize],
+            ['goal dropdown', style('.goalpicker .ts-control').fontSize],
+            // The classless <input> tom-select nests in the control: the
+            // text a user types to filter goals renders at ITS size, so
+            // it must match the control (tom-select.css sets it 13px)
+            ['goal typing input',
+             style('.goalpicker .ts-control input').fontSize],
+            ['connector', style('#goalsummary .doom-modifier').fontSize],
+          ],
+          hscroll: document.scrollingElement.scrollWidth -
+                   document.scrollingElement.clientWidth,
+          dueby: [...document.querySelectorAll('#gdueby .dbcell')].map(e =>
+            [e.textContent, ratio(getComputedStyle(e).color,
+                                  'rgb(255, 255, 255)')]),
+          dots: [...document.querySelectorAll('#gdueby .dbdot')].map(e => {
+            const bg = getComputedStyle(e).backgroundColor
+            return [bg, STDHUES.includes(bg) || bg === BLACK]
+          }),
+        }
+      }
+      // 1360px is this qual's own desktop viewport (above the 1040px
+      // responsive breakpoint), 800 sits below it, and 390 and 320 are
+      // common and narrowest phones
+      for (const w of [1360, 800, 390, 320]) {
+        await page.setViewport({width: w, height: 900})
+        await new Promise(r => setTimeout(r, 150))
+        const aa = await page.evaluate(contrastEval)
+        const at = `at ${w}px`
+        assert(aa.chip >= aa.need,
+          `${name}: countdown chip text vs fill >= ${aa.need}:1 ${at} ` +
+          `(got ${aa.chip.toFixed(2)}:1)`)
+        assert(aa.chipBgStd,
+          `${name}: countdown chip fill is a standard safety-buffer hue ` +
+          `${at} (got ${aa.chipBg})`)
+        assert(aa.large,
+          `${name}: chip renders at WCAG large-text metrics ${at} ` +
+          JSON.stringify(aa.chipset))
+        for (const [color, r, std] of aa.chipAll) {
+          assert(r >= aa.need,
+            `${name}: ${color} chip text vs fill >= ${aa.need}:1 ${at} ` +
+            `(got ${r.toFixed(2)}:1)`)
+          assert(std,
+            `${name}: ${color} chip fill is a standard safety-buffer ` +
+            `hue ${at}`)
+        }
+        assert(aa.chipset.every(([, size, weight]) =>
+                 size === aa.chipset[0][1] && weight === aa.chipset[0][2]),
+          `${name}: baremin/doom/pledge share size and weight ${at} ` +
+          JSON.stringify(aa.chipset))
+        assert(aa.picker.every(([, size]) => size === aa.picker[0][1]),
+          `${name}: picker and connector words share a text scale ${at} ` +
+          JSON.stringify(aa.picker))
+        assert(parseFloat(aa.picker[0][1]) >= 16,
+          `${name}: picker text >= 16px so iOS doesn't zoom on focus ` +
+          `${at} (got ${aa.picker[0][1]})`)
+        assert(aa.hscroll <= 0,
+          `${name}: no horizontal page overflow ${at} ` +
+          `(got ${aa.hscroll}px)`)
+        assert(aa.dueby.length > 0, `${name}: due-by table has cells ${at}`)
+        for (const [txt, r] of aa.dueby)
+          assert(r >= 4.5,
+            `${name}: due-by cell "${txt}" on white >= 4.5:1 ${at} ` +
+            `(got ${r.toFixed(2)}:1)`)
+        assert(aa.dots.length > 0,
+          `${name}: due-by rows carry dot markers ${at}`)
+        for (const [bg, ok] of aa.dots)
+          assert(ok,
+            `${name}: due-by dot is a standard hue or black ${at} ` +
+            `(got ${bg})`)
+      }
+      // Restore this qual's viewport for the final screenshot
+      await page.setViewport({width: 1360, height: 900})
+      await new Promise(r => setTimeout(r, 150))
+
     }, {width: 1360, height: 900})
 
   // Replicata: land on /username/goalname (the server hands the client

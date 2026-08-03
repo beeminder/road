@@ -1437,7 +1437,7 @@ function duebylabel(i, now) {
   const mm = moment.unix(gol.asof+i*SID).utc()
   const ds = bu.dayparse(mm.format("YYYYMMDD")) / SID
   if (ds == now-1) return ["Yesterday", bu.BHUE.REDDOT]
-  if (ds == now) return ["Today", bu.BHUE.ORNG]
+  if (ds == now) return ["Today", bu.BHUE.ORNDOT]
   if (ds == now+1) return ["Tomorrow", bu.BHUE.BLUDOT]
   const dstr = mm.format("ddd (Do)")
   if (ds == now+2) return [dstr, bu.BHUE.GRNDOT]
@@ -1479,13 +1479,17 @@ function updateDueBy() {
     .selectAll(".dbrow")
     .selectAll(".dbcell")
     .data((row, i) => {
+      // The row's urgency hue rides on a dot marker before the day label
+      // (matching the graph's dot colors) rather than coloring the text,
+      // which at these hues would fail WCAG AA contrast on white
       const inf = duebylabel(i,nowday), del = db[i][1]
-      return [inf, [(del > 0 || gol.dir < 0) ? bu.shn(del) : mark, inf[1]], 
-              [bu.shn(db[i][2]), inf[1]]]
+      const dot =
+        `<span class="dbdot" style="background-color:${inf[1]}"></span>`
+      return [dot + inf[0], (del > 0 || gol.dir < 0) ? bu.shn(del) : mark,
+              bu.shn(db[i][2])]
     })
     .join(enter=>enter.append("span").attr('class', 'dbcell'), update=>update)
-    .html(d=>d[0])
-    .style('color', d=>d[1])
+    .html(d=>d)
 }
 
 /** Creates all graph matrix table components if a table DIV is provided. Called

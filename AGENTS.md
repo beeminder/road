@@ -35,6 +35,27 @@ I'm tentatively retiring the following rules that seem unncessary for Fable and 
 
 Start by running quals: npm run quals
 
+Candidate next things:
+
+* [CAG] Countdown chip: The "due in N days" chip is white text on the safety-buffer color (pagekit.js:87): white on green #00aa00 is 3.11:1, white on red 4.00:1, and white on orange #ffa500 is 1.97:1 — all below the 4.5:1 AA threshold for text this size, with the orange case (one safe day, i.e. when the user most needs to read it) the worst. The same hues appear as colored text on white in the due-by table ("Today" in orange: 1.97:1). Accessibility audits are table stakes in professional practice now; this is the complaint that comes with a screenshot from a contrast checker attached.
+
+* [DPK] Clicking the date field opens stock-theme Pikaday: iOS-blue selected day, its own grays and underlined weekday headers (datepicker.png). That blue exists nowhere else in the amber/charcoal system — a third accent color introduced by an unthemed third-party widget. Related: the goal picker (tom-select) renders as a plain text input with no chevron, so nothing signals it's a dropdown.
+
+* [EMO] Five icon languages on one page. Grayscale-filtered emoji (📷, 🔍), a typed "?" glyph, Material inline SVGs (undo/redo), standalone SVG files (pencil/trash/plus in the tables), dingbat checkmarks (✔) in the due-by table's DELTA column, and the skeuomorphic ⊕⊖ circles inside the SVG. Designers are dogmatic about a single icon family; the emoji-as-toolbar-buttons pattern in particular reads as prototype-grade.
+
+* [GPR] Unlabeled and clipped content. The Goal Progress section ends in two naked gray bars with no captions (pagekit.js:65-69 appends them label-free) — at 0% fill they're just two empty pills, and nothing says one is time-elapsed and the other value-progress. In the Data tab, comments hard-truncate mid-word ("initial datapoint of 0 #h") with no ellipsis or tooltip. The DELTA column showing colored checkmarks instead of numbers is cryptic on first read.
+
+* [COR] Sub-minimum interactive targets and micro-text. The corner chips are 24×24px — exactly at the WCAG 2.5.8 floor, well under Apple's 44pt / Material's 48dp. [What are corner chips?]
+
+* [TAB] Tab-system inconsistencies. The View side's default-active tab is Entry, in fourth position; the Edit side's is Red Line, in first. The two tab sets share three labels but order the emphasis differently, and the "Red Line" tab's panel is titled "Graph Matrix" — a label mismatch between the control and what it reveals.
+
+* [SUB] Disabled Submit with no explanation. The gray Submit button gives no hint about why it's disabled or what would enable it — the exact scenario in NN/g's disabled-button critique. Hover shows not-allowed, which states the fact without the reason.
+
+* [SHR] Mobile renders the graph illegible. At 390px the layout stacks correctly, but the SVG scales down uniformly, so its 11px internal type lands around 6px (phone-390.png). Distinct from the aesthetic complaints already passed on: this one is that the responsive strategy for the page's main content is "shrink the image." [But what's the alternative?]
+
+* [FTR] The footer is an exact duplicate of the header nav (three links, nothing else), and the header nav wraps raggedly at phone widths.
+
+
 # Beebrain Project Knowledge
 
 ## Overview

@@ -111,6 +111,15 @@ div.rdcell.sl,div.rdhdrcell.sl { width: 85px;min-width: 85px; }
           font-size:        90%;
           white-space:      nowrap;           }
 
+/* Dot marker carrying a due-by row's urgency hue (the graph's dot
+   colors), so the row's text can stay ink for WCAG AA contrast */
+.dbdot { display:        inline-block;
+         width:          10px;
+         height:         10px;
+         margin-right:   7px;
+         border-radius:  50%;
+         vertical-align: -1px;               }
+
 /* Data table styles */
 .dbody {display:inline-block;
         vertical-align:top;
