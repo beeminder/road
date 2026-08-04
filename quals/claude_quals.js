@@ -2418,6 +2418,96 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         `${name}: header lockup and nav fit a 320px viewport ` +
         JSON.stringify(tiny))
 
+      // Pikaday and the goal picker wear the design system (AGENTS.md
+      // [DPK]): stock Pikaday paints iOS-blue #33aaff on the selected
+      // day and today's date and white-on-#ff8000 on hover -- accents
+      // from nowhere in the amber/charcoal system -- and the browser
+      // dotted-underlines its abbr weekday headers; the goal picker
+      // gives no visual hint that it's a dropdown.
+      // Replicata: click the Entry tab's date field to open the picker;
+      // read computed styles of the selected day, today's day, a hovered
+      // day, and the weekday headers; read the goal-picker control's
+      // ::after pseudo-element.
+      // Expectata: the selected day is brand amber with ink text at >=
+      // 4.5:1; today's label isn't stock blue and clears 4.5:1; a
+      // hovered day clears 4.5:1 and isn't the stock orange; no
+      // underlined weekday headers; the control renders a chevron.
+      // Resultata (pre-fix): white on #33aaff selected day (2.52:1),
+      // #33aaff today (2.32:1 on the gray cell), white on #ff8000 hover
+      // (2.52:1), seven dotted underlines, no chevron.
+      // (The checks above leave the page in Editor mode at 320px; the
+      // date field lives in View mode's Entry tab)
+      await page.setViewport({width: 1360, height: 900})
+      await page.click('#graphtab')
+      await page.evaluate(() =>
+        document.querySelectorAll('#graph .gtablinks')[3].click())
+      await page.click('#datadate')
+      await page.waitForSelector('.pika-single:not(.is-hidden)')
+      await page.hover(
+        '.pika-single td[data-day]:not(.is-selected) .pika-button')
+      const dpk = await page.evaluate(() => {
+        const lum = rgb => {
+          const c = rgb.match(/\d+/g).slice(0, 3).map(v => v/255)
+            .map(v => v <= .04045 ? v/12.92 : ((v+.055)/1.055)**2.4)
+          return .2126*c[0] + .7152*c[1] + .0722*c[2]
+        }
+        const ratio = (a, b) => {
+          const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x)
+          return (hi+.05) / (lo+.05)
+        }
+        const STOCKBLUE = 'rgb(51, 170, 255)'
+        const STOCKORANGE = 'rgb(255, 128, 0)'
+        const AMBER = 'rgb(255, 203, 6)'
+        const cs = sel => getComputedStyle(document.querySelector(sel))
+        const seld = cs('.pika-single .is-selected .pika-button')
+        const today = cs('.pika-single .is-today .pika-button')
+        const hov = cs(
+          '.pika-single td[data-day]:not(.is-selected):hover .pika-button')
+        const abbrs = [...document.querySelectorAll('.pika-table abbr')]
+        const chev = getComputedStyle(
+          document.querySelector('.goalpicker .ts-control'), '::after')
+        return {
+          selBg: seld.backgroundColor,
+          selAmber: seld.backgroundColor === AMBER,
+          selContrast: ratio(seld.color, seld.backgroundColor),
+          todayColor: today.color,
+          todayNotBlue: today.color !== STOCKBLUE,
+          todayContrast: ratio(today.color, today.backgroundColor),
+          hovBg: hov.backgroundColor,
+          hovNotStock: hov.backgroundColor !== STOCKORANGE,
+          hovContrast: ratio(hov.color, hov.backgroundColor),
+          nAbbr: abbrs.length,
+          abbrUnderlines: abbrs.filter(a =>
+            getComputedStyle(a).textDecorationLine.includes('underline'))
+            .length,
+          chevron: chev.content !== 'none' &&
+                   parseFloat(chev.borderTopWidth) > 0,
+        }
+      })
+      assert(dpk.selAmber,
+        `${name}: selected day wears brand amber (got ${dpk.selBg})`)
+      assert(dpk.selContrast >= 4.5,
+        `${name}: selected day text >= 4.5:1 ` +
+        `(got ${dpk.selContrast.toFixed(2)}:1)`)
+      assert(dpk.todayNotBlue,
+        `${name}: today's date isn't stock Pikaday blue`)
+      assert(dpk.todayContrast >= 4.5,
+        `${name}: today's label >= 4.5:1 ` +
+        `(got ${dpk.todayContrast.toFixed(2)}:1)`)
+      assert(dpk.hovNotStock,
+        `${name}: hovered day isn't stock Pikaday orange`)
+      assert(dpk.hovContrast >= 4.5,
+        `${name}: hovered day text >= 4.5:1 ` +
+        `(got ${dpk.hovContrast.toFixed(2)}:1)`)
+      assert(dpk.nAbbr === 7 && dpk.abbrUnderlines === 0,
+        `${name}: weekday headers lose the browser's abbr underline ` +
+        `(${dpk.abbrUnderlines} of ${dpk.nAbbr} underlined)`)
+      assert(dpk.chevron,
+        `${name}: goal picker renders a dropdown chevron`)
+      // Close the picker so later checks see the page at rest
+      await page.evaluate(() =>
+        document.getElementById('datadate').blur())
+
       // Countdown chip and due-by table stay in the standard safety-buffer
       // hues AND pass WCAG AA (AGENTS.md [CAG]). The hues are brand
       // vocabulary (they're the graph's dot colors, BHUE.REDDOT & co), so

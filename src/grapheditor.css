@@ -815,10 +815,26 @@ button.bmdrbtn:disabled {
 
 .ts-control.roadselect {
   display: inline-block;
+  position: relative; /* anchors the dropdown chevron */
   flex: 1; /* fill the .goalpicker wrapper, which caps the width */
   min-height: 40px;
+  padding-right: 26px; /* goalname text stays clear of the chevron */
   border-radius: var(--radius-ctl);
   font-size: 1.125rem;
+}
+
+/* A chevron so the goal picker reads as a dropdown, not a text field
+   (tom-select's stock arrow rules target markup this version doesn't
+   emit). Pure decoration: it takes no pointer events and screen
+   readers already announce the underlying select. */
+.ts-control.roadselect::after {
+  content: "";
+  position: absolute;
+  top: calc(50% - 3px);
+  right: 11px;
+  border: 5px solid transparent;
+  border-top-color: var(--muted);
+  pointer-events: none;
 }
 
 /* The classless <input> tom-select nests in the control (inside its
@@ -827,6 +843,54 @@ button.bmdrbtn:disabled {
    text at every width */
 .ts-control.roadselect input {
   font-size: inherit;
+}
+
+/* Pikaday: design-system skin over the stock iOS-blue theme. Covers
+   the states these single-date pickers render (plain, today, selected,
+   hover) plus the range/event states this app never uses, blanket-
+   recolored so no stock blue survives anywhere. */
+.pika-single {
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+}
+
+.pika-single.is-bound {
+  box-shadow: 0 2px 10px rgba(45, 42, 34, .18); /* the .chippop shadow */
+}
+
+.pika-table th {
+  color: var(--muted);
+}
+
+.pika-table abbr {
+  text-decoration: none; /* the browser dotted-underlines abbr[title] */
+}
+
+.pika-button {
+  border-radius: var(--radius-ctl);
+  background: #f8f7f4; /* the bmdrbtn control surface */
+  color: var(--ink);
+  font-size: .8125rem;
+}
+
+.is-today .pika-button {
+  color: var(--focus); /* dark amber marks today; no blue needed */
+}
+
+.is-selected .pika-button,
+.has-event .pika-button,
+.is-startrange .pika-button,
+.is-endrange .pika-button {
+  background: var(--amber);
+  box-shadow: none;
+  color: var(--ink);
+}
+
+.pika-button:hover,
+.pika-row.pick-whole-week:hover .pika-button {
+  background: var(--amber-soft);
+  color: var(--ink);
 }
 
 /* Increase font size for dropdown options (HT Codebuff) */
