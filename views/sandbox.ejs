@@ -68,7 +68,7 @@
   <div class="graphcontainer panel">
     <div class="graphbox">
     <details class="gchip zoom">
-      <summary aria-label="Zoom">🔍</summary>
+      <summary aria-label="Zoom"><%- include('uicon', {name: 'search'}) %></summary>
       <div class="chippop">
         <button class="bmdrbtn" id="szoomall" onclick="sandboxgr.zoomAll();">View All</button>
         <button class="bmdrbtn" id="szoomdflt" onclick="sandboxgr.zoomDefault();">Reset Zoom</button>
@@ -78,8 +78,8 @@
       </div>
     </div>
     <div class="graphtools">
-      <button class="bmdrbtn iconbtn" id="sundo" aria-label="Undo" data-tip="Ctrl-Z / ⌘Z" aria-keyshortcuts="Control+Z Meta+Z" onclick="sandbox.undo();"><svg class="uicon" viewBox="0 -960 960 960" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M280-200v-80h284q63 0 109.5-40T720-420q0-60-46.5-100T564-560H312l104 104-56 56-200-200 200-200 56 56-104 104h252q97 0 166.5 63T800-420q0 94-69.5 157T564-200H280Z"/></svg><span id="sundocnt" class="ucnt">0</span></button>
-      <button class="bmdrbtn iconbtn" id="sredo" aria-label="Redo" data-tip="Ctrl-Y / ⇧⌘Z" aria-keyshortcuts="Control+Y Shift+Meta+Z" onclick="sandbox.redo();"><svg class="uicon" viewBox="0 -960 960 960" width="15" height="15" fill="currentColor" aria-hidden="true"><g transform="translate(960 0) scale(-1 1)"><path d="M280-200v-80h284q63 0 109.5-40T720-420q0-60-46.5-100T564-560H312l104 104-56 56-200-200 200-200 56 56-104 104h252q97 0 166.5 63T800-420q0 94-69.5 157T564-200H280Z"/></g></svg><span id="sredocnt" class="ucnt">0</span></button>
+      <button class="bmdrbtn iconbtn" id="sundo" aria-label="Undo" data-tip="Ctrl-Z / ⌘Z" aria-keyshortcuts="Control+Z Meta+Z" onclick="sandbox.undo();"><%- include('uicon', {name: 'undo'}) %><span id="sundocnt" class="ucnt">0</span></button>
+      <button class="bmdrbtn iconbtn" id="sredo" aria-label="Redo" data-tip="Ctrl-Y / ⇧⌘Z" aria-keyshortcuts="Control+Y Shift+Meta+Z" onclick="sandbox.redo();"><%- include('uicon', {name: 'undo', flip: true}) %><span id="sredocnt" class="ucnt">0</span></button>
       <button class="bmdrbtn" id="snextday" onclick="sandbox.nextDay();">Next Day</button>
     </div>
   </div>

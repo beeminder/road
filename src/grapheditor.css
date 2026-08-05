@@ -517,11 +517,6 @@ details.gchip.zoom > .chippop {
 /* An open chip's popover paints over its sibling chip */
 details.gchip[open] { z-index: 3; }
 
-details.gchip > summary {
-  font-size: .8rem;
-  filter: grayscale(1); /* mute the emoji glyphs to match the ? chip */
-}
-
 details.gchip > .chippop {
   position: absolute;
   top: 30px;

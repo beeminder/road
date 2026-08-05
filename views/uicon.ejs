@@ -1,0 +1,16 @@
+<%
+/* uicon = UI icon: one Material Symbols glyph (Apache 2.0) as an inline
+   svg. All entries come from the outlined-24px set so every icon on these
+   pages speaks one visual language, and each path is the symbol's own
+   data in its native 0 -960 960 960 box. The svg takes the surrounding
+   text color via currentColor, so eg a disabled button grays its glyph
+   out for free. Usage: include('uicon', {name: 'camera'}), plus
+   {flip: true} to mirror a glyph horizontally (redo = flipped undo). */
+const UICONPATH = {
+  undo:   'M280-200v-80h284q63 0 109.5-40T720-420q0-60-46.5-100T564-560H312l104 104-56 56-200-200 200-200 56 56-104 104h252q97 0 166.5 63T800-420q0 94-69.5 157T564-200H280Z',
+  camera: 'M480-260q75 0 127.5-52.5T660-440q0-75-52.5-127.5T480-620q-75 0-127.5 52.5T300-440q0 75 52.5 127.5T480-260Zm0-80q-42 0-71-29t-29-71q0-42 29-71t71-29q42 0 71 29t29 71q0 42-29 71t-71 29ZM160-120q-33 0-56.5-23.5T80-200v-480q0-33 23.5-56.5T160-760h126l74-80h240l74 80h126q33 0 56.5 23.5T880-680v480q0 33-23.5 56.5T800-120H160Zm0-80h640v-480H638l-73-80H395l-73 80H160v480Zm320-240Z',
+  search: 'M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z',
+  help:   'M478-240q21 0 35.5-14.5T528-290q0-21-14.5-35.5T478-340q-21 0-35.5 14.5T428-290q0 21 14.5 35.5T478-240Zm-36-154h74q0-33 7.5-52t42.5-52q26-26 41-49.5t15-56.5q0-56-41-86t-97-30q-57 0-92.5 30T342-618l66 26q5-18 22.5-39t53.5-21q32 0 48 17.5t16 38.5q0 20-12 37.5T506-526q-44 39-54 59t-10 73Zm38 314q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z',
+}
+if (!(locals.name in UICONPATH)) throw new Error('unknown uicon: ' + locals.name)
+%><svg class="uicon" viewBox="0 -960 960 960" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="<%= UICONPATH[name] %>"<% if (locals.flip) { %> transform="translate(960 0) scale(-1 1)"<% } %>/></svg>

@@ -127,9 +127,18 @@ div.rdcell.sl,div.rdhdrcell.sl { width: 85px;min-width: 85px; }
         border-spacing:3px;
        }
 
-img.dicon, img.ricon {
+svg.dicon, svg.ricon {
     width:1em;
+    height:1em;
     vertical-align:middle;
+}
+
+/* Checkmark standing in for a zero delta in the dueby table, sized and
+   seated like the text it sits among */
+svg.dbcheck {
+    width:1em;
+    height:1em;
+    vertical-align:-2px;
 }
 .dhdrrow,.drow { display: table-row; }
 

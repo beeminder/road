@@ -22,6 +22,11 @@ const MIME = {
 const GRAPHEDITOR_PATH = '/quals/grapheditor.html'
 const GRAPHEDITOR_TEMPLATE = fs.readFileSync(
   path.join(REPO, 'views/grapheditor.ejs'), 'utf8')
+// ejs.render on a raw template string needs the template's path to
+// resolve include() partials (views/uicon.ejs); express's view engine
+// does this by itself on the live server
+const GEOPTS = {filename: path.join(REPO, 'views/grapheditor.ejs')}
+const SBOPTS = {filename: path.join(REPO, 'views/sandbox.ejs')}
 const EDITOR_START = GRAPHEDITOR_TEMPLATE.indexOf('<section id="editor"')
 const EDITOR_END = GRAPHEDITOR_TEMPLATE.indexOf('</main>')
 nodeAssert(EDITOR_START >= 0)
@@ -32,14 +37,14 @@ const QUAL_ROUTES = {
     contentType: MIME['.html'],
     body: ejs.render(GRAPHEDITOR_TEMPLATE, {user: {username: 'qual'},
                                             version: 'qual', goal: null,
-                                            wanted: null}),
+                                            wanted: null}, GEOPTS),
   },
   '/quals/grapheditor-deeplink.html': {
     contentType: MIME['.html'],
     body: ejs.render(GRAPHEDITOR_TEMPLATE, {user: {username: 'qual'},
                                             version: 'qual',
                                             goal: 'othergoal',
-                                            wanted: null}),
+                                            wanted: null}, GEOPTS),
   },
   // Deep link to a goal that isn't among the user's goals
   '/quals/grapheditor-badgoal.html': {
@@ -47,7 +52,7 @@ const QUAL_ROUTES = {
     body: ejs.render(GRAPHEDITOR_TEMPLATE, {user: {username: 'qual'},
                                             version: 'qual',
                                             goal: 'nosuchgoal',
-                                            wanted: null}),
+                                            wanted: null}, GEOPTS),
   },
   // A hostile deep link: /username/<goalname> arrives URL-decoded, so a
   // goalname carrying </script> would break out of the inline script that
@@ -57,7 +62,7 @@ const QUAL_ROUTES = {
     body: ejs.render(GRAPHEDITOR_TEMPLATE, {
       user: {username: 'qual'}, version: 'qual',
       goal: '</script><script>window.pwned = 1</script>',
-      wanted: null}),
+      wanted: null}, GEOPTS),
   },
   // Deep link to some other user's goal (the server denied it and asks
   // the client to explain rather than silently teleport)
@@ -66,12 +71,13 @@ const QUAL_ROUTES = {
     body: ejs.render(GRAPHEDITOR_TEMPLATE, {user: {username: 'qual'},
                                             version: 'qual',
                                             goal: null,
-                                            wanted: 'alice/foo'}),
+                                            wanted: 'alice/foo'}, GEOPTS),
   },
   '/quals/sandboxpage.html': {
     contentType: MIME['.html'],
     body: ejs.render(fs.readFileSync(
-      path.join(REPO, 'views/sandbox.ejs'), 'utf8'), {version: 'qual'}),
+      path.join(REPO, 'views/sandbox.ejs'), 'utf8'), {version: 'qual'},
+      SBOPTS),
   },
   '/quals/login.html': {
     contentType: MIME['.html'],
@@ -153,7 +159,7 @@ function serve(req, res) {
     res.end(ejs.render(GRAPHEDITOR_TEMPLATE, {user: {username: 'qual'},
                                               version: 'qual',
                                               goal: deeplink[1],
-                                              wanted: null}))
+                                              wanted: null}, GEOPTS))
     return
   }
 
@@ -337,6 +343,27 @@ console.log('\n--- static-analysis quals ---')
     assert(external.length === 0,
       `${page}: no CDN scripts or stylesheets ` + JSON.stringify(external))
   }
+})()
+
+// --- [EMO] One icon family in the sources: Material Symbols only ---
+// Every icon is an inline svg from the Material Symbols outlined-24px set
+// (the family the undo/redo arrows come from), so first-party sources may
+// contain no emoji-as-icon, no dingbat checkmark entities, and no <img>
+// fetches of the retired third-party icon files.
+;(() => {
+  const sources = ['views/grapheditor.ejs', 'views/sandbox.ejs',
+                   'src/bgraph.js']
+  for (const f of sources) {
+    const src = fs.readFileSync(path.join(REPO, f), 'utf8')
+    assert(!/📷|🔍|✔|✓|&#10004;/.test(src),
+      `${f}: no emoji or dingbat icons in source`)
+  }
+  const bgraph = fs.readFileSync(path.join(REPO, 'src/bgraph.js'), 'utf8')
+  assert(!/<img/.test(bgraph),
+    'bgraph.js: table icons are inline svg, not <img> file fetches')
+  for (const f of ['check', 'edit', 'cancel', 'trash', 'plus', 'delete'])
+    assert(!fs.existsSync(path.join(REPO, `src/${f}.svg`)),
+      `src/${f}.svg: retired third-party icon file is gone`)
 })()
 
 console.log('\n--- butil unit quals ---')
@@ -2649,6 +2676,73 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
 
     }, {width: 1360, height: 900})
 
+  // [EMO] One icon language on the rendered page. Replicata: load the
+  // graph editor. Expectata: every icon -- corner chips, undo/redo, the
+  // due-by DELTA marks, the data/matrix table buttons, and the shapes
+  // bgraph draws inside the graph svg -- is a Material Symbols glyph in
+  // the symbols' native "0 -960 960 960" box. Resultata (pre-fix): five
+  // icon languages at once: grayscale-filtered emoji chips (📷, 🔍), a
+  // typed "?" glyph, ✔ dingbats in the due-by table, Flaticon <img> files
+  // in the tables, and hand-drawn ⊕⊖/circled-x paths inside the svg.
+  const MATERIAL_BOX = '0 -960 960 960'
+  // The three shapes bgraph draws inside the graph svg (Material Symbols
+  // cancel, add_circle, and do_not_disturb_on)
+  const MATERIAL_DEFS = {
+    removebutton: 'm336-280 144-144 144 144 56-56-144-144 144-144-56-56-144 144-144-144-56 56 144 144-144 144 56 56ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z',
+    zoominbtn: 'M440-280h80v-160h160v-80H520v-160h-80v160H280v80h160v160Zm40 200q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z',
+    zoomoutbtn: 'M280-440h400v-80H280v80ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z',
+  }
+  await runQual(browser, port, 'icons', GRAPHEDITOR_PATH,
+    async (page, name) => {
+      const icons = await page.evaluate(() => {
+        const dbcells = [...document.querySelectorAll('.dbcell')]
+        return {
+          chips: [...document.querySelectorAll(
+            'details.gchip > summary, details.hint > summary')].map(s => ({
+              label: s.getAttribute('aria-label'),
+              text: s.textContent.trim(),
+              svgs: s.querySelectorAll('svg.uicon').length,
+            })),
+          uiconBoxes: [...document.querySelectorAll('svg.uicon')].map(s =>
+            s.getAttribute('viewBox')),
+          dingbats: dbcells.filter(c => /[✔✓]/.test(c.textContent)).length,
+          dbchecks: dbcells.filter(c => c.querySelector('svg')).length,
+          imgicons: document.querySelectorAll('img.dicon, img.ricon').length,
+          dicons: document.querySelectorAll('svg.dicon').length,
+          ricons: document.querySelectorAll('svg.ricon').length,
+          defs: Object.fromEntries(
+            ['removebutton', 'zoominbtn', 'zoomoutbtn'].map(id => {
+              const g = document.getElementById(id)
+              const paths = g ? [...g.querySelectorAll('path')] : []
+              return [id, paths.length ?
+                      paths[paths.length-1].getAttribute('d') : null]
+            })),
+        }
+      })
+      assert(icons.chips.length === 5,
+        `${name}: five corner chips (got ${icons.chips.length})`)
+      for (const chip of icons.chips)
+        assert(chip.svgs === 1 && chip.text === '',
+          `${name}: "${chip.label}" chip glyph is an inline Material svg, ` +
+          `not a text glyph ` + JSON.stringify(chip))
+      assert(icons.uiconBoxes.length >= 7 &&
+             icons.uiconBoxes.every(vb => vb === MATERIAL_BOX),
+        `${name}: all inline icons share the Material Symbols box ` +
+        JSON.stringify(icons.uiconBoxes))
+      assert(icons.dingbats === 0,
+        `${name}: no dingbat checkmarks in the due-by table ` +
+        `(got ${icons.dingbats})`)
+      assert(icons.dbchecks > 0,
+        `${name}: due-by DELTA marks are svg checkmarks`)
+      assert(icons.imgicons === 0 && icons.dicons > 0 && icons.ricons > 0,
+        `${name}: table icons are inline svgs, not <img> files ` +
+        JSON.stringify([icons.imgicons, icons.dicons, icons.ricons]))
+      for (const [id, want] of Object.entries(MATERIAL_DEFS))
+        assert(icons.defs[id] === want,
+          `${name}: in-graph #${id} glyph is the Material shape ` +
+          `(got ${JSON.stringify(icons.defs[id])?.slice(0, 60)})`)
+    })
+
   // Replicata: land on /username/goalname (the server hands the client
   // the goal from the URL). Expectata: that goal is selected and loaded,
   // the address bar keeps naming it, and switching goals through the
@@ -3041,6 +3135,24 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         `${name}: icon undo/redo buttons with accessible names ` +
         JSON.stringify(creation))
       assert(creation.zoomChip, `${name}: magnifier chip present`)
+
+      // [EMO] The sandbox's chip and icon glyphs speak the same Material
+      // Symbols language as the graph editor's
+      const sbicons = await page.evaluate(() => ({
+        chips: [...document.querySelectorAll('details.gchip > summary')]
+          .map(s => ({text: s.textContent.trim(),
+                      svgs: s.querySelectorAll('svg.uicon').length})),
+        uiconBoxes: [...document.querySelectorAll('svg.uicon')].map(s =>
+          s.getAttribute('viewBox')),
+      }))
+      assert(sbicons.chips.length === 1 && sbicons.chips[0].svgs === 1 &&
+             sbicons.chips[0].text === '',
+        `${name}: zoom chip glyph is an inline Material svg ` +
+        JSON.stringify(sbicons.chips))
+      assert(sbicons.uiconBoxes.length >= 3 &&
+             sbicons.uiconBoxes.every(vb => vb === '0 -960 960 960'),
+        `${name}: all inline icons share the Material Symbols box ` +
+        JSON.stringify(sbicons.uiconBoxes))
 
       // Add a datapoint through the Edit tool tab
       await page.type('#sdataval', '1')
@@ -3494,6 +3606,21 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
 
   await browser.close()
   server.close()
+
+  // --- npm postinstall build: gulp compile must succeed ---
+  // Replicata: npm ci, whose postinstall runs gulp compile. Expectata: a
+  // clean install. Resultata (pre-fix): gulpfile.js's generate_qual_html
+  // rendered grapheditor.ejs via a raw ejs.render with no filename option,
+  // so the include('uicon') partial from the icon unification couldn't
+  // resolve and every fresh install errored out.
+  console.log('\n--- gulp compile qual ---')
+  ;(() => {
+    const { spawnSync } = require('child_process')
+    const r = spawnSync('npx', ['gulp', 'compile'], {cwd: REPO})
+    assert(r.status === 0,
+      'gulp compile (npm postinstall) succeeds: ' +
+      (r.stderr || '').toString().trim().split('\n').slice(-6).join(' | '))
+  })()
 
   // --- app/server.js routing: boot the real Express app and drive it ---
   // The puppeteer quals render templates via ejs.render, which never

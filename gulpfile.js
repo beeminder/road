@@ -142,7 +142,9 @@ function favicons () { // Copy favicons from src to lib
 function generate_qual_html() {
   // Generate quals/generated/grapheditor.html from views/grapheditor.ejs
   const ejsTemplate = fs.readFileSync('views/grapheditor.ejs', 'utf8')
-  const html = ejs.render(ejsTemplate, { user: null, version: 'dev', goal: null, wanted: null })
+  // The filename option lets ejs resolve include() partials (views/uicon.ejs)
+  const html = ejs.render(ejsTemplate, { user: null, version: 'dev', goal: null, wanted: null },
+                          { filename: __dirname + '/views/grapheditor.ejs' })
 
   // Ensure generated directory exists
   if (!fs.existsSync('quals/generated')) {

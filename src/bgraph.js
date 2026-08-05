@@ -57,6 +57,35 @@ const round = Math.round
 const DIY = 365.25
 const SID = 86400
 
+// MSYMB = Material Symbols: glyphs from Google's outlined-24px icon set
+// (Apache 2.0), the same family the pages' chrome icons come from (see
+// views/uicon.ejs), so everything bgraph draws -- table buttons, due-by
+// checkmarks, and the buttons inside the graph svg -- speaks the one icon
+// language. Each entry is the symbol's path data in its native
+// 0 -960 960 960 box.
+const MSYMB = {
+  check:   'M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z',
+  edit:    'M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z',
+  trash:   'M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z',
+  plus:    'M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z',
+  cross:   'm256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z',
+  cancel:  'm336-280 144-144 144 144 56-56-144-144 144-144-56-56-144 144-144-144-56 56 144 144-144 144 56 56ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z',
+  zoomin:  'M440-280h80v-160h160v-80H520v-160h-80v160H280v80h160v160Zm40 200q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z',
+  zoomout: 'M280-440h400v-80H280v80ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z',
+}
+
+/** Renders an MSYMB glyph as an inline-svg icon string for d3 .html().
+    label is the accessible name and tip the hover tooltip (both keep the
+    exact strings the old img alt/title pairs carried). The svg inherits
+    the surrounding text color via currentColor. */
+function msymbIcon(name, cls, label, tip) {
+  if (!(name in MSYMB)) throw new Error("unknown MSYMB glyph: "+name)
+  return '<svg class="uicon '+cls+'" role="img" aria-label="'+label
+    +'" viewBox="0 -960 960 960" width="15" height="15"'
+    +' fill="currentColor"><title>'+tip+'</title><path d="'
+    +MSYMB[name]+'"/></svg>'
+}
+
 // -----------------------------------------------------------------------------
 // ------------------------------ FACTORY GLOBALS ------------------------------
 
@@ -740,32 +769,43 @@ function createGraph() {
                          .style("stroke",       "#ff5555")
                          .style("stroke-width", 25)
 
+  // The buttons drawn inside the graph svg reuse the MSYMB glyphs (see
+  // top of file). Each def keeps the coordinate box its use-sites expect
+  // (28 units for the knot-removal button, 540 for the zoom pair), so the
+  // Material path just gets scaled from its native 960 box, over a white
+  // backing disk sized to the glyph's outer ring.
   const buttongrp = defs.append("g").attr("id", "removebutton")
   buttongrp.append("circle").attr("cx",   14)
                             .attr("cy",   14)
                             .attr("r",    16)
                             .attr('fill', 'white')
   buttongrp.append("path")
-    .attr("d", "M13.98,0C6.259,0,0,6.261,0,13.983c0,7.721,6.259,13.982,13.98,13.982c7.725,0,13.985-6.262,13.985-13.982C27.965,6.261,21.705,0,13.98,0z M19.992,17.769l-2.227,2.224c0,0-3.523-3.78-3.786-3.78c-0.259,0-3.783,3.78-3.783,3.78l-2.228-2.224c0,0,3.784-3.472,3.784-3.781c0-0.314-3.784-3.787-3.784-3.787l2.228-2.229c0,0,3.553,3.782,3.783,3.782c0.232,0,3.786-3.782,3.786-3.782l2.227,2.229c0,0-3.785,3.523-3.785,3.787C16.207,14.239,19.992,17.769,19.992,17.769z")
-  
+    .attr("transform", "translate(0,28) scale("+(28/960)+")")
+    .attr("d", MSYMB.cancel)
 
   const zoomingrp = defs.append("g").attr("id", "zoominbtn")
   if (!opts.headless && opts.buttonZoom) {
     // Zoom buttons are not visible for SVG output in headless mode
-    zoomingrp.append("path").style("fill", "white")
-      .attr("d", "m 530.86356,264.94116 a 264.05649,261.30591 0 1 1 -528.1129802,0 264.05649,261.30591 0 1 1 528.1129802,0 z")
+    zoomingrp.append("circle").attr("cx",   270)
+                              .attr("cy",   270)
+                              .attr("r",    225)
+                              .attr("fill", "white")
     zoomingrp.append("path")
-      .attr("d", "m 308.21,155.10302 -76.553,0 0,76.552 -76.552,0 0,76.553 76.552,0 0,76.552 76.553,0 0,-76.552 76.552,0 0,-76.553 -76.552,0 z m 229.659,114.829 C 537.869,119.51007 420.50428,1.9980234 269.935,1.9980234 121.959,1.9980234 2.0000001,121.95602 2.0000001,269.93202 c 0,147.976 117.2473599,267.934 267.9339999,267.934 150.68664,0 267.935,-117.51205 267.935,-267.934 z m -267.935,191.381 c -105.681,0 -191.381,-85.7 -191.381,-191.381 0,-105.681 85.701,-191.380996 191.381,-191.380996 105.681,0 191.381,85.700996 191.381,191.380996 0,105.681 -85.7,191.381 -191.381,191.381 z")
+      .attr("transform", "translate(0,540) scale("+(540/960)+")")
+      .attr("d", MSYMB.zoomin)
   }
-  
+
   const zoomoutgrp = defs.append("g").attr("id", "zoomoutbtn")
   if (!opts.headless && opts.buttonZoom) {
     // Zoom buttons are not visible for SVG output in headless mode
-    zoomoutgrp.append("path").style("fill", "white")
-      .attr("d", "m 530.86356,264.94116 a 264.05649,261.30591 0 1 1 -528.1129802,0 264.05649,261.30591 0 1 1 528.1129802,0 z")
+    zoomoutgrp.append("circle").attr("cx",   270)
+                               .attr("cy",   270)
+                               .attr("r",    225)
+                               .attr("fill", "white")
     zoomoutgrp.append("path")
-      .attr("d", "m 155.105,231.65502 0,76.553 229.657,0 0,-76.553 c -76.55233,0 -153.10467,0 -229.657,0 z m 382.764,38.277 C 537.869,119.51007 420.50428,1.9980234 269.935,1.9980234 121.959,1.9980234 2.0000001,121.95602 2.0000001,269.93202 c 0,147.976 117.2473599,267.934 267.9339999,267.934 150.68664,0 267.935,-117.51205 267.935,-267.934 z m -267.935,191.381 c -105.681,0 -191.381,-85.7 -191.381,-191.381 0,-105.681 85.701,-191.380996 191.381,-191.380996 105.681,0 191.381,85.700996 191.381,191.380996 0,105.681 -85.7,191.381 -191.381,191.381 z")
-  } 
+      .attr("transform", "translate(0,540) scale("+(540/960)+")")
+      .attr("d", MSYMB.zoomout)
+  }
    
   // Create rectange to monitor zoom events and install handlers
   zoomarea = svg.append('rect').attr("class",  "zoomarea")
@@ -1387,11 +1427,12 @@ function updateDataTable() {
               {txt:date,            clk:null,     edit:editp, col:1},
               {txt:rawdata[row][1], clk:null,     edit:editp, col:2},
               {txt:rawdata[row][2], clk:null,     edit:editp, col:3},
-              {txt:editp ? '<img class="dicon" src="../src/check.svg" alt="Confirm" title="Confirm"></img>' :
-                           '<img class="dicon" src="../src/edit.svg" alt="Edit" title="Edit"></img>',
+              {txt:editp ? msymbIcon('check', 'dicon', 'Confirm', 'Confirm') :
+                           msymbIcon('edit',  'dicon', 'Edit',    'Edit'),
                                     clk:dataEdit, edit:editp, col:4},
-              {txt:editp ? '<img class="dicon" src="../src/cancel.svg" alt="Cancel" title="Cancel"></img>' :
-                           '<img class="dicon" src="../src/trash.svg" alt="Delete" title="Delete datapoint"></img>',
+              {txt:editp ? msymbIcon('cross', 'dicon', 'Cancel', 'Cancel') :
+                           msymbIcon('trash', 'dicon', 'Delete',
+                                     'Delete datapoint'),
                                     clk:editp ? dataCancel : dataDelete,
                                                   edit:editp, col:5}]
     })
@@ -1472,7 +1513,9 @@ function updateDueBy() {
 
   const nowstamp = bu.nowstamp(gol.timezone, gol.deadline, gol.asof)
   const nowday = bu.dayparse(nowstamp) / SID
-  const mark = "&#10004;"
+  // TODO: the checkmark's accessible name and tooltip are meant to convey
+  // that nothing is due that day; Latin placeholder pending human copy
+  const mark = msymbIcon('check', 'dbcheck', 'Nihil debitum', 'Nihil debitum')
   let db = br.dueby(road, gol, 7)
   
   dbbody
@@ -5547,12 +5590,12 @@ function updateTableButtons() {
       { order: 8, row: kind, name: "btndel"+kind,
         evt: () => removeKnot(kind,true),
         type: 'button',
-        txt: '<img class="ricon" src="../src/trash.svg" alt="Delete row" title="Delete row"></img>',
+        txt: msymbIcon('trash', 'ricon', 'Delete row', 'Delete row'),
         auto: false },
       { order: 9, row: kind, name: "btnadd"+kind,
         evt: () => addNewKnot(kind+1),
         type: 'button',
-        txt: '<img class="ricon" src="../src/plus.svg" alt="Add below" title="Insert row below"></img>',
+        txt: msymbIcon('plus', 'ricon', 'Add below', 'Insert row below'),
         auto: false },
     ]
   })

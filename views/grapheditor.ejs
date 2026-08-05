@@ -92,7 +92,7 @@
    grapheditor.js. */
 const shotChip = (p, obj) => `
     <details class="gchip shot">
-      <summary aria-label="Screenshot">📷</summary>
+      <summary aria-label="Screenshot">${include('uicon', {name: 'camera'})}</summary>
       <div class="chippop">
         <button class="bmdrbtn" id="${p}savesvgblob" onclick="${obj}.saveGraphBlob();">Preview SVG</button>
         <button class="bmdrbtn" id="${p}savesvgdl" onclick="${obj}.saveGraphDownload();">Download SVG</button>
@@ -106,14 +106,9 @@ const shotChip = (p, obj) => `
         </span>
       </div>
     </details>`
-/* Inline SVG undo arrow (the Material Symbols undo shape, Apache 2.0) and
-   its geometric mirror for redo; fill follows the button's text color so
-   the disabled state grays them out for free */
-const undoSvg = `<svg class="uicon" viewBox="0 -960 960 960" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M280-200v-80h284q63 0 109.5-40T720-420q0-60-46.5-100T564-560H312l104 104-56 56-200-200 200-200 56 56-104 104h252q97 0 166.5 63T800-420q0 94-69.5 157T564-200H280Z"/></svg>`
-const redoSvg = `<svg class="uicon" viewBox="0 -960 960 960" width="15" height="15" fill="currentColor" aria-hidden="true"><g transform="translate(960 0) scale(-1 1)"><path d="M280-200v-80h284q63 0 109.5-40T720-420q0-60-46.5-100T564-560H312l104 104-56 56-200-200 200-200 56 56-104 104h252q97 0 166.5 63T800-420q0 94-69.5 157T564-200H280Z"/></g></svg>`
 const zoomChip = (p, obj) => `
     <details class="gchip zoom">
-      <summary aria-label="Zoom">🔍</summary>
+      <summary aria-label="Zoom">${include('uicon', {name: 'search'})}</summary>
       <div class="chippop">
         <button class="bmdrbtn" id="${p}zoomall" onclick="${obj}.zoomAll();">View All</button>
         <button class="bmdrbtn" id="${p}zoomdflt" onclick="${obj}.zoomDefault();">Reset Zoom</button>
@@ -172,7 +167,7 @@ const zoomChip = (p, obj) => `
   <div class="workspace">
   <div class="graphcontainer panel">
     <details class="hint">
-      <summary aria-label="Help">?</summary>
+      <summary aria-label="Help"><%- include('uicon', {name: 'help'}) %></summary>
       <div class="hintpop">
         <p>Drag the bright red line or double-click for new segments.</p>
         <p>Knots (shown with vertical lines) are segment boundaries aka kinks in the red line.</p>
@@ -191,8 +186,8 @@ const zoomChip = (p, obj) => `
     </div>
     <br/>
     <div class="graphtools">
-      <button class="bmdrbtn iconbtn" id="eundo" aria-label="Undo" data-tip="Ctrl-Z / ⌘Z" aria-keyshortcuts="Control+Z Meta+Z" onclick="editor.undo();"><%- undoSvg %><span id="eundocnt" class="ucnt">0</span></button>
-      <button class="bmdrbtn iconbtn" id="eredo" aria-label="Redo" data-tip="Ctrl-Y / ⇧⌘Z" aria-keyshortcuts="Control+Y Shift+Meta+Z" onclick="editor.redo();"><%- redoSvg %><span id="eredocnt" class="ucnt">0</span></button>
+      <button class="bmdrbtn iconbtn" id="eundo" aria-label="Undo" data-tip="Ctrl-Z / ⌘Z" aria-keyshortcuts="Control+Z Meta+Z" onclick="editor.undo();"><%- include('uicon', {name: 'undo'}) %><span id="eundocnt" class="ucnt">0</span></button>
+      <button class="bmdrbtn iconbtn" id="eredo" aria-label="Redo" data-tip="Ctrl-Y / ⇧⌘Z" aria-keyshortcuts="Control+Y Shift+Meta+Z" onclick="editor.redo();"><%- include('uicon', {name: 'undo', flip: true}) %><span id="eredocnt" class="ucnt">0</span></button>
       <span class="checkpair pushright">
         <input id="keepslopes" type="checkbox"
                onclick="editor.keepSlopes(this.checked)" checked>
