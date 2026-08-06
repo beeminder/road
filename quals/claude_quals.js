@@ -3267,9 +3267,53 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         `${name}: matrix tab label matches its panel title ` +
         JSON.stringify(sbtab))
 
+      // [SBX] The merged "Edit" tab is split into Entry and Dial, the
+      // graph editor's exact tab vocabulary. Replicata: load the
+      // sandbox, read the tab strip, open the Dial tab. Expectata: five
+      // tabs (Graph Matrix|Stats|Data|Entry|Dial), Entry lit by default
+      // showing "Enter new data", and Dial revealing the "Dial Graph"
+      // rate controls. Resultata (pre-fix): a fourth tab named "Edit"
+      // -- colliding with the graph editor's View/Edit mode toggle --
+      // held both sections on one panel.
+      const sbstrip = await page.evaluate(() => ({
+        labels: [...document.querySelectorAll('.stablinks')]
+          .map(b => b.textContent).join('|'),
+        lit: document.querySelector('.stablinks.active')?.textContent,
+        entryTitle: document.querySelector('#sentry .tooltitle')?.textContent,
+        entryShown: document.getElementById('sentry')?.offsetParent !== null,
+      }))
+      assert(sbstrip.labels === 'Graph Matrix|Stats|Data|Entry|Dial',
+        `${name}: sandbox strip speaks the graph editor's tab ` +
+        `vocabulary (got ${sbstrip.labels})`)
+      assert(sbstrip.lit === 'Entry' && sbstrip.entryShown &&
+             sbstrip.entryTitle === 'Enter new data',
+        `${name}: Entry tab lit by default showing the entry form ` +
+        JSON.stringify(sbstrip))
+      await page.evaluate(() =>
+        document.querySelector('.stablinks[onclick*="sdial"]')?.click())
+      const sbdial = await page.evaluate(() => ({
+        title: document.querySelector('#sdial .tooltitle')?.textContent,
+        dialShown: document.getElementById('sendslope')?.offsetParent !== null,
+      }))
+      assert(sbdial.title === 'Dial Graph' && sbdial.dialShown,
+        `${name}: Dial tab reveals the Dial Graph rate controls ` +
+        JSON.stringify(sbdial))
+
+      // All five tabs share one strip row (the strip used to be a
+      // hard-coded 4-column grid, so a fifth tab wrapped at any width)
+      const striprows = await page.evaluate(() => new Set(
+        [...document.querySelectorAll('.stablinks')]
+          .map(b => Math.round(b.getBoundingClientRect().top))).size)
+      assert(striprows === 1,
+        `${name}: the five tabs share one strip row ` +
+        `(got ${striprows} rows)`)
+      // Land back on Entry for the data-entry flow below
+      await page.evaluate(() =>
+        document.querySelector('.stablinks[onclick*="sentry"]')?.click())
+
       // Add a datapoint through the Edit tool tab
       await page.type('#sdataval', '1')
-      await page.click('#sedit button[onclick*="newData"]')
+      await page.click('#sentry button[onclick*="newData"]')
       await page.waitForFunction(
         () => document.getElementById('sundocnt').textContent === '1')
       const afterAdd = await page.evaluate(() => ({
@@ -3286,6 +3330,8 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       // commitTo fed a per-second rate into bsandbox.newRate, whose rfin
       // is per the goal's rate units, so the dial silently set the rate
       // to roughly zero.
+      await page.evaluate(() =>
+        document.querySelector('.stablinks[onclick*="sdial"]')?.click())
       await page.evaluate(() => {
         document.getElementById('sendslope').value = '3'
       })

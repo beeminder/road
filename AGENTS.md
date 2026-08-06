@@ -37,8 +37,6 @@ Start by running quals: npm run quals
 
 Candidate next things:
 
-* [SBX] Sandbox residue from [TAB]/[TABDATA]: the sandbox's fourth tab is named "Edit" while the analogous slots on the graph editor are Entry/Dial (renaming it means new copy), and its Data tab stays read-only "View past data" (nothing to edit against; bsandbox owns its data).
-
 * [GPR] Unlabeled and clipped content. The Goal Progress section ends in two naked gray bars with no captions (pagekit.js:65-69 appends them label-free) — at 0% fill they're just two empty pills, and nothing says one is time-elapsed and the other value-progress. [Probably just add tooltips? Better yet, mimic what github.com/beeminder/beeminder does.]
 
 * [TRU] In the Data tab, comments hard-truncate mid-word ("initial datapoint of 0 #h") with no ellipsis or tooltip. 

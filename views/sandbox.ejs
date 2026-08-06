@@ -87,9 +87,9 @@
   <div class="vtabcontainer panel">
     <div class="vtabtitle">Sandbox Tools</div>
     <div class="vtab">
-      <button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sroad')">Graph Matrix</button><button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sstats')">Stats</button><button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sdata')">Data</button><button class="bmdrbtn stablinks active" onclick="openSandboxTab(event, 'sedit')">Edit</button> <!-- Warning, these elements should be on the same line to prevent inline spacing -->
+      <button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sroad')">Graph Matrix</button><button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sstats')">Stats</button><button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sdata')">Data</button><button class="bmdrbtn stablinks active" onclick="openSandboxTab(event, 'sentry')">Entry</button><button class="bmdrbtn stablinks" onclick="openSandboxTab(event, 'sdial')">Dial</button> <!-- Warning, these elements should be on the same line to prevent inline spacing -->
     </div>
-    <div id="sedit" class="stabcontent">
+    <div id="sdial" class="stabcontent">
       <div class="tooltitle">Dial Graph</div>
       Goal rate:<br/>
       <input type = "number" id="sendslope" class="toolinput rateinput" step="any"><br/>
@@ -100,6 +100,8 @@
         <option value="31557600">per year</option>
       </select>
       <button class="bmdrbtn" id="scommit" onclick="commitTo()">UPDATE</button>
+    </div>
+    <div id="sentry" class="stabcontent">
       <div class="tooltitle">Enter new data</div>
       Value:
       <input id="sdataval" class="toolinput daysinput inlinecontrol" type="number">

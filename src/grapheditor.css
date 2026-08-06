@@ -302,7 +302,7 @@ label {
   padding: 18px 0 0;
 }
 
-#graph, #entry, #eedit, #sedit {
+#graph, #entry, #eedit, #sentry {
   display: block;
 }
 
@@ -567,8 +567,9 @@ details.gchip > .chippop {
 }
 /***** VERTICAL SECONDARY TABS *****/
 .vtab {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap; /* strips with room render one row; tight widths wrap
+                      whole tabs rather than clipping their labels */
   width: 100%;
   padding: 0 12px;
   white-space: nowrap;
@@ -579,7 +580,8 @@ details.gchip > .chippop {
 .vtab button.bmdrbtn {
   display: block;
   width: auto;
-  min-width: 0;
+  flex: 1 1 0; /* equal-width tabs regardless of how many the strip holds */
+  min-width: max-content; /* but never narrower than the label */
   min-height: 43px;
   padding: 10px 5px 8px;
   border: 0;
