@@ -476,10 +476,10 @@ function shn(x, t=10, d=5, e=0) {
 /** Show Number with Sign: include the sign explicitly. See {@link
     module:butil.shn shn}.
     @param {Number} x Input number
-    @param {Number} [t=16] Total number of significant figures 
-    @param {Number} [d=5] Number of significant figures after the decimal 
+    @param {Number} [t=16] Total number of significant figures
+    @param {Number} [d=5] Number of significant figures after the decimal
     @param {Number} [e=0] Error direction for conservarounding */
-//shns = (x, t=16, d=5, e=0) => (x>=0 ? "+" : "") + shn(x, t, d, e)
+const shns = (x, t=16, d=5, e=0) => (x>=0 ? "+" : "") + shn(x, t, d, e)
 
 /** Show Date: take timestamp and return something like 2012.10.22
     @param {Number} t Unix timestamp */
@@ -1107,7 +1107,7 @@ return {
   arrMin, arrMax, extendo, deepcopy, partition, quantile, sum,
   accumulate, monotonize, zip, chop, clip, 
   searchLow, searchHigh, 
-  shn, shd, splur, 
+  shn, shns, shd, splur,
   conservaround, 
   linspace, rescale, deldups, orderedq, unaryflat, 
   clocky, mean, median, mode, trimmean, 

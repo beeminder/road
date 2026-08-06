@@ -37,7 +37,7 @@ Start by running quals: npm run quals
 
 Candidate next things:
 
-* [GPR] Unlabeled and clipped content. The Goal Progress section ends in two naked gray bars with no captions (pagekit.js:65-69 appends them label-free) — at 0% fill they're just two empty pills, and nothing says one is time-elapsed and the other value-progress. [Probably just add tooltips? Better yet, mimic what github.com/beeminder/beeminder does.]
+* [TGT] The Goal Progress TARGET row prints raw floats ("2029-12-26 → 0.00005787037037037037") — bgraph's getProgress doesn't shn its values the way beeminder.com's show_progress does (it uses cshn).
 
 * [TRU] In the Data tab, comments hard-truncate mid-word ("initial datapoint of 0 #h") with no ellipsis or tooltip. 
 

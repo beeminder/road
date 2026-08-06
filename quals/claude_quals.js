@@ -2846,6 +2846,62 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       await page.evaluate(() => editor.undo())
     })
 
+  // [GPR] The Goal Progress bars carry their captions, ported from
+  // beeminder.com's goal page (beeminder/beeminder goals_helper.rb
+  // prog_by_time / prog_by_value). Replicata: load the editor and read
+  // the Goal Progress section on both sides. Expectata: a by-time bar
+  // and a by-value bar, each split into a "done" and a "togo" segment
+  // captioned inside itself when wide enough and via hover tooltip
+  // otherwise ("N days on track" / "N days to go"; "+X so far" / "Y to
+  // goal"), segment widths summing to 100%, and the START/NOW/TARGET
+  // rows tooltipped with beebrain's progsum. Resultata (pre-fix): two
+  // naked gray bars with no captions, tooltips, or labels of any kind.
+  await runQual(browser, port, 'progress', GRAPHEDITOR_PATH,
+    async (page, name) => {
+      const sections = await page.evaluate(() =>
+        ['gprogress', 'eprogress'].map(id => {
+          const div = document.getElementById(id)
+          const seg = sel => {
+            const el = div.querySelector(sel)
+            return el && {
+              cap: el.querySelector('.barcap')?.textContent ?? null,
+              tip: el.getAttribute('title'),
+              w: parseFloat(el.style.width),
+            }
+          }
+          return {
+            id,
+            legacy: div.querySelectorAll('.progcont, .progbar').length,
+            rowtips: [...div.querySelectorAll('.progrow')].map(r =>
+              r.getAttribute('title')),
+            tdone: seg('.sum.bytime .done'), ttogo: seg('.sum.bytime .togo'),
+            vdone: seg('.sum.byvalue .done'), vtogo: seg('.sum.byvalue .togo'),
+          }
+        }))
+      for (const s of sections) {
+        const cap = seg => seg && (seg.cap ?? seg.tip)
+        assert(s.tdone && s.ttogo && s.vdone && s.vtogo,
+          `${name}: ${s.id} has by-time and by-value done/togo segments`)
+        if (!(s.tdone && s.ttogo && s.vdone && s.vtogo)) continue
+        assert(/^\d+ days? on track$/.test(cap(s.tdone)) &&
+               /^\d+ days? to go$/.test(cap(s.ttogo)),
+          `${name}: ${s.id} time bar captioned ` +
+          JSON.stringify([cap(s.tdone), cap(s.ttogo)]))
+        assert(/ so far$/.test(cap(s.vdone)) && / to goal$/.test(cap(s.vtogo)),
+          `${name}: ${s.id} value bar captioned ` +
+          JSON.stringify([cap(s.vdone), cap(s.vtogo)]))
+        assert(s.tdone.w + s.ttogo.w === 100 && s.vdone.w + s.vtogo.w === 100,
+          `${name}: ${s.id} segment widths sum to 100 ` +
+          JSON.stringify([s.tdone.w, s.ttogo.w, s.vdone.w, s.vtogo.w]))
+        assert(s.rowtips.length === 3 &&
+               s.rowtips.every(t => /% done/.test(t || '')),
+          `${name}: ${s.id} START/NOW/TARGET rows tooltip the progsum ` +
+          JSON.stringify(s.rowtips))
+        assert(s.legacy === 0,
+          `${name}: ${s.id} has no uncaptioned legacy bars`)
+      }
+    })
+
   // Replicata: land on /username/goalname (the server hands the client
   // the goal from the URL). Expectata: that goal is selected and loaded,
   // the address bar keeps naming it, and switching goals through the
@@ -3298,6 +3354,19 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       assert(sbdial.title === 'Dial Graph' && sbdial.dialShown,
         `${name}: Dial tab reveals the Dial Graph rate controls ` +
         JSON.stringify(sbdial))
+
+      // [GPR] The sandbox's Goal Progress bars carry captions too
+      // (shared updateProgress in pagekit.js)
+      const sbprog = await page.evaluate(() => ({
+        segs: document.querySelectorAll(
+          '#sprogress .sum .done, #sprogress .sum .togo').length,
+        caps: [...document.querySelectorAll(
+          '#sprogress .sum .done, #sprogress .sum .togo')].map(el =>
+          el.querySelector('.barcap')?.textContent ??
+          el.getAttribute('title')),
+      }))
+      assert(sbprog.segs === 4 && sbprog.caps.every(c => c),
+        `${name}: progress bars are captioned ` + JSON.stringify(sbprog))
 
       // All five tabs share one strip row (the strip used to be a
       // hard-coded 4-column grid, so a fifth tab wrapped at any width)

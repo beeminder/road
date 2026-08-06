@@ -659,19 +659,35 @@ details.gchip > .chippop {
   padding: 4px 15px 4px 4px;
 }
 .progcell { display: table-cell; }
-.progcont {
+/* Goal-progress bars, after beeminder.com's goal page: an amber "done"
+   segment and a gray "togo" remainder, captioned inside themselves
+   (pagekit.js progressBar) */
+.progsum .sum {
+  display: flex;
   width: min(300px, 100%);
-  height: 12px;
   margin: 8px 0;
   overflow: hidden;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-ctl);
   background: #eceae5;
+  font-size: .75rem;
+  line-height: 20px;
+  white-space: nowrap;
 }
-.progbar { 
-  height:100%; 
+.progsum .done {
+  overflow: hidden;
   background-color: var(--amber);
-  transition: width 0.3s ease; 
+  text-align: center;
+  transition: width 0.3s ease;
+}
+.progsum .togo {
+  overflow: hidden;
+  text-align: center;
+  transition: width 0.3s ease;
+}
+.barcap {
+  padding: 0 6px;
+  color: var(--ink);
 }
 
 /* Top summary line and components */
