@@ -2018,6 +2018,7 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       // with the insta-derail message. Exercises the tableKeyDown ->
       // tableSlopeChanged -> editorChanged path, which no qual drove
       // before.
+      await page.click('#editor .vtab button[onclick*="eroad"]')
       await page.click('#editorroad [name=slope1]')
       await page.evaluate(() => {
         const cell = document.querySelector('#editorroad [name=slope1]')
@@ -2293,6 +2294,9 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       // editor, so drive it at phone width too
       await page.click('#graphtab')
       await page.waitForSelector('#graph', {visible: true})
+      // The mode switch carries the editor's tab position over, so land
+      // on the Entry tool explicitly before driving its form
+      await page.click('#graph .vtab button[onclick*="entry"]')
       // Focusing the empty date field auto-fills today via Pikaday. Wait
       // for the picker and for focus to actually land on each field before
       // typing: puppeteer can otherwise outrace the picker's open handler
@@ -2367,8 +2371,8 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       }))
       assert(labels.main === 'View|Edit',
         `${name}: mode-switch copy as designed (got ${labels.main})`)
-      assert(labels.editor === 'Red Line|Stats|Data|Dial',
-        `${name}: editor-tool copy is unchanged`)
+      assert(labels.editor === 'Graph Matrix|Stats|Data|Dial',
+        `${name}: editor-tool copy as designed (got ${labels.editor})`)
       assert(labels.actions === 'View All|Reset Zoom|Submit',
         `${name}: editor-action copy is unchanged ` +
         `(got ${labels.actions})`)
@@ -2741,6 +2745,105 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         assert(icons.defs[id] === want,
           `${name}: in-graph #${id} glyph is the Material shape ` +
           `(got ${JSON.stringify(icons.defs[id])?.slice(0, 60)})`)
+    })
+
+  // [TAB] The two tool-tab strips behave as one. Replicata: load the
+  // editor and note which tool tab is lit; click Stats on the View side
+  // and switch to Edit; click Data on the Edit side and switch back.
+  // Expectata: the strips mirror each other position for position --
+  // both sides light the same position by default and a mode switch
+  // keeps the selected position -- and the tab that reveals the Graph
+  // Matrix panel is labeled with the panel's own title. Resultata
+  // (pre-fix): View lit Entry (4th), Edit lit Red Line (1st), so the
+  // highlight teleported across the strip on every mode switch and the
+  // user's tab choice was dropped; the matrix tab was labeled "Red
+  // Line" while its panel said "Graph Matrix".
+  await runQual(browser, port, 'tabs', GRAPHEDITOR_PATH,
+    async (page, name) => {
+      const activePos = sel => page.evaluate(s =>
+        [...document.querySelectorAll(s)].findIndex(b =>
+          b.classList.contains('active')), sel)
+      const visible = id => page.evaluate(i =>
+        document.getElementById(i).offsetParent !== null, id)
+
+      const posView = await activePos('.gtablinks')
+      const posEdit = await activePos('.etablinks')
+      assert(posView === posEdit,
+        `${name}: both strips light the same position at load ` +
+        `(View ${posView}, Edit ${posEdit})`)
+
+      await page.evaluate(() =>
+        document.querySelectorAll('.gtablinks')[1].click())
+      await page.click('#editortab')
+      assert(await activePos('.etablinks') === 1 && await visible('estats'),
+        `${name}: Stats selection survives the switch to Edit`)
+
+      await page.evaluate(() =>
+        document.querySelectorAll('.etablinks')[2].click())
+      await page.click('#graphtab')
+      assert(await activePos('.gtablinks') === 2 && await visible('data'),
+        `${name}: Data selection survives the switch back to View`)
+
+      const labels = await page.evaluate(() => ({
+        viewTab: document.querySelector('.gtablinks').textContent,
+        viewTitle: document.querySelector('#road .tooltitle').textContent,
+        editTab: document.querySelector('.etablinks').textContent,
+        editTitle: document.querySelector('#eroad .tooltitle').textContent,
+      }))
+      assert(labels.viewTab === labels.viewTitle &&
+             labels.editTab === labels.editTitle,
+        `${name}: matrix tab label matches its panel title ` +
+        JSON.stringify(labels))
+
+      // [TABDATA] One Data tab, not two: both sides carry the same
+      // view-and-edit data table. Replicata: load the editor and open
+      // each side's Data tab. Expectata: identical panel titles from a
+      // single-sourced partial, edit controls live on both sides, and --
+      // since a datapoint change reloads the goal -- triggering one
+      // while road edits are pending asks before nuking them.
+      // Resultata (pre-fix): the Edit side's panel said "View past
+      // data", its edit buttons were display:none, its cells
+      // non-editable, and the markup carried a dead data-range input.
+      const datapanels = await page.evaluate(() => ({
+        viewTitle: document.querySelector('#data .tooltitle').textContent,
+        editTitle: document.querySelector('#edata .tooltitle').textContent,
+        btnDisplay: document.querySelector('#editordata button.dcell')
+          .style.display,
+        editable: document.querySelector('#editordata .dcell.vl')
+          .getAttribute('contenteditable'),
+      }))
+      assert(datapanels.viewTitle === 'View and edit past data' &&
+             datapanels.editTitle === datapanels.viewTitle,
+        `${name}: both Data panels share the view-and-edit title ` +
+        JSON.stringify(datapanels))
+      assert((GRAPHEDITOR_TEMPLATE.match(/>View and edit past data</g) || [])
+               .length === 1,
+        `${name}: the Data panel markup is single-sourced in the template`)
+      assert(!GRAPHEDITOR_TEMPLATE.includes('data-range'),
+        `${name}: the dead data-range input is gone from the template`)
+      assert(datapanels.btnDisplay === '' && datapanels.editable === 'true',
+        `${name}: Edit side's data table is editable ` +
+        JSON.stringify(datapanels))
+
+      // The unsaved-edits confirm guard, from the Edit side: dial in a
+      // pending road edit, then poke a datapoint's delete button
+      await page.click('#editortab')
+      await page.evaluate(() =>
+        document.querySelector('.etablinks[onclick*="edata"]').click())
+      await page.evaluate(() => editor.commitTo(2 / 604800))
+      const dialogMsg = new Promise(res => page.once('dialog', async d => {
+        const m = d.message()
+        await d.dismiss()
+        res(m)
+      }))
+      await page.evaluate(() =>
+        document.querySelector('#editordata button.dcell.del').click())
+      const msg = await Promise.race([dialogMsg,
+        new Promise(r => setTimeout(() => r('(no dialog)'), 3000))])
+      assert(msg.includes('unsaved changes in the editor'),
+        `${name}: data edit with pending road edits asks first ` +
+        `(got ${JSON.stringify(msg)})`)
+      await page.evaluate(() => editor.undo())
     })
 
   // Replicata: land on /username/goalname (the server hands the client
@@ -3153,6 +3256,16 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
              sbicons.uiconBoxes.every(vb => vb === '0 -960 960 960'),
         `${name}: all inline icons share the Material Symbols box ` +
         JSON.stringify(sbicons.uiconBoxes))
+
+      // [TAB] The sandbox's matrix tab is labeled with its panel's own
+      // title, same as the graph editor's strips
+      const sbtab = await page.evaluate(() => ({
+        tab: document.querySelector('.stablinks').textContent,
+        title: document.querySelector('#sroad .tooltitle').textContent,
+      }))
+      assert(sbtab.tab === sbtab.title,
+        `${name}: matrix tab label matches its panel title ` +
+        JSON.stringify(sbtab))
 
       // Add a datapoint through the Edit tool tab
       await page.type('#sdataval', '1')

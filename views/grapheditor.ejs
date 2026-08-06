@@ -114,6 +114,13 @@ const zoomChip = (p, obj) => `
         <button class="bmdrbtn" id="${p}zoomdflt" onclick="${obj}.zoomDefault();">Reset Zoom</button>
       </div>
     </details>`
+/* Both modes carry the same view-and-edit data table (bgraph fills the
+   inner div and wires the editing to grapheditor.js's dataEdited) */
+const dataPanel = (id, cls, divid) => `
+    <div id="${id}" class="${cls}">
+      <div class="tooltitle">View and edit past data</div>
+      <div id="${divid}"></div>
+    </div>`
 %>
 <!-- Tab content -->
 <section id="graph" class="tabcontent" aria-labelledby="graphtab">
@@ -129,7 +136,7 @@ const zoomChip = (p, obj) => `
   <div class="vtabcontainer panel">
     <div class="vtabtitle">Graph Tools</div>
     <div class="vtab">
-      <button class="bmdrbtn gtablinks" onclick="openGraphTab(event, 'road')">Red Line</button><button class="bmdrbtn gtablinks" onclick="openGraphTab(event, 'stats')">Stats</button><button class="bmdrbtn gtablinks" onclick="openGraphTab(event, 'data')">Data</button><button class="bmdrbtn gtablinks active" onclick="openGraphTab(event, 'entry')">Entry</button> <!-- Warning, these elements should be on the same line to prevent inline spacing -->
+      <button class="bmdrbtn gtablinks" onclick="openGraphTab(event, 'road')">Graph Matrix</button><button class="bmdrbtn gtablinks" onclick="openGraphTab(event, 'stats')">Stats</button><button class="bmdrbtn gtablinks" onclick="openGraphTab(event, 'data')">Data</button><button class="bmdrbtn gtablinks active" onclick="openGraphTab(event, 'entry')">Entry</button> <!-- Warning, these elements should be on the same line to prevent inline spacing -->
     </div>
     <div id="entry" class="gtabcontent">
       <div class="tooltitle">Enter new data</div>
@@ -143,12 +150,7 @@ const zoomChip = (p, obj) => `
         <button class="bmdrbtn" id="dataadd" onclick="handleDataSubmit()">ADD PROGRESS</button>
       </div>
     </div>
-    <div id="data" class="gtabcontent">
-      <div class="tooltitle">View and edit past data</div>
-      <div id="graphdata">
-        <input class="data-range" type="range" step="0.5" value="5" min="1" max="10">
-      </div>
-    </div>
+    <%- dataPanel('data', 'gtabcontent', 'graphdata') %>
     <div id="stats" class="gtabcontent">
       <div class="tooltitle">Amounts Due By Day</div>
       <div class="duebytable" id="gdueby"></div>
@@ -215,7 +217,7 @@ const zoomChip = (p, obj) => `
   <div class="vtabcontainer panel">
     <div class="vtabtitle">Editor Tools</div>
     <div class="vtab">
-      <button class="bmdrbtn etablinks active" onclick="openEditorTab(event, 'eroad')">Red Line</button><button class="bmdrbtn etablinks" onclick="openEditorTab(event, 'estats')">Stats</button><button class="bmdrbtn etablinks" onclick="openEditorTab(event, 'edata')">Data</button><button class="bmdrbtn etablinks" onclick="openEditorTab(event, 'eedit')">Dial</button> <!-- Warning, these elements should be on the same line to prevent inline spacing -->
+      <button class="bmdrbtn etablinks" onclick="openEditorTab(event, 'eroad')">Graph Matrix</button><button class="bmdrbtn etablinks" onclick="openEditorTab(event, 'estats')">Stats</button><button class="bmdrbtn etablinks" onclick="openEditorTab(event, 'edata')">Data</button><button class="bmdrbtn etablinks active" onclick="openEditorTab(event, 'eedit')">Dial</button> <!-- Warning, these elements should be on the same line to prevent inline spacing -->
     </div>
     <div id="eedit" class="etabcontent">
       <div class="tooltitle">Dial Graph</div>
@@ -246,11 +248,7 @@ const zoomChip = (p, obj) => `
         <button class="bmdrbtn" id="overwritebreak" onclick="scheduleBreak(false);">Overwrite</button>
       </div>
     </div>
-    <div id="edata" class="etabcontent">
-      <div class="tooltitle">View past data</div>
-      <div id="editordata">
-      </div>
-    </div>
+    <%- dataPanel('edata', 'etabcontent', 'editordata') %>
     <div id="estats" class="etabcontent">
       <div class="tooltitle">Amounts Due By Day</div>
       <div class="duebytable" id="edueby"></div>

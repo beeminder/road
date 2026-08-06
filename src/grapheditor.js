@@ -21,6 +21,16 @@ function setMode(evt, mode) {
   if (!evt) document.getElementById(mode == "editor" ? "editortab"
                                                      : "graphtab")
                     .className += " active"
+  // The two tool-tab strips mirror each other position for position
+  // (Graph Matrix, Stats, Data, then Entry/Dial), so a mode switch
+  // carries the user's selected tab across by clicking the same-position
+  // button on the strip being switched to. Crashes loudly if a strip has
+  // no active button, which the markup makes impossible.
+  const fromstrip = [...document.getElementsByClassName(
+    mode == "editor" ? "gtablinks" : "etablinks")]
+  const tostrip = [...document.getElementsByClassName(
+    mode == "editor" ? "etablinks" : "gtablinks")]
+  tostrip[fromstrip.findIndex(b => b.classList.contains("active"))].click()
   // The following is necessary because Y axis width handling does not
   // work when the graph is not visible, so we have to call show()
   // after the mode becomes visible
@@ -522,6 +532,7 @@ function initialize() {
                        maxFutureDays: 365,
                        showFocusRect: true,
                        showContext: true,
+                       onDataEdit: dataEdited,
                        onRoadChange: editorChanged})
   graph.showData(document.getElementById("gshowdata").checked);
   editor.showData(document.getElementById("eshowdata").checked);

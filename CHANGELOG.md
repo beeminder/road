@@ -1,6 +1,8 @@
 
 ## CHANGELOG
 
+* 2026.08.04 The datepickers in the visual graph editor now have the right Beeminder color theme
+* 2026.08.03 [[More things we forgot to changelog; see UVIs]]
 * 2026.07.18 Logged-out deep links skip the login page (invisible OAuth bounce)
 * 2026.07.14 Revamped tutorial
 * 2026.07.14 Nicer header and footer HT @aad
