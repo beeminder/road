@@ -3850,6 +3850,111 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       (r.stderr || '').toString().trim().split('\n').slice(-6).join(' | '))
   })()
 
+  // --- jsbrain_server renderer: tab-pool failure handling ---
+  // From a production incident (2026-08-26, mirzakhani): a tab whose
+  // page.goto timed out went straight back into the pool with no idle-close
+  // timer armed, so it failed every render it was handed until the process
+  // restarted -- days, at ~777 failed renders/day. And each render leaked an
+  // anonymous requestfailed listener onto its tab, so every failure line was
+  // logged once per render the tab had ever served (~1M log lines/day).
+  // These quals drive the Renderer class with a stub browser -- no Chromium,
+  // hermetic -- and pin down the recovery behavior.
+  console.log('\n--- renderer pool quals ---')
+  await (async () => {
+    const os = require('os')
+    const Renderer = require(path.join(REPO, 'jsbrain_server/renderer')).Renderer
+    assert(typeof Renderer === 'function',
+      'renderer: module exports the Renderer class for quals')
+    if (typeof Renderer !== 'function') return
+
+    // A stub puppeteer page: goto rejects with the browser's scripted error
+    // (firing a pageerror first, the way a crashing tab logs before its
+    // navigation dies), close just records that it happened.
+    function stubPage(gotoError) {
+      return {
+        listeners: {},
+        closed: false,
+        gotoError: gotoError,
+        on(ev, fn) { (this.listeners[ev] = this.listeners[ev] || []).push(fn) },
+        off(ev, fn) {
+          const l = this.listeners[ev] || []
+          const i = l.indexOf(fn)
+          if (i >= 0) l.splice(i, 1)
+        },
+        listenerCount(ev) { return (this.listeners[ev] || []).length },
+        async goto(url, opts) {
+          if (this.gotoError) {
+            for (const fn of (this.listeners['pageerror'] || []))
+              fn(new Error('tab crashed'))
+            throw this.gotoError
+          }
+        },
+        async close() { this.closed = true },
+      }
+    }
+    // nextGotoError scripts the next created page to fail its goto
+    const mkBrowser = () => ({
+      created: [],
+      nextGotoError: null,
+      async newPage() {
+        const p = stubPage(this.nextGotoError)
+        this.nextGotoError = null
+        this.created.push(p)
+        return p
+      },
+    })
+
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'renderqual-'))
+    fs.writeFileSync(path.join(dir, 'slugfail.bb'), '{}')
+    const noop = () => {}
+
+    try {
+      // Replicata: a render whose page.goto rejects (the 40s navigation
+      // timeout). Expectata: render() reports the real cause, keeps the
+      // page's crash log, and the wedged tab is closed and its slot emptied
+      // so the next pickup gets a fresh page. Resultata (the bug): generic
+      // "Could not create headless chrome page!", crash log discarded, and
+      // the wedged tab back in the pool to fail every later render.
+      const browser = mkBrowser()
+      const r = new Renderer(browser, 'q')
+      browser.nextGotoError =
+        new Error('Navigation timeout of 40000 ms exceeded')
+      const res = await r.render(dir, dir, 'slugfail', 1, true)
+      const wedged = browser.created[0]
+      assert(res.error && /Navigation timeout/.test(res.error),
+        `renderer: goto failure surfaces the real cause (got: ${res.error})`)
+      assert(/PAGE ERROR: tab crashed/.test(res.msgbuf),
+        'renderer: page log kept on goto failure (wedge forensics)')
+      assert(wedged.closed === true,
+        'renderer: tab whose goto failed is closed, not repooled')
+      assert(r.pages.length === 1 && r.pages[0].page === null,
+        'renderer: failed slot emptied for reinstantiation')
+      assert(r.pages[0].busy === false,
+        'renderer: failed slot not left busy')
+
+      const pi = await r.renderPage('file:///next', '(q:2) ', noop, noop)
+      assert(browser.created.length === 2 &&
+             pi && pi.page === browser.created[1],
+        'renderer: pickup after a failure reinstantiates a fresh tab')
+
+      // Replicata: two renders reuse one healthy tab. Expectata: exactly one
+      // requestfailed listener on the tab (page-lifetime concern, attached
+      // at page creation). Resultata (the bug): one more listener per render,
+      // never removable (anonymous), multiplying every failure log line.
+      const b2 = mkBrowser()
+      const r2 = new Renderer(b2, 'q2')
+      const p1 = await r2.renderPage('file:///a', '(q2:1) ', noop, noop)
+      p1.busy = false
+      const p2 = await r2.renderPage('file:///b', '(q2:2) ', noop, noop)
+      assert(p2 && p2.page === p1.page, 'renderer: idle tab is reused')
+      assert(p1.page.listenerCount('requestfailed') === 1,
+        'renderer: requestfailed logger attached once per page, not per ' +
+        `render (got ${p1.page.listenerCount('requestfailed')})`)
+    } finally {
+      fs.rmSync(dir, {recursive: true, force: true})
+    }
+  })()
+
   // --- app/server.js routing: boot the real Express app and drive it ---
   // The puppeteer quals render templates via ejs.render, which never
   // exercises server.js's routes -- login round-trips, deep links, the
