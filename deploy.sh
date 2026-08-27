@@ -8,6 +8,7 @@
 #   ./deploy.sh quinn oster            same, to a subset (hostname or first label)
 #   ./deploy.sh prod-20260710_1200     deploy an existing tag: that is a rollback,
 #                                      or catching a lagging box up
+#   ./deploy.sh help                   print this documentation (also -h, --help)
 #
 # Master moves constantly, so deploys are pinned: each deploy mints an
 # annotated tag prod-YYYYMMDD_HHMM (UTC) at local master -- which must be an
@@ -62,8 +63,8 @@ PORT=8777
 # Prefix for remote commands that need node/npm/pm2 on their PATH.
 WITH_NODE='export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh" && nvm use '"$NODE_VERSION"' >/dev/null && '
 
-usage() {
-  sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'
+usage() { # the docs are the header comment; print it up to the first code line
+  sed -n '2,/^[^#]/p' "$0" | sed -e 's/^# \{0,1\}//' -e '$d'
   echo "Fleet: ${FLEET[*]}"
 }
 
@@ -168,7 +169,7 @@ was at $at; to revert it: ./deploy.sh $hint $serv"
 
 # ------------------------------------------------------------------ main ---
 
-case "${1:-}" in -h|--help) usage; exit 0;; esac
+case "${1:-}" in -h|--help|help) usage; exit 0;; esac
 
 TAG=""
 if [ $# -ge 1 ] && is_prod_tag "$1"; then
