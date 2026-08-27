@@ -33,7 +33,23 @@ class Renderer {
   
   prfinfo(r) { return [this.id,r] }
   prf(r) { return "("+this.id+":"+r+") " }
-  
+
+  // Create a page (tab) with its page-lifetime logging attached. The
+  // requestfailed logger lives here, once per page, NOT per render in
+  // renderPage: a per-render listener is anonymous, so nothing can off() it,
+  // and one accumulates per render for the life of the tab -- every failure
+  // line then gets logged once per render the tab ever served.
+  async createPage() {
+    const page = await this.browser.newPage()
+    page.on('requestfailed', (request) => {
+      const failure = request.failure()
+      console.error(`Request failed: ${request.url()} ` +
+                    (failure ? failure.errorText : "(no failure info)"))
+    })
+    return page
+  }
+
+
   // Renders and returns an available page (tab) within the puppeteer
   // chrome instance. Creates one if all existing ones are found to be
   // busy
@@ -51,7 +67,7 @@ class Renderer {
           // Check if page was closed by timeout, recreate if necessary
           if (!pageinfo.page) {
             console.log(tag+"renderer.js: Reinstantiating page in slot "+i)
-            pageinfo.page = await this.browser.newPage()
+            pageinfo.page = await this.createPage()
           }
           page = pageinfo.page
           if (pageinfo.timeout) {
@@ -64,7 +80,7 @@ class Renderer {
       if (!pageinfo) {
         // If all existing pages are found to be busy, create a new one
         console.log(tag+"renderer.js: Creating new page in slot "+numpages)
-        page = await this.browser.newPage()
+        page = await this.createPage()
         pageinfo = {page: page, busy: true, slot: numpages}
         this.pages.push( pageinfo )
       }
@@ -78,23 +94,24 @@ class Renderer {
       page.on('console',   msglog)
       page.on('error',     errlog)
       page.on('pageerror', errlog)
-      page.on('requestfailed', (request) => {
-        console.error(`Request failed: ${request.url()} ${request.failure().errorText}`);
-      });
 
       // Render the page and return result
       try {
         await page.goto(url, gotoOptions)
       } catch (error) {
-        // Remove listeners to prevent accumulation of old listeners for reused 
-        // pages. UPDATE: Remove listeners using off() instead of removeListener()
-        page.off('console',   msglog)
-        page.off('error',     errlog)
-        page.off('pageerror', errlog)
-        console.log(error)
+        console.log(tag+"renderer.js: page.goto failed:", error)
+        // A tab whose navigation failed may be wedged for good (after a tab
+        // crash, every subsequent goto times out), and a wedged tab returned
+        // to the pool fails every render it's handed until the process
+        // restarts. Discard it: the emptied slot gets a fresh page at next
+        // pickup, same as after an idle close. (Closing the page takes its
+        // listeners with it.)
+        page.close().catch(() => {})
+        pageinfo.page = null
+        pageinfo.gotoError = error.message
         pageinfo.busy = false
-        return null
-      } 
+        return pageinfo
+      }
       return pageinfo
     } catch (error) {
       console.error('Error in renderPage:', error);
@@ -313,13 +330,16 @@ class Renderer {
 
       } else {
 
-        let err = "Could not create headless chrome page!"
+        // Keep whatever the page logged before its goto died -- it's the
+        // only forensics for what wedged the tab.
+        msgbuf += pagelog.msg
+        let err = "page.goto failed: "+pageinfo.gotoError
         msgbuf += (tag+" renderer.js ERROR: "+err+"\n")
 
         // Clean up leftover timing
         if (time_id != null) msgbuf += this.timeEndMsg(time_id)
         time_id = null
-        
+
         return { error:err, msgbuf: msgbuf }
       }
     } finally {
@@ -494,3 +514,4 @@ async function create( id, pproduct ) {
 }
 
 module.exports = create
+module.exports.Renderer = Renderer // for quals: construct with a stub browser
