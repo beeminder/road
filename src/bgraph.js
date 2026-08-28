@@ -1,9 +1,10 @@
 /**
- * Beebrain graph generation and red line editing provided as a UMD module.
+ * Beebrain graph generation and graph editor, provided as a UMD module.
  * Provides a {@link bgraph} class, which can be used to construct independent
  * graph generating objects each with their own internal state, possibly linked
- * to particular div elements on the DOM.<br/>
- * <br/>Copyright 2017-2025 Uluc Saranli and Daniel Reeves
+ * to particular div elements on the DOM.
+ * 
+ * Copyright 2017-2026 Uluc Saranli and Daniel Reeves
  @module bgraph
  @requires d3
  @requires moment

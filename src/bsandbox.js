@@ -1,10 +1,10 @@
 /**
- * Javascript implementation of a sandbox for Beeminder goals, provided as a UMD
- * module. Provides a {@link bsandbox} class, which can be used to construct 
- * independent sandbox objects each with their own graph object, linked to
- * particular div element on the DOM.<br/>
+ * Sandbox for Beeminder goals, provided as a UMD module. 
+ * Provides a {@link bsandbox} class, which can be used to construct independent
+ * sandbox objects each with their own graph object, linked to particular div
+ * element on the DOM.
 
- * <br/>Copyright 2017-2026 Uluc Saranli and Daniel Reeves and Bethany Soule
+ * Copyright 2017-2026 Uluc Saranli and Daniel Reeves and Bethany Soule
  @module bsandbox
  @requires d3
  @requires moment

@@ -76,9 +76,7 @@ if (cluster.isMaster) {
   const port = process.env.PORT || 3000
 
   const fs = require('fs')
-  const sleep = require('sleep-promise') // change 'sleep' to 'sleep-promise'
   const express = require('express')
-  const contentDisposition = require('content-disposition')
   const createRenderer = require('./renderer')
 
   const prefix = "("+cluster.worker.id+"): "
@@ -98,7 +96,7 @@ if (cluster.isMaster) {
   const noinpath = "Bad URL parameters: Missing \"inpath\"<br/><br/>"+usage
   const nofile = `Bad URL parameters: One of "slug" or ("user","goal") must be supplied!<br/><br/>`+usage
   const paramconflict = 'Bad URL parameters: "slug\" and ("user\","goal") cannot be used together!<br/><br/>'+usage
-  const unknown = "Unknown error!<br/><br/>"+usage
+  //const unknown = "Unknown error!<br/><br/>"+usage // not currently used
   const pong = "pong"
   
   // Render url.

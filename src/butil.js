@@ -3,7 +3,7 @@
  * Provides a "butil" object holding various constants and utility functions.
  * No internal state.<br/>
  *
- * Copyright 2018-2025 Uluc Saranli and Daniel Reeves
+ * Copyright 2018-2026 Uluc Saranli and Daniel Reeves
  *
  * @requires moment
  * @exports butil

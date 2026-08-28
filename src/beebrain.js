@@ -1,7 +1,7 @@
 /**
- * Javascript implementation of Beebrain, provided as a UMD module.
+ * Javascript implementation of Beebrain as a UMD module.
  * Provides a {@link beebrain} class, which can be used to construct independent
- * Beebrain objects each with their own internal state.<br/>
+ * Beebrain objects each with their own internal state.
 
 @module beebrain
 @requires moment
@@ -14,7 +14,7 @@ Ported to Python by Uluc Saranli around 2011.12.20.
 Maintained and evolved by dreev, 2012-2018.
 Ported to Javascript by Uluc Saranli, in 2018-2019.
 
-Copyright 2008-2025 Uluc Saranli and Daniel Reeves
+Copyright 2008-2026 Uluc Saranli and Daniel Reeves
 */
 
 ;(((root, factory) => { // BEGIN PREAMBLE --------------------------------------
