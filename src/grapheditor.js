@@ -465,8 +465,10 @@ function handleDataSubmit() {
 }
 
 function setEntryToday() {
-  var today=moment().format("YYYY-MM-DD")
-  if (!dataDate.value.trim()) datePicker.setDate(today)
+  // Pikaday gets a Date, not a "YYYY-MM-DD" string: its setDate runs strings
+  // through Date.parse, which reads a date-only ISO string as UTC midnight,
+  // i.e., yesterday evening anywhere west of UTC
+  if (!dataDate.value.trim()) datePicker.setDate(new Date())
 }
 
 // Claude added this and it might be dumb but it seems to work

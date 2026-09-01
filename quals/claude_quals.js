@@ -188,6 +188,15 @@ function assert(condition, msg) {
   }
 }
 
+// CONSISTENT_AKRASIA_HORIZON: quals that spec the new akrasia-horizon
+// algorithm (gissue #232) go through this while the algorithm is parked
+// behind bu.CONSISTENT_AKRASIA_HORIZON. With the flag off they pass
+// vacuously, so they spec nothing about the shipped behavior; flipping it
+// on switches the code over and makes them bite.
+function assertCAH(condition, msg) {
+  assert(condition || !bu.CONSISTENT_AKRASIA_HORIZON, msg)
+}
+
 // Load a page, collect errors, wait for rendering, then run checks
 async function runQual(browser, port, name, urlPath, checkFn,
                        viewport = {width: 800, height: 600},
@@ -626,8 +635,8 @@ assert(bu.dayparse(null) === null, 'dayparse(null)')
   const dp = bu.dayparse
   const LA = 'America/Los_Angeles'
   // 09:00 PST Jan 14, 6pm deadline not yet passed, so asof = today
-  assert(bu.horizon(dp('20260114') + 17*3600, LA, dp('20260114'))
-         === dp('20260121'),
+  assertCAH(bu.horizon(dp('20260114') + 17*3600, LA, dp('20260114'))
+            === dp('20260121'),
     'horizon: pre-deadline, today + 7 = asof + 7')
   // 20:00 PST Jan 14, 6pm deadline passed, so asof = tomorrow's daystamp
   assert(bu.horizon(dp('20260115') + 4*3600, LA, dp('20260115'))
@@ -635,22 +644,22 @@ assert(bu.dayparse(null) === null, 'dayparse(null)')
     'horizon: post-deadline, still today + 7, ie, asof + 6')
   // 01:00 PST Jan 15, 3am nightowl deadline not yet passed, so asof =
   // Jan 14 even though the calendar says Jan 15
-  assert(bu.horizon(dp('20260115') + 9*3600, LA, dp('20260114'))
-         === dp('20260122'),
+  assertCAH(bu.horizon(dp('20260115') + 9*3600, LA, dp('20260114'))
+            === dp('20260122'),
     'horizon: nightowl post-midnight, today + 7 = asof + 8')
   // 00:30 PDT Jul 16: getting this right requires current DST data, which
   // is why horizon uses Intl; the vendored moment-timezone's data ends in
   // 2025, making it think this instant is still Jul 15, which would put
   // the horizon (and the first legal break date) a day early
-  assert(bu.horizon(dp('20260716') + 7*3600 + 1800, LA, dp('20260716'))
-         === dp('20260723'),
+  assertCAH(bu.horizon(dp('20260716') + 7*3600 + 1800, LA, dp('20260716'))
+            === dp('20260723'),
     'horizon: half past midnight during DST, today + 7')
   // Time travel: bb files can set asof way in the past ("compute
   // everything as if it were this date"), and then today is taken as asof
   const now = Math.floor(Date.now()/1000)
-  assert(bu.horizon(now, LA, dp('20170710')) === dp('20170717'),
+  assertCAH(bu.horizon(now, LA, dp('20170710')) === dp('20170717'),
     'horizon: time-traveled bb file gets asof + 7 days')
-  assert(bu.horizon(now, null, dp('20991231')) === dp('21000107'),
+  assertCAH(bu.horizon(now, null, dp('20991231')) === dp('21000107'),
     'horizon: far-future asof also snaps to asof + 7 days')
   let threw = false
   try { bu.horizon(NaN, null, dp('20170710')) } catch(e) { threw = true }
@@ -661,7 +670,7 @@ assert(bu.dayparse(null) === null, 'dayparse(null)')
   threw = false
   try { bu.horizon(now, 'Neverland/Neverwhere', dp('20260101')) }
   catch(e) { threw = true }
-  assert(threw, 'horizon: bogus timezone throws (anti-robustness)')
+  assertCAH(threw, 'horizon: bogus timezone throws (anti-robustness)')
 })()
 
 // --- beebrain: a degenerate bb file yields the graceful error, no crash ---
@@ -693,7 +702,7 @@ assert(bu.dayparse(null) === null, 'dayparse(null)')
     `beebrain: post-deadline horizon is calendar-today + 7 days ` +
     `(got ${bu.dayify(b.gol.horizon)}, want ${bu.dayify(T + 7*SID)})`)
   const pz = b.gol.pinkzone
-  assert(pz[pz.length-1][0] === b.gol.horizon,
+  assertCAH(pz[pz.length-1][0] === b.gol.horizon,
     `beebrain: pinkzone right edge sits on the horizon ` +
     `(got ${pz[pz.length-1][0]}, want ${b.gol.horizon})`)
 })()
@@ -2315,6 +2324,7 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       await page.type('#datacmt', 'abc')
       const graphNarrow = await page.evaluate(() => ({
         date: document.getElementById('datadate').value,
+        today: moment().format('YYYY-MM-DD'),
         value: document.getElementById('datavalue').value,
         cmt: document.getElementById('datacmt').value,
         pageFits: document.documentElement.scrollWidth <= innerWidth,
@@ -2323,6 +2333,18 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
              graphNarrow.value === '5' && graphNarrow.cmt === 'abc',
         `${name}: entry form date auto-fills and inputs accept typed text ` +
         JSON.stringify(graphNarrow))
+      // Replicata: open the Entry tab with its date field empty, which
+      // auto-fills it. Expectata: the field reads today's date in the
+      // browser's local time. Resultata (pre-fix): yesterday's date anywhere
+      // west of UTC. setEntryToday handed Pikaday a "YYYY-MM-DD" string, and
+      // Pikaday's setDate runs strings through Date.parse, which reads a
+      // date-only ISO string as UTC midnight, i.e., the previous evening in
+      // any timezone west of UTC. Side effect: on the 1st of a month the
+      // datepicker below opened on the previous month with no today cell,
+      // which crashed the [DPK] check.
+      assert(graphNarrow.date === graphNarrow.today,
+        `${name}: entry form auto-fills today, not yesterday ` +
+        `(got ${graphNarrow.date}, today is ${graphNarrow.today})`)
       assert(graphNarrow.pageFits,
         `${name}: graph tab fits a 390px viewport`)
       await page.screenshot({
@@ -3093,7 +3115,7 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         `${name}: post-deadline horizon is asof + 6 days, ie, ` +
         `calendar-today + 7 (asof ${res.asof}, horizon ${res.horizon})`)
       assert(res.valid0 === true, `${name}: unedited road is valid`)
-      assert(res.atHorizon.valid === true,
+      assertCAH(res.atHorizon.valid === true,
         `${name}: red line may get easier starting AT the horizon ` +
         JSON.stringify(res.atHorizon))
       assert(res.insideWindow.valid === false,
@@ -3127,22 +3149,22 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
           howl:  butil.horizon(dp('20260115') +  9*3600, LA, dp('20260114')),
         }
       }, flattenFromSrc)
-      assert(res.horizon === res.asof + 7*SID,
+      assertCAH(res.horizon === res.asof + 7*SID,
         `${name}: pre-deadline horizon is asof + 7 days ` +
         `(asof ${res.asof}, horizon ${res.horizon})`)
       assert(res.valid0 === true, `${name}: unedited road is valid`)
-      assert(res.atHorizon.valid === true,
+      assertCAH(res.atHorizon.valid === true,
         `${name}: red line may get easier starting AT the horizon ` +
         JSON.stringify(res.atHorizon))
       assert(res.insideWindow.valid === false,
         `${name}: red line may NOT get easier inside the horizon ` +
         JSON.stringify(res.insideWindow))
-      assert(res.hpre === bu.dayparse('20260121'),
+      assertCAH(res.hpre === bu.dayparse('20260121'),
         `${name}: butil.horizon pre-deadline: today + 7 (got ${res.hpre})`)
       assert(res.hpost === bu.dayparse('20260121'),
         `${name}: butil.horizon post-deadline: still today + 7, ie, ` +
         `asof + 6 (got ${res.hpost})`)
-      assert(res.howl === bu.dayparse('20260122'),
+      assertCAH(res.howl === bu.dayparse('20260122'),
         `${name}: butil.horizon nightowl post-midnight: today + 7, ie, ` +
         `asof + 8 (got ${res.howl})`)
     })

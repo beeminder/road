@@ -262,8 +262,9 @@ function newRate( r ) {
   // check if there is a road segment ending a week from now
   var asof = bu.dayparse(gol.bb.params.asof)
   // CONSISTENT_AKRASIA_HORIZON -- previously 6*SID instead of bu.AKH == 7*SID
-  var nextweek = bu.daysnap(asof + bu.AKH - SID) // OLD ALGORITHM
-  //var nextweek = bu.daysnap(asof + bu.AKH)       // NEW ALGORITHM
+  var nextweek = bu.CONSISTENT_AKRASIA_HORIZON
+    ? bu.daysnap(asof + bu.AKH)       // NEW ALGORITHM
+    : bu.daysnap(asof + bu.AKH - SID) // OLD ALGORITHM
   var road = gol.bb.params.road
   var roadlast = bu.dayparse(road[road.length-1][0])
 

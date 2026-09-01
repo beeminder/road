@@ -2096,6 +2096,14 @@ function isRoadValid(rd) {
   const ir = iroad
   const EPS = 0.000001 // dang floating point comparisons
 
+  /* CONSISTENT_AKRASIA_HORIZON -- NEW ALGORITHM */
+  if (bu.CONSISTENT_AKRASIA_HORIZON) {
+    for (let t = gol.horizon - bu.AKH; t < gol.horizon; t += SID) {
+      if (gol.yaw*br.rdf(rd, t) < gol.yaw*br.rdf(ir, t) - EPS) return false
+    }
+    return true
+  }
+
   /* CONSISTENT_AKRASIA_HORIZON -- OLD ALGORITHM */
   const now = gol.asof
   const hor = gol.horizon
@@ -2117,12 +2125,6 @@ function isRoadValid(rd) {
     if (gol.yaw*br.rdf(rd, ir[i].end[0]) < 
         gol.yaw*br.rdf(ir, ir[i].end[0]) - EPS) return false
   }
-  /* */ 
-  /* CONSISTENT_AKRASIA_HORIZON -- NEW ALGORITHM 
-  for (let t = gol.horizon - bu.AKH; t < gol.horizon; t += SID) {
-    if (gol.yaw*br.rdf(rd, t) < gol.yaw*br.rdf(ir, t) - EPS) return false
-  }
-  */
 
   return true
 }

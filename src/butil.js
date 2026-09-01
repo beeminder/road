@@ -90,6 +90,12 @@ RAZR3:  "#6BC461", // Green line;                     faded = #6BC461
 
 
 const AKH   = 7*SID       // Akrasia horizon, in seconds 
+// CONSISTENT_AKRASIA_HORIZON: feature flag for the akrasia-horizon algorithm
+// that keys the horizon to calendar-today in the goal's timezone rather than
+// to asof (gissue #232). False until Beebody ships its side. Every site that
+// branches on it is tagged CONSISTENT_AKRASIA_HORIZON, as are the quals that
+// spec the new algorithm, which pass vacuously while this is false.
+const CONSISTENT_AKRASIA_HORIZON = false
 //const BDUSK = 2147317201  // circa 2038, Rails's ENDOFDAYS+1 (was 2^31-2weeks)
 const BDUSK = 4102444799 // 2099-12-31 23:59:59 UTC
 
@@ -968,7 +974,7 @@ function nowstamp(tz, deadline, asof) {
 function horizon(now, tz, asof) {
   assert(nummy(now) && nummy(asof),
          ()=>`horizon: invalid now=${now} or asof=${asof}`)
-  return asof + AKH - SID // CONSISTENT_AKRASIA_HORIZON -- OLD ALGORITHM
+  if (!CONSISTENT_AKRASIA_HORIZON) return asof + AKH - SID // OLD ALGORITHM
 
   // CONSISTENT_AKRASIA_HORIZON -- NEW ALGORITHM
   let today
@@ -1101,7 +1107,7 @@ function lineintersect(s1, e1, s2, e2) {
 
 // All the constants and functions butil exports
 return {
-  MAXTIME, BBURL, BHUE, AKH, BDUSK, SECS, UNAM, 
+  MAXTIME, BBURL, BHUE, AKH, CONSISTENT_AKRASIA_HORIZON, BDUSK, SECS, UNAM, 
   assert, // exported so broad.js, beebrain.js, etc can fail loudly per rule 11
   nummy, norn, stringy, listy,
   arrMin, arrMax, extendo, deepcopy, partition, quantile, sum,

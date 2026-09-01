@@ -1611,8 +1611,8 @@ this.reloadRoad = function() {
   gol.fullroad = gol.road.slice()
   gol.fullroad.unshift( [gol.tini, gol.vini, 0, 0] )
   // CONSISTENT_AKRASIA_HORIZON
-  const akh = gol.asof+bu.AKH   // OLD ALGORITHM
-  //const akh = gol.horizon     // NEW ALGORITHM
+  const akh = bu.CONSISTENT_AKRASIA_HORIZON ? gol.horizon      // NEW ALGORITHM
+                                            : gol.asof+bu.AKH  // OLD ALGORITHM
   if (gol.error == "") {
     gol.pinkzone = [[gol.asof, br.rdf(roads, gol.asof), 0]]
     gol.road.forEach(
