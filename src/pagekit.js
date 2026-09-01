@@ -71,17 +71,21 @@ function updateProgress(div, gr) {
   // Create the top level table
   table = d3.select(div).append('div').attr('class', 'progtable')
 
+  // Values shown the way beebrain's statsum shows this same triple, rather
+  // than as raw floats like 0.00005787037037037037
+  const cell = ([date, v]) => date+" → "+butil.shn(v, 4, 2, 0)
+
   row = table.append('div').attr('class', 'progrow')
   row.append('div').attr('class', 'proghdr').text('START')
-  row.append('div').attr('class', 'progcell').text(progress[0][0]+" → "+progress[0][1])
+  row.append('div').attr('class', 'progcell').text(cell(progress[0]))
 
   row = table.append('div').attr('class', 'progrow')
   row.append('div').attr('class', 'proghdr').text('NOW')
-  row.append('div').attr('class', 'progcell').text(progress[1][0]+" → "+progress[1][1])
+  row.append('div').attr('class', 'progcell').text(cell(progress[1]))
 
   row = table.append('div').attr('class', 'progrow')
   row.append('div').attr('class', 'proghdr').text('TARGET')
-  row.append('div').attr('class', 'progcell').text(progress[2][0]+" → "+progress[2][1])
+  row.append('div').attr('class', 'progcell').text(cell(progress[2]))
 
   // Like beeminder.com's goal page, every row tooltips beebrain's
   // one-line percentwise progress summary

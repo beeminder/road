@@ -45,8 +45,6 @@ Start by running quals: npm run quals
 
 Candidate next things:
 
-* [TGT] The Goal Progress TARGET row prints raw floats ("2029-12-26 → 0.00005787037037037037") — bgraph's getProgress doesn't shn its values the way beeminder.com's show_progress does (it uses cshn).
-
 * [TRU] In the Data tab, comments hard-truncate mid-word ("initial datapoint of 0 #h") with no ellipsis or tooltip. 
 
 * [DEL] The DELTA column showing colored checkmarks instead of numbers is cryptic on first read.

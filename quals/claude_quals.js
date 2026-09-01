@@ -2922,6 +2922,25 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         assert(s.legacy === 0,
           `${name}: ${s.id} has no uncaptioned legacy bars`)
       }
+
+      // [TGT] Replicata: render the progress table for a goal whose values
+      // aren't round numbers (e.g. an aggday-mean goal, or a rate given per
+      // second). Expectata: the START/NOW/TARGET rows show the values the way
+      // beebrain's statsum does, via shn(v, 4, 2, 0). Resultata (pre-fix):
+      // raw floats, e.g. "2029-12-26 → 0.00005787037037037037".
+      const rows = await page.evaluate(() => {
+        const div = document.createElement('div')
+        updateProgress(div, {
+          getProgress: () => [['2026-01-01', 0],
+                              ['2026-06-01', 1/3],
+                              ['2026-12-31', 100/3]],
+          getGoalObj: () => ({progsum: '50% done', delta: 0, yaw: 1}),
+        })
+        return [...div.querySelectorAll('.progcell')].map(c => c.textContent)
+      })
+      assert(rows.join(' | ') ===
+             '2026-01-01 → 0 | 2026-06-01 → 0.33 | 2026-12-31 → 33.33',
+        `${name}: progress rows show shn'd values ` + JSON.stringify(rows))
     })
 
   // Replicata: land on /username/goalname (the server hands the client
