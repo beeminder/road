@@ -27,6 +27,12 @@ const GRAPHEDITOR_TEMPLATE = fs.readFileSync(
 // does this by itself on the live server
 const GEOPTS = {filename: path.join(REPO, 'views/grapheditor.ejs')}
 const SBOPTS = {filename: path.join(REPO, 'views/sandbox.ejs')}
+// generate.html as jsbrain_server's Chromium loads it, with the bb file on
+// the qual server instead of file://. The static handler in serve() maps
+// req.url straight to a file, query string and all, so this exact URL is
+// routed by hand in QUAL_ROUTES.
+const GENERATE_URL =
+  '/jsbrain_server/generate.html?bb=/quals/basic_test.bb&NOGRAPH=false'
 const EDITOR_START = GRAPHEDITOR_TEMPLATE.indexOf('<section id="editor"')
 const EDITOR_END = GRAPHEDITOR_TEMPLATE.indexOf('</main>')
 nodeAssert(EDITOR_START >= 0)
@@ -72,6 +78,11 @@ const QUAL_ROUTES = {
                                             version: 'qual',
                                             goal: null,
                                             wanted: 'alice/foo'}, GEOPTS),
+  },
+  [GENERATE_URL]: {
+    contentType: MIME['.html'],
+    body: fs.readFileSync(path.join(REPO, 'jsbrain_server/generate.html'),
+                          'utf8'),
   },
   '/quals/sandboxpage.html': {
     contentType: MIME['.html'],
@@ -3994,6 +4005,60 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
     } finally {
       fs.rmSync(dir, {recursive: true, force: true})
     }
+  })()
+
+  // --- jsbrain_server/generate.html: no timer outlives `done` ---
+  // From the oster logs (2026-09-01): every render whose tab then sat idle
+  // for a minute logged `"Aborting due to timeout!"` (generate.html:28) 60s
+  // after page load, success or not. That was generate.html's own abort
+  // timer (butil.MAXTIME, 653d0e8) firing into a finished page: nothing ever
+  // cleared it, and since c22d578 the tab pool keeps idle tabs for 600s,
+  // long enough for it to fire. Nor could it ever guard anything: renderer.js
+  // stops waiting at pageTimeout (40s) and detaches its listeners, so a 60s
+  // timer fires for no one. renderer.js owns the timeout; the page owns none.
+  console.log('\n--- generate.html timer quals ---')
+  await (async () => {
+    // Replicata: load generate.html the way renderer.js does and wait for
+    // `done`. Expectata: no timer is still pending; the page has nothing
+    // left to say. Resultata (the bug): one 60000ms timer pending, which
+    // later logs "Aborting due to timeout!" into a tab nobody listens to.
+    const page = await browser.newPage()
+    await page.evaluateOnNewDocument(() => {
+      const pending = new Map() // timer id -> delay in ms
+      const realSet = window.setTimeout, realClear = window.clearTimeout
+      window.setTimeout = function(fn, delay, ...args) {
+        const id = realSet(function() {
+          pending.delete(id)
+          return fn.apply(this, args)
+        }, delay)
+        pending.set(id, delay)
+        return id
+      }
+      window.clearTimeout = function(id) {
+        pending.delete(id)
+        return realClear(id)
+      }
+      window.__pendingTimers = () => Array.from(pending.values())
+    })
+    try {
+      await page.goto(`http://localhost:${port}${GENERATE_URL}`,
+                      {waitUntil: 'load', timeout: 30000})
+      await page.waitForFunction('done', {timeout: 30000})
+      const stats = await page.evaluate(
+        () => document.getElementById('goaljson').innerText.length)
+      assert(stats > 100,
+        `generate.html: goal stats rendered under the qual server (${stats} chars)`)
+      const pending = await page.evaluate(() => window.__pendingTimers())
+      assert(pending.length === 0,
+        'generate.html: no timer pending once done (pending delays: ' +
+        `${JSON.stringify(pending)})`)
+    } catch (e) {
+      assert(false, `generate.html: load threw (${e.message})`)
+    } finally {
+      await page.close()
+    }
+    assert(bu.MAXTIME === undefined,
+      'butil: no MAXTIME ceiling; the render timeout is renderer.js pageTimeout')
   })()
 
   // --- app/server.js routing: boot the real Express app and drive it ---

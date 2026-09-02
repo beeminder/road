@@ -23,13 +23,6 @@
 
 let done = false; // IMPORTANT: This is monitored by renderer.js
 
-// Make sure to abort processing if an unreasonable amount of time has elapsed
-setTimeout(function() {
-    console.log("Aborting due to timeout!");
-    done=true
-  },
-  butil.MAXTIME);
-
 try {
 
   function getParameterByName(name, url) {
