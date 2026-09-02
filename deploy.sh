@@ -44,6 +44,20 @@
 #
 # Node version is set explicitly via nvm in every remote command because
 # non-interactive ssh gets whatever nvm default each box happens to have.
+#
+# Deploying from OpenSSH 10.1+ (Oct 2025) prints this, once per ssh connection
+# -- so dozens of times per deploy, every remote command being its own ssh:
+#   ** WARNING: connection is not using a post-quantum key exchange algorithm.
+# The fleet runs Ubuntu 20.04's OpenSSH 8.2, which predates post-quantum key
+# exchange (OpenSSH 9.0, April 2022; Ubuntu 24.04 is the first LTS with it), so
+# the client falls back to classical curve25519 and warns. The session is still
+# encrypted and authenticated; the threat is someone recording the traffic now
+# and decrypting it with a future quantum computer, which matters little for a
+# deploy session. Silence it in your own ~/.ssh/config, not here (passing
+# -o WarnWeakCrypto is a hard error on clients older than 10.1):
+#   Match host *.beeminder.com
+#     WarnWeakCrypto no-pq-kex
+# The real fix is upgrading the servers' OS. See https://www.openssh.org/pq.html
 
 set -euo pipefail
 cd "$(dirname "$0")"
