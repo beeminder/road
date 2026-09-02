@@ -49,11 +49,6 @@ const SID = 86400  // seconds in a day (not used: DIM=DIY/12, WIM=DIY/12/7)
 // -----------------------------------------------------------------------------
 // ---------------------------- BEEBRAIN CONSTANTS -----------------------------
 
-// Maximum amount of time in milliseconds that Beebrain processing should take.
-// Users of bgraph and related tools should implement timeouts with this amount
-// to avoid infinite waits in case something goes wrong.
-const MAXTIME = 60000
-
 // Base URL for images.
 const BBURL = "https://brain.beeminder.com/"
 
@@ -1107,7 +1102,7 @@ function lineintersect(s1, e1, s2, e2) {
 
 // All the constants and functions butil exports
 return {
-  MAXTIME, BBURL, BHUE, AKH, CONSISTENT_AKRASIA_HORIZON, BDUSK, SECS, UNAM, 
+  BBURL, BHUE, AKH, CONSISTENT_AKRASIA_HORIZON, BDUSK, SECS, UNAM, 
   assert, // exported so broad.js, beebrain.js, etc can fail loudly per rule 11
   nummy, norn, stringy, listy,
   arrMin, arrMax, extendo, deepcopy, partition, quantile, sum,
