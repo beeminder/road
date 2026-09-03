@@ -1,63 +1,6 @@
 #!/usr/bin/env bash
-# One-command deploy of bbserver aka jsbrain to production, pinned by prod-* 
-# tags.
-#
-# Usage:
-#   ./deploy.sh                        tag local master as prod-<UTC stamp>, push
-#                                      the tag, and deploy it to the whole fleet
-#   ./deploy.sh quinn oster            same, to a subset (hostname or first label)
-#   ./deploy.sh prod-20260710_1200     deploy an existing tag: that is a rollback,
-#                                      or catching a lagging box up
-#   ./deploy.sh help                   print this documentation (also -h, --help)
-#
-# Master moves constantly, so deploys are pinned: each deploy mints an
-# annotated tag prod-YYYYMMDD_HHMM (UTC) at local master -- which must be an
-# ancestor of origin/master, i.e. pushed, though origin/master may have moved
-# past it -- and the fleet checks out that tag. Every deploy thus leaves a
-# permanent tag on GitHub: the release ledger is global and immutable, and
-# rollback is just deploying an older tag.
-#
-# What a deploy does, per server (sequentially, aborting the whole run on the
-# first failure):
-#   1. verify the server's checkout is detached at a prod-* tag, or on master
-#      (accepted for migrating from the pre-tag scheme); anything else looks
-#      deliberately pinned and aborts the deploy
-#   2. discard the server's local package-lock.json drift (damage left by the
-#      npm-install era; see below), then require an otherwise clean tree
-#   3. stop resque workers: everything that changes files the running app
-#      reads (a render loads generate.html and src/* from the checkout at
-#      request time) happens after this and before the restart in step 7,
-#      so background jobs never render against a mid-deploy beebrain.
-#      Steps 1-2 don't touch anything the app reads at runtime, and since
-#      servers deploy sequentially, the other worker boxes keep draining
-#      the queue while this one is paused.
-#   4. fetch the deploy tag and check it out (detached HEAD)
-#   5. npm ci in jsbrain_server under node NODE_VERSION
-#   6. pm2 reload jsbrain, then wait for a pong from the ping endpoint AND
-#      render a real test graph through puppeteer before declaring victory
-#   7. restart resque workers
-#
-# npm ci, never npm install: npm install rewrites package-lock.json (it is
-# not actually a lock file), which is what kept leaving servers with dirty
-# lockfiles. npm ci obeys the lockfile exactly and fails loudly on any
-# mismatch with package.json.
-#
-# Node version is set explicitly via nvm in every remote command because
-# non-interactive ssh gets whatever nvm default each box happens to have.
-#
-# Deploying from OpenSSH 10.1+ (Oct 2025) prints this, once per ssh connection
-# -- so dozens of times per deploy, every remote command being its own ssh:
-#   ** WARNING: connection is not using a post-quantum key exchange algorithm.
-# The fleet runs Ubuntu 20.04's OpenSSH 8.2, which predates post-quantum key
-# exchange (OpenSSH 9.0, April 2022; Ubuntu 24.04 is the first LTS with it), so
-# the client falls back to classical curve25519 and warns. The session is still
-# encrypted and authenticated; the threat is someone recording the traffic now
-# and decrypting it with a future quantum computer, which matters little for a
-# deploy session. Silence it in your own ~/.ssh/config, not here (passing
-# -o WarnWeakCrypto is a hard error on clients older than 10.1):
-#   Match host *.beeminder.com
-#     WarnWeakCrypto no-pq-kex
-# The real fix is upgrading the servers' OS. See https://www.openssh.org/pq.html
+# One-command deploy of bbserver aka jsbrain to production, pinned by prod-*
+# tags. Run ./deploy.sh for usage and ./deploy.sh info for how a deploy works.
 
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -77,9 +20,82 @@ PORT=8777
 # Prefix for remote commands that need node/npm/pm2 on their PATH.
 WITH_NODE='export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh" && nvm use '"$NODE_VERSION"' >/dev/null && '
 
-usage() { # the docs are the header comment; print it up to the first code line
-  sed -n '2,/^[^#]/p' "$0" | sed -e 's/^# \{0,1\}//' -e '$d'
-  echo "Fleet: ${FLEET[*]}"
+usage() { cat <<EOT
+Deploy bbserver aka jsbrain to production, pinned by prod-* tags.
+
+Usage:
+  ./deploy.sh all                      tag local master as prod-<UTC stamp>, push
+                                       the tag, and deploy it to the whole fleet
+  ./deploy.sh quinn oster              same, to a subset (hostname or first label)
+  ./deploy.sh prod-20260710_1200 all   deploy an existing tag: that is a rollback,
+                                       or catching a lagging box up
+  ./deploy.sh prod-20260710_1200 quinn ...to a subset; the tag always comes first
+  ./deploy.sh info                     how a deploy works, step by step, and the
+                                       gotchas around npm, node, and ssh
+  ./deploy.sh help                     print this usage (also -h, --help, no args)
+
+Fleet: ${FLEET[*]}
+EOT
+}
+
+info() { cat <<'EOT'
+Master moves constantly, so deploys are pinned: each deploy mints an
+annotated tag prod-YYYYMMDD_HHMM (UTC) at local master -- which must be an
+ancestor of origin/master, i.e. pushed, though origin/master may have moved
+past it -- and the fleet checks out that tag. Every deploy thus leaves a
+permanent tag on GitHub: the release ledger is global and immutable, and
+rollback is just deploying an older tag.
+
+What a deploy does, per server (sequentially, aborting the whole run on the
+first failure):
+  1. verify the server's checkout is detached at a prod-* tag, or on master
+     (accepted for migrating from the pre-tag scheme); anything else looks
+     deliberately pinned and aborts the deploy
+  2. discard the server's local package-lock.json drift (damage left by the
+     npm-install era; see below), then require an otherwise clean tree
+  3. stop resque workers: everything that changes files the running app
+     reads (a render loads generate.html and src/* from the checkout at
+     request time) happens after this and before the restart in step 7,
+     so background jobs never render against a mid-deploy beebrain.
+     Steps 1-2 don't touch anything the app reads at runtime, and since
+     servers deploy sequentially, the other worker boxes keep draining
+     the queue while this one is paused.
+  4. fetch the deploy tag and check it out (detached HEAD)
+  5. npm ci in jsbrain_server under node NODE_VERSION
+  6. pm2 reload jsbrain, then wait for a pong from the ping endpoint AND
+     render a real test graph through puppeteer before declaring victory
+  7. restart resque workers
+
+Redeploying the tag a box is already at is safe and still runs the whole
+cycle above: resque paused, npm ci from scratch, pm2 reloaded. It is this
+script's way of restarting jsbrain on a box. To see what a box is at (the
+same check as step 1; a box on master is a vestigial provision-time clone,
+see SERVERS.md):
+  ssh beeminder@quinn.beeminder.com \
+    git -C /var/www/jsbrain describe --tags --exact-match HEAD
+
+npm ci, never npm install: npm install rewrites package-lock.json (it is
+not actually a lock file), which is what kept leaving servers with dirty
+lockfiles. npm ci obeys the lockfile exactly and fails loudly on any
+mismatch with package.json.
+
+Node version is set explicitly via nvm in every remote command because
+non-interactive ssh gets whatever nvm default each box happens to have.
+
+Deploying from OpenSSH 10.1+ (Oct 2025) prints this, once per ssh connection
+-- so dozens of times per deploy, every remote command being its own ssh:
+  ** WARNING: connection is not using a post-quantum key exchange algorithm.
+The fleet runs Ubuntu 20.04's OpenSSH 8.2, which predates post-quantum key
+exchange (OpenSSH 9.0, April 2022; Ubuntu 24.04 is the first LTS with it), so
+the client falls back to classical curve25519 and warns. The session is still
+encrypted and authenticated; the threat is someone recording the traffic now
+and decrypting it with a future quantum computer, which matters little for a
+deploy session. Silence it in your own ~/.ssh/config, not here (passing
+-o WarnWeakCrypto is a hard error on clients older than 10.1):
+  Match host *.beeminder.com
+    WarnWeakCrypto no-pq-kex
+The real fix is upgrading the servers' OS. See https://www.openssh.org/pq.html
+EOT
 }
 
 die() {
@@ -183,19 +199,27 @@ was at $at; to revert it: ./deploy.sh $hint $serv"
 
 # ------------------------------------------------------------------ main ---
 
-case "${1:-}" in -h|--help|help) usage; exit 0;; esac
+case "${1:-}" in
+  ""|-h|--help|help) usage; exit 0;;
+  info) info; exit 0;;
+esac
 
 TAG=""
-if [ $# -ge 1 ] && is_prod_tag "$1"; then
+if is_prod_tag "$1"; then
   TAG=$1; shift
 fi
+[ $# -ge 1 ] || die "no servers given; name some, or 'all' for the whole fleet"
 
 SERVERS=()
-for arg in "$@"; do
-  serv=$(resolve_server "$arg") || die "unknown server '$arg' (fleet: ${FLEET[*]})"
-  SERVERS+=("$serv")
-done
-[ ${#SERVERS[@]} -gt 0 ] || SERVERS=("${FLEET[@]}")
+if [ "$*" = all ]; then
+  SERVERS=("${FLEET[@]}")
+else
+  for arg in "$@"; do
+    serv=$(resolve_server "$arg") ||
+      die "unknown server '$arg'; give 'all' by itself, or any of: ${FLEET[*]}"
+    SERVERS+=("$serv")
+  done
+fi
 
 if [ -z "$TAG" ]; then
   TAG=prod-$(date -u +%Y%m%d_%H%M) # UTC, so tags sort the same for every deployer

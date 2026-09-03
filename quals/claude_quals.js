@@ -3884,9 +3884,6 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       assert(tutlink, `${name}: login page links to the tutorial`)
     }, {width: 320, height: 700}, 'img')
 
-  await browser.close()
-  server.close()
-
   // --- npm postinstall build: gulp compile must succeed ---
   // Replicata: npm ci, whose postinstall runs gulp compile. Expectata: a
   // clean install. Resultata (pre-fix): gulpfile.js's generate_qual_html
@@ -4061,6 +4058,9 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       'butil: no MAXTIME ceiling; the render timeout is renderer.js pageTimeout')
   })()
 
+  await browser.close()
+  server.close()
+
   // --- app/server.js routing: boot the real Express app and drive it ---
   // The puppeteer quals render templates via ejs.render, which never
   // exercises server.js's routes -- login round-trips, deep links, the
@@ -4231,6 +4231,87 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       srv.kill('SIGKILL')
       try { require('fs').unlinkSync(dbfile) } catch {}
     }
+  })()
+
+  // --- deploy.sh: argument parsing, everything before the first git/ssh ---
+  // Replicata: run ./deploy.sh with no args. Expectata: the usage, since a
+  // bare invocation of a fleet-wide deploy script is more likely a request
+  // for help than a request for a deploy. Resultata (pre-fix): it minted a
+  // tag and deployed it to all seven boxes. The fleet is now spelled 'all',
+  // the usage is short, and the long notes that used to bloat the header
+  // live behind 'info'.
+  //
+  // Every path here must exit before the first git or ssh, so both are
+  // stubbed on PATH: a run that reaches either fails the qual instead of
+  // deploying to production, whatever regression got it there.
+  console.log('\n--- deploy.sh argument quals ---')
+  ;(() => {
+    const { spawnSync } = require('child_process')
+    const os = require('os')
+    const stubdir = fs.mkdtempSync(path.join(os.tmpdir(), 'qual-deploy-'))
+    for (const cmd of ['git', 'ssh']) {
+      const stub = path.join(stubdir, cmd)
+      fs.writeFileSync(stub,
+        `#!/bin/sh\necho "STUB ${cmd} REACHED: $*" >&2\nexit 99\n`)
+      fs.chmodSync(stub, 0o755)
+    }
+    const run = args => {
+      const r = spawnSync('./deploy.sh', args, {cwd: REPO,
+        env: {...process.env, PATH: `${stubdir}:${process.env.PATH}`}})
+      return {status: r.status,
+              out: r.stdout.toString(), err: r.stderr.toString()}
+    }
+    const label = args => `deploy.sh ${args.join(' ') || '(no args)'}`
+    const untouched = (args, r) => assert(!/STUB (git|ssh) REACHED/.test(r.err),
+      `${label(args)}: exits before any git or ssh (${r.err.trim()})`)
+    const NOTES = /npm ci, never npm install/ // a phrase from the long notes
+
+    let args = [], r = run(args)
+    assert(r.status === 0 && /\.\/deploy\.sh all\b/.test(r.out) &&
+           /\.\/deploy\.sh info\b/.test(r.out),
+      `${label(args)}: prints the usage, naming 'all' and 'info' ` +
+      `(exit ${r.status})`)
+    assert(!NOTES.test(r.out),
+      `${label(args)}: the usage is the short version, not the notes`)
+    untouched(args, r)
+    const usage = r.out
+
+    for (args of [['help'], ['-h'], ['--help']]) {
+      r = run(args)
+      assert(r.status === 0 && r.out === usage,
+        `${label(args)}: same usage as no args (exit ${r.status})`)
+      untouched(args, r)
+    }
+
+    args = ['info'], r = run(args)
+    assert(r.status === 0 && NOTES.test(r.out),
+      `${label(args)}: prints the long notes (exit ${r.status})`)
+    untouched(args, r)
+
+    args = ['zeether'], r = run(args)
+    assert(r.status === 1 && /unknown server 'zeether'/.test(r.err),
+      `${label(args)}: dies on an unknown box (exit ${r.status})`)
+    untouched(args, r)
+
+    args = ['prod-20260101_0000', 'zeether'], r = run(args)
+    assert(r.status === 1 && /unknown server 'zeether'/.test(r.err),
+      `${label(args)}: dies on an unknown box before fetching the tag ` +
+      `(exit ${r.status})`)
+    untouched(args, r)
+
+    // A tag with no boxes no longer defaults to the whole fleet
+    args = ['prod-20260101_0000'], r = run(args)
+    assert(r.status === 1 && /no servers/.test(r.err),
+      `${label(args)}: a tag alone dies rather than defaulting to the ` +
+      `fleet (exit ${r.status})`)
+    untouched(args, r)
+
+    args = ['all', 'quinn'], r = run(args)
+    assert(r.status === 1,
+      `${label(args)}: 'all' does not mix with box names (exit ${r.status})`)
+    untouched(args, r)
+
+    fs.rmSync(stubdir, {recursive: true})
   })()
 
   // --- Done ---
