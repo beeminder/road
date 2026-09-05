@@ -234,6 +234,7 @@ label {
 /* While a goal loads, the numbers still on screen are the old goal's:
    gray them out and stop taking clicks until the swap completes */
 .goalloading .summary.inbar,
+.goalloading .goalpicker,
 .goalloading .vtabcontainer,
 .goalloading .graphcontainer .graphtools {
   opacity: .35;

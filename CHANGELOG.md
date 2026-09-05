@@ -1,6 +1,7 @@
 
 ## CHANGELOG
 
+* 2026.09.04 More robust sessions, ~never expire, more graceful recoveries from errors
 * 2026.09.01 Better formatting of numbers in Goal Progress
 * 2026.09.01 Off-by-one bugfix with default date in one of the datepickers in the western hemisphere
 * 2026.08.04 The datepickers in the visual graph editor now have the right Beeminder color theme

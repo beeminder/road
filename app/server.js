@@ -1,9 +1,12 @@
 "use strict";
 
 const BHOST    = "www.beeminder.com";
-const BASEURL  = "https://www.beeminder.com/api/v1/users/";
 
 require("dotenv").config();
+// Where the API proxies send their requests. Overridable so the routing
+// quals can point it at a stub and script Beeminder's answers
+const BAPI     = process.env.BEEMINDER_API_BASE || `https://${BHOST}`;
+const BASEURL  = `${BAPI}/api/v1/users/`;
 
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -60,6 +63,22 @@ const sequelize = new Sequelize(
   }
 );
 
+// Stuff in the pub directory is served statically. Mounted above the
+// session middleware, so asset requests neither touch the session store
+// nor carry Set-Cookie (see rolling below)
+app.use("/staticdesign", express.static("quals/generated/grapheditor.html"));
+app.use("/tutorial",     express.static("quals/tutorial.html"));
+app.use("/newgoal",      express.static("quals/newgoal.html"));
+app.use("/src",          express.static("src"));       // js served through /src
+app.use("/data",         express.static("data"));  // bb files served thru /data
+app.use("/lib",          express.static("lib"));  // js/css/etc served thru /lib
+
+// Session lifetimes, counted from the last visit (see rolling below).
+// Logged-in sessions get 400 days, the ceiling Chrome and Firefox honor,
+// so in practice "until 400 idle days"
+const ANON_SESSION_MS  = 24 * 3600 * 1000;
+const LOGIN_SESSION_MS = 400 * 24 * 3600 * 1000;
+
 // Set up session parameters. SESSION_MEMSTORE swaps in express-session's
 // default in-process store (synchronous, so cross-request session state is
 // immediately durable) for the routing quals, which test redirects, not
@@ -72,7 +91,20 @@ app.use(
       : new SequelizeStore({ db: sequelize }),
     saveUninitialized: false,
     resave: false,
-    cookie: { secure: process.env.NODE_ENV !== "development" },
+    // Re-send the cookie on every response so the browser's copy, like the
+    // server's, expires maxAge after the last visit rather than after login
+    rolling: true,
+    cookie: {
+      secure: process.env.NODE_ENV !== "development",
+      // A new session starts anonymous (an OAuth stash, or a scanner hit on
+      // a name-shaped path; any cookieless hit that writes to the session
+      // mints one) and lives a day.
+      // /connect stretches it to LOGIN_SESSION_MS on login. The session
+      // store follows the cookie's expiry (its own default was 24 idle
+      // hours). Infinity is not an option: it serializes as an invalid
+      // date and every login would 500.
+      maxAge: ANON_SESSION_MS,
+    },
     trustProxy: true, // probably redundant with app.set("trust proxy", 1) above
   })
 );
@@ -91,14 +123,6 @@ sequelize
   .catch((err) => {
     console.log("Unable to connect to the database: ", err);
   });
-
-// Stuff in the pub directory is served statically
-app.use("/staticdesign", express.static("quals/generated/grapheditor.html"));
-app.use("/tutorial",     express.static("quals/tutorial.html"));
-app.use("/newgoal",      express.static("quals/newgoal.html"));
-app.use("/src",          express.static("src"));       // js served through /src
-app.use("/data",         express.static("data"));  // bb files served thru /data
-app.use("/lib",          express.static("lib"));  // js/css/etc served thru /lib
 
 const listener = app.listen(process.env.PORT, () => {
   console.log(`Graph Editor app is running on port ${listener.address().port}`);
@@ -186,6 +210,7 @@ app.get("/connect", (req, resp) => {
       typeof req.query.username     === "undefined") {
     req.session.access_token = null;
     req.session.username     = null;
+    req.session.cookie.maxAge = ANON_SESSION_MS; // anonymous again
     if (typeof req.query.error != "undefined") {
       req.session.error             = req.query.error;
       req.session.error_description = req.query.error_description;
@@ -195,14 +220,25 @@ app.get("/connect", (req, resp) => {
     //console.log(process.env);
     req.session.access_token = req.query.access_token;
     req.session.username     = req.query.username;
+    req.session.cookie.maxAge = LOGIN_SESSION_MS; // logged in: long-lived
   }
-  resp.redirect("/login");
+  // Saved explicitly: a re-login with the token Beeminder already issued
+  // changes nothing express-session hashes (it skips the cookie), so the
+  // cookie's new lifetime would otherwise never reach the store
+  req.session.save((err) => {
+    if (err) {
+      console.error("session save failed:", err);
+      resp.status(500).send("An error occurred.");
+      return;
+    }
+    resp.redirect("/login");
+  });
 });
 
 app.get("/logout", (req, resp) => {
-  req.session.access_token = null;
-  req.session.username     = null;
-  resp.redirect("/");
+  // Destroyed outright, not just emptied: the row would otherwise sit in
+  // the store for the cookie's whole 400-day life
+  dropSession(req, resp, "logout", () => resp.redirect("/"));
 });
 
 app.get("/getusergoals", async (req, resp) => {
@@ -218,6 +254,11 @@ app.get("/getusergoals", async (req, resp) => {
     });
     resp.send(JSON.stringify(goals));
   } catch (error) {
+    if (tokenRejected(error)) {
+      dropSession(req, resp, "Beeminder rejected the token", () =>
+        resp.status(401).json({error: "Not authenticated"}));
+      return;
+    }
     console.log(error);
     resp.status(500).send("An error occurred.");
   }
@@ -236,6 +277,11 @@ app.get("/getgoaljson/:goal", async (req, resp) => {
     });
     resp.send(JSON.stringify(goals));
   } catch (error) {
+    if (tokenRejected(error)) {
+      dropSession(req, resp, "Beeminder rejected the token",
+                  () => resp.redirect("/login"));
+      return;
+    }
     console.log(error);
     resp.status(500).send("An error occurred.");
   }
@@ -414,15 +460,39 @@ async function beemUpdatePoint(params) {
   return response.data;
 }
 
+// Beeminder answered 401: the token no longer works (revoked, most
+// likely). The session holding it is then dead weight that would trap the
+// browser behind a token that can't work for as long as the cookie lives,
+// so the proxies above drop it and let the next page load re-log in.
+function tokenRejected(error) {
+  return error.response?.status === 401;
+}
+
+// Drops the session from the store (saying why in the log), then carries
+// on with the response. A store failure is a 500, not a silent success
+// that would leave the row (and its token) alive behind a browser told it
+// was logged out.
+function dropSession(req, resp, why, then) {
+  console.log(`Dropping session of ${req.session.username}: ${why}`);
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("session destroy failed:", err);
+      resp.status(500).send("An error occurred.");
+      return;
+    }
+    then();
+  });
+}
+
 async function beemGetUser(user) {
-  const url = `https://${BHOST}/api/v1/users/${user.username}` + 
+  const url = `${BAPI}/api/v1/users/${user.username}` + 
               `.json?access_token=${user.access_token}`;
   const response = await axios.get(url);
   return response.data.goals;
 }
 
 async function beemGetGraphParams(usergoal) {
-  const url = `https://${BHOST}/api/vx/users/${usergoal.username}/goals/` +
+  const url = `${BAPI}/api/vx/users/${usergoal.username}/goals/` +
         `${usergoal.goalname}/graph.json?access_token=${usergoal.access_token}`;
   const response = await axios.get(url);
   return response.data;

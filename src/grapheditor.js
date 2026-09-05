@@ -11,6 +11,10 @@ if (typeof username != 'undefined') {
 
 let graph, editor // bgraph objects for view and edit modes
 let gload = true, eload = true // Loading states
+// The picker value whose goal is actually on screen, '' until one loads. A
+// failed load snaps the picker back to it so the page's labels never
+// disagree with its data (the URL and title derive from the picker).
+let loadedGoal = ''
 
 let curMode = "graph" // "graph" = view mode, "editor" = edit mode
 // Switches between view mode (the plain graph) and edit mode (the editor)
@@ -124,10 +128,15 @@ async function loadGoals(url) {
   // Tom Select fires once with an empty value when the dropdown is first
   // focused; skip that so we don't hit /getgoaljson/ and get a 404:
   if (!url || url.trim() === '') return;
+  // Remembered so a failed load can put them back
+  const [gload0, eload0] = [gload, eload]
+  gload = true; eload = true
   // Everything numeric on the page still belongs to the previous goal
   // until the new one lands, so gray it all out in the meantime (the
-  // graph area shows its own loading overlay)
+  // graph area shows its own loading overlay). The picker goes inert as
+  // well, keyboard included: a second pick mid-load would race this one
   document.body.classList.add("goalloading")
+  document.querySelector(".goalpicker").inert = true
   try {
     let resp
     if (graph) graph.loading(true)
@@ -137,14 +146,23 @@ async function loadGoals(url) {
     if (graph) graph.loading(false)
     if (editor) editor.loading(false)
     if (!resp) {
-      console.log("Failed to load goal")
+      showURLBanner('Error: Failed to load "' + url + '". ' + 
+        'Reload the page to log in again.')
+      // The previous goal is still what's on screen, so the picker and the
+      // loading flags go back to saying so. On a page where nothing has
+      // loaded yet the picker keeps naming the goal the banner names, as
+      // the address bar does
+      roadTomSelect.setValue(loadedGoal || url, true)
+      gload = gload0; eload = eload0
       return
     }
     await graph.loadGoalJSON( resp )
     await editor.loadGoalJSON( resp )
+    loadedGoal = url
     updateURL()
   } finally {
     document.body.classList.remove("goalloading")
+    document.querySelector(".goalpicker").inert = false
   }
 }
 
@@ -292,6 +310,10 @@ function prepareGoalSelect(goals) {
     opt.value = "load failed!";
     roadSelect.add(opt);
     initTomSelect()
+    // TODO: Latin for: Error: Failed to load your goals. Reload the page
+    // to log in again.
+    showURLBanner('Error: metae tuae onerari non potuerunt. ' +
+                  'Paginam renova ut rursus inires.')
     return
   }
   
@@ -317,7 +339,8 @@ function prepareGoalSelect(goals) {
   loadGoals(roadSelect.value)
 }
 
-// Shows the can't-show-what-the-URL-asked-for banner above the goalbar
+// Shows the error banner above the goalbar: why the URL's goal isn't the
+// one showing, or that a goal or the goal list failed to load
 function showURLBanner(msg) {
   document.getElementById('urlbannermsg').textContent = msg
   document.getElementById('urlbanner').hidden = false
@@ -334,6 +357,10 @@ function loadJSON( url, callback ) {
       if (xobj.responseText == "") callback(null)
       else
         callback(JSON.parse(xobj.responseText))
+    } else if (xobj.readyState == 4) {
+      // Like butil.loadJSON, any non-200 outcome (a 401 once the server
+      // has dropped a rejected token, a 500) hands the caller null
+      callback(null)
     }
   }
   xobj.open('GET', url, true);

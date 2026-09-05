@@ -65,7 +65,7 @@
   <div class="goalbar">
     <span class="goalpicker">
       <% if (user) { %><span class="yooguser"><%= user.username %>/</span><% } %>
-      <select id="roadselect" class="roadselect" aria-label="Beeminder goal:" onchange="eload=true;gload = true;loadGoals(this.value);">
+      <select id="roadselect" class="roadselect" aria-label="Beeminder goal:" onchange="loadGoals(this.value);">
       <option value="../automon/data/testroad0.bb">Test 0</option>
       <option value="../../privatesuite/data/afcuttin+gmailzero.bb">Test 1</option>
       <option value="../../privatesuite/data/b+coffee2.bb">Test 2</option>

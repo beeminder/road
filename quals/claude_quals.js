@@ -2416,34 +2416,130 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
         `${name}: icon-only undo/redo buttons keep accessible names ` +
         `(got ${labels.undoLabels})`)
 
-      // Replicata: load a goal whose /getgoaljson response is an HTML page
+      // Replicata: pick a goal whose /getgoaljson response is an HTML page
       // instead of JSON, which is what a dead session serves (the server
-      // 302s the XHR to the login page). Expectata: loadGoals survives:
-      // logs the failure, clears the loading overlays, and the page
-      // recovers on the next goal load. Resultata (pre-fix): 480ab4a made
-      // butil.loadJSON reject on parse failure without updating its
+      // 302s the XHR to the login page). Expectata: loadGoals survives and
+      // fails loudly: the URL banner names the goal that couldn't load, the
+      // picker snaps back to the goal still on screen so the page's labels
+      // never disagree with its data, the loading overlays clear, and the
+      // page recovers on the next goal load. Resultata (pre-fix): 480ab4a
+      // made butil.loadJSON reject on parse failure without updating its
       // callers, so the rejection escaped as an uncaught SyntaxError (the
       // "Unexpected token '<'" console error) and the "loading..."
-      // overlays were stranded forever.
-      const badLoad = await page.evaluate(() =>
-        loadGoals('htmlgoal').then(() => 'resolved', e => 'rejected: ' + e))
+      // overlays were stranded forever. Then the failure was only
+      // console-logged, and the picker kept naming the goal that never
+      // arrived over the previous goal's graph and numbers.
+      const badLoad = await page.evaluate(() => {
+        // What the picker does: Tom Select changes the select's value
+        // before its onchange handler calls loadGoals
+        roadTomSelect.addOption({value: 'htmlgoal', text: 'htmlgoal'})
+        roadTomSelect.setValue('htmlgoal', true)
+        return loadGoals('htmlgoal')
+          .then(() => 'resolved', e => 'rejected: ' + e)
+      })
       assert(badLoad === 'resolved',
         `${name}: loadGoals survives an HTML (non-JSON) goal response ` +
         `(got: ${badLoad})`)
-      const stuckOverlays = await page.evaluate(() =>
-        document.querySelectorAll('svg.bmndrsvg g.overlay').length)
-      assert(stuckOverlays === 0,
+      const failed = await page.evaluate(() => ({
+        bannerHidden: document.getElementById('urlbanner').hidden,
+        bannerMsg: document.getElementById('urlbannermsg').textContent,
+        picker: roadTomSelect.getValue(),
+        select: roadSelect.value,
+        loading: [gload, eload],
+        stuckOverlays:
+          document.querySelectorAll('svg.bmndrsvg g.overlay').length,
+      }))
+      assert(!failed.bannerHidden && /htmlgoal/.test(failed.bannerMsg),
+        `${name}: failed goal load shows a banner naming the goal ` +
+        JSON.stringify(failed))
+      assert(failed.picker === 'testroad0' && failed.select === 'testroad0',
+        `${name}: picker snaps back to the goal still on screen ` +
+        JSON.stringify(failed))
+      assert(failed.loading.join() === 'false,false',
+        `${name}: loading flags return to loaded after a failed load ` +
+        JSON.stringify(failed))
+      assert(failed.stuckOverlays === 0,
         `${name}: no loading overlays stranded after a failed goal load ` +
-        `(found ${stuckOverlays})`)
+        `(found ${failed.stuckOverlays})`)
+      await page.click('#urlbanner button')
+      await page.evaluate(() => roadTomSelect.removeOption('htmlgoal'))
       await page.evaluate(() => loadGoals('testroad0'))
       await page.waitForSelector('#roadgraph svg.bmndrsvg .razr')
 
+      // Replicata: the goal list itself fails to arrive (/getusergoals
+      // answers 401 once Beeminder rejects the token, or 500). Expectata:
+      // the page's own loadJSON hands its callback null on any non-200,
+      // like butil.loadJSON, and prepareGoalSelect(null) says so in the
+      // banner, not just in a "load failed!" picker entry. Resultata
+      // (pre-fix): the callback never ran, so the picker sat on
+      // "Loading..." forever with no banner.
+      const listFail = await page.evaluate(() => new Promise(resolve => {
+        const t = setTimeout(() => resolve('no callback'), 1500)
+        loadJSON('/nonexistent.json', r => { clearTimeout(t); resolve(r) })
+      }))
+      assert(listFail === null,
+        `${name}: loadJSON hands its callback null on a non-200 ` +
+        `(got ${JSON.stringify(listFail)})`)
+      const listBanner = await page.evaluate(() => {
+        const hiddenBefore = document.getElementById('urlbanner').hidden
+        prepareGoalSelect(null)
+        return {
+          hiddenBefore,
+          hidden: document.getElementById('urlbanner').hidden,
+          msg: document.getElementById('urlbannermsg').textContent,
+          picker: roadTomSelect.getValue(),
+        }
+      })
+      assert(listBanner.hiddenBefore && !listBanner.hidden &&
+             listBanner.msg.length > 0 && !/htmlgoal/.test(listBanner.msg) &&
+             listBanner.picker === 'load failed!',
+        `${name}: a failed goal list shows a banner ` +
+        JSON.stringify(listBanner))
+      // Dismissed the way the button does it, so a missing banner (the
+      // pre-fix state) doesn't abort the suite here
+      await page.evaluate(() =>
+        document.getElementById('urlbanner').hidden = true)
+      await page.evaluate(() =>
+        prepareGoalSelect(['testroad0', 'othergoal', 'postdl', 'predl']))
+      await page.waitForFunction(() =>
+        !document.body.classList.contains('goalloading'))
+
+      // Replicata: the very first goal fetch of a page fails (a 500 on the
+      // landing goal, or a token revoked between the goal list and the
+      // goal), so there is nothing on screen to snap back to. Expectata:
+      // the picker keeps naming the goal the banner names, as the address
+      // bar does. Resultata (pre-fix): the picker went blank.
+      const firstFail = await page.evaluate(async () => {
+        loadedGoal = '' // what a fresh page has before anything loads
+        roadTomSelect.addOption({value: 'htmlgoal', text: 'htmlgoal'})
+        roadTomSelect.setValue('htmlgoal', true)
+        await loadGoals('htmlgoal')
+        return {
+          picker: roadTomSelect.getValue(), select: roadSelect.value,
+          hidden: document.getElementById('urlbanner').hidden,
+        }
+      })
+      assert(firstFail.picker === 'htmlgoal' &&
+             firstFail.select === 'htmlgoal' && !firstFail.hidden,
+        `${name}: a first-load failure leaves the picker naming the goal ` +
+        JSON.stringify(firstFail))
+      await page.evaluate(() => {
+        document.getElementById('urlbanner').hidden = true
+        roadTomSelect.removeOption('htmlgoal')
+      })
+      await page.evaluate(() => loadGoals('testroad0'))
+      await page.waitForFunction(() =>
+        !document.body.classList.contains('goalloading'))
+
       // Replicata: pick a goal that takes a while to arrive. Expectata:
       // the numbers still on screen belong to the old goal, so the
-      // summary and tools gray out and stop taking clicks until the new
-      // goal's numbers land (the graph area shows its own loading
-      // overlay). Resultata (pre-fix): the old safebuf and pledge kept
-      // showing full-strength against the newly picked goal's name.
+      // summary, tools, and goal picker gray out and stop taking clicks
+      // until the new goal's numbers land (the graph area shows its own
+      // loading overlay). Resultata (pre-fix): the old safebuf and pledge
+      // kept showing full-strength against the newly picked goal's name;
+      // later, the picker still took a second pick mid-load, and a failed
+      // second pick snapped it back to the goal the first pick was
+      // about to replace.
       const during = await page.evaluate(() => {
         loadGoals('slowgoal') // deliberately not awaited: sample mid-load
         return new Promise(resolve => setTimeout(() => resolve({
@@ -2452,10 +2548,21 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
             document.querySelector('.summary.inbar')).opacity,
           toolsPe: getComputedStyle(
             document.querySelector('#graph .vtabcontainer')).pointerEvents,
+          pickerPe: getComputedStyle(
+            document.querySelector('.goalpicker')).pointerEvents,
+          // Inert, not just unclickable: CSS pointer-events leaves the
+          // keyboard path open (Tab into Tom Select, arrow, Enter)
+          pickerInert: document.querySelector('.goalpicker').inert,
+          pickerTakesFocus: (() => {
+            document.querySelector('.goalpicker .ts-control input').focus()
+            return document.querySelector('.goalpicker')
+              .contains(document.activeElement)
+          })(),
         }), 250))
       })
       assert(during.classed && parseFloat(during.summaryOp) < 1 &&
-             during.toolsPe === 'none',
+             during.toolsPe === 'none' && during.pickerPe === 'none' &&
+             during.pickerInert === true && !during.pickerTakesFocus,
         `${name}: stale numbers gray out while a goal loads ` +
         JSON.stringify(during))
       await page.waitForFunction(() =>
@@ -4074,12 +4181,22 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
     const os = require('os')
     const dbfile = path.join(os.tmpdir(),
       `qualdb-${process.pid}-${Date.now()}.sqlite`)
+    // A stand-in for Beeminder's API: answers 401 to everything, the way
+    // Beeminder does once a token is revoked
+    let bapiHits = 0
+    const bapi = http.createServer((q, s) => {
+      bapiHits++
+      s.writeHead(401, { 'Content-Type': 'application/json' })
+      s.end('{"errors":{"message":"invalid token"}}')
+    })
+    await new Promise(r => bapi.listen(0, r))
     const srv = spawn('node', ['app/server.js'], { cwd: REPO, env: {
       ...process.env,
       PORT: '0', DB_STORAGE: dbfile, NODE_ENV: 'development',
       SESSION_MEMSTORE: '1', // sync session store: no async-persist race
       SESSION_SECRET: 'qualsecret', BEEMINDER_CLIENT_ID: 'qual',
       AUTH_REDIRECT_URI: 'http://localhost/connect',
+      BEEMINDER_API_BASE: `http://localhost:${bapi.address().port}`,
     }})
     let srvport
     try {
@@ -4100,6 +4217,7 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
     } catch (e) {
       assert(false, `server routing: ${e.message}`)
       srv.kill('SIGKILL')
+      bapi.close()
       return
     }
 
@@ -4124,7 +4242,8 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
             let body = ''
             res.on('data', d => { body += d })
             res.on('end', () => resolve(
-              { status: res.statusCode, loc: res.headers.location, body }))
+              { status: res.statusCode, loc: res.headers.location, body,
+                setCookie: res.headers['set-cookie'] || [] }))
           })
         req.on('error', reject)
         req.end()
@@ -4147,7 +4266,29 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       assert(r.status === 302 && r.loc === authurl,
         `server: logged-out deep link bounces straight to Beeminder ` +
         `OAuth (${r.status} -> ${r.loc})`)
-      await hit('flow', jars, '/connect?access_token=tok&username=alice')
+      // An anonymous session (the OAuth stash above, or a scanner hitting
+      // any name-shaped path) lives a day, not the 400 that logging in
+      // earns below: any cookieless hit that writes to the session (the
+      // stash, /connect) mints one of these rows.
+      // Resultata (pre-fix): 400 days for those too.
+      const expiresOf = res => ((res.setCookie.find(c =>
+        c.startsWith('connect.sid=')) || '').match(/Expires=([^;]+)/) || [])[1]
+      const anonDays = expiresOf(r)
+        ? (Date.parse(expiresOf(r)) - Date.now()) / 86400e3 : NaN
+      assert(anonDays > 0.99 && anonDays <= 1,
+        `server: anonymous session cookie expires in a day ` +
+        `(got ${anonDays} days)`)
+      r = await hit('flow', jars, '/connect?access_token=tok&username=alice')
+      // The login cookie outlives the browser session: an Expires 400 days
+      // out (the ceiling Chrome and Firefox honor), reset on every request,
+      // so nobody is logged out for quitting the browser or for a day away.
+      // Resultata (pre-fix): a cookie with no Expires, gone when the browser
+      // quit, and a server-side session the store swept after 24 idle hours
+      // (the store's default; it follows the cookie's expiry once set).
+      const daysOut = expiresOf(r)
+        ? (Date.parse(expiresOf(r)) - Date.now()) / 86400e3 : NaN
+      assert(daysOut > 399 && daysOut <= 400,
+        `server: login cookie expires 400 days out (got ${expiresOf(r)})`)
       r = await hit('flow', jars, '/login')
       assert(r.status === 302 && r.loc === '/alice/mygoal',
         `server: login returns you to the stashed deep link ` +
@@ -4156,6 +4297,26 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       assert(r.status === 302 && r.loc === '/',
         `server: the stash is one-shot; next login goes to / ` +
         `(${r.status} -> ${r.loc})`)
+      // Rolling: an ordinary logged-in page request that doesn't change
+      // the session still re-sends the cookie with a fresh Expires, so the
+      // browser's copy lives 400 days from the last visit, not from login.
+      // express-session only does that with rolling on. Resultata
+      // (pre-fix): no Set-Cookie on such a request.
+      r = await hit('flow', jars, '/')
+      const rolledDays = expiresOf(r)
+        ? (Date.parse(expiresOf(r)) - Date.now()) / 86400e3 : NaN
+      assert(r.status === 200 && rolledDays > 399 && rolledDays <= 400,
+        `server: every response refreshes the login cookie, to the ` +
+        `logged-in 400 days (${r.status}, got ${rolledDays} days)`)
+      // Static assets are served above the session middleware: they neither
+      // touch the session store (one UPDATE per script tag, before) nor
+      // carry Set-Cookie, which a cache configured to ignore that header
+      // would otherwise hand to the next visitor. Resultata (pre-fix): a
+      // Set-Cookie on every asset response.
+      r = await hit('flow', jars, '/src/butil.js')
+      assert(r.status === 200 && r.setCookie.length === 0,
+        `server: static assets bypass the session ` +
+        `(${r.status}, Set-Cookie: ${JSON.stringify(r.setCookie)})`)
 
       // A bare visit (no deep link to auto-bounce through OAuth) still
       // gets the landing page: / sends you to /login, whose button
@@ -4223,12 +4384,81 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       r = await hit('auth', jars, '/alice/mygoal/')
       assert(r.status === 200 && /const initgoal = "mygoal"/.test(r.body),
         `server: trailing-slash deep link still renders the goal`)
+
+      // Logging out destroys the session outright rather than nulling its
+      // token: the next request gets a brand-new session (a different sid
+      // once the deep-link stash mints one). Resultata (pre-fix): the row
+      // lived on under the same sid, for 400 days now that cookies do.
+      r = await hit('bye', jars, '/connect?access_token=tok&username=alice')
+      const sidOf = res =>
+        (res.setCookie.find(c => c.startsWith('connect.sid=')) || '')
+          .split(';')[0]
+      const sidBefore = sidOf(r)
+      r = await hit('bye', jars, '/logout')
+      assert(r.status === 302 && r.loc === '/',
+        `server: logout redirects home (${r.status} -> ${r.loc})`)
+      r = await hit('bye', jars, '/alice/mygoal')
+      assert(r.status === 302 && sidBefore && sidOf(r) &&
+             sidOf(r) !== sidBefore,
+        `server: logout destroys the session; the next request gets a ` +
+        `new one (before ${sidBefore}, after ${sidOf(r)})`)
+
+      // Beeminder answering 401 (a revoked token) drops the session, so the
+      // next page load takes the login bounce instead of trapping the
+      // browser behind a token that can't work for as long as the cookie
+      // lives. Resultata (pre-fix): a 500 with the session kept, and the
+      // same 500 on every reload.
+      await hit('revoked', jars, '/connect?access_token=tok&username=alice')
+      r = await hit('revoked', jars, '/')
+      assert(r.status === 200,
+        `server: the revoked-token jar is logged in to begin with ` +
+        `(got ${r.status})`)
+      r = await hit('revoked', jars, '/getgoaljson/mygoal')
+      assert(r.status === 302 && r.loc === '/login',
+        `server: goal fetch with a revoked token bounces to login ` +
+        `(${r.status} -> ${r.loc})`)
+      r = await hit('revoked', jars, '/')
+      assert(r.status === 302 && r.loc === '/login',
+        `server: after a revoked-token fetch the session is gone ` +
+        `(${r.status} -> ${r.loc})`)
+      await hit('revoked2', jars, '/connect?access_token=tok&username=alice')
+      r = await hit('revoked2', jars, '/')
+      assert(r.status === 200,
+        `server: the second revoked-token jar is logged in to begin ` +
+        `with (got ${r.status})`)
+      r = await hit('revoked2', jars, '/getusergoals')
+      assert(r.status === 401,
+        `server: goal list with a revoked token answers 401 ` +
+        `(got ${r.status})`)
+      r = await hit('revoked2', jars, '/')
+      assert(r.status === 302 && r.loc === '/login',
+        `server: after a revoked-token goal list the session is gone ` +
+        `(${r.status} -> ${r.loc})`)
+      // The real API also answers 401 to a bogus token, so the stub has to
+      // prove it was the one asked
+      assert(bapiHits >= 2,
+        `server: the revoked-token flows went through the stub API ` +
+        `(${bapiHits} hits)`)
+
+      // Beeminder's deny/failure callback (/connect?error=...) on a
+      // logged-in session makes it anonymous again, and anonymous means
+      // the 1-day tier, not the 400 days the login had earned. Resultata
+      // (pre-fix): the token was nulled but the cookie and its row kept
+      // their 400 days.
+      await hit('deny', jars, '/connect?access_token=tok&username=alice')
+      r = await hit('deny', jars, '/connect?error=access_denied')
+      const denyDays = expiresOf(r)
+        ? (Date.parse(expiresOf(r)) - Date.now()) / 86400e3 : NaN
+      assert(r.status === 302 && denyDays > 0.99 && denyDays <= 1,
+        `server: a failed re-auth drops the session to the anonymous ` +
+        `lifetime (${r.status}, got ${denyDays} days)`)
     } catch (e) {
       // A transport error (rather than an assertion) is itself a failure
       // to record, not a reason to abort the whole suite
       assert(false, `server routing: request threw (${e.code || e.message})`)
     } finally {
       srv.kill('SIGKILL')
+      bapi.close()
       try { require('fs').unlinkSync(dbfile) } catch {}
     }
   })()
