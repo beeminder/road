@@ -384,11 +384,12 @@ app.put("/data/:goal/:id", async (req, resp) => {
 // page -- an invisible round trip if they're logged in over there and
 // have authorized this app before -- and land back here.
 app.get(["/:username", "/:username/:goalname"], (req, resp, next) => {
-  // Usernames and goalnames are alphanumeric plus underscore (no dots or
-  // hyphens), so a path that can't be a name -- like any file request,
-  // which has a dot in it -- is not a deep link and 404s just like it did
-  // before this route existed
-  const namepat = /^[a-zA-Z0-9_]+$/;
+  // Usernames and goalnames are alphanumeric plus underscore, and goalnames
+  // can also have hyphens (one pattern serves both). Neither has dots, so a
+  // path that can't be a name -- like any file request, which has a dot in
+  // it -- is not a deep link and 404s just like it did before this route
+  // existed
+  const namepat = /^[a-zA-Z0-9_-]+$/;
   const { username, goalname } = req.params; // goalname undefined on /username
   const names = goalname ? [username, goalname] : [username];
   if (!names.every(n => namepat.test(n))) return next();

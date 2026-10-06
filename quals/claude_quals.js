@@ -4348,6 +4348,41 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
              /const wanted = "bob\/theirgoal"/.test(r.body),
         `server: someone else's goal comes through as a banner request`)
 
+      // Goalnames may contain hyphens: Beeminder's slug validator
+      // (lib/slug_format_validator.rb in the beeminder repo) has allowed
+      // letters, digits, underscores, and dashes since 2012. Replicata: as
+      // alice, open /alice/my-goal (or pick my-goal in the editor, which
+      // writes that path into the address bar, and reload). Expectata: the
+      // editor on my-goal. Resultata (pre-fix): Express's bare 404,
+      // "Cannot GET /alice/my-goal", from a name guard that allowed only
+      // [a-zA-Z0-9_]. A hyphen anywhere else gets the same treatment as any
+      // other name: someone else's goal is a banner request, and a
+      // logged-out deep link survives the OAuth round trip.
+      r = await hit('auth', jars, '/alice/my-goal')
+      assert(r.status === 200 && /const initgoal = "my-goal"/.test(r.body) &&
+             /const wanted = null/.test(r.body),
+        `server: a hyphenated goalname deep-links like any other ` +
+        `(got ${r.status})`)
+      r = await hit('auth', jars, '/bob/their-goal')
+      assert(r.status === 200 && /const initgoal = null/.test(r.body) &&
+             /const wanted = "bob\/their-goal"/.test(r.body),
+        `server: someone else's hyphenated goal comes through as a banner ` +
+        `request (got ${r.status})`)
+      r = await hit('auth', jars, '/bo-b/theirgoal')
+      assert(r.status === 200 && /const initgoal = null/.test(r.body) &&
+             /const wanted = "bo-b\/theirgoal"/.test(r.body),
+        `server: a hyphenated username comes through as a banner request ` +
+        `(got ${r.status})`)
+      r = await hit('dashflow', jars, '/alice/my-goal')
+      assert(r.status === 302 && r.loc === authurl,
+        `server: logged-out hyphenated deep link bounces to Beeminder ` +
+        `OAuth (${r.status} -> ${r.loc})`)
+      await hit('dashflow', jars, '/connect?access_token=tok&username=alice')
+      r = await hit('dashflow', jars, '/login')
+      assert(r.status === 302 && r.loc === '/alice/my-goal',
+        `server: login returns you to the stashed hyphenated deep link ` +
+        `(${r.status} -> ${r.loc})`)
+
       // A goalname carrying </script> never reaches the template at all:
       // its < and / fail the name-grammar guard, so the route 404s before
       // any rendering. (The jsval escaping that would neutralize such a
