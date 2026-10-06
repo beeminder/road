@@ -310,10 +310,7 @@ function prepareGoalSelect(goals) {
     opt.value = "load failed!";
     roadSelect.add(opt);
     initTomSelect()
-    // TODO: Latin for: Error: Failed to load your goals. Reload the page
-    // to log in again.
-    showURLBanner('Error: metae tuae onerari non potuerunt. ' +
-                  'Paginam renova ut rursus inires.')
+    showURLBanner('Error: Failed to load your goals. Try reloading the page?')
     return
   }
   
