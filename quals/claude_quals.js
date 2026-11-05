@@ -4045,6 +4045,12 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
             throw this.gotoError
           }
         },
+        async content() { return '' },
+        // waitError scripts the post-goto wait for `done` to reject, the way
+        // a tab stuck in a script loop times out after a successful load
+        async waitForFunction(fn, opts) {
+          if (this.waitError) throw this.waitError
+        },
         async close() { this.closed = true },
       }
     }
@@ -4092,6 +4098,33 @@ assert(br.AGGR.muflat([4,0])         === 4, 'aggday muflat single nonzero')
       assert(browser.created.length === 2 &&
              pi && pi.page === browser.created[1],
         'renderer: pickup after a failure reinstantiates a fresh tab')
+
+      // Replicata (#340): a render whose page.goto succeeds but whose wait
+      // for `done` times out (tab stalled after load). Expectata: as with a
+      // goto failure, the tab is closed and its slot emptied and freed.
+      // Resultata (the bug): the stalled tab goes back into the pool with an
+      // idle timer, failing every render it's handed for up to pageIdle.
+      const b3 = mkBrowser()
+      const r3 = new Renderer(b3, 'q3')
+      fs.writeFileSync(path.join(dir, 'slugwait.bb'), '{}')
+      const res3 = await (async () => {
+        const realNewPage = b3.newPage.bind(b3)
+        b3.newPage = async () => {
+          const p = await realNewPage()
+          p.waitError = new Error('Waiting failed: 40000ms exceeded')
+          return p
+        }
+        return r3.render(dir, dir, 'slugwait', 1, true)
+      })()
+      const stalled = b3.created[0]
+      assert(res3.error && /40000ms exceeded/.test(res3.error),
+        `renderer: wait-for-done failure surfaces the cause (got: ${res3.error})`)
+      assert(stalled.closed === true,
+        'renderer: tab whose wait for done failed is closed, not repooled')
+      assert(r3.pages.length === 1 && r3.pages[0].page === null,
+        'renderer: stalled slot emptied for reinstantiation')
+      assert(r3.pages[0].busy === false && r3.pages[0].timeout == null,
+        'renderer: stalled slot not left busy, no idle timer armed')
 
       // Replicata: two renders reuse one healthy tab. Expectata: exactly one
       // requestfailed listener on the tab (page-lifetime concern, attached
