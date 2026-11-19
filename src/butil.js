@@ -90,7 +90,7 @@ const AKH   = 7*SID       // Akrasia horizon, in seconds
 // to asof (gissue #232). False until Beebody ships its side. Every site that
 // branches on it is tagged CONSISTENT_AKRASIA_HORIZON, as are the quals that
 // spec the new algorithm, which pass vacuously while this is false.
-const CONSISTENT_AKRASIA_HORIZON = false
+const CONSISTENT_AKRASIA_HORIZON = true
 //const BDUSK = 2147317201  // circa 2038, Rails's ENDOFDAYS+1 (was 2^31-2weeks)
 const BDUSK = 4102444799 // 2099-12-31 23:59:59 UTC
 
