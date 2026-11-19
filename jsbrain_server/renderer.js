@@ -137,6 +137,10 @@ class Renderer {
     let page = null
     let pagelog = {msg:""}
     let pageinfo = null
+    // renderok: every step after page pickup completed. Anything short of
+    // that (a timed-out wait for `done`, a thrown CDP call) may mean a wedged
+    // tab, so the finally block discards the tab rather than repooling it.
+    let renderok = false
     function msglog(msg) {
       pagelog.msg += (tag+" PAGE LOG: " + msg.text().replace(/\n/g, '\n'+tag)+"\n")}
     function errlog(error) {
@@ -327,6 +331,7 @@ class Renderer {
         if (fs.existsSync(imgftmp)) fs.renameSync(imgftmp, imgf )
         if (time_id != null) msgbuf += this.timeEndMsg(time_id)
         time_id = null
+        renderok = true
 
       } else {
 
@@ -349,7 +354,14 @@ class Renderer {
         page.off('error',     errlog)
         page.off('pageerror', errlog)
         pageinfo.busy = false
-        pageinfo.timeout
+        if (!renderok) {
+          // Same discard as a failed goto in renderPage: the emptied slot
+          // gets a fresh page at next pickup. (#340)
+          console.log(tag+"renderer.js: Discarding page after failed render "
+                      +"in slot "+pageinfo.slot)
+          page.close().catch(() => {})
+          pageinfo.page = null
+        } else pageinfo.timeout
           = setTimeout(
             function(){
               if (pageinfo) {
